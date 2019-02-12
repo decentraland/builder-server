@@ -5,6 +5,7 @@
     "lib": ["es2017"],
     "plugins": [{ "name": "tslint-language-service" }],
     "moduleResolution": "node",
+    "outDir": "dist",
     "strict": true,
     "noImplicitAny": true,
     "noImplicitThis": true,
@@ -17,6 +18,6 @@
     "allowSyntheticDefaultImports": true,
     "forceConsistentCasingInFileNames": true
   },
-  "exclude": ["node_modules"],
-  "include": ["*"]
+  "exclude": ["node_modules", "dist"],
+  "include": ["./**/*"]
 }

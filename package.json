@@ -2,13 +2,13 @@
   "name": "builder-contest-server",
   "version": "1.0.0",
   "description": "Contest server for projects",
-  "main": "index.js",
+  "main": "server.js",
   "scripts": {
     "lint": "tslint -p tsconfig.json --fix",
     "lint:fix": "tslint -p tsconfig.json",
     "build:tsc": "tsc -p tsconfig.json",
     "watch:build:tsc": "tsc -p tsconfig.json --watch",
-    "start": "npm run build:tsc && node index.js"
+    "start": "npm run build:tsc && node server.js"
   },
   "keywords": [
     "decentraland"

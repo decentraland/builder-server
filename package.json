@@ -21,6 +21,7 @@
     "aws-sdk": "^2.401.0",
     "body-parser": "^1.18.3",
     "decentraland-commons": "^5.1.0",
+    "decentraland-server": "^2.0.1",
     "express": "^4.16.4",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3"

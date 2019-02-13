@@ -5,7 +5,6 @@ export class ContestRouter extends Router {
   mount() {
     /**
      * Returns all stored districts
-     * @return {array<District>}
      */
     this.app.post('/contest/submit', server.handleRequest(this.submitProject))
   }

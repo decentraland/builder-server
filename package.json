@@ -8,7 +8,7 @@
     "lint:fix": "tslint -p tsconfig.json",
     "build:tsc": "tsc -p tsconfig.json",
     "watch:build:tsc": "tsc -p tsconfig.json --watch",
-    "start": "npm run build:tsc && node server.js"
+    "start": "npm run build:tsc && node dist/server.js"
   },
   "keywords": [
     "decentraland"
@@ -18,9 +18,11 @@
   "dependencies": {
     "@types/body-parser": "^1.17.0",
     "@types/express": "^4.16.1",
+    "@types/pg": "^7.4.11",
     "aws-sdk": "^2.401.0",
     "body-parser": "^1.18.3",
     "decentraland-commons": "^5.1.0",
+    "decentraland-server": "^2.0.1",
     "express": "^4.16.4",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3"

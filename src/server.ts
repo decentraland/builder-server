@@ -1,33 +1,22 @@
-import bodyParser = require('body-parser')
-import express = require('express')
 import { env } from 'decentraland-commons'
+import { ContestRouter } from './Contest/Contest.router'
+import { ExpressApp } from './common/ExpressApp'
 
-const SERVER_PORT = env.get('SERVER_PORT', 5000)
-const app = express()
+const SERVER_PORT = env.get('SERVER_PORT', '5000')
+const API_VERSION = env.get('API_VERSION', 'v1')
 
-app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }))
-app.use(bodyParser.json())
+const app = new ExpressApp()
+
+app.useJSON().useVersion(API_VERSION)
 
 if (env.isDevelopment()) {
-  app.use(function(_, res, next) {
-    res.setHeader('Access-Control-Allow-Origin', '*')
-    res.setHeader('Access-Control-Request-Method', '*')
-    res.setHeader(
-      'Access-Control-Allow-Methods',
-      'OPTIONS, GET, POST, PUT, DELETE'
-    )
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
-
-    next()
-  })
+  app.useCORS()
 }
 
+// Mount routers
+new ContestRouter(app).mount()
+
+// Start
 if (require.main === module) {
-  startServer()
-}
-
-function startServer() {
-  return app.listen(SERVER_PORT, () =>
-    console.log('Server running on port', SERVER_PORT)
-  )
+  app.listen(SERVER_PORT)
 }

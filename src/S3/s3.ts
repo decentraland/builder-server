@@ -28,12 +28,14 @@ export function readFile(key: string): Promise<any> {
   return utils.promisify<any>(s3.getObject.bind(s3))(params)
 }
 
-export function checkFile(key: string): Promise<boolean> {
+export async function checkFile(key: string): Promise<boolean> {
   const params = {
     Bucket: bucketName,
     Key: key
   }
-  return utils.promisify<boolean>(s3.headObject.bind(s3))(params)
+  const headObject = utils.promisify<boolean>(s3.headObject.bind(s3))
+  const result = await headObject(params)
+  return !!result
 }
 
 export function uploadFile(

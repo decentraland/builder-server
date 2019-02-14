@@ -20,12 +20,12 @@ if (!bucketName) {
 
 export const s3 = new AWS.S3({ accessKeyId, secretAccessKey })
 
-export function readFile(key: string): Promise<any> {
+export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
   const params = {
     Bucket: bucketName,
     Key: key
   }
-  return utils.promisify<any>(s3.getObject.bind(s3))(params)
+  return utils.promisify<AWS.S3.GetObjectOutput>(s3.getObject.bind(s3))(params)
 }
 
 export async function checkFile(key: string): Promise<boolean> {

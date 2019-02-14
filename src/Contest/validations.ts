@@ -1,3 +1,4 @@
+import { utils } from 'decentraland-commons'
 import { Entry } from './types'
 
 export function parseEntry(entryJSON: string): Entry {
@@ -28,7 +29,13 @@ export function parseEntry(entryJSON: string): Entry {
   const errorsStr = errors.join('\n').trim()
   if (errorsStr) throw new Error(errorsStr)
 
-  return entry
+  return trimEntry(entry)
+}
+
+function trimEntry(entry: Entry): Entry {
+  const newEntry = { ...entry }
+  newEntry.project = utils.omit(entry.project, ['thumbnail'])
+  return newEntry
 }
 
 function getProjectErrors(project: Entry['project']): string {

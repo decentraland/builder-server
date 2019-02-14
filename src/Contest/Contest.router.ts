@@ -23,7 +23,11 @@ export class ContestRouter extends Router {
   async getEntry(req: express.Request): Promise<Entry> {
     const projectId = server.extractFromReq(req, 'projectId')
 
-    const entry: Entry = await readFile(projectId)
+    const file = await readFile(projectId)
+
+    if (!file.Body) throw new Error(`Unknown entry ${projectId}`)
+
+    const entry: Entry = JSON.parse(file.Body.toString())
     entry.contest.email = await decrypt(entry.contest.email)
 
     return entry

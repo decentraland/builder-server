@@ -25,7 +25,7 @@ export function readFile(key: string): Promise<any> {
     Bucket: bucketName,
     Key: key
   }
-  return utils.promisify<any>(s3.getObject)(params)
+  return utils.promisify<any>(s3.getObject.bind(s3))(params)
 }
 
 export function checkFile(key: string): Promise<boolean> {
@@ -33,7 +33,7 @@ export function checkFile(key: string): Promise<boolean> {
     Bucket: bucketName,
     Key: key
   }
-  return utils.promisify<boolean>(s3.headObject)(params)
+  return utils.promisify<boolean>(s3.headObject.bind(s3))(params)
 }
 
 export function uploadFile(
@@ -46,5 +46,5 @@ export function uploadFile(
     Body: data,
     ACL: 'public-read'
   }
-  return utils.promisify<AWS.S3.ManagedUpload>(s3.upload)(params)
+  return utils.promisify<AWS.S3.ManagedUpload>(s3.upload.bind(s3))(params)
 }

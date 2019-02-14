@@ -1,5 +1,5 @@
-export type Submission = {
-  version: string
+export type Entry = {
+  version: number
   project: {
     id: string
     title: string

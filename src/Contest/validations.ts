@@ -1,15 +1,15 @@
-import { Submission } from './types'
+import { Entry } from './types'
 
-export function parseSubmission(submissionJSON: string): Submission {
-  const submission: Submission = JSON.parse(submissionJSON)
+export function parseEntry(entryJSON: string): Entry {
+  const entry: Entry = JSON.parse(entryJSON)
   let errors: string[] = []
 
-  switch (submission.version) {
+  switch (entry.version.toString()) {
     case '1':
-      const { project, contest, scene } = submission
+      const { project, contest, scene } = entry
       if (!project || !contest || !scene) {
         throw new Error(
-          'Missing required props. Check your submission contains a project, contest and scene props'
+          'Missing required props. Check your entry contains a project, contest and scene props'
         )
       }
 
@@ -20,32 +20,36 @@ export function parseSubmission(submissionJSON: string): Submission {
       ]
       break
     default:
-      throw new Error('Missing version')
+      throw new Error(
+        `Unknown version, received entry version: ${entry.version}`
+      )
   }
 
   const errorsStr = errors.join('\n').trim()
   if (errorsStr) throw new Error(errorsStr)
 
-  return submission
+  return entry
 }
 
-function getProjectErrors(project: Submission['project']): string {
+function getProjectErrors(project: Entry['project']): string {
   const errors = validateProps(project, ['id', 'title'])
-  return errors.length ? `Project:\n${errors.map(error => `\t- ${error}`)}` : ''
+  return errors.length > 0
+    ? `Project:\n${errors.map(error => `\t- ${error}`)}`
+    : ''
 }
 
-function getContestErrors(contest: Submission['contest']): string {
+function getContestErrors(contest: Entry['contest']): string {
   const errors = validateProps(contest, ['email'])
-  return errors.length ? `Contest:\n${formatErrors(errors)}` : ''
+  return errors.length > 0 ? `Contest:\n${formatErrors(errors)}` : ''
 }
 
-function getSceneErrors(scene: Submission['scene']): string {
-  const errors = validateProps(scene, ['components', 'entities'])
+function getSceneErrors(scene: Entry['scene']): string {
+  const sceneErrors = validateProps(scene, ['components', 'entities'])
 
   let componentErrors: string[] = []
   let entityErrors: string[] = []
 
-  if (errors.length === 0) {
+  if (sceneErrors.length === 0) {
     for (const component of Object.values(scene.components)) {
       componentErrors = componentErrors.concat(
         validateProps(component, ['id', 'type', 'data'])
@@ -59,9 +63,19 @@ function getSceneErrors(scene: Submission['scene']): string {
     }
   }
 
-  return `Scene:\n${formatErrors(errors)}\n${formatErrors(
-    componentErrors
-  )}\n${formatErrors(entityErrors)}`
+  let errors = ''
+
+  if (sceneErrors.length) {
+    errors += `Scene:\n${formatErrors(sceneErrors)}\n`
+  }
+  if (componentErrors.length) {
+    errors += `Scene Components:${formatErrors(componentErrors)}}\n`
+  }
+  if (entityErrors.length) {
+    errors += `Scene Entities:${formatErrors(entityErrors)}\n`
+  }
+
+  return errors
 }
 
 function formatErrors(errors: string[]): string {

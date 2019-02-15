@@ -1,4 +1,5 @@
 import { utils } from 'decentraland-commons'
+
 import { Entry } from './types'
 
 export function parseEntry(entryJSON: string): Entry {

@@ -12,12 +12,12 @@ export class ContestRouter extends Router {
     /**
      * Get entry by id
      */
-    this.app.get('/entry/:projectId', server.handleRequest(this.getEntry))
+    this.router.get('/entry/:projectId', server.handleRequest(this.getEntry))
 
     /**
      * Upload a new entry
      */
-    this.app.post('/entry', server.handleRequest(this.submitProject))
+    this.router.post('/entry', server.handleRequest(this.submitProject))
   }
 
   async getEntry(req: express.Request): Promise<Entry> {

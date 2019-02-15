@@ -3,10 +3,10 @@ import express = require('express')
 import { ExpressApp } from './ExpressApp'
 
 export class Router {
-  protected app: express.Application
+  protected router: express.Router
 
-  constructor(app: ExpressApp | express.Application) {
-    this.app = app instanceof ExpressApp ? app.get() : app
+  constructor(router: ExpressApp | express.Router) {
+    this.router = router instanceof ExpressApp ? router.getRouter() : router
   }
 
   mount(): void {

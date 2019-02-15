@@ -33,16 +33,15 @@ export function parseEntry(entryJSON: string): Entry {
 }
 
 function trimEntry(entry: Entry): Entry {
-  const newEntry = { ...entry }
-  newEntry.project = utils.omit(entry.project, ['thumbnail'])
-  return newEntry
+  return {
+    ...entry,
+    project: utils.omit(entry.project, ['thumbnail'])
+  }
 }
 
 function getProjectErrors(project: Entry['project']): string {
   const errors = validateProps(project, ['id', 'title'])
-  return errors.length > 0
-    ? `Project:\n${formatErrors(errors)}`
-    : ''
+  return errors.length > 0 ? `Project:\n${formatErrors(errors)}` : ''
 }
 
 function getContestErrors(contest: Entry['contest']): string {

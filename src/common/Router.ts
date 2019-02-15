@@ -1,4 +1,5 @@
 import express = require('express')
+
 import { ExpressApp } from './ExpressApp'
 
 export class Router {

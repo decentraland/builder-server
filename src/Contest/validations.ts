@@ -28,7 +28,9 @@ export function parseEntry(entryJSON: string): Entry {
   }
 
   const errorsStr = errors.join('\n').trim()
-  if (errorsStr) throw new Error(errorsStr)
+  if (errorsStr) {
+    throw new Error(errorsStr)
+  }
 
   return trimEntry(entry)
 }

@@ -10,8 +10,9 @@ if (!SECRET) {
 }
 
 export async function encrypt(text: string) {
-  if (!SECRET) return text
-
+  if (!SECRET) {
+    return text
+  }
   const key = await crypto.scryptSync(ALGORITHM, SECRET, KEY_SIZE)
   const iv = crypto.randomBytes(16)
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
@@ -20,8 +21,9 @@ export async function encrypt(text: string) {
 }
 
 export async function decrypt(encryptedText: string) {
-  if (!SECRET) return encryptedText
-
+  if (!SECRET) {
+    return encryptedText
+  }
   const key = await crypto.scryptSync(ALGORITHM, SECRET, KEY_SIZE)
   const [text, iv] = extractIV(encryptedText)
   const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)

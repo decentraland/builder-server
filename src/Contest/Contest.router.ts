@@ -25,7 +25,9 @@ export class ContestRouter extends Router {
 
     const file = await readFile(projectId)
 
-    if (!file.Body) throw new Error(`Unknown entry ${projectId}`)
+    if (!file.Body) {
+      throw new Error(`Unknown entry ${projectId}`)
+    }
 
     const entry: Entry = JSON.parse(file.Body.toString())
     entry.contest.email = await decrypt(entry.contest.email)

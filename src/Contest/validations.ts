@@ -41,7 +41,7 @@ function trimEntry(entry: Entry): Entry {
 function getProjectErrors(project: Entry['project']): string {
   const errors = validateProps(project, ['id', 'title'])
   return errors.length > 0
-    ? `Project:\n${errors.map(error => `\t- ${error}`)}`
+    ? `Project:\n${formatErrors(errors)}`
     : ''
 }
 

@@ -3,9 +3,11 @@ import bodyParser = require('body-parser')
 
 export class ExpressApp {
   protected app: express.Application
+  protected router: express.Router
 
   constructor() {
     this.app = express()
+    this.router = express.Router()
   }
 
   useJSON() {
@@ -28,9 +30,8 @@ export class ExpressApp {
     })
   }
 
-  useVersion(version: string) {
-    const router = express.Router()
-    this.app.use(`/${version}`, router)
+  useVersion(version: string = '') {
+    this.app.use(`/${version}`, this.router)
     return this
   }
 
@@ -38,7 +39,11 @@ export class ExpressApp {
     this.app.listen(port, () => console.log('Server running on port', port))
   }
 
-  get() {
+  getApp() {
     return this.app
+  }
+
+  getRouter() {
+    return this.router
   }
 }

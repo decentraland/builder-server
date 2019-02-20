@@ -17,7 +17,7 @@ export class ExpressApp {
   }
 
   useCORS() {
-    this.app.use(function(_, res, next) {
+    const cors = function(_: any, res: express.Response, next: Function) {
       res.setHeader('Access-Control-Allow-Origin', '*')
       res.setHeader('Access-Control-Request-Method', '*')
       res.setHeader(
@@ -27,7 +27,9 @@ export class ExpressApp {
       res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
 
       next()
-    })
+    }
+    this.app.use(cors)
+    this.router.all('*', cors)
   }
 
   useVersion(version: string = '') {

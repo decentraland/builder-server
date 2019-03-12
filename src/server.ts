@@ -7,20 +7,13 @@ const API_VERSION = env.get('API_VERSION', 'v1')
 
 const app = new ExpressApp()
 
-app.useJSON().useVersion(API_VERSION)
+const corsOrigin = env.isDevelopment() ? '*' : env.get('CORS_ORIGIN', '')
+const corsMethod = env.isDevelopment() ? '*' : env.get('CORS_METHOD', '')
 
-let corsOrigin = ''
-let corsMethod = ''
-
-if (env.isDevelopment()) {
-  corsOrigin = '*'
-  corsMethod = '*'
-} else {
-  corsOrigin = env.get('CORS_ORIGIN', '')
-  corsMethod = env.get('CORS_METHOD', '')
-}
-
-app.useCORS(corsOrigin, corsMethod)
+app
+  .useJSON()
+  .useVersion(API_VERSION)
+  .useCORS(corsOrigin, corsMethod)
 
 // Mount routers
 new ContestRouter(app).mount()

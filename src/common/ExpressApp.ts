@@ -16,10 +16,10 @@ export class ExpressApp {
     return this
   }
 
-  useCORS() {
+  useCORS(origin: string, method: string) {
     const cors = function(_: any, res: express.Response, next: Function) {
-      res.setHeader('Access-Control-Allow-Origin', '*')
-      res.setHeader('Access-Control-Request-Method', '*')
+      res.setHeader('Access-Control-Allow-Origin', origin)
+      res.setHeader('Access-Control-Request-Method', method)
       res.setHeader(
         'Access-Control-Allow-Methods',
         'OPTIONS, GET, POST, PUT, DELETE'
@@ -30,6 +30,7 @@ export class ExpressApp {
     }
     this.app.use(cors)
     this.router.all('*', cors)
+    return this
   }
 
   useVersion(version: string = '') {

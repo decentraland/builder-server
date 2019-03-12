@@ -9,9 +9,18 @@ const app = new ExpressApp()
 
 app.useJSON().useVersion(API_VERSION)
 
+let corsOrigin = ''
+let corsMethod = ''
+
 if (env.isDevelopment()) {
-  app.useCORS()
+  corsOrigin = '*'
+  corsMethod = '*'
+} else {
+  corsOrigin = env.get('CORS_ORIGIN', '')
+  corsMethod = env.get('CORS_METHOD', '')
 }
+
+app.useCORS(corsOrigin, corsMethod)
 
 // Mount routers
 new ContestRouter(app).mount()

@@ -30,6 +30,7 @@ export class ExpressApp {
     }
     this.app.use(cors)
     this.router.all('*', cors)
+    return this
   }
 
   useVersion(version: string = '') {

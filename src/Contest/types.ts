@@ -16,4 +16,5 @@ export type Entry = {
     components: Record<string, any>
     [key: string]: any
   }
+  secret?: string
 }

@@ -8,7 +8,12 @@ export function parseEntry(entryJSON: string): Entry {
 
   switch (entry.version.toString()) {
     case '1':
-      const { project, contest, scene } = entry
+      const { project, contest, scene, secret } = entry
+      if (!secret) {
+        throw new Error(
+          'Missing secret. You might be using an old version of the Builder.'
+        )
+      }
       if (!project || !contest || !scene) {
         throw new Error(
           'Missing required props. Check your entry contains a project, contest and scene props'

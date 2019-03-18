@@ -12,7 +12,7 @@ export class ExpressApp {
 
   useJSON() {
     this.app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }))
-    this.app.use(bodyParser.json())
+    this.app.use(bodyParser.json({ limit: '1mb' }))
     return this
   }
 

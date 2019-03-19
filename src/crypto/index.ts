@@ -13,7 +13,7 @@ export async function encrypt(text: string) {
   if (!SECRET) {
     return text
   }
-  const key = await crypto.scryptSync(ALGORITHM, SECRET, KEY_SIZE)
+  const key = crypto.scryptSync(ALGORITHM, SECRET, KEY_SIZE)
   const iv = crypto.randomBytes(16)
   const cipher = crypto.createCipheriv(ALGORITHM, key, iv)
   const crypted = cipher.update(text, 'utf8', 'hex')
@@ -24,7 +24,7 @@ export async function decrypt(encryptedText: string) {
   if (!SECRET) {
     return encryptedText
   }
-  const key = await crypto.scryptSync(ALGORITHM, SECRET, KEY_SIZE)
+  const key = crypto.scryptSync(ALGORITHM, SECRET, KEY_SIZE)
   const [text, iv] = extractIV(encryptedText)
   const decipher = crypto.createDecipheriv(ALGORITHM, key, iv)
   const decrypted = decipher.update(text, 'hex', 'utf8')

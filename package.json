@@ -24,6 +24,7 @@
     "decentraland-commons": "^5.1.0",
     "decentraland-server": "^2.0.1",
     "express": "^4.16.4",
+    "express-basic-auth": "^1.1.6",
     "tslint": "^5.12.1",
     "typescript": "^3.3.3"
   },

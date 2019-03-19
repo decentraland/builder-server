@@ -50,3 +50,9 @@ export function uploadFile(
   }
   return utils.promisify<AWS.S3.ManagedUpload>(s3.upload.bind(s3))(params)
 }
+
+export function parseFileBody(file: AWS.S3.GetObjectOutput): any | undefined {
+  if (file.Body) {
+    return JSON.parse(file.Body.toString())
+  }
+}

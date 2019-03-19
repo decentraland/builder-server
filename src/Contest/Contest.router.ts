@@ -2,37 +2,17 @@ import express = require('express')
 import { server } from 'decentraland-server'
 
 import { Router } from '../common'
-import { uploadFile, readFile, checkFile } from '../S3'
+import { uploadFile, readFile, checkFile, parseFileBody } from '../S3'
 import { encrypt, decrypt } from '../crypto'
-import { Entry } from './types'
+import { LegacyEntry } from './types'
 import { parseEntry } from './validations'
 
 export class ContestRouter extends Router {
   mount() {
     /**
-     * Get entry by id
-     */
-    this.router.get('/entry/:projectId', server.handleRequest(this.getEntry))
-
-    /**
      * Upload a new entry
      */
     this.router.post('/entry', server.handleRequest(this.submitProject))
-  }
-
-  async getEntry(req: express.Request): Promise<Entry> {
-    const projectId = server.extractFromReq(req, 'projectId')
-
-    const file = await readFile(projectId)
-
-    if (!file.Body) {
-      throw new Error(`Unknown entry ${projectId}`)
-    }
-
-    const entry: Entry = JSON.parse(file.Body.toString())
-    entry.contest.email = await decrypt(entry.contest.email)
-
-    return entry
   }
 
   async submitProject(req: express.Request): Promise<boolean> {
@@ -41,7 +21,36 @@ export class ContestRouter extends Router {
     const entry = parseEntry(EntryJSON)
     const projectId = entry.project.id
 
+    let previousEntry: LegacyEntry | undefined
+
+    // We need to check if a previous entry exists and if it has an user,
+    // throw if it's different to the current entry's secret
+    try {
+      const file = await readFile(projectId)
+      previousEntry = parseFileBody(file)
+    } catch (error) {
+      // No previous entity
+    }
+
+    if (previousEntry) {
+      if (typeof previousEntry.user === 'undefined') {
+        // Handle old entries
+        const previousEmail = await decrypt(previousEntry.contest.email)
+        if (previousEmail !== entry.contest.email) {
+          throw new Error(
+            "You can't update this entry's email, please contact support"
+          )
+        }
+      } else {
+        const previousId = await decrypt(previousEntry.user.id)
+        if (previousId !== entry.user.id) {
+          throw new Error("New entry's secret doesn't match the previous one")
+        }
+      }
+    }
+
     entry.contest.email = await encrypt(entry.contest.email)
+    entry.user.id = await encrypt(entry.user.id)
 
     await uploadFile(projectId, Buffer.from(JSON.stringify(entry)))
     await checkFile(projectId)

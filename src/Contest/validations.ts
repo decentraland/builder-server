@@ -8,7 +8,11 @@ export function parseEntry(entryJSON: string): Entry {
 
   switch (entry.version.toString()) {
     case '1':
-      const { project, contest, scene } = entry
+      const { project, contest, scene, user } = entry
+
+      if (!user) {
+        throw new Error('You might be using an old version of the Builder.')
+      }
       if (!project || !contest || !scene) {
         throw new Error(
           'Missing required props. Check your entry contains a project, contest and scene props'
@@ -18,7 +22,8 @@ export function parseEntry(entryJSON: string): Entry {
       errors = [
         getProjectErrors(project),
         getContestErrors(contest),
-        getSceneErrors(scene)
+        getSceneErrors(scene),
+        getUserErrors(user)
       ]
       break
     default:
@@ -87,14 +92,22 @@ function getSceneErrors(scene: Entry['scene']): string {
   return errors
 }
 
+function getUserErrors(user: Entry['user']): string {
+  const errors = validateProps(user, ['id'])
+  return errors.length > 0 ? `User:\n${formatErrors(errors)}` : ''
+}
+
 function formatErrors(errors: string[]): string {
   return errors.map(error => `\t- ${error}`).join('')
 }
 
-export function validateProps(object: Object, props: string[]): string[] {
+export function validateProps(
+  object: Record<string, any>,
+  props: string[]
+): string[] {
   const errors = []
-  for (const prop in props) {
-    if (typeof object === 'undefined') {
+  for (const prop of props) {
+    if (typeof object[prop] === 'undefined') {
       errors.push(`Missing ${prop}`)
     }
   }

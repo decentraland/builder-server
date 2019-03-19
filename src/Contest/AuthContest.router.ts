@@ -27,7 +27,7 @@ export class AuthContestRouter extends AuthRouter {
 
     entry.contest.email = await decrypt(entry.contest.email)
 
-    if (entry.user.id) {
+    if (entry.user) {
       entry.user.id = await decrypt(entry.user.id)
     }
 

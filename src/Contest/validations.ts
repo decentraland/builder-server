@@ -11,9 +11,7 @@ export function parseEntry(entryJSON: string): Entry {
       const { project, contest, scene, user } = entry
 
       if (!user) {
-        throw new Error(
-          'Missing secret. You might be using an old version of the Builder.'
-        )
+        throw new Error('You might be using an old version of the Builder.')
       }
       if (!project || !contest || !scene) {
         throw new Error(

@@ -38,7 +38,7 @@ export class ContestRouter extends Router {
         const previousEmail = await decrypt(previousEntry.contest.email)
         if (previousEmail !== entry.contest.email) {
           throw new Error(
-            "You can't update this entries email, please contact support"
+            "You can't update this entry's email, please contact support"
           )
         }
       } else {

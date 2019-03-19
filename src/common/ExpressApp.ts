@@ -33,7 +33,7 @@ export class ExpressApp {
     return this
   }
 
-  useVersion(version: string = '') {
+  useVersion(version: string) {
     this.app.use(`/${version}`, this.router)
     return this
   }

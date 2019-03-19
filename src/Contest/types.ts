@@ -1,4 +1,4 @@
-export type Entry = {
+export type BaseEntry = {
   version: number
   project: {
     id: string
@@ -16,5 +16,16 @@ export type Entry = {
     components: Record<string, any>
     [key: string]: any
   }
-  secret?: string
+}
+
+export type User = {
+  id: string
+}
+
+export type Entry = BaseEntry & {
+  user: User
+}
+
+export type LegacyEntry = BaseEntry & {
+  user?: User
 }

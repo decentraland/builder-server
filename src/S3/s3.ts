@@ -28,6 +28,28 @@ export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
   return utils.promisify<AWS.S3.GetObjectOutput>(s3.getObject.bind(s3))(params)
 }
 
+export async function listFiles(
+  continuationToken?: string,
+  contents: AWS.S3.ObjectList = []
+): Promise<AWS.S3.ObjectList> {
+  const params: AWS.S3.ListObjectsV2Request = {
+    Bucket: bucketName
+  }
+  if (continuationToken) {
+    params.ContinuationToken = continuationToken
+  }
+
+  const listObjects = utils.promisify<AWS.S3.ListObjectsV2Output>(
+    s3.listObjectsV2.bind(s3)
+  )
+  const data = await listObjects(params)
+  contents = contents.concat(data.Contents || [])
+
+  return data.IsTruncated
+    ? listFiles(data.ContinuationToken, contents)
+    : contents
+}
+
 export async function checkFile(key: string): Promise<boolean> {
   const params = {
     Bucket: bucketName,

@@ -24,7 +24,10 @@ export class ExpressApp {
         'Access-Control-Allow-Methods',
         'OPTIONS, GET, POST, PUT, DELETE'
       )
-      res.setHeader('Access-Control-Allow-Headers', 'Content-Type')
+      res.setHeader(
+        'Access-Control-Allow-Headers',
+        'Content-Type,Authorization'
+      )
 
       next()
     }

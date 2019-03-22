@@ -8,6 +8,7 @@ export function parseEntry(entryJSON: string): Entry {
 
   switch (entry.version.toString()) {
     case '1':
+    case '2':
       const { project, contest, scene, user } = entry
 
       if (!user) {

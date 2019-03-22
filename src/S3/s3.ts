@@ -46,7 +46,7 @@ export async function listFiles(
   contents = contents.concat(data.Contents || [])
 
   return data.IsTruncated
-    ? listFiles(data.ContinuationToken, contents)
+    ? listFiles(data.NextContinuationToken, contents)
     : contents
 }
 

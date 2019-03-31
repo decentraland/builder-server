@@ -1,7 +1,7 @@
 DROP TABLE IF EXISTS scenes;
 
 CREATE TABLE scenes (
-  id TEXT NOT NULL, 
+  id TEXT NOT NULL PRIMARY KEY, 
   value JSONB,
   email TEXT NOT NULL,
   title TEXT NOT NULL,

@@ -40,7 +40,7 @@ const connectDB = () => {
   db.postgres.connect(CONNECTION_STRING)
 }
 
-const save = async (saveData: any, tag: string) => {
+const indexScene = async (saveData: any, tag: string) => {
   const email = await crypto.decrypt(saveData.contest.email)
   log.info(`${saveData.project.id} ${email}`)
 
@@ -74,7 +74,7 @@ async function main() {
   for (const filename of filenames) {
     try {
       const saveData = readScene(path.join(baseDir, filename))
-      await save(saveData, tag)
+      await indexScene(saveData, tag)
     } catch (err) {
       log.error(err)
     }

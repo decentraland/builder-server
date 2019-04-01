@@ -10,7 +10,7 @@ CREATE TABLE scenes (
   parcels_count INTEGER,
   triangles_count INTEGER,
   items_count INTEGER,
-  env TEXT,
+  tag TEXT,
   created_at TIMESTAMP,
   updated_at TIMESTAMP
 );

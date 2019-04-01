@@ -2,8 +2,10 @@ import * as fs from 'fs'
 import * as path from 'path'
 
 import * as crypto from '../src/crypto'
-import { env } from 'decentraland-commons'
+import { Log, env } from 'decentraland-commons'
 import { db, Model } from 'decentraland-server'
+
+const log = new Log('IndexScenes')
 
 export interface OptionAttributes {
   id: string
@@ -38,9 +40,9 @@ const connectDB = () => {
   db.postgres.connect(CONNECTION_STRING)
 }
 
-const save = async (saveData: any) => {
+const save = async (saveData: any, tag: string) => {
   const email = await crypto.decrypt(saveData.contest.email)
-  console.log(`${saveData.project.id} ${email}`)
+  log.info(`${saveData.project.id} ${email}`)
 
   return Scene.create({
     id: saveData.project.id,
@@ -52,22 +54,29 @@ const save = async (saveData: any) => {
     parcels_count: saveData.project.parcels.length,
     triangles_count: saveData.scene.metrics.triangles,
     items_count: Object.keys(saveData.scene.entities).length,
-    env: 'org'
+    tag: tag
   })
+}
+
+const getNextArg = () => {
+  return process.argv.pop() || ''
 }
 
 async function main() {
   connectDB()
 
-  const baseDir = process.argv.length > 2 ? process.argv.pop() || '' : ''
+  const tag = process.argv.length > 3 ? getNextArg() : ''
+  const baseDir = process.argv.length > 2 ? getNextArg() : ''
+
+  log.info(`Reading scenes from:${baseDir} tag:${tag}`)
 
   const filenames = getSceneList(baseDir)
   for (const filename of filenames) {
     try {
       const saveData = readScene(path.join(baseDir, filename))
-      await save(saveData)
+      await save(saveData, tag)
     } catch (err) {
-      console.log(err)
+      log.error(err)
     }
   }
 }

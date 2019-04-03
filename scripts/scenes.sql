@@ -10,6 +10,10 @@ CREATE TABLE scenes (
   parcels_count INTEGER,
   triangles_count INTEGER,
   items_count INTEGER,
+  sessions INTEGER,
+  days INTEGER,
+  n_events INTEGER,
+  create_time INTEGER,
   tag TEXT,
   created_at TIMESTAMP,
   updated_at TIMESTAMP

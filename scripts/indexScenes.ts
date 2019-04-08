@@ -108,8 +108,7 @@ async function main() {
   } else {
     printHelp()
   }
+  process.exit()
 }
 
-main()
-  .catch(console.error)
-  .finally(process.exit)
+main().catch(console.error)

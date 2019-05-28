@@ -1,7 +1,7 @@
 {
-  "name": "builder-contest-server",
+  "name": "builder-server",
   "version": "1.0.0",
-  "description": "Contest server for projects",
+  "description": "Builder server",
   "main": "server.js",
   "scripts": {
     "lint": "tslint -p tsconfig.json --fix",

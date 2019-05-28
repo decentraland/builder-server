@@ -5,15 +5,23 @@ import { Router } from '../common'
 import { encrypt, decrypt } from '../crypto'
 import { uploadFile, checkFile } from '../S3'
 import { readEntry } from '../storage'
-import { LegacyEntry } from './types'
+import { Entry } from './types'
 import { parseEntry } from './validations'
 
-export class ContestRouter extends Router {
+export class ProjectRouter extends Router {
   mount() {
     /**
-     * Upload a new entry
+     * Create a new project
      */
-    this.router.post('/entry', server.handleRequest(this.submitProject))
+    this.router.post('/project', server.handleRequest(this.submitProject))
+
+    /**
+     * Upload a project attachment
+     */
+    // this.router.post(
+    //   '/project/:projectId/preview',
+    //   server.handleRequest(this.submitPreview)
+    // )
   }
 
   async submitProject(req: express.Request): Promise<boolean> {
@@ -24,26 +32,16 @@ export class ContestRouter extends Router {
 
     // We need to check if a previous entry exists and if it has an user,
     // throw if it's different to the current entry's secret
-    let previousEntry: LegacyEntry = await readEntry(projectId)
+    let previousEntry: Entry = await readEntry(projectId)
 
     if (previousEntry) {
-      if (typeof previousEntry.user === 'undefined') {
-        // Handle old entries
-        const previousEmail = await decrypt(previousEntry.contest.email)
-        if (previousEmail !== entry.contest.email) {
-          throw new Error(
-            "You can't update this entry's email, please contact support"
-          )
-        }
-      } else {
-        const previousId = await decrypt(previousEntry.user.id)
-        if (previousId !== entry.user.id) {
-          throw new Error("New entry's secret doesn't match the previous one")
-        }
+      const previousId = await decrypt(previousEntry.user.id)
+      if (previousId !== entry.user.id) {
+        throw new Error("New entry's secret doesn't match the previous one")
       }
     }
 
-    entry.contest.email = await encrypt(entry.contest.email)
+    entry.user.email = await encrypt(entry.user.email)
     entry.user.id = await encrypt(entry.user.id)
 
     await uploadFile(projectId, Buffer.from(JSON.stringify(entry)))
@@ -51,4 +49,8 @@ export class ContestRouter extends Router {
 
     return true
   }
+
+  // async submitPreview(req: express.Request): Promise<boolean> {
+  //   return true
+  // }
 }

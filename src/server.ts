@@ -1,5 +1,6 @@
 import { env } from 'decentraland-commons'
 import { ContestRouter, AuthContestRouter } from './Contest'
+import { ProjectRouter } from './Project'
 import { ExpressApp } from './common/ExpressApp'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
@@ -22,6 +23,7 @@ app
 // Mount routers
 new ContestRouter(app).mount()
 new AuthContestRouter(app, auth).mount()
+new ProjectRouter(app).mount()
 
 // Start
 if (require.main === module) {

@@ -35,13 +35,14 @@ export async function saveEntry(
   await checkFile(key)
 }
 
-export function getUploader() {
+export function getFileUploader(filename: string, prefix: EntryPrefix) {
   return multer.default({
     storage: multerS3.default({
       s3: s3,
       bucket: bucketName,
       key: function(_req, _file, cb) {
-        cb(null, _file.filename)
+        const key = prefix + '/' + filename
+        cb(null, key)
       }
     })
   })

@@ -3,7 +3,7 @@ import { server } from 'decentraland-server'
 
 import { Router } from '../common'
 import { encrypt, decrypt } from '../crypto'
-import { readEntry, saveEntry, getUploader, EntryPrefix } from '../storage'
+import { readEntry, saveEntry, getFileUploader, EntryPrefix } from '../storage'
 import { Entry } from './types'
 import { parseEntry } from './validations'
 
@@ -19,8 +19,7 @@ export class ProjectRouter extends Router {
      */
     this.router.post(
       '/project/:projectId/preview',
-      server.handleRequest(this.submitPreview),
-      getUploader().array('', 2)
+      server.handleRequest(this.submitPreview)
     )
   }
 
@@ -49,11 +48,25 @@ export class ProjectRouter extends Router {
     return true
   }
 
-  async submitPreview(req: express.Request): Promise<boolean> {
+  async submitPreview(
+    req: express.Request,
+    res: express.Response
+  ): Promise<boolean> {
     const projectId = server.extractFromReq(req, 'projectId')
-    console.log(projectId)
-    // Check if project id exists
 
-    return true
+    // Check if project id exists
+    const entry: Entry = await readEntry(projectId, EntryPrefix.Project)
+    if (!entry) {
+      throw new Error('Cannot add files to non-existing project')
+    }
+
+    // TODO: add file extension based on mime/type
+    return getFileUploader(projectId, EntryPrefix.Project).single('attachment')(
+      req,
+      res,
+      () => {
+        return true
+      }
+    )
   }
 }

@@ -10,7 +10,7 @@ if (!accessKeyId || !secretAccessKey) {
   )
 }
 
-let bucketName = env.get('AWS_BUCKET_NAME', '')
+export let bucketName = env.get('AWS_BUCKET_NAME', '')
 if (!bucketName) {
   bucketName = 'builder-server'
   console.warn(

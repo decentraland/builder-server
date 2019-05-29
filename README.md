@@ -1,18 +1,18 @@
-# Builder contest server
+# Builder Server
 
-Exposes endpoints for the builder contest
+Exposes endpoints for the Builder.
 
 ## API
 
 `POST /entry`
 
-Upload a entry to the S3 bucket. You can check the [`Entry` type](https://github.com/decentraland/builder-contest-server/blob/master/src/Contest/types.ts) to see how it looks.
+Upload a Contest Entry to the S3 bucket. You can check the Contest [`Entry` type](https://github.com/decentraland/builder-contest-server/blob/master/src/Contest/types.ts) to see how it looks.
 
 Sensitive information will be encrypted if the SECRET (env variable) is set.
 
 `GET /entry/:projectId`
 
-Gets a entry by id.
+Gets a contest entry by id.
 
 Sensitive information will be decrypted if the SECRET (env variable) is set.
 

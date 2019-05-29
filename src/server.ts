@@ -22,8 +22,8 @@ app
 
 // Mount routers
 new ContestRouter(app).mount()
-new AuthContestRouter(app, auth).mount()
 new ProjectRouter(app).mount()
+new AuthContestRouter(app, auth).mount()
 
 // Start
 if (require.main === module) {

@@ -3,8 +3,7 @@ import { server } from 'decentraland-server'
 
 import { Router } from '../common'
 import { encrypt, decrypt } from '../crypto'
-import { uploadFile, checkFile } from '../S3'
-import { readEntry } from '../storage'
+import { readEntry, saveEntry, getUploader, EntryPrefix } from '../storage'
 import { Entry } from './types'
 import { parseEntry } from './validations'
 
@@ -18,10 +17,11 @@ export class ProjectRouter extends Router {
     /**
      * Upload a project attachment
      */
-    // this.router.post(
-    //   '/project/:projectId/preview',
-    //   server.handleRequest(this.submitPreview)
-    // )
+    this.router.post(
+      '/project/:projectId/preview',
+      server.handleRequest(this.submitPreview),
+      getUploader().array('', 2)
+    )
   }
 
   async submitProject(req: express.Request): Promise<boolean> {
@@ -32,7 +32,7 @@ export class ProjectRouter extends Router {
 
     // We need to check if a previous entry exists and if it has an user,
     // throw if it's different to the current entry's secret
-    let previousEntry: Entry = await readEntry(projectId)
+    let previousEntry: Entry = await readEntry(projectId, EntryPrefix.Project)
 
     if (previousEntry) {
       const previousId = await decrypt(previousEntry.user.id)
@@ -44,13 +44,16 @@ export class ProjectRouter extends Router {
     entry.user.email = await encrypt(entry.user.email)
     entry.user.id = await encrypt(entry.user.id)
 
-    await uploadFile(projectId, Buffer.from(JSON.stringify(entry)))
-    await checkFile(projectId)
+    await saveEntry(projectId, entry, EntryPrefix.Project)
 
     return true
   }
 
-  // async submitPreview(req: express.Request): Promise<boolean> {
-  //   return true
-  // }
+  async submitPreview(req: express.Request): Promise<boolean> {
+    const projectId = server.extractFromReq(req, 'projectId')
+    console.log(projectId)
+    // Check if project id exists
+
+    return true
+  }
 }

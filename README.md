@@ -28,7 +28,6 @@ Upload preview files associated with a Project.
 
 Required field names as form-data:
 
-- `image`
 - `video`
 - `thumb`
 - `north`

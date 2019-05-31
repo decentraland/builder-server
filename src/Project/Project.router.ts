@@ -9,7 +9,6 @@ import { Entry } from './types'
 import { parseEntry } from './validations'
 
 const SUPPORTED_FILE_FIELDS = [
-  'image',
   'video',
   'thumb',
   'north',

@@ -4,7 +4,8 @@ import { server } from 'decentraland-server'
 import * as multer from 'multer'
 import * as multerS3 from 'multer-s3'
 
-import { BaseEntry } from '../common/types'
+import { ContestEntry } from '../Contest/types'
+import { ProjectEntry } from '../Project/types'
 
 import {
   bucketName,
@@ -48,7 +49,7 @@ export async function readEntry(projectId: string, prefix: EntryPrefix) {
 
 export async function saveEntry(
   projectId: string,
-  entry: BaseEntry,
+  entry: ContestEntry | ProjectEntry,
   prefix: EntryPrefix
 ) {
   const key = getEntryKey(projectId, prefix)

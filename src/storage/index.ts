@@ -14,6 +14,7 @@ import {
 } from '../S3'
 
 const ENTRY_FILENAME = 'entry.json'
+const MAX_FILE_SIZE = 2000000
 
 export enum EntryPrefix {
   Contest = 'contest',
@@ -55,6 +56,9 @@ export async function saveEntry(
 
 export function getFileUploader(prefix: EntryPrefix, acl: string = 'private') {
   return multer.default({
+    limits: {
+      fileSize: MAX_FILE_SIZE
+    },
     storage: multerS3.default({
       s3: s3,
       acl: acl,

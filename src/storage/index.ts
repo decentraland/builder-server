@@ -14,7 +14,7 @@ import {
 } from '../S3'
 
 const ENTRY_FILENAME = 'entry.json'
-const MAX_FILE_SIZE = 2000000
+const MAX_FILE_SIZE = 3000000
 
 export enum EntryPrefix {
   Contest = 'contest',

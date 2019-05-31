@@ -44,7 +44,7 @@ Notes:
 
 - The Project must exist before uploading associated files.
 - All the of required files must be posted for the request to be successful.
-- File size limit is enforced and configured as 3 MB.
+- File size limit is enforced and configured as 5 MB.
 
 ## RUN
 

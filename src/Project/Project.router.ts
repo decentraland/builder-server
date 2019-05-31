@@ -93,15 +93,13 @@ export class ProjectRouter extends Router {
     const uploadedFiles = Object.values(req.files)
 
     // Check if all files uploaded
-    const areFilesUploaded = uploadedFiles
-      .map(files => {
-        const fieldName = files[0].fieldname
-        return SUPPORTED_FILE_FIELDS.includes(fieldName)
-      })
-      .every(e => e === true)
+    const uploadedFieldNames = Object.keys(req.files)
+    const areFilesUploaded = SUPPORTED_FILE_FIELDS.every(fieldName => {
+      return uploadedFieldNames.includes(fieldName)
+    })
 
     if (!areFilesUploaded) {
-      return false
+      throw new Error('Required files not present in the upload')
     }
 
     // Check files exist in bucket

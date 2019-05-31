@@ -3,9 +3,24 @@ import { server } from 'decentraland-server'
 
 import { Router } from '../common'
 import { encrypt, decrypt } from '../crypto'
+import { checkFile } from '../S3'
 import { readEntry, saveEntry, getFileUploader, EntryPrefix } from '../storage'
 import { Entry } from './types'
 import { parseEntry } from './validations'
+
+const SUPPORTED_FILE_FIELDS = [
+  'image',
+  'video',
+  'thumb',
+  'north',
+  'east',
+  'south',
+  'west'
+]
+
+const uploadFileFields = SUPPORTED_FILE_FIELDS.map(fieldName => {
+  return { name: fieldName, maxCount: 1 }
+})
 
 export class ProjectRouter extends Router {
   mount() {
@@ -19,7 +34,11 @@ export class ProjectRouter extends Router {
      */
     this.router.post(
       '/project/:projectId/preview',
-      server.handleRequest(this.submitPreview)
+      this.submitPreview,
+      getFileUploader(EntryPrefix.Project, 'public-read').fields(
+        uploadFileFields
+      ),
+      server.handleRequest(this.filesUploaded)
     )
   }
 
@@ -50,23 +69,45 @@ export class ProjectRouter extends Router {
 
   async submitPreview(
     req: express.Request,
-    res: express.Response
-  ): Promise<boolean> {
+    res: express.Response,
+    next: express.NextFunction
+  ) {
     const projectId = server.extractFromReq(req, 'projectId')
 
     // Check if project id exists
     const entry: Entry = await readEntry(projectId, EntryPrefix.Project)
     if (!entry) {
-      throw new Error('Cannot add files to non-existing project')
+      return res.json({
+        ok: false,
+        data: {},
+        error: 'Cannot add files to non-existing project'
+      })
     }
 
-    // TODO: add file extension based on mime/type
-    return getFileUploader(projectId, EntryPrefix.Project).single('attachment')(
-      req,
-      res,
-      () => {
-        return true
-      }
+    return next()
+  }
+
+  async filesUploaded(req: express.Request, _res: express.Response) {
+    const uploadedFiles = Object.values(req.files)
+
+    // Check if all files uploaded
+    const areFilesUploaded = uploadedFiles.map(files => {
+      const fieldName = files[0].fieldname
+      return SUPPORTED_FILE_FIELDS.includes(fieldName)
+    })
+
+    if (!areFilesUploaded) {
+      return false
+    }
+
+    // Check files exist in bucket
+    const results = await Promise.all(
+      uploadedFiles.map(files => {
+        const file = files[0]
+        return checkFile(file.key)
+      })
     )
+
+    return results.every(e => e === true)
   }
 }

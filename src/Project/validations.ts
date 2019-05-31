@@ -1,8 +1,8 @@
-import { Entry } from './types'
+import { ProjectEntry } from './types'
 import { formatErrors, validateProps } from '../common/validations'
 
-export function parseEntry(entryJSON: string): Entry {
-  const entry: Entry = JSON.parse(entryJSON)
+export function parseEntry(entryJSON: string): ProjectEntry {
+  const entry: ProjectEntry = JSON.parse(entryJSON)
   let errors: string[] = []
 
   switch (entry.version.toString()) {
@@ -35,12 +35,12 @@ export function parseEntry(entryJSON: string): Entry {
   return entry
 }
 
-function getProjectErrors(project: Entry['project']): string {
+function getProjectErrors(project: ProjectEntry['project']): string {
   const errors = validateProps(project, ['id', 'title'])
   return errors.length > 0 ? `Project:\n${formatErrors(errors)}` : ''
 }
 
-function getSceneErrors(scene: Entry['scene']): string {
+function getSceneErrors(scene: ProjectEntry['scene']): string {
   const sceneErrors = validateProps(scene, ['components', 'entities'])
 
   let componentErrors: string[] = []
@@ -75,7 +75,7 @@ function getSceneErrors(scene: Entry['scene']): string {
   return errors
 }
 
-function getUserErrors(user: Entry['user']): string {
+function getUserErrors(user: ProjectEntry['user']): string {
   const errors = validateProps(user, ['id', 'email'])
   return errors.length > 0 ? `User:\n${formatErrors(errors)}` : ''
 }

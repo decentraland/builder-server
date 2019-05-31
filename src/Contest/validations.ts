@@ -1,10 +1,10 @@
 import { utils } from 'decentraland-commons'
 
-import { Entry } from './types'
+import { ContestEntry } from './types'
 import { formatErrors, validateProps } from '../common/validations'
 
-export function parseEntry(entryJSON: string): Entry {
-  const entry: Entry = JSON.parse(entryJSON)
+export function parseEntry(entryJSON: string): ContestEntry {
+  const entry: ContestEntry = JSON.parse(entryJSON)
   let errors: string[] = []
 
   switch (entry.version.toString()) {
@@ -42,24 +42,24 @@ export function parseEntry(entryJSON: string): Entry {
   return trimEntry(entry)
 }
 
-function trimEntry(entry: Entry): Entry {
+function trimEntry(entry: ContestEntry): ContestEntry {
   return {
     ...entry,
     project: utils.omit(entry.project, ['thumbnail'])
   }
 }
 
-function getProjectErrors(project: Entry['project']): string {
+function getProjectErrors(project: ContestEntry['project']): string {
   const errors = validateProps(project, ['id', 'title'])
   return errors.length > 0 ? `Project:\n${formatErrors(errors)}` : ''
 }
 
-function getContestErrors(contest: Entry['contest']): string {
+function getContestErrors(contest: ContestEntry['contest']): string {
   const errors = validateProps(contest, ['email'])
   return errors.length > 0 ? `Contest:\n${formatErrors(errors)}` : ''
 }
 
-function getSceneErrors(scene: Entry['scene']): string {
+function getSceneErrors(scene: ContestEntry['scene']): string {
   const sceneErrors = validateProps(scene, ['components', 'entities'])
 
   let componentErrors: string[] = []
@@ -94,7 +94,7 @@ function getSceneErrors(scene: Entry['scene']): string {
   return errors
 }
 
-function getUserErrors(user: Entry['user']): string {
+function getUserErrors(user: ContestEntry['user']): string {
   const errors = validateProps(user, ['id'])
   return errors.length > 0 ? `User:\n${formatErrors(errors)}` : ''
 }

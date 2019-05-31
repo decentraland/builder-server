@@ -1,19 +1,9 @@
-export type BaseEntry = {
-  version: number
-  project: {
-    id: string
-    title: string
-    description: string
-    [key: string]: any
-  }
+import { BaseEntry } from '../common/types'
+
+export type BaseContestEntry = BaseEntry & {
   contest: {
     email: string
     ethAddress: string
-    [key: string]: any
-  }
-  scene: {
-    entities: Record<string, any>
-    components: Record<string, any>
     [key: string]: any
   }
 }
@@ -22,10 +12,10 @@ export type User = {
   id: string
 }
 
-export type Entry = BaseEntry & {
+export type ContestEntry = BaseContestEntry & {
   user: User
 }
 
-export type LegacyEntry = BaseEntry & {
+export type LegacyContestEntry = BaseContestEntry & {
   user?: User
 }

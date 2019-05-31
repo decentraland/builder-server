@@ -4,7 +4,7 @@ import { server } from 'decentraland-server'
 import { Router } from '../common'
 import { encrypt, decrypt } from '../crypto'
 import { readEntry, saveEntry, EntryPrefix } from '../storage'
-import { LegacyEntry } from './types'
+import { LegacyContestEntry } from './types'
 import { parseEntry } from './validations'
 
 export class ContestRouter extends Router {
@@ -23,7 +23,7 @@ export class ContestRouter extends Router {
 
     // We need to check if a previous entry exists and if it has an user,
     // throw if it's different to the current entry's secret
-    let previousEntry: LegacyEntry = await readEntry(
+    let previousEntry: LegacyContestEntry = await readEntry(
       projectId,
       EntryPrefix.Contest
     )

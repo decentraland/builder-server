@@ -1,12 +1,4 @@
-import { BaseEntry } from '../common/types'
-
-export type User = {
-  id: string
-  email: string
-  ethAddress: string
-}
-
-export type ProjectEntry = BaseEntry & {
+export type BaseEntry = {
   version: number
   project: {
     id: string
@@ -19,5 +11,4 @@ export type ProjectEntry = BaseEntry & {
     components: Record<string, any>
     [key: string]: any
   }
-  user: User
 }

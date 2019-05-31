@@ -5,13 +5,13 @@ import { Log, env } from 'decentraland-commons'
 import { db, Model } from 'decentraland-server'
 
 import * as crypto from '../src/crypto'
-import { BaseEntry } from '../src/Contest/types'
+import { BaseContestEntry } from '../src/Contest/types'
 
 const log = new Log('IndexScenes')
 
 export interface SceneAttributes {
   id: string
-  value: BaseEntry
+  value: BaseContestEntry
   email: string
   title: string
   description?: string
@@ -36,7 +36,7 @@ const getSceneList = (baseDir: string): string[] => {
   return fs.readdirSync(baseDir)
 }
 
-const readScene = (filepath: string): BaseEntry => {
+const readScene = (filepath: string): BaseContestEntry => {
   const data = fs.readFileSync(filepath)
   return JSON.parse(data.toString())
 }
@@ -46,7 +46,7 @@ const connectDB = () => {
   return db.postgres.connect(CONNECTION_STRING)
 }
 
-const indexScene = async (saveData: BaseEntry, tag: string) => {
+const indexScene = async (saveData: BaseContestEntry, tag: string) => {
   const email = await crypto.decrypt(saveData.contest.email)
   log.info(`${saveData.project.id} ${email}`)
 

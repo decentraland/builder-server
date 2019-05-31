@@ -5,7 +5,7 @@ import { Router } from '../common'
 import { encrypt, decrypt } from '../crypto'
 import { checkFile } from '../S3'
 import { readEntry, saveEntry, getFileUploader, EntryPrefix } from '../storage'
-import { Entry } from './types'
+import { ProjectEntry } from './types'
 import { parseEntry } from './validations'
 
 const SUPPORTED_FILE_FIELDS = [
@@ -49,7 +49,10 @@ export class ProjectRouter extends Router {
 
     // We need to check if a previous entry exists and if it has an user,
     // throw if it's different to the current entry's secret
-    let previousEntry: Entry = await readEntry(projectId, EntryPrefix.Project)
+    let previousEntry: ProjectEntry = await readEntry(
+      projectId,
+      EntryPrefix.Project
+    )
 
     if (previousEntry) {
       const previousId = await decrypt(previousEntry.user.id)
@@ -74,7 +77,7 @@ export class ProjectRouter extends Router {
     const projectId = server.extractFromReq(req, 'projectId')
 
     // Check if project id exists
-    const entry: Entry = await readEntry(projectId, EntryPrefix.Project)
+    const entry: ProjectEntry = await readEntry(projectId, EntryPrefix.Project)
     if (!entry) {
       return res.json({
         ok: false,

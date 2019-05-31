@@ -43,9 +43,9 @@ export class ProjectRouter extends Router {
   }
 
   async submitProject(req: express.Request): Promise<boolean> {
-    const EntryJSON = server.extractFromReq(req, 'entry')
+    const entryJSON = server.extractFromReq(req, 'entry')
 
-    const entry = parseEntry(EntryJSON)
+    const entry = parseEntry(entryJSON)
     const projectId = entry.project.id
 
     // We need to check if a previous entry exists and if it has an user,

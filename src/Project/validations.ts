@@ -1,31 +1,24 @@
-import { utils } from 'decentraland-commons'
-
-import { ContestEntry } from './types'
+import { ProjectEntry } from './types'
 import { formatErrors, validateProps } from '../common/validations'
 
-export function parseEntry(entryJSON: string): ContestEntry {
-  const entry: ContestEntry = JSON.parse(entryJSON)
+export function parseEntry(entryJSON: string): ProjectEntry {
+  const entry: ProjectEntry = JSON.parse(entryJSON)
   let errors: string[] = []
 
   switch (entry.version.toString()) {
     case '1':
-    case '2':
-      const { project, contest, scene, user } = entry
+      const { project, user, scene } = entry
 
-      if (!user) {
-        throw new Error('You might be using an old version of the Builder.')
-      }
-      if (!project || !contest || !scene) {
+      if (!project || !user || !scene) {
         throw new Error(
-          'Missing required props. Check your entry contains a project, contest and scene props'
+          'Missing required props. Check your entry contains a project, user and scene props'
         )
       }
 
       errors = [
         getProjectErrors(project),
-        getContestErrors(contest),
-        getSceneErrors(scene),
-        getUserErrors(user)
+        getUserErrors(user),
+        getSceneErrors(scene)
       ]
       break
     default:
@@ -39,27 +32,15 @@ export function parseEntry(entryJSON: string): ContestEntry {
     throw new Error(errorsStr)
   }
 
-  return trimEntry(entry)
+  return entry
 }
 
-function trimEntry(entry: ContestEntry): ContestEntry {
-  return {
-    ...entry,
-    project: utils.omit(entry.project, ['thumbnail'])
-  }
-}
-
-function getProjectErrors(project: ContestEntry['project']): string {
+function getProjectErrors(project: ProjectEntry['project']): string {
   const errors = validateProps(project, ['id', 'title'])
   return errors.length > 0 ? `Project:\n${formatErrors(errors)}` : ''
 }
 
-function getContestErrors(contest: ContestEntry['contest']): string {
-  const errors = validateProps(contest, ['email'])
-  return errors.length > 0 ? `Contest:\n${formatErrors(errors)}` : ''
-}
-
-function getSceneErrors(scene: ContestEntry['scene']): string {
+function getSceneErrors(scene: ProjectEntry['scene']): string {
   const sceneErrors = validateProps(scene, ['components', 'entities'])
 
   let componentErrors: string[] = []
@@ -94,7 +75,7 @@ function getSceneErrors(scene: ContestEntry['scene']): string {
   return errors
 }
 
-function getUserErrors(user: ContestEntry['user']): string {
-  const errors = validateProps(user, ['id'])
+function getUserErrors(user: ProjectEntry['user']): string {
+  const errors = validateProps(user, ['id', 'email'])
   return errors.length > 0 ? `User:\n${formatErrors(errors)}` : ''
 }

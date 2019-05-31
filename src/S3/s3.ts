@@ -10,9 +10,9 @@ if (!accessKeyId || !secretAccessKey) {
   )
 }
 
-let bucketName = env.get('AWS_BUCKET_NAME', '')
+export let bucketName = env.get('AWS_BUCKET_NAME', '')
 if (!bucketName) {
-  bucketName = 'builder-contest-server'
+  bucketName = 'builder-server'
   console.warn(
     `Using "${bucketName}" as a bucket name, you can change it in the .env`
   )

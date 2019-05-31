@@ -2,9 +2,9 @@ import express = require('express')
 import { server } from 'decentraland-server'
 
 import { Router } from '../common'
-import { uploadFile, readFile, checkFile, parseFileBody } from '../S3'
 import { encrypt, decrypt } from '../crypto'
-import { LegacyEntry } from './types'
+import { readEntry, saveEntry, EntryPrefix } from '../storage'
+import { LegacyContestEntry } from './types'
 import { parseEntry } from './validations'
 
 export class ContestRouter extends Router {
@@ -16,21 +16,17 @@ export class ContestRouter extends Router {
   }
 
   async submitProject(req: express.Request): Promise<boolean> {
-    const EntryJSON = server.extractFromReq(req, 'entry')
+    const entryJSON = server.extractFromReq(req, 'entry')
 
-    const entry = parseEntry(EntryJSON)
+    const entry = parseEntry(entryJSON)
     const projectId = entry.project.id
-
-    let previousEntry: LegacyEntry | undefined
 
     // We need to check if a previous entry exists and if it has an user,
     // throw if it's different to the current entry's secret
-    try {
-      const file = await readFile(projectId)
-      previousEntry = parseFileBody(file)
-    } catch (error) {
-      // No previous entity
-    }
+    let previousEntry: LegacyContestEntry = await readEntry(
+      projectId,
+      EntryPrefix.Contest
+    )
 
     if (previousEntry) {
       if (typeof previousEntry.user === 'undefined') {
@@ -52,8 +48,7 @@ export class ContestRouter extends Router {
     entry.contest.email = await encrypt(entry.contest.email)
     entry.user.id = await encrypt(entry.user.id)
 
-    await uploadFile(projectId, Buffer.from(JSON.stringify(entry)))
-    await checkFile(projectId)
+    await saveEntry(projectId, entry, EntryPrefix.Contest)
 
     return true
   }

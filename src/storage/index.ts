@@ -33,13 +33,17 @@ const contentTypeExtensionMap: ContentTypeExtension = {
   'video/webm': 'webm'
 }
 
-export function getEntryKey(projectId: string, prefix: EntryPrefix): string {
-  return prefix + '/' + projectId + '/' + ENTRY_FILENAME
+export function getEntryKey(
+  filename: string,
+  projectId: string,
+  prefix: EntryPrefix
+): string {
+  return `${prefix}/${projectId}/${filename}`
 }
 
 export async function readEntry(projectId: string, prefix: EntryPrefix) {
   try {
-    const key = getEntryKey(projectId, prefix)
+    const key = getEntryKey(ENTRY_FILENAME, projectId, prefix)
     const file = await readFile(key)
     return parseFileBody(file)
   } catch (error) {
@@ -52,7 +56,7 @@ export async function saveEntry(
   entry: ContestEntry | ProjectEntry,
   prefix: EntryPrefix
 ) {
-  const key = getEntryKey(projectId, prefix)
+  const key = getEntryKey(ENTRY_FILENAME, projectId, prefix)
   await uploadFile(key, Buffer.from(JSON.stringify(entry)))
   await checkFile(key)
 }
@@ -62,19 +66,19 @@ export function getFileUploader(prefix: EntryPrefix, acl: string = 'private') {
     limits: {
       fileSize: MAX_FILE_SIZE
     },
+    fileFilter: function(_, file, cb) {
+      cb(null, Object.keys(contentTypeExtensionMap).includes(file.mimetype))
+    },
     storage: multerS3.default({
       s3: s3,
       acl: acl,
       bucket: bucketName,
       key: function(req: express.Request, file, cb) {
-        const fileExtension = contentTypeExtensionMap[file.mimetype]
-        if (!fileExtension) {
-          cb(new Error(`Content-Type not supported : ${file.mimetype}`))
-          return
-        }
-
         const projectId = server.extractFromReq(req, 'projectId')
-        const key = `${prefix}/${projectId}/${file.fieldname}.${fileExtension}`
+        const fileExtension = contentTypeExtensionMap[file.mimetype]
+        const filename = `${file.fieldname}.${fileExtension}`
+        const key = getEntryKey(filename, projectId, prefix)
+
         cb(null, key)
       }
     })

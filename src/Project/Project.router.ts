@@ -91,10 +91,12 @@ export class ProjectRouter extends Router {
     const uploadedFiles = Object.values(req.files)
 
     // Check if all files uploaded
-    const areFilesUploaded = uploadedFiles.map(files => {
-      const fieldName = files[0].fieldname
-      return SUPPORTED_FILE_FIELDS.includes(fieldName)
-    })
+    const areFilesUploaded = uploadedFiles
+      .map(files => {
+        const fieldName = files[0].fieldname
+        return SUPPORTED_FILE_FIELDS.includes(fieldName)
+      })
+      .every(e => e === true)
 
     if (!areFilesUploaded) {
       return false

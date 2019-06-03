@@ -1,16 +1,13 @@
-# latest official node image
-FROM node:10.15.1
+FROM node:alpine
 
-RUN apt-get update && apt-get upgrade -y && apt-get install
+WORKDIR /app
 
-# use cached layer for node modules
-ADD package.json /tmp/package.json
-RUN cd /tmp && npm install --unsafe-perm
-RUN mkdir -p /usr/src/app && cp -a /tmp/node_modules /usr/src/app/
+COPY . /app
 
-# add project files
-ADD . /usr/src/app
-ADD package.json /usr/src/app/package.json
-WORKDIR /usr/src/app
+RUN apk update && \
+    apk --no-cache upgrade && \
+    apk --no-cache add git && \
+    npm install --unsafe-perm && \
+    rm -rf /var/cache/apk/*
 
-CMD npm run start
+ENTRYPOINT [ "./entrypoint.sh" ]

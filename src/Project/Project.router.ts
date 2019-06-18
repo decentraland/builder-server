@@ -8,14 +8,9 @@ import { readEntry, saveEntry, getFileUploader, EntryPrefix } from '../storage'
 import { ProjectEntry } from './types'
 import { parseEntry } from './validations'
 
-const SUPPORTED_FILE_FIELDS = [
-  'video',
-  'thumb',
-  'north',
-  'east',
-  'south',
-  'west'
-]
+const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
+const OPTIONAL_FILE_FIELDS = ['video']
+const SUPPORTED_FILE_FIELDS = [...REQUIRED_FILE_FIELDS, ...OPTIONAL_FILE_FIELDS]
 
 const uploadFileFields = SUPPORTED_FILE_FIELDS.map(fieldName => {
   return { name: fieldName, maxCount: 1 }
@@ -94,7 +89,7 @@ export class ProjectRouter extends Router {
 
     // Check if all files uploaded
     const uploadedFieldNames = Object.keys(req.files)
-    const areFilesUploaded = SUPPORTED_FILE_FIELDS.every(fieldName => {
+    const areFilesUploaded = REQUIRED_FILE_FIELDS.every(fieldName => {
       return uploadedFieldNames.includes(fieldName)
     })
 

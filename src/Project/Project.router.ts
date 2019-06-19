@@ -9,10 +9,10 @@ import { ProjectEntry } from './types'
 import { parseEntry } from './validations'
 
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
-// const OPTIONAL_FILE_FIELDS = ['video']
-// const SUPPORTED_FILE_FIELDS = [...REQUIRED_FILE_FIELDS, ...OPTIONAL_FILE_FIELDS]
+const OPTIONAL_FILE_FIELDS = ['video']
+const SUPPORTED_FILE_FIELDS = [...REQUIRED_FILE_FIELDS, ...OPTIONAL_FILE_FIELDS]
 
-const uploadFileFields = REQUIRED_FILE_FIELDS.map(fieldName => {
+const uploadFileFields = SUPPORTED_FILE_FIELDS.map(fieldName => {
   return { name: fieldName, maxCount: 1 }
 })
 

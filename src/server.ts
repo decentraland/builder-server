@@ -1,4 +1,5 @@
 import { env } from 'decentraland-commons'
+import { AppRouter } from './App'
 import { ContestRouter, AuthContestRouter } from './Contest'
 import { ProjectRouter } from './Project'
 import { ExpressApp } from './common/ExpressApp'
@@ -21,6 +22,7 @@ app
   .useCORS(CORS_ORIGIN, CORS_METHOD)
 
 // Mount routers
+new AppRouter(app).mount()
 new ContestRouter(app).mount()
 new ProjectRouter(app).mount()
 new AuthContestRouter(app, auth).mount()

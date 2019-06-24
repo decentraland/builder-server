@@ -28,7 +28,6 @@ export class ProjectRouter extends Router {
      */
     this.router.post(
       '/project/:projectId/preview',
-      this.submitPreview,
       getFileUploader(EntryPrefix.Project, 'public-read').fields(
         uploadFileFields
       ),
@@ -62,26 +61,6 @@ export class ProjectRouter extends Router {
     await saveEntry(projectId, entry, EntryPrefix.Project)
 
     return true
-  }
-
-  async submitPreview(
-    req: express.Request,
-    res: express.Response,
-    next: express.NextFunction
-  ) {
-    const projectId = server.extractFromReq(req, 'projectId')
-
-    // Check if project id exists
-    const entry: ProjectEntry = await readEntry(projectId, EntryPrefix.Project)
-    if (!entry) {
-      return res.json({
-        ok: false,
-        data: {},
-        error: 'Cannot add files to non-existing project'
-      })
-    }
-
-    return next()
   }
 
   async filesUploaded(req: express.Request, _res: express.Response) {

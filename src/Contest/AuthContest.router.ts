@@ -2,7 +2,8 @@ import express = require('express')
 import { server } from 'decentraland-server'
 
 import { AuthRouter } from '../common'
-import { readFile, listFiles, parseFileBody } from '../S3'
+import { listFiles } from '../S3'
+import { readEntry, EntryPrefix } from '../storage'
 import { decrypt } from '../crypto'
 import { ContestEntry } from './types'
 
@@ -25,12 +26,9 @@ export class AuthContestRouter extends AuthRouter {
 
   async getEntry(req: express.Request): Promise<ContestEntry> {
     const projectId = server.extractFromReq(req, 'projectId')
-    let entry: ContestEntry
 
-    try {
-      const file = await readFile(projectId)
-      entry = parseFileBody(file)
-    } catch (error) {
+    let entry: ContestEntry = await readEntry(projectId, EntryPrefix.Contest)
+    if (!entry) {
       throw new Error(`Unknown entry ${projectId}`)
     }
 

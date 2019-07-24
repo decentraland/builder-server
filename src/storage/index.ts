@@ -4,7 +4,7 @@ import { server } from 'decentraland-server'
 import * as multer from 'multer'
 import * as multerS3 from 'multer-s3'
 
-import { ContestEntry } from '../Contest/types'
+// TODO: This shouldn't be coupled to the Project model
 import { ProjectEntry } from '../Project/types'
 
 import {
@@ -20,7 +20,6 @@ const ENTRY_FILENAME = 'entry.json'
 const MAX_FILE_SIZE = 5000000
 
 export enum EntryPrefix {
-  Contest = 'contest',
   Project = 'project'
 }
 
@@ -53,7 +52,7 @@ export async function readEntry(projectId: string, prefix: EntryPrefix) {
 
 export async function saveEntry(
   projectId: string,
-  entry: ContestEntry | ProjectEntry,
+  entry: ProjectEntry,
   prefix: EntryPrefix
 ) {
   const key = getEntryKey(ENTRY_FILENAME, projectId, prefix)

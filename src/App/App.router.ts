@@ -1,5 +1,5 @@
-import express = require('express')
 import { server } from 'decentraland-server'
+import { env } from 'decentraland-commons'
 
 import { Router } from '../common'
 
@@ -8,9 +8,9 @@ export class AppRouter extends Router {
     this.router.get('/info', server.handleRequest(this.getVersion))
   }
 
-  getVersion(_req: express.Request) {
+  getVersion() {
     return {
-      version: process.env.npm_package_version
+      version: env.get('npm_package_version', '')
     }
   }
 }

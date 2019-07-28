@@ -9,14 +9,15 @@ export const up = (pgm: MigrationBuilder) => {
     {
       id: { type: 'UUID', primaryKey: true, notNull: true },
       address: { type: 'TEXT', primaryKey: true, notNull: true },
-      title: { type: 'TEXT' },
+      title: { type: 'TEXT', notNull: true },
       description: { type: 'TEXT' },
-      thumbnail: { type: 'TEXT' },
-      scene_id: { type: 'UUID' },
-      user_id: { type: 'TEXT' },
-      layout: { type: 'JSON' },
-      created_at: { type: 'BIGINT', notNull: true },
-      updated_at: { type: 'BIGINT', notNull: true }
+      thumbnail: { type: 'TEXT', notNull: true },
+      scene_id: { type: 'UUID', notNull: true },
+      user_id: { type: 'TEXT', notNull: true },
+      cols: { type: 'INT', notNull: true },
+      rows: { type: 'INT', notNull: true },
+      created_at: { type: 'TIMESTAMP', notNull: true },
+      updated_at: { type: 'TIMESTAMP', notNull: true }
     },
     { ifNotExists: true }
   )

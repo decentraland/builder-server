@@ -1,11 +1,8 @@
+import { ProjectAttributes } from '../Project'
+
 export type BaseEntry = {
   version: number
-  project: {
-    id: string
-    title: string
-    description: string
-    [key: string]: any
-  }
+  project: ProjectAttributes
   scene: {
     entities: Record<string, any>
     components: Record<string, any>

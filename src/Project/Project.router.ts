@@ -3,8 +3,7 @@ import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
 import { Router } from '../common'
-import { checkFile } from '../S3'
-import { getFileUploader, EntryPrefix } from '../storage'
+import { checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 
@@ -21,7 +20,7 @@ const ajv = new Ajv()
 export class ProjectRouter extends Router {
   mount() {
     /**
-     * Upsert a new project
+     * Get all projects
      */
     this.router.get('/projects', server.handleRequest(this.upsertProject))
 
@@ -39,11 +38,9 @@ export class ProjectRouter extends Router {
      * Upload a project attachment
      */
     this.router.post(
-      '/projects/:projectId/preview',
-      getFileUploader(EntryPrefix.Project, 'public-read').fields(
-        uploadFileFields
-      ),
-      server.handleRequest(this.filesUploaded)
+      '/projects/:id/preview',
+      this.getFileUploaderMiddleware(),
+      server.handleRequest(this.uploadFiles)
     )
   }
 
@@ -66,7 +63,7 @@ export class ProjectRouter extends Router {
   }
 
   async upsertProject(req: express.Request) {
-    const projectId = server.extractFromReq(req, 'project')
+    const projectId = server.extractFromReq(req, 'id')
     const projectJSON = server.extractFromReq(req, 'project')
 
     const validator = ajv.compile(projectSchema)
@@ -83,7 +80,13 @@ export class ProjectRouter extends Router {
     return new Project(attributes).upsert()
   }
 
-  async filesUploaded(req: express.Request, _res: express.Response) {
+  getFileUploaderMiddleware() {
+    return getProjectFileUploader(ACL.publicRead, req =>
+      server.extractFromReq(req, 'id')
+    ).fields(uploadFileFields)
+  }
+
+  async uploadFiles(req: express.Request) {
     const uploadedFiles = Object.values(req.files)
 
     // Check if all files uploaded

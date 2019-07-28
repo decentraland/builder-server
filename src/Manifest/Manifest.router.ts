@@ -3,8 +3,8 @@ import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
 import { Router } from '../common'
-import { saveEntry, EntryPrefix } from '../storage'
-import { Manifest, manifestSchema } from './Manifest.types'
+import { saveManifest } from '../S3'
+import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { Project, ProjectAttributes } from '../Project'
 
 const ajv = new Ajv()
@@ -12,7 +12,7 @@ const ajv = new Ajv()
 export class ManifestRouter extends Router {
   mount() {
     /**
-     * Upserts the manifest and it's resources
+     * Upserts the manifest resources
      */
     this.router.post('/manifests', server.handleRequest(this.upsertManfiest))
   }
@@ -25,12 +25,12 @@ export class ManifestRouter extends Router {
       throw new Error(ajv.errorsText())
     }
 
-    const manifest: Manifest = JSON.parse(manifestJSON)
+    const manifest: ManifestAttributes = JSON.parse(manifestJSON)
     const project: ProjectAttributes = manifest.project
 
     await Promise.all([
       new Project(project).upsert(),
-      saveEntry(project.id, manifest, EntryPrefix.Project)
+      saveManifest(project.id, manifest)
     ])
 
     return true

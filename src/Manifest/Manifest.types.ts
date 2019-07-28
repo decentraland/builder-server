@@ -1,7 +1,7 @@
 import { ProjectAttributes, projectSchema } from '../Project'
 import { SceneAttributes, sceneSchema } from '../Scene'
 
-export type Manifest = {
+export type ManifestAttributes = {
   version: number
   project: ProjectAttributes
   scene: SceneAttributes

@@ -1,4 +1,6 @@
 import * as AWS from 'aws-sdk'
+import * as multer from 'multer'
+import multerS3 from 'multer-s3'
 import { env, utils } from 'decentraland-commons'
 
 const accessKeyId = env.get('AWS_ACCESS_KEY', '')
@@ -17,6 +19,25 @@ if (!bucketName) {
     `Using "${bucketName}" as a bucket name, you can change it in the .env`
   )
 }
+
+export const ACL = {
+  private: 'private' as 'private',
+  publicRead: 'public-read' as 'public-read',
+  publicReadWrite: 'public-read-write' as 'public-read-write',
+  authenticatedRead: 'authenticated-read' as 'authenticated-read',
+  awsExecRead: 'aws-exec-read' as 'aws-exec-read',
+  bucketOwnerRead: 'bucket-owner-read' as 'bucket-owner-read',
+  bucketOwnerFullControl: 'bucket-owner-full-control' as 'bucket-owner-full-control'
+}
+export type ACLValues = typeof ACL[keyof typeof ACL]
+
+export const MIME_TYPES = {
+  'image/png': 'png',
+  'video/webm': 'webm'
+}
+export type MimeTypes = keyof typeof MIME_TYPES
+
+export const MAX_FILE_SIZE = 5000000
 
 export const s3 = new AWS.S3({ accessKeyId, secretAccessKey })
 
@@ -62,15 +83,36 @@ export async function checkFile(key: string): Promise<boolean> {
 
 export function uploadFile(
   key: string,
-  data: Buffer
+  data: Buffer,
+  acl: ACLValues
 ): Promise<AWS.S3.ManagedUpload> {
   const params = {
     Bucket: bucketName,
     Key: key,
     Body: data,
-    ACL: 'public-read'
+    ACL: acl
   }
   return utils.promisify<AWS.S3.ManagedUpload>(s3.upload.bind(s3))(params)
+}
+
+export function getFileUploader(
+  acl: ACLValues,
+  callback: multer.DiskStorageOptions['filename'] // multers3 does not export it's types correctly
+) {
+  return multer.default({
+    limits: {
+      fileSize: MAX_FILE_SIZE
+    },
+    fileFilter: function(_, file, cb) {
+      cb(null, Object.keys(MIME_TYPES).includes(file.mimetype))
+    },
+    storage: multerS3({
+      s3: s3,
+      acl: acl,
+      bucket: bucketName,
+      key: callback
+    })
+  })
 }
 
 export function parseFileBody(file: AWS.S3.GetObjectOutput): any | undefined {

@@ -1,12 +1,12 @@
 import express = require('express')
 import { server } from 'decentraland-server'
+import Ajv from 'ajv'
 
 import { Router } from '../common'
-import { encrypt, decrypt } from '../crypto'
 import { checkFile } from '../S3'
-import { readEntry, saveEntry, getFileUploader, EntryPrefix } from '../storage'
-import { ProjectEntry } from './types'
-import { parseEntry } from './validations'
+import { getFileUploader, EntryPrefix } from '../storage'
+import { Project } from './Project.model'
+import { ProjectAttributes, projectSchema } from './Project.types'
 
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
 const OPTIONAL_FILE_FIELDS = ['video']
@@ -16,18 +16,30 @@ const uploadFileFields = SUPPORTED_FILE_FIELDS.map(fieldName => {
   return { name: fieldName, maxCount: 1 }
 })
 
+const ajv = new Ajv()
+
 export class ProjectRouter extends Router {
   mount() {
     /**
-     * Create a new project
+     * Upsert a new project
      */
-    this.router.post('/project', server.handleRequest(this.submitProject))
+    this.router.get('/projects', server.handleRequest(this.upsertProject))
+
+    /**
+     * Upsert a new project
+     */
+    this.router.put('/projects/:id', server.handleRequest(this.upsertProject))
+
+    /**
+     * Get project
+     */
+    this.router.get('/projects/:id', server.handleRequest(this.getProject))
 
     /**
      * Upload a project attachment
      */
     this.router.post(
-      '/project/:projectId/preview',
+      '/projects/:projectId/preview',
       getFileUploader(EntryPrefix.Project, 'public-read').fields(
         uploadFileFields
       ),
@@ -35,32 +47,40 @@ export class ProjectRouter extends Router {
     )
   }
 
-  async submitProject(req: express.Request): Promise<boolean> {
-    const entryJSON = server.extractFromReq(req, 'entry')
+  async getProjects() {
+    // TODO: Wrap layout rows and cols?
+    // TODO: Paginate
+    return Project.find()
+  }
 
-    const entry = parseEntry(entryJSON)
-    const projectId = entry.project.id
+  async getProject(req: express.Request) {
+    const projectId = server.extractFromReq(req, 'id')
+    const project = await Project.findOne(projectId)
 
-    // We need to check if a previous entry exists and if it has an user,
-    // throw if it's different to the current entry's secret
-    let previousEntry: ProjectEntry = await readEntry(
-      projectId,
-      EntryPrefix.Project
-    )
-
-    if (previousEntry) {
-      const previousId = await decrypt(previousEntry.user.id)
-      if (previousId !== entry.user.id) {
-        throw new Error("New entry's secret doesn't match the previous one")
-      }
+    if (!project) {
+      throw new Error(`Invalid project id ${projectId}`)
     }
 
-    entry.user.email = await encrypt(entry.user.email)
-    entry.user.id = await encrypt(entry.user.id)
+    // TODO: Wrap layout rows and cols?
+    return project
+  }
 
-    await saveEntry(projectId, entry, EntryPrefix.Project)
+  async upsertProject(req: express.Request) {
+    const projectId = server.extractFromReq(req, 'project')
+    const projectJSON = server.extractFromReq(req, 'project')
 
-    return true
+    const validator = ajv.compile(projectSchema)
+    if (!validator(projectJSON)) {
+      throw new Error(ajv.errorsText())
+    }
+
+    const attributes: ProjectAttributes = JSON.parse(projectJSON)
+
+    if (projectId !== attributes.id) {
+      throw new Error('The project id on the data and URL do not match')
+    }
+
+    return new Project(attributes).upsert()
   }
 
   async filesUploaded(req: express.Request, _res: express.Response) {

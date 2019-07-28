@@ -3,17 +3,11 @@ import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
 import { Router } from '../common'
-import { checkFile, ACL, getProjectFileUploader } from '../S3'
+import { checkFile, ACL, getProjectFileUploader, deleteUploads } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
-const OPTIONAL_FILE_FIELDS = ['video']
-const SUPPORTED_FILE_FIELDS = [...REQUIRED_FILE_FIELDS, ...OPTIONAL_FILE_FIELDS]
-
-const uploadFileFields = SUPPORTED_FILE_FIELDS.map(fieldName => {
-  return { name: fieldName, maxCount: 1 }
-})
 
 const ajv = new Ajv()
 
@@ -38,9 +32,17 @@ export class ProjectRouter extends Router {
      * Upload a project attachment
      */
     this.router.post(
-      '/projects/:id/preview',
+      '/projects/:id/media',
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadFiles)
+    )
+
+    /**
+     * Delete project
+     */
+    this.router.delete(
+      '/projects/:id',
+      server.handleRequest(this.deleteProject)
     )
   }
 
@@ -81,6 +83,11 @@ export class ProjectRouter extends Router {
   }
 
   getFileUploaderMiddleware() {
+    const uploadFileFields = REQUIRED_FILE_FIELDS.map(fieldName => ({
+      name: fieldName,
+      maxCount: 1
+    }))
+
     return getProjectFileUploader(ACL.publicRead, req =>
       server.extractFromReq(req, 'id')
     ).fields(uploadFileFields)
@@ -91,22 +98,27 @@ export class ProjectRouter extends Router {
 
     // Check if all files uploaded
     const uploadedFieldNames = Object.keys(req.files)
-    const areFilesUploaded = REQUIRED_FILE_FIELDS.every(fieldName => {
-      return uploadedFieldNames.includes(fieldName)
-    })
+    const areFilesUploaded = REQUIRED_FILE_FIELDS.every(fieldName =>
+      uploadedFieldNames.includes(fieldName)
+    )
 
     if (!areFilesUploaded) {
       throw new Error('Required files not present in the upload')
     }
 
     // Check files exist in bucket
-    const results = await Promise.all(
+    const checks = await Promise.all(
       uploadedFiles.map(files => {
         const file = files[0]
         return checkFile(file.key)
       })
     )
 
-    return results.every(e => e === true)
+    return checks.every(check => check === true)
+  }
+
+  async deleteProject(req: express.Request) {
+    const id = server.extractFromReq(req, 'id')
+    return Promise.all([Project.delete({ id }), deleteUploads(id)])
   }
 }

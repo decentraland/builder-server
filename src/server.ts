@@ -2,6 +2,7 @@ import { env } from 'decentraland-commons'
 
 import { AppRouter } from './App'
 import { ProjectRouter } from './Project'
+import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
@@ -20,7 +21,13 @@ app
 new AppRouter(app).mount()
 new ProjectRouter(app).mount()
 
-// Start
+/* Start the server only if run directly */
 if (require.main === module) {
-  app.listen(SERVER_PORT)
+  startServer().catch(console.error)
+}
+
+async function startServer() {
+  console.log('Connecting database')
+  await db.connect()
+  return app.listen(SERVER_PORT)
 }

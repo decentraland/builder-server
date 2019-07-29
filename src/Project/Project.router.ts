@@ -3,7 +3,7 @@ import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
 import { Router } from '../common'
-import { checkFile, ACL, getProjectFileUploader, deleteUploads } from '../S3'
+import { S3Project, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 
@@ -49,7 +49,7 @@ export class ProjectRouter extends Router {
   async getProjects() {
     // TODO: Wrap layout rows and cols?
     // TODO: Paginate
-    return Project.find()
+    return Project.find<ProjectAttributes[]>()
   }
 
   async getProject(req: express.Request) {
@@ -79,7 +79,7 @@ export class ProjectRouter extends Router {
       throw new Error('The project id on the data and URL do not match')
     }
 
-    return new Project(attributes).upsert()
+    return new S3Project(attributes).upsert()
   }
 
   getFileUploaderMiddleware() {
@@ -119,6 +119,6 @@ export class ProjectRouter extends Router {
 
   async deleteProject(req: express.Request) {
     const id = server.extractFromReq(req, 'id')
-    return Promise.all([Project.delete({ id }), deleteUploads(id)])
+    return S3Project.delete(id)
   }
 }

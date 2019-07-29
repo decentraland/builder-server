@@ -3,9 +3,8 @@ import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
 import { Router } from '../common'
-import { readManifest, saveManifest, deleteManifest } from '../S3'
+import { S3Manifest, readManifest } from '../S3'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
-import { Project, ProjectAttributes } from '../Project'
 
 const ajv = new Ajv()
 
@@ -29,7 +28,7 @@ export class ManifestRouter extends Router {
   }
 
   async upsertManfiest(req: express.Request) {
-    const manifestId = server.extractFromReq(req, 'id') //
+    const manifestId = server.extractFromReq(req, 'id')
     const manifestJSON = server.extractFromReq(req, 'manifest')
 
     const validator = ajv.compile(manifestSchema)
@@ -38,14 +37,8 @@ export class ManifestRouter extends Router {
     }
 
     const manifest: ManifestAttributes = JSON.parse(manifestJSON)
-    const project: ProjectAttributes = manifest.project
 
-    await Promise.all([
-      new Project(project).upsert(),
-      saveManifest(manifestId, manifest)
-    ])
-
-    return true
+    return new S3Manifest(manifestId, manifest).upsert()
   }
 
   async deleteManfiest(req: express.Request) {
@@ -59,11 +52,6 @@ export class ManifestRouter extends Router {
       throw new Error(`Could not find manifest for id ${manifestId}`)
     }
 
-    await Promise.all([
-      Project.delete({ id: manifest.project.id }),
-      deleteManifest(manifestId)
-    ])
-
-    return true
+    return new S3Manifest(manifestId, manifest).delete()
   }
 }

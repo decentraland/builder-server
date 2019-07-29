@@ -2,7 +2,8 @@ import express = require('express')
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
-import { Router } from '../common'
+import { Router } from '../common/Router'
+import { HTTPError } from '../common/HTTPError'
 import { S3Project, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
@@ -57,7 +58,7 @@ export class ProjectRouter extends Router {
     const project = await Project.findOne(projectId)
 
     if (!project) {
-      throw new Error(`Invalid project id ${projectId}`)
+      throw new HTTPError('Invalid project id', projectId)
     }
 
     // TODO: Wrap layout rows and cols?
@@ -76,7 +77,10 @@ export class ProjectRouter extends Router {
     const attributes: ProjectAttributes = JSON.parse(projectJSON)
 
     if (projectId !== attributes.id) {
-      throw new Error('The project id on the data and URL do not match')
+      throw new HTTPError('The body and URL project ids do not match', {
+        url: projectId,
+        body: attributes.id
+      })
     }
 
     return new S3Project(attributes).upsert()
@@ -103,7 +107,9 @@ export class ProjectRouter extends Router {
     )
 
     if (!areFilesUploaded) {
-      throw new Error('Required files not present in the upload')
+      throw new HTTPError('Required files not present in the upload', {
+        requiredFields: REQUIRED_FILE_FIELDS
+      })
     }
 
     // Check files exist in bucket

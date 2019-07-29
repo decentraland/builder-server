@@ -2,7 +2,8 @@ import express = require('express')
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
-import { Router } from '../common'
+import { Router } from '../common/Router'
+import { HTTPError } from '../common/HTTPError'
 import { S3Manifest, readManifest } from '../S3'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 
@@ -32,8 +33,10 @@ export class ManifestRouter extends Router {
     const manifestJSON = server.extractFromReq(req, 'manifest')
 
     const validator = ajv.compile(manifestSchema)
-    if (!validator(manifestJSON)) {
-      throw new Error(ajv.errorsText())
+    validator(manifestJSON)
+
+    if (validator.errors) {
+      throw new HTTPError('Invalid schema', validator.errors)
     }
 
     const manifest: ManifestAttributes = JSON.parse(manifestJSON)
@@ -49,7 +52,7 @@ export class ManifestRouter extends Router {
     )
 
     if (!manifest) {
-      throw new Error(`Could not find manifest for id ${manifestId}`)
+      throw new HTTPError('Invalid manifest id', manifestId)
     }
 
     return new S3Manifest(manifestId, manifest).delete()

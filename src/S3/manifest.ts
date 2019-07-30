@@ -8,14 +8,13 @@ import {
   parseFileBody,
   ACL
 } from './s3'
+import { getProjectFolder } from './project'
 
 const MANIFEST_FILENAME = 'manifest.json'
 
-export const PREFIX = 'manifest'
-
-export async function readManifest(manifestId: string) {
+export async function readManifest(id: string) {
   try {
-    const key = getFileKey(manifestId, MANIFEST_FILENAME)
+    const key = getManifestFileKey(id)
     const file = await readFile(key)
     return parseFileBody(file)
   } catch (error) {
@@ -23,23 +22,17 @@ export async function readManifest(manifestId: string) {
   }
 }
 
-export async function saveManifest(
-  manifestId: string,
-  manifest: ManifestAttributes
-) {
-  const key = getFileKey(manifestId, MANIFEST_FILENAME)
+export async function saveManifest(id: string, manifest: ManifestAttributes) {
+  const key = getManifestFileKey(id)
   await uploadFile(key, Buffer.from(JSON.stringify(manifest)), ACL.publicRead)
   await checkFile(key)
 }
 
-export async function deleteManifest(manifestId: string) {
-  // Delete the entire folder.
-  // **Keep in mind** that the project media is being stored in the same folder by using the same id
-  // We might want to avoid this by just deleting specific files using `listFiles`
-  const key = getFileKey(manifestId, '')
+export async function deleteManifest(id: string) {
+  const key = getManifestFileKey(id)
   return deleteFile(key)
 }
 
-export function getFileKey(manifestId: string, filename: string): string {
-  return `${PREFIX}/${manifestId}/${filename}`
+export function getManifestFileKey(id: string): string {
+  return `${getProjectFolder(id)}/${MANIFEST_FILENAME}`
 }

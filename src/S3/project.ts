@@ -1,12 +1,13 @@
 import express = require('express')
 
-import { getFileKey } from './manifest'
 import { getFileUploader, deleteFile, ACLValues } from './s3'
 
 export const MIME_TYPES = {
   'image/png': 'png'
 }
 export type MimeTypes = keyof typeof MIME_TYPES
+
+const PREFIX = 'project'
 
 export function getProjectFileUploader(
   acl: ACLValues,
@@ -21,7 +22,7 @@ export function getProjectFileUploader(
         const fileExtension = MIME_TYPES[file.mimetype as MimeTypes]
         const filename = `${file.fieldname}.${fileExtension}`
 
-        callback(null, getFileKey(projectId, filename)) // **Important** Share folders with the manifest resource
+        callback(null, getProjectFileKey(projectId, filename)) // **Important** Share folders with the manifest resource
       } catch (error) {
         callback(error, '')
       }
@@ -29,10 +30,17 @@ export function getProjectFileUploader(
   )
 }
 
-export async function deleteUploads(projectId: string) {
+export function deleteProject(id: string) {
   // Delete the entire folder
-  // **Keep in mind** that the manifest is being stored in the same folder by using the same id
-  // We might want to avoid this by just deleting specific files using `listFiles`
-  const key = getFileKey(projectId, '')
+  // **Keep in mind** that the project manifest is being stored in the same folder
+  const key = getProjectFolder(id)
   return deleteFile(key)
+}
+
+export function getProjectFileKey(id: string, filename: string): string {
+  return `${getProjectFolder(id)}/${filename}`
+}
+
+export function getProjectFolder(id: string): string {
+  return `${PREFIX}/${id}`
 }

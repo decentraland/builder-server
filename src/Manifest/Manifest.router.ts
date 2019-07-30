@@ -30,7 +30,7 @@ export class ManifestRouter extends Router {
 
   async upsertManfiest(req: express.Request) {
     const manifestId = server.extractFromReq(req, 'id')
-    const manifestJSON = server.extractFromReq(req, 'manifest')
+    const manifestJSON = server.extractFromReq(req, 'manifest') as any
 
     const validator = ajv.compile(manifestSchema)
     validator(manifestJSON)
@@ -39,7 +39,7 @@ export class ManifestRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    const manifest: ManifestAttributes = JSON.parse(manifestJSON)
+    const manifest = manifestJSON as ManifestAttributes
 
     return new S3Manifest(manifestId, manifest).upsert()
   }

@@ -15,5 +15,6 @@ export const sceneSchema = {
       additionalProperties: true
     }
   },
-  additionalProperties: true
+  additionalProperties: true,
+  required: ['entities', 'components']
 }

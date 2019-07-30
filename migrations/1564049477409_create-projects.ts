@@ -7,11 +7,10 @@ export const up = (pgm: MigrationBuilder) => {
   pgm.createTable(
     tableName,
     {
-      id: { type: 'UUID', primaryKey: true, notNull: true },
-      address: { type: 'TEXT', primaryKey: true, notNull: true },
+      id: { type: 'UUID', primaryKey: true, unique: true, notNull: true },
       title: { type: 'TEXT', notNull: true },
       description: { type: 'TEXT' },
-      thumbnail: { type: 'TEXT', notNull: true },
+      thumbnail: { type: 'TEXT' },
       scene_id: { type: 'UUID', notNull: true },
       user_id: { type: 'TEXT', notNull: true },
       cols: { type: 'INT', notNull: true },

@@ -14,5 +14,7 @@ export const manifestSchema = {
     project: projectSchema,
     scene: sceneSchema
   },
-  additionalProperties: false
+  additionalProperties: false,
+  removeAdditional: true,
+  required: ['version', 'project', 'scene']
 }

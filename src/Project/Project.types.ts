@@ -2,7 +2,7 @@ export type ProjectAttributes = {
   id: string
   title: string
   description?: string
-  thumbnail: string
+  thumbnail?: string
   scene_id: string
   user_id: string
   cols: number
@@ -14,18 +14,25 @@ export type ProjectAttributes = {
 export const projectSchema = {
   type: 'object',
   properties: {
-    id: {
-      type: 'string',
-      format: 'uuid'
-    },
+    id: { type: 'string', format: 'uuid' },
     title: { type: 'string' },
     description: { type: 'string' },
-    thumbnail: { type: 'string' },
+    thumbnail: { type: ['string', 'null'] },
     scene_id: { type: 'string', format: 'uuid' },
     cols: { type: 'number' },
     rows: { type: 'number' },
-    created_at: { type: 'string', format: 'date' },
-    updated_at: { type: 'string', format: 'date' }
+    created_at: { type: 'string', format: 'date', nullable: true },
+    updated_at: { type: 'string', format: 'date', nullable: true }
   },
-  additionalProperties: false
+  additionalProperties: false,
+  removeAdditional: true,
+  required: [
+    'id',
+    'title',
+    'description',
+    'thumbnail',
+    'scene_id',
+    'cols',
+    'rows'
+  ]
 }

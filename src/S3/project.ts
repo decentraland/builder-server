@@ -1,5 +1,4 @@
-import express = require('express')
-
+import { AuthRequest } from '../middleware/auth'
 import { getFileUploader, deleteFile, ACLValues } from './s3'
 
 export const MIME_TYPES = {
@@ -11,14 +10,14 @@ const PREFIX = 'project'
 
 export function getProjectFileUploader(
   acl: ACLValues,
-  getProjectId: (req: express.Request) => string
+  getProjectId: (req: AuthRequest) => string | Promise<string>
 ) {
   return getFileUploader(
     acl,
     Object.keys(MIME_TYPES),
-    (req: express.Request, file, callback) => {
+    async (req: AuthRequest, file, callback) => {
       try {
-        const projectId = getProjectId(req)
+        const projectId = await getProjectId(req)
         const fileExtension = MIME_TYPES[file.mimetype as MimeTypes]
         const filename = `${file.fieldname}.${fileExtension}`
 

@@ -11,6 +11,8 @@ export type ProjectAttributes = {
   updated_at: Date
 }
 
+export const pepe = 2
+
 export const projectSchema = {
   type: 'object',
   properties: {

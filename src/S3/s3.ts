@@ -82,8 +82,13 @@ export async function checkFile(key: string): Promise<boolean> {
     Key: key
   }
   const headObject = utils.promisify<boolean>(s3.headObject.bind(s3))
-  const result = await headObject(params)
-  return !!result
+
+  try {
+    await headObject(params)
+    return true
+  } catch (error) {
+    return false
+  }
 }
 
 export function uploadFile(

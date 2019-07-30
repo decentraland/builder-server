@@ -2,7 +2,6 @@ import { env } from 'decentraland-commons'
 
 import { AppRouter } from './App'
 import { ProjectRouter } from './Project'
-import { ManifestRouter } from './Manifest'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 
@@ -21,7 +20,6 @@ app
 // Mount routers
 new AppRouter(app).mount()
 new ProjectRouter(app).mount()
-new ManifestRouter(app).mount()
 
 /* Start the server only if run directly */
 if (require.main === module) {

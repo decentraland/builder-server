@@ -4,16 +4,8 @@ import Ajv from 'ajv'
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
 import { auth, AuthRequest } from '../middleware/auth'
-import { ManifestAttributes, manifestSchema } from '../Manifest'
 import { Deployment } from '../Deployment'
-import {
-  saveManifest,
-  deleteManifest,
-  deleteProject,
-  checkFile,
-  ACL,
-  getProjectFileUploader
-} from '../S3'
+import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 
@@ -53,24 +45,6 @@ export class ProjectRouter extends Router {
       '/projects/:id',
       auth,
       server.handleRequest(this.deleteProject)
-    )
-
-    /**
-     * Upserts the manifest and the project inside of it
-     */
-    this.router.put(
-      '/projects/:id/manifest',
-      auth,
-      server.handleRequest(this.upsertManifest)
-    )
-
-    /**
-     * Upserts the manifest and the project inside of it
-     */
-    this.router.delete(
-      '/projects/:id/manifest',
-      auth,
-      server.handleRequest(this.deleteManifest)
     )
 
     /**
@@ -168,38 +142,6 @@ export class ProjectRouter extends Router {
     ])
 
     return { rowCount: projectResult.rowCount + deploymentResult.rowCount }
-  }
-
-  async upsertManifest(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const manifestJSON: any = server.extractFromReq(req, 'manifest')
-    const user_id = req.auth.sub
-
-    const validator = ajv.compile(manifestSchema)
-    validator(manifestJSON)
-
-    if (validator.errors) {
-      throw new HTTPError('Invalid schema', validator.errors)
-    }
-
-    const manifest = {
-      ...manifestJSON,
-      project: { ...manifestJSON.project, user_id }
-    } as ManifestAttributes
-
-    const [project] = await Promise.all([
-      new Project(manifest.project).upsert(),
-      saveManifest(id, manifest)
-    ])
-    return project
-  }
-
-  async deleteManifest(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    if (!(await checkFile(id))) {
-      throw new HTTPError('The manifest does not exist', { id })
-    }
-    return deleteManifest(id)
   }
 
   private getFileUploaderMiddleware() {

@@ -21,19 +21,28 @@ export class DeploymentRouter extends Router {
     )
 
     /**
-     * Upsert a deployment
+     * Get a projects deployment
+     */
+    this.router.get(
+      '/projects/:id/deployment',
+      auth,
+      server.handleRequest(this.getProjectDeployment)
+    )
+
+    /**
+     * Upsert a project deployment
      */
     this.router.put(
-      '/deployments/:id',
+      '/projects/:id/deployment',
       auth,
       server.handleRequest(this.upsertDeployment)
     )
 
     /**
-     * Delete deployment
+     * Delete project deployment
      */
     this.router.delete(
-      '/deployments/:id',
+      '/projects/:id/deployment',
       auth,
       server.handleRequest(this.deleteDeployment)
     )
@@ -42,6 +51,12 @@ export class DeploymentRouter extends Router {
   async getDeployments(req: AuthRequest) {
     const user_id = req.auth.sub
     return Deployment.find<DeploymentAttributes>({ user_id })
+  }
+
+  async getProjectDeployment(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    const user_id = req.auth.sub
+    return Deployment.findOne<DeploymentAttributes>({ id, user_id })
   }
 
   async upsertDeployment(req: AuthRequest) {

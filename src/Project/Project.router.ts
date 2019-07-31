@@ -5,6 +5,7 @@ import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
 import { auth, AuthRequest } from '../middleware/auth'
 import { ManifestAttributes, manifestSchema } from '../Manifest'
+import { Deployment } from '../Deployment'
 import {
   saveManifest,
   deleteManifest,
@@ -160,12 +161,13 @@ export class ProjectRouter extends Router {
       throw new HTTPError(`Invalid project id`, { id, user_id })
     }
 
-    const [{ rowCount }] = await Promise.all([
+    const [projectResult, deploymentResult] = await Promise.all([
       Project.delete({ id }),
+      Deployment.delete({ id }),
       deleteProject(id)
     ])
 
-    return { rowCount }
+    return { rowCount: projectResult.rowCount + deploymentResult.rowCount }
   }
 
   async upsertManifest(req: AuthRequest) {

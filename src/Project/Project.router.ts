@@ -107,8 +107,10 @@ export class ProjectRouter extends Router {
     const user_id = req.auth.sub
 
     const validator = ajv.compile(projectSchema)
-    if (!validator(projectJSON)) {
-      throw new Error(ajv.errorsText())
+    validator(projectJSON)
+
+    if (validator.errors) {
+      throw new HTTPError('Invalid schema', validator.errors)
     }
 
     const attributes = { ...projectJSON, user_id } as ProjectAttributes

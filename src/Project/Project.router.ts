@@ -3,11 +3,12 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { auth, AuthRequest } from '../middleware/auth'
+import { authentication, AuthRequest } from '../middleware/authentication'
 import { Deployment } from '../Deployment'
 import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
+import { projectAuthorization } from '../middleware/authorization/project'
 
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
 
@@ -18,14 +19,19 @@ export class ProjectRouter extends Router {
     /**
      * Get all projects
      */
-    this.router.get('/projects', auth, server.handleRequest(this.getProjects))
+    this.router.get(
+      '/projects',
+      authentication,
+      server.handleRequest(this.getProjects)
+    )
 
     /**
      * Get project
      */
     this.router.get(
       '/projects/:id',
-      auth,
+      authentication,
+      projectAuthorization,
       server.handleRequest(this.getProject)
     )
 
@@ -34,7 +40,8 @@ export class ProjectRouter extends Router {
      */
     this.router.put(
       '/projects/:id',
-      auth,
+      authentication,
+      projectAuthorization,
       server.handleRequest(this.upsertProject)
     )
 
@@ -43,7 +50,8 @@ export class ProjectRouter extends Router {
      */
     this.router.delete(
       '/projects/:id',
-      auth,
+      authentication,
+      projectAuthorization,
       server.handleRequest(this.deleteProject)
     )
 
@@ -52,7 +60,8 @@ export class ProjectRouter extends Router {
      */
     this.router.post(
       '/projects/:id/media',
-      auth,
+      authentication,
+      projectAuthorization,
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadFiles)
     )

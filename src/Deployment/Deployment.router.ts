@@ -3,10 +3,10 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { authentication, AuthRequest } from '../middleware/authentication'
+import { authentication, AuthRequest, projectExists } from '../middleware'
+import { projectAuthorization } from '../middleware/authorization'
 import { Deployment } from './Deployment.model'
 import { DeploymentAttributes, deploymentSchema } from './Deployment.types'
-import { projectAuthorization } from '../middleware/authorization/project'
 
 const ajv = new Ajv()
 
@@ -27,6 +27,7 @@ export class DeploymentRouter extends Router {
     this.router.get(
       '/projects/:id/deployment',
       authentication,
+      projectExists,
       projectAuthorization,
       server.handleRequest(this.getProjectDeployment)
     )
@@ -37,6 +38,7 @@ export class DeploymentRouter extends Router {
     this.router.put(
       '/projects/:id/deployment',
       authentication,
+      projectExists,
       projectAuthorization,
       server.handleRequest(this.upsertDeployment)
     )
@@ -47,6 +49,7 @@ export class DeploymentRouter extends Router {
     this.router.delete(
       '/projects/:id/deployment',
       authentication,
+      projectExists,
       projectAuthorization,
       server.handleRequest(this.deleteDeployment)
     )

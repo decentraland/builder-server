@@ -3,11 +3,11 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { authentication, AuthRequest } from '../middleware/authentication'
+import { authentication, AuthRequest, projectExists } from '../middleware'
+import { projectAuthorization } from '../middleware/authorization'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { saveManifest, deleteManifest, checkFile, readManifest } from '../S3'
-import { projectAuthorization } from '../middleware/authorization/project'
 
 const ajv = new Ajv()
 
@@ -19,16 +19,18 @@ export class ManifestRouter extends Router {
     this.router.get(
       '/projects/:id/manifest',
       authentication,
+      projectExists,
       projectAuthorization,
       server.handleRequest(this.getManifest)
     )
+
     /**
      * Upserts the manifest and the project inside of it
+     * Important! Project authorization is done inside the handler because the manifest upserts the project
      */
     this.router.put(
       '/projects/:id/manifest',
       authentication,
-      projectAuthorization,
       server.handleRequest(this.upsertManifest)
     )
 
@@ -58,6 +60,14 @@ export class ManifestRouter extends Router {
 
     if (validator.errors) {
       throw new HTTPError('Invalid schema', validator.errors)
+    }
+
+    const [projectExists, isOwner] = await Promise.all([
+      Project.exists(id),
+      Project.isOwnedBy(id, user_id)
+    ])
+    if (projectExists && !isOwner) {
+      throw new Error(`Unauthorized user ${user_id} for project ${id}`)
     }
 
     const manifest = {

@@ -1,13 +1,14 @@
 import { Request, Response, NextFunction } from 'express'
 import { server } from 'decentraland-server'
+
 import { AuthRequest } from '../authentication'
 import { Project } from '../../Project'
 
-export const projectAuthorization = async (
+export async function projectAuthorization(
   req: Request,
   res: Response,
   next: NextFunction
-) => {
+) {
   const id = server.extractFromReq(req, 'id')
   const user_id = (req as AuthRequest).auth.sub
 
@@ -17,13 +18,13 @@ export const projectAuthorization = async (
     )
   }
 
-  if (!(await Project.exists(id))) {
-    res.status(404).end(JSON.stringify({ ok: false, error: 'Not found' }))
-    return
-  }
-
   if (!(await Project.isOwnedBy(id, user_id))) {
-    res.status(401).end(JSON.stringify({ ok: false, error: 'Unauthorized' }))
+    const response = JSON.stringify({
+      ok: false,
+      error: `Unauthorized user ${user_id} for project ${id}`
+    })
+    res.setHeader('Content-Type', 'application/json')
+    res.status(401).end(response)
     return
   }
 

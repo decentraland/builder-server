@@ -3,12 +3,12 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { authentication, AuthRequest } from '../middleware/authentication'
+import { authentication, AuthRequest, projectExists } from '../middleware'
+import { projectAuthorization } from '../middleware/authorization'
 import { Deployment } from '../Deployment'
 import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
-import { projectAuthorization } from '../middleware/authorization/project'
 
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
 
@@ -51,6 +51,7 @@ export class ProjectRouter extends Router {
     this.router.delete(
       '/projects/:id',
       authentication,
+      projectExists,
       projectAuthorization,
       server.handleRequest(this.deleteProject)
     )
@@ -61,6 +62,7 @@ export class ProjectRouter extends Router {
     this.router.post(
       '/projects/:id/media',
       authentication,
+      projectExists,
       projectAuthorization,
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadFiles)
@@ -77,11 +79,6 @@ export class ProjectRouter extends Router {
   async getProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const user_id = req.auth.sub
-
-    if (!(await Project.isOwnedBy(id, user_id))) {
-      throw new HTTPError('Invalid project id', { id, user_id })
-    }
-
     return Project.findOne({ id, user_id })
   }
 
@@ -138,11 +135,6 @@ export class ProjectRouter extends Router {
 
   async deleteProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth.sub
-
-    if (!(await Project.isOwnedBy(id, user_id))) {
-      throw new HTTPError(`Invalid project id`, { id, user_id })
-    }
 
     const [projectResult, deploymentResult] = await Promise.all([
       Project.delete({ id }),

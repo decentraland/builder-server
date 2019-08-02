@@ -2,8 +2,6 @@ import { Request, Response, NextFunction } from 'express'
 import jwt from 'express-jwt'
 import jwksRsa from 'jwks-rsa'
 import { env } from 'decentraland-commons'
-import { server } from 'decentraland-server'
-import { Project } from '../Project'
 
 export type AuthRequest = Request & {
   auth: Record<string, string | number | boolean> & {
@@ -49,24 +47,4 @@ export function getAuthenticationMiddleware() {
   }
 }
 
-export function getAuthorizationMiddleware() {
-  return async (req: Request, res: Response, next: NextFunction) => {
-    const id = server.extractFromReq(req, 'id')
-    const user_id = (req as AuthRequest).auth.sub
-
-    if (!(await Project.exists(id))) {
-      res.status(404).end(JSON.stringify({ ok: false, error: 'Not found' }))
-      return
-    }
-
-    if (!(await Project.isOwnedBy(id, user_id))) {
-      res.status(401).end(JSON.stringify({ ok: false, error: 'Unauthorized' }))
-      return
-    }
-
-    next()
-  }
-}
-
-export const authn = getAuthenticationMiddleware()
-export const authz = getAuthorizationMiddleware()
+export const authentication = getAuthenticationMiddleware()

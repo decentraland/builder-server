@@ -3,10 +3,11 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { authn, AuthRequest, authz } from '../middleware/auth'
+import { authentication, AuthRequest } from '../middleware/authentication'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { saveManifest, deleteManifest, checkFile, readManifest } from '../S3'
+import { projectAuthorization } from '../middleware/authorization/project'
 
 const ajv = new Ajv()
 
@@ -17,8 +18,8 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/projects/:id/manifest',
-      authn,
-      authz,
+      authentication,
+      projectAuthorization,
       server.handleRequest(this.getManifest)
     )
     /**
@@ -26,8 +27,8 @@ export class ManifestRouter extends Router {
      */
     this.router.put(
       '/projects/:id/manifest',
-      authn,
-      authz,
+      authentication,
+      projectAuthorization,
       server.handleRequest(this.upsertManifest)
     )
 
@@ -36,8 +37,8 @@ export class ManifestRouter extends Router {
      */
     this.router.delete(
       '/projects/:id/manifest',
-      authn,
-      authz,
+      authentication,
+      projectAuthorization,
       server.handleRequest(this.deleteManifest)
     )
   }

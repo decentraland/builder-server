@@ -3,7 +3,7 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { auth, AuthRequest } from '../middleware/auth'
+import { authn, AuthRequest, authz } from '../middleware/auth'
 import { Deployment } from './Deployment.model'
 import { DeploymentAttributes, deploymentSchema } from './Deployment.types'
 
@@ -16,7 +16,8 @@ export class DeploymentRouter extends Router {
      */
     this.router.get(
       '/deployments',
-      auth,
+      authn,
+      authz,
       server.handleRequest(this.getDeployments)
     )
 
@@ -25,7 +26,8 @@ export class DeploymentRouter extends Router {
      */
     this.router.get(
       '/projects/:id/deployment',
-      auth,
+      authn,
+      authz,
       server.handleRequest(this.getProjectDeployment)
     )
 
@@ -34,7 +36,8 @@ export class DeploymentRouter extends Router {
      */
     this.router.put(
       '/projects/:id/deployment',
-      auth,
+      authn,
+      authz,
       server.handleRequest(this.upsertDeployment)
     )
 
@@ -43,7 +46,8 @@ export class DeploymentRouter extends Router {
      */
     this.router.delete(
       '/projects/:id/deployment',
-      auth,
+      authn,
+      authz,
       server.handleRequest(this.deleteDeployment)
     )
   }

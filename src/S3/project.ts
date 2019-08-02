@@ -1,4 +1,4 @@
-import { AuthRequest } from '../middleware/auth'
+import { AuthRequest } from '../middleware/authentication'
 import { getFileUploader, deleteFile, ACLValues } from './s3'
 
 export const MIME_TYPES = {

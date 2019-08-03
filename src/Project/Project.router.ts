@@ -31,6 +31,7 @@ export class ProjectRouter extends Router {
     this.router.get(
       '/projects/:id',
       authentication,
+      projectExists,
       projectAuthorization,
       server.handleRequest(this.getProject)
     )

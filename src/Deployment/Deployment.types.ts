@@ -18,7 +18,9 @@ export const deploymentSchema = {
     x: { type: 'number' },
     y: { type: 'number' },
     rotation: { type: 'string', pattern: 'north|east|south|west' },
-    additionalProperties: false
+    user_id: { type: ['string', 'null'] },
+    created_at: { type: 'string', nullable: true },
+    updated_at: { type: 'string', nullable: true }
   },
   additionalProperties: false,
   removeAdditional: true,

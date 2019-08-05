@@ -9,11 +9,11 @@ export type AuthRequest = Request & {
   }
 }
 
-export function getAuthMiddleware() {
+export function getAuthenticationMiddleware() {
   const auth0Domain = env.get('AUTH0_DOMAIN')
 
   if (!auth0Domain) {
-    console.log('Auth0 domain or app id missing, authentication disabled')
+    console.log('Auth0 domain is missing, authentication disabled')
     return (req: Request, _: Response, next: NextFunction) => {
       const authRequest = req as AuthRequest
       authRequest.auth = { sub: 'fakeUserId' }
@@ -39,7 +39,7 @@ export function getAuthMiddleware() {
         console.log(err.message)
         res
           .status(err.status)
-          .end(JSON.stringify({ ok: false, error: 'Unauthorized' }))
+          .end(JSON.stringify({ ok: false, error: 'Unauthenticated' }))
         return
       }
       next(err)
@@ -47,4 +47,4 @@ export function getAuthMiddleware() {
   }
 }
 
-export const auth = getAuthMiddleware()
+export const authentication = getAuthenticationMiddleware()

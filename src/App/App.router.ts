@@ -1,7 +1,7 @@
 import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 
-import { Router } from '../common'
+import { Router } from '../common/Router'
 
 export class AppRouter extends Router {
   mount() {

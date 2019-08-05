@@ -7,5 +7,5 @@ export const database: typeof pg = Object.create(pg)
 
 database.connect = async () => {
   const CONNECTION_STRING = env.get('CONNECTION_STRING', undefined)
-  await pg.connect(CONNECTION_STRING)
+  return pg.connect(CONNECTION_STRING)
 }

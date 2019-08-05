@@ -1,8 +1,8 @@
 export type DeploymentAttributes = {
   id: string
   user_id: string
-  lastPublishedCID: string | null
-  isDirty: boolean
+  last_published_cid: string | null
+  is_dirty: boolean
   x: number
   y: number
   rotation: Rotation
@@ -13,8 +13,8 @@ export const deploymentSchema = {
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
-    lastPublishedCID: { type: ['string', 'null'] },
-    isDirty: { type: 'boolean' },
+    last_published_cid: { type: ['string', 'null'] },
+    is_dirty: { type: 'boolean' },
     x: { type: 'number' },
     y: { type: 'number' },
     rotation: { type: 'string', pattern: 'north|east|south|west' },
@@ -24,5 +24,5 @@ export const deploymentSchema = {
   },
   additionalProperties: false,
   removeAdditional: true,
-  required: ['id', 'lastPublishedCID', 'isDirty', 'x', 'y', 'rotation']
+  required: ['id', 'last_published_cid', 'is_dirty', 'x', 'y', 'rotation']
 }

@@ -9,8 +9,8 @@ export const up = (pgm: MigrationBuilder) => {
     {
       id: { type: 'UUID', primaryKey: true, unique: true, notNull: true },
       user_id: { type: 'TEXT', notNull: true },
-      lastPublishedCID: { type: 'TEXT' },
-      isDirty: { type: 'BOOLEAN', notNull: true },
+      last_published_cid: { type: 'TEXT' },
+      is_dirty: { type: 'BOOLEAN', notNull: true },
       x: { type: 'INT', notNull: true },
       y: { type: 'INT', notNull: true },
       rotation: { type: 'TEXT', notNull: true },

@@ -10,6 +10,9 @@ import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 
+import { FiltrableModel } from '../common/FiltrableModel'
+import { FilterRequestParameters } from '../RequestParameters'
+
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
 
 const ajv = new Ajv()
@@ -71,10 +74,23 @@ export class ProjectRouter extends Router {
   }
 
   async getProjects(req: AuthRequest) {
-    const user_id = req.auth.sub
+    // TODO: const user_id = req.auth.sub
 
-    // TODO: Paginate
-    return Project.find<ProjectAttributes>({ user_id })
+    const filtrableProject = new FiltrableModel<ProjectAttributes>(
+      Project.tableName
+    )
+    const filters = new FilterRequestParameters<ProjectAttributes>(req, {
+      sort: {
+        by: ['created_at'],
+        order: ['DESC', 'ASC']
+      },
+      pagination: {
+        offset: 0,
+        limit: 100
+      }
+    })
+
+    return filtrableProject.search(filters)
   }
 
   async getProject(req: AuthRequest) {

@@ -9,7 +9,7 @@ export type DeploymentAttributes = {
 }
 export type Rotation = 'north' | 'east' | 'south' | 'west'
 
-export const deploymentSchema = {
+export const deploymentSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
@@ -25,4 +25,4 @@ export const deploymentSchema = {
   additionalProperties: false,
   removeAdditional: true,
   required: ['id', 'last_published_cid', 'is_dirty', 'x', 'y', 'rotation']
-}
+})

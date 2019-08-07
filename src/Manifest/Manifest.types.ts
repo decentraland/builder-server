@@ -7,7 +7,7 @@ export type ManifestAttributes = {
   scene: SceneAttributes
 }
 
-export const manifestSchema = {
+export const manifestSchema = Object.freeze({
   type: 'object',
   properties: {
     version: { type: 'number' },
@@ -17,4 +17,4 @@ export const manifestSchema = {
   additionalProperties: false,
   removeAdditional: true,
   required: ['version', 'project', 'scene']
-}
+})

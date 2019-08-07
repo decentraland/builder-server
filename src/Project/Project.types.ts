@@ -11,7 +11,7 @@ export type ProjectAttributes = {
   updated_at: Date
 }
 
-export const projectSchema = {
+export const projectSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
@@ -36,4 +36,13 @@ export const projectSchema = {
     'cols',
     'rows'
   ]
-}
+})
+
+export const searchableProjectProperties: (keyof ProjectAttributes)[] = [
+  'title',
+  'description',
+  'cols',
+  'rows',
+  'created_at',
+  'updated_at'
+]

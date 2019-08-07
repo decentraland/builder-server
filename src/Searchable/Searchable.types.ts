@@ -11,17 +11,6 @@ export type Pagination = Partial<{
   offset: Offset
 }>
 
-export type Bounds<T> = {
-  sort: {
-    by: SortBy<T>[]
-    order: SortOrder[]
-  }
-  pagination: {
-    limit: Limit
-    offset: Offset
-  }
-}
-
 export type Parameters<T> = {
   sort: Sort<T>
   pagination: Pagination

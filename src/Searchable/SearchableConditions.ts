@@ -1,19 +1,13 @@
 import { RequestParameters } from '../RequestParameters'
 import { BaseAttributes } from './Searchable.types'
-
-type QueryString = Record<string, any>
-
-type ColumnName<T> = keyof T
-
-type Whitelist<T> = {
-  eq: (ColumnName<T>)[]
-  not_eq: (ColumnName<T>)[]
-}
-
-type ConditionName<T> = keyof Whitelist<T>
-type Condition<T> = Partial<Record<ColumnName<T>, any>>
-
-type Extra<T> = Record<ConditionName<T>, Condition<T>>
+import {
+  QueryString,
+  ColumnName,
+  Whitelist,
+  ConditionName,
+  Condition,
+  Extra
+} from './SearchableConditions.types'
 
 const DEAFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   eq: [],

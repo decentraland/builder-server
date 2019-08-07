@@ -7,6 +7,7 @@ import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
 import { deleteProject, ACL, getProjectFileUploader } from '../S3'
 import { Deployment } from '../Deployment'
+import { Pool } from '../Pool'
 import { RequestParameters } from '../RequestParameters'
 import {
   SearchableModel,
@@ -91,6 +92,7 @@ export class ProjectRouter extends Router {
   async getProjects(req: AuthRequest) {
     const user_id = req.auth.sub
 
+    // TODO: This is the same code as Pool.router#getPools
     const requestParameters = new RequestParameters(req)
     const searchableProject = new SearchableModel<ProjectAttributes>(
       Project.tableName
@@ -162,6 +164,7 @@ export class ProjectRouter extends Router {
     const [projectResult, deploymentResult] = await Promise.all([
       Project.delete({ id }),
       Deployment.delete({ id }),
+      Pool.delete({ id }),
       deleteProject(id)
     ])
 

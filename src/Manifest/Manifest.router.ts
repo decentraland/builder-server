@@ -21,7 +21,18 @@ export class ManifestRouter extends Router {
       authentication,
       projectExists,
       projectAuthorization,
-      server.handleRequest(this.getManifest)
+      server.handleRequest(this.getProjectManifest)
+    )
+
+    /**
+     * Returns the manifest of a pool
+     */
+    this.router.get(
+      '/pools/:id/manifest',
+      authentication,
+      projectExists,
+      projectAuthorization,
+      server.handleRequest(this.getPoolManifest)
     )
 
     /**
@@ -45,7 +56,13 @@ export class ManifestRouter extends Router {
     )
   }
 
-  async getManifest(req: AuthRequest) {
+  async getProjectManifest(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    return readManifest(id)
+  }
+
+  async getPoolManifest(req: AuthRequest) {
+    // TODO: Damn
     const id = server.extractFromReq(req, 'id')
     return readManifest(id)
   }

@@ -22,14 +22,14 @@ export class SearchableModel<T> {
     if (conditions) {
       const { eq, notEq } = conditions.sanitize()
 
-      Object.keys(eq).forEach(columnName =>
+      for (const columnName in eq) {
         conditionsQuery.append(SQL` AND ${raw(columnName)} = ${eq[columnName]}`)
-      )
-      Object.keys(notEq).forEach(columnName =>
+      }
+      for (const columnName in notEq) {
         conditionsQuery.append(
           SQL` AND ${raw(columnName)} != ${notEq[columnName]}`
         )
-      )
+      }
     }
 
     const sortQuery =

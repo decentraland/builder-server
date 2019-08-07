@@ -2,11 +2,18 @@ import { RequestParameters } from '../RequestParameters'
 import { BaseAttributes } from './Searchable.types'
 
 type QueryString = Record<string, any>
+
+type ColumnName<T> = keyof T
+
 type Whitelist<T> = {
-  eq: (keyof T)[]
-  not_eq: (keyof T)[]
+  eq: (ColumnName<T>)[]
+  not_eq: (ColumnName<T>)[]
 }
-type PartialWhitelist<T> = Partial<Whitelist<T>>
+
+type ConditionName<T> = keyof Whitelist<T>
+type Condition<T> = Partial<Record<ColumnName<T>, any>>
+
+type Extra<T> = Record<ConditionName<T>, Condition<T>>
 
 const DEAFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   eq: [],
@@ -15,16 +22,18 @@ const DEAFAULT_WHITELIST: Whitelist<BaseAttributes> = {
 
 export class SearchableConditions<T> {
   requestParameters: RequestParameters
-  queryString: QueryString
-  whitelist: Whitelist<T>
+  private queryString: QueryString
+  private whitelist: Whitelist<T>
+  private extras: Partial<Extra<T>>
 
   constructor(
     requestParameters: RequestParameters,
-    whitelist?: PartialWhitelist<T>
+    whitelist?: Partial<Whitelist<T>>
   ) {
     this.requestParameters = requestParameters
     this.queryString = requestParameters.getQueryString()
     this.whitelist = DEAFAULT_WHITELIST
+    this.extras = {}
 
     if (whitelist) {
       this.whitelist = { ...this.whitelist, ...whitelist }
@@ -38,23 +47,50 @@ export class SearchableConditions<T> {
     }
   }
 
-  private getEq() {
-    return this.getSanitizedCondition('eq')
+  addExtras(conditionName: ConditionName<T>, conditions: Condition<T>) {
+    this.extras[conditionName] = {
+      ...this.extras[conditionName],
+      ...conditions
+    }
   }
 
-  private getNotEq() {
-    return this.getSanitizedCondition('not_eq')
+  removeExtra(
+    conditionName: ConditionName<T>,
+    conditionNamesToRemove: (keyof Condition<T>)[]
+  ) {
+    for (const conditionNameToRemove of conditionNamesToRemove) {
+      if (this.extras[conditionName] === undefined) {
+        continue
+      }
+
+      delete this.extras[conditionName]![conditionNameToRemove]
+    }
   }
 
-  private getSanitizedCondition(name: keyof Whitelist<T>) {
-    const condition: QueryString = {}
-    const queryStringName = `_${name}`
+  private getEq(): Condition<T> {
+    return {
+      ...this.getSanitizedCondition('eq'),
+      ...this.extras['eq']
+    }
+  }
+
+  private getNotEq(): Condition<T> {
+    return {
+      ...this.getSanitizedCondition('not_eq'),
+      ...this.extras['not_eq']
+    }
+  }
+
+  private getSanitizedCondition(conditionName: ConditionName<T>) {
+    const condition: Partial<Condition<T>> = {}
+    const queryStringName = `_${conditionName}`
 
     for (const key in this.queryString) {
       if (key.endsWith(queryStringName)) {
         const columnName = key.replace(queryStringName, '')
-        if (this.isWhitelisted(columnName, name)) {
-          condition[columnName] = this.queryString[key]
+
+        if (this.isWhitelisted(conditionName, columnName)) {
+          condition[columnName as ColumnName<T>] = this.queryString[key]
         }
       }
     }
@@ -62,8 +98,8 @@ export class SearchableConditions<T> {
     return condition
   }
 
-  private isWhitelisted(columnName: string, whitelistKey: keyof Whitelist<T>) {
-    const finding = this.whitelist[whitelistKey].find(
+  private isWhitelisted(conditionName: ConditionName<T>, columnName: string) {
+    const finding = this.whitelist[conditionName].find(
       value => value === columnName
     )
     return !!finding

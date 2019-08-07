@@ -81,7 +81,7 @@ export class ProjectRouter extends Router {
   }
 
   async getProjects(req: AuthRequest) {
-    // TODO: const user_id = req.auth.sub
+    const user_id = req.auth.sub
 
     const requestParameters = new RequestParameters(req)
     const searchableProject = new SearchableModel<ProjectAttributes>(
@@ -95,6 +95,7 @@ export class ProjectRouter extends Router {
       requestParameters,
       { eq: searchableProjectProperties }
     )
+    conditions.addExtras('eq', { user_id })
 
     return searchableProject.search(parameters, conditions)
   }

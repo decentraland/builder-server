@@ -28,8 +28,8 @@ const MIN_PAGINATION_LIMIT = 1
 
 export class SearchableParameters<T = BaseAttributes> {
   requestParameters: RequestParameters
-  whitelist: Whitelist<T>
-  bounds: Bounds
+  private whitelist: Whitelist<T>
+  private bounds: Bounds
 
   constructor(
     requestParameters: RequestParameters,

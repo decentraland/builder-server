@@ -4,3 +4,15 @@ export function unsafeParseInt(str: string) {
   }
   return parseInt(str, 10)
 }
+
+export function toArray<T = any>(value: T | T[]): T[] {
+  if (value == null) {
+    return []
+  }
+
+  if (Array.isArray(value)) {
+    return value
+  }
+
+  return [value]
+}

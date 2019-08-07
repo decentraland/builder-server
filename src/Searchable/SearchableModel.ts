@@ -32,10 +32,18 @@ export class SearchableModel<T> {
       }
     }
 
-    const sortQuery =
-      sort.by && sort.order
-        ? SQL`ORDER BY ${raw(sort.by.toString())} ${raw(sort.order)}`
-        : SQL``
+    const sortQuery = SQL``
+
+    if (Object.keys(sort).length > 0) {
+      const sortQueryParts: string[] = []
+
+      for (const by in sort) {
+        sortQueryParts.push(`${by} ${sort[by]}`)
+      }
+
+      sortQuery.append('ORDER BY ')
+      sortQuery.append(sortQueryParts.join(', '))
+    }
 
     const paginationQuery = SQL`LIMIT ${raw(pagination.limit)} OFFSET ${raw(
       pagination.offset

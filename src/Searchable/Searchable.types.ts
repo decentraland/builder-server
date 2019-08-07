@@ -1,10 +1,7 @@
 export type SortBy<T> = keyof T
 export type SortOrder = 'DESC' | 'ASC'
 
-export type Sort<T> = {
-  by: SortBy<T> | undefined
-  order: SortOrder | undefined
-}
+export type Sort<T> = Partial<Record<SortBy<T>, SortOrder>>
 
 export type Limit = number
 export type Offset = number

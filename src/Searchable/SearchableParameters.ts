@@ -1,3 +1,4 @@
+import { toArray } from '../utils/parse'
 import { RequestParameters } from '../RequestParameters'
 import {
   Sort,
@@ -63,13 +64,33 @@ export class SearchableParameters<T = BaseAttributes> {
   private getSort(): Sort<T> {
     const { sort } = this.whitelist
 
-    const sortBy = this.requestParameters.getString('sort_by', '')
-    const sortOrder = this.requestParameters.getString('sort_order', '')
+    const sortBy = toArray(
+      this.requestParameters.get<string | string[]>('sort_by', [])
+    )
+    const sortOrder = toArray(
+      this.requestParameters.get<string | string[]>('sort_order', [])
+    )
 
-    return {
-      by: sort.by.find(value => value === sortBy),
-      order: sort.order.find(value => value === sortOrder)
+    if (sortBy.length !== sortOrder.length) {
+      throw new Error(
+        `The sort_by and sort_order keys should have the same length`
+      )
     }
+
+    const sortResult: Sort<T> = {}
+
+    for (let i = 0; i < sortBy.length; i++) {
+      const by = sort.by.find(value => value === sortBy[i])
+      const order = sort.order.find(
+        value => value === sortOrder[i].toUpperCase()
+      )
+
+      if (by && order) {
+        sortResult[by] = order
+      }
+    }
+
+    return sortResult
   }
 
   private getPagination(): Pagination {

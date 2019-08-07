@@ -1,36 +1,53 @@
 import { RequestParameters } from '../RequestParameters'
-import { Sort, Bounds, Pagination, Parameters } from './Searchable.types'
+import {
+  Sort,
+  Pagination,
+  Parameters,
+  BaseAttributes
+} from './Searchable.types'
+import {
+  Whitelist,
+  Bounds,
+  PartialWhitelist,
+  PartialBounds
+} from './SearchableParameters.types'
 
-type PartialBounds<T> = {
-  sort?: Partial<Bounds<T>['sort']>
-  pagination?: Partial<Bounds<T>['pagination']>
-}
-type BaseAttributes = Record<string, any>
-
-const MIN_PAGINATION_LIMIT = 1
-
-const DEFAULT_BOUNDS: Bounds<BaseAttributes> = {
+const DEFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   sort: {
     by: [],
     order: ['ASC', 'DESC']
-  },
+  }
+}
+const DEFAULT_BOUNDS: Bounds = {
   pagination: {
     offset: 0,
     limit: 100
   }
 }
+const MIN_PAGINATION_LIMIT = 1
 
 export class SearchableParameters<T = BaseAttributes> {
   requestParameters: RequestParameters
-  bounds: Bounds<T>
+  whitelist: Whitelist<T>
+  bounds: Bounds
 
-  constructor(requestParameters: RequestParameters, bounds?: PartialBounds<T>) {
+  constructor(
+    requestParameters: RequestParameters,
+    whitelist?: PartialWhitelist<T>,
+    bounds?: PartialBounds
+  ) {
     this.requestParameters = requestParameters
+    this.whitelist = DEFAULT_WHITELIST
     this.bounds = DEFAULT_BOUNDS
+
+    if (whitelist) {
+      this.whitelist = {
+        sort: { ...this.whitelist.sort, ...whitelist.sort }
+      }
+    }
 
     if (bounds) {
       this.bounds = {
-        sort: { ...this.bounds.sort, ...bounds.sort },
         pagination: { ...this.bounds.pagination, ...bounds.pagination }
       }
     }
@@ -44,7 +61,7 @@ export class SearchableParameters<T = BaseAttributes> {
   }
 
   private getSort(): Sort<T> {
-    const { sort } = this.bounds
+    const { sort } = this.whitelist
 
     const sortBy = this.requestParameters.getString('sort_by', '')
     const sortOrder = this.requestParameters.getString('sort_order', '')

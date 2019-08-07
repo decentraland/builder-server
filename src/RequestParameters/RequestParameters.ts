@@ -10,6 +10,10 @@ export class RequestParameters {
     this.req = req
   }
 
+  getQueryString() {
+    return this.req.query
+  }
+
   has(param: string) {
     try {
       server.extractFromReq(this.req, param)

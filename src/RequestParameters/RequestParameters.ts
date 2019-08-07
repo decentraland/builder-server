@@ -28,6 +28,10 @@ export class RequestParameters {
     }
   }
 
+  getString(param: string, defaultValue?: string) {
+    return this.get<string>(param, defaultValue).toString()
+  }
+
   getInteger(param: string, defaultValue?: number) {
     let value
 

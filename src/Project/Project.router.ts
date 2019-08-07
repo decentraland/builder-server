@@ -8,7 +8,11 @@ import { projectAuthorization } from '../middleware/authorization'
 import { Deployment } from '../Deployment'
 import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
-import { ProjectAttributes, projectSchema } from './Project.types'
+import {
+  ProjectAttributes,
+  projectSchema,
+  searchableProjectProperties
+} from './Project.types'
 
 import { RequestParameters } from '../RequestParameters'
 import { SearchableModel, SearchableParameters } from '../Searchable'
@@ -82,16 +86,7 @@ export class ProjectRouter extends Router {
     )
     const parameters = new SearchableParameters<ProjectAttributes>(
       requestParameters,
-      {
-        sort: {
-          by: ['created_at'],
-          order: ['DESC', 'ASC']
-        },
-        pagination: {
-          offset: 0,
-          limit: 100
-        }
-      }
+      { sort: { by: searchableProjectProperties } }
     )
 
     return searchableProject.search(parameters.sanitize())

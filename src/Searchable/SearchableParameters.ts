@@ -1,37 +1,22 @@
 import { RequestParameters } from '../RequestParameters'
-import {
-  Sort,
-  SortBy,
-  SortOrder,
-  Pagination,
-  Limit,
-  Offset,
-  Parameters
-} from './Searchable.types'
+import { Sort, Bounds, Pagination, Parameters } from './Searchable.types'
 
-export type Bounds<T> = {
-  sort: {
-    by: SortBy<T>[]
-    order: SortOrder[]
-  }
-  pagination: {
-    limit: Limit
-    offset: Offset
-  }
+type PartialBounds<T> = {
+  sort?: Partial<Bounds<T>['sort']>
+  pagination?: Partial<Bounds<T>['pagination']>
 }
 type BaseAttributes = Record<string, any>
 
 const MIN_PAGINATION_LIMIT = 1
-const MAX_PAGINATION_LIMIT = 100
 
 const DEFAULT_BOUNDS: Bounds<BaseAttributes> = {
   sort: {
     by: [],
-    order: []
+    order: ['ASC', 'DESC']
   },
   pagination: {
     offset: 0,
-    limit: 20
+    limit: 100
   }
 }
 
@@ -39,10 +24,16 @@ export class SearchableParameters<T = BaseAttributes> {
   requestParameters: RequestParameters
   bounds: Bounds<T>
 
-  // TODO: Bounds to partial
-  constructor(requestParameters: RequestParameters, bounds?: Bounds<T>) {
+  constructor(requestParameters: RequestParameters, bounds?: PartialBounds<T>) {
     this.requestParameters = requestParameters
-    this.bounds = bounds ? bounds : DEFAULT_BOUNDS
+    this.bounds = DEFAULT_BOUNDS
+
+    if (bounds) {
+      this.bounds = {
+        sort: { ...this.bounds.sort, ...bounds.sort },
+        pagination: { ...this.bounds.pagination, ...bounds.pagination }
+      }
+    }
   }
 
   sanitize(): Parameters<T> {
@@ -55,8 +46,8 @@ export class SearchableParameters<T = BaseAttributes> {
   private getSort(): Sort<T> {
     const { sort } = this.bounds
 
-    const sortBy = this.requestParameters.get<string>('sort_by', '')
-    const sortOrder = this.requestParameters.get<string>('sort_order', '')
+    const sortBy = this.requestParameters.getString('sort_by', '')
+    const sortOrder = this.requestParameters.getString('sort_order', '')
 
     return {
       by: sort.by.find(value => value === sortBy),
@@ -64,22 +55,15 @@ export class SearchableParameters<T = BaseAttributes> {
     }
   }
 
-  // TODO: This is not a bound is a default
   private getPagination(): Pagination {
     const { pagination } = this.bounds
 
-    const limit = this.requestParameters.getInteger('limit', pagination.limit)
-    const offset = this.requestParameters.getInteger(
-      'offset',
-      pagination.offset
-    )
+    const limit = this.requestParameters.getInteger('limit', 0)
+    const offset = this.requestParameters.getInteger('offset', 0)
 
     return {
-      limit: Math.max(
-        Math.min(MAX_PAGINATION_LIMIT, limit),
-        MIN_PAGINATION_LIMIT
-      ),
-      offset: Math.max(offset, 0)
+      limit: Math.max(Math.min(pagination.limit, limit), MIN_PAGINATION_LIMIT),
+      offset: Math.max(offset, pagination.offset)
     }
   }
 }

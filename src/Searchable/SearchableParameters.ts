@@ -1,9 +1,13 @@
-import { Request } from 'express'
-
-import { RequestParameters } from './RequestParameters'
-
-type SortBy<T> = keyof T
-type SortOrder = 'DESC' | 'ASC'
+import { RequestParameters } from '../RequestParameters'
+import {
+  Sort,
+  SortBy,
+  SortOrder,
+  Pagination,
+  Limit,
+  Offset,
+  Parameters
+} from './Searchable.types'
 
 export type Bounds<T> = {
   sort: {
@@ -11,8 +15,8 @@ export type Bounds<T> = {
     order: SortOrder[]
   }
   pagination: {
-    limit: number
-    offset: number
+    limit: Limit
+    offset: Offset
   }
 }
 type BaseAttributes = Record<string, any>
@@ -31,24 +35,24 @@ const DEFAULT_BOUNDS: Bounds<BaseAttributes> = {
   }
 }
 
-export class FilterRequestParameters<T = BaseAttributes> {
+export class SearchableParameters<T = BaseAttributes> {
   requestParameters: RequestParameters
   bounds: Bounds<T>
 
   // TODO: Bounds to partial
-  constructor(req: Request, bounds?: Bounds<T>) {
-    this.requestParameters = new RequestParameters(req)
+  constructor(requestParameters: RequestParameters, bounds?: Bounds<T>) {
+    this.requestParameters = requestParameters
     this.bounds = bounds ? bounds : DEFAULT_BOUNDS
   }
 
-  sanitize() {
+  sanitize(): Parameters<T> {
     return {
       sort: this.getSort(),
       pagination: this.getPagination()
     }
   }
 
-  private getSort() {
+  private getSort(): Sort<T> {
     const { sort } = this.bounds
 
     const sortBy = this.requestParameters.get<string>('sort_by', '')
@@ -61,7 +65,7 @@ export class FilterRequestParameters<T = BaseAttributes> {
   }
 
   // TODO: This is not a bound is a default
-  private getPagination() {
+  private getPagination(): Pagination {
     const { pagination } = this.bounds
 
     const limit = this.requestParameters.getInteger('limit', pagination.limit)

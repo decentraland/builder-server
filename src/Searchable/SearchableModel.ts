@@ -1,9 +1,9 @@
 import { SQL, raw } from 'decentraland-server'
 
 import { db } from '../database'
-import { FilterRequestParameters } from '../RequestParameters'
+import { Parameters } from './Searchable.types'
 
-export class FiltrableModel<T> {
+export class SearchableModel<T> {
   tableName: string
 
   constructor(tableName: string) {
@@ -11,9 +11,8 @@ export class FiltrableModel<T> {
   }
 
   // TODO: Conditions
-  // TODO: Fix, typings. They're intertwined
-  search(filters: FilterRequestParameters<T>) {
-    const { sort, pagination } = filters.sanitize()
+  async search(parameters: Parameters<T>) {
+    const { sort, pagination } = parameters
 
     const sortQuery =
       sort.by && sort.order

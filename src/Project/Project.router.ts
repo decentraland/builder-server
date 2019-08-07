@@ -10,8 +10,8 @@ import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 
-import { FiltrableModel } from '../common/FiltrableModel'
-import { FilterRequestParameters } from '../RequestParameters'
+import { RequestParameters } from '../RequestParameters'
+import { SearchableModel, SearchableParameters } from '../Searchable'
 
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
 
@@ -76,21 +76,25 @@ export class ProjectRouter extends Router {
   async getProjects(req: AuthRequest) {
     // TODO: const user_id = req.auth.sub
 
-    const filtrableProject = new FiltrableModel<ProjectAttributes>(
+    const requestParameters = new RequestParameters(req)
+    const searchableProject = new SearchableModel<ProjectAttributes>(
       Project.tableName
     )
-    const filters = new FilterRequestParameters<ProjectAttributes>(req, {
-      sort: {
-        by: ['created_at'],
-        order: ['DESC', 'ASC']
-      },
-      pagination: {
-        offset: 0,
-        limit: 100
+    const parameters = new SearchableParameters<ProjectAttributes>(
+      requestParameters,
+      {
+        sort: {
+          by: ['created_at'],
+          order: ['DESC', 'ASC']
+        },
+        pagination: {
+          offset: 0,
+          limit: 100
+        }
       }
-    })
+    )
 
-    return filtrableProject.search(filters)
+    return searchableProject.search(parameters.sanitize())
   }
 
   async getProject(req: AuthRequest) {

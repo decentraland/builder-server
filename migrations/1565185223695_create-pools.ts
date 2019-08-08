@@ -1,7 +1,7 @@
 import { MigrationBuilder } from 'node-pg-migrate'
-import { Project } from '../src/Project'
+import { Pool } from '../src/Pool'
 
-const tableName = Project.tableName
+const tableName = Pool.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   // Same as 1564049477409_create-projects.ts

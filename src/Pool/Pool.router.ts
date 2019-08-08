@@ -75,9 +75,9 @@ export class PoolRouter extends Router {
   }
 
   async upsertPool(req: AuthRequest) {
-    // Grab project by id
-    // Copy table
-    // Copy manifest
+    // TODO: Grab project by id
+    // TODO: Copy table
+    // TODO: Copy manifest
     const id = server.extractFromReq(req, 'id')
     const user_id = req.auth.sub
 

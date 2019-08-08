@@ -1,3 +1,4 @@
 export * from './s3'
 export * from './manifest'
-export * from './project'
+export * from './pool'
+export * from './S3Project'

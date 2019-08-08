@@ -5,9 +5,9 @@ import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
 import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
-import { deleteProject, ACL, getProjectFileUploader } from '../S3'
 import { Deployment } from '../Deployment'
 import { Pool } from '../Pool'
+import { getFileUploader, S3Project, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import {
   SearchableModel,
@@ -30,6 +30,9 @@ const FILE_NAMES = [
   'south',
   'west'
 ]
+const MIME_TYPES = {
+  'image/png': 'png'
+}
 
 const ajv = new Ajv()
 
@@ -57,11 +60,11 @@ export class ProjectRouter extends Router {
 
     /**
      * Upsert a new project
+     * Important! Project authorization is done inside the handler
      */
     this.router.put(
       '/projects/:id',
       authentication,
-      projectAuthorization,
       server.handleRequest(this.upsertProject)
     )
 
@@ -128,6 +131,10 @@ export class ProjectRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
+    if (!(await Project.canUpsert(id, user_id))) {
+      throw new Error(`Unauthorized user ${user_id} for project ${id}`)
+    }
+
     const attributes = { ...projectJSON, user_id } as ProjectAttributes
 
     if (id !== attributes.id) {
@@ -161,35 +168,48 @@ export class ProjectRouter extends Router {
   async deleteProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
-    const [projectResult, deploymentResult] = await Promise.all([
-      Project.delete({ id }),
+    await Promise.all([
+      new S3Project(id).delete(),
       Deployment.delete({ id }),
       Pool.delete({ id }),
-      deleteProject(id)
+      Project.delete({ id })
     ])
 
-    return { rowCount: projectResult.rowCount + deploymentResult.rowCount }
+    return true
   }
 
   private getFileUploaderMiddleware() {
+    const uploader = getFileUploader(
+      ACL.publicRead,
+      Object.keys(MIME_TYPES),
+      async (req: AuthRequest, file, callback) => {
+        try {
+          if (!this.isValidMimeType(file.mimetype)) {
+            throw new HTTPError('Invalid mimetype', { mimetype: file.mimetype })
+          }
+
+          const id = server.extractFromReq(req, 'id')
+
+          const extension = MIME_TYPES[file.mimetype as keyof typeof MIME_TYPES]
+          const filename = `${file.fieldname}.${extension}`
+
+          // **Important** Shares folder with the other project files
+          callback(null, new S3Project(id).getFileKey(filename))
+        } catch (error) {
+          callback(error, '')
+        }
+      }
+    )
+
     const uploadFileFields = FILE_NAMES.map(fieldName => ({
       name: fieldName,
       maxCount: 1
     }))
 
-    const getProjectId = async (req: AuthRequest) => {
-      const id = server.extractFromReq(req, 'id')
-      const user_id = req.auth.sub
+    return uploader.fields(uploadFileFields)
+  }
 
-      if (!(await Project.isOwnedBy(id, user_id))) {
-        throw new HTTPError(`Invalid project id`, { id, user_id })
-      }
-
-      return id
-    }
-
-    return getProjectFileUploader(ACL.publicRead, getProjectId).fields(
-      uploadFileFields
-    )
+  private isValidMimeType(mimeType: string) {
+    return mimeType in MIME_TYPES
   }
 }

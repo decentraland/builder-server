@@ -9,7 +9,7 @@ import {
   Extra
 } from './SearchableConditions.types'
 
-const DEAFAULT_WHITELIST: Whitelist<BaseAttributes> = {
+const DEFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   eq: [],
   not_eq: []
 }
@@ -26,7 +26,7 @@ export class SearchableConditions<T> {
   ) {
     this.requestParameters = requestParameters
     this.queryString = requestParameters.getQueryString()
-    this.whitelist = DEAFAULT_WHITELIST
+    this.whitelist = DEFAULT_WHITELIST
     this.extras = {}
 
     if (whitelist) {

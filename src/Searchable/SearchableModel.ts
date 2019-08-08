@@ -3,6 +3,7 @@ import { SQL, raw } from 'decentraland-server'
 import { db } from '../database'
 import { SearchableParameters } from './SearchableParameters'
 import { SearchableConditions } from './SearchableConditions'
+import { Pagination, Sort } from './Searchable.types'
 
 export class SearchableModel<T> {
   tableName: string
@@ -17,6 +18,29 @@ export class SearchableModel<T> {
   ) {
     const { sort, pagination } = parameters.sanitize()
 
+    const conditionsQuery = this.getConditionsQuery(conditions)
+    const sortQuery = this.getSortQuery(sort)
+    const paginationQuery = this.getPaginationQuery(pagination)
+
+    const [items, counts] = await Promise.all([
+      db.query(
+        SQL`SELECT *
+        FROM ${raw(this.tableName)}
+        ${conditionsQuery}
+        ${sortQuery}
+        ${paginationQuery}`
+      ),
+      db.query(
+        SQL`SELECT COUNT(*)
+        FROM ${raw(this.tableName)}
+        ${conditionsQuery}`
+      )
+    ])
+
+    return { items, total: Number(counts[0].count) }
+  }
+
+  private getConditionsQuery(conditions?: SearchableConditions<T>) {
     const conditionsQuery = SQL`WHERE 1 = 1`
 
     if (conditions) {
@@ -31,7 +55,10 @@ export class SearchableModel<T> {
         )
       }
     }
+    return conditionsQuery
+  }
 
+  private getSortQuery(sort: Sort<T>) {
     const sortQuery = SQL``
 
     if (Object.keys(sort).length > 0) {
@@ -44,17 +71,10 @@ export class SearchableModel<T> {
       sortQuery.append('ORDER BY ')
       sortQuery.append(sortQueryParts.join(', '))
     }
+    return sortQuery
+  }
 
-    const paginationQuery = SQL`LIMIT ${raw(pagination.limit)} OFFSET ${raw(
-      pagination.offset
-    )}`
-
-    return db.query(
-      SQL`SELECT *
-        FROM ${raw(this.tableName)}
-        ${conditionsQuery}
-        ${sortQuery}
-        ${paginationQuery}`
-    )
+  private getPaginationQuery(pagination: Pagination) {
+    return SQL`LIMIT ${raw(pagination.limit)} OFFSET ${raw(pagination.offset)}`
   }
 }

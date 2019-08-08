@@ -7,8 +7,18 @@ import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
 import { Deployment } from '../Deployment'
 import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
+import { RequestParameters } from '../RequestParameters'
+import {
+  SearchableModel,
+  SearchableParameters,
+  SearchableConditions
+} from '../Searchable'
 import { Project } from './Project.model'
-import { ProjectAttributes, projectSchema } from './Project.types'
+import {
+  ProjectAttributes,
+  projectSchema,
+  searchableProjectProperties
+} from './Project.types'
 
 const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
 
@@ -73,8 +83,21 @@ export class ProjectRouter extends Router {
   async getProjects(req: AuthRequest) {
     const user_id = req.auth.sub
 
-    // TODO: Paginate
-    return Project.find<ProjectAttributes>({ user_id })
+    const requestParameters = new RequestParameters(req)
+    const searchableProject = new SearchableModel<ProjectAttributes>(
+      Project.tableName
+    )
+    const parameters = new SearchableParameters<ProjectAttributes>(
+      requestParameters,
+      { sort: { by: searchableProjectProperties } }
+    )
+    const conditions = new SearchableConditions<ProjectAttributes>(
+      requestParameters,
+      { eq: searchableProjectProperties }
+    )
+    conditions.addExtras('eq', { user_id })
+
+    return searchableProject.search(parameters, conditions)
   }
 
   async getProject(req: AuthRequest) {

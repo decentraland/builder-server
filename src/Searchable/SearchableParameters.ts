@@ -96,12 +96,22 @@ export class SearchableParameters<T = BaseAttributes> {
   private getPagination(): Pagination {
     const { pagination } = this.bounds
 
-    const limit = this.requestParameters.getInteger('limit', 0)
-    const offset = this.requestParameters.getInteger('offset', 0)
+    const limit = this.requestParameters.get<number | null>('limit', null)
+    const offset = this.requestParameters.get<number | null>('offset', null)
 
-    return {
-      limit: Math.max(Math.min(pagination.limit, limit), MIN_PAGINATION_LIMIT),
-      offset: Math.max(offset, pagination.offset)
+    const paginationResult: Pagination = {}
+
+    if (limit !== null) {
+      paginationResult.limit = Math.max(
+        Math.min(pagination.limit, limit),
+        MIN_PAGINATION_LIMIT
+      )
     }
+
+    if (offset !== null) {
+      paginationResult.offset = Math.max(offset, pagination.offset)
+    }
+
+    return paginationResult
   }
 }

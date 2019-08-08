@@ -6,10 +6,10 @@ export type Sort<T> = Partial<Record<SortBy<T>, SortOrder>>
 export type Limit = number
 export type Offset = number
 
-export type Pagination = {
+export type Pagination = Partial<{
   limit: Limit
   offset: Offset
-}
+}>
 
 export type Parameters<T> = {
   sort: Sort<T>

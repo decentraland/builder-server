@@ -71,10 +71,20 @@ export class SearchableModel<T> {
       sortQuery.append('ORDER BY ')
       sortQuery.append(sortQueryParts.join(', '))
     }
+
     return sortQuery
   }
 
   private getPaginationQuery(pagination: Pagination) {
-    return SQL`LIMIT ${raw(pagination.limit)} OFFSET ${raw(pagination.offset)}`
+    const paginationQuery = SQL``
+
+    if (pagination.limit) {
+      paginationQuery.append(SQL`LIMIT ${raw(pagination.limit)} `)
+    }
+    if (pagination.offset) {
+      paginationQuery.append(SQL`OFFSET ${raw(pagination.offset)}`)
+    }
+
+    return paginationQuery
   }
 }

@@ -3,7 +3,9 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
+import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
 import { RequestParameters } from '../RequestParameters'
+import { Project, ProjectAttributes } from '../Project'
 import {
   SearchableModel,
   SearchableParameters,
@@ -75,13 +77,20 @@ export class PoolRouter extends Router {
   }
 
   async upsertPool(req: AuthRequest) {
-    // TODO: Grab project by id
-    // TODO: Copy table
-    // TODO: Copy manifest
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth.sub
 
-    return { id, user_id }
-    // return new Pool(attributes).upsert()
+    const s3Project = new S3Project(id)
+
+    const [project, manifest] = await Promise.all([
+      Project.findOne<ProjectAttributes>(id),
+      s3Project.readFile(MANIFEST_FILENAME)
+    ])
+
+    const [pool] = await Promise.all([
+      new Pool(project!).upsert(),
+      s3Project.saveFile(POOL_FILENAME, manifest)
+    ])
+
+    return pool
   }
 }

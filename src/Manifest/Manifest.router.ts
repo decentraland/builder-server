@@ -89,7 +89,7 @@ export class ManifestRouter extends Router {
 
     const [project] = await Promise.all([
       new Project(manifest.project).upsert(),
-      new S3Project(id).saveManifest(MANIFEST_FILENAME, manifest)
+      new S3Project(id).saveFile(MANIFEST_FILENAME, manifest)
     ])
     return project
   }

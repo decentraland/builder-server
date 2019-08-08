@@ -1,5 +1,3 @@
-import { ManifestAttributes } from '../Manifest'
-
 import {
   readFile,
   checkFile,
@@ -24,10 +22,6 @@ export class S3Project {
     } catch (error) {
       // No previous entity
     }
-  }
-
-  async saveManifest(filename: string, manifest: ManifestAttributes) {
-    return this.saveFile(filename, manifest)
   }
 
   async saveFile(filename: string, data: any) {

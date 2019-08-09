@@ -1,11 +1,4 @@
-import {
-  readFile,
-  checkFile,
-  deleteFile,
-  uploadFile,
-  parseFileBody,
-  ACL
-} from './s3'
+import { readFile, checkFile, deleteFile, uploadFile, ACL } from './s3'
 
 export class S3Project {
   id: string
@@ -15,18 +8,21 @@ export class S3Project {
   }
 
   async readFile(filename: string) {
+    let body
+
     try {
       const key = this.getFileKey(filename)
       const file = await readFile(key)
-      return parseFileBody(file)
+      body = file.Body
     } catch (error) {
       // No previous entity
     }
+    return body
   }
 
-  async saveFile(filename: string, data: any) {
+  async saveFile(filename: string, data: string, encoding?: string) {
     const key = this.getFileKey(filename)
-    return uploadFile(key, Buffer.from(JSON.stringify(data)), ACL.publicRead)
+    return uploadFile(key, Buffer.from(data, encoding), ACL.publicRead)
   }
 
   async deleteFile(filename: string) {

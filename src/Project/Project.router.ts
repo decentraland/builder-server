@@ -1,3 +1,4 @@
+import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
@@ -90,6 +91,17 @@ export class ProjectRouter extends Router {
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadFiles)
     )
+
+    /**
+     * Upload a project attachment
+     */
+    this.router.get(
+      '/projects/:id/media/:filename',
+      authentication,
+      projectExists,
+      projectAuthorization,
+      this.getMedia
+    )
   }
 
   async getProjects(req: AuthRequest) {
@@ -147,6 +159,19 @@ export class ProjectRouter extends Router {
     return new Project(attributes).upsert()
   }
 
+  async deleteProject(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+
+    await Promise.all([
+      new S3Project(id).delete(),
+      Deployment.delete({ id }),
+      Pool.delete({ id }),
+      Project.delete({ id })
+    ])
+
+    return true
+  }
+
   async uploadFiles(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
@@ -165,17 +190,26 @@ export class ProjectRouter extends Router {
     return true
   }
 
-  async deleteProject(req: AuthRequest) {
+  async getMedia(req: Request, res: Response) {
     const id = server.extractFromReq(req, 'id')
+    const filename = server.extractFromReq(req, 'filename')
 
-    await Promise.all([
-      new S3Project(id).delete(),
-      Deployment.delete({ id }),
-      Pool.delete({ id }),
-      Project.delete({ id })
-    ])
+    // TODO if filename ok?
 
-    return true
+    const file = await new S3Project(id).readFile(filename)
+    if (!file) {
+      return res
+        .status(404)
+        .json(
+          server.sendError(
+            { id, filename },
+            'File does not exist in that project'
+          )
+        )
+    }
+
+    res.setHeader('Content-Type', 'image/png')
+    return res.end(file)
   }
 
   private getFileUploaderMiddleware() {

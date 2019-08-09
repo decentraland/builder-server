@@ -81,7 +81,7 @@ export class ProjectRouter extends Router {
     )
 
     /**
-     * Upload a project attachment
+     * Upload a project media attachment
      */
     this.router.post(
       '/projects/:id/media',
@@ -93,7 +93,7 @@ export class ProjectRouter extends Router {
     )
 
     /**
-     * Upload a project attachment
+     * Get a project media attachment
      */
     this.router.get(
       '/projects/:id/media/:filename',

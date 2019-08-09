@@ -11,8 +11,10 @@ export class ExpressApp {
   }
 
   useJSON() {
-    this.app.use(bodyParser.urlencoded({ extended: false, limit: '2mb' }))
-    this.app.use(bodyParser.json({ limit: '5mb' }))
+    this.app.use(
+      bodyParser.urlencoded({ extended: false, limit: '2mb' }),
+      bodyParser.json({ limit: '5mb' })
+    )
     return this
   }
 
@@ -38,6 +40,11 @@ export class ExpressApp {
 
   useVersion(version: string) {
     this.app.use(`/${version}`, this.router)
+    return this
+  }
+
+  use(...handers: express.RequestHandler[]) {
+    this.app.use(...handers)
     return this
   }
 

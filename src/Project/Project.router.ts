@@ -5,8 +5,8 @@ import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
 import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
+import { deleteProject, ACL, getProjectFileUploader } from '../S3'
 import { Deployment } from '../Deployment'
-import { deleteProject, checkFile, ACL, getProjectFileUploader } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import {
   SearchableModel,
@@ -20,7 +20,15 @@ import {
   searchableProjectProperties
 } from './Project.types'
 
-const REQUIRED_FILE_FIELDS = ['thumb', 'north', 'east', 'south', 'west']
+const THUMBNAIL_FILE_NAME = 'thumbnail'
+const FILE_NAMES = [
+  THUMBNAIL_FILE_NAME,
+  'preview',
+  'north',
+  'east',
+  'south',
+  'west'
+]
 
 const ajv = new Ajv()
 
@@ -131,30 +139,21 @@ export class ProjectRouter extends Router {
   }
 
   async uploadFiles(req: AuthRequest) {
-    const uploadedFiles = Object.values(req.files)
+    const id = server.extractFromReq(req, 'id')
 
-    // Check if all files uploaded
-    const uploadedFieldNames = Object.keys(req.files)
-    const areFilesUploaded = REQUIRED_FILE_FIELDS.every(fieldName =>
-      uploadedFieldNames.includes(fieldName)
-    )
+    // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
+    // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
+    // So the array will always have only one item on it
+    // This transformation is for easier access of each file. The filed name is still accessible on each File
+    const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
+    const files = Object.values(reqFiles).map(files => files[0])
 
-    if (!areFilesUploaded) {
-      throw new HTTPError('Required files not present in the upload', {
-        requiredFields: REQUIRED_FILE_FIELDS,
-        uploadedFieldNames
-      })
+    const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
+    if (thumbnail) {
+      await Project.update({ thumbnail: thumbnail.location }, { id })
     }
 
-    // Check files exist in bucket
-    const checks = await Promise.all(
-      uploadedFiles.map(files => {
-        const file = files[0]
-        return checkFile(file.key)
-      })
-    )
-
-    return checks.every(check => check === true)
+    return true
   }
 
   async deleteProject(req: AuthRequest) {
@@ -170,7 +169,7 @@ export class ProjectRouter extends Router {
   }
 
   private getFileUploaderMiddleware() {
-    const uploadFileFields = REQUIRED_FILE_FIELDS.map(fieldName => ({
+    const uploadFileFields = FILE_NAMES.map(fieldName => ({
       name: fieldName,
       maxCount: 1
     }))

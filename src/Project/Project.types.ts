@@ -27,15 +27,7 @@ export const projectSchema = Object.freeze({
   },
   additionalProperties: false,
   removeAdditional: true,
-  required: [
-    'id',
-    'title',
-    'description',
-    'thumbnail',
-    'scene_id',
-    'cols',
-    'rows'
-  ]
+  required: ['id', 'title', 'description', 'scene_id', 'cols', 'rows']
 })
 
 export const searchableProjectProperties: (keyof ProjectAttributes)[] = [

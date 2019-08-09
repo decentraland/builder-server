@@ -194,7 +194,11 @@ export class ProjectRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const filename = server.extractFromReq(req, 'filename')
 
-    // TODO if filename ok?
+    if (!FILE_NAMES.includes(filename)) {
+      return res
+        .status(404)
+        .json(server.sendError({ filename }, 'Invalid filename'))
+    }
 
     const file = await new S3Project(id).readFile(filename)
     if (!file) {

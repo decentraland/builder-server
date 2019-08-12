@@ -97,9 +97,7 @@ export class ProjectRouter extends Router {
      */
     this.router.get(
       '/projects/:id/media/:filename',
-      authentication,
       projectExists,
-      projectAuthorization,
       this.getMedia
     )
   }

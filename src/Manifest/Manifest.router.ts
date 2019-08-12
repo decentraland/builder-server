@@ -7,7 +7,7 @@ import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
-import { saveManifest, deleteManifest, checkFile, readManifest } from '../S3'
+import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
 
 const ajv = new Ajv()
 
@@ -21,7 +21,18 @@ export class ManifestRouter extends Router {
       authentication,
       projectExists,
       projectAuthorization,
-      server.handleRequest(this.getManifest)
+      server.handleRequest(this.getProjectManifest)
+    )
+
+    /**
+     * Returns the manifest of a pool
+     */
+    this.router.get(
+      '/pools/:id/manifest',
+      authentication,
+      projectExists,
+      projectAuthorization,
+      server.handleRequest(this.getPoolManifest)
     )
 
     /**
@@ -45,9 +56,14 @@ export class ManifestRouter extends Router {
     )
   }
 
-  async getManifest(req: AuthRequest) {
+  async getProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return readManifest(id)
+    return new S3Project(id).readFile(MANIFEST_FILENAME)
+  }
+
+  async getPoolManifest(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    return new S3Project(id).readFile(POOL_FILENAME)
   }
 
   async upsertManifest(req: AuthRequest) {
@@ -62,12 +78,8 @@ export class ManifestRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    const [projectExists, isOwner] = await Promise.all([
-      Project.exists(id),
-      Project.isOwnedBy(id, user_id)
-    ])
-    if (projectExists && !isOwner) {
-      throw new Error(`Unauthorized user ${user_id} for project ${id}`)
+    if (!(await Project.canUpsert(id, user_id))) {
+      throw new HTTPError('Unauthorized user', { id, user_id })
     }
 
     const manifest = {
@@ -77,16 +89,14 @@ export class ManifestRouter extends Router {
 
     const [project] = await Promise.all([
       new Project(manifest.project).upsert(),
-      saveManifest(id, manifest)
+      new S3Project(id).saveFile(MANIFEST_FILENAME, manifest)
     ])
     return project
   }
 
   async deleteManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    if (!(await checkFile(id))) {
-      throw new HTTPError('The manifest does not exist', { id })
-    }
-    return deleteManifest(id)
+    await new S3Project(id).deleteFile(MANIFEST_FILENAME)
+    return true
   }
 }

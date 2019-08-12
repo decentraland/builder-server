@@ -2,6 +2,7 @@ import { env } from 'decentraland-commons'
 
 import { AppRouter } from './App'
 import { ProjectRouter } from './Project'
+import { PoolRouter } from './Pool'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
 import { db } from './database'
@@ -22,6 +23,7 @@ app
 // Mount routers
 new AppRouter(app).mount()
 new ProjectRouter(app).mount()
+new PoolRouter(app).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
 

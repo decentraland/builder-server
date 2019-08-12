@@ -98,8 +98,8 @@ export class DeploymentRouter extends Router {
       throw new HTTPError(`Invalid deployment id`, { id, user_id })
     }
 
-    const { rowCount } = await Deployment.delete({ id })
+    await Deployment.delete({ id })
 
-    return { rowCount }
+    return true
   }
 }

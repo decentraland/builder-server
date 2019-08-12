@@ -182,8 +182,9 @@ export class ProjectRouter extends Router {
     const files = Object.values(reqFiles).map(files => files[0])
 
     const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
+
     if (thumbnail) {
-      await Project.update({ thumbnail: thumbnail.location }, { id })
+      await Project.update({ thumbnail: thumbnail.key }, { id })
     }
 
     return true

@@ -58,14 +58,18 @@ export class ManifestRouter extends Router {
 
   async getProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const body = new S3Project(id).readFile(MANIFEST_FILENAME)
-    return JSON.parse(body.toString())
+    const body = await new S3Project(id).readFile(MANIFEST_FILENAME)
+    if (body) {
+      return JSON.parse(body.toString())
+    }
   }
 
   async getPoolManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const body = new S3Project(id).readFile(POOL_FILENAME)
-    return JSON.parse(body.toString())
+    const body = await new S3Project(id).readFile(POOL_FILENAME)
+    if (body) {
+      return JSON.parse(body.toString())
+    }
   }
 
   async upsertManifest(req: AuthRequest) {

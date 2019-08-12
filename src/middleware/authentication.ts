@@ -13,7 +13,7 @@ export function getAuthenticationMiddleware() {
   const auth0Domain = env.get('AUTH0_DOMAIN')
 
   if (!auth0Domain) {
-    console.log('Auth0 domain is missing, authentication disabled')
+    console.log('Auth0 domain is missing, using default user id')
     return (req: Request, _: Response, next: NextFunction) => {
       const authRequest = req as AuthRequest
       authRequest.auth = { sub: 'fakeUserId' }

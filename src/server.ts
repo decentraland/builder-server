@@ -7,6 +7,7 @@ import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
+import { getLogger } from './middleware'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
@@ -16,6 +17,7 @@ const CORS_METHOD = env.get('CORS_METHOD', '*')
 const app = new ExpressApp()
 
 app
+  .use(getLogger())
   .useJSON()
   .useVersion(API_VERSION)
   .useCORS(CORS_ORIGIN, CORS_METHOD)

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
+import path from 'path'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
@@ -192,7 +193,9 @@ export class ProjectRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const filename = server.extractFromReq(req, 'filename')
 
-    if (!FILE_NAMES.includes(filename)) {
+    const basename = filename.replace(path.extname(filename), '')
+
+    if (!FILE_NAMES.includes(basename)) {
       return res
         .status(404)
         .json(server.sendError({ filename }, 'Invalid filename'))

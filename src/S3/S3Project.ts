@@ -45,6 +45,6 @@ export class S3Project {
   }
 
   private getProjectFolder(): string {
-    return `project/${this.id}`
+    return `projects/${this.id}`
   }
 }

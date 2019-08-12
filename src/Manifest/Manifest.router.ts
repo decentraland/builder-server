@@ -58,12 +58,18 @@ export class ManifestRouter extends Router {
 
   async getProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return new S3Project(id).readFile(MANIFEST_FILENAME)
+    const body = await new S3Project(id).readFile(MANIFEST_FILENAME)
+    if (body) {
+      return JSON.parse(body.toString())
+    }
   }
 
   async getPoolManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return new S3Project(id).readFile(POOL_FILENAME)
+    const body = await new S3Project(id).readFile(POOL_FILENAME)
+    if (body) {
+      return JSON.parse(body.toString())
+    }
   }
 
   async upsertManifest(req: AuthRequest) {
@@ -89,7 +95,7 @@ export class ManifestRouter extends Router {
 
     const [project] = await Promise.all([
       new Project(manifest.project).upsert(),
-      new S3Project(id).saveFile(MANIFEST_FILENAME, manifest)
+      new S3Project(id).saveFile(MANIFEST_FILENAME, JSON.stringify(manifest))
     ])
     return project
   }

@@ -1,5 +1,7 @@
+import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
+import path from 'path'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
@@ -80,7 +82,7 @@ export class ProjectRouter extends Router {
     )
 
     /**
-     * Upload a project attachment
+     * Upload a project media attachment
      */
     this.router.post(
       '/projects/:id/media',
@@ -89,6 +91,15 @@ export class ProjectRouter extends Router {
       projectAuthorization,
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadFiles)
+    )
+
+    /**
+     * Get a project media attachment
+     */
+    this.router.get(
+      '/projects/:id/media/:filename',
+      projectExists,
+      this.getMedia
     )
   }
 
@@ -147,24 +158,6 @@ export class ProjectRouter extends Router {
     return new Project(attributes).upsert()
   }
 
-  async uploadFiles(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-
-    // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
-    // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
-    // So the array will always have only one item on it
-    // This transformation is for easier access of each file. The filed name is still accessible on each File
-    const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
-    const files = Object.values(reqFiles).map(files => files[0])
-
-    const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
-    if (thumbnail) {
-      await Project.update({ thumbnail: thumbnail.location }, { id })
-    }
-
-    return true
-  }
-
   async deleteProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
@@ -176,6 +169,53 @@ export class ProjectRouter extends Router {
     ])
 
     return true
+  }
+
+  async uploadFiles(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+
+    // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
+    // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
+    // So the array will always have only one item on it
+    // This transformation is for easier access of each file. The filed name is still accessible on each File
+    const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
+    const files = Object.values(reqFiles).map(files => files[0])
+
+    const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
+
+    if (thumbnail) {
+      await Project.update({ thumbnail: thumbnail.key }, { id })
+    }
+
+    return true
+  }
+
+  async getMedia(req: Request, res: Response) {
+    const id = server.extractFromReq(req, 'id')
+    const filename = server.extractFromReq(req, 'filename')
+
+    const basename = filename.replace(path.extname(filename), '')
+
+    if (!FILE_NAMES.includes(basename)) {
+      return res
+        .status(404)
+        .json(server.sendError({ filename }, 'Invalid filename'))
+    }
+
+    const file = await new S3Project(id).readFile(filename)
+    if (!file) {
+      return res
+        .status(404)
+        .json(
+          server.sendError(
+            { id, filename },
+            'File does not exist in that project'
+          )
+        )
+    }
+
+    res.setHeader('Content-Type', 'image/png')
+    return res.end(file)
   }
 
   private getFileUploaderMiddleware() {

@@ -125,9 +125,3 @@ export function getFileUploader(
     })
   })
 }
-
-export function parseFileBody(file: AWS.S3.GetObjectOutput): any | undefined {
-  if (file.Body) {
-    return JSON.parse(file.Body.toString())
-  }
-}

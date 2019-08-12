@@ -27,7 +27,7 @@
     "aws-sdk": "^2.401.0",
     "body-parser": "^1.18.3",
     "decentraland-commons": "^5.1.0",
-    "decentraland-server": "^2.6.0",
+    "decentraland-server": "^2.7.0",
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
     "express-jwt": "^5.3.1",

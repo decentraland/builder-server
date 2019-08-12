@@ -86,11 +86,14 @@ export class PoolRouter extends Router {
       s3Project.readFile(MANIFEST_FILENAME)
     ])
 
-    const [pool] = await Promise.all([
-      new Pool(project!).upsert(),
-      s3Project.saveFile(POOL_FILENAME, manifest)
-    ])
+    const promises: Promise<any>[] = [new Pool(project!).upsert()]
 
-    return pool
+    if (manifest) {
+      const data = JSON.stringify(manifest.toString())
+      promises.push(s3Project.saveFile(POOL_FILENAME, data))
+    }
+
+    const [pool] = await Promise.all(promises)
+    return pool as ProjectAttributes
   }
 }

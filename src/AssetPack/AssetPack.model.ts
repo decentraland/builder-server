@@ -6,18 +6,28 @@ import { AssetPackAttributes } from './AssetPack.types'
 export class AssetPack extends Model<AssetPackAttributes> {
   static tableName = 'asset_packs'
 
-  static findVisible(userId: string) {
+  static async findVisible(userId: string) {
     return this.query<AssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)}
-        WHERE user_id = ${userId}
-          OR user_id IS NULL`)
+        WHERE is_deleted = FALSE
+          AND (user_id = ${userId} OR user_id IS NULL)`)
   }
 
-  static findWithAssets(id: string) {
+  static async findWithAssets(id: string, userId: string) {
     return this.query<AssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)} as asset_packs
-        WHERE id = ${id}`)
+        WHERE is_deleted = FALSE
+          AND id = ${id}
+          AND (user_id = ${userId} OR user_id IS NULL)`)
+  }
+
+  static async delete<T = any>(conditions: Partial<T>): Promise<any>
+  static async delete(conditions: Partial<AssetPackAttributes>) {
+    if (!conditions.user_id) {
+      throw new Error('You need to supply an user_id to delete an asset pack')
+    }
+    return this.update({ is_deleted: true }, conditions)
   }
 }

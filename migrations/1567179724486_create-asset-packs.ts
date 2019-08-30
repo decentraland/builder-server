@@ -12,6 +12,7 @@ export const up = (pgm: MigrationBuilder) => {
       url: { type: 'TEXT', notNull: true },
       thumbnail: { type: 'TEXT' },
       user_id: { type: 'TEXT', notNull: true },
+      is_deleted: { type: 'BOOLEAN', default: false, notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
       updated_at: { type: 'TIMESTAMP', notNull: true }
     },

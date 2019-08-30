@@ -1,12 +1,8 @@
 import { server } from 'decentraland-server'
-// import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
-// import { HTTPError } from '../common/HTTPError'
 import { authentication, AuthRequest } from '../middleware'
 import { AssetPack } from './AssetPack.model'
-
-// const ajv = new Ajv()
 
 export class AssetPackRouter extends Router {
   mount() {
@@ -27,6 +23,15 @@ export class AssetPackRouter extends Router {
       authentication,
       server.handleRequest(this.getAssetPack)
     )
+
+    /**
+     * Delete asset pack
+     */
+    this.router.delete(
+      '/assetPacks/:id',
+      authentication,
+      server.handleRequest(this.deleteAssetPack)
+    )
   }
 
   async getAssetPacks(req: AuthRequest) {
@@ -36,6 +41,14 @@ export class AssetPackRouter extends Router {
 
   async getAssetPack(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return AssetPack.findWithAssets(id)
+    const user_id = req.auth.sub
+    return AssetPack.findWithAssets(id, user_id)
+  }
+
+  async deleteAssetPack(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    const user_id = req.auth.sub
+    await AssetPack.delete({ id, user_id })
+    return true
   }
 }

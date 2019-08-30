@@ -6,6 +6,7 @@ export type AssetPackAttributes = {
   url: string
   thumbnail?: string
   user_id: string
+  is_deleted: boolean
   assets: AssetAttributes[]
   created_at: Date
   updated_at: Date

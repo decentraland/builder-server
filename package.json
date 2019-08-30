@@ -4,8 +4,8 @@
   "description": "Builder server",
   "main": "server.js",
   "scripts": {
-    "lint": "tslint -p tsconfig.json --fix",
-    "lint:fix": "tslint -p tsconfig.json",
+    "lint": "tslint -p tsconfig.json",
+    "lint:fix": "tslint -p tsconfig.json --fix",
     "build:tsc": "tsc -p tsconfig.json",
     "watch:build:tsc": "tsc -p tsconfig.json --watch",
     "start": "npm run build:tsc && node dist/src/server.js",
@@ -16,7 +16,12 @@
     "decentraland"
   ],
   "author": "Decentraland",
-  "license": "ISC",
+  "license": "Apache-2.0",
+  "prettier": {
+    "semi": false,
+    "singleQuote": true,
+    "printWidth": 80
+  },
   "dependencies": {
     "@types/body-parser": "^1.17.0",
     "@types/express": "^4.16.1",

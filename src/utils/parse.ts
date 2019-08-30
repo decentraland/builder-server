@@ -5,8 +5,8 @@ export function unsafeParseInt(str: string) {
   return parseInt(str, 10)
 }
 
-export function toArray<T = any>(value: T | T[]): T[] {
-  if (value == null) {
+export function toArray<T = any>(value: T | T[] | null): T[] {
+  if (value === null) {
     return []
   }
 

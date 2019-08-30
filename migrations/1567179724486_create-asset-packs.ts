@@ -20,6 +20,7 @@ export const up = (pgm: MigrationBuilder) => {
   )
 
   pgm.createIndex(tableName, 'user_id')
+  pgm.createIndex(tableName, 'is_deleted')
 }
 
 export const down = (pgm: MigrationBuilder) => {

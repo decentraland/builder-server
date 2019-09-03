@@ -3,8 +3,8 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { authentication, AuthRequest, projectExists } from '../middleware'
-import { projectAuthorization } from '../middleware/authorization'
+import { authentication, AuthRequest, modelExists } from '../middleware'
+import { modelAuthorization } from '../middleware/authorization'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
@@ -13,6 +13,9 @@ const ajv = new Ajv()
 
 export class ManifestRouter extends Router {
   mount() {
+    const projectExists = modelExists(Project)
+    const projectAuthorization = modelAuthorization(Project)
+
     /**
      * Returns the manifest of a project
      */

@@ -1,8 +1,8 @@
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { authentication, AuthRequest, projectExists } from '../middleware'
-import { projectAuthorization } from '../middleware/authorization'
+import { authentication, AuthRequest, modelExists } from '../middleware'
+import { modelAuthorization } from '../middleware/authorization'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import { Project, ProjectAttributes } from '../Project'
@@ -16,6 +16,9 @@ import { PoolAttributes, searchablePoolProperties } from './Pool.types'
 
 export class PoolRouter extends Router {
   mount() {
+    const projectExists = modelExists(Project)
+    const projectAuthorization = modelAuthorization(Project)
+
     /**
      * Get all pools
      */

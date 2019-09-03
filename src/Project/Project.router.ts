@@ -5,11 +5,11 @@ import path from 'path'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { authentication, AuthRequest, projectExists } from '../middleware'
-import { projectAuthorization } from '../middleware/authorization'
+import { authentication, AuthRequest, modelExists } from '../middleware'
+import { modelAuthorization } from '../middleware/authorization'
 import { Deployment } from '../Deployment'
 import { Pool } from '../Pool'
-import { getFileUploader, S3Project, ACL } from '../S3'
+import { S3Project, getFileUploader, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import {
   SearchableModel,
@@ -40,6 +40,9 @@ const ajv = new Ajv()
 
 export class ProjectRouter extends Router {
   mount() {
+    const projectExists = modelExists(Project)
+    const projectAuthorization = modelAuthorization(Project)
+
     /**
      * Get all projects
      */
@@ -198,7 +201,8 @@ export class ProjectRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const filename = server.extractFromReq(req, 'filename')
 
-    const basename = filename.replace(path.extname(filename), '')
+    const extension = path.extname(filename)
+    const basename = filename.replace(extension, '')
 
     if (!FILE_NAMES.includes(basename)) {
       return res
@@ -218,7 +222,22 @@ export class ProjectRouter extends Router {
         )
     }
 
-    res.setHeader('Content-Type', 'image/png')
+    let fileMimeType = ''
+    for (const [mimeType, fileType] of Object.entries(MIME_TYPES)) {
+      if (fileType === extension.slice(1)) {
+        // .slice(1) is needed because path.extname returns the leading dot
+        fileMimeType = mimeType
+        break
+      }
+    }
+
+    if (!fileMimeType) {
+      return res
+        .status(404)
+        .json(server.sendError({ id, fileMimeType }, 'Invalid mime type'))
+    }
+
+    res.setHeader('Content-Type', fileMimeType)
     return res.end(file)
   }
 
@@ -228,10 +247,6 @@ export class ProjectRouter extends Router {
       Object.keys(MIME_TYPES),
       async (req: AuthRequest, file, callback) => {
         try {
-          if (!this.isValidMimeType(file.mimetype)) {
-            throw new HTTPError('Invalid mimetype', { mimetype: file.mimetype })
-          }
-
           const id = server.extractFromReq(req, 'id')
 
           const extension = MIME_TYPES[file.mimetype as keyof typeof MIME_TYPES]
@@ -251,9 +266,5 @@ export class ProjectRouter extends Router {
     }))
 
     return uploader.fields(uploadFileFields)
-  }
-
-  private isValidMimeType(mimeType: string) {
-    return mimeType in MIME_TYPES
   }
 }

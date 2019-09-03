@@ -1,5 +1,6 @@
 import { Model } from 'decentraland-server'
 
+import { Ownable } from '../Ownable'
 import { ProjectAttributes } from './Project.types'
 
 export class Project extends Model<ProjectAttributes> {
@@ -9,14 +10,10 @@ export class Project extends Model<ProjectAttributes> {
     return (await this.count({ id })) > 0
   }
 
-  static async isOwnedBy(id: string, userId: string) {
-    return (await this.count({ id, user_id: userId })) > 0
-  }
-
   static async canUpsert(id: string, userId: string) {
     const [projectExists, isOwner] = await Promise.all([
       Project.exists(id),
-      Project.isOwnedBy(id, userId)
+      new Ownable(Project).isOwnedBy(id, userId)
     ])
     return !projectExists || isOwner
   }

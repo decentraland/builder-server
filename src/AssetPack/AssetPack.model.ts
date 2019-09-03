@@ -1,4 +1,4 @@
-import { Model, SQL } from 'decentraland-server'
+import { Model, SQL, QueryPart } from 'decentraland-server'
 
 import { AssetQueries } from '../Asset'
 import { AssetPackAttributes } from './AssetPack.types'
@@ -35,11 +35,16 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return counts[0].count > 0
   }
 
-  static async delete<T = any>(conditions: Partial<T>): Promise<any>
-  static async delete(conditions: Partial<AssetPackAttributes>) {
+  static async count(conditions: Partial<QueryPart>, extra?: string) {
+    return super.count({ is_deleted: false, ...conditions }, extra) // don't count deleted asset packs by default
+  }
+
+  static async delete(conditions: Partial<QueryPart>) {
     if (!conditions.user_id) {
       throw new Error('You need to supply an user_id to delete an asset pack')
     }
     return this.update({ is_deleted: true }, conditions)
   }
+
+  // hardDelete
 }

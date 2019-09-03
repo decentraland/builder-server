@@ -18,7 +18,7 @@ if (!BUCKET_NAME) {
   )
 }
 
-const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', '5000000'), 10)
+const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 5000000
 
 export const ACL = {
   private: 'private' as 'private',
@@ -68,7 +68,9 @@ export async function listFiles(
     : contents
 }
 
-export function deleteFile(key: string): Promise<AWS.S3.DeleteObjectOutput> {
+export async function deleteFile(
+  key: string
+): Promise<AWS.S3.DeleteObjectOutput> {
   const params = {
     Bucket: BUCKET_NAME,
     Key: key
@@ -76,6 +78,22 @@ export function deleteFile(key: string): Promise<AWS.S3.DeleteObjectOutput> {
   return utils.promisify<AWS.S3.DeleteObjectOutput>(s3.deleteObject.bind(s3))(
     params
   )
+}
+
+export async function deleteFolder(
+  key: string
+): Promise<AWS.S3.DeleteObjectOutput> {
+  const objectList = await listFiles(key)
+  const promises = []
+
+  for (const object of objectList) {
+    if (object.Key) {
+      promises.push(deleteFile(object.Key))
+    }
+  }
+  await Promise.all(promises)
+
+  return deleteFile(key)
 }
 
 export async function checkFile(key: string): Promise<boolean> {
@@ -117,7 +135,11 @@ export function getFileUploader(
       fileSize: MAX_FILE_SIZE
     },
     fileFilter: function(_, file, cb) {
-      cb(null, mimeTypes.includes(file.mimetype))
+      if (mimeTypes.length > 0) {
+        cb(null, mimeTypes.includes(file.mimetype))
+      } else {
+        cb(null, true)
+      }
     },
     storage: multerS3({
       s3: s3,

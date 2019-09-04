@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import AWS from 'aws-sdk'
 import multer from 'multer'
 import multerS3 from 'multer-s3'
@@ -122,7 +123,7 @@ export function uploadFile(key: string, data: Buffer, acl: ACLValues) {
 export function getFileUploader(
   acl: ACLValues,
   mimeTypes: string[],
-  callback: multer.DiskStorageOptions['filename'] // multers3 does not export it's types correctly
+  callback: (req: Request, file: Express.Multer.File) => string
 ) {
   return multer({
     limits: {
@@ -139,7 +140,13 @@ export function getFileUploader(
       s3: s3,
       acl: acl,
       bucket: BUCKET_NAME,
-      key: callback
+      key: (req, file, next) => {
+        try {
+          next(null, callback(req as Request, file))
+        } catch (error) {
+          next(error, '')
+        }
+      }
     })
   })
 }

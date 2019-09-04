@@ -6,10 +6,14 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { authentication, AuthRequest, modelExists } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
+import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
 import { Asset, AssetAttributes, assetPackSchema } from '../Asset'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
+const THUMBNAIL_FILE_NAME = 'thumbnail'
+const THUMBNAIL_MIME_TYPE = 'image/png'
+
 const ajv = new Ajv()
 
 export class AssetPackRouter extends Router {
@@ -45,6 +49,16 @@ export class AssetPackRouter extends Router {
       assetPackExists,
       assetPackAuthorization,
       server.handleRequest(this.deleteAssetPack)
+    )
+
+    /**
+     * Uplaod asset pack thumbnail
+     */
+    this.router.post(
+      '/assetPacks/:id/thumbnail',
+      authentication,
+      this.getFileUploaderMiddleware(),
+      server.handleRequest(this.uploadThumbnail)
     )
   }
 
@@ -122,6 +136,32 @@ export class AssetPackRouter extends Router {
     const user_id = req.auth.sub
     await AssetPack.delete({ id, user_id })
     return true
+  }
+
+  async uploadThumbnail(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    const thumbnail = req.file as Express.MulterS3.File
+
+    if (thumbnail) {
+      await AssetPack.update({ thumbnail: thumbnail.location }, { id })
+    }
+
+    return true
+  }
+
+  private getFileUploaderMiddleware() {
+    const uploader = getFileUploader(
+      ACL.publicRead,
+      [THUMBNAIL_MIME_TYPE],
+      (req, file) => {
+        const id = server.extractFromReq(req, 'id')
+        const filename = `${file.fieldname}.png`
+
+        return new S3AssetPack(id).getFileKey(filename)
+      }
+    )
+
+    return uploader.single(THUMBNAIL_FILE_NAME)
   }
 
   private sanitize(assetPacks: AssetPackAttributes[]) {

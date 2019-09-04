@@ -4,12 +4,7 @@ import { utils } from 'decentraland-commons'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import {
-  authentication,
-  AuthRequest,
-  modelExists,
-  asMiddleware
-} from '../middleware'
+import { authentication, modelExists, asMiddleware } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { AssetPack } from '../AssetPack'
@@ -68,25 +63,14 @@ export class AssetRouter extends Router {
   }
 
   private getAssetFilesRequestHandler() {
-    const uploader = getFileUploader(
-      ACL.publicRead,
-      [],
-      (req: AuthRequest, file, callback) => {
-        try {
-          const assetPackId = server.extractFromReq(req, 'assetPackId')
-          const id = server.extractFromReq(req, 'id')
+    const uploader = getFileUploader(ACL.publicRead, [], (req, file) => {
+      const assetPackId = server.extractFromReq(req, 'assetPackId')
+      const id = server.extractFromReq(req, 'id')
 
-          const filename = file.fieldname
+      const filename = file.fieldname
 
-          callback(
-            null,
-            new S3AssetPack(assetPackId).getAssetFileKey(id, filename)
-          )
-        } catch (error) {
-          callback(error, '')
-        }
-      }
-    )
+      return new S3AssetPack(assetPackId).getAssetFileKey(id, filename)
+    })
     return utils.promisify<boolean>(uploader.any())
   }
 }

@@ -7,10 +7,10 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { authentication, AuthRequest, modelExists } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
+import { S3Project, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
 import { Deployment } from '../Deployment'
 import { Pool } from '../Pool'
-import { S3Project, getFileUploader, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import {
   SearchableModel,
@@ -86,6 +86,15 @@ export class ProjectRouter extends Router {
     )
 
     /**
+     * Get a project media attachment
+     */
+    this.router.get(
+      '/projects/:id/media/:filename',
+      projectExists,
+      this.getMedia
+    )
+
+    /**
      * Upload a project media attachment
      */
     this.router.post(
@@ -95,15 +104,6 @@ export class ProjectRouter extends Router {
       projectAuthorization,
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadFiles)
-    )
-
-    /**
-     * Get a project media attachment
-     */
-    this.router.get(
-      '/projects/:id/media/:filename',
-      projectExists,
-      this.getMedia
     )
   }
 
@@ -180,25 +180,6 @@ export class ProjectRouter extends Router {
     return true
   }
 
-  async uploadFiles(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-
-    // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
-    // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
-    // So the array will always have only one item on it
-    // We cast req.files for easier access of each file. The field name is still accessible on each File
-    const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
-    const files = Object.values(reqFiles).map(files => files[0])
-
-    const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
-
-    if (thumbnail) {
-      await Project.update({ thumbnail: thumbnail.key }, { id })
-    }
-
-    return true
-  }
-
   async getMedia(req: Request, res: Response) {
     const id = server.extractFromReq(req, 'id')
     const filename = server.extractFromReq(req, 'filename')
@@ -243,22 +224,37 @@ export class ProjectRouter extends Router {
     return res.end(file)
   }
 
+  async uploadFiles(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+
+    // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
+    // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
+    // So the array will always have only one item on it
+    // We cast req.files for easier access of each file. The field name is still accessible on each File
+    const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
+    const files = Object.values(reqFiles).map(files => files[0])
+
+    const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
+
+    if (thumbnail) {
+      await Project.update({ thumbnail: thumbnail.key }, { id })
+    }
+
+    return true
+  }
+
   private getFileUploaderMiddleware() {
     const uploader = getFileUploader(
       ACL.publicRead,
       Object.keys(MIME_TYPES),
-      (req: AuthRequest, file, callback) => {
-        try {
-          const id = server.extractFromReq(req, 'id')
+      (req, file) => {
+        const id = server.extractFromReq(req, 'id')
 
-          const extension = MIME_TYPES[file.mimetype as keyof typeof MIME_TYPES]
-          const filename = `${file.fieldname}.${extension}`
+        const extension = MIME_TYPES[file.mimetype as keyof typeof MIME_TYPES]
+        const filename = `${file.fieldname}.${extension}`
 
-          // **Important** Shares folder with the other project files
-          callback(null, new S3Project(id).getFileKey(filename))
-        } catch (error) {
-          callback(error, '')
-        }
+        // **Important** Shares folder with the other project files
+        return new S3Project(id).getFileKey(filename)
       }
     )
 

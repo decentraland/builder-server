@@ -4,9 +4,9 @@ import { server } from 'decentraland-server'
 import { AuthRequest } from '../authentication'
 import { Ownable, OwnableModel } from '../../Ownable'
 
-export function modelAuthorization(Model: OwnableModel) {
+export function modelAuthorization(Model: OwnableModel, param = 'id') {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const id = server.extractFromReq(req, 'id')
+    const id = server.extractFromReq(req, param)
     const user_id = (req as AuthRequest).auth.sub
 
     if (!user_id) {

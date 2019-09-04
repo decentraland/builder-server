@@ -12,12 +12,12 @@ export type QueryableModel =
   | typeof Deployment
   | typeof AssetPack
 
-export function modelExists(Model: QueryableModel) {
+export function modelExists(Model: QueryableModel, param = 'id') {
   return async (req: Request, res: Response, next: NextFunction) => {
-    const id = server.extractFromReq(req, 'id')
+    const id = server.extractFromReq(req, param)
 
     const count = await Model.count({ id })
-    if (count > 0) {
+    if (count <= 0) {
       res.setHeader('Content-Type', 'application/json')
       res.status(404).json({
         ok: false,

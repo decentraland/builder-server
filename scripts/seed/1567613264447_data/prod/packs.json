@@ -1,0 +1,37 @@
+{
+  "ok": true,
+  "data": {
+    "packs": [
+      {
+        "id": "98d8d506-59e1-468e-b873-6aa37f0ba5f3",
+        "title": "Fantasy",
+        "thumbnail": "https://builder-packs-prd.now.sh/98d8d506-59e1-468e-b873-6aa37f0ba5f3.png",
+        "url": "/98d8d506-59e1-468e-b873-6aa37f0ba5f3.json"
+      },
+      {
+        "id": "e6fa9601-3e47-4dff-9a84-e8e017add15a",
+        "title": "Genesis City",
+        "thumbnail": "https://builder-packs-prd.now.sh/e6fa9601-3e47-4dff-9a84-e8e017add15a.png",
+        "url": "/e6fa9601-3e47-4dff-9a84-e8e017add15a.json"
+      },
+      {
+        "id": "d184ef93-07f6-4fa5-bbac-0c3b6e4c5899",
+        "title": "Pirates",
+        "thumbnail": "https://builder-packs-prd.now.sh/d184ef93-07f6-4fa5-bbac-0c3b6e4c5899.png",
+        "url": "/d184ef93-07f6-4fa5-bbac-0c3b6e4c5899.json"
+      },
+      {
+        "id": "173c9b1a-b730-4065-a7a9-3e7e40da7b52",
+        "title": "HTC Exodus",
+        "thumbnail": "https://builder-packs-prd.now.sh/173c9b1a-b730-4065-a7a9-3e7e40da7b52.png",
+        "url": "/173c9b1a-b730-4065-a7a9-3e7e40da7b52.json"
+      },
+      {
+        "id": "83564d63-6e14-4469-abe6-60680391183c",
+        "title": "Year of the Pig",
+        "thumbnail": "https://builder-packs-prd.now.sh/83564d63-6e14-4469-abe6-60680391183c.png",
+        "url": "/83564d63-6e14-4469-abe6-60680391183c.json"
+      }
+    ]
+  }
+}

@@ -8,6 +8,7 @@ const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
 
 export class AssetPack extends Model<AssetPackAttributes> {
   static tableName = 'asset_packs'
+
   static async count(conditions: Partial<QueryPart>, extra?: string) {
     return super.count({ is_deleted: false, ...conditions }, extra) // don't count deleted asset packs by default
   }

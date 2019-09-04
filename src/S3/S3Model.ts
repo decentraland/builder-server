@@ -43,8 +43,6 @@ export class S3Model {
   }
 
   async delete() {
-    // Delete the entire folder
-    // **Keep in mind** that the project files are being stored in the same folder
     return deleteFolder(this.getFolder())
   }
 

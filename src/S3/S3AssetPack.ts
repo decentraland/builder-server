@@ -5,4 +5,8 @@ export class S3AssetPack extends S3Model {
     super(id)
     this.type = 'asset_packs'
   }
+
+  getAssetFileKey(assetId: string, filename: string) {
+    return this.getFileKey('') + `assets/${assetId}/${filename}`
+  }
 }

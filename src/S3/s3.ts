@@ -1,5 +1,5 @@
-import * as AWS from 'aws-sdk'
-import * as multer from 'multer'
+import AWS from 'aws-sdk'
+import multer from 'multer'
 import multerS3 from 'multer-s3'
 import { env, utils } from 'decentraland-commons'
 
@@ -130,7 +130,7 @@ export function getFileUploader(
   mimeTypes: string[],
   callback: multer.DiskStorageOptions['filename'] // multers3 does not export it's types correctly
 ) {
-  return multer.default({
+  return multer({
     limits: {
       fileSize: MAX_FILE_SIZE
     },

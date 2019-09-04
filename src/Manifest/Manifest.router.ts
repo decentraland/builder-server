@@ -5,6 +5,7 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { authentication, AuthRequest, modelExists } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
+import { Ownable } from '../Ownable'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
@@ -87,7 +88,8 @@ export class ManifestRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    if (!(await Project.canUpsert(id, user_id))) {
+    const canUpsert = await new Ownable(Project).canUpsert(id, user_id)
+    if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
         { id, user_id },

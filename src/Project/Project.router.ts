@@ -7,6 +7,7 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { authentication, AuthRequest, modelExists } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
+import { Ownable } from '../Ownable'
 import { Deployment } from '../Deployment'
 import { Pool } from '../Pool'
 import { S3Project, getFileUploader, ACL } from '../S3'
@@ -145,7 +146,8 @@ export class ProjectRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    if (!(await Project.canUpsert(id, user_id))) {
+    const canUpsert = await new Ownable(Project).canUpsert(id, user_id)
+    if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
         { id, user_id },
@@ -184,7 +186,7 @@ export class ProjectRouter extends Router {
     // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
     // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
     // So the array will always have only one item on it
-    // This transformation is for easier access of each file. The filed name is still accessible on each File
+    // We cast req.files for easier access of each file. The field name is still accessible on each File
     const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
     const files = Object.values(reqFiles).map(files => files[0])
 
@@ -245,7 +247,7 @@ export class ProjectRouter extends Router {
     const uploader = getFileUploader(
       ACL.publicRead,
       Object.keys(MIME_TYPES),
-      async (req: AuthRequest, file, callback) => {
+      (req: AuthRequest, file, callback) => {
         try {
           const id = server.extractFromReq(req, 'id')
 

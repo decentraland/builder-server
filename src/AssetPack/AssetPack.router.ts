@@ -68,7 +68,7 @@ export class AssetPackRouter extends Router {
     return this.sanitize(assetPacks)
   }
 
-  async getAssetPack(req: AuthRequest) {
+  getAssetPack = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
     const user_id = req.auth ? req.auth.sub : ''
 

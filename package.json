@@ -6,11 +6,11 @@
   "scripts": {
     "lint": "tslint -p tsconfig.json",
     "lint:fix": "tslint -p tsconfig.json --fix",
-    "build:tsc": "tsc -p tsconfig.json",
-    "watch:build:tsc": "tsc -p tsconfig.json --watch",
-    "start": "npm run build:tsc && node dist/src/server.js",
+    "build": "tsc -p tsconfig.json",
+    "watch:build": "tsc -p tsconfig.json --watch",
+    "start": "npm run build:tsc && node ./dist/src/server.js",
     "migrate": "./migrations/migrate.ts",
-    "indexScenes": "npm run build:tsc && node dist/scripts/indexScenes.js"
+    "seed": "tsc -p ./scripts/seed/tsconfig.json && node ./dist/scripts/seed/index.js"
   },
   "keywords": [
     "decentraland"

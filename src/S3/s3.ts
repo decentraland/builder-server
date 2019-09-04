@@ -68,9 +68,7 @@ export async function listFiles(
     : contents
 }
 
-export async function deleteFile(
-  key: string
-): Promise<AWS.S3.DeleteObjectOutput> {
+export async function deleteFile(key: string) {
   const params = {
     Bucket: BUCKET_NAME,
     Key: key
@@ -80,9 +78,7 @@ export async function deleteFile(
   )
 }
 
-export async function deleteFolder(
-  key: string
-): Promise<AWS.S3.DeleteObjectOutput> {
+export async function deleteFolder(key: string) {
   const objectList = await listFiles(key)
   const promises = []
 
@@ -111,18 +107,16 @@ export async function checkFile(key: string): Promise<boolean> {
   }
 }
 
-export function uploadFile(
-  key: string,
-  data: Buffer,
-  acl: ACLValues
-): Promise<AWS.S3.ManagedUpload> {
+export function uploadFile(key: string, data: Buffer, acl: ACLValues) {
   const params = {
     Bucket: BUCKET_NAME,
     Key: key,
     Body: data,
     ACL: acl
   }
-  return utils.promisify<AWS.S3.ManagedUpload>(s3.upload.bind(s3))(params)
+  return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
+    params
+  )
 }
 
 export function getFileUploader(

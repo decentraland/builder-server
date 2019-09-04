@@ -28,9 +28,10 @@ export class S3Model {
     return body
   }
 
-  async saveFile(filename: string, data: string, encoding?: string) {
+  async saveFile(filename: string, data: string | Buffer, encoding?: string) {
     const key = this.getFileKey(filename)
-    return uploadFile(key, Buffer.from(data, encoding), ACL.publicRead)
+    const buffer = typeof data === 'string' ? Buffer.from(data, encoding) : data
+    return uploadFile(key, buffer, ACL.publicRead)
   }
 
   async deleteFile(filename: string) {

@@ -1,10 +1,14 @@
 import { Model, SQL, QueryPart } from 'decentraland-server'
+import { env } from 'decentraland-commons'
 
 import { AssetQueries } from '../Asset'
 import { AssetPackAttributes } from './AssetPack.types'
 
+const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
+
 export class AssetPack extends Model<AssetPackAttributes> {
   static tableName = 'asset_packs'
+
   static async count(conditions: Partial<QueryPart>, extra?: string) {
     return super.count({ is_deleted: false, ...conditions }, extra) // don't count deleted asset packs by default
   }
@@ -27,7 +31,7 @@ export class AssetPack extends Model<AssetPackAttributes> {
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)}
         WHERE is_deleted = FALSE
-          AND (${userIdQuery} OR user_id IS NULL)`)
+          AND (${userIdQuery} OR user_id = ${DEFAULT_USER_ID})`)
   }
 
   static async findWithAssets(id: string) {
@@ -44,7 +48,7 @@ export class AssetPack extends Model<AssetPackAttributes> {
         FROM ${SQL.raw(this.tableName)} as asset_packs
         WHERE is_deleted = FALSE
           AND id = ${id}
-          AND (user_id = ${userId} OR user_id IS NULL)`)
+          AND (user_id = ${userId} OR user_id = ${DEFAULT_USER_ID})`)
 
     return counts[0].count > 0
   }

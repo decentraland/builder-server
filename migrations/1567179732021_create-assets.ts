@@ -14,6 +14,7 @@ export const up = (pgm: MigrationBuilder) => {
       thumbnail: { type: 'TEXT' },
       tags: { type: 'TEXT[]', notNull: true },
       category: { type: 'TEXT', notNull: true },
+      contents: { type: 'JSON', notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
       updated_at: { type: 'TIMESTAMP', notNull: true }
     },

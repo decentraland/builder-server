@@ -1,0 +1,4807 @@
+{
+  "ok": true,
+  "data": {
+    "id": "d184ef93-07f6-4fa5-bbac-0c3b6e4c5899",
+    "version": 1,
+    "title": "Pirates",
+    "assets": [
+      {
+        "id": "c83532407a75033f89574b5584482fef54a33a381d968716c2b7441c44704976",
+        "name": "Anchor",
+        "thumbnail": "https://assets.decentraland.org/QmP1zcmrVGEybpEwTXbg32Ua9mPTr7Su98k4ZGXNzeLj5W",
+        "url": "Anchor_01/Anchor_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "ship",
+          "flagship",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Anchor_01/Anchor_01.glb": "Qmd7EbDosMm8c6XKYX6ymwmJjuTsYXtQoh4HMXqejURgMx",
+          "Anchor_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Anchor_01/thumbnail.png": "QmP1zcmrVGEybpEwTXbg32Ua9mPTr7Su98k4ZGXNzeLj5W"
+        }
+      },
+      {
+        "id": "60beb13656281933b8ae1dd8ea5580c2148ab67071f0ac4e6659de720be942cb",
+        "name": "Axe",
+        "thumbnail": "https://assets.decentraland.org/QmeNmkVg1zimxqNest87DWy4aZy4mebC1y95XBNgAEvb27",
+        "url": "Axe_01/Axe_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "wood",
+          "wooden",
+          "weapon",
+          "tool"
+        ],
+        "variations": [],
+        "contents": {
+          "Axe_01/Axe_01.glb": "QmS32WmuvAQcQgvKW2zPz2J8XvaJ2sN1jaxWFCY6gm8e9W",
+          "Axe_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Axe_01/thumbnail.png": "QmeNmkVg1zimxqNest87DWy4aZy4mebC1y95XBNgAEvb27"
+        }
+      },
+      {
+        "id": "ed23bd3f01c5a89273a54c8b22a964899c61220614f5acf4045c12d24b51ff2d",
+        "name": "Bamboo",
+        "thumbnail": "https://assets.decentraland.org/QmQmse78ENuaPVctgfR4uxrsyoAygMxdaGUSGkyEWsGMVS",
+        "url": "Bamboo_01/Bamboo_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "leaves",
+          "stick",
+          "jungle"
+        ],
+        "variations": [],
+        "contents": {
+          "Bamboo_01/Bamboo_01.glb": "Qma5HF7iyn5CLSzY6DL6TTnNdCG1erhan2R9gmFRZ51gZb",
+          "Bamboo_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bamboo_01/thumbnail.png": "QmQmse78ENuaPVctgfR4uxrsyoAygMxdaGUSGkyEWsGMVS"
+        }
+      },
+      {
+        "id": "bd52bb7bf27a291df27857b5933d7e680b7a0fb894ee4e059ec512e9c7326f39",
+        "name": "Bamboo Culms",
+        "thumbnail": "https://assets.decentraland.org/QmfNzKjSuouZWBjs5cPb4DJaRjJfQ7z9arEkbmEj2nkDDL",
+        "url": "Bamboo_02/Bamboo_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stick",
+          "jungle"
+        ],
+        "variations": [],
+        "contents": {
+          "Bamboo_02/Bamboo_02.glb": "QmTGdLBZLHcqGTrdzQBRK5cQr3PVcAjrVPcZwnB9NG2XdH",
+          "Bamboo_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bamboo_02/thumbnail.png": "QmfNzKjSuouZWBjs5cPb4DJaRjJfQ7z9arEkbmEj2nkDDL"
+        }
+      },
+      {
+        "id": "feaab0047b89cecc46f062e1b93f9c87dce531497ace0e78da8770cec0966fb9",
+        "name": "Bananas",
+        "thumbnail": "https://assets.decentraland.org/QmdxgHz2gtb5qy8gpXaAFURxSjrLFXhBeEW3oXiP4qpnR8",
+        "url": "Bananas_01/Bananas_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fruit",
+          "fruits",
+          "monkey",
+          "monkeys"
+        ],
+        "variations": [],
+        "contents": {
+          "Bananas_01/Bananas_01.glb": "QmTgGMW8Qbtp58onLfeY6m9TSqdN8KfejCZu6P3CTJVpyE",
+          "Bananas_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bananas_01/thumbnail.png": "QmdxgHz2gtb5qy8gpXaAFURxSjrLFXhBeEW3oXiP4qpnR8"
+        }
+      },
+      {
+        "id": "18a26fda45f084f23feea690ff4d85c0e25e4dda4847c269abefa50b1cbbd6b2",
+        "name": "Gunpowder Barrel",
+        "thumbnail": "https://assets.decentraland.org/QmUkHDhqL66dLiRyT4hS6Bzneep5DNVUT1KXqrPu46Ky3e",
+        "url": "Barrel_01/Barrel_01.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "iron",
+          "barrel",
+          "powder",
+          "boom",
+          "danger"
+        ],
+        "variations": [],
+        "contents": {
+          "Barrel_01/Barrel_01.glb": "Qme1u3NhuXTRk88jAb2bSxsYan3WFfajrAK3G7ye9sn1GY",
+          "Barrel_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Barrel_01/thumbnail.png": "QmUkHDhqL66dLiRyT4hS6Bzneep5DNVUT1KXqrPu46Ky3e"
+        }
+      },
+      {
+        "id": "dfebd223a09476f8de0d623f828e848a8d35a5f150084e9c0dd4adf451d8b61e",
+        "name": "Rum Barrel",
+        "thumbnail": "https://assets.decentraland.org/QmXbU4FP6pS63rCCjrJoLfFbre63hPBfZr3GdYiBGiLBRP",
+        "url": "Barrel_02/Barrel_02.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "iron",
+          "barrel",
+          "powder",
+          "boom",
+          "danger",
+          "rum",
+          "fabric",
+          "blanket"
+        ],
+        "variations": [],
+        "contents": {
+          "Barrel_02/Barrel_02.glb": "QmSsxCRKJJSnhrriw5wMbE2BqzE1nNEBmUd53cCS3AWJd5",
+          "Barrel_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Barrel_02/thumbnail.png": "QmXbU4FP6pS63rCCjrJoLfFbre63hPBfZr3GdYiBGiLBRP"
+        }
+      },
+      {
+        "id": "e60790a704b35bb72341524da2f3fb45d8db479f8b1c5eebd3cd650ef0c72a35",
+        "name": "Grog Mug",
+        "thumbnail": "https://assets.decentraland.org/QmP8idEAM97tfdQ44cMwRQ3C3rBvuDDvQgeEmB7gABVWmK",
+        "url": "BeerMug_01/BeerMug_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "leather",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "BeerMug_01/BeerMug_01.glb": "QmUDcA9WHq2MbGdZdftTnQnxtfJmUju4L9YcZcAYfx6MMC",
+          "BeerMug_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "BeerMug_01/thumbnail.png": "QmP8idEAM97tfdQ44cMwRQ3C3rBvuDDvQgeEmB7gABVWmK"
+        }
+      },
+      {
+        "id": "83e130eca0cace5feaed18875115035e1a70d79c435aa0e2b4e8913a1b99946f",
+        "name": "Wooden Bench",
+        "thumbnail": "https://assets.decentraland.org/QmZMVqUfj4TrMKnfH8UKWB1ANGkUjU5nMHQF2BULD5ZUMS",
+        "url": "Bench_01/Bench_01.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "seat",
+          "bench"
+        ],
+        "variations": [],
+        "contents": {
+          "Bench_01/Bench_01.glb": "QmSRnqvyyfMxGoZug4SCWztqHUKVBm13D9DhNXZamcsm5Z",
+          "Bench_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bench_01/thumbnail.png": "QmZMVqUfj4TrMKnfH8UKWB1ANGkUjU5nMHQF2BULD5ZUMS"
+        }
+      },
+      {
+        "id": "555c489802c4add9b9c529e1972321580d3b8e97282bdc63752dc385cb14be88",
+        "name": "Spyglass",
+        "thumbnail": "https://assets.decentraland.org/QmeUGx6o5tpYtBAFixQkC4KhzD8KGoFaJQBjb1sEgosHUW",
+        "url": "Binoculars_01/Binoculars_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "brass",
+          "glass",
+          "retractable"
+        ],
+        "variations": [],
+        "contents": {
+          "Binoculars_01/Binoculars_01.glb": "QmeZX8zj6brjUqBbvVBpJqoRZ8SYgU4JktWUgrNCasJyfm",
+          "Binoculars_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Binoculars_01/thumbnail.png": "QmeUGx6o5tpYtBAFixQkC4KhzD8KGoFaJQBjb1sEgosHUW"
+        }
+      },
+      {
+        "id": "790bf5150401d9ed97d04a06e255f321c670266ee8d40ea38f149bc73a44434e",
+        "name": "Wooden Paddle",
+        "thumbnail": "https://assets.decentraland.org/QmfTAyKfoc1h44dN6Bsiz55rSBBr9rawJRrugUdZJRPqbh",
+        "url": "BoatPaddle_01/BoatPaddle_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "boat",
+          "water",
+          "paddle"
+        ],
+        "variations": [],
+        "contents": {
+          "BoatPaddle_01/BoatPaddle_01.glb": "QmVsviWTGxsYJdhKFowur4SewqAhBkP74pbRUJ2qMokPso",
+          "BoatPaddle_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "BoatPaddle_01/thumbnail.png": "QmfTAyKfoc1h44dN6Bsiz55rSBBr9rawJRrugUdZJRPqbh"
+        }
+      },
+      {
+        "id": "3fb4cf04e6e924aa421aadbee4145ec3c11ab618f7d681443c5e3008d3f50ce4",
+        "name": "Steering wheel",
+        "thumbnail": "https://assets.decentraland.org/QmYz3RAHoK5cpHHP1wWxuXhK17ntzRBiPXBRojLJTdpYWa",
+        "url": "BoatWheel_01/BoatWheel_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "wheel",
+          "ship",
+          "flagship"
+        ],
+        "variations": [],
+        "contents": {
+          "BoatWheel_01/BoatWheel_01.glb": "QmQYxyHZG1YG8ZCXEErgU8meYvBcQ8omJbGDumq4FaVbF7",
+          "BoatWheel_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "BoatWheel_01/thumbnail.png": "QmYz3RAHoK5cpHHP1wWxuXhK17ntzRBiPXBRojLJTdpYWa"
+        }
+      },
+      {
+        "id": "141e8fe35f64941e69f0c98fd0afd0bef64668c323e42df1b4292fed0cc01591",
+        "name": "Rustic Steering Wheel",
+        "thumbnail": "https://assets.decentraland.org/QmPscChkKd8WLdfPKVY4eYCNmbfRMUtXywFHjPhydmsyZk",
+        "url": "BoatWheel_02/BoatWheel_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "wheel",
+          "ship",
+          "flagship"
+        ],
+        "variations": [],
+        "contents": {
+          "BoatWheel_02/BoatWheel_02.glb": "QmQmU2vw8rZpwhXYMFGUSBDAJbS5WYhvH1GgDULmdgLtKd",
+          "BoatWheel_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "BoatWheel_02/thumbnail.png": "QmPscChkKd8WLdfPKVY4eYCNmbfRMUtXywFHjPhydmsyZk"
+        }
+      },
+      {
+        "id": "25d0c8ec93aed854b9e693c559bcb09c155a3701b3c9870ff655e7838e4f0013",
+        "name": "Rowboat",
+        "thumbnail": "https://assets.decentraland.org/QmY4eid3BHf4br7bo8zHHcWtweaoCv4koeaxT7XVES9QQ8",
+        "url": "Boat_01/Boat_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "boat",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Boat_01/Boat_01.glb": "QmU8Rik2vg3N8NkyYMFZKwWYHTDmWfCJDwvpUkpyUraBDw",
+          "Boat_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Boat_01/thumbnail.png": "QmY4eid3BHf4br7bo8zHHcWtweaoCv4koeaxT7XVES9QQ8"
+        }
+      },
+      {
+        "id": "2b4073bc2c7d3ee355b7d0cce4726bef51b6d8040b1f8eb6ea797f892b810ef7",
+        "name": "Iron Grenade",
+        "thumbnail": "https://assets.decentraland.org/QmW4NFsxKacMtSdGA9Q7bHkz6NHePzMoWvSr4q4v3ZkVFw",
+        "url": "Bomb_01/Bomb_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "weapon",
+          "wick",
+          "boom"
+        ],
+        "variations": [],
+        "contents": {
+          "Bomb_01/Bomb_01.glb": "QmWCf5Wyg7yRheFXjWw4ZHXfZ2wvxk2KkQ1KgWBiJUutax",
+          "Bomb_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bomb_01/thumbnail.png": "QmW4NFsxKacMtSdGA9Q7bHkz6NHePzMoWvSr4q4v3ZkVFw"
+        }
+      },
+      {
+        "id": "30422aa59c35418dce68126038fbc66a81be5c48b999edb868ed7d791ba82062",
+        "name": "Big Bone",
+        "thumbnail": "https://assets.decentraland.org/QmUVZkL76HxD1cTeaCe559exyvjbgE3xUqdM3uQR4o8WBe",
+        "url": "BonesBig_01/BonesBig_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bone",
+          "bones",
+          "calcium"
+        ],
+        "variations": [],
+        "contents": {
+          "BonesBig_01/BonesBig_01.glb": "QmTQGb5Yn2p5zM8WQAiK57dpVgaJGz6bDZLQAShjbWD4K1",
+          "BonesBig_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "BonesBig_01/thumbnail.png": "QmUVZkL76HxD1cTeaCe559exyvjbgE3xUqdM3uQR4o8WBe"
+        }
+      },
+      {
+        "id": "2fc7ca6bbbb85b229687bd3ca9f94eff58cfe2038148446784cc08bebf4d805d",
+        "name": "Beach Bones",
+        "thumbnail": "https://assets.decentraland.org/QmaQhyXQnXb12rVnEuDUXAc1MPY59xJ7UXHfGTAmzZmZ8a",
+        "url": "BonesChest_01/BonesChest_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bone",
+          "bones",
+          "calcium",
+          "carcass"
+        ],
+        "variations": [],
+        "contents": {
+          "BonesChest_01/BonesChest_01.glb": "QmVD2errLWDrNh92BP7pU37UvTpynbMGLXSX7fAq84GHLU",
+          "BonesChest_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "BonesChest_01/thumbnail.png": "QmaQhyXQnXb12rVnEuDUXAc1MPY59xJ7UXHfGTAmzZmZ8a"
+        }
+      },
+      {
+        "id": "fb8128da47cd6ab055f083648e39b49455fbb282dfebf77aea600a1a0d1064d8",
+        "name": "Skull",
+        "thumbnail": "https://assets.decentraland.org/QmdVr7cp5KFr2quhfp9iByWKXh8A7h5VkqvyqAtGDkUr1M",
+        "url": "BonesSkull_01/BonesSkull_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "skull",
+          "bone",
+          "bones",
+          "shakespeare",
+          "hamlet",
+          "yorick"
+        ],
+        "variations": [],
+        "contents": {
+          "BonesSkull_01/BonesSkull_01.glb": "QmeERJqvfS6DCRfLVFvvMod4PT5PSqTDMFZe2x4wYDMwDv",
+          "BonesSkull_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "BonesSkull_01/thumbnail.png": "QmdVr7cp5KFr2quhfp9iByWKXh8A7h5VkqvyqAtGDkUr1M"
+        }
+      },
+      {
+        "id": "ca6570b03ce034c0b39937a797b326c4374a6e1c4ef3d68a15941644fa679c92",
+        "name": "Small Bone",
+        "thumbnail": "https://assets.decentraland.org/Qmce7zasvxapJXjoWQrUzcQ28Z1Hk82w6h9mVCbMG69zUD",
+        "url": "BonesSmall_01/BonesSmall_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bone",
+          "bones",
+          "calcium"
+        ],
+        "variations": [],
+        "contents": {
+          "BonesSmall_01/BonesSmall_01.glb": "Qmc6fcmcoMaCeGLRdasWvnhJqHTMSvvgnsUA3uH6UYDHrG",
+          "BonesSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "BonesSmall_01/thumbnail.png": "Qmce7zasvxapJXjoWQrUzcQ28Z1Hk82w6h9mVCbMG69zUD"
+        }
+      },
+      {
+        "id": "8b0b4300ace100b7cbced6ca0b17d852aa12ee59438bae9f8f023619251dbec2",
+        "name": "Rum",
+        "thumbnail": "https://assets.decentraland.org/QmVrVFnf7f1LLmfm9npjXDyFQvNSbyTKtNGjgW7zbieLit",
+        "url": "Bottle_01/Bottle_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_01/Bottle_01.glb": "QmVnsJZTPzbSkaSB5GY1BajXf7mS9YCNHJ4iELLPB9o4PC",
+          "Bottle_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_01/thumbnail.png": "QmVrVFnf7f1LLmfm9npjXDyFQvNSbyTKtNGjgW7zbieLit"
+        }
+      },
+      {
+        "id": "88e0de3842dd3504555ac354cf08b3d6be174b752ed3af938a003e2e8bd8d616",
+        "name": "Wine",
+        "thumbnail": "https://assets.decentraland.org/QmfPgeTZrkCvbgJK5ZwjprZhaJ3GwBdBJTxqHyw2n8Worq",
+        "url": "Bottle_02/Bottle_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_02/Bottle_02.glb": "QmQuj5HPJQSEgvpozWoNwq8UgCJjqPy1RPb1SzAub9Cgmj",
+          "Bottle_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_02/thumbnail.png": "QmfPgeTZrkCvbgJK5ZwjprZhaJ3GwBdBJTxqHyw2n8Worq"
+        }
+      },
+      {
+        "id": "ac675666b11923318aafcb9ce13fc10e985bb2c1913bf9176a6019b38f396051",
+        "name": "BumBoo",
+        "thumbnail": "https://assets.decentraland.org/QmSLjnkvbBCynJyEPnS58SxvJxn4fySyoKKRQuBVGxtS7s",
+        "url": "Bottle_03/Bottle_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_03/Bottle_03.glb": "Qmeefhz6DjL1moB1fT9wLQWLvSzYE52sKHML5bU7iKPoXS",
+          "Bottle_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_03/thumbnail.png": "QmSLjnkvbBCynJyEPnS58SxvJxn4fySyoKKRQuBVGxtS7s"
+        }
+      },
+      {
+        "id": "44b3460c31745e924842a8b928ba4666a32f808d05039ae013f7e06c8292e607",
+        "name": "Rumfustian",
+        "thumbnail": "https://assets.decentraland.org/QmfZnFJKJaBxLCX9T6DLa7aarg9XzvF65T6wNuByomfa6H",
+        "url": "Bottle_04/Bottle_04.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_04/Bottle_04.glb": "QmWBsCwdbfbrtaqSckQGEKRp7hdmKkrKLDaeTNU5r44YBd",
+          "Bottle_04/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_04/thumbnail.png": "QmfZnFJKJaBxLCX9T6DLa7aarg9XzvF65T6wNuByomfa6H"
+        }
+      },
+      {
+        "id": "ab2bb2faddecb920888984c3bc7efb0bf8ffc0ebacfe064a36412d95339d2deb",
+        "name": "Flip",
+        "thumbnail": "https://assets.decentraland.org/QmPXY2pscXmDuQRRmkAsxG9nKrP2R5bD4iDoaKWYUPFKLv",
+        "url": "Bottle_05/Bottle_05.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_05/Bottle_05.glb": "QmXUswnwMT52s7MFxXveiULX9nG1C2GtKmZwhfQP8MFyMM",
+          "Bottle_05/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_05/thumbnail.png": "QmPXY2pscXmDuQRRmkAsxG9nKrP2R5bD4iDoaKWYUPFKLv"
+        }
+      },
+      {
+        "id": "5472c5a4f01dea5e728523b882be1d4dd9e87f9a7f778c101f2da64fb5565b5f",
+        "name": "Beer",
+        "thumbnail": "https://assets.decentraland.org/QmSGgshcN9ZLsJ8dJfZiecQ4QL5Wek6GF1enEVbKGhrWD8",
+        "url": "Bottle_06/Bottle_06.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_06/Bottle_06.glb": "QmUinqCzTD6V6a8dKSvuGY8TEJXpLT68Fxuw7KSjR9SzbH",
+          "Bottle_06/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_06/thumbnail.png": "QmSGgshcN9ZLsJ8dJfZiecQ4QL5Wek6GF1enEVbKGhrWD8"
+        }
+      },
+      {
+        "id": "a6f00553f4c8f1b5aed3ff9e8b1fa7779e134a4b30fa60bb934764ca3903fc57",
+        "name": "Grog",
+        "thumbnail": "https://assets.decentraland.org/QmenttV2t3UYaKokbbKrn8Nt34GhyuHYKqdDZLf4p3KUEN",
+        "url": "Bottle_07/Bottle_07.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_07/Bottle_07.glb": "QmSriYf5eJBxyrq3tKfTnXqDk5dD6EexhqFC5ANiT1CCzg",
+          "Bottle_07/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_07/thumbnail.png": "QmenttV2t3UYaKokbbKrn8Nt34GhyuHYKqdDZLf4p3KUEN"
+        }
+      },
+      {
+        "id": "3d3bbd1efa5af12cc9302344c95266f999720d807195eb8b0e8b97fceb2b50c5",
+        "name": "Gin",
+        "thumbnail": "https://assets.decentraland.org/Qmdf784Wtt4n475sZU6pwdoDUfZmGc3CLtK5fC72qkE8db",
+        "url": "Bottle_08/Bottle_08.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_08/Bottle_08.glb": "QmYr9bEoPfFEJw5bFqvzfBs7xGmr8jTTqRiWzbPGjD2KXM",
+          "Bottle_08/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_08/thumbnail.png": "Qmdf784Wtt4n475sZU6pwdoDUfZmGc3CLtK5fC72qkE8db"
+        }
+      },
+      {
+        "id": "5f13d00f780221bc91249cb016fd4d0882b102f8de4a814c3e492665fde92a7e",
+        "name": "Rumfustian",
+        "thumbnail": "https://assets.decentraland.org/QmTDJKZmsoHzNHQXhg9JhxZ3aYu7tdzqFK7d4zyhQKUBVq",
+        "url": "Bottle_09/Bottle_09.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_09/Bottle_09.glb": "QmaHNiaRcUEFWLGHmZ1LHe5HZJFeuavqu7za2zTUJMp7wf",
+          "Bottle_09/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_09/thumbnail.png": "QmTDJKZmsoHzNHQXhg9JhxZ3aYu7tdzqFK7d4zyhQKUBVq"
+        }
+      },
+      {
+        "id": "73ed1c217e04548f9643fb168bfd71aa9d3ca80673e50fe757d781418704746f",
+        "name": "Sangaree",
+        "thumbnail": "https://assets.decentraland.org/Qme9PY3XmZQi1csjJE2QoGRzz9cAtYBaQdNouQ9TDV3ijC",
+        "url": "Bottle_10/Bottle_10.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_10/Bottle_10.glb": "QmU4fo7UxExb2ZHGmkHE5RmZurH6CW9LV1FnznVB4JZUUa",
+          "Bottle_10/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_10/thumbnail.png": "Qme9PY3XmZQi1csjJE2QoGRzz9cAtYBaQdNouQ9TDV3ijC"
+        }
+      },
+      {
+        "id": "773a7c4e55c22df6bea7e9be596e1de28a4ac38e2287897c84630a313ff65503",
+        "name": "Message In A Bottle",
+        "thumbnail": "https://assets.decentraland.org/QmXn6BSatnf8uwmLjroc6pkMXbTT6byqjCxHVAou22cioY",
+        "url": "Bottle_11/Bottle_11.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol",
+          "paper",
+          "message"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_11/Bottle_11.glb": "QmfK5zL5A9wKi4AwWYn9DEGxF1NiQ7PNi2XxGZeE5Dv3pB",
+          "Bottle_11/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_11/PiratesPack_TransparentTX.png.png": "QmUDmQ9PC4KZdLJ2ofjjH8CxJQJ4XFKQmgLzfZ6BchvhSZ",
+          "Bottle_11/thumbnail.png": "QmXn6BSatnf8uwmLjroc6pkMXbTT6byqjCxHVAou22cioY"
+        }
+      },
+      {
+        "id": "6d84eab55c473e0cfadd63e04558617d599fbd709b42b12d910b4f3cb5e46d1d",
+        "name": "Ginger Rum",
+        "thumbnail": "https://assets.decentraland.org/QmeWMhJLVDS4UEYHPe9wkWxkgRejmk7qH4oK7pW7fZdbUx",
+        "url": "Bottle_12/Bottle_12.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bottle",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Bottle_12/Bottle_12.glb": "QmNqzvb9fioCyH3BaRtTDAC42KAhmkv3UWBEeovV5ortpi",
+          "Bottle_12/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bottle_12/PiratesPack_TransparentTX.png.png": "QmUDmQ9PC4KZdLJ2ofjjH8CxJQJ4XFKQmgLzfZ6BchvhSZ",
+          "Bottle_12/thumbnail.png": "QmeWMhJLVDS4UEYHPe9wkWxkgRejmk7qH4oK7pW7fZdbUx"
+        }
+      },
+      {
+        "id": "9b7e3b302880ae7a49d978849cb219968aa94ca595900e28206cc9cf8799187d",
+        "name": "Wooden Bucket",
+        "thumbnail": "https://assets.decentraland.org/QmPAkhd9nTiPYFx1Puu1joXPdpmwWGSBqyJPxJzNjyoMu3",
+        "url": "Bucket_01/Bucket_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "bucket",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Bucket_01/Bucket_01.glb": "QmRrzPwUKqsMgNFFwMr47RAXP1Kv1nkpBfEca9AZErTJ94",
+          "Bucket_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Bucket_01/thumbnail.png": "QmPAkhd9nTiPYFx1Puu1joXPdpmwWGSBqyJPxJzNjyoMu3"
+        }
+      },
+      {
+        "id": "cbf022c17f45d2a910398480626b97c9335d246d9eab32a5f847f81282ea31d8",
+        "name": "Worn Zinc Washbasin",
+        "thumbnail": "https://assets.decentraland.org/Qmaqst4xPL23qQzoDJKxxhXqAwNfpXjVjQ8Ym5PFDK9jNY",
+        "url": "Bucket_02/Bucket_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "zinc",
+          "basin",
+          "washing",
+          "wash",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Bucket_02/Bucket_02.glb": "QmTvTVusVfA37en1pBNb3VYyrHuV736msc6yeAzTVubGPe",
+          "Bucket_02/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Bucket_02/thumbnail.png": "Qmaqst4xPL23qQzoDJKxxhXqAwNfpXjVjQ8Ym5PFDK9jNY"
+        }
+      },
+      {
+        "id": "65cc27a3adfe0c098f55e6db6dd0fc3bb111d037dd660dbecbfff9abb00a53eb",
+        "name": "Old Candlestick",
+        "thumbnail": "https://assets.decentraland.org/QmXdnaNy8x8txkoBVYCrSr3d85XN2JevCTcz3W7CNWCUCZ",
+        "url": "Candle_01/Candle_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wick",
+          "golden",
+          "gold",
+          "bronze",
+          "wax",
+          "light"
+        ],
+        "variations": [],
+        "contents": {
+          "Candle_01/Candle_01.glb": "QmPS2Ro9G9gdrNVYs6dxc3bWJmz65DXMxY5gosJPdxqxd8",
+          "Candle_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Candle_01/thumbnail.png": "QmXdnaNy8x8txkoBVYCrSr3d85XN2JevCTcz3W7CNWCUCZ"
+        }
+      },
+      {
+        "id": "9bb7a6cd20cc348adb1b8022bec96739050e71c443d63bee2355505d3d05adc5",
+        "name": "Candle",
+        "thumbnail": "https://assets.decentraland.org/QmR6jNFLbfxFvaKqu2jkdp2ukMRM2XkonGmJLCSeAaoCEP",
+        "url": "Candle_02/Candle_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wick",
+          "wax",
+          "light"
+        ],
+        "variations": [],
+        "contents": {
+          "Candle_02/Candle_02.glb": "QmaREYZb9vsm5nGVBdD2C1dqKGGsLFN4Bss7VgXqvJdjXY",
+          "Candle_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Candle_02/thumbnail.png": "QmR6jNFLbfxFvaKqu2jkdp2ukMRM2XkonGmJLCSeAaoCEP"
+        }
+      },
+      {
+        "id": "e2e46ac2f855ab52ad3989ac117b93acf2fe50e77687c75c3d070b5917e09773",
+        "name": "Demi-cannon",
+        "thumbnail": "https://assets.decentraland.org/QmUx9pvAhGNu67DvvvAtaHnzCacHgg6aopsWw3xdXokaZf",
+        "url": "Cannon_01/Cannon_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "brass",
+          "wood",
+          "wooden",
+          "iron",
+          "wheel",
+          "wheels",
+          "weapon",
+          "boom"
+        ],
+        "variations": [],
+        "contents": {
+          "Cannon_01/Cannon_01.glb": "QmX3C6YbjxxzYwEKvQjwyT2iHY1gK7hw8cBEf7mMaKX8gY",
+          "Cannon_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Cannon_01/thumbnail.png": "QmUx9pvAhGNu67DvvvAtaHnzCacHgg6aopsWw3xdXokaZf"
+        }
+      },
+      {
+        "id": "4139113bf43bf1c4b2f742b5d348afdabad78ee3e55e421181a1a080f56d3ff8",
+        "name": "Carronade",
+        "thumbnail": "https://assets.decentraland.org/QmWXiVnSRneDvjv3W5gL2hLG17C2DRY33TuEbfKz2HXw7Y",
+        "url": "Cannon_02/Cannon_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "wood",
+          "wooden",
+          "weapon",
+          "boom",
+          "wick"
+        ],
+        "variations": [],
+        "contents": {
+          "Cannon_02/Cannon_02.glb": "QmNy4qCmVXDRHVKSSKMA59pNEwUZwwY8XCyBgB4XVtNpgH",
+          "Cannon_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Cannon_02/thumbnail.png": "QmWXiVnSRneDvjv3W5gL2hLG17C2DRY33TuEbfKz2HXw7Y"
+        }
+      },
+      {
+        "id": "81ce8dc4f026432c26d645b8584260be04f3b47fb302ed52890b3f3803e50f0b",
+        "name": "Round shot",
+        "thumbnail": "https://assets.decentraland.org/QmWL8SFjimgh6mrDjMi1JxqFtSjpGHyyt2QTRR3RyHYpy9",
+        "url": "Cannonball_01/Cannonball_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "sphere",
+          "round",
+          "rounded",
+          "ammunition",
+          "shot",
+          "cannon"
+        ],
+        "variations": [],
+        "contents": {
+          "Cannonball_01/Cannonball_01.glb": "QmRwb9KgWmCcFivAyEgUBGVoeqxfeP6E9EXHTV1bbAQLWc",
+          "Cannonball_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Cannonball_01/thumbnail.png": "QmWL8SFjimgh6mrDjMi1JxqFtSjpGHyyt2QTRR3RyHYpy9"
+        }
+      },
+      {
+        "id": "1ba2b3dd7732d2ec594cb1a8f38fd96cd241b4aa9a3f36afd336c5327ef6decc",
+        "name": "Pile of Round Shots",
+        "thumbnail": "https://assets.decentraland.org/QmcVY8k3GaPVCFgtwGSZ5MSCuDKZj8FqPXBrpPEsg2Av66",
+        "url": "Cannonball_02/Cannonball_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "sphere",
+          "round",
+          "rounded",
+          "ammunition",
+          "shot",
+          "cannon"
+        ],
+        "variations": [],
+        "contents": {
+          "Cannonball_02/Cannonball_02.glb": "QmXEZvC1EAfEzM8djr1rnShQHHfwouUAcrg3ccMqhH5oAu",
+          "Cannonball_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Cannonball_02/thumbnail.png": "QmcVY8k3GaPVCFgtwGSZ5MSCuDKZj8FqPXBrpPEsg2Av66"
+        }
+      },
+      {
+        "id": "d4e7226b12f8fa98e9a104f449e79af2e6248def8d9ef11ce683b0bc5a89ff04",
+        "name": "Box of Round Shots",
+        "thumbnail": "https://assets.decentraland.org/QmUBSqnYx6qZwSCEagr3bibzzkZMU1wRnG4BxWbhJYy5PB",
+        "url": "Cannonball_03/Cannonball_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "sphere",
+          "round",
+          "rounded",
+          "ammunition",
+          "shot",
+          "cannon"
+        ],
+        "variations": [],
+        "contents": {
+          "Cannonball_03/Cannonball_03.glb": "Qmbff73YJXE8ArUsMJqmdBhez2D3DZKXyxz4ndaQjbzd7f",
+          "Cannonball_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Cannonball_03/thumbnail.png": "QmUBSqnYx6qZwSCEagr3bibzzkZMU1wRnG4BxWbhJYy5PB"
+        }
+      },
+      {
+        "id": "389000bc327800ff791a19d31041bef88d8a53e968e85a802f11d5ad5d4d6ae8",
+        "name": "Cauldron",
+        "thumbnail": "https://assets.decentraland.org/QmZvVtWFBv6xAvJhmxnberXamyL6EgaKKqRtNYFMKS1TSY",
+        "url": "Cauldron_01/Cauldron_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "soup",
+          "meal",
+          "stew"
+        ],
+        "variations": [],
+        "contents": {
+          "Cauldron_01/Cauldron_01.glb": "QmYCSsPmUsV2BZFtBvqa4f3jtwAm4s7XsS5rfwYfsgYxoE",
+          "Cauldron_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Cauldron_01/thumbnail.png": "QmZvVtWFBv6xAvJhmxnberXamyL6EgaKKqRtNYFMKS1TSY"
+        }
+      },
+      {
+        "id": "295fafd7e494cc68b6df668aa55893a7cd14d7fe34fc94415512b8447a23b53a",
+        "name": "Rustic Round Stool",
+        "thumbnail": "https://assets.decentraland.org/QmSsUsAanwZFcQKtjNCgGkTNm9W2YccN6F3NcNUHK4rdcr",
+        "url": "Chairwood_01/Chairwood_01.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "seat",
+          "round"
+        ],
+        "variations": [],
+        "contents": {
+          "Chairwood_01/Chairwood_01.glb": "QmUNxQWFrQVMpYW6Wfc4H7bCQeUMxr9CQbvV2r2f7BauzK",
+          "Chairwood_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Chairwood_01/thumbnail.png": "QmSsUsAanwZFcQKtjNCgGkTNm9W2YccN6F3NcNUHK4rdcr"
+        }
+      },
+      {
+        "id": "0f006008c9ede631da6f35b79f28b3fb6160089d7ccecf08a8f3c721a2b7dc7b",
+        "name": "Rustic Square Stool",
+        "thumbnail": "https://assets.decentraland.org/QmbnZFVU7WwjEWKePuGs1FfTsYvDYkUgAxQXDkn8vbLfzi",
+        "url": "Chairwood_02/Chairwood_02.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "seat",
+          "square"
+        ],
+        "variations": [],
+        "contents": {
+          "Chairwood_02/Chairwood_02.glb": "QmaCmLcjKNKVDqhHQxaCruL5c4AtyKyzDNFVyE2pbLGfoD",
+          "Chairwood_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Chairwood_02/thumbnail.png": "QmbnZFVU7WwjEWKePuGs1FfTsYvDYkUgAxQXDkn8vbLfzi"
+        }
+      },
+      {
+        "id": "acf1e33fe0c40e389f6e9a2ac4e37d987de90e01151ee53df6d37d9943812f50",
+        "name": "Chalice",
+        "thumbnail": "https://assets.decentraland.org/QmXsiSx6vw6LEp8ZPhGQLVhppVzf1mRrESqBLXpcBX9UjQ",
+        "url": "Chalice_01/Chalice_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "golden",
+          "jewels",
+          "cup",
+          "fake",
+          "holy",
+          "grail"
+        ],
+        "variations": [],
+        "contents": {
+          "Chalice_01/Chalice_01.glb": "QmUurefJVouukatEUcgmZJNjMv8sykbz7mLnfrN4croxBc",
+          "Chalice_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Chalice_01/thumbnail.png": "QmXsiSx6vw6LEp8ZPhGQLVhppVzf1mRrESqBLXpcBX9UjQ"
+        }
+      },
+      {
+        "id": "06947ae3fcef14df681c169df8d8339fd992a34bc951fb71a4143357ea5dff25",
+        "name": "3-Candle Candelabra",
+        "thumbnail": "https://assets.decentraland.org/QmcMCVcNyQnbdTdbDJf1dPBTXKbJESSL3NA9CGKtsK65LA",
+        "url": "Chandelier_01/Chandelier_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "golden",
+          "candle",
+          "light",
+          "holder"
+        ],
+        "variations": [],
+        "contents": {
+          "Chandelier_01/Chandelier_01.glb": "QmUknSbMsnnGBTeT4Loohda55k3ffBhpjMEHvwBcjxELDN",
+          "Chandelier_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Chandelier_01/thumbnail.png": "QmcMCVcNyQnbdTdbDJf1dPBTXKbJESSL3NA9CGKtsK65LA"
+        }
+      },
+      {
+        "id": "5ed84e73c65be5c72bc709a316bb35276112843fa75d4d7ab6065eca210e1b96",
+        "name": "Coconut",
+        "thumbnail": "https://assets.decentraland.org/QmdWfW8PT9w84CPkzrEuMUxj7tRX1rwf6VXgBWipx7HD3R",
+        "url": "Coco_01/Coco_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fruit",
+          "fruits",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "Coco_01/Coco_01.glb": "QmV9MfF9kZziyZDCNaeHsFq2zBmQUy7dDTMuzX3DeoBKuh",
+          "Coco_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Coco_01/thumbnail.png": "QmdWfW8PT9w84CPkzrEuMUxj7tRX1rwf6VXgBWipx7HD3R"
+        }
+      },
+      {
+        "id": "a71168b3c18a4ddaccac019dc828ef322ed99f81ab585d0fa8348865a62ce297",
+        "name": "Half Coconut",
+        "thumbnail": "https://assets.decentraland.org/QmagsM6ukLLJVXc53DoLcWDvbxtS6m5kX7Gg1GzpapqYsB",
+        "url": "Coco_02/Coco_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fruit",
+          "fruits",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "Coco_02/Coco_02.glb": "QmfGaLdpQ4MhUMtHC8NchqxBFVd4EfAo6Jg3rsFm9J4qhf",
+          "Coco_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Coco_02/thumbnail.png": "QmagsM6ukLLJVXc53DoLcWDvbxtS6m5kX7Gg1GzpapqYsB"
+        }
+      },
+      {
+        "id": "6c9a88f6cbc0f1d111cc79ef05b7700573f6a40a3fa4ba3e865bc1f80a0b9862",
+        "name": "Doubloon",
+        "thumbnail": "https://assets.decentraland.org/QmXr6rkNiojJ7YS9PXEFPNE5JPyFQ4v8nWfuSZsz7qsLg5",
+        "url": "Coin_01/Coin_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "golden",
+          "coin"
+        ],
+        "variations": [],
+        "contents": {
+          "Coin_01/Coin_01.glb": "QmVQHFBfjKeSjy891UR7d4W4V83L5apnJrJZm8GLQCpSiL",
+          "Coin_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Coin_01/thumbnail.png": "QmXr6rkNiojJ7YS9PXEFPNE5JPyFQ4v8nWfuSZsz7qsLg5"
+        }
+      },
+      {
+        "id": "774093eab8e1384e2f8cc688be173f9f424633cd2201a5b65549d33f15a85c6a",
+        "name": "Compass",
+        "thumbnail": "https://assets.decentraland.org/QmVuw4XzYsGjq9aawhM4ToRmq5YBPo1khssL5eboYuKNeU",
+        "url": "Compass_01/Compass_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "golden",
+          "needle",
+          "magnet",
+          "magnetic",
+          "north",
+          "south",
+          "east",
+          "west"
+        ],
+        "variations": [],
+        "contents": {
+          "Compass_01/Compass_01.glb": "QmXtALLgyDFFdoZwi3iY5WXozdFAduhaQc6dEPA5DKjAg8",
+          "Compass_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Compass_01/thumbnail.png": "QmVuw4XzYsGjq9aawhM4ToRmq5YBPo1khssL5eboYuKNeU"
+        }
+      },
+      {
+        "id": "7091e7d931f95fe75121133e0a9d91846f9600f7ac38c39c4d9674967051b8e8",
+        "name": "Long Closed Wooden Crate",
+        "thumbnail": "https://assets.decentraland.org/QmYWv3bPyd8i8qVGihxsmSiVkfcpCjCwEyonQ86pzuLcB3",
+        "url": "CrateLong_01/CrateLong_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "leather",
+          "strips",
+          "crate",
+          "box"
+        ],
+        "variations": [],
+        "contents": {
+          "CrateLong_01/CrateLong_01.glb": "QmaEujhuhke9Vs8ASyEvvKPPAfc3apEw8kiVadgwtBDBAM",
+          "CrateLong_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "CrateLong_01/thumbnail.png": "QmYWv3bPyd8i8qVGihxsmSiVkfcpCjCwEyonQ86pzuLcB3"
+        }
+      },
+      {
+        "id": "a77fb079063dcc8fa0fcd6e3b96ff0e32e62aaf6de1e0d92fad51a463f569cf3",
+        "name": "Long Opened Wooden Crate",
+        "thumbnail": "https://assets.decentraland.org/QmX3hdwNh4aJxf7mPXJWy4nnrtxZUCgfn2wbztGWwqLPYs",
+        "url": "CrateLong_02/CrateLong_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "crate",
+          "box",
+          "open"
+        ],
+        "variations": [],
+        "contents": {
+          "CrateLong_02/CrateLong_02.glb": "QmexN4BjAeC3FumpgcvBRATrVJu2zDPhZh3BV1PrSBPMPq",
+          "CrateLong_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "CrateLong_02/thumbnail.png": "QmX3hdwNh4aJxf7mPXJWy4nnrtxZUCgfn2wbztGWwqLPYs"
+        }
+      },
+      {
+        "id": "0f6015d7b15e625028bbf741e0668df85b0f3c62a35c9e72df9850dc4dcdcb67",
+        "name": "Closed Wooden Crate",
+        "thumbnail": "https://assets.decentraland.org/QmbiMkvUHxBJT3ZDd9iBwRkRtzBj7t5RDoGwEF5pAiVyY1",
+        "url": "Crate_01/Crate_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "crate",
+          "box"
+        ],
+        "variations": [],
+        "contents": {
+          "Crate_01/Crate_01.glb": "QmY6iaHsum7sr74GgaJNPXz3nL9P7TACUPTwSzhsGYyVfb",
+          "Crate_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Crate_01/thumbnail.png": "QmbiMkvUHxBJT3ZDd9iBwRkRtzBj7t5RDoGwEF5pAiVyY1"
+        }
+      },
+      {
+        "id": "a18c05b92ec78f2bd0fc26b2316a81045b4e6517dfbf6cabe96a47319917fb10",
+        "name": "Opened Wooden Crate",
+        "thumbnail": "https://assets.decentraland.org/QmUqTgTmkcVsvLobdDaMuZthzjpiSVqYqd5dWLgBN3Ayk8",
+        "url": "Crate_02/Crate_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "crate",
+          "box",
+          "open"
+        ],
+        "variations": [],
+        "contents": {
+          "Crate_02/Crate_02.glb": "QmW1RUxnd5kPV6DDSFxq6egx6nrJC7sNkShM1hcQJyZnc5",
+          "Crate_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Crate_02/thumbnail.png": "QmUqTgTmkcVsvLobdDaMuZthzjpiSVqYqd5dWLgBN3Ayk8"
+        }
+      },
+      {
+        "id": "e044c5cccdc4be5545031f9f83de23488014df07d097f9ed3868ab77f1713f95",
+        "name": "Covered Wooden Crate",
+        "thumbnail": "https://assets.decentraland.org/QmXjhv3VEkZ6Qz95vLbP6iZmmjYV86G8TrfubFfStA3fPB",
+        "url": "Crate_03/Crate_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "crate",
+          "box",
+          "fabric",
+          "blanket"
+        ],
+        "variations": [],
+        "contents": {
+          "Crate_03/Crate_03.glb": "QmTQCnXHurmhQGsRbwcSNQivbUZTtNMECXWpE9t1k5jouv",
+          "Crate_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Crate_03/thumbnail.png": "QmXjhv3VEkZ6Qz95vLbP6iZmmjYV86G8TrfubFfStA3fPB"
+        }
+      },
+      {
+        "id": "7227c8c3b612df9d030e8bc5eadde11abcb4fc9da79b5f950c5fb4f6f6b24bc5",
+        "name": "Crown",
+        "thumbnail": "https://assets.decentraland.org/QmQue1HDmniiAf84ZTefU85HgTRer4ChGevd7nFxNjs5B9",
+        "url": "Crown_01/Crown_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "golden",
+          "jewels",
+          "king"
+        ],
+        "variations": [],
+        "contents": {
+          "Crown_01/Crown_01.glb": "QmbCaZ7RN6THnuTJD1qAP1DKVcchgdUy9Yp1L9sNnD6cZK",
+          "Crown_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Crown_01/thumbnail.png": "QmQue1HDmniiAf84ZTefU85HgTRer4ChGevd7nFxNjs5B9"
+        }
+      },
+      {
+        "id": "0171028b3cb4458efc4c74787063b828931da072684eb3cce6d15a8232834c52",
+        "name": "Wooden Cup",
+        "thumbnail": "https://assets.decentraland.org/Qmdg59MDncQ4Gta4ntKV52qykJyDt4bWcZyxD9hsUrBiUW",
+        "url": "Cup_01/Cup_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "cup",
+          "drink",
+          "beverage",
+          "alcohol"
+        ],
+        "variations": [],
+        "contents": {
+          "Cup_01/Cup_01.glb": "QmR9zbSbavmuKFDEXnt6ELvh8p8BaPdqSNRwPjiTMKR84S",
+          "Cup_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Cup_01/thumbnail.png": "Qmdg59MDncQ4Gta4ntKV52qykJyDt4bWcZyxD9hsUrBiUW"
+        }
+      },
+      {
+        "id": "128e6601270105e5a23fd6e2bc08917b13191acd33ef4b50f02ff2c88077ca0d",
+        "name": "Dagger",
+        "thumbnail": "https://assets.decentraland.org/QmPgtoJ6yKhWZ7ehfBGKCzcvjtMm7f45mAHtDKi14PQnAr",
+        "url": "Dagger_01/Dagger_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "brass",
+          "iron",
+          "leather",
+          "sword",
+          "weapon",
+          "golden",
+          "gold"
+        ],
+        "variations": [],
+        "contents": {
+          "Dagger_01/Dagger_01.glb": "QmYPEke3EqU5BWbspwDSnXkECjb23TfnabUWLzxmVwpA54",
+          "Dagger_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Dagger_01/thumbnail.png": "QmPgtoJ6yKhWZ7ehfBGKCzcvjtMm7f45mAHtDKi14PQnAr"
+        }
+      },
+      {
+        "id": "f4666f3b4b5ff93a622f044f851c1061d3a6cbd3f2b562fad48041b5768c019f",
+        "name": "Rustic Rope Bridge",
+        "thumbnail": "https://assets.decentraland.org/QmeHPzebQxGZuYD2JU9unkZA6yTfLaA7UJ5NUvb61Wuzae",
+        "url": "DocksBridge_01/DocksBridge_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "rope",
+          "ropes",
+          "pillar",
+          "pillars"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksBridge_01/DocksBridge_01.glb": "QmR9q1myjGbEdetttq1UxDsZxKL7apCGmLy51y9aRxR28t",
+          "DocksBridge_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksBridge_01/thumbnail.png": "QmeHPzebQxGZuYD2JU9unkZA6yTfLaA7UJ5NUvb61Wuzae"
+        }
+      },
+      {
+        "id": "883a74809a40c852716a59bb15d95f3d20903aa8695d3fc76ece7261c7dd7b41",
+        "name": "Rustic Old Rope Bridge",
+        "thumbnail": "https://assets.decentraland.org/QmTaKU5xpqKq3eU6nb34NajR1FhBkuDcFj9tgSbGDLCotT",
+        "url": "DocksBridge_02/DocksBridge_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "rope",
+          "ropes",
+          "old",
+          "pillar",
+          "pillars"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksBridge_02/DocksBridge_02.glb": "Qmb4wLtqoMVt6hfxxjazofiPtkqH5438GgMcQNCbX7pjqN",
+          "DocksBridge_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksBridge_02/thumbnail.png": "QmTaKU5xpqKq3eU6nb34NajR1FhBkuDcFj9tgSbGDLCotT"
+        }
+      },
+      {
+        "id": "57b784e14b11bb5e63c240168a7fb37797ddcee3d92b54f465244ee987ece05b",
+        "name": "Curved Dock Module",
+        "thumbnail": "https://assets.decentraland.org/Qmbnqk8qQ6D3CkRBKDG3CmKi9ZZDAmzr8EXoMmyrsxeM4E",
+        "url": "DocksModuleCurve_01/DocksModuleCurve_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "pillars"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleCurve_01/DocksModuleCurve_01.glb": "QmdkeTpQr7MYvQtyDXyPWi1V3ZPiyouvMsrQfWu7Va25BX",
+          "DocksModuleCurve_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleCurve_01/thumbnail.png": "Qmbnqk8qQ6D3CkRBKDG3CmKi9ZZDAmzr8EXoMmyrsxeM4E"
+        }
+      },
+      {
+        "id": "8873d08f584f0f27160b04c75e82f0ffd608ecc9518241b7639fa972c15cbee2",
+        "name": "Curved Old Dock Module",
+        "thumbnail": "https://assets.decentraland.org/QmXWnrkjuyM4U4dJff6rPSymFKMxCfUE8aGcanEAosTfyx",
+        "url": "DocksModuleCurve_02/DocksModuleCurve_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "pillars",
+          "old"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleCurve_02/DocksModuleCurve_02.glb": "QmenYXZmQaykWWTpuqdtQUXnuaPHeQ1aHnggmpuyqCC7yM",
+          "DocksModuleCurve_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleCurve_02/thumbnail.png": "QmXWnrkjuyM4U4dJff6rPSymFKMxCfUE8aGcanEAosTfyx"
+        }
+      },
+      {
+        "id": "6bc9172e130f515fd43e6dda9ff2a6b650c2258ab87f1856d005671945ea636b",
+        "name": "Medium Straight Dock Module",
+        "thumbnail": "https://assets.decentraland.org/QmTyfbPFkbD2bE8qJXadC6RBVm6T3apHtPCbajfosx2VVJ",
+        "url": "DocksModuleMedium_01/DocksModuleMedium_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "pillars"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleMedium_01/DocksModuleMedium_01.glb": "QmNrU8LYX55cELEBqpGk6LZ4BK4NKZXWVj9F9ksHX9bSpK",
+          "DocksModuleMedium_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleMedium_01/thumbnail.png": "QmTyfbPFkbD2bE8qJXadC6RBVm6T3apHtPCbajfosx2VVJ"
+        }
+      },
+      {
+        "id": "3ff723239671fa01f91d5ad5b8829b2bffe1ddcdd77bdbf2c2fa9477b06b991e",
+        "name": "Medium Straight Old Dock Module",
+        "thumbnail": "https://assets.decentraland.org/QmYe8JcNmNzpMawadq2HFB3GLRkQvmSTRVYdsKjKQnBE6H",
+        "url": "DocksModuleMedium_02/DocksModuleMedium_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "pillars",
+          "old"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleMedium_02/DocksModuleMedium_02.glb": "QmZCsPA58byQouL1t7ZMmkLb9F8oGbfJWo86u4pQoQ4Gkt",
+          "DocksModuleMedium_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleMedium_02/thumbnail.png": "QmYe8JcNmNzpMawadq2HFB3GLRkQvmSTRVYdsKjKQnBE6H"
+        }
+      },
+      {
+        "id": "040122ad4ea3a3f2bdf3a4a0f048caf0312b9dd1e4c3a17c2b253c2e2a636896",
+        "name": "Small Straight Dock Module",
+        "thumbnail": "https://assets.decentraland.org/QmTGZ9duXJwyhoR1NmWuF5CY1DrymPDBwwxctMH8QYG91X",
+        "url": "DocksModuleSmall_01/DocksModuleSmall_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "pillars"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleSmall_01/DocksModuleSmall_01.glb": "Qmca1YUzw5e3Gzjo6Tzm5SL1UwFmFvMm5ru4sHyMQPY1ab",
+          "DocksModuleSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleSmall_01/thumbnail.png": "QmTGZ9duXJwyhoR1NmWuF5CY1DrymPDBwwxctMH8QYG91X"
+        }
+      },
+      {
+        "id": "a818bcd4589bf24cf0386ad9d86830f3486f24ed9fc5118a3805ffd3eb0bdb54",
+        "name": "Small Straight Old Dock Module",
+        "thumbnail": "https://assets.decentraland.org/QmcSxmdYNbbrzDESiHKAZTUhzmRyjam5fNNPiRR1FDf41V",
+        "url": "DocksModuleSmall_02/DocksModuleSmall_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "pillars",
+          "old"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleSmall_02/DocksModuleSmall_02.glb": "QmRTVgxf7bdJbcLiekkimzb6B9LW33mWAuaitrLd6NHLgz",
+          "DocksModuleSmall_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleSmall_02/thumbnail.png": "QmcSxmdYNbbrzDESiHKAZTUhzmRyjam5fNNPiRR1FDf41V"
+        }
+      },
+      {
+        "id": "3c20f7217f6dee7295506b9a1edae56a2480d8504b375a187ae73d3d83e0abb9",
+        "name": "Wooden Dock Stairs",
+        "thumbnail": "https://assets.decentraland.org/QmQubZcnSLp4rTEaVkRCzdJejCcsYbh3zGaHxv5zNh5cMM",
+        "url": "DocksModuleStairs_01/DocksModuleStairs_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "stair",
+          "steps"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleStairs_01/DocksModuleStairs_01.glb": "QmNjtzCokGDA9tmp3Ljj7dr1yBWhhQ8VGWAYVMPspjWNGs",
+          "DocksModuleStairs_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleStairs_01/thumbnail.png": "QmQubZcnSLp4rTEaVkRCzdJejCcsYbh3zGaHxv5zNh5cMM"
+        }
+      },
+      {
+        "id": "4173a521ee3bda1ba1ef505d88240b76d6427b498a2b1392c7e0587075108365",
+        "name": "Old Wooden Dock Stairs",
+        "thumbnail": "https://assets.decentraland.org/QmQnFkhtu7PR3swZyKVJF7vasiprYT2QLk2CNz5b7hCgth",
+        "url": "DocksModuleStairs_02/DocksModuleStairs_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "stair",
+          "steps",
+          "old"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksModuleStairs_02/DocksModuleStairs_02.glb": "QmRTVgxf7bdJbcLiekkimzb6B9LW33mWAuaitrLd6NHLgz",
+          "DocksModuleStairs_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksModuleStairs_02/thumbnail.png": "QmQnFkhtu7PR3swZyKVJF7vasiprYT2QLk2CNz5b7hCgth"
+        }
+      },
+      {
+        "id": "5355b03c0644805408b2ab4b40aceaab5218e9da04f1d74bbe99915f98218b36",
+        "name": "Dock Piling",
+        "thumbnail": "https://assets.decentraland.org/QmS3EzVUECpvB71bbHM8hthLSGUmjaU2ZtdsVwGsRft4J6",
+        "url": "DocksPillar_01/DocksPillar_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "pillars"
+        ],
+        "variations": [],
+        "contents": {
+          "DocksPillar_01/DocksPillar_01.glb": "QmVrhJTydaXsCWqF182L8shmUWtHNJpGfGHMTpk4dBCz7L",
+          "DocksPillar_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "DocksPillar_01/thumbnail.png": "QmS3EzVUECpvB71bbHM8hthLSGUmjaU2ZtdsVwGsRft4J6"
+        }
+      },
+      {
+        "id": "2d09d4d7a86408c77d8117078066baaba06707014c63e6280cbf541c61d798e8",
+        "name": "Stick Fence End Module",
+        "thumbnail": "https://assets.decentraland.org/QmVkJ3JcHRGVjeebNqArnLzVajDTMfxdKqdf2YF23fW9xD",
+        "url": "FenceSticksEnd_01/FenceSticksEnd_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "pillar",
+          "stick",
+          "sticks"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceSticksEnd_01/FenceSticksEnd_01.glb": "QmcuKTxFHPaJXZVZkSqE5tBZYMZnz2AbG48xHBwyJjkCJq",
+          "FenceSticksEnd_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceSticksEnd_01/thumbnail.png": "QmVkJ3JcHRGVjeebNqArnLzVajDTMfxdKqdf2YF23fW9xD"
+        }
+      },
+      {
+        "id": "2d6970373a9b1a6ac7978e0c148f1425c266f7f54cb20b269b621ec06b62987b",
+        "name": "Sticks Large Fence",
+        "thumbnail": "https://assets.decentraland.org/QmfYiVn7Rrou1kDeNUDoxy2w84jwvyh49zpDcnWphtco9D",
+        "url": "FenceSticksLarge_01/FenceSticksLarge_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "stick",
+          "sticks"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceSticksLarge_01/FenceSticksLarge_01.glb": "QmanaTyE8szV7RWpJt3NS2rs1PdbH6JRAKXcvEszBPUB7q",
+          "FenceSticksLarge_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceSticksLarge_01/thumbnail.png": "QmfYiVn7Rrou1kDeNUDoxy2w84jwvyh49zpDcnWphtco9D"
+        }
+      },
+      {
+        "id": "823c4da8e71fd47df42160abbe8e592f01ab1becbf77011a2bbab3d79a9e4bbb",
+        "name": "Sticks Medium Fence",
+        "thumbnail": "https://assets.decentraland.org/QmRQ1CLqPou9kDTuCy4Xws7FUGtVtjgURMx6XuZsFkRLJ6",
+        "url": "FenceSticksMedium_01/FenceSticksMedium_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "stick",
+          "sticks"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceSticksMedium_01/FenceSticksMedium_01.glb": "QmYDaRYRBu4pd5wFwYF3bCyccKRsKXyPBhKVEsTHxv391m",
+          "FenceSticksMedium_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceSticksMedium_01/thumbnail.png": "QmRQ1CLqPou9kDTuCy4Xws7FUGtVtjgURMx6XuZsFkRLJ6"
+        }
+      },
+      {
+        "id": "3037b4fd28b57f52fd37cf72664851b52b4736f5999b61f6f48923727749f1b1",
+        "name": "Sticks Small Fence",
+        "thumbnail": "https://assets.decentraland.org/QmSfgr2ADvmk7sNRUHemWc9VkZi5EUxfTpyRZp4AvhMu2J",
+        "url": "FenceSticksSmall_01/FenceSticksSmall_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "dock",
+          "stick",
+          "sticks"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceSticksSmall_01/FenceSticksSmall_01.glb": "QmbsHk3ae7kaMGgXkTHjtk2R2Kq9528qjevCZ9grCA9mZG",
+          "FenceSticksSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceSticksSmall_01/thumbnail.png": "QmSfgr2ADvmk7sNRUHemWc9VkZi5EUxfTpyRZp4AvhMu2J"
+        }
+      },
+      {
+        "id": "3a3dbb7f4b4be24ef40113e9ffdf9102f5dc5141c2eea4e086882a5113ef39bd",
+        "name": "Large Plank Fence",
+        "thumbnail": "https://assets.decentraland.org/QmeVSTSfjzkHAUDwg1okvTYyMC58vmeAF3UchM69tNKgvf",
+        "url": "FenceWoodLarge_01/FenceWoodLarge_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "plank"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceWoodLarge_01/FenceWoodLarge_01.glb": "QmNLi98CsM2YJyo99PVWE2nw2uAM2o6UPFVS6VLNj2EJNT",
+          "FenceWoodLarge_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceWoodLarge_01/thumbnail.png": "QmeVSTSfjzkHAUDwg1okvTYyMC58vmeAF3UchM69tNKgvf"
+        }
+      },
+      {
+        "id": "c9142da0ccb10a79a9588dbab9500dc2a6cd4e28fe44d08a7521cbf5fe5e142f",
+        "name": "Old Large Plank Fence",
+        "thumbnail": "https://assets.decentraland.org/QmXQEp1M3VUXfdxASodFzDnP6j7ic4eouYMA8wntioEQSn",
+        "url": "FenceWoodLarge_02/FenceWoodLarge_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "plank",
+          "old"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceWoodLarge_02/FenceWoodLarge_02.glb": "QmPwsJrmfH72vgbPXit94vvnemBGjMjT88D1D88zr9RgEH",
+          "FenceWoodLarge_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceWoodLarge_02/thumbnail.png": "QmXQEp1M3VUXfdxASodFzDnP6j7ic4eouYMA8wntioEQSn"
+        }
+      },
+      {
+        "id": "27307dadfb94b79e5fabb3ca11317d0367a4711925c2db710137d5df3d320ac5",
+        "name": "Medium Plank Fence",
+        "thumbnail": "https://assets.decentraland.org/QmQUcbQo42JREktrBm89vWbH4QNKBKiAwbk23mFdqmdtT9",
+        "url": "FenceWoodMedium_01/FenceWoodMedium_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "plank"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceWoodMedium_01/FenceWoodMedium_01.glb": "QmZbxJiJyB5F5d6pbzw4FrqqTDTb2DxB8os9cdgsZE8cts",
+          "FenceWoodMedium_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceWoodMedium_01/thumbnail.png": "QmQUcbQo42JREktrBm89vWbH4QNKBKiAwbk23mFdqmdtT9"
+        }
+      },
+      {
+        "id": "35e05b9e5bfbb724aba3d5f5212bc31034f6ec793c0dd7e5b0ab6c4376f76331",
+        "name": "Old Medium Large Plank Fence",
+        "thumbnail": "https://assets.decentraland.org/QmeCdCodjPoEEXvQh8bjfSHDFFSPwkHYnFLsU8nBdGaog8",
+        "url": "FenceWoodMedium_02/FenceWoodMedium_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "plank",
+          "old"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceWoodMedium_02/FenceWoodMedium_02.glb": "QmUUYDFZti639eZboHkkTCFQm6aQZL44A2ZW5HY96xV98X",
+          "FenceWoodMedium_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceWoodMedium_02/thumbnail.png": "QmeCdCodjPoEEXvQh8bjfSHDFFSPwkHYnFLsU8nBdGaog8"
+        }
+      },
+      {
+        "id": "6dbe7c8dadd9bbaa7cda6a099775b507534f7d82e436dfa84002ef8e618656ce",
+        "name": "Small Plank Fence",
+        "thumbnail": "https://assets.decentraland.org/QmdKsqtV7LkgMtGDtTxbDmjAhe8ZYnmWM3AVv2mP7C63o5",
+        "url": "FenceWoodSmall_01/FenceWoodSmall_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "plank"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceWoodSmall_01/FenceWoodSmall_01.glb": "QmakTCymyLb3LRHCm16y7Q51y4c3JwCTupwf1wyGnfEdFY",
+          "FenceWoodSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceWoodSmall_01/thumbnail.png": "QmdKsqtV7LkgMtGDtTxbDmjAhe8ZYnmWM3AVv2mP7C63o5"
+        }
+      },
+      {
+        "id": "f3043c3bdd1046b2cc6f7ac74cd154e8af1e26b476915bf4626d98cc473faa48",
+        "name": "Old Small Large Plank Fence",
+        "thumbnail": "https://assets.decentraland.org/QmXToGhG9KoFHHxpmFPayhWvxDwGLEKQkms6mMkxsCTefS",
+        "url": "FenceWoodSmall_02/FenceWoodSmall_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "plank",
+          "old"
+        ],
+        "variations": [],
+        "contents": {
+          "FenceWoodSmall_02/FenceWoodSmall_02.glb": "QmYjcwqPYib5TQscWTscZ6bbKiMChJPG6SF7LfyNddRTF9",
+          "FenceWoodSmall_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FenceWoodSmall_02/thumbnail.png": "QmXToGhG9KoFHHxpmFPayhWvxDwGLEKQkms6mMkxsCTefS"
+        }
+      },
+      {
+        "id": "f277f7ef6a0503f078f58414140a283c426307dc59a5307e4257f91ebefcaf8b",
+        "name": "Fish bones",
+        "thumbnail": "https://assets.decentraland.org/QmUqVGDbmLML9ywELyTiKWd1xiGK1hRbPeqwPaFyUd1nUt",
+        "url": "FishSkeleton_01/FishSkeleton_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bone",
+          "bones",
+          "calcium",
+          "fish"
+        ],
+        "variations": [],
+        "contents": {
+          "FishSkeleton_01/FishSkeleton_01.glb": "QmfVsB5DByWDowmXbYyTfQtzC7fg47HM1xeofjX6GtcKNr",
+          "FishSkeleton_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "FishSkeleton_01/thumbnail.png": "QmUqVGDbmLML9ywELyTiKWd1xiGK1hRbPeqwPaFyUd1nUt"
+        }
+      },
+      {
+        "id": "04eb35484b28cbeabea38442190452389fd0512dab228dc63eb29f96c652609d",
+        "name": "Silver Fish",
+        "thumbnail": "https://assets.decentraland.org/QmPMtT7Vd1vdPTAsL8bvd8MDhWXKZ54rgYcmFDGXVmgXry",
+        "url": "Fish_01/Fish_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fish",
+          "silver",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Fish_01/Fish_01.glb": "QmTJnkqTqNYUkw9CnGGFBcpyWPk9vYZTudUUbjtmnMHeQH",
+          "Fish_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Fish_01/thumbnail.png": "QmPMtT7Vd1vdPTAsL8bvd8MDhWXKZ54rgYcmFDGXVmgXry"
+        }
+      },
+      {
+        "id": "40e6c7d9bcdf5f224d17b507e64fd602613e1e125e8b9f22094f6bc4aeb8d5d1",
+        "name": "Red Fish",
+        "thumbnail": "https://assets.decentraland.org/QmPnMAQ85xdKyyxJQgqjiNXh1KxggXziR1EPLP6odxM4oG",
+        "url": "Fish_02/Fish_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fish",
+          "red",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Fish_02/Fish_02.glb": "QmagGgHjGhziRD6gnHsxKXF9F3ufjXgFcNPEfU5AdaCz7L",
+          "Fish_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Fish_02/thumbnail.png": "QmPnMAQ85xdKyyxJQgqjiNXh1KxggXziR1EPLP6odxM4oG"
+        }
+      },
+      {
+        "id": "d919bc4247684caae8579a5760f1c50023b1acb3234a1e3622282849db730e65",
+        "name": "Green Fish",
+        "thumbnail": "https://assets.decentraland.org/QmW3P3wij9xrV9xRob9vZoMfcGZpubtmHNaiQSNVTxuU51",
+        "url": "Fish_03/Fish_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fish",
+          "green",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Fish_03/Fish_03.glb": "QmVHWW1M6fHLYSk3g1yg9e8uFXehhZSSrTK3b2EfTcqYkg",
+          "Fish_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Fish_03/thumbnail.png": "QmW3P3wij9xrV9xRob9vZoMfcGZpubtmHNaiQSNVTxuU51"
+        }
+      },
+      {
+        "id": "e39a01e7d0c89873fb7e9575bbce1d807f4d29557cdfec96e7df0a414cf95654",
+        "name": "Exotic Fish",
+        "thumbnail": "https://assets.decentraland.org/QmWkqt1FkJ8JaBc2TwWyRjgLPjWaHrYUYA7BLvW9Z16tjc",
+        "url": "Fish_04/Fish_04.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fish",
+          "exotic",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "Fish_04/Fish_04.glb": "Qmb7Ag2GRLn98zCHhAybHibmmq1ZK6Cg4icn2hPwHbHFGt",
+          "Fish_04/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Fish_04/thumbnail.png": "QmWkqt1FkJ8JaBc2TwWyRjgLPjWaHrYUYA7BLvW9Z16tjc"
+        }
+      },
+      {
+        "id": "a1b7e36d574f6acb9224bde7ce57a287ae5566b1492a68f2c64161ce7afe061b",
+        "name": "Pirate Flag Post",
+        "thumbnail": "https://assets.decentraland.org/QmR2VtMTmpVBy7pFCovhP6SKB9KYB7rje25Mg3V9LttkTT",
+        "url": "Flag_01/Flag_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "wood",
+          "wooden",
+          "post",
+          "flag",
+          "skull",
+          "paint",
+          "painted"
+        ],
+        "variations": [],
+        "contents": {
+          "Flag_01/Flag_01.glb": "QmVne1FQhdv4zXYrp2ELToF3ZHDuh5dJYqumuUTpx5rVD2",
+          "Flag_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Flag_01/thumbnail.png": "QmR2VtMTmpVBy7pFCovhP6SKB9KYB7rje25Mg3V9LttkTT"
+        }
+      },
+      {
+        "id": "7386caa2f403577fbc5d65b5855af095ade5aa5a3f69ccf2e6eb078415dc208b",
+        "name": "Desert sand",
+        "thumbnail": "https://assets.decentraland.org/QmbWyq7YaXDXFvewCKGu2FsZkcebzDWA725wo1rhSdLph4",
+        "url": "FloorBaseDesert_01/FloorBaseDesert_01.glb",
+        "category": "ground",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "ground"
+        ],
+        "variations": [],
+        "contents": {
+          "FloorBaseDesert_01/FloorBaseDesert_01.glb": "QmNsWFJVPScwLaueeVDU5Jazs5aDA5zqs3G3XnWnba8TCq",
+          "FloorBaseDesert_01/Floor_Desert01.png": "QmYDsYsKTD2T8WS8yoQWMP96bbYaZY48v3bSZdKZWxWMnR",
+          "FloorBaseDesert_01/thumbnail.png": "QmbWyq7YaXDXFvewCKGu2FsZkcebzDWA725wo1rhSdLph4"
+        }
+      },
+      {
+        "id": "0ee7741ef950081da1afb3e4d43a25e63a53764bcdcef14e1d0b775fb35bad64",
+        "name": "Dusty Sand",
+        "thumbnail": "https://assets.decentraland.org/QmYwWBpTKLTTXhgf9w8QcFdkmBDbATAhR1NTuYQws69UDq",
+        "url": "FloorBaseDirt_01/FloorBaseDirt_01.glb",
+        "category": "ground",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "ground"
+        ],
+        "variations": [],
+        "contents": {
+          "FloorBaseDirt_01/FloorBaseDirt_01.glb": "QmRWmA6t7uu92dx6uNS9tHAXZS1WEdWGhByfxGFckoB5Ss",
+          "FloorBaseDirt_01/Floor_Dirt03.png.001.png": "QmTncREQVdAhSBB4mXp5UUFNbkMXi8BaZqUck3wrbpMTr8",
+          "FloorBaseDirt_01/thumbnail.png": "QmYwWBpTKLTTXhgf9w8QcFdkmBDbATAhR1NTuYQws69UDq"
+        }
+      },
+      {
+        "id": "eb05a4210af1d91dfa0cb5e8b2ee43339deecd35f112c0753f47c1d6739ac50c",
+        "name": "Beach Sand",
+        "thumbnail": "https://assets.decentraland.org/QmPAwsnSzCoAAmvDZqdNXcoMaeB32k7LfZ8gAM2nB8C8a9",
+        "url": "FloorBaseSand_01/FloorBaseSand_01.glb",
+        "category": "ground",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "ground"
+        ],
+        "variations": [],
+        "contents": {
+          "FloorBaseSand_01/FloorBaseSand_01.glb": "QmY4Qh1ntuX7ViNzN2CWFayRF1J9kPC2Sgf42Pu6qnTQTS",
+          "FloorBaseSand_01/Floor_Sand01.png.001.png": "QmQ4n3eP9YuXXYvM3rcVWC4zZwV7NUAqwCN95uFDnERRCj",
+          "FloorBaseSand_01/thumbnail.png": "QmPAwsnSzCoAAmvDZqdNXcoMaeB32k7LfZ8gAM2nB8C8a9"
+        }
+      },
+      {
+        "id": "45299383e220b5f5675f55e46d6e9d1cdc57c35782d90a5a713bfed95e15207f",
+        "name": "The Fountain of Spirits",
+        "thumbnail": "https://assets.decentraland.org/QmPbwzxBPULiqdz1fpiNoXRhBXjVF5bYYmM2JYvYaDgV1U",
+        "url": "Fountain_01/Fountain_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "stone",
+          "water",
+          "tiered",
+          "fountain",
+          "plaza"
+        ],
+        "variations": [],
+        "contents": {
+          "Fountain_01/Fountain_01.glb": "QmVwHJx4krhXntXtuQruzti7y8jFn9EQag9oNkBsNgP1p2",
+          "Fountain_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Fountain_01/thumbnail.png": "QmPbwzxBPULiqdz1fpiNoXRhBXjVF5bYYmM2JYvYaDgV1U"
+        }
+      },
+      {
+        "id": "21c695c7d53365492960f1b05a1ffe4d02f2897fbb159ac0be9a45c794fdfad8",
+        "name": "The Fountain of Purity",
+        "thumbnail": "https://assets.decentraland.org/QmRh69yJvZCUEMZMGZWvQCb9WfKpcdwB5zo3wW3xsVpsab",
+        "url": "Fountain_02/Fountain_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "stone",
+          "water",
+          "tiered",
+          "fountain",
+          "plaza"
+        ],
+        "variations": [],
+        "contents": {
+          "Fountain_02/Fountain_02.glb": "QmfVsrn1kbWZDAmVLYzBEdr1hUP34Gat16pjLSmAxRmx82",
+          "Fountain_02/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Fountain_02/thumbnail.png": "QmRh69yJvZCUEMZMGZWvQCb9WfKpcdwB5zo3wW3xsVpsab"
+        }
+      },
+      {
+        "id": "6362519f940eaef8dcaf6e5854e81453f32cbbca4d6e05d81bc697da075efc5b",
+        "name": "The Lonely Fountain",
+        "thumbnail": "https://assets.decentraland.org/QmaZV57FdX4iUyKuHAYNdhwY3kE5NiVwpm2Ruu291b7GVz",
+        "url": "Fountain_03/Fountain_03.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "stone",
+          "water",
+          "tiered",
+          "fountain",
+          "plaza"
+        ],
+        "variations": [],
+        "contents": {
+          "Fountain_03/Fountain_03.glb": "QmVXh8AxdVgGRPLdqgu8iafzB5VH59XBnRzrUM1fRRUCdP",
+          "Fountain_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Fountain_03/thumbnail.png": "QmaZV57FdX4iUyKuHAYNdhwY3kE5NiVwpm2Ruu291b7GVz"
+        }
+      },
+      {
+        "id": "8c60f44e5d3c2a415b46143d491245fdafd3016a193c45bc20e02a1c3c70afd6",
+        "name": "Topaz",
+        "thumbnail": "https://assets.decentraland.org/QmW9fCFfunHPr5fjDPERcA2EZ3W7XvjhDCkU7pU9gV5hxD",
+        "url": "Gem_01/Gem_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_01/Gem_01.glb": "QmefdaZSd6LWSHAyZLgrPEiGwgFH6JRC13CKBtgHk7vAKi",
+          "Gem_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_01/thumbnail.png": "QmW9fCFfunHPr5fjDPERcA2EZ3W7XvjhDCkU7pU9gV5hxD"
+        }
+      },
+      {
+        "id": "6ee5d8fb7a75d61fe84455914758632eb9b38d97254b91e7be9151f83b779dd3",
+        "name": "Emerald",
+        "thumbnail": "https://assets.decentraland.org/Qme4v1QtqfXX6pcHKJ9rfQkM6MFb7G2zgCEuyY4SjQxMo1",
+        "url": "Gem_02/Gem_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_02/Gem_02.glb": "QmS6fs9ah27miD3WXSyqKSADgGRT8E5JCFswakHKKSWeup",
+          "Gem_02/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_02/thumbnail.png": "Qme4v1QtqfXX6pcHKJ9rfQkM6MFb7G2zgCEuyY4SjQxMo1"
+        }
+      },
+      {
+        "id": "96893a3dac49ca6130d331d368786660409b02944a658a348b9c6e260f687bf7",
+        "name": "Beryl",
+        "thumbnail": "https://assets.decentraland.org/QmS9tTCt1j236tBiKMfcwVVkmZH4m5G6dg2fhvTNSyU94P",
+        "url": "Gem_03/Gem_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_03/Gem_03.glb": "QmbAL7EBMCvTvw65rNADfvHr1kcTo68tNg9tkain8VrzFR",
+          "Gem_03/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_03/thumbnail.png": "QmS9tTCt1j236tBiKMfcwVVkmZH4m5G6dg2fhvTNSyU94P"
+        }
+      },
+      {
+        "id": "bc45ca78d4258e98692d21632f1ca777b67f12d880b17811194893adeb691410",
+        "name": "Amethyst",
+        "thumbnail": "https://assets.decentraland.org/QmTXcVqSC88mHnTmj3eY8e2nKjB2jnh7Um7xbsMBMZ3ZXG",
+        "url": "Gem_04/Gem_04.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_04/Gem_04.glb": "QmZ18uACmCTJqHmiMBjNsf4xkfENCdeo47FHjikCg3GqJA",
+          "Gem_04/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_04/thumbnail.png": "QmTXcVqSC88mHnTmj3eY8e2nKjB2jnh7Um7xbsMBMZ3ZXG"
+        }
+      },
+      {
+        "id": "f52f159c1f900897bf78ab46cfb5a1d26382b92c4243b94b4e3b62d97cf200b1",
+        "name": "Citrine",
+        "thumbnail": "https://assets.decentraland.org/QmX9WhpHNKJjZ6Vg6YJgSxxtd3kdKuCVNDs2RocdD5oX56",
+        "url": "Gem_05/Gem_05.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_05/Gem_05.glb": "QmUrpyZV3ULDb29goijN6GW2TcbviXju1jHrUBBavS9Gx4",
+          "Gem_05/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_05/thumbnail.png": "QmX9WhpHNKJjZ6Vg6YJgSxxtd3kdKuCVNDs2RocdD5oX56"
+        }
+      },
+      {
+        "id": "1720f0b40c26e7538fd2bfc66518ceed95c2152f37d680aabe0464def7602fd2",
+        "name": "Aquamarine Jewellery",
+        "thumbnail": "https://assets.decentraland.org/QmbFE3Dx4Etjf5hPWuhUkvjTFsYoy7uczvRDdByPmTSqXR",
+        "url": "Gem_06/Gem_06.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone",
+          "jewellery",
+          "gold",
+          "golden",
+          "framed"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_06/Gem_06.glb": "QmQDvbsNjFBnYXhNvcfwkxgp79oSAtJfXPfSBQAme3Xjoi",
+          "Gem_06/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_06/thumbnail.png": "QmbFE3Dx4Etjf5hPWuhUkvjTFsYoy7uczvRDdByPmTSqXR"
+        }
+      },
+      {
+        "id": "b44feceba496629eda5c53519df054338fe1a893c76452c373e09e67736a5307",
+        "name": "Golden Octahedron Peridot",
+        "thumbnail": "https://assets.decentraland.org/Qmdi8LCa8X63GwVdPnoqiDioFjB2G86nF3aayucJUWvJgk",
+        "url": "Gem_07/Gem_07.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone",
+          "jewellery",
+          "gold",
+          "golden",
+          "framed"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_07/Gem_07.glb": "QmNnJu3xhBGBgnNzdDzGT6Tv8ei4tvGGQf1eVS5Ud8BSKQ",
+          "Gem_07/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_07/thumbnail.png": "Qmdi8LCa8X63GwVdPnoqiDioFjB2G86nF3aayucJUWvJgk"
+        }
+      },
+      {
+        "id": "1fea1f194e5df08393abae375dcd7692adfa0678ade66e854f90a972354ecaff",
+        "name": "Tourmaline Jewellery",
+        "thumbnail": "https://assets.decentraland.org/QmZvzT59Pwi9MJ1aA5xyuxUqBp5KmQ1yt7i7ZLYtx1YYHQ",
+        "url": "Gem_08/Gem_08.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone",
+          "jewellery",
+          "gold",
+          "golden",
+          "framed"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_08/Gem_08.glb": "QmSqnN6nhVQ53qNikD5DmtwD3PuLAPX4iPvJv8YQ3g3Aex",
+          "Gem_08/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_08/thumbnail.png": "QmZvzT59Pwi9MJ1aA5xyuxUqBp5KmQ1yt7i7ZLYtx1YYHQ"
+        }
+      },
+      {
+        "id": "d75906c1f1e9a9edac97fd39e8099b7e9a6d3ae4216ed14b714572de79466a5a",
+        "name": "Sapphire Jewellery",
+        "thumbnail": "https://assets.decentraland.org/QmabxT64er6AVaJMK2vLcptBwdNwbPoSDf3LDnQm8by61E",
+        "url": "Gem_09/Gem_09.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone",
+          "jewellery",
+          "gold",
+          "golden",
+          "framed"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_09/Gem_09.glb": "QmeRFt7xFeYLWUD5bAEjLxpDkE7DZt8DwJG5mMPdPycNr1",
+          "Gem_09/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_09/thumbnail.png": "QmabxT64er6AVaJMK2vLcptBwdNwbPoSDf3LDnQm8by61E"
+        }
+      },
+      {
+        "id": "c0d690055185c6d3e4a17a76a4d9a4319ed61623e1a4a2d1b199dc8dbfea159e",
+        "name": "Alexite Jewellery",
+        "thumbnail": "https://assets.decentraland.org/QmYvCcd7VRSQkD1uo8QZSRkq7CAKnktn4TYYcwu4a1JxKS",
+        "url": "Gem_10/Gem_10.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "jewel",
+          "jewels",
+          "gemstone",
+          "jewellery",
+          "gold",
+          "golden",
+          "framed"
+        ],
+        "variations": [],
+        "contents": {
+          "Gem_10/Gem_10.glb": "QmV2bav5m1PxEPfVJNF6eFcC95Mg2q13p83sRNPKHjCzFf",
+          "Gem_10/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Gem_10/thumbnail.png": "QmYvCcd7VRSQkD1uo8QZSRkq7CAKnktn4TYYcwu4a1JxKS"
+        }
+      },
+      {
+        "id": "861baaa1b1803a8d732a3089933dae14338262e85a461dc596da2b7534a99186",
+        "name": "Gold Bar",
+        "thumbnail": "https://assets.decentraland.org/QmVpSdoyJS1JQTprCNuMCyjNadXtpW8tpNfcxHLpkHf1oP",
+        "url": "GoldBar_01/GoldBar_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "golden",
+          "bar"
+        ],
+        "variations": [],
+        "contents": {
+          "GoldBar_01/GoldBar_01.glb": "QmXXeU2Mwk5V6kD5yHVQAN77A8kW1gVigh8oJbD2eL71ud",
+          "GoldBar_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "GoldBar_01/thumbnail.png": "QmVpSdoyJS1JQTprCNuMCyjNadXtpW8tpNfcxHLpkHf1oP"
+        }
+      },
+      {
+        "id": "cb69229313068dbd0a7899323457fb8a16d36a29ef0572c5f6ba077338a4f478",
+        "name": "Beach Fern",
+        "thumbnail": "https://assets.decentraland.org/QmSJBv6bLvVRwsVReNJ5pbwR4RHnkQRPYTnn8y8TLpb7iu",
+        "url": "Grass_01/Grass_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "Grass_01/Grass_01.glb": "QmNmMwJSk6fTW8BF5PT6cdoiPPyNJM2EAPUve8LepVkuAR",
+          "Grass_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Grass_01/thumbnail.png": "QmSJBv6bLvVRwsVReNJ5pbwR4RHnkQRPYTnn8y8TLpb7iu"
+        }
+      },
+      {
+        "id": "7b2a43ec57e784773e0431af41c131301363bab998a49fb836ad77e292fd647d",
+        "name": "Blue Star Fern",
+        "thumbnail": "https://assets.decentraland.org/QmQWp4RhB9SMQAA1Zz2aSMihBod8HnKnLjauCLQWCCdWd8",
+        "url": "Grass_02/Grass_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "Grass_02/Grass_02.glb": "Qmd7tojsxnG57syCkUeDLsf5MTo7aTRgcfREaDQ2rPJt7h",
+          "Grass_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Grass_02/thumbnail.png": "QmQWp4RhB9SMQAA1Zz2aSMihBod8HnKnLjauCLQWCCdWd8"
+        }
+      },
+      {
+        "id": "1154adaf9462d8fc7a07c5bb1b75e59df3f9a7fee41999f7462e6b5cb9c30e22",
+        "name": "Cretan Brake Fern",
+        "thumbnail": "https://assets.decentraland.org/QmSkCo4JqERGWVhS2JkgzqQVMZAR2j8AazMM3XsrDi4ABQ",
+        "url": "Grass_03/Grass_03.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "Grass_03/Grass_03.glb": "QmcK8QAoEaxXPnVUeCbk3DpGjUnurTEtQDzzNTeLVxwGTJ",
+          "Grass_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Grass_03/thumbnail.png": "QmSkCo4JqERGWVhS2JkgzqQVMZAR2j8AazMM3XsrDi4ABQ"
+        }
+      },
+      {
+        "id": "b0953fec2d375c857d775ba815cab26b73d2013ec0ac79c09bfa84cfebad4302",
+        "name": "Sand Reed",
+        "thumbnail": "https://assets.decentraland.org/QmVyBSKZwqmHgSqfdFcbyLhC2TFzCs2fDPfTj4JQNc4619",
+        "url": "Grass_04/Grass_04.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "Grass_04/Grass_04.glb": "QmRuzZ3sAG4zYucKzEYpbdEwj7ZatTDkMPy38ffA9Xb3i7",
+          "Grass_04/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Grass_04/thumbnail.png": "QmVyBSKZwqmHgSqfdFcbyLhC2TFzCs2fDPfTj4JQNc4619"
+        }
+      },
+      {
+        "id": "fca17ba4590c19744ba756e231846c72d01b15c0223e3a8822cc88fae8469247",
+        "name": "Beachgrass",
+        "thumbnail": "https://assets.decentraland.org/QmR7k4VBGQ9gF2FmJwfs7XVaJ2ykfFGQLKhCWH9aWRPUin",
+        "url": "Grass_05/Grass_05.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "Grass_05/Grass_05.glb": "QmYhpLk3e5br12dhtAe16LFbX3fspLUFQFWnNy1HHskuAD",
+          "Grass_05/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Grass_05/thumbnail.png": "QmR7k4VBGQ9gF2FmJwfs7XVaJ2ykfFGQLKhCWH9aWRPUin"
+        }
+      },
+      {
+        "id": "b45c407f299474f96e3c04763d60aa7cdac6d5dbb59954798e15cbab209d2174",
+        "name": "Flintlock Pistol",
+        "thumbnail": "https://assets.decentraland.org/QmaLc4QSDM1MUFjJu6TEVPWLkAGPUpMg4mUW3wAMqZRNku",
+        "url": "Gun_01/Gun_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "iron",
+          "wood",
+          "brass",
+          "trigger",
+          "bullet",
+          "gun",
+          "weapon",
+          "powder",
+          "boom",
+          "bang"
+        ],
+        "variations": [],
+        "contents": {
+          "Gun_01/Gun_01.glb": "QmU3rwL2Jo39Kh44b9iTS3CjBV7zwRZEzNUq2cSxWQRCB8",
+          "Gun_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Gun_01/thumbnail.png": "QmaLc4QSDM1MUFjJu6TEVPWLkAGPUpMg4mUW3wAMqZRNku"
+        }
+      },
+      {
+        "id": "35924eb6fbffaa2539b0bc8b8413fbde73f827e1379b47ac6382c69fb99c3581",
+        "name": "Hammer",
+        "thumbnail": "https://assets.decentraland.org/QmXFxZ77KM1y9cYPeGGJtPsrF8n6y6r4gi4CFhwDgmipkE",
+        "url": "Hammer_01/Hammer_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "stone",
+          "wood",
+          "wooden",
+          "leather",
+          "strips",
+          "tool"
+        ],
+        "variations": [],
+        "contents": {
+          "Hammer_01/Hammer_01.glb": "QmUi9pm88aQDDzZtGbzttxVr8Waqwfw4uQhyLUgxfTSaio",
+          "Hammer_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Hammer_01/thumbnail.png": "QmXFxZ77KM1y9cYPeGGJtPsrF8n6y6r4gi4CFhwDgmipkE"
+        }
+      },
+      {
+        "id": "ffb441bd6deef32cdcf9bf70730072e66dffd16d8434b988e32bf85aa4f1f69d",
+        "name": "Cooking Tripod",
+        "thumbnail": "https://assets.decentraland.org/QmY8ZNppCdCs8CxuXaiRanmbzqVSmQUM7qtf8WJvz3VWvw",
+        "url": "HangingStructure_01/HangingStructure_01.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "stick",
+          "sticks",
+          "rope",
+          "hook"
+        ],
+        "variations": [],
+        "contents": {
+          "HangingStructure_01/HangingStructure_01.glb": "Qmd7dea9v83kuBrjVvaKcRzzrLYfX7sLKT3iJMjre7Ddj4",
+          "HangingStructure_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "HangingStructure_01/thumbnail.png": "QmY8ZNppCdCs8CxuXaiRanmbzqVSmQUM7qtf8WJvz3VWvw"
+        }
+      },
+      {
+        "id": "08bb7527334af7ca471535b340f8370cd621fea4488df8b0cb1412436e66e586",
+        "name": "Hand Hook",
+        "thumbnail": "https://assets.decentraland.org/QmX6MTBU7KQ1QH6rrwCFeepijByoAaQ5uXC22doYnZyNNX",
+        "url": "Hook_01/Hook_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "hook",
+          "hand",
+          "golden",
+          "gold",
+          "wood",
+          "tool"
+        ],
+        "variations": [],
+        "contents": {
+          "Hook_01/Hook_01.glb": "QmbKWLecbgXWkCS4DAqHVmHLdMs3DzuH3zXqf2SBDsXjZ8",
+          "Hook_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Hook_01/thumbnail.png": "QmX6MTBU7KQ1QH6rrwCFeepijByoAaQ5uXC22doYnZyNNX"
+        }
+      },
+      {
+        "id": "cba87959251af8b60a0e5ec08630c300adae9611f6be6c52d50cd0cc135684c7",
+        "name": "Jungle Lamp Post",
+        "thumbnail": "https://assets.decentraland.org/QmRQ1yCLLvdwvXQGTajvobHb4ovoKtXscPJy1iazn9iSqz",
+        "url": "JungleLampPost_01/JungleLampPost_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "lamp",
+          "lamps",
+          "iron",
+          "rope",
+          "post"
+        ],
+        "variations": [],
+        "contents": {
+          "JungleLampPost_01/JungleLampPost_01.glb": "QmPe71amKYH9L5btmA6qWw5yVYrDVXmSxntg4zsdVdSZGL",
+          "JungleLampPost_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "JungleLampPost_01/thumbnail.png": "QmRQ1yCLLvdwvXQGTajvobHb4ovoKtXscPJy1iazn9iSqz"
+        }
+      },
+      {
+        "id": "7747bb7cbae38cfe7b0245c14fb460f65bfe4f19a98a3774ad30fc00bad23adc",
+        "name": "Jungle Fern",
+        "thumbnail": "https://assets.decentraland.org/QmaTG1NWvk65giAb2QuWHoGrAtiyDwXtjHpcbDJuha5p9e",
+        "url": "JunglePlant_01/JunglePlant_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_01/JunglePlant_01.glb": "QmbjPPqczJLXZURY8ui4q67LWpFoxD6Tn63iQxknnytFTE",
+          "JunglePlant_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_01/thumbnail.png": "QmaTG1NWvk65giAb2QuWHoGrAtiyDwXtjHpcbDJuha5p9e"
+        }
+      },
+      {
+        "id": "19b511a0999349f450043cd35563e9de5ee9409c44027118da9018ffb366981f",
+        "name": "Jungle Shrub",
+        "thumbnail": "https://assets.decentraland.org/QmXRYpXTvJDYejCK5eNRNrTXWeK3eekVq2qCxdHAqGEVw7",
+        "url": "JunglePlant_02/JunglePlant_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_02/JunglePlant_02.glb": "QmPQxhJozLig5bGwf2QckEJfLJgcQck1csN87SZXGcKEKB",
+          "JunglePlant_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_02/thumbnail.png": "QmXRYpXTvJDYejCK5eNRNrTXWeK3eekVq2qCxdHAqGEVw7"
+        }
+      },
+      {
+        "id": "42b52096d30e017898a1c0bd13beaf272bb0e88aa5bd5525889ef83a81365335",
+        "name": "Monstera Deliciosa",
+        "thumbnail": "https://assets.decentraland.org/QmWenNp2Fci1UXWVbZ2inHeA9SsQPFuEwVU4VYCwKwzV9Z",
+        "url": "JunglePlant_03/JunglePlant_03.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_03/JunglePlant_03.glb": "QmNyB4mXUuz9BUmgSZ6AB5CGsgtb6sm2ro1qWmoPXhRVZ1",
+          "JunglePlant_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_03/thumbnail.png": "QmWenNp2Fci1UXWVbZ2inHeA9SsQPFuEwVU4VYCwKwzV9Z"
+        }
+      },
+      {
+        "id": "e8ae069c9eec15b88e48a64570267f0a55d77ab8f7d68387a6b308194d6ad7d3",
+        "name": "Musa Acuminata",
+        "thumbnail": "https://assets.decentraland.org/QmXB4PijkFCyBzAwr8dg2MHHLQcFFojesyuP9Rfj2BeCAd",
+        "url": "JunglePlant_04/JunglePlant_04.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_04/JunglePlant_04.glb": "QmagkBAfy2YtFmkUr2JGiDXTKJxThU2NVy9Wtsp48utrNU",
+          "JunglePlant_04/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_04/thumbnail.png": "QmXB4PijkFCyBzAwr8dg2MHHLQcFFojesyuP9Rfj2BeCAd"
+        }
+      },
+      {
+        "id": "579b9bc76a436b5e13f3d9e13ffbf11b5df85813df594015655f4485f6eb103e",
+        "name": "Bird Of Paradise",
+        "thumbnail": "https://assets.decentraland.org/QmRtjP5iqRNk8qxNTpZtJpXZTSKuZ97KFGdYskZfjTjkZE",
+        "url": "JunglePlant_05/JunglePlant_05.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_05/JunglePlant_05.glb": "QmcVmijLQ36thCmfZDxY1A5Aky7PHEKFdkPw1JBKbCjDhu",
+          "JunglePlant_05/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_05/thumbnail.png": "QmRtjP5iqRNk8qxNTpZtJpXZTSKuZ97KFGdYskZfjTjkZE"
+        }
+      },
+      {
+        "id": "bce2c50aff7d1e5e80dab8d5dcdf0426eb055b840db3cd5601081c05f63a0add",
+        "name": "Beachgrass Fern",
+        "thumbnail": "https://assets.decentraland.org/QmVeeVFypjLnvcc53tdNKPfzmUDrGPMn98H1hqte1c2Wnb",
+        "url": "JunglePlant_06/JunglePlant_06.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_06/JunglePlant_06.glb": "QmZyJQcyZ9evHCcyv1ojrCMotxg6Y5rEgXomyfWY8cfSbk",
+          "JunglePlant_06/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_06/thumbnail.png": "QmVeeVFypjLnvcc53tdNKPfzmUDrGPMn98H1hqte1c2Wnb"
+        }
+      },
+      {
+        "id": "ab8aff45873336079ccc7c4bdb31b2224d09e10730e3d3a0aee3d70133bbc78f",
+        "name": "Small Palm Tree",
+        "thumbnail": "https://assets.decentraland.org/QmQ1at4gD9d2JvB2xykxevBYkRtpepM3JgwbxS1bqrrYT5",
+        "url": "JunglePlant_07/JunglePlant_07.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_07/JunglePlant_07.glb": "Qmej7guhs6VQE23V2kFD6S2866exmdq2Z632W1ot7FigzE",
+          "JunglePlant_07/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "JunglePlant_07/thumbnail.png": "QmQ1at4gD9d2JvB2xykxevBYkRtpepM3JgwbxS1bqrrYT5"
+        }
+      },
+      {
+        "id": "c74d481180be65b0f5e92421ff234a5e46be3c6f21779258eb94ec8887a3d03f",
+        "name": "Plumeria",
+        "thumbnail": "https://assets.decentraland.org/QmRVAj1sU9yWJQhg7oPsbwwHvHQyMroQxH1Umcx9Hf1E1F",
+        "url": "JunglePlant_08/JunglePlant_08.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_08/JunglePlant_08.glb": "QmdUbEMcm7iAduBr9X1UK5mjTmBin4BNEudQ87w394Uqdp",
+          "JunglePlant_08/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_08/thumbnail.png": "QmRVAj1sU9yWJQhg7oPsbwwHvHQyMroQxH1Umcx9Hf1E1F"
+        }
+      },
+      {
+        "id": "450928287e5ce53a1e3cc2f2ef1199edc8acbd77909d025cad8e74e282a4ef74",
+        "name": "Areca palm",
+        "thumbnail": "https://assets.decentraland.org/QmdGFRL9nYteTFkKZZGhnYgbSvMZPVhX2FDZfyj5mtMoFJ",
+        "url": "JunglePlant_09/JunglePlant_09.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "JunglePlant_09/JunglePlant_09.glb": "QmXJ5s29ceeG5VWB9k6ozrYniicGkWLb39dUdYtwj8GYNQ",
+          "JunglePlant_09/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "JunglePlant_09/thumbnail.png": "QmdGFRL9nYteTFkKZZGhnYgbSvMZPVhX2FDZfyj5mtMoFJ"
+        }
+      },
+      {
+        "id": "0b4e54c3251c635310b35a4273ec163eee49a20cb1bc5027779bdeb7ddb25174",
+        "name": "Rustic Wodden Ladder",
+        "thumbnail": "https://assets.decentraland.org/QmfF7w8pxLYqwemkVQnFZo4XUe5p5TDBCjpDnzJ4NVnT7B",
+        "url": "Ladder_01/Ladder_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "ladder",
+          "steps"
+        ],
+        "variations": [],
+        "contents": {
+          "Ladder_01/Ladder_01.glb": "QmTnd2W1tcDcx2zZqvcgaqfV6huSKJsetfX24NYrrSgpcM",
+          "Ladder_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Ladder_01/thumbnail.png": "QmfF7w8pxLYqwemkVQnFZo4XUe5p5TDBCjpDnzJ4NVnT7B"
+        }
+      },
+      {
+        "id": "0567f30c5d86dff6e87020e6c88012a030e1c4c64f4f5ec3a62747280c4af56b",
+        "name": "Crew Candle Lamp",
+        "thumbnail": "https://assets.decentraland.org/QmdjL7deweqmZkPjHCrqadFXkc7dcrRwBu3CHhpFVuV12N",
+        "url": "Lantern_01/Lantern_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "candle",
+          "lamp",
+          "crew",
+          "ship",
+          "flagship",
+          "night"
+        ],
+        "variations": [],
+        "contents": {
+          "Lantern_01/Lantern_01.glb": "QmPDbLYkB2EYXxKB3UxAjNsVg1PeTzUvX9292rYXTHf4WW",
+          "Lantern_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Lantern_01/thumbnail.png": "QmdjL7deweqmZkPjHCrqadFXkc7dcrRwBu3CHhpFVuV12N"
+        }
+      },
+      {
+        "id": "9627768188365d3da2e14f46aa7e0f4393a9a0d12595354e8fd02dc3f5a6d97a",
+        "name": "Lilypad",
+        "thumbnail": "https://assets.decentraland.org/QmQRTCoB2zhZjHozVsgEyrDPWAHiZv8TBeftsRonjKVX8V",
+        "url": "LilyPad_01/LilyPad_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "beach",
+          "foliage",
+          "plant",
+          "plants",
+          "water"
+        ],
+        "variations": [],
+        "contents": {
+          "LilyPad_01/LilyPad_01.glb": "QmZAavizfLy7mvTvM4nCYJhEtnkCdBFBCEr48dhD415PPU",
+          "LilyPad_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "LilyPad_01/thumbnail.png": "QmQRTCoB2zhZjHozVsgEyrDPWAHiZv8TBeftsRonjKVX8V"
+        }
+      },
+      {
+        "id": "56afe724d0dc8adcdc25b2c5668189fc8f86b9fca80638839cf74a1e1f74a9ec",
+        "name": "Sealed Pirate Scroll",
+        "thumbnail": "https://assets.decentraland.org/QmcrW1yZDkBfrTV7SW67dQVnujk7pryVNBdFt9s18Zamnc",
+        "url": "Map_01/Map_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "paper",
+          "scroll",
+          "leather",
+          "strips",
+          "rope"
+        ],
+        "variations": [],
+        "contents": {
+          "Map_01/Map_01.glb": "QmY3dxAf7LkaMv8vLxYym2ECc9xmNcFXip9jDKk2QDJpA5",
+          "Map_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Map_01/thumbnail.png": "QmcrW1yZDkBfrTV7SW67dQVnujk7pryVNBdFt9s18Zamnc"
+        }
+      },
+      {
+        "id": "4c0cbc921d36f1cb90db6f3ea140e480e03326c70e4d179950093311c2f47de1",
+        "name": "Pirate Scroll",
+        "thumbnail": "https://assets.decentraland.org/QmdoHfEroNtTGPLNoHs1CddZFv3kDpxzi5HSaXwvT5dZgD",
+        "url": "Map_03/Map_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "paper",
+          "scroll",
+          "instructions",
+          "recipe"
+        ],
+        "variations": [],
+        "contents": {
+          "Map_03/Map_03.glb": "QmPh44qWa5b4CockR26y4qaPDFC5rfxn9eRwbEbhW2AbGf",
+          "Map_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Map_03/thumbnail.png": "QmdoHfEroNtTGPLNoHs1CddZFv3kDpxzi5HSaXwvT5dZgD"
+        }
+      },
+      {
+        "id": "4266312be37f26b9c1322a1cc6ed6c7dc2f05bd6080893409572113cf1620e2d",
+        "name": "Treasure Map",
+        "thumbnail": "https://assets.decentraland.org/QmTESqfLWj9CvHqpM5ZN7mpFwgGAWNG6ihUz5LqSSgQhwZ",
+        "url": "Map_04/Map_04.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "paper",
+          "scroll",
+          "map",
+          "instructions",
+          "treasure",
+          "spot"
+        ],
+        "variations": [],
+        "contents": {
+          "Map_04/Map_04.glb": "QmNSBn1wLSi2gRMgz6PT7MSr49e7aLZgeVfcwSTd4DVWsM",
+          "Map_04/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Map_04/thumbnail.png": "QmTESqfLWj9CvHqpM5ZN7mpFwgGAWNG6ihUz5LqSSgQhwZ"
+        }
+      },
+      {
+        "id": "1aae29f5fcca502edbbe02fa214f6d74f8f8cc23b43af3c2ec4fd326bbac03db",
+        "name": "Treasure Chest Lid",
+        "thumbnail": "https://assets.decentraland.org/QmbrWUJTaoEdJgZ5pNNo6aeSXg29McMFWQQTjVAGgEc1Lo",
+        "url": "OpenChestTop_01/OpenChestTop_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "iron",
+          "chest",
+          "trunk",
+          "gold",
+          "golden"
+        ],
+        "variations": [],
+        "contents": {
+          "OpenChestTop_01/OpenChestTop_01.glb": "QmWerHRGBTN2cuPVCFeASiTN9ay5oQT3r1bzkAyMi61q5A",
+          "OpenChestTop_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "OpenChestTop_01/thumbnail.png": "QmbrWUJTaoEdJgZ5pNNo6aeSXg29McMFWQQTjVAGgEc1Lo"
+        }
+      },
+      {
+        "id": "2b6c6e62b16541a789684f05793a0eeb2bcedd15e5193dfc005f84a6a03d175d",
+        "name": "Treasure Chest Base",
+        "thumbnail": "https://assets.decentraland.org/QmfPGjGW3fC7VUbr4bc5ycKXvJFUjBos4NKDpUYqVaWGNV",
+        "url": "OpenChest_01/OpenChest_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "iron",
+          "chest",
+          "trunk",
+          "gold",
+          "golden",
+          "doubloon",
+          "doubloons",
+          "coin",
+          "coins"
+        ],
+        "variations": [],
+        "contents": {
+          "OpenChest_01/OpenChest_01.glb": "QmWQJoozFH6egQkRsyNPW6wuSjfjNCVPn7CJm4aZKSBnb2",
+          "OpenChest_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "OpenChest_01/thumbnail.png": "QmfPGjGW3fC7VUbr4bc5ycKXvJFUjBos4NKDpUYqVaWGNV"
+        }
+      },
+      {
+        "id": "57a85831da8a50ed8a132bc9fb875240b70604fbd4cfebf216c0c029a3e1a2dd",
+        "name": "Bent Palm Tree",
+        "thumbnail": "https://assets.decentraland.org/QmVtUDbkssakiNYFzt2Z4LEmmf4NDaSvoGFK4Q8mtd5u2N",
+        "url": "PalmTree_01/PalmTree_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "tree",
+          "beach",
+          "plant",
+          "plants",
+          "foliage"
+        ],
+        "variations": [],
+        "contents": {
+          "PalmTree_01/PalmTree_01.glb": "QmSBwW4KQsSadyBqSB7bzFkmUwASBsiKZVSq1waRoATWsP",
+          "PalmTree_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "PalmTree_01/thumbnail.png": "QmVtUDbkssakiNYFzt2Z4LEmmf4NDaSvoGFK4Q8mtd5u2N"
+        }
+      },
+      {
+        "id": "1df7e0d03ebf268d4263d5fbf36463bfa21fe1bad48f0bc9b21c1dcd56269ea1",
+        "name": "Tall Palm Tree",
+        "thumbnail": "https://assets.decentraland.org/QmW9AkKRNQysRALUqHKCE97ie9LgS1W7mj5CNcuPG9WSJ5",
+        "url": "PalmTree_02/PalmTree_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "tree",
+          "beach",
+          "plant",
+          "plants",
+          "foliage"
+        ],
+        "variations": [],
+        "contents": {
+          "PalmTree_02/PalmTree_02.glb": "QmWPWa8y9sGhTfmbCJaQb2HdPoBQBAHSMKmibduCWgJbq6",
+          "PalmTree_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "PalmTree_02/thumbnail.png": "QmW9AkKRNQysRALUqHKCE97ie9LgS1W7mj5CNcuPG9WSJ5"
+        }
+      },
+      {
+        "id": "7ac86d8d868d1a5b62bb6b86f004c4c46bd80994fa8c8b21c9356493f4a88576",
+        "name": "Leather Tricorn Hat",
+        "thumbnail": "https://assets.decentraland.org/QmZmbv8aUrVCojZWswjRZ3ySatDXBLmqAnNMdrkfRYw2UQ",
+        "url": "PirateHat_01/PirateHat_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "leather",
+          "hat",
+          "red",
+          "golden",
+          "strips"
+        ],
+        "variations": [],
+        "contents": {
+          "PirateHat_01/PirateHat_01.glb": "QmNdTdr1YqTgu73ViyQcSQQXXvBeph8oq69ZjruSGa8jBP",
+          "PirateHat_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "PirateHat_01/thumbnail.png": "QmZmbv8aUrVCojZWswjRZ3ySatDXBLmqAnNMdrkfRYw2UQ"
+        }
+      },
+      {
+        "id": "bb0d2e36a1e21871eb7b67281bf94493f705bc7b49d92c3eec6da1d854e9dd86",
+        "name": "Black Tricorn Hat",
+        "thumbnail": "https://assets.decentraland.org/QmbKH4ENPAqZtXHgJspzpoUvz4RViVYgc9DtrdhyUA1rAr",
+        "url": "PirateHat_02/PirateHat_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "leather",
+          "hat",
+          "red",
+          "golden",
+          "strips",
+          "feather"
+        ],
+        "variations": [],
+        "contents": {
+          "PirateHat_02/PirateHat_02.glb": "QmU5LqJHVDnudzSqj787Ei3bhF2K1pL6d7F1jNB1NwSE5M",
+          "PirateHat_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "PirateHat_02/thumbnail.png": "QmbKH4ENPAqZtXHgJspzpoUvz4RViVYgc9DtrdhyUA1rAr"
+        }
+      },
+      {
+        "id": "d83465c124e5cb14a1ed98d72849582ac23a795eb3184dfd1ade56fee8ccc5c1",
+        "name": "Wooden Plate",
+        "thumbnail": "https://assets.decentraland.org/QmZvAKrgZnRufMUMhPF2Qk8MJe4akbXrT3v78Q9MXUwMJS",
+        "url": "Plate_01/Plate_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "cooking",
+          "dish",
+          "meal"
+        ],
+        "variations": [],
+        "contents": {
+          "Plate_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Plate_01/Plate_01.glb": "QmdmH3xgLsZaX16rKzJphHGAJAUKD9y6w9uhVELga5g4BV",
+          "Plate_01/thumbnail.png": "QmZvAKrgZnRufMUMhPF2Qk8MJe4akbXrT3v78Q9MXUwMJS"
+        }
+      },
+      {
+        "id": "2bd6cd776472203617634e20aab340e9e2218b20edb27738b142b8e12efd852e",
+        "name": "Wooden Raft",
+        "thumbnail": "https://assets.decentraland.org/QmTr2WHLVyDvg3A8o6VtjVLtfUFAgRYSE8LY1p3rTQoccz",
+        "url": "Raft_01/Raft_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "wood",
+          "wooden",
+          "rope",
+          "sail"
+        ],
+        "variations": [],
+        "contents": {
+          "Raft_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Raft_01/Raft_01.glb": "Qmf4LUY8Nh1WZKfUEeFgS7WaHap67n5eS2zL6SoGdS3Mu8",
+          "Raft_01/thumbnail.png": "QmTr2WHLVyDvg3A8o6VtjVLtfUFAgRYSE8LY1p3rTQoccz"
+        }
+      },
+      {
+        "id": "032089047ed02da97d267b25003c2c0441567252074001329a9e2b188f61fefb",
+        "name": "Rock Arch",
+        "thumbnail": "https://assets.decentraland.org/QmVMCYFdoJGauvsNmq8Dmi9ZWQaBfWtEeqARmfJXTR3XMP",
+        "url": "RockArc_01/RockArc_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "arch",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockArc_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockArc_01/RockArc_01.glb": "QmUyUoTVwsieB26pDqVEHnTsMFjYxCtEZt1upxAEs88w6D",
+          "RockArc_01/thumbnail.png": "QmVMCYFdoJGauvsNmq8Dmi9ZWQaBfWtEeqARmfJXTR3XMP"
+        }
+      },
+      {
+        "id": "6dbc424caffb04dc5cbc780bdbe2512c03ee5563998f2ea1b5cd9774cc1881bc",
+        "name": "Rock Arch",
+        "thumbnail": "https://assets.decentraland.org/QmYSEqXcivKRAXq4rcwwxLoW8A8bX1dtuDUaExF9zsMnjb",
+        "url": "RockArc_02/RockArc_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "arch",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockArc_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockArc_02/RockArc_02.glb": "QmTT3pVJKYBg9UtrFd2RwDUuVhchhBQ7phYPrZaVhE8Nby",
+          "RockArc_02/thumbnail.png": "QmYSEqXcivKRAXq4rcwwxLoW8A8bX1dtuDUaExF9zsMnjb"
+        }
+      },
+      {
+        "id": "1f77f6dd218006127090e7a5956bd80067bf7e03dadfdb47d47069d2320ee89e",
+        "name": "Beach Rock",
+        "thumbnail": "https://assets.decentraland.org/QmbYJVYbuU93EgscAk8x3JdGntwktebXuXg6qWkexNn98M",
+        "url": "RockBig_01/RockBig_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockBig_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockBig_01/RockBig_01.glb": "QmfANKWok7bGfnFLKsXsP8Ptc6LmFSXBJGBtVNreefKrWS",
+          "RockBig_01/thumbnail.png": "QmbYJVYbuU93EgscAk8x3JdGntwktebXuXg6qWkexNn98M"
+        }
+      },
+      {
+        "id": "112d158895261926834f20cac24af0514bbbd6c277860366acc3c0bb3d79d92c",
+        "name": "Beach Rock",
+        "thumbnail": "https://assets.decentraland.org/QmR4wsUtXUu7excuCd3TSHmBfhHa4ddqGHskFNmJYFSm2S",
+        "url": "RockBig_02/RockBig_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockBig_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockBig_02/RockBig_02.glb": "QmWRnaAUUjPHwFHvuhXmfbzx9xqtfLKUGyeurbxnhgoaSz",
+          "RockBig_02/thumbnail.png": "QmR4wsUtXUu7excuCd3TSHmBfhHa4ddqGHskFNmJYFSm2S"
+        }
+      },
+      {
+        "id": "5214b969c8638226ebdb7428f8b5987abddfa158514465f92204b2688f54bc26",
+        "name": "Beach Rock",
+        "thumbnail": "https://assets.decentraland.org/QmatkHULk6mZt8AUV1j66jwL4aYAa6oJo2Aaoq3ogtA7MZ",
+        "url": "RockBig_03/RockBig_03.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockBig_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockBig_03/RockBig_03.glb": "QmZg3a5kFxP9RPn5N7XLCJxUy5DRetvMsaMFgF7FraX9RG",
+          "RockBig_03/thumbnail.png": "QmatkHULk6mZt8AUV1j66jwL4aYAa6oJo2Aaoq3ogtA7MZ"
+        }
+      },
+      {
+        "id": "140da7da4981166d75a3efbaedf08bbbb4513561677d90cea111678c2dbfc4a4",
+        "name": "Beach Rock",
+        "thumbnail": "https://assets.decentraland.org/QmUjtbk9EWfmqjvZZ8YdbabmghkpMjJpZhMdF19PGi8rMC",
+        "url": "RockBig_04/RockBig_04.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockBig_04/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockBig_04/RockBig_04.glb": "QmTddHJESkhVrSYoRutNt1rKng7YuVPtonsXyHCvhwW1CE",
+          "RockBig_04/thumbnail.png": "QmUjtbk9EWfmqjvZZ8YdbabmghkpMjJpZhMdF19PGi8rMC"
+        }
+      },
+      {
+        "id": "d3d120906ad6ec70613e1a695b314ce305017411a8fff28411b549ab5a9cc94b",
+        "name": "Beach Rock",
+        "thumbnail": "https://assets.decentraland.org/QmdMKBNyH5drovRKM1e5HKb3uwSuMyArhxBoEhCxdJyDnP",
+        "url": "RockBig_05/RockBig_05.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockBig_05/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockBig_05/RockBig_05.glb": "QmSbs9yWJtMwAx2eUjjoe9Qo63MUDBvdPQs4cM6uYYbtps",
+          "RockBig_05/thumbnail.png": "QmdMKBNyH5drovRKM1e5HKb3uwSuMyArhxBoEhCxdJyDnP"
+        }
+      },
+      {
+        "id": "6b43517b56c445ddd77d5d93df9ab37f3e3097e56578586c473e855c1c2adee7",
+        "name": "Beach Rock",
+        "thumbnail": "https://assets.decentraland.org/QmY7Br5kgvDWd7hHoipGCiKYENDU9e5D1GyB8JpHPoUhgs",
+        "url": "RockBig_06/RockBig_06.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockBig_06/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockBig_06/RockBig_06.glb": "QmU4VaVuPcjC9hBbCLSG2ckU5YJs4G4WqVHoe7aJQHd4Qv",
+          "RockBig_06/thumbnail.png": "QmY7Br5kgvDWd7hHoipGCiKYENDU9e5D1GyB8JpHPoUhgs"
+        }
+      },
+      {
+        "id": "e810c90fcc870e3bd8b48b0d6e0a6865f55bb9343845ad426772f88320af597f",
+        "name": "Beach Rock",
+        "thumbnail": "https://assets.decentraland.org/QmePaCyzzM47RW183QeTQavKVrHx9bHfEZtUdSDwpsPut1",
+        "url": "RockBig_07/RockBig_07.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockBig_07/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockBig_07/RockBig_07.glb": "QmXZXG86WDd4xkVNwjVnswQWCYweDbLdJs54VABU4h4uFV",
+          "RockBig_07/thumbnail.png": "QmePaCyzzM47RW183QeTQavKVrHx9bHfEZtUdSDwpsPut1"
+        }
+      },
+      {
+        "id": "3eed82c7e96220879647e53a8fcfa6de4a5d21f46ff562dc3284f792a7ed81ce",
+        "name": "Rock Pillars",
+        "thumbnail": "https://assets.decentraland.org/QmbLrmD8ki1xeSWvjEd2y1S3aQ4eFiNPE8XeV1A5oWeCf4",
+        "url": "RockPillars_01/RockPillars_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "pillar",
+          "pillars"
+        ],
+        "variations": [],
+        "contents": {
+          "RockPillars_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockPillars_01/RockPillars_01.glb": "QmPWGajd9Mkfxtj8UzLy1TkyZ9nhDSWWzeZkkyFUstMZGd",
+          "RockPillars_01/thumbnail.png": "QmbLrmD8ki1xeSWvjEd2y1S3aQ4eFiNPE8XeV1A5oWeCf4"
+        }
+      },
+      {
+        "id": "12bd9f6f01a57f6d01aa87d8196e9890db45c00a6814fad1a35570948aff4b98",
+        "name": "Sandy Rock",
+        "thumbnail": "https://assets.decentraland.org/QmcoW7NWcv7RXjWRk5ZoAYFfLJ5rrr3gatzjMDSi2KWJfF",
+        "url": "RockSand_01/RockSand_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "sand",
+          "sandy",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockSand_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockSand_01/RockSand_01.glb": "QmYUArKokVZyQNeB2g1kwjqz1QcZMmLgigi6Pmvg7zjzzY",
+          "RockSand_01/thumbnail.png": "QmcoW7NWcv7RXjWRk5ZoAYFfLJ5rrr3gatzjMDSi2KWJfF"
+        }
+      },
+      {
+        "id": "f80a5277a5cbe3d54fcb9815b71a3935cf81f7fec456120bdd782ca1cda41f58",
+        "name": "Sandy Rock",
+        "thumbnail": "https://assets.decentraland.org/QmU5RBgm5hZpSPruaD9MJ3CFPRDjspGsFoxvX1X4XdGfcZ",
+        "url": "RockSand_02/RockSand_02.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "sand",
+          "sandy",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockSand_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockSand_02/RockSand_02.glb": "QmSt19trCjaEFM5NayNDzoe4ztvwiARct6eQMJVTq1xzDg",
+          "RockSand_02/thumbnail.png": "QmU5RBgm5hZpSPruaD9MJ3CFPRDjspGsFoxvX1X4XdGfcZ"
+        }
+      },
+      {
+        "id": "56e70e7d308268a1e026319c87b11dcbbc3d0f9c5a1a549d3614eac3e925d7b0",
+        "name": "Sandy Rock",
+        "thumbnail": "https://assets.decentraland.org/Qmcupqw6t1uw5KZ9swU5kUW8xdzJXND4twE3fFCPANVFPW",
+        "url": "RockSand_03/RockSand_03.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "sand",
+          "sandy",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockSand_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockSand_03/RockSand_03.glb": "QmPNHpYtKcCUQnA8Q9nLAEKwggXrij7eNnZ9f71mQWzjUg",
+          "RockSand_03/thumbnail.png": "Qmcupqw6t1uw5KZ9swU5kUW8xdzJXND4twE3fFCPANVFPW"
+        }
+      },
+      {
+        "id": "3c5ce4f1fc7c8093d4aecb3ad008039a8917dec9beba0cad3f8a90b501fe0e13",
+        "name": "Sandy Rock",
+        "thumbnail": "https://assets.decentraland.org/QmYDSh9hGZ58TuoDQiZoRJYG2mwrQY91LfdNJYXcFncMaL",
+        "url": "RockSand_04/RockSand_04.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "sand",
+          "sandy",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockSand_04/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockSand_04/RockSand_04.glb": "QmRzBAbJ1Ym5nojxFYHrhPGwVhRAvjBcnoUisNJE1Bt19F",
+          "RockSand_04/thumbnail.png": "QmYDSh9hGZ58TuoDQiZoRJYG2mwrQY91LfdNJYXcFncMaL"
+        }
+      },
+      {
+        "id": "ee5523947e6a1357785a9dec0d0ffc89aedf9b550038ffd2a53987bd81dd7177",
+        "name": "Sandy Rock",
+        "thumbnail": "https://assets.decentraland.org/QmevW1y6it3im8kZAGJhPNg1tSfwMPPwQD8zR44e67aVEW",
+        "url": "RockSand_05/RockSand_05.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "sand",
+          "sandy",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockSand_05/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockSand_05/RockSand_05.glb": "QmagM5F23GmHnhUapTuu1FHsfFW6oP6eYJG1Cq6Pxz3AoU",
+          "RockSand_05/thumbnail.png": "QmevW1y6it3im8kZAGJhPNg1tSfwMPPwQD8zR44e67aVEW"
+        }
+      },
+      {
+        "id": "dc87dcc0d567fa3283c363f6433d33fe7abecc9fea029ca2f182ea74018cf7f6",
+        "name": "Sandy Rock",
+        "thumbnail": "https://assets.decentraland.org/QmdrGZ7LHVu8WNkywnyz34nx3ivveTPuTwo8Cd6TvMzrZN",
+        "url": "RockSand_06/RockSand_06.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "stone",
+          "stones",
+          "rock",
+          "rocks",
+          "sand",
+          "sandy",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "RockSand_06/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "RockSand_06/RockSand_06.glb": "QmU1S9rMrvURpnAGKSVhmazFcaR6d4hry4xVGMaztZ6KAn",
+          "RockSand_06/thumbnail.png": "QmdrGZ7LHVu8WNkywnyz34nx3ivveTPuTwo8Cd6TvMzrZN"
+        }
+      },
+      {
+        "id": "e01f552d7e1817a3c93f1b67873b34bc7eca0aa9eb44aa245387ed0fb2e0e49c",
+        "name": "Nautical Rope",
+        "thumbnail": "https://assets.decentraland.org/QmS7pAWkzKwGK3rJ3A9q3xUhgAaTsEc6GVEqn7Jit2om5S",
+        "url": "Rope_01/Rope_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "rope",
+          "ship",
+          "flagship",
+          "dock"
+        ],
+        "variations": [],
+        "contents": {
+          "Rope_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Rope_01/Rope_01.glb": "QmaGVctEyBRKvGGZ9RWjSy5kVMRawHCY1T5WwNtPXhn3VE",
+          "Rope_01/thumbnail.png": "QmS7pAWkzKwGK3rJ3A9q3xUhgAaTsEc6GVEqn7Jit2om5S"
+        }
+      },
+      {
+        "id": "a174ed84807948d6898779579124d3c5ecb8a24f216a3b3a654256d5a4e082e6",
+        "name": "Sack",
+        "thumbnail": "https://assets.decentraland.org/QmUpZXhGUaJPTkYks7J69Nvt4tLkcpyTcEwu9ktqXtNFpc",
+        "url": "Sack_01/Sack_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "rope",
+          "fabric",
+          "sack",
+          "coin",
+          "coins",
+          "gold"
+        ],
+        "variations": [],
+        "contents": {
+          "Sack_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Sack_01/Sack_01.glb": "QmQ8FqoY9fDEiAA1bMSX2EsKE2AXZtDEVXcm5CMsmhg7yp",
+          "Sack_01/thumbnail.png": "QmUpZXhGUaJPTkYks7J69Nvt4tLkcpyTcEwu9ktqXtNFpc"
+        }
+      },
+      {
+        "id": "b3e36d792d768df8f93173cb679827666f311038dfed57facb62debbae625dfa",
+        "name": "Gold Sack",
+        "thumbnail": "https://assets.decentraland.org/QmfYbqo9QBQURHqYnqs5TBdGAoaNPKHBUbyqHQ6zYLKjv6",
+        "url": "Sack_02/Sack_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "fabric",
+          "sack",
+          "coin",
+          "coins",
+          "gold"
+        ],
+        "variations": [],
+        "contents": {
+          "Sack_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Sack_02/Sack_02.glb": "QmSix8KRgp6zk4NSYxxUWeojLUrntzHAADGB2QhD4ftYzU",
+          "Sack_02/thumbnail.png": "QmfYbqo9QBQURHqYnqs5TBdGAoaNPKHBUbyqHQ6zYLKjv6"
+        }
+      },
+      {
+        "id": "f8231c0c493ea80425df60175d57fa5d3a78862ff075d873cf42d4806c57f9b9",
+        "name": "Big Sand Dune",
+        "thumbnail": "https://assets.decentraland.org/QmPYs2XAvXqqawAqBgJf24eHsPM9u3Zq86HcvkAHc4uUev",
+        "url": "SandPatchBig_01/SandPatchBig_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "sand",
+          "dune",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "SandPatchBig_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "SandPatchBig_01/SandPatchBig_01.glb": "QmVjcxPVgfYUzw87hdPShPmrAq9qu9FkEorzSPPbc5uWMn",
+          "SandPatchBig_01/thumbnail.png": "QmPYs2XAvXqqawAqBgJf24eHsPM9u3Zq86HcvkAHc4uUev"
+        }
+      },
+      {
+        "id": "d49609dafbd9fcf51a4af456a3bcb94cc736c8a228eb57e21c48d63788b143b8",
+        "name": "Extra Sand Small Dune",
+        "thumbnail": "https://assets.decentraland.org/QmfBfyGBHp3v5WTJP8e4ayozv7M1q82EHa2iugTU2sXfFi",
+        "url": "SandPatchExtraSmall_01/SandPatchExtraSmall_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "sand",
+          "dune",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "SandPatchExtraSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "SandPatchExtraSmall_01/SandPatchExtraSmall_01.glb": "QmVg38riXc72r9nCHLFFavnzpfaprgEPNMuYSbkUd8Pvf4",
+          "SandPatchExtraSmall_01/thumbnail.png": "QmfBfyGBHp3v5WTJP8e4ayozv7M1q82EHa2iugTU2sXfFi"
+        }
+      },
+      {
+        "id": "bdbfcd57957e950cde205a3e4bb2503be963c710de1719d6deb238718feb21ae",
+        "name": "Medium Sand Dune",
+        "thumbnail": "https://assets.decentraland.org/QmWG4xJpJGE6KbzkpdTw3eHwQBAFheAHz8avUM6yNVbpoV",
+        "url": "SandPatchMedium_01/SandPatchMedium_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "sand",
+          "dune",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "SandPatchMedium_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "SandPatchMedium_01/SandPatchMedium_01.glb": "QmRZ4fLzmVyLCVkk9jjHFAFLsbYmWRpj8jNFoBNfZZhVNP",
+          "SandPatchMedium_01/thumbnail.png": "QmWG4xJpJGE6KbzkpdTw3eHwQBAFheAHz8avUM6yNVbpoV"
+        }
+      },
+      {
+        "id": "8b592604b87197b825c52ae470faa8716581da0ae937cd527369f1575b5fc8cb",
+        "name": "Small Sand Dune",
+        "thumbnail": "https://assets.decentraland.org/QmemLkjyxgBe2RrgCQpJx647B9qYFLtAGDSqg4YYMvb4jZ",
+        "url": "SandPatchSmall_01/SandPatchSmall_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "sand",
+          "dune",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "SandPatchSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "SandPatchSmall_01/SandPatchSmall_01.glb": "QmR1ZdSGukfn7zrcXzdMWNZ6CGzWfRvX172B97hBd6u48c",
+          "SandPatchSmall_01/thumbnail.png": "QmemLkjyxgBe2RrgCQpJx647B9qYFLtAGDSqg4YYMvb4jZ"
+        }
+      },
+      {
+        "id": "db8a55fbfbcf5e62f40f4833b8f94f41c79883fa766e7ffab872b37665497c5a",
+        "name": "Sandbag",
+        "thumbnail": "https://assets.decentraland.org/QmUtb1Y6LJpbT4MLEFY9xStzBrNt7R66RQ6sBtQX2MtLSJ",
+        "url": "Sandbag_01/Sandbag_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "bag",
+          "sand"
+        ],
+        "variations": [],
+        "contents": {
+          "Sandbag_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Sandbag_01/Sandbag_01.glb": "QmSUJfeP8SJY2cLoYqBU1Kx1FmcsSyVv6Q1UohBgtSYMtt",
+          "Sandbag_01/thumbnail.png": "QmUtb1Y6LJpbT4MLEFY9xStzBrNt7R66RQ6sBtQX2MtLSJ"
+        }
+      },
+      {
+        "id": "7a5316513fce81ee47d01210ae1cae3148030a8f8cd587b2d000a0a2cdd9894a",
+        "name": "Rustic Merchant stand",
+        "thumbnail": "https://assets.decentraland.org/QmXLz4unhoCCyXtJL7iST8nCSo2uTGdEsXnDZhYT72qo2L",
+        "url": "SellingGoods_01/SellingGoods_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "empty",
+          "crate"
+        ],
+        "variations": [],
+        "contents": {
+          "SellingGoods_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "SellingGoods_01/SellingGoods_01.glb": "QmVGKtzAxHbz2Vj313FaqQ46znCp1RDUk3Uw9M58Hnhh9d",
+          "SellingGoods_01/thumbnail.png": "QmXLz4unhoCCyXtJL7iST8nCSo2uTGdEsXnDZhYT72qo2L"
+        }
+      },
+      {
+        "id": "cfacf776141745c0a77bdb527d7fa1650aed73a0b751dc7afbd166385c06272b",
+        "name": "Rustic Merchant Fish Stand",
+        "thumbnail": "https://assets.decentraland.org/QmU96kAeK8CQsjRzubMFuBEqorsTv2BRuPgUNw6RU53bEA",
+        "url": "SellingGoods_02/SellingGoods_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "fish",
+          "crate",
+          "fabric",
+          "blanket"
+        ],
+        "variations": [],
+        "contents": {
+          "SellingGoods_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "SellingGoods_02/SellingGoods_02.glb": "QmcdBgNgLMHDVJsDMNurtr4eG9bKEjfb3Gi2gDaEmjcPdB",
+          "SellingGoods_02/thumbnail.png": "QmU96kAeK8CQsjRzubMFuBEqorsTv2BRuPgUNw6RU53bEA"
+        }
+      },
+      {
+        "id": "cdbd7c4db59de6efcce8509ac49410bf103f9af0535fd5e6420483d43c41e2df",
+        "name": "Rustic Covered Merchant Stand",
+        "thumbnail": "https://assets.decentraland.org/QmPrkVQN7AGbPNjHCCEhgp1BzpVURNc5rSUp1uzFWiPEGB",
+        "url": "SellingGoods_03/SellingGoods_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "crate",
+          "fabric",
+          "blanket"
+        ],
+        "variations": [],
+        "contents": {
+          "SellingGoods_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "SellingGoods_03/SellingGoods_03.glb": "QmbY7LJMVDymWDcM59q8fCFPvsr1nbURvzpMtPmEV7sgUL",
+          "SellingGoods_03/thumbnail.png": "QmPrkVQN7AGbPNjHCCEhgp1BzpVURNc5rSUp1uzFWiPEGB"
+        }
+      },
+      {
+        "id": "28eee427afb3638c0680bc6278084036359cf8a0d031a4545b03373f03fa5b1a",
+        "name": "Imperial Pirate Flagship",
+        "thumbnail": "https://assets.decentraland.org/QmfBgC4KLDLEkfM6Xx7XVQYtgQTyT9uevwgcjDqeYU429X",
+        "url": "Ship_01/Ship_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "ship",
+          "flagship",
+          "empire",
+          "sail",
+          "black",
+          "cannon",
+          "cannons"
+        ],
+        "variations": [],
+        "contents": {
+          "Ship_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Ship_01/thumbnail.png": "QmfBgC4KLDLEkfM6Xx7XVQYtgQTyT9uevwgcjDqeYU429X",
+          "Ship_01/Ship_01.glb": "QmRBYk1uZggr9p6wqbpoaVNfYfX1uxnSWTSUq27pqC1B8S"
+        }
+      },
+      {
+        "id": "5afd880ef2a4eb005db5e426590b7035033cc5d787b18d80a0a52d21f9b5ac9a",
+        "name": "Sand Weeds",
+        "thumbnail": "https://assets.decentraland.org/QmUCJv17KoK8eaoSEjVMW9jCfxm5rCZpHEsBmHuD2ubwZN",
+        "url": "ShoreGrass_01/ShoreGrass_01.glb",
+        "category": "nature",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "fern",
+          "beach",
+          "foliage",
+          "plant",
+          "plants"
+        ],
+        "variations": [],
+        "contents": {
+          "ShoreGrass_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "ShoreGrass_01/ShoreGrass_01.glb": "QmNWhSoy4rK1yyS7sgT8td2DdqnX3UqPCBYg7FhsSFd32r",
+          "ShoreGrass_01/thumbnail.png": "QmUCJv17KoK8eaoSEjVMW9jCfxm5rCZpHEsBmHuD2ubwZN"
+        }
+      },
+      {
+        "id": "eced5d30cca03b544f1c7defc351af15caa80fb0394c74c93124da9935b16731",
+        "name": "Spear",
+        "thumbnail": "https://assets.decentraland.org/QmQFLg9cMg5aDUuMSBaLGwRL3km4tsmjXasniJEJgMmtXj",
+        "url": "Spear_01/Spear_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "iron",
+          "spear",
+          "leather",
+          "weapon"
+        ],
+        "variations": [],
+        "contents": {
+          "Spear_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Spear_01/Spear_01.glb": "QmSGDEDzwF9M2zQrjYn5B3HtpXWWCxLMpkqjsqhvpgZbwT",
+          "Spear_01/thumbnail.png": "QmQFLg9cMg5aDUuMSBaLGwRL3km4tsmjXasniJEJgMmtXj"
+        }
+      },
+      {
+        "id": "9273f2df5b9127de1ec6623b48ccb2336a8b6e5ce0b379200fca33df0e31920c",
+        "name": "Cardamon Spicebag",
+        "thumbnail": "https://assets.decentraland.org/QmRtTvrH7swPBo9aoR5kwvB1aCo1cUebeSFgeApUGZMQp4",
+        "url": "Spicesbag_01/Spicesbag_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decoration",
+          "spices",
+          "sack",
+          "fabric",
+          "leather"
+        ],
+        "variations": [],
+        "contents": {
+          "Spicesbag_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Spicesbag_01/Spicesbag_01.glb": "QmaGCWfqZ9Ekj1jgCoXfxQmEodpuqNtH6FjQ5oxBGqCCtD",
+          "Spicesbag_01/thumbnail.png": "QmRtTvrH7swPBo9aoR5kwvB1aCo1cUebeSFgeApUGZMQp4"
+        }
+      },
+      {
+        "id": "f9c2f99073e42a1b1663eabc627d9a098f02732bf785d0aea3bcb8774717d332",
+        "name": "Paprika Spicebag",
+        "thumbnail": "https://assets.decentraland.org/QmNtsqrt5LWDxk5k3wsPn9ASMctuYGRxEuTtVktrNsghXi",
+        "url": "Spicesbag_02/Spicesbag_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decoration",
+          "spices",
+          "sack",
+          "fabric",
+          "leather"
+        ],
+        "variations": [],
+        "contents": {
+          "Spicesbag_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Spicesbag_02/Spicesbag_02.glb": "QmeVBDUnnE3y9MPRnbjsBYCdUpmVddZAamHpo3NR6wK3UP",
+          "Spicesbag_02/thumbnail.png": "QmNtsqrt5LWDxk5k3wsPn9ASMctuYGRxEuTtVktrNsghXi"
+        }
+      },
+      {
+        "id": "7e2b265c6018e0eb8a340ed5a772b3342ad666a9398294307baa1fd7005481ba",
+        "name": "Cumin Spicebag",
+        "thumbnail": "https://assets.decentraland.org/QmeEjwGR36DxRy5KbsRQaEQeDUMndCNKdtmKEHSMju4yZx",
+        "url": "Spicesbag_03/Spicesbag_03.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decoration",
+          "spices",
+          "sack",
+          "fabric",
+          "leather"
+        ],
+        "variations": [],
+        "contents": {
+          "Spicesbag_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Spicesbag_03/Spicesbag_03.glb": "QmS8YBL7YjQ248JcwDX4USh9T12tvFN5rh4fmBmB3mTWZx",
+          "Spicesbag_03/thumbnail.png": "QmeEjwGR36DxRy5KbsRQaEQeDUMndCNKdtmKEHSMju4yZx"
+        }
+      },
+      {
+        "id": "72d20bdc96dea27a89142f3892ab09744bb0609c73aa487e2f5f09b4a6b3621b",
+        "name": "Starfish",
+        "thumbnail": "https://assets.decentraland.org/QmUhJSnaQ9upTaH35zffZe4tKwJzHkeGH3dJqfejUW8Xnb",
+        "url": "Starfish_01/Starfish_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "nature",
+          "fish",
+          "red",
+          "water",
+          "beach"
+        ],
+        "variations": [],
+        "contents": {
+          "Starfish_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "Starfish_01/Starfish_01.glb": "QmNbwJz9V4kkShpuKzR9SEbgVm9PKnYZ6LVJq8yEAZZYX1",
+          "Starfish_01/thumbnail.png": "QmUhJSnaQ9upTaH35zffZe4tKwJzHkeGH3dJqfejUW8Xnb"
+        }
+      },
+      {
+        "id": "7a5bea5877700ef8c99831e1e129d59c7f321d3346b1e9b8e83ff25b9885d10f",
+        "name": "Worn Out Medium Stone Path",
+        "thumbnail": "https://assets.decentraland.org/QmXNTE6DynwADPF7mU3gg6gfKTaDB47Do4mFJZww4PNaui",
+        "url": "StonePathBroken_01/StonePathBroken_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePathBroken_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePathBroken_01/StonePathBroken_01.glb": "QmenehzUe5eV6FXoXSYSuYJJkmMgVVf7CoMYUMAe5Z4org",
+          "StonePathBroken_01/thumbnail.png": "QmXNTE6DynwADPF7mU3gg6gfKTaDB47Do4mFJZww4PNaui"
+        }
+      },
+      {
+        "id": "4d5f3bc52df4a7a96aff5ebb9be97765b807cbac5787064685bc2bea7e29f1c1",
+        "name": "Worn Out Big Stone Path",
+        "thumbnail": "https://assets.decentraland.org/QmXsBYodKVszSRYrHhfmNTZguNc84SDt61C7ibCkb8WHvp",
+        "url": "StonePathBroken_02/StonePathBroken_02.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePathBroken_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePathBroken_02/StonePathBroken_02.glb": "QmNbaYi7bBkxWX3GQwCxHCoZ5Wm3RBPToM6xABoVUwSjd1",
+          "StonePathBroken_02/thumbnail.png": "QmXsBYodKVszSRYrHhfmNTZguNc84SDt61C7ibCkb8WHvp"
+        }
+      },
+      {
+        "id": "d612afd96558b3904f132ea3100169ae7d89b1cb0b04d2ccfa7e3d9ef7a9c039",
+        "name": "Worn Out Small Stone Path",
+        "thumbnail": "https://assets.decentraland.org/QmQ7BxZPrsvqaRXxBv9axfhCvQypyDpZU7AeSjoR3Xmikh",
+        "url": "StonePathBroken_03/StonePathBroken_03.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePathBroken_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePathBroken_03/StonePathBroken_03.glb": "QmXGvCMTomswS52ttgXbLJCAMnAbzfpz8JDFpyeDVvJowJ",
+          "StonePathBroken_03/thumbnail.png": "QmQ7BxZPrsvqaRXxBv9axfhCvQypyDpZU7AeSjoR3Xmikh"
+        }
+      },
+      {
+        "id": "6a8ab6d375ffeb68698fc204df6df3fbc579253464a80233bbad45caac3bab7b",
+        "name": "Curved Broken Stone Path",
+        "thumbnail": "https://assets.decentraland.org/QmWPP8YwQaV7Ko7fusRUTJ3Fv3QMcnji1Hn1gUnn9E3dF4",
+        "url": "StonePathCurveBroken_01/StonePathCurveBroken_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePathCurveBroken_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePathCurveBroken_01/StonePathCurveBroken_01.glb": "QmfXSHu6ahxwQNLXWo9BHgwoPXNPrkYKwCvHaBUQAJsfeJ",
+          "StonePathCurveBroken_01/thumbnail.png": "QmWPP8YwQaV7Ko7fusRUTJ3Fv3QMcnji1Hn1gUnn9E3dF4"
+        }
+      },
+      {
+        "id": "76643b8dbf403f910c5da8f543feecbf6d073c248dc9b3c11148c9ac84d36380",
+        "name": "Curved Stones Path",
+        "thumbnail": "https://assets.decentraland.org/QmSTYybc2qjsrwTTpTfRQo7owiATeDzaFfTTxL6sLjY7Et",
+        "url": "StonePathCurve_01/StonePathCurve_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePathCurve_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePathCurve_01/StonePathCurve_01.glb": "QmahEXv2H5mZNUn6Tfmm9zNvv9aPFXuGmeYb4qGhY7HJQ2",
+          "StonePathCurve_01/thumbnail.png": "QmSTYybc2qjsrwTTpTfRQo7owiATeDzaFfTTxL6sLjY7Et"
+        }
+      },
+      {
+        "id": "cad949215684d854673925b81d3cdabd56ea05c47b7836901e35cf0c76169e39",
+        "name": "Stone Path",
+        "thumbnail": "https://assets.decentraland.org/QmSQ1JyQAtvkx3wqSNxG31UJyFgQhUKzcZ966wcbWE6Eq5",
+        "url": "StonePath_01/StonePath_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePath_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePath_01/StonePath_01.glb": "QmXDEQjswjHexRGETatYywALjSFqDFiKsdcyyk5hEXRQjB",
+          "StonePath_01/thumbnail.png": "QmSQ1JyQAtvkx3wqSNxG31UJyFgQhUKzcZ966wcbWE6Eq5"
+        }
+      },
+      {
+        "id": "963e3706b3710087a7bad9b89a7db3202e18b0e39b97e7c1991a8052fec197cf",
+        "name": "Big Stone Path",
+        "thumbnail": "https://assets.decentraland.org/QmeETdyB7ijbT4Z8knGbuLqw1vxxdgyTsymRAguJTJeHhh",
+        "url": "StonePath_02/StonePath_02.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePath_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePath_02/StonePath_02.glb": "QmV37v47a4AqgaNLG3y8Sf4RMDJnsxFkPVg5kYKwzoFSVy",
+          "StonePath_02/thumbnail.png": "QmeETdyB7ijbT4Z8knGbuLqw1vxxdgyTsymRAguJTJeHhh"
+        }
+      },
+      {
+        "id": "69a389de3985884c691216ae89402197bf99396b5023df9a4e95ced2bf616107",
+        "name": "Smal Stone Path",
+        "thumbnail": "https://assets.decentraland.org/QmXfRyHtDtt9x3fuKdRvdHBQ7V1nPQSxR1bRMwj814K69z",
+        "url": "StonePath_03/StonePath_03.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StonePath_03/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StonePath_03/StonePath_03.glb": "QmNhCFWYYKQESH9RfPqpFRF87aD3jXJjbbezjzk6iHChBo",
+          "StonePath_03/thumbnail.png": "QmXfRyHtDtt9x3fuKdRvdHBQ7V1nPQSxR1bRMwj814K69z"
+        }
+      },
+      {
+        "id": "92c44f11df4a25814c5d15db174e238da7c6b478c4a7f43161aaf5996615dcaa",
+        "name": "Big Stone Tile",
+        "thumbnail": "https://assets.decentraland.org/QmbQMLTVUE23e9TV8Rkhq7foaEXdZ3gY6ferVi2TdpGSoY",
+        "url": "StoneRandomBig_01/StoneRandomBig_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StoneRandomBig_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StoneRandomBig_01/StoneRandomBig_01.glb": "QmRphgJj7FLeQG2L6VuXV1V9ZK2KBV4st4fKQa3XxkELGV",
+          "StoneRandomBig_01/thumbnail.png": "QmbQMLTVUE23e9TV8Rkhq7foaEXdZ3gY6ferVi2TdpGSoY"
+        }
+      },
+      {
+        "id": "1c4f268d5486e4da829878bbe7b37a4f585c00391b823329fcb6b05152b8b5de",
+        "name": "Small Stone Tile",
+        "thumbnail": "https://assets.decentraland.org/Qmf7Kcz3KEAKnvNBHu7VP7zJa7wFqXUXjrHwFLjnrVhpn3",
+        "url": "StoneRandomSmall_01/StoneRandomSmall_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StoneRandomSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StoneRandomSmall_01/StoneRandomSmall_01.glb": "Qmdggj89b6yBFhwWFz7jXPqCLpbXzcRyqVpgmj5nTZ5VYo",
+          "StoneRandomSmall_01/thumbnail.png": "Qmf7Kcz3KEAKnvNBHu7VP7zJa7wFqXUXjrHwFLjnrVhpn3"
+        }
+      },
+      {
+        "id": "5021eafbb62b95101f5cc86d663ba58faf6c8517f149c6c474cda724655d3dfa",
+        "name": "Medium Stone Slab Tile",
+        "thumbnail": "https://assets.decentraland.org/QmWPb3bcHSEyUY5P2KsTFdzUQF8jn7YbtKHVBRmyi1pYW4",
+        "url": "StoneSlabMedium_01/StoneSlabMedium_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StoneSlabMedium_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StoneSlabMedium_01/StoneSlabMedium_01.glb": "QmRrSgFjkRXmfVQbdMfFNp3eiBjoq1Us29AzCwp8D6QwGY",
+          "StoneSlabMedium_01/thumbnail.png": "QmWPb3bcHSEyUY5P2KsTFdzUQF8jn7YbtKHVBRmyi1pYW4"
+        }
+      },
+      {
+        "id": "6d19d1c6a7967fa48badc9ec959a29665bbcc266fcf1f4a6e5817254525efaa7",
+        "name": "Small Stone Slab Tile",
+        "thumbnail": "https://assets.decentraland.org/QmUZ9FqzdbJmbsZmup8Gw5mwQcxLBCvmpMPPWZSJeMDSBz",
+        "url": "StoneSlabSmall_01/StoneSlabSmall_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StoneSlabSmall_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StoneSlabSmall_01/StoneSlabSmall_01.glb": "QmP2tEhgvUv7KkADapAvkf62kEruD9yujRziswceMd4ykN",
+          "StoneSlabSmall_01/thumbnail.png": "QmUZ9FqzdbJmbsZmup8Gw5mwQcxLBCvmpMPPWZSJeMDSBz"
+        }
+      },
+      {
+        "id": "05c64abd18f50a7483e824aef10a8bdb28356e1018d570f3ab9390fafa6b3efd",
+        "name": "Big Stone Slab Tile",
+        "thumbnail": "https://assets.decentraland.org/QmceSNSpXzch47QqyrwJ8PGpDBzeQV6ouRULtcTZgJ59JJ",
+        "url": "StoneSlabSmall_02/StoneSlabSmall_02.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "tiles",
+          "cobblestones",
+          "stone",
+          "stones",
+          "path"
+        ],
+        "variations": [],
+        "contents": {
+          "StoneSlabSmall_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "StoneSlabSmall_02/StoneSlabSmall_02.glb": "QmbD5YjiujZyjNgaUjjmvDBdv6R7B2cxfgwTmZPZPSVYHa",
+          "StoneSlabSmall_02/thumbnail.png": "QmceSNSpXzch47QqyrwJ8PGpDBzeQV6ouRULtcTZgJ59JJ"
+        }
+      },
+      {
+        "id": "6a2ac723168ef81d7403f87cd946990c9e04b0ebc271e0edf61e5302debe445d",
+        "name": "Treasure Sword",
+        "thumbnail": "https://assets.decentraland.org/QmeHCVMH3ETMxZ1aq9mAmaCQtGmYm92c7AkGP7iD1P6Dtj",
+        "url": "Sword_01/Sword_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "golden",
+          "iron",
+          "leather",
+          "sword",
+          "excalibur",
+          "weapon"
+        ],
+        "variations": [],
+        "contents": {
+          "Sword_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Sword_01/Sword_01.glb": "Qme2px9PG5GBxb8AAznYxYmJ9gjjhjLhJtYVfoEcb8fV9M",
+          "Sword_01/thumbnail.png": "QmeHCVMH3ETMxZ1aq9mAmaCQtGmYm92c7AkGP7iD1P6Dtj"
+        }
+      },
+      {
+        "id": "da4fcd2430c0a67b2c5532d15977ddeb29ab2d091a84cc7b3d3b2b38d8c780f9",
+        "name": "Scimitar",
+        "thumbnail": "https://assets.decentraland.org/QmXRddPk12wABuqMU3C7BFqi3trWjdMzhQepAjAnvs9YHK",
+        "url": "Sword_02/Sword_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "brass",
+          "iron",
+          "leather",
+          "sword",
+          "weapon"
+        ],
+        "variations": [],
+        "contents": {
+          "Sword_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Sword_02/Sword_02.glb": "QmZ4xGkjwunw3ZY5piA3g3cSXpASJm8ufGCpBT1vpRb5DG",
+          "Sword_02/thumbnail.png": "QmXRddPk12wABuqMU3C7BFqi3trWjdMzhQepAjAnvs9YHK"
+        }
+      },
+      {
+        "id": "c74360511a978717f86e1dd305e981a752ef0d54ee97efefba81846995cfcf22",
+        "name": "Wooden Tavern Table",
+        "thumbnail": "https://assets.decentraland.org/QmRkBLqCppafQHVGMRLqFK2StUMFRDPSrFxcByCzk6NEjc",
+        "url": "TableWood_01/TableWood_01.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "table",
+          "rectangular"
+        ],
+        "variations": [],
+        "contents": {
+          "TableWood_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "TableWood_01/TableWood_01.glb": "QmVh5nvRG3qWWZZRNMEKrLxKvRNcjWEcrCw7ZL3xzQLCyp",
+          "TableWood_01/thumbnail.png": "QmRkBLqCppafQHVGMRLqFK2StUMFRDPSrFxcByCzk6NEjc"
+        }
+      },
+      {
+        "id": "4c286b2a7f68a690506304db66ee7b2ac07e92e58a0a5494f696ab3bb4ad0252",
+        "name": "Rounded Tabern Table",
+        "thumbnail": "https://assets.decentraland.org/QmQQxFXVgr3qeTzNpgaPFxuPc6pEnCKkN9HeX8yRVP7wms",
+        "url": "TableWood_02/TableWood_02.glb",
+        "category": "furniture",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "furniture",
+          "wood",
+          "wooden",
+          "table",
+          "round"
+        ],
+        "variations": [],
+        "contents": {
+          "TableWood_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "TableWood_02/TableWood_02.glb": "QmRkum5MEgjpx5C1RhYskHHCfebHdzbmxXK8eaVFnabDib",
+          "TableWood_02/thumbnail.png": "QmQQxFXVgr3qeTzNpgaPFxuPc6pEnCKkN9HeX8yRVP7wms"
+        }
+      },
+      {
+        "id": "9b41235913637a5580275569e2b080f78120dcac6fdb898c8093dd5a1297e8e8",
+        "name": "Merchant Tent",
+        "thumbnail": "https://assets.decentraland.org/QmSEioX6meWHxmUfz8vEvfxSRB4ML6HipW9dVThBCzn9J1",
+        "url": "Tent_01/Tent_01.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "tent",
+          "sticks",
+          "fabric",
+          "canopy"
+        ],
+        "variations": [],
+        "contents": {
+          "Tent_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Tent_01/Tent_01.glb": "QmaFjQ5a87o9hf4CuGnYdm4WQUPzpj1aeTFj8XK3qLMYnS",
+          "Tent_01/thumbnail.png": "QmSEioX6meWHxmUfz8vEvfxSRB4ML6HipW9dVThBCzn9J1"
+        }
+      },
+      {
+        "id": "e3a61a33d946efc238c8feeec66213cf884e8e1d36ca550adb2adc4f5807d886",
+        "name": "Bazaar Tent",
+        "thumbnail": "https://assets.decentraland.org/QmWbKjR2sgSCdh3HA1xKsSsKeP54drJSSxVvA3H88qfn87",
+        "url": "Tent_02/Tent_02.glb",
+        "category": "structures",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "structures",
+          "wood",
+          "wooden",
+          "tent",
+          "sticks",
+          "fabric",
+          "canopy"
+        ],
+        "variations": [],
+        "contents": {
+          "Tent_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Tent_02/Tent_02.glb": "QmNYTyt7WCGfLziTSjQ3WjbbicJBMuYTT4kTKwra5ZfQFq",
+          "Tent_02/thumbnail.png": "QmWbKjR2sgSCdh3HA1xKsSsKeP54drJSSxVvA3H88qfn87"
+        }
+      },
+      {
+        "id": "1d37c5d1faeb17c1b9304b8967bb8f63caad9c0ec5112cd54077ffcc5fc0c400",
+        "name": "Standing Torch",
+        "thumbnail": "https://assets.decentraland.org/QmNRBqC8JdJezNZTEMXpH9wiTE3vzofy5R11cQ9GHHbS7N",
+        "url": "Torch_01/Torch_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "stick",
+          "iron",
+          "torch",
+          "fire",
+          "jungle"
+        ],
+        "variations": [],
+        "contents": {
+          "Torch_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Torch_01/Torch_01.glb": "QmNfeBh7LkcmWNnKhRY2kE8v4iSmqC2DnSTUdFfg7WcKhN",
+          "Torch_01/thumbnail.png": "QmNRBqC8JdJezNZTEMXpH9wiTE3vzofy5R11cQ9GHHbS7N"
+        }
+      },
+      {
+        "id": "62c65890f586b02c6c8f5556709afa12ae01694ebff45553a46232e61386911a",
+        "name": "Treasure Gold Pieces",
+        "thumbnail": "https://assets.decentraland.org/QmXRG7k2GmRoPTCsu2rUkcPQisxsjAhKTxEFSL4AGxRABa",
+        "url": "TreasureCoins_01/TreasureCoins_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "golden",
+          "coin",
+          "coins"
+        ],
+        "variations": [],
+        "contents": {
+          "TreasureCoins_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "TreasureCoins_01/TreasureCoins_01.glb": "QmUHsL2K9SfAkyVHL4j56mpEpBmBChHZc6JFN7BKAQEtUb",
+          "TreasureCoins_01/thumbnail.png": "QmXRG7k2GmRoPTCsu2rUkcPQisxsjAhKTxEFSL4AGxRABa"
+        }
+      },
+      {
+        "id": "a719ad5a308ce69e596fc64b9771eedf69ee1a90fcc6b9c80cd244bf78a8bb5b",
+        "name": "Gold Plate",
+        "thumbnail": "https://assets.decentraland.org/QmWuqS5PWaT8VgJHDhyYzWfx1HU61knRztx6CRf84GtPh8",
+        "url": "TreasurePlate_01/TreasurePlate_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "gold",
+          "jewel",
+          "jewels",
+          "gemstones",
+          "plate",
+          "meal"
+        ],
+        "variations": [],
+        "contents": {
+          "TreasurePlate_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "TreasurePlate_01/TreasurePlate_01.glb": "QmZF9X2kxrw7F9Jg4NxCaCzsy1VtBiiebfdeJmBXWEanpf",
+          "TreasurePlate_01/thumbnail.png": "QmWuqS5PWaT8VgJHDhyYzWfx1HU61knRztx6CRf84GtPh8"
+        }
+      },
+      {
+        "id": "4fa918493b166877126742787fe2806cf742127d12fc2b63642dca4c26df247d",
+        "name": "Loot Trunk",
+        "thumbnail": "https://assets.decentraland.org/QmNPB9t8UyaHazxGXUdvfbvUe8uHxUwdPhEVKbiESgkPmy",
+        "url": "Trunk_01/Trunk_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "treasure",
+          "chest",
+          "lootbox",
+          "loot"
+        ],
+        "variations": [],
+        "contents": {
+          "Trunk_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Trunk_01/Trunk_01.glb": "QmTz3Xwvnetc5MXexmanDjdh73uAEwagcAfN23E4cpDLki",
+          "Trunk_01/thumbnail.png": "QmNPB9t8UyaHazxGXUdvfbvUe8uHxUwdPhEVKbiESgkPmy"
+        }
+      },
+      {
+        "id": "ec407d9386690a74262a2de61a443c8f571f4766ede089d4824fb800f6e930c7",
+        "name": "Treasure Loot Trunk",
+        "thumbnail": "https://assets.decentraland.org/QmR5aG66ggXqQHxF7RUM1WoXxbeaqH98ELxTLLqc6t8Gqe",
+        "url": "Trunk_02/Trunk_02.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "gold",
+          "golden",
+          "treasure",
+          "chest",
+          "lootbox",
+          "loot",
+          "skull",
+          "gemstone"
+        ],
+        "variations": [],
+        "contents": {
+          "Trunk_02/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Trunk_02/Trunk_02.glb": "QmaURjnVMY5qXnYjHYu4psYJ3CdGf3DgbH4hzsv411W9E5",
+          "Trunk_02/thumbnail.png": "QmR5aG66ggXqQHxF7RUM1WoXxbeaqH98ELxTLLqc6t8Gqe"
+        }
+      },
+      {
+        "id": "2343c38fbef60443dddcc77a5ed7804c1e81d4df34c44c629b4b2e9d099db6bb",
+        "name": "Caribbean Water with Corner Rocks",
+        "thumbnail": "https://assets.decentraland.org/Qmbmio5PJoU4v7HT5VyLSCACVcCAD6e1MppqXeTgy2RMH8",
+        "url": "WaterPatchCornerInside_01/WaterPatchCornerInside_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "water",
+          "rock",
+          "rocks",
+          "stone",
+          "stones",
+          "beach",
+          "ocean"
+        ],
+        "variations": [],
+        "contents": {
+          "WaterPatchCornerInside_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "WaterPatchCornerInside_01/WaterPatchCornerInside_01.glb": "QmbT2M1d4YpyHrE6smAoc6SPyJ5t2LaA5ufrXxn5TmadLx",
+          "WaterPatchCornerInside_01/thumbnail.png": "Qmbmio5PJoU4v7HT5VyLSCACVcCAD6e1MppqXeTgy2RMH8"
+        }
+      },
+      {
+        "id": "e42844b6eb954c1d8f06884d896f79a37b12e6b44bb640ad2d09dd05f11d26f4",
+        "name": "Caribbean Water with Two Side Rocks",
+        "thumbnail": "https://assets.decentraland.org/QmVQ6YtcPSYgU5wJz7o87seFgXM9aWDbdYapfUt865vjxr",
+        "url": "WaterPatchCornerOutside_01/WaterPatchCornerOutside_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "water",
+          "rock",
+          "rocks",
+          "stone",
+          "stones",
+          "beach",
+          "ocean"
+        ],
+        "variations": [],
+        "contents": {
+          "WaterPatchCornerOutside_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "WaterPatchCornerOutside_01/WaterPatchCornerOutside_01.glb": "QmYcF2Tv9HaeKL9CVxvYEVitnssaGz2riAndccSDu6V42d",
+          "WaterPatchCornerOutside_01/thumbnail.png": "QmVQ6YtcPSYgU5wJz7o87seFgXM9aWDbdYapfUt865vjxr"
+        }
+      },
+      {
+        "id": "9b405d0a06c77b29262ff549fb4c2fdead3cb48c70105601aa029acc8a91bb8d",
+        "name": "Caribbean Shore with Rocks Patch",
+        "thumbnail": "https://assets.decentraland.org/QmXN2GGotS3FUNmZRb4U1eU8uHkudggMkSeJ66DoChKzkt",
+        "url": "WaterPatchCurve_01/WaterPatchCurve_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "water",
+          "rock",
+          "rocks",
+          "stone",
+          "stones",
+          "beach",
+          "ocean"
+        ],
+        "variations": [],
+        "contents": {
+          "WaterPatchCurve_01/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "WaterPatchCurve_01/WaterPatchCurve_01.glb": "QmQPx1p6VQq4QLZS1zvcfmk2Rc4d5tCMbsMVGwwh3qaGgr",
+          "WaterPatchCurve_01/thumbnail.png": "QmXN2GGotS3FUNmZRb4U1eU8uHkudggMkSeJ66DoChKzkt"
+        }
+      },
+      {
+        "id": "68538d58eeda0022c3b68354a14137e569b2cfe78b2b909c2c8a1b5e0c13fefa",
+        "name": "Caribbean Shore with Rocks Patch",
+        "thumbnail": "https://assets.decentraland.org/QmdwUFEzGAELFbgAcUoDTxjSSRgzMS1HEqz6ajqpKSNCrw",
+        "url": "WaterPatchCurve_02/WaterPatchCurve_02.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "water",
+          "rock",
+          "rocks",
+          "stone",
+          "stones",
+          "beach",
+          "ocean"
+        ],
+        "variations": [],
+        "contents": {
+          "WaterPatchCurve_02/PiratesPack_TX.png": "QmRKVmgh31wjLWoGcSK917AbgSUDApfKQucn9ZGCQutwHX",
+          "WaterPatchCurve_02/WaterPatchCurve_02.glb": "QmboQRktUBHKjuewPSNmmGZLVrW84KGK3YnoH3e2Ch8Xkq",
+          "WaterPatchCurve_02/thumbnail.png": "QmdwUFEzGAELFbgAcUoDTxjSSRgzMS1HEqz6ajqpKSNCrw"
+        }
+      },
+      {
+        "id": "77235ed233c4f51a3526eaf2fa61118235c9f32cc4a07523d715de0273425b50",
+        "name": "Caribbean Water",
+        "thumbnail": "https://assets.decentraland.org/QmbHgR3rDVsfm8Wi5FRXRuF8WGNATGJVphny4jmocVh82e",
+        "url": "WaterPatchFull_01/WaterPatchFull_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "water",
+          "beach",
+          "ocean"
+        ],
+        "variations": [],
+        "contents": {
+          "WaterPatchFull_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "WaterPatchFull_01/WaterPatchFull_01.glb": "QmQLNnWPWoe8dUGE8uPcokdZ6i2DmZF8eBubA25jSspGXA",
+          "WaterPatchFull_01/thumbnail.png": "QmbHgR3rDVsfm8Wi5FRXRuF8WGNATGJVphny4jmocVh82e"
+        }
+      },
+      {
+        "id": "b92cc9239e033854c2797859d5d55bc671933b6c509b8fd3abf89958ce67d02a",
+        "name": "Caribbean Water with Side Rocks",
+        "thumbnail": "https://assets.decentraland.org/QmRenzehR6a9xGrhZXywaRVmHPnYRpwzy3GcAYs6hpiCYU",
+        "url": "WaterPatchSide_01/WaterPatchSide_01.glb",
+        "category": "tiles",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "nature",
+          "water",
+          "rock",
+          "rocks",
+          "stone",
+          "stones",
+          "beach",
+          "ocean"
+        ],
+        "variations": [],
+        "contents": {
+          "WaterPatchSide_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "WaterPatchSide_01/WaterPatchSide_01.glb": "QmWobEXGnF8CNeBqEAcz5QP8hzGVHZ1RLDzZBMtBeFSA8d",
+          "WaterPatchSide_01/thumbnail.png": "QmRenzehR6a9xGrhZXywaRVmHPnYRpwzy3GcAYs6hpiCYU"
+        }
+      },
+      {
+        "id": "18c84d7f5d4222af24aadcd2b5011f647b9c4a1d67ed11f8cf5bbbc6135e2460",
+        "name": "Rustic Wheelbarrow",
+        "thumbnail": "https://assets.decentraland.org/QmUvubJqvkz3hMBX6EtW5F6vZRzkQG5cE8PpGp6hMro8E9",
+        "url": "WheelBarrow_01/WheelBarrow_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "wheel",
+          "spokes",
+          "steel",
+          "tire",
+          "felloes",
+          "box"
+        ],
+        "variations": [],
+        "contents": {
+          "WheelBarrow_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "WheelBarrow_01/WheelBarrow_01.glb": "QmZ6wzR9QPhGRwVRtoNkQ95q9GsRAzN6sphB9Zfshp9UBp",
+          "WheelBarrow_01/thumbnail.png": "QmUvubJqvkz3hMBX6EtW5F6vZRzkQG5cE8PpGp6hMro8E9"
+        }
+      },
+      {
+        "id": "b2543bd0d9fd94e02e7071892eb55c4046375662518fd2bf103c24d70472ebb6",
+        "name": "Wooden Wheel",
+        "thumbnail": "https://assets.decentraland.org/QmbEZf8ZnB5wy6CVo8GD3g5KEq8n3BvwJbsY6QmJ5ee6t7",
+        "url": "Wheel_01/Wheel_01.glb",
+        "category": "decorations",
+        "tags": [
+          "pirate",
+          "paradise",
+          "pirates",
+          "decorations",
+          "wood",
+          "wooden",
+          "wheel",
+          "spokes",
+          "steel",
+          "tire",
+          "felloes"
+        ],
+        "variations": [],
+        "contents": {
+          "Wheel_01/PiratesPack_TX.png.png": "QmRzYug6rwWdLb1YT8ZUjXi6qcKUtJWdBXqnhMjzCruMMw",
+          "Wheel_01/Wheel_01.glb": "QmQ8yQSB6wYduTeUA14XrTQk7AdPqEs3nzDYWBeLz3RPje",
+          "Wheel_01/thumbnail.png": "QmbEZf8ZnB5wy6CVo8GD3g5KEq8n3BvwJbsY6QmJ5ee6t7"
+        }
+      }
+    ]
+  }
+}

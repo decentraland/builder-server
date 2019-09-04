@@ -29,7 +29,6 @@ export class AssetRouter extends Router {
     /**
      * Upload the files for each asset in an asset pack
      */
-    // TODO: Check asset belongs to asset pack
     this.router.post(
       '/assetPacks/:assetPackId/assets/:id/files',
       authentication,

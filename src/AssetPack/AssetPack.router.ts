@@ -127,8 +127,10 @@ export class AssetPackRouter extends Router {
       })
     }
 
+    await AssetPack.deleteAssets(attributes.id)
+
     const upsertResult = await new AssetPack(attributes).upsert()
-    await Promise.all(assets.map(asset => new Asset(asset).upsert))
+    await Promise.all(assets.map(asset => new Asset(asset).upsert()))
 
     return upsertResult
   }

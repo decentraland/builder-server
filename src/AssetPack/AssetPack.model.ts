@@ -1,7 +1,7 @@
 import { Model, SQL, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 
-import { AssetQueries } from '../Asset'
+import { Asset, AssetQueries } from '../Asset'
 import { AssetPackAttributes } from './AssetPack.types'
 
 const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
@@ -51,5 +51,13 @@ export class AssetPack extends Model<AssetPackAttributes> {
           AND (user_id = ${userId} OR user_id = ${DEFAULT_USER_ID})`)
 
     return counts[0].count > 0
+  }
+
+  static async deleteAssets(id: string) {
+    return this.db.query(
+      SQL`DELETE *
+        FROM ${Asset.tableName}
+        WHERE asset_pack_id = ${id}`
+    )
   }
 }

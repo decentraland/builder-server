@@ -57,6 +57,8 @@ export class AssetPackRouter extends Router {
     this.router.post(
       '/assetPacks/:id/thumbnail',
       authentication,
+      assetPackExists,
+      assetPackAuthorization,
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadThumbnail)
     )

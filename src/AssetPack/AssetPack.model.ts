@@ -1,7 +1,7 @@
 import { Model, SQL, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 
-import { AssetQueries } from '../Asset'
+import { Asset, AssetQueries } from '../Asset'
 import { AssetPackAttributes } from './AssetPack.types'
 
 const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')

@@ -10,7 +10,7 @@
     "watch:build": "tsc -p tsconfig.json --watch",
     "start": "npm run build && node ./dist/src/server.js",
     "migrate": "./migrations/migrate.ts",
-    "seed": "tsc -p ./scripts/seed/tsconfig.json && node ./dist/scripts/seed/index.js"
+    "seed": "npm run build && cp -r ./scripts/seed/*_data ./dist/scripts/seed && node ./dist/scripts/seed/index.js"
   },
   "keywords": [
     "decentraland"

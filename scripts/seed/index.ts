@@ -1,4 +1,3 @@
-import https from 'https'
 import fs from 'fs'
 import { env, utils } from 'decentraland-commons'
 
@@ -100,49 +99,32 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
 }
 
 async function uploadThumbnail(attributes: DefaultAssetPack) {
-  const filename = 'thumbnail.png'
-  const currentThumbnail = await downloadFile(attributes.thumbnail)
+  const currentThumbnail = readFile(`${attributes.id}.png`)
 
-  console.log(`Uploading ${filename} to S3`)
+  console.log(`Uploading thumbnail to S3`)
   const { Location } = await new S3AssetPack(attributes.id).saveFile(
-    filename,
+    'thumbnail.png',
     currentThumbnail
   )
 
   return Location
 }
 
-async function downloadFile(url: string): Promise<Buffer> {
-  console.log(`Downloading file ${url}`)
-  return new Promise((resolve, reject) => {
-    const chunks: any[] = []
-    let file = Buffer.concat([])
-
-    https.get(url, function(response) {
-      response.on('data', chunk => chunks.push(chunk))
-      response.on('end', () => {
-        file = Buffer.concat(chunks)
-        resolve(file)
-      })
-      response.on('error', error => reject(error))
-    })
-  })
+function readJSON(filename: string) {
+  return JSON.parse(readFile(filename, 'utf8') as string)
 }
 
-function readJSON(filename: string) {
+function readFile(filename: string, encoding?: string) {
   const dataPath = getDataPath()
   const path = `${dataPath}/${filename}`
   console.log(`Reading file ${path}`)
-  return JSON.parse(fs.readFileSync(path, 'utf8'))
+  return fs.readFileSync(path, encoding)
 }
 
 function getDataPath() {
   const dataDirectories = getDirectories(__dirname).sort()
   const lastData = dataDirectories.pop()
-
-  const envFolder = env.isProduction() ? 'prod' : 'dev'
-
-  return `${__dirname}/${lastData}/${envFolder}`
+  return `${__dirname}/${lastData}`
 }
 
 function getDirectories(source: string) {

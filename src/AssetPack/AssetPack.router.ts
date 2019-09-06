@@ -8,7 +8,8 @@ import { authentication, AuthRequest, modelExists } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
-import { Asset, AssetAttributes, assetPackSchema } from '../Asset'
+import { Asset, assetPackSchema } from '../Asset'
+import { AssetPack } from './AssetPack.model'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -84,9 +85,9 @@ export class AssetPackRouter extends Router {
       )
     }
 
-    const assetPacks = await AssetPack.findWithAssets(id)
+    const assetPack = await AssetPack.findOneWithAssets(id)
 
-    if (assetPacks.length === 0) {
+    if (!assetPack) {
       throw new HTTPError(
         'Asset pack not found',
         { id, user_id },
@@ -94,7 +95,7 @@ export class AssetPackRouter extends Router {
       )
     }
 
-    return this.sanitize(assetPacks)
+    return this.sanitize([assetPack])[0]
   }
 
   async upsertAssetPack(req: AuthRequest) {
@@ -114,7 +115,10 @@ export class AssetPackRouter extends Router {
       throw new HTTPError('Unauthorized user', { id, user_id })
     }
 
-    const assets: AssetAttributes[] = utils.pick(assetPackJSON, ['assets'])
+    const { assets } = utils.pick<Pick<AssetPackAttributes, 'assets'>>(
+      assetPackJSON,
+      ['assets']
+    )
     const attributes = {
       ...utils.omit(assetPackJSON, ['assets']),
       user_id
@@ -127,7 +131,17 @@ export class AssetPackRouter extends Router {
       })
     }
 
-    await AssetPack.deleteAssets(attributes.id)
+    const currentAssetPack = await AssetPack.findOneWithAssets(id, user_id)
+    if (currentAssetPack) {
+      // Only delete assets that no longer exist
+      const assetIdsToDelete: string[] = []
+      for (const currentAsset of currentAssetPack.assets) {
+        if (!assets.find(asset => asset.id === currentAsset.id)) {
+          assetIdsToDelete.push(currentAsset.id)
+        }
+      }
+      await Asset.deleteByIds(assetIdsToDelete)
+    }
 
     const upsertResult = await new AssetPack(attributes).upsert()
     await Promise.all(assets.map(asset => new Asset(asset).upsert()))

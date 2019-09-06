@@ -1,7 +1,7 @@
 import { Model, SQL, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 
-import { Asset, AssetQueries } from '../Asset'
+import { AssetQueries } from '../Asset'
 import { AssetPackAttributes } from './AssetPack.types'
 
 const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
@@ -34,12 +34,13 @@ export class AssetPack extends Model<AssetPackAttributes> {
           AND (${userIdQuery} OR user_id = ${DEFAULT_USER_ID})`)
   }
 
-  static async findWithAssets(id: string) {
-    return this.query<AssetPackAttributes>(SQL`
+  static async findOneWithAssets(id: string) {
+    const assetPacks = await this.query<AssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)} as asset_packs
         WHERE is_deleted = FALSE
           AND id = ${id}`)
+    return assetPacks[0]
   }
 
   static async isVisible(id: string, userId: string) {
@@ -51,13 +52,5 @@ export class AssetPack extends Model<AssetPackAttributes> {
           AND (user_id = ${userId} OR user_id = ${DEFAULT_USER_ID})`)
 
     return counts[0].count > 0
-  }
-
-  static async deleteAssets(id: string) {
-    return this.db.query(
-      SQL`DELETE *
-        FROM ${Asset.tableName}
-        WHERE asset_pack_id = ${id}`
-    )
   }
 }

@@ -130,8 +130,8 @@ function getDataPath() {
 function getDirectories(source: string) {
   return fs
     .readdirSync(source, { withFileTypes: true })
-    .filter(dirent => dirent.isDirectory())
-    .map(dirent => dirent.name)
+    .filter(directory => directory.isDirectory())
+    .map(directory => directory.name)
 }
 
 if (require.main === module) {

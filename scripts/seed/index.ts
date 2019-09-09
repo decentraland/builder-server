@@ -1,8 +1,9 @@
+import https from 'https'
 import fs from 'fs'
 import { env, utils } from 'decentraland-commons'
 
 import { db } from '../../src/database'
-import { S3AssetPack } from '../../src/S3'
+import { S3AssetPack, S3Asset, ACL } from '../../src/S3'
 import { AssetPack, AssetPackAttributes } from '../../src/AssetPack'
 import { Asset, AssetAttributes } from '../../src/Asset'
 
@@ -80,7 +81,7 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
 
 async function upsertAssets(assetPacks: DefaultAssetPack[]) {
   for (const { id } of assetPacks) {
-    const assetUpserts = []
+    const assetPromises: Promise<any>[] = []
     const assetsResponse: DefaultAssetResponse = readJSON(`${id}.json`)
     const assets = assetsResponse.data.assets
 
@@ -91,30 +92,67 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       } as AssetAttributes
 
       console.log(`Upserting asset ${attributes.id} for asset pack ${id}`)
-      assetUpserts.push(new Asset(attributes).upsert())
+      assetPromises.push(new Asset(attributes).upsert())
+
+      try {
+        for (const cid of Object.values(attributes.contents)) {
+          const file = await downloadAsset(cid)
+
+          console.log(`Uploading file ${cid} to S3`)
+          assetPromises.push(new S3Asset().saveFile(cid, file, ACL.publicRead))
+        }
+      } catch (error) {
+        // if the download errors out, we assume asset.decentraland is down and every asset has been uploaded to S3
+        console.log(`Ignoring error: ${error.message}`)
+      }
     }
 
-    await Promise.all(assetUpserts)
+    await Promise.all(assetPromises)
   }
 }
 
 async function uploadThumbnail(attributes: DefaultAssetPack) {
-  const currentThumbnail = readFile(`${attributes.id}.png`)
+  const s3AssetPack = new S3AssetPack(attributes.id)
+
+  const filename = s3AssetPack.getThumbnailFilename()
+  const currentThumbnail = readFileSync(filename)
 
   console.log(`Uploading thumbnail to S3`)
-  const { Location } = await new S3AssetPack(attributes.id).saveFile(
-    'thumbnail.png',
-    currentThumbnail
+  const { Location } = await s3AssetPack.saveFile(
+    filename,
+    currentThumbnail,
+    ACL.publicRead
   )
 
   return Location
 }
 
-function readJSON(filename: string) {
-  return JSON.parse(readFile(filename, 'utf8') as string)
+async function downloadAsset(cid: string): Promise<Buffer> {
+  const domain = env.isProduction() ? 'org' : 'zone'
+  const url = `https://assets.decentraland.${domain}/${cid}`
+
+  console.log(`Downloading ${url}`)
+
+  return new Promise((resolve, reject) => {
+    const chunks: any[] = []
+    let file = Buffer.concat([])
+
+    https.get(url, function(response) {
+      response.on('data', chunk => chunks.push(chunk))
+      response.on('end', () => {
+        file = Buffer.concat(chunks)
+        resolve(file)
+      })
+      response.on('error', error => reject(error))
+    })
+  })
 }
 
-function readFile(filename: string, encoding?: string) {
+function readJSON(filename: string) {
+  return JSON.parse(readFileSync(filename, 'utf8') as string)
+}
+
+function readFileSync(filename: string, encoding?: string) {
   const dataPath = getDataPath()
   const path = `${dataPath}/${filename}`
   console.log(`Reading file ${path}`)

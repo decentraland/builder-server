@@ -7,6 +7,7 @@ import { ProjectRouter } from './Project'
 import { PoolRouter } from './Pool'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
+import { S3Router } from './S3'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { getLogger } from './middleware'
@@ -32,6 +33,7 @@ new ProjectRouter(app).mount()
 new PoolRouter(app).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
+new S3Router(app).mount()
 
 /* Start the server only if run directly */
 if (require.main === module) {

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
+import mimeTypes from 'mime-types'
 import path from 'path'
 
 import { Router } from '../common/Router'
@@ -184,8 +185,7 @@ export class ProjectRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const filename = server.extractFromReq(req, 'filename')
 
-    const extension = path.extname(filename)
-    const basename = filename.replace(extension, '')
+    const basename = filename.replace(path.extname(filename), '')
 
     if (!FILE_NAMES.includes(basename)) {
       return res
@@ -193,7 +193,7 @@ export class ProjectRouter extends Router {
         .json(server.sendError({ filename }, 'Invalid filename'))
     }
 
-    const file = await new S3Project(id).readFile(filename)
+    const file = await new S3Project(id).readFileBody(filename)
     if (!file) {
       return res
         .status(404)
@@ -205,22 +205,7 @@ export class ProjectRouter extends Router {
         )
     }
 
-    let fileMimeType = ''
-    for (const [mimeType, fileType] of Object.entries(MIME_TYPES)) {
-      if (fileType === extension.slice(1)) {
-        // .slice(1) is needed because path.extname returns the leading dot
-        fileMimeType = mimeType
-        break
-      }
-    }
-
-    if (!fileMimeType) {
-      return res
-        .status(404)
-        .json(server.sendError({ id, fileMimeType }, 'Invalid mime type'))
-    }
-
-    res.setHeader('Content-Type', fileMimeType)
+    res.setHeader('Content-Type', mimeTypes.lookup(basename) || '')
     return res.end(file)
   }
 

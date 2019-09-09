@@ -158,8 +158,8 @@ export class AssetPackRouter extends Router {
 
   async uploadThumbnail(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const thumbnail = req.file as Express.MulterS3.File
 
+    const thumbnail = req.file as Express.MulterS3.File // using `single` on getFileUploaderMiddleware
     if (thumbnail) {
       await AssetPack.update({ thumbnail: thumbnail.location }, { id })
     }
@@ -171,11 +171,9 @@ export class AssetPackRouter extends Router {
     const uploader = getFileUploader(
       ACL.publicRead,
       [THUMBNAIL_MIME_TYPE],
-      (req, file) => {
+      req => {
         const id = server.extractFromReq(req, 'id')
-        const filename = `${file.fieldname}.png`
-
-        return new S3AssetPack(id).getFileKey(filename)
+        return new S3AssetPack(id).getThumbnailFilename()
       }
     )
 

@@ -5,12 +5,14 @@ import { Project } from '../Project'
 import { Pool } from '../Pool'
 import { Deployment } from '../Deployment'
 import { AssetPack } from '../AssetPack'
+import { Asset } from '../Asset'
 
 export type QueryableModel =
   | typeof Project
   | typeof Pool
   | typeof Deployment
   | typeof AssetPack
+  | typeof Asset
 
 export function modelExists(Model: QueryableModel, param = 'id') {
   return async (req: Request, res: Response, next: NextFunction) => {

@@ -8,7 +8,7 @@ import { modelAuthorization } from '../middleware/authorization'
 import { Ownable } from '../Ownable'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
-import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
+import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 
 const ajv = new Ajv()
 
@@ -62,7 +62,7 @@ export class ManifestRouter extends Router {
 
   async getProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const body = await new S3Project(id).readFile(MANIFEST_FILENAME)
+    const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
     if (body) {
       return JSON.parse(body.toString())
     }
@@ -70,7 +70,7 @@ export class ManifestRouter extends Router {
 
   async getPoolManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const body = await new S3Project(id).readFile(POOL_FILENAME)
+    const body = await new S3Project(id).readFileBody(POOL_FILENAME)
     if (body) {
       return JSON.parse(body.toString())
     }
@@ -104,7 +104,11 @@ export class ManifestRouter extends Router {
 
     const [project] = await Promise.all([
       new Project(manifest.project).upsert(),
-      new S3Project(id).saveFile(MANIFEST_FILENAME, JSON.stringify(manifest))
+      new S3Project(id).saveFile(
+        MANIFEST_FILENAME,
+        JSON.stringify(manifest),
+        ACL.private
+      )
     ])
     return project
   }

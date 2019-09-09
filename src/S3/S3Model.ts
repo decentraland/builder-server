@@ -4,34 +4,43 @@ import {
   deleteFile,
   deleteFolder,
   uploadFile,
-  ACL
+  ACLValues
 } from './s3'
 
 export class S3Model {
   id: string
-  type: string = ''
+  type: string
 
-  constructor(id: string) {
+  constructor(id: string, type: string) {
     this.id = id
+    this.type = type
   }
 
-  async readFile(filename: string) {
+  async readFileBody(filename: string) {
+    const file = await this.readFile(filename)
     let body
 
-    try {
-      const key = this.getFileKey(filename)
-      const file = await readFile(key)
+    if (file) {
       body = file.Body
-    } catch (error) {
-      // No previous entity
     }
     return body
   }
 
-  async saveFile(filename: string, data: string | Buffer, encoding?: string) {
+  async readFile(filename: string) {
+    let file
+    try {
+      const key = this.getFileKey(filename)
+      file = await readFile(key)
+    } catch (error) {
+      // No previous entity
+    }
+    return file
+  }
+
+  async saveFile(filename: string, data: string | Buffer, acl: ACLValues) {
     const key = this.getFileKey(filename)
-    const buffer = typeof data === 'string' ? Buffer.from(data, encoding) : data
-    return uploadFile(key, buffer, ACL.publicRead)
+    const buffer = typeof data === 'string' ? Buffer.from(data) : data
+    return uploadFile(key, buffer, acl)
   }
 
   async deleteFile(filename: string) {
@@ -51,7 +60,7 @@ export class S3Model {
     return `${this.getFolder()}/${filename}`
   }
 
-  private getFolder(): string {
+  protected getFolder(): string {
     return `${this.type}/${this.id}`
   }
 }

@@ -6,7 +6,7 @@ import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
 import { authentication, modelExists, asMiddleware } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
-import { S3AssetPack, getFileUploader, ACL } from '../S3'
+import { S3AssetPack, S3Asset, getFileUploader, ACL } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'
 
@@ -51,10 +51,11 @@ export class AssetRouter extends Router {
       await this.assetFilesRequestHandler!(req, res)
     } catch (error) {
       const assetPackId = server.extractFromReq(req, 'assetPackId')
+      const s3AssetPack = new S3AssetPack(assetPackId)
 
       await Promise.all([
         AssetPack.hardDelete({ id: assetPackId }),
-        new S3AssetPack(assetPackId).delete()
+        s3AssetPack.deleteFile(s3AssetPack.getThumbnailFilename())
       ])
       throw new HTTPError('An error occurred trying to upload asset files', {
         message: error.message
@@ -63,14 +64,9 @@ export class AssetRouter extends Router {
   }
 
   private getAssetFilesRequestHandler() {
-    const uploader = getFileUploader(ACL.publicRead, [], (req, file) => {
-      const assetPackId = server.extractFromReq(req, 'assetPackId')
-      const id = server.extractFromReq(req, 'id')
-
-      const filename = file.fieldname
-
-      return new S3AssetPack(assetPackId).getAssetFileKey(id, filename)
-    })
+    const uploader = getFileUploader(ACL.publicRead, [], (_, file) =>
+      new S3Asset().getFileKey(file.fieldname)
+    )
     return utils.promisify<boolean>(uploader.any())
   }
 }

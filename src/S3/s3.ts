@@ -2,6 +2,7 @@ import { Request } from 'express'
 import AWS from 'aws-sdk'
 import multer from 'multer'
 import multerS3 from 'multer-s3'
+import mimeTypes from 'mime-types'
 import { env, utils } from 'decentraland-commons'
 
 const ACCESS_KEY = env.get('AWS_ACCESS_KEY', '')
@@ -108,13 +109,23 @@ export async function checkFile(key: string): Promise<boolean> {
   }
 }
 
-export function uploadFile(key: string, data: Buffer, acl: ACLValues) {
+export function uploadFile(
+  key: string,
+  data: Buffer,
+  acl: ACLValues,
+  options: Partial<AWS.S3.PutObjectRequest> = {}
+) {
+  const ContentType = options.ContentType || mimeTypes.lookup(key) || ''
+
   const params = {
+    ...options,
     Bucket: BUCKET_NAME,
     Key: key,
     Body: data,
-    ACL: acl
+    ACL: acl,
+    ContentType
   }
+
   return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
     params
   )

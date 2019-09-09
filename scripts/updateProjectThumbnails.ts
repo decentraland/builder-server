@@ -1,18 +1,27 @@
 import { db } from '../src/database'
 import { Project, THUMBNAIL_FILE_NAME } from '../src/Project'
+import { Pool } from '../src/Pool'
 
 export async function updateProjectThumbnails() {
-  const projects = await Project.find()
+  console.log('==== Projects ====')
+  await updateThumbnails(Project)
+
+  console.log('==== Pools ====')
+  await updateThumbnails(Pool)
+}
+
+async function updateThumbnails(Model: typeof Project | typeof Pool) {
+  const resources = await Model.find()
 
   const updates = []
-  for (const project of projects) {
+  for (const resource of resources) {
     const thumbnail = `${THUMBNAIL_FILE_NAME}.png`
 
-    console.log(`Updating project ${project.id} with thumbnail "${thumbnail}"`)
-    updates.push(Project.update({ thumbnail }, { id: project.id }))
+    console.log(`Updating project ${resource.id} with thumbnail "${thumbnail}"`)
+    updates.push(Model.update({ thumbnail }, { id: resource.id }))
   }
 
-  await Promise.all(updates)
+  return Promise.all(updates)
 }
 
 if (require.main === module) {

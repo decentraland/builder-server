@@ -8,8 +8,9 @@ import { authentication, AuthRequest, modelExists } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
-import { Asset, assetPackSchema } from '../Asset'
+import { Asset } from '../Asset'
 import { AssetPack } from './AssetPack.model'
+import { AssetPackAttributes, assetPackSchema } from './AssetPack.types'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -131,7 +132,7 @@ export class AssetPackRouter extends Router {
       })
     }
 
-    const currentAssetPack = await AssetPack.findOneWithAssets(id, user_id)
+    const currentAssetPack = await AssetPack.findOneWithAssets(id)
     if (currentAssetPack) {
       // Only delete assets that no longer exist
       const assetIdsToDelete: string[] = []

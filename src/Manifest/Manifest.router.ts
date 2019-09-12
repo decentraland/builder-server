@@ -2,7 +2,7 @@ import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
-import { HTTPError } from '../common/HTTPError'
+import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
 import { Project } from '../Project'
@@ -85,7 +85,11 @@ export class ManifestRouter extends Router {
     }
 
     if (!(await Project.canUpsert(id, user_id))) {
-      throw new HTTPError('Unauthorized user', { id, user_id })
+      throw new HTTPError(
+        'Unauthorized user',
+        { id, user_id },
+        STATUS_CODES.unauthorized
+      )
     }
 
     const manifest = {

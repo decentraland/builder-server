@@ -53,10 +53,15 @@ export class AssetRouter extends Router {
       const assetPackId = server.extractFromReq(req, 'assetPackId')
       const s3AssetPack = new S3AssetPack(assetPackId)
 
-      await Promise.all([
-        AssetPack.hardDelete({ id: assetPackId }),
-        s3AssetPack.deleteFile(s3AssetPack.getThumbnailFilename())
-      ])
+      try {
+        await Promise.all([
+          AssetPack.hardDelete({ id: assetPackId }),
+          s3AssetPack.deleteFile(s3AssetPack.getThumbnailFilename())
+        ])
+      } catch (error) {
+        // Skip
+      }
+
       throw new HTTPError('An error occurred trying to upload asset files', {
         message: error.message
       })

@@ -12,7 +12,7 @@ export type AssetAttributes = {
 export const assetSchema = Object.freeze({
   type: 'object',
   properties: {
-    id: { type: 'string', format: 'uuid' },
+    id: { type: 'string' },
     asset_pack_id: { type: 'string', format: 'uuid' },
     name: { type: 'string' },
     url: { type: 'string' },

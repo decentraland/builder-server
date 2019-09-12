@@ -4,7 +4,7 @@ import Ajv from 'ajv'
 import path from 'path'
 
 import { Router } from '../common/Router'
-import { HTTPError } from '../common/HTTPError'
+import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { authentication, AuthRequest, projectExists } from '../middleware'
 import { projectAuthorization } from '../middleware/authorization'
 import { Deployment } from '../Deployment'
@@ -143,7 +143,11 @@ export class ProjectRouter extends Router {
     }
 
     if (!(await Project.canUpsert(id, user_id))) {
-      throw new Error(`Unauthorized user ${user_id} for project ${id}`)
+      throw new HTTPError(
+        'Unauthorized user',
+        { id, user_id },
+        STATUS_CODES.unauthorized
+      )
     }
 
     const attributes = { ...projectJSON, user_id } as ProjectAttributes

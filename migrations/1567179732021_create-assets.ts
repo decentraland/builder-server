@@ -7,7 +7,7 @@ export const up = (pgm: MigrationBuilder) => {
   pgm.createTable(
     tableName,
     {
-      id: { type: 'UUID', primaryKey: true, unique: true, notNull: true },
+      id: { type: 'TEXT', primaryKey: true, unique: true, notNull: true },
       asset_pack_id: { type: 'UUID', notNull: true },
       name: { type: 'TEXT', notNull: true },
       url: { type: 'TEXT' },

@@ -89,7 +89,7 @@ export class PoolRouter extends Router {
     const promises: Promise<any>[] = [new Pool(project!).upsert()]
 
     if (manifest) {
-      const data = JSON.stringify(manifest.toString())
+      const data = manifest.toString()
       promises.push(s3Project.saveFile(POOL_FILENAME, data))
     }
 

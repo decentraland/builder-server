@@ -45,11 +45,13 @@ export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
 }
 
 export async function listFiles(
+  key: string,
   continuationToken?: string,
   contents: AWS.S3.ObjectList = []
 ): Promise<AWS.S3.ObjectList> {
   const params: AWS.S3.ListObjectsV2Request = {
-    Bucket: BUCKET_NAME
+    Bucket: BUCKET_NAME,
+    Prefix: key
   }
   if (continuationToken) {
     params.ContinuationToken = continuationToken
@@ -62,7 +64,7 @@ export async function listFiles(
   contents = contents.concat(data.Contents || [])
 
   return data.IsTruncated
-    ? listFiles(data.NextContinuationToken, contents)
+    ? listFiles(key, data.NextContinuationToken, contents)
     : contents
 }
 

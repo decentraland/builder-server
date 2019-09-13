@@ -1,3 +1,4 @@
+export * from './asMiddleware'
 export * from './authentication'
-export * from './project'
 export * from './logger'
+export * from './model'

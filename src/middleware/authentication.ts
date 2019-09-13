@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import jwt from 'express-jwt'
 import jwksRsa from 'jwks-rsa'
+import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 
 export type AuthRequest = Request & {
@@ -36,10 +37,9 @@ export function getAuthenticationMiddleware() {
   return (req: Request, res: Response, next: NextFunction) => {
     jwtMiddleware(req, res, err => {
       if (err && err.name === 'UnauthorizedError') {
-        console.log(err.message)
         res
           .status(err.status)
-          .end(JSON.stringify({ ok: false, error: 'Unauthenticated' }))
+          .json(server.sendError({ error: err.message }, 'Unauthenticated'))
         return
       }
       next(err)

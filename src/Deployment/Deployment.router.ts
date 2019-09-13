@@ -3,12 +3,17 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { authentication, AuthRequest, projectExists } from '../middleware'
-import { projectAuthorization } from '../middleware/authorization'
+import { authentication, AuthRequest, modelExists } from '../middleware'
+import { modelAuthorization } from '../middleware/authorization'
+import { Project } from '../Project'
 import { Deployment } from './Deployment.model'
 import { DeploymentAttributes, deploymentSchema } from './Deployment.types'
 
 const ajv = new Ajv()
+
+const projectExists = modelExists(Project)
+const projectAuthorization = modelAuthorization(Project)
+const deploymentAuthorization = modelAuthorization(Deployment)
 
 export class DeploymentRouter extends Router {
   mount() {
@@ -51,6 +56,7 @@ export class DeploymentRouter extends Router {
       authentication,
       projectExists,
       projectAuthorization,
+      deploymentAuthorization,
       server.handleRequest(this.deleteDeployment)
     )
   }
@@ -94,11 +100,7 @@ export class DeploymentRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const user_id = req.auth.sub
 
-    if (!(await Deployment.isOwnedBy(id, user_id))) {
-      throw new HTTPError(`Invalid deployment id`, { id, user_id })
-    }
-
-    await Deployment.delete({ id })
+    await Deployment.delete({ id, user_id })
 
     return true
   }

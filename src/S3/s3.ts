@@ -1,6 +1,8 @@
-import * as AWS from 'aws-sdk'
-import * as multer from 'multer'
+import { Request } from 'express'
+import AWS from 'aws-sdk'
+import multer from 'multer'
 import multerS3 from 'multer-s3'
+import mimeTypes from 'mime-types'
 import { env, utils } from 'decentraland-commons'
 
 const ACCESS_KEY = env.get('AWS_ACCESS_KEY', '')
@@ -18,7 +20,7 @@ if (!BUCKET_NAME) {
   )
 }
 
-const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', '5000000'), 10)
+const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 5000000
 
 export const ACL = {
   private: 'private' as 'private',
@@ -68,7 +70,7 @@ export async function listFiles(
     : contents
 }
 
-export function deleteFile(key: string): Promise<AWS.S3.DeleteObjectOutput> {
+export async function deleteFile(key: string) {
   const params = {
     Bucket: BUCKET_NAME,
     Key: key
@@ -76,6 +78,20 @@ export function deleteFile(key: string): Promise<AWS.S3.DeleteObjectOutput> {
   return utils.promisify<AWS.S3.DeleteObjectOutput>(s3.deleteObject.bind(s3))(
     params
   )
+}
+
+export async function deleteFolder(key: string) {
+  const objectList = await listFiles(key)
+  const promises = []
+
+  for (const object of objectList) {
+    if (object.Key) {
+      promises.push(deleteFile(object.Key))
+    }
+  }
+  await Promise.all(promises)
+
+  return deleteFile(key)
 }
 
 export async function checkFile(key: string): Promise<boolean> {
@@ -96,34 +112,52 @@ export async function checkFile(key: string): Promise<boolean> {
 export function uploadFile(
   key: string,
   data: Buffer,
-  acl: ACLValues
-): Promise<AWS.S3.ManagedUpload> {
+  acl: ACLValues,
+  options: Partial<AWS.S3.PutObjectRequest> = {}
+) {
+  const ContentType = options.ContentType || mimeTypes.lookup(key) || ''
+
   const params = {
+    ...options,
     Bucket: BUCKET_NAME,
     Key: key,
     Body: data,
-    ACL: acl
+    ACL: acl,
+    ContentType
   }
-  return utils.promisify<AWS.S3.ManagedUpload>(s3.upload.bind(s3))(params)
+
+  return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
+    params
+  )
 }
 
 export function getFileUploader(
   acl: ACLValues,
   mimeTypes: string[],
-  callback: multer.DiskStorageOptions['filename'] // multers3 does not export it's types correctly
+  callback: (req: Request, file: Express.Multer.File) => string
 ) {
-  return multer.default({
+  return multer({
     limits: {
       fileSize: MAX_FILE_SIZE
     },
     fileFilter: function(_, file, cb) {
-      cb(null, mimeTypes.includes(file.mimetype))
+      if (mimeTypes.length > 0) {
+        cb(null, mimeTypes.includes(file.mimetype))
+      } else {
+        cb(null, true)
+      }
     },
     storage: multerS3({
       s3: s3,
       acl: acl,
       bucket: BUCKET_NAME,
-      key: callback
+      key: (req, file, next) => {
+        try {
+          next(null, callback(req as Request, file))
+        } catch (error) {
+          next(error, '')
+        }
+      }
     })
   })
 }

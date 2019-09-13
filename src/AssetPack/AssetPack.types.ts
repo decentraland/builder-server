@@ -12,7 +12,7 @@ export type AssetPackAttributes = {
   updated_at: Date
 }
 
-export const assetPacksSchema = Object.freeze({
+export const assetPackSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },

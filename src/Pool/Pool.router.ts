@@ -1,9 +1,9 @@
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { authentication, AuthRequest, projectExists } from '../middleware'
-import { projectAuthorization } from '../middleware/authorization'
-import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
+import { authentication, AuthRequest, modelExists } from '../middleware'
+import { modelAuthorization } from '../middleware/authorization'
+import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import { Project, ProjectAttributes } from '../Project'
 import {
@@ -16,6 +16,9 @@ import { PoolAttributes, searchablePoolProperties } from './Pool.types'
 
 export class PoolRouter extends Router {
   mount() {
+    const projectExists = modelExists(Project)
+    const projectAuthorization = modelAuthorization(Project)
+
     /**
      * Get all pools
      */
@@ -83,14 +86,14 @@ export class PoolRouter extends Router {
 
     const [project, manifest] = await Promise.all([
       Project.findOne<ProjectAttributes>(id),
-      s3Project.readFile(MANIFEST_FILENAME)
+      s3Project.readFileBody(MANIFEST_FILENAME)
     ])
 
     const promises: Promise<any>[] = [new Pool(project!).upsert()]
 
     if (manifest) {
       const data = manifest.toString()
-      promises.push(s3Project.saveFile(POOL_FILENAME, data))
+      promises.push(s3Project.saveFile(POOL_FILENAME, data, ACL.private))
     }
 
     const [pool] = await Promise.all(promises)

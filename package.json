@@ -6,11 +6,11 @@
   "scripts": {
     "lint": "tslint -p tsconfig.json",
     "lint:fix": "tslint -p tsconfig.json --fix",
-    "build:tsc": "tsc -p tsconfig.json",
-    "watch:build:tsc": "tsc -p tsconfig.json --watch",
-    "start": "npm run build:tsc && node dist/src/server.js",
+    "build": "tsc -p tsconfig.json",
+    "watch:build": "tsc -p tsconfig.json --watch",
+    "start": "npm run build && node ./dist/src/server.js",
     "migrate": "./migrations/migrate.ts",
-    "indexScenes": "npm run build:tsc && node dist/scripts/indexScenes.js"
+    "seed": "npm run build && cp -r ./scripts/seed/*_data ./dist/scripts/seed && node ./dist/scripts/seed/index.js"
   },
   "keywords": [
     "decentraland"
@@ -25,6 +25,7 @@
   "dependencies": {
     "@types/body-parser": "^1.17.0",
     "@types/express": "^4.16.1",
+    "@types/mime-types": "^2.1.0",
     "@types/morgan": "^1.7.36",
     "@types/multer": "^1.3.7",
     "@types/multer-s3": "^2.7.6",
@@ -33,11 +34,12 @@
     "aws-sdk": "^2.401.0",
     "body-parser": "^1.18.3",
     "decentraland-commons": "^5.1.0",
-    "decentraland-server": "^2.8.0",
+    "decentraland-server": "^2.9.0",
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
     "express-jwt": "^5.3.1",
     "jwks-rsa": "^1.6.0",
+    "mime-types": "^2.1.24",
     "morgan": "^1.9.1",
     "multer": "^1.4.1",
     "multer-s3": "^2.9.0",

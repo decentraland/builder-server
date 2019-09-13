@@ -16,7 +16,7 @@ export const assetSchema = Object.freeze({
     asset_pack_id: { type: 'string', format: 'uuid' },
     name: { type: 'string' },
     url: { type: 'string' },
-    thumbnail: { type: ['string', 'null'] },
+    thumbnail: { type: 'string' },
     tags: { items: { type: 'string' } },
     category: { type: 'string' },
     contents: {
@@ -31,6 +31,7 @@ export const assetSchema = Object.freeze({
     'asset_pack_id',
     'name',
     'url',
+    'thumbnail',
     'tags',
     'category',
     'contents'

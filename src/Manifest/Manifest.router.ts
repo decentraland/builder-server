@@ -3,16 +3,20 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { authentication, AuthRequest, projectExists } from '../middleware'
-import { projectAuthorization } from '../middleware/authorization'
+import { authentication, AuthRequest, modelExists } from '../middleware'
+import { modelAuthorization } from '../middleware/authorization'
+import { Ownable } from '../Ownable'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
-import { S3Project, MANIFEST_FILENAME, POOL_FILENAME } from '../S3'
+import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 
 const ajv = new Ajv()
 
 export class ManifestRouter extends Router {
   mount() {
+    const projectExists = modelExists(Project)
+    const projectAuthorization = modelAuthorization(Project)
+
     /**
      * Returns the manifest of a project
      */
@@ -58,7 +62,7 @@ export class ManifestRouter extends Router {
 
   async getProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const body = await new S3Project(id).readFile(MANIFEST_FILENAME)
+    const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
     if (body) {
       return JSON.parse(body.toString())
     }
@@ -66,7 +70,7 @@ export class ManifestRouter extends Router {
 
   async getPoolManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const body = await new S3Project(id).readFile(POOL_FILENAME)
+    const body = await new S3Project(id).readFileBody(POOL_FILENAME)
     if (body) {
       return JSON.parse(body.toString())
     }
@@ -84,7 +88,8 @@ export class ManifestRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    if (!(await Project.canUpsert(id, user_id))) {
+    const canUpsert = await new Ownable(Project).canUpsert(id, user_id)
+    if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
         { id, user_id },
@@ -99,7 +104,11 @@ export class ManifestRouter extends Router {
 
     const [project] = await Promise.all([
       new Project(manifest.project).upsert(),
-      new S3Project(id).saveFile(MANIFEST_FILENAME, JSON.stringify(manifest))
+      new S3Project(id).saveFile(
+        MANIFEST_FILENAME,
+        JSON.stringify(manifest),
+        ACL.private
+      )
     ])
     return project
   }

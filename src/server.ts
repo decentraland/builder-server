@@ -2,10 +2,12 @@ import { env } from 'decentraland-commons'
 
 import { AppRouter } from './App'
 import { AssetPackRouter } from './AssetPack'
+import { AssetRouter } from './Asset'
 import { ProjectRouter } from './Project'
 import { PoolRouter } from './Pool'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
+import { S3Router } from './S3'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { getLogger } from './middleware'
@@ -26,10 +28,12 @@ app
 // Mount routers
 new AppRouter(app).mount()
 new AssetPackRouter(app).mount()
+new AssetRouter(app).mount()
 new ProjectRouter(app).mount()
 new PoolRouter(app).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
+new S3Router(app).mount()
 
 /* Start the server only if run directly */
 if (require.main === module) {

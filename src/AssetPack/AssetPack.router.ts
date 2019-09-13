@@ -66,7 +66,7 @@ export class AssetPackRouter extends Router {
     )
   }
 
-  async getAssetPacks(req: AuthRequest) {
+  getAssetPacks = async (req: AuthRequest) => {
     const user_id = req.auth ? req.auth.sub : ''
     const assetPacks = await AssetPack.findVisible(user_id)
     return this.sanitize(assetPacks)

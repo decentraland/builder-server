@@ -25,7 +25,7 @@ import {
   searchableProjectProperties
 } from './Project.types'
 
-const THUMBNAIL_FILE_NAME = 'thumbnail'
+export const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
   THUMBNAIL_FILE_NAME,
   'preview',
@@ -34,9 +34,7 @@ const FILE_NAMES = [
   'south',
   'west'
 ]
-const MIME_TYPES = {
-  'image/png': 'png'
-}
+const MIME_TYPES = ['image/png']
 
 const ajv = new Ajv()
 
@@ -222,7 +220,11 @@ export class ProjectRouter extends Router {
     const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
 
     if (thumbnail) {
-      await Project.update({ thumbnail: thumbnail.key }, { id })
+      const extension = mimeTypes.extension(thumbnail.mimetype)
+      await Project.update(
+        { thumbnail: `${THUMBNAIL_FILE_NAME}.${extension}` },
+        { id }
+      )
     }
 
     return true
@@ -231,11 +233,11 @@ export class ProjectRouter extends Router {
   private getFileUploaderMiddleware() {
     const uploader = getFileUploader(
       ACL.publicRead,
-      Object.keys(MIME_TYPES),
+      MIME_TYPES,
       (req, file) => {
         const id = server.extractFromReq(req, 'id')
 
-        const extension = MIME_TYPES[file.mimetype as keyof typeof MIME_TYPES]
+        const extension = mimeTypes.extension(file.mimetype)
         const filename = `${file.fieldname}.${extension}`
 
         // **Important** Shares folder with the other project files

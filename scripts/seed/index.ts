@@ -1,5 +1,6 @@
 import https from 'https'
 import fs from 'fs'
+import path from 'path'
 import { env, utils } from 'decentraland-commons'
 
 import { db } from '../../src/database'
@@ -15,6 +16,13 @@ type DefaultAssetPack = {
 }
 type DefaultAsset = {
   id: string
+  name: string
+  thumbnail: string
+  url: string
+  category: string
+  tags: string[]
+  variations: string[]
+  contents: Record<string, string>
 }
 
 type DefaultAssetPackResponse = {
@@ -55,11 +63,11 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
   const assetPackUpserts = []
   const now = new Date()
 
-  for (const defaultAttributes of assetPacks) {
-    const assetPackUpsert = uploadThumbnail(defaultAttributes).then(
+  for (const defaultAssetPack of assetPacks) {
+    const assetPackUpsert = uploadThumbnail(defaultAssetPack).then(
       thumbnail => {
         const attributes = {
-          ...defaultAttributes,
+          ...utils.omit<AssetPackAttributes>(defaultAssetPack, ['url']),
           thumbnail,
           user_id: DEFAULT_USER_ID,
           created_at: now,
@@ -86,8 +94,11 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
     const assets = assetsResponse.data.assets
 
     for (const defaultAttributes of assets) {
+      const thumbnail = path.basename(defaultAttributes.thumbnail)
+
       const attributes = {
         ...utils.omit(defaultAttributes, ['variations']),
+        thumbnail,
         asset_pack_id: id
       } as AssetAttributes
 
@@ -103,7 +114,7 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
         }
       } catch (error) {
         // if the download errors out, we assume asset.decentraland is down and every asset has been uploaded to S3
-        console.log(`Ignoring error: ${error.message}`)
+        console.log(`Ignoring ERROR: ${error.message}`)
       }
     }
 
@@ -118,18 +129,13 @@ async function uploadThumbnail(attributes: DefaultAssetPack) {
   const currentThumbnail = readFileSync(filename)
 
   console.log(`Uploading thumbnail to S3`)
-  const { Location } = await s3AssetPack.saveFile(
-    filename,
-    currentThumbnail,
-    ACL.publicRead
-  )
+  await s3AssetPack.saveFile(filename, currentThumbnail, ACL.publicRead)
 
-  return Location
+  return filename
 }
 
 async function downloadAsset(cid: string): Promise<Buffer> {
-  const domain = env.isProduction() ? 'org' : 'zone'
-  const url = `https://assets.decentraland.${domain}/${cid}`
+  const url = `${getAssetsUrl()}/${cid}`
 
   console.log(`Downloading ${url}`)
 
@@ -157,6 +163,11 @@ function readFileSync(filename: string, encoding?: string) {
   const path = `${dataPath}/${filename}`
   console.log(`Reading file ${path}`)
   return fs.readFileSync(path, encoding)
+}
+
+function getAssetsUrl() {
+  const domain = env.isProduction() ? 'org' : 'zone'
+  return `https://assets.decentraland.${domain}`
 }
 
 function getDataPath() {

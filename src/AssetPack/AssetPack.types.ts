@@ -3,7 +3,6 @@ import { AssetAttributes, assetSchema } from '../Asset'
 export type AssetPackAttributes = {
   id: string
   title: string
-  url: string
   thumbnail?: string
   user_id: string
   is_deleted: boolean
@@ -17,7 +16,6 @@ export const assetPackSchema = Object.freeze({
   properties: {
     id: { type: 'string', format: 'uuid' },
     title: { type: 'string' },
-    url: { type: 'string' },
     thumbnail: { type: ['string', 'null'] },
     user_id: { type: ['string', 'null'] },
     assets: { items: assetSchema, additionalProperties: false },
@@ -26,5 +24,5 @@ export const assetPackSchema = Object.freeze({
   },
   additionalProperties: false,
   removeAdditional: true,
-  required: ['id', 'title', 'url', 'assets']
+  required: ['id', 'title', 'assets']
 })

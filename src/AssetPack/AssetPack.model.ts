@@ -1,10 +1,7 @@
 import { Model, SQL, QueryPart } from 'decentraland-server'
-import { env } from 'decentraland-commons'
 
 import { AssetQueries } from '../Asset'
 import { AssetPackAttributes } from './AssetPack.types'
-
-const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
 
 export class AssetPack extends Model<AssetPackAttributes> {
   static tableName = 'asset_packs'
@@ -24,14 +21,12 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return this.db.delete(this.tableName, conditions)
   }
 
-  static async findVisible(userId: string | undefined) {
-    const userIdQuery = userId ? SQL`user_id = ${userId}` : SQL`1 = 1`
-
+  static async findByUserId(userId: string | undefined) {
     return this.query<AssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)}
         WHERE is_deleted = FALSE
-          AND (${userIdQuery} OR user_id = ${DEFAULT_USER_ID})`)
+          AND user_id = ${userId}`)
   }
 
   static async findOneWithAssets(id: string) {
@@ -43,13 +38,13 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return assetPacks[0]
   }
 
-  static async isVisible(id: string, userId: string) {
+  static async isVisible(id: string, userIds: string[] = []) {
     const counts = await this.query(SQL`
       SELECT COUNT(*) as count
         FROM ${SQL.raw(this.tableName)} as asset_packs
         WHERE is_deleted = FALSE
           AND id = ${id}
-          AND (user_id = ${userId} OR user_id = ${DEFAULT_USER_ID})`)
+          AND ANY(${userIds})`)
 
     return counts[0].count > 0
   }

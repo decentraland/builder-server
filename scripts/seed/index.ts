@@ -106,11 +106,21 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       assetPromises.push(new Asset(attributes).upsert())
 
       try {
-        for (const cid of Object.values(attributes.contents)) {
-          const file = await downloadAsset(cid)
+        const s3Asset = new S3Asset()
 
-          console.log(`Uploading file ${cid} to S3`)
-          assetPromises.push(new S3Asset().saveFile(cid, file, ACL.publicRead))
+        for (const cid of Object.values(attributes.contents)) {
+          const promise = s3Asset.checkFile(cid).then(async exists => {
+            if (exists) {
+              console.log(`File ${cid} already exists in S3`)
+            } else {
+              const file = await downloadAsset(cid)
+
+              console.log(`Uploading file ${cid} to S3`)
+              await s3Asset.saveFile(cid, file, ACL.publicRead)
+              console.log(`File ${cid} uploaded successfully`)
+            }
+          })
+          assetPromises.push(promise)
         }
       } catch (error) {
         // if the download errors out, we assume asset.decentraland is down and every asset has been uploaded to S3
@@ -124,12 +134,16 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
 
 async function uploadThumbnail(attributes: DefaultAssetPack) {
   const s3AssetPack = new S3AssetPack(attributes.id)
-
   const filename = s3AssetPack.getThumbnailFilename()
-  const currentThumbnail = readFileSync(filename)
 
-  console.log(`Uploading thumbnail to S3`)
-  await s3AssetPack.saveFile(filename, currentThumbnail, ACL.publicRead)
+  if (await s3AssetPack.checkFile(filename)) {
+    console.log(`Thumbnail already exists in S3`)
+  } else {
+    const currentThumbnail = readFileSync(filename)
+
+    console.log(`Uploading thumbnail to S3`)
+    await s3AssetPack.saveFile(filename, currentThumbnail, ACL.publicRead)
+  }
 
   return filename
 }

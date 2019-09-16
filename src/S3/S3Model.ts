@@ -43,12 +43,12 @@ export class S3Model {
     return uploadFile(key, buffer, acl)
   }
 
+  async checkFile(filename: string) {
+    return checkFile(this.getFileKey(filename))
+  }
+
   async deleteFile(filename: string) {
     const key = this.getFileKey(filename)
-
-    if (!(await checkFile(key))) {
-      throw new Error(`File "${key}" does not exist`)
-    }
     return deleteFile(key)
   }
 

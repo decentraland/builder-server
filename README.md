@@ -25,13 +25,13 @@ npm start
 ```
 
 # Rewrites to S3
-- GET /storage/assetPacks/:filename => https://s3.amazonaws.com/nico.decentraland.zone/asset_packs/:filename (for the thumbnail, :id.png)
-- GET /storage/assets/:filename     => https://s3.amazonaws.com/nico.decentraland.zone/assets/:filename
+- `GET /storage/assetPacks/:filename` => https://s3.amazonaws.com/nico.decentraland.zone/asset_packs/:filename (for the thumbnail, :id.png)
+- `GET /storage/assets/:filename`     => https://s3.amazonaws.com/nico.decentraland.zone/assets/:filename
 
 # Also S3 but behind auth
-- GET /projects/:id/manifest        => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/manifest.json
-- GET /pools/:id/manifest           => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/pool.json
-- GET /projects/:id/media/:filename => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/filename
+- `GET /projects/:id/manifest`        => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/manifest.json
+- `GET /pools/:id/manifest`           => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/pool.json
+- `GET /projects/:id/media/:filename` => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/filename
 
 # S3 structure
 ```bash

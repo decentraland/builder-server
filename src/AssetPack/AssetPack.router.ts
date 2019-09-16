@@ -1,4 +1,4 @@
-import { utils } from 'decentraland-commons'
+import { env, utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
 
@@ -15,10 +15,14 @@ import { AssetPackAttributes, assetPackSchema } from './AssetPack.types'
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
 const THUMBNAIL_MIME_TYPE = 'image/png'
+const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
 
 const ajv = new Ajv()
 
 export class AssetPackRouter extends Router {
+  defaultAssetPacks: AssetPackAttributes[] = []
+  lastDefaultAssetPacksFetch = Date.now()
+
   mount() {
     const assetPackExists = modelExists(AssetPack)
     const assetPackAuthorization = modelAuthorization(AssetPack)
@@ -68,15 +72,21 @@ export class AssetPackRouter extends Router {
 
   getAssetPacks = async (req: AuthRequest) => {
     const user_id = req.auth ? req.auth.sub : ''
-    const assetPacks = await AssetPack.findVisible(user_id)
-    return this.sanitize(assetPacks)
+
+    const defaultAssetPacks = await this.getDefaultAssetPacks()
+    const userAssetPacks =
+      user_id && user_id !== DEFAULT_USER_ID
+        ? await AssetPack.findByUserId(user_id)
+        : []
+
+    return defaultAssetPacks.concat(userAssetPacks)
   }
 
   getAssetPack = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
     const user_id = req.auth ? req.auth.sub : ''
 
-    const isVisible = await AssetPack.isVisible(id, user_id)
+    const isVisible = await AssetPack.isVisible(id, [user_id, DEFAULT_USER_ID])
 
     if (!isVisible) {
       throw new HTTPError(
@@ -179,6 +189,18 @@ export class AssetPackRouter extends Router {
     )
 
     return uploader.single(THUMBNAIL_FILE_NAME)
+  }
+
+  private async getDefaultAssetPacks() {
+    const aDayPassed = Date.now() - this.lastDefaultAssetPacksFetch > 1440000 // 24 * 60 * 1000
+
+    if (this.defaultAssetPacks.length === 0 || aDayPassed) {
+      const defaultAssetPacks = await AssetPack.findByUserId(DEFAULT_USER_ID)
+      this.defaultAssetPacks = this.sanitize(defaultAssetPacks)
+      this.lastDefaultAssetPacksFetch = Date.now()
+    }
+
+    return this.defaultAssetPacks
   }
 
   private sanitize(assetPacks: AssetPackAttributes[]) {

@@ -44,7 +44,7 @@ export class AssetPack extends Model<AssetPackAttributes> {
         FROM ${SQL.raw(this.tableName)} as asset_packs
         WHERE is_deleted = FALSE
           AND id = ${id}
-          AND ANY(${userIds})`)
+          AND user_id = ANY(${userIds})`)
 
     return counts[0].count > 0
   }

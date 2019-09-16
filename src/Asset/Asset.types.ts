@@ -14,7 +14,7 @@ export const assetSchema = Object.freeze({
   properties: {
     id: { type: 'string' },
     asset_pack_id: { type: 'string', format: 'uuid' },
-    name: { type: 'string' },
+    name: { type: 'string', minLength: 3, maxLength: 20 },
     url: { type: 'string' },
     thumbnail: { type: 'string' },
     tags: { items: { type: 'string' } },

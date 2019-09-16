@@ -170,8 +170,7 @@ export class AssetPackRouter extends Router {
 
   private getFileUploaderMiddleware() {
     const uploader = getFileUploader(
-      ACL.publicRead,
-      [THUMBNAIL_MIME_TYPE],
+      { acl: ACL.publicRead, mimeTypes: [THUMBNAIL_MIME_TYPE] },
       req => {
         const id = server.extractFromReq(req, 'id')
         return new S3AssetPack(id).getThumbnailFilename()

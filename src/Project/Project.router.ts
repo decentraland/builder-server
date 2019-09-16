@@ -232,8 +232,7 @@ export class ProjectRouter extends Router {
 
   private getFileUploaderMiddleware() {
     const uploader = getFileUploader(
-      ACL.publicRead,
-      MIME_TYPES,
+      { acl: ACL.publicRead, mimeTypes: MIME_TYPES },
       (req, file) => {
         const id = server.extractFromReq(req, 'id')
 

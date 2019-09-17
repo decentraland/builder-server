@@ -196,7 +196,9 @@ export class AssetPackRouter extends Router {
       { acl: ACL.publicRead, mimeTypes: [THUMBNAIL_MIME_TYPE] },
       req => {
         const id = server.extractFromReq(req, 'id')
-        return new S3AssetPack(id).getThumbnailFilename()
+        const s3AssetPack = new S3AssetPack(id)
+        const filename = s3AssetPack.getThumbnailFilename()
+        return s3AssetPack.getFileKey(filename)
       }
     )
 

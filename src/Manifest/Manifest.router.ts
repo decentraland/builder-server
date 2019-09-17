@@ -3,8 +3,8 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { authentication, AuthRequest, modelExists } from '../middleware'
-import { modelAuthorization } from '../middleware/authorization'
+import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
+import { withModelAuthorization } from '../middleware/authorization'
 import { Ownable } from '../Ownable'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
@@ -14,17 +14,17 @@ const ajv = new Ajv()
 
 export class ManifestRouter extends Router {
   mount() {
-    const projectExists = modelExists(Project)
-    const projectAuthorization = modelAuthorization(Project)
+    const withProjectExists = withModelExists(Project)
+    const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
      * Returns the manifest of a project
      */
     this.router.get(
       '/projects/:id/manifest',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.getProjectManifest)
     )
 
@@ -33,9 +33,9 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/pools/:id/manifest',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.getPoolManifest)
     )
 
@@ -45,7 +45,7 @@ export class ManifestRouter extends Router {
      */
     this.router.put(
       '/projects/:id/manifest',
-      authentication,
+      withAuthentication,
       server.handleRequest(this.upsertManifest)
     )
 
@@ -54,8 +54,8 @@ export class ManifestRouter extends Router {
      */
     this.router.delete(
       '/projects/:id/manifest',
-      authentication,
-      projectAuthorization,
+      withAuthentication,
+      withProjectAuthorization,
       server.handleRequest(this.deleteManifest)
     )
   }

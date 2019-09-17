@@ -15,8 +15,10 @@ export type AuthRequest = Request & {
   }
 }
 
-export function getAuthenticationMiddleware() {
-  return (req: Request, res: Response, next: NextFunction) => {
+const jwt = getJWTMiddleware()
+
+function getAuthenticationMiddleware() {
+  return (req: Request, res: Response, next: NextFunction) =>
     jwt(req, res, err => {
       if (err && err.name === 'UnauthorizedError') {
         res
@@ -26,10 +28,14 @@ export function getAuthenticationMiddleware() {
       }
       next(err)
     })
-  }
 }
 
-export function getJWTMiddleware() {
+function getPermissiveAuthenticationMiddleware() {
+  return (req: Request, res: Response, next: NextFunction) =>
+    jwt(req, res, () => next())
+}
+
+function getJWTMiddleware() {
   if (!AUTH0_DOMAIN) {
     return (req: Request, _: Response, next: NextFunction) => {
       const authRequest = req as AuthRequest
@@ -51,5 +57,5 @@ export function getJWTMiddleware() {
   })
 }
 
-export const jwt = getJWTMiddleware()
-export const authentication = getAuthenticationMiddleware()
+export const withPermissiveAuthentication = getPermissiveAuthenticationMiddleware()
+export const withAuthentication = getAuthenticationMiddleware()

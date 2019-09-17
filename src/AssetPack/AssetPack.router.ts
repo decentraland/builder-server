@@ -1,12 +1,16 @@
 import { env, utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
-import mimeTypes from 'mime-types'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { authentication, jwt, AuthRequest, modelExists } from '../middleware'
-import { modelAuthorization } from '../middleware/authorization'
+import {
+  withAuthentication,
+  withPermissiveAuthentication,
+  withModelExists,
+  AuthRequest
+} from '../middleware'
+import { withModelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
 import { Asset } from '../Asset'
@@ -25,15 +29,15 @@ export class AssetPackRouter extends Router {
   lastDefaultAssetPacksFetch = Date.now()
 
   mount() {
-    const assetPackExists = modelExists(AssetPack)
-    const assetPackAuthorization = modelAuthorization(AssetPack)
+    const withAssetPackExists = withModelExists(AssetPack)
+    const withAssetPackAuthorization = withModelAuthorization(AssetPack)
 
     /**
      * Get all asset packs
      */
     this.router.get(
       '/assetPacks',
-      jwt,
+      withPermissiveAuthentication,
       server.handleRequest(this.getAssetPacks)
     )
 
@@ -42,7 +46,7 @@ export class AssetPackRouter extends Router {
      */
     this.router.get(
       '/assetPacks/:id',
-      jwt,
+      withPermissiveAuthentication,
       server.handleRequest(this.getAssetPack)
     )
 
@@ -51,7 +55,7 @@ export class AssetPackRouter extends Router {
      */
     this.router.put(
       '/assetPacks/:id',
-      authentication,
+      withAuthentication,
       server.handleRequest(this.upsertAssetPack)
     )
 
@@ -60,9 +64,9 @@ export class AssetPackRouter extends Router {
      */
     this.router.delete(
       '/assetPacks/:id',
-      authentication,
-      assetPackExists,
-      assetPackAuthorization,
+      withAuthentication,
+      withAssetPackExists,
+      withAssetPackAuthorization,
       server.handleRequest(this.deleteAssetPack)
     )
 
@@ -71,9 +75,9 @@ export class AssetPackRouter extends Router {
      */
     this.router.post(
       '/assetPacks/:id/thumbnail',
-      authentication,
-      assetPackExists,
-      assetPackAuthorization,
+      withAuthentication,
+      withAssetPackExists,
+      withAssetPackAuthorization,
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadThumbnail)
     )
@@ -181,11 +185,8 @@ export class AssetPackRouter extends Router {
 
     const thumbnail = req.file as Express.MulterS3.File // using `single` on getFileUploaderMiddleware
     if (thumbnail) {
-      const extension = mimeTypes.extension(thumbnail.mimetype)
-      await AssetPack.update(
-        { thumbnail: `${THUMBNAIL_FILE_NAME}.${extension}` },
-        { id }
-      )
+      const filename = new S3AssetPack(id).getThumbnailFilename()
+      await AssetPack.update({ thumbnail: filename }, { id })
     }
 
     return true

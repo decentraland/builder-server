@@ -3,17 +3,17 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { authentication, AuthRequest, modelExists } from '../middleware'
-import { modelAuthorization } from '../middleware/authorization'
+import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
+import { withModelAuthorization } from '../middleware/authorization'
 import { Project } from '../Project'
 import { Deployment } from './Deployment.model'
 import { DeploymentAttributes, deploymentSchema } from './Deployment.types'
 
 const ajv = new Ajv()
 
-const projectExists = modelExists(Project)
-const projectAuthorization = modelAuthorization(Project)
-const deploymentAuthorization = modelAuthorization(Deployment)
+const withProjectExists = withModelExists(Project)
+const withProjectAuthorization = withModelAuthorization(Project)
+const withDeploymentAuthorization = withModelAuthorization(Deployment)
 
 export class DeploymentRouter extends Router {
   mount() {
@@ -22,7 +22,7 @@ export class DeploymentRouter extends Router {
      */
     this.router.get(
       '/deployments',
-      authentication,
+      withAuthentication,
       server.handleRequest(this.getDeployments)
     )
 
@@ -31,9 +31,9 @@ export class DeploymentRouter extends Router {
      */
     this.router.get(
       '/projects/:id/deployment',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.getProjectDeployment)
     )
 
@@ -42,9 +42,9 @@ export class DeploymentRouter extends Router {
      */
     this.router.put(
       '/projects/:id/deployment',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.upsertDeployment)
     )
 
@@ -53,10 +53,10 @@ export class DeploymentRouter extends Router {
      */
     this.router.delete(
       '/projects/:id/deployment',
-      authentication,
-      projectExists,
-      projectAuthorization,
-      deploymentAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
+      withDeploymentAuthorization,
       server.handleRequest(this.deleteDeployment)
     )
   }

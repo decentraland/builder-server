@@ -5,7 +5,7 @@ import mimeTypes from 'mime-types'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { authentication, AuthRequest, modelExists } from '../middleware'
+import { authentication, jwt, AuthRequest, modelExists } from '../middleware'
 import { modelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
@@ -31,12 +31,20 @@ export class AssetPackRouter extends Router {
     /**
      * Get all asset packs
      */
-    this.router.get('/assetPacks', server.handleRequest(this.getAssetPacks))
+    this.router.get(
+      '/assetPacks',
+      jwt,
+      server.handleRequest(this.getAssetPacks)
+    )
 
     /**
      * Get asset pack
      */
-    this.router.get('/assetPacks/:id', server.handleRequest(this.getAssetPack))
+    this.router.get(
+      '/assetPacks/:id',
+      jwt,
+      server.handleRequest(this.getAssetPack)
+    )
 
     /**
      * Upsert an asset pack and its assets

@@ -6,7 +6,7 @@ morgan.token('id', req => {
   return authRequest.auth ? authRequest.auth.sub : 'unauthenticated'
 })
 
-export function getLogger() {
+export function withLogger() {
   return morgan(
     ':remote-addr :remote-user :method :url HTTP/:http-version :status :res[content-length] - :id - :response-time ms'
   )

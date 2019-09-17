@@ -1,8 +1,8 @@
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { authentication, AuthRequest, modelExists } from '../middleware'
-import { modelAuthorization } from '../middleware/authorization'
+import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
+import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import { Project, ProjectAttributes } from '../Project'
@@ -16,15 +16,15 @@ import { PoolAttributes, searchablePoolProperties } from './Pool.types'
 
 export class PoolRouter extends Router {
   mount() {
-    const projectExists = modelExists(Project)
-    const projectAuthorization = modelAuthorization(Project)
+    const withProjectExists = withModelExists(Project)
+    const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
      * Get all pools
      */
     this.router.get(
       '/pools',
-      authentication,
+      withAuthentication,
       server.handleRequest(this.getPools)
     )
 
@@ -33,9 +33,9 @@ export class PoolRouter extends Router {
      */
     this.router.get(
       '/projects/:id/pool',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.getPool)
     )
 
@@ -44,9 +44,9 @@ export class PoolRouter extends Router {
      */
     this.router.put(
       '/projects/:id/pool',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.upsertPool)
     )
   }

@@ -14,7 +14,7 @@ export type QueryableModel =
   | typeof AssetPack
   | typeof Asset
 
-export function modelExists(Model: QueryableModel, param = 'id') {
+export function withModelExists(Model: QueryableModel, param = 'id') {
   return async (req: Request, res: Response, next: NextFunction) => {
     const id = server.extractFromReq(req, param)
 

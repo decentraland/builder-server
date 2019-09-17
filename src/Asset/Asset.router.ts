@@ -4,8 +4,12 @@ import { utils } from 'decentraland-commons'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { authentication, modelExists, asMiddleware } from '../middleware'
-import { modelAuthorization } from '../middleware/authorization'
+import {
+  withAuthentication,
+  withModelExists,
+  asMiddleware
+} from '../middleware'
+import { withModelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, S3Asset, getFileUploader, ACL } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'
@@ -16,8 +20,11 @@ export class AssetRouter extends Router {
     | undefined
 
   mount() {
-    const assetPackExists = modelExists(AssetPack, 'assetPackId')
-    const assetPackAuthorization = modelAuthorization(AssetPack, 'assetPackId')
+    const withassetPackExists = withModelExists(AssetPack, 'assetPackId')
+    const withAssetPackAuthorization = withModelAuthorization(
+      AssetPack,
+      'assetPackId'
+    )
 
     this.assetFilesRequestHandler = this.getAssetFilesRequestHandler()
 
@@ -26,9 +33,9 @@ export class AssetRouter extends Router {
      */
     this.router.post(
       '/assetPacks/:assetPackId/assets/:id/files',
-      authentication,
-      assetPackExists,
-      assetPackAuthorization,
+      withAuthentication,
+      withassetPackExists,
+      withAssetPackAuthorization,
       asMiddleware(this.assetBelongsToPackMiddleware),
       server.handleRequest(this.uploadAssetFiles)
     )

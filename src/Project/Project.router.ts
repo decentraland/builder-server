@@ -6,8 +6,8 @@ import path from 'path'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { authentication, AuthRequest, modelExists } from '../middleware'
-import { modelAuthorization } from '../middleware/authorization'
+import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
+import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
 import { Deployment } from '../Deployment'
@@ -40,15 +40,15 @@ const ajv = new Ajv()
 
 export class ProjectRouter extends Router {
   mount() {
-    const projectExists = modelExists(Project)
-    const projectAuthorization = modelAuthorization(Project)
+    const withProjectExists = withModelExists(Project)
+    const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
      * Get all projects
      */
     this.router.get(
       '/projects',
-      authentication,
+      withAuthentication,
       server.handleRequest(this.getProjects)
     )
 
@@ -57,9 +57,9 @@ export class ProjectRouter extends Router {
      */
     this.router.get(
       '/projects/:id',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.getProject)
     )
 
@@ -69,7 +69,7 @@ export class ProjectRouter extends Router {
      */
     this.router.put(
       '/projects/:id',
-      authentication,
+      withAuthentication,
       server.handleRequest(this.upsertProject)
     )
 
@@ -78,9 +78,9 @@ export class ProjectRouter extends Router {
      */
     this.router.delete(
       '/projects/:id',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       server.handleRequest(this.deleteProject)
     )
 
@@ -89,7 +89,7 @@ export class ProjectRouter extends Router {
      */
     this.router.get(
       '/projects/:id/media/:filename',
-      projectExists,
+      withProjectExists,
       this.getMedia
     )
 
@@ -98,9 +98,9 @@ export class ProjectRouter extends Router {
      */
     this.router.post(
       '/projects/:id/media',
-      authentication,
-      projectExists,
-      projectAuthorization,
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
       this.getFileUploaderMiddleware(),
       server.handleRequest(this.uploadFiles)
     )

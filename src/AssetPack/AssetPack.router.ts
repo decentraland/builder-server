@@ -1,6 +1,7 @@
 import { env, utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
+import mimeTypes from 'mime-types'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -172,7 +173,11 @@ export class AssetPackRouter extends Router {
 
     const thumbnail = req.file as Express.MulterS3.File // using `single` on getFileUploaderMiddleware
     if (thumbnail) {
-      await AssetPack.update({ thumbnail: thumbnail.location }, { id })
+      const extension = mimeTypes.extension(thumbnail.mimetype)
+      await AssetPack.update(
+        { thumbnail: `${THUMBNAIL_FILE_NAME}.${extension}` },
+        { id }
+      )
     }
 
     return true

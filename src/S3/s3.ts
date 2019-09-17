@@ -132,13 +132,14 @@ export function uploadFile(
 }
 
 export function getFileUploader(
-  acl: ACLValues,
-  mimeTypes: string[],
+  options: { acl: ACLValues; mimeTypes?: string[]; maxFileSize?: number },
   callback: (req: Request, file: Express.Multer.File) => string
 ) {
+  const { acl, mimeTypes = [], maxFileSize = MAX_FILE_SIZE } = options
+
   return multer({
     limits: {
-      fileSize: MAX_FILE_SIZE
+      fileSize: maxFileSize
     },
     fileFilter: function(_, file, cb) {
       if (mimeTypes.length > 0) {

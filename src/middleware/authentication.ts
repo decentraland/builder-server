@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express'
-import jwt from 'express-jwt'
+import { default as expressJwt } from 'express-jwt'
 import jwksRsa from 'jwks-rsa'
 import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
+
+const AUTH0_DOMAIN = env.get('AUTH0_DOMAIN')
+if (!AUTH0_DOMAIN) {
+  console.log('Auth0 domain is missing, will use default user id')
+}
 
 export type AuthRequest = Request & {
   auth: Record<string, string | number | boolean> & {
@@ -11,31 +16,8 @@ export type AuthRequest = Request & {
 }
 
 export function getAuthenticationMiddleware() {
-  const auth0Domain = env.get('AUTH0_DOMAIN')
-
-  if (!auth0Domain) {
-    console.log('Auth0 domain is missing, using default user id')
-    return (req: Request, _: Response, next: NextFunction) => {
-      const authRequest = req as AuthRequest
-      authRequest.auth = { sub: 'fakeUserId' }
-      next()
-    }
-  }
-
-  const jwtMiddleware = jwt({
-    secret: jwksRsa.expressJwtSecret({
-      cache: true,
-      rateLimit: true,
-      jwksRequestsPerMinute: 5,
-      jwksUri: `https://${auth0Domain}/.well-known/jwks.json`
-    }),
-    requestProperty: 'auth',
-    issuer: `https://${auth0Domain}/`,
-    algorithms: ['RS256']
-  })
-
   return (req: Request, res: Response, next: NextFunction) => {
-    jwtMiddleware(req, res, err => {
+    jwt(req, res, err => {
       if (err && err.name === 'UnauthorizedError') {
         res
           .status(err.status)
@@ -47,4 +29,27 @@ export function getAuthenticationMiddleware() {
   }
 }
 
+export function getJWTMiddleware() {
+  if (!AUTH0_DOMAIN) {
+    return (req: Request, _: Response, next: NextFunction) => {
+      const authRequest = req as AuthRequest
+      authRequest.auth = { sub: 'fakeUserId' }
+      next()
+    }
+  }
+
+  return expressJwt({
+    secret: jwksRsa.expressJwtSecret({
+      cache: true,
+      rateLimit: true,
+      jwksRequestsPerMinute: 5,
+      jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`
+    }),
+    requestProperty: 'auth',
+    issuer: `https://${AUTH0_DOMAIN}/`,
+    algorithms: ['RS256']
+  })
+}
+
+export const jwt = getJWTMiddleware()
 export const authentication = getAuthenticationMiddleware()

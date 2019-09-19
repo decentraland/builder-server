@@ -1,30 +1,30 @@
 export type MetricsAttributes = {
-  triangles: number
-  materials: number
-  geometries: number
+  meshes: number
   bodies: number
-  entities: number
+  materials: number
   textures: number
+  triangles: number
+  entities: number
 }
 
 export const metricsSchema = Object.freeze({
   type: 'object',
   properties: {
-    triangles: { type: 'number', minimum: 0 },
-    materials: { type: 'number', minimum: 0 },
-    geometries: { type: 'number', minimum: 0 },
+    meshes: { type: 'number', minimum: 0 },
     bodies: { type: 'number', minimum: 0 },
-    entities: { type: 'number', minimum: 0 },
-    textures: { type: 'number', minimum: 0 }
+    materials: { type: 'number', minimum: 0 },
+    textures: { type: 'number', minimum: 0 },
+    triangles: { type: 'number', minimum: 0 },
+    entities: { type: 'number', minimum: 0 }
   },
   additionalProperties: false,
   removeAdditional: true,
   required: [
-    'triangles',
-    'materials',
-    'geometries',
+    'meshes',
     'bodies',
-    'entities',
-    'textures'
+    'materials',
+    'textures',
+    'triangles',
+    'entities'
   ]
 })

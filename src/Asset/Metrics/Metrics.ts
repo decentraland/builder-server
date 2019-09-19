@@ -9,12 +9,12 @@ export class Metrics {
 
   getAttributes(): MetricsAttributes {
     return {
-      triangles: 0,
-      materials: 0,
-      geometries: 0,
+      meshes: 0,
       bodies: 0,
-      entities: 0,
+      materials: 0,
       textures: 0,
+      triangles: 0,
+      entities: 0,
       ...this.attributes
     }
   }

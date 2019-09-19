@@ -1,3 +1,5 @@
+import { metricsSchema } from './Metrics'
+
 export type AssetAttributes = {
   id: string
   asset_pack_id: string
@@ -16,13 +18,14 @@ export const assetSchema = Object.freeze({
     asset_pack_id: { type: 'string', format: 'uuid' },
     name: { type: 'string', minLength: 3, maxLength: 20 },
     url: { type: 'string' },
-    thumbnail: { type: ['string', 'null'] },
+    thumbnail: { type: 'string', nullable: true },
     tags: { items: { type: 'string' } },
     category: { type: 'string' },
     contents: {
       type: 'object',
       additionalProperties: true
-    }
+    },
+    metrics: metricsSchema
   },
   additionalProperties: false,
   removeAdditional: true,

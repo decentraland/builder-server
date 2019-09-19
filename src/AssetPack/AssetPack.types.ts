@@ -16,11 +16,11 @@ export const assetPackSchema = Object.freeze({
   properties: {
     id: { type: 'string', format: 'uuid' },
     title: { type: 'string', minLength: 3, maxLength: 20 },
-    thumbnail: { type: 'string', nullable: true },
-    user_id: { type: 'string', nullable: true },
+    thumbnail: { type: ['string', 'null'] },
+    user_id: { type: ['string', 'null'] },
     assets: { items: assetSchema, additionalProperties: false },
-    created_at: { type: 'string', nullable: true },
-    updated_at: { type: 'string', nullable: true }
+    created_at: { type: ['string', 'null'] },
+    updated_at: { type: ['string', 'null'] }
   },
   additionalProperties: false,
   removeAdditional: true,

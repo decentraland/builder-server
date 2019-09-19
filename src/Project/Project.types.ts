@@ -17,13 +17,13 @@ export const projectSchema = Object.freeze({
     id: { type: 'string', format: 'uuid' },
     title: { type: 'string' },
     description: { type: 'string' },
-    thumbnail: { type: 'string', nullable: true },
+    thumbnail: { type: ['string', 'null'] },
     scene_id: { type: 'string', format: 'uuid' },
-    user_id: { type: 'string', nullable: true },
+    user_id: { type: ['string', 'null'] },
     cols: { type: 'number' },
     rows: { type: 'number' },
-    created_at: { type: 'string', nullable: true },
-    updated_at: { type: 'string', nullable: true }
+    created_at: { type: ['string', 'null'] },
+    updated_at: { type: ['string', 'null'] }
   },
   additionalProperties: false,
   removeAdditional: true,

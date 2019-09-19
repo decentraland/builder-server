@@ -13,12 +13,12 @@ export const deploymentSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
-    last_published_cid: { type: ['string', 'null'] },
+    last_published_cid: { type: 'string', nullable: true },
     is_dirty: { type: 'boolean' },
     x: { type: 'number' },
     y: { type: 'number' },
     rotation: { type: 'string', pattern: 'north|east|south|west' },
-    user_id: { type: ['string', 'null'] },
+    user_id: { type: 'string', nullable: true },
     created_at: { type: 'string', nullable: true },
     updated_at: { type: 'string', nullable: true }
   },

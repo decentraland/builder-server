@@ -67,7 +67,7 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
     const assetPackUpsert = uploadThumbnail(defaultAssetPack).then(
       thumbnail => {
         const attributes = {
-          ...utils.omit<AssetPackAttributes>(defaultAssetPack, ['url']),
+          ...utils.omit(defaultAssetPack, ['url']),
           thumbnail,
           user_id: DEFAULT_USER_ID,
           created_at: now,

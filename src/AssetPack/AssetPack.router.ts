@@ -15,7 +15,11 @@ import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
 import { Asset } from '../Asset'
 import { AssetPack } from './AssetPack.model'
-import { AssetPackAttributes, assetPackSchema } from './AssetPack.types'
+import {
+  AssetPackAttributes,
+  FullAssetPackAttributes,
+  assetPackSchema
+} from './AssetPack.types'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -25,7 +29,7 @@ const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
 const ajv = new Ajv()
 
 export class AssetPackRouter extends Router {
-  defaultAssetPacks: AssetPackAttributes[] = []
+  defaultAssetPacks: FullAssetPackAttributes[] = []
   lastDefaultAssetPacksFetch = Date.now()
 
   mount() {
@@ -89,7 +93,7 @@ export class AssetPackRouter extends Router {
     const defaultAssetPacks = await this.getDefaultAssetPacks()
     const userAssetPacks =
       user_id && user_id !== DEFAULT_USER_ID
-        ? await AssetPack.findByUserId(user_id)
+        ? await AssetPack.findByUserIdWithAssets(user_id)
         : []
 
     return defaultAssetPacks.concat(userAssetPacks)
@@ -139,7 +143,7 @@ export class AssetPackRouter extends Router {
       throw new HTTPError('Unauthorized user', { id, user_id })
     }
 
-    const { assets } = utils.pick<Pick<AssetPackAttributes, 'assets'>>(
+    const { assets } = utils.pick<Pick<FullAssetPackAttributes, 'assets'>>(
       assetPackJSON,
       ['assets']
     )
@@ -210,7 +214,9 @@ export class AssetPackRouter extends Router {
     const aDayPassed = Date.now() - this.lastDefaultAssetPacksFetch > 1440000 // 24 * 60 * 1000
 
     if (this.defaultAssetPacks.length === 0 || aDayPassed) {
-      const defaultAssetPacks = await AssetPack.findByUserId(DEFAULT_USER_ID)
+      const defaultAssetPacks = await AssetPack.findByUserIdWithAssets(
+        DEFAULT_USER_ID
+      )
       this.defaultAssetPacks = this.sanitize(defaultAssetPacks)
       this.lastDefaultAssetPacksFetch = Date.now()
     }
@@ -218,8 +224,8 @@ export class AssetPackRouter extends Router {
     return this.defaultAssetPacks
   }
 
-  private sanitize(assetPacks: AssetPackAttributes[]) {
-    return utils.mapOmit<AssetPackAttributes>(
+  private sanitize(assetPacks: FullAssetPackAttributes[]) {
+    return utils.mapOmit<FullAssetPackAttributes>(
       assetPacks,
       BLACKLISTED_PROPERTIES
     )

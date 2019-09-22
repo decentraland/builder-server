@@ -1,7 +1,7 @@
 import express = require('express')
 import basicAuth = require('express-basic-auth')
-import { env } from 'decentraland-commons'
 import { PathParams, RequestHandlerParams } from 'express-serve-static-core'
+import { env } from 'decentraland-commons'
 
 import { Router } from './Router'
 import { ExpressApp } from './ExpressApp'

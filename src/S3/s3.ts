@@ -3,7 +3,7 @@ import AWS from 'aws-sdk'
 import multer from 'multer'
 import multerS3 from 'multer-s3'
 import mimeTypes from 'mime-types'
-import { env, utils } from 'decentraland-commons'
+import { env, utils, Log } from 'decentraland-commons'
 
 const ACCESS_KEY = env.get('AWS_ACCESS_KEY', '')
 const ACCESS_SECRET = env.get('AWS_ACCESS_SECRET', '')
@@ -33,6 +33,8 @@ export const ACL = {
 }
 export type ACLValues = typeof ACL[keyof typeof ACL]
 
+const log = new Log('s3')
+
 export const s3 = new AWS.S3({
   accessKeyId: ACCESS_KEY,
   secretAccessKey: ACCESS_SECRET
@@ -43,6 +45,7 @@ export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
     Bucket: BUCKET_NAME,
     Key: key
   }
+  log.info(`Reading file "${key}"`)
   return utils.promisify<AWS.S3.GetObjectOutput>(s3.getObject.bind(s3))(params)
 }
 
@@ -57,6 +60,8 @@ export async function listFiles(
   }
   if (continuationToken) {
     params.ContinuationToken = continuationToken
+  } else {
+    log.info(`Listing files "${key}"`)
   }
 
   const listObjects = utils.promisify<AWS.S3.ListObjectsV2Output>(
@@ -75,6 +80,7 @@ export async function deleteFile(key: string) {
     Bucket: BUCKET_NAME,
     Key: key
   }
+  log.info(`Deleting "${key}"`)
   return utils.promisify<AWS.S3.DeleteObjectOutput>(s3.deleteObject.bind(s3))(
     params
   )
@@ -83,6 +89,8 @@ export async function deleteFile(key: string) {
 export async function deleteFolder(key: string) {
   const objectList = await listFiles(key)
   const promises = []
+
+  log.info(`Deleting folder "${key}"`)
 
   for (const object of objectList) {
     if (object.Key) {
@@ -99,10 +107,10 @@ export async function checkFile(key: string): Promise<boolean> {
     Bucket: BUCKET_NAME,
     Key: key
   }
-  const headObject = utils.promisify<boolean>(s3.headObject.bind(s3))
+  log.info(`Checking file "${key}"`)
 
   try {
-    await headObject(params)
+    await utils.promisify<boolean>(s3.headObject.bind(s3))(params)
     return true
   } catch (error) {
     return false
@@ -125,6 +133,7 @@ export function uploadFile(
     ACL: acl,
     ContentType
   }
+  log.info(`Uploading file "${key}"`)
 
   return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
     params

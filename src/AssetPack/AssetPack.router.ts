@@ -1,5 +1,5 @@
-import { env, utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
+import { env, utils } from 'decentraland-commons'
 import Ajv from 'ajv'
 
 import { Router } from '../common/Router'

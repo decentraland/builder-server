@@ -19,7 +19,7 @@ import { AssetPackAttributes, assetPackSchema } from './AssetPack.types'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
-const THUMBNAIL_MIME_TYPE = 'image/png'
+const THUMBNAIL_MIME_TYPES = ['image/png', 'image/jpeg']
 const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
 
 const ajv = new Ajv()
@@ -194,7 +194,7 @@ export class AssetPackRouter extends Router {
 
   private getFileUploaderMiddleware() {
     const uploader = getFileUploader(
-      { acl: ACL.publicRead, mimeTypes: [THUMBNAIL_MIME_TYPE] },
+      { acl: ACL.publicRead, mimeTypes: THUMBNAIL_MIME_TYPES },
       req => {
         const id = server.extractFromReq(req, 'id')
         const s3AssetPack = new S3AssetPack(id)

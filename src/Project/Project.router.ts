@@ -34,7 +34,7 @@ const FILE_NAMES = [
   'south',
   'west'
 ]
-const MIME_TYPES = ['image/png']
+const MIME_TYPES = ['image/png', 'image/jpeg']
 
 const ajv = new Ajv()
 

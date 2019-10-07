@@ -1,0 +1,31 @@
+version: 2.1
+jobs:
+  build:
+    docker:
+      - image: circleci/node:10.15.1
+        environment: &ENVIRONMENT
+          DOCKER_IMAGE_NAME: decentraland/builder-server
+    working_directory: /tmp/app
+    steps:
+      - checkout
+      - setup_remote_docker: { docker_layer_caching: true }
+      - run:
+          name: (Docker) build image
+          command: docker build -t $DOCKER_IMAGE_NAME:$CIRCLE_SHA1 .
+      - run:
+          name: (Docker) login
+          command: docker login -u "$DOCKER_USER" -p "$DOCKER_PASS"
+      - run:
+          name: (Docker) push image
+          command: docker push "$DOCKER_IMAGE_NAME:$CIRCLE_SHA1"
+
+workflows:
+  version: 2.1
+  build:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only:
+                - staging
+                - release

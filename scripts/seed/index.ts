@@ -97,8 +97,9 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       const thumbnail = path.basename(defaultAttributes.thumbnail)
 
       const attributes = {
-        ...utils.omit(defaultAttributes, ['variations']),
+        ...utils.omit(defaultAttributes, ['variations', 'url']),
         thumbnail,
+        model: defaultAttributes.url,
         asset_pack_id: id
       } as AssetAttributes
 

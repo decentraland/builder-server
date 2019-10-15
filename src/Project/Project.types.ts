@@ -9,6 +9,7 @@ export type ProjectAttributes = {
   rows: number
   created_at: Date
   updated_at: Date
+  is_public: boolean
 }
 
 export const projectSchema = Object.freeze({
@@ -23,7 +24,8 @@ export const projectSchema = Object.freeze({
     cols: { type: 'number' },
     rows: { type: 'number' },
     created_at: { type: ['string', 'null'] },
-    updated_at: { type: ['string', 'null'] }
+    updated_at: { type: ['string', 'null'] },
+    is_public: { type: ['boolean', 'null'] }
   },
   additionalProperties: false,
   removeAdditional: true,

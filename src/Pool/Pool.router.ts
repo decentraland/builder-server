@@ -31,13 +31,7 @@ export class PoolRouter extends Router {
     /**
      * Get pool
      */
-    this.router.get(
-      '/projects/:id/pool',
-      withAuthentication,
-      withProjectExists,
-      withProjectAuthorization,
-      server.handleRequest(this.getPool)
-    )
+    this.router.get('/projects/:id/pool', server.handleRequest(this.getPool))
 
     /**
      * Upsert a new pool
@@ -74,9 +68,7 @@ export class PoolRouter extends Router {
 
   async getPool(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth.sub
-
-    return Pool.findOne({ id, user_id })
+    return Pool.findOne({ id })
   }
 
   async upsertPool(req: AuthRequest) {

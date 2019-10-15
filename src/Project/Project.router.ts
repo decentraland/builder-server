@@ -84,6 +84,11 @@ export class ProjectRouter extends Router {
       server.handleRequest(this.deleteProject)
     )
 
+    this.router.get(
+      '/projects/:id/public',
+      server.handleRequest(this.getPublicProject)
+    )
+
     /**
      * Get a project media attachment
      */
@@ -131,6 +136,11 @@ export class ProjectRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const user_id = req.auth.sub
     return Project.findOne({ id, user_id })
+  }
+
+  async getPublicProject(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    return Project.findOne({ id, is_public: true })
   }
 
   async upsertProject(req: AuthRequest) {

@@ -32,7 +32,7 @@ export class ManifestRouter extends Router {
      * Returns the manifest of a pool
      */
     this.router.get(
-      '/public/:id/manifest',
+      '/publics/:id/manifest',
       server.handleRequest(this.getPublicProjectManifest)
     )
 

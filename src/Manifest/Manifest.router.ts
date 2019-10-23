@@ -32,10 +32,15 @@ export class ManifestRouter extends Router {
      * Returns the manifest of a pool
      */
     this.router.get(
+      '/publics/:id/manifest',
+      server.handleRequest(this.getPublicProjectManifest)
+    )
+
+    /**
+     * Returns the manifest of a pool
+     */
+    this.router.get(
       '/pools/:id/manifest',
-      withAuthentication,
-      withProjectExists,
-      withProjectAuthorization,
       server.handleRequest(this.getPoolManifest)
     )
 
@@ -61,6 +66,14 @@ export class ManifestRouter extends Router {
   }
 
   async getProjectManifest(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
+    if (body) {
+      return JSON.parse(body.toString())
+    }
+  }
+
+  async getPublicProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
     if (body) {

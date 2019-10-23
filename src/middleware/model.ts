@@ -14,11 +14,15 @@ export type QueryableModel =
   | typeof AssetPack
   | typeof Asset
 
-export function withModelExists(Model: QueryableModel, param = 'id') {
+export function withModelExists(
+  Model: QueryableModel,
+  param = 'id',
+  enforce: { [key: string]: any } = {}
+) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const id = server.extractFromReq(req, param)
 
-    const count = await Model.count({ id })
+    const count = await Model.count({ id, ...enforce })
     if (count <= 0) {
       res.setHeader('Content-Type', 'application/json')
       res.status(404).json({

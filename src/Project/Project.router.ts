@@ -40,7 +40,10 @@ const ajv = new Ajv()
 
 export class ProjectRouter extends Router {
   mount() {
-    const withProjectExists = withModelExists(Project)
+    const withProjectExists = withModelExists(Project, 'id')
+    const withProjectExistsAndIsPublic = withModelExists(Project, 'id', {
+      is_public: true
+    })
     const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
@@ -86,6 +89,7 @@ export class ProjectRouter extends Router {
 
     this.router.get(
       '/projects/:id/public',
+      withProjectExistsAndIsPublic,
       server.handleRequest(this.getPublicProject)
     )
 

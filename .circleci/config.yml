@@ -4,7 +4,7 @@ jobs:
     docker:
       - image: circleci/node:10.15.1
         environment: &ENVIRONMENT
-          DOCKER_IMAGE_NAME: decentraland/builder-server
+          DOCKER_IMAGE_NAME: decentraland/builder-contest-server
     working_directory: /tmp/app
     steps:
       - checkout

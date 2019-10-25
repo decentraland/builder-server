@@ -1,6 +1,6 @@
 import { AssetAttributes, assetSchema } from '../Asset'
 
-export type AssetPackAttributes = {
+export type FullAssetPackAttributes = {
   id: string
   title: string
   thumbnail?: string
@@ -10,6 +10,7 @@ export type AssetPackAttributes = {
   created_at: Date
   updated_at: Date
 }
+export type AssetPackAttributes = Omit<FullAssetPackAttributes, 'assets'>
 
 export const assetPackSchema = Object.freeze({
   type: 'object',

@@ -1,16 +1,16 @@
-import { Model, SQL, QueryPart } from 'decentraland-server'
+import { Model, SQL } from 'decentraland-server'
 
 import { AssetQueries } from '../Asset'
-import { AssetPackAttributes } from './AssetPack.types'
+import { AssetPackAttributes, FullAssetPackAttributes } from './AssetPack.types'
 
 export class AssetPack extends Model<AssetPackAttributes> {
   static tableName = 'asset_packs'
 
-  static async count(conditions: Partial<QueryPart>, extra?: string) {
+  static async count(conditions: Partial<AssetPackAttributes>, extra?: string) {
     return super.count({ is_deleted: false, ...conditions }, extra) // don't count deleted asset packs by default
   }
 
-  static async delete(conditions: Partial<QueryPart>) {
+  static async delete(conditions: Partial<AssetPackAttributes>) {
     if (!conditions.user_id) {
       throw new Error('You need to supply an user_id to delete an asset pack')
     }
@@ -21,8 +21,8 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return this.db.delete(this.tableName, conditions)
   }
 
-  static async findByUserId(userId: string | undefined) {
-    return this.query<AssetPackAttributes>(SQL`
+  static async findByUserIdWithAssets(userId: string | undefined) {
+    return this.query<FullAssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)}
         WHERE is_deleted = FALSE
@@ -30,7 +30,7 @@ export class AssetPack extends Model<AssetPackAttributes> {
   }
 
   static async findOneWithAssets(id: string) {
-    const assetPacks = await this.query<AssetPackAttributes>(SQL`
+    const assetPacks = await this.query<FullAssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)} as asset_packs
         WHERE is_deleted = FALSE

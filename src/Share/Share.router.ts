@@ -1,6 +1,6 @@
 import { Response } from 'express'
-import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
+import { format } from 'util'
 
 import { Router } from '../common/Router'
 
@@ -9,6 +9,7 @@ import { withSocialUserAgentDetector, SocialRequest } from '../middleware/share'
 import { Params } from './Share.types'
 import { Pool, PoolAttributes } from '../Pool'
 import { ProjectAttributes } from '../Project'
+import template from './template'
 
 const BUILDER_URL = env.get('BUILDER_URL', '')
 
@@ -20,20 +21,16 @@ export class ShareRouter extends Router {
     this.router.get(
       '/share/:type(scene|pool)/:id',
       withSocialUserAgentDetector,
-      server.handleRequest(this.redirectToBuilder)
+      this.redirectToBuilder
     )
   }
 
-  async redirectToBuilder(req: SocialRequest, res: Response) {
+  private redirectToBuilder = async (req: SocialRequest, res: Response) => {
     const { type, id } = req.params as Params
+    const targetPath = type === 'scene' ? `/view/${id}` : `/view/${type}/${id}`
+    const url = BUILDER_URL + targetPath
     if (!req.socialAgent) {
-      switch (type) {
-        case 'scene':
-          return res.redirect(301, BUILDER_URL + `/view/${id}`)
-
-        default:
-          return res.redirect(301, BUILDER_URL + `/view/${type}/${id}`)
-      }
+      return res.redirect(301, url)
     }
 
     const p = await this.findPoolOrProject(id, type)
@@ -42,7 +39,15 @@ export class ShareRouter extends Router {
       return res.send(404)
     }
 
-    return p
+    const thumbnail =
+      p.thumbnail &&
+      format(
+        `http://localhost:5000/v1/projects/%s/media/thumbnail.png?updated_at=%s`,
+        p.id,
+        Date.parse(String(p.updated_at))
+      )
+
+    return res.status(200).send(template({ ...p, url, thumbnail }))
   }
 
   private async findPoolOrProject(

@@ -6,7 +6,7 @@ const columnName = 'is_public'
 const columns = {
   [columnName]: {
     type: 'BOOLEAN',
-    default: false,
+    default: true,
     notNull: true
   }
 }

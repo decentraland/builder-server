@@ -75,6 +75,14 @@ export class ManifestRouter extends Router {
     }
   }
 
+  async getPublicProjectManifest(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
+    if (body) {
+      return JSON.parse(body.toString())
+    }
+  }
+
   async getPoolManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const body = await new S3Project(id).readFileBody(POOL_FILENAME)

@@ -1,6 +1,6 @@
 {
   "name": "builder-server",
-  "version": "2.2.1",
+  "version": "2.2.2",
   "description": "Builder server",
   "main": "server.js",
   "scripts": {
@@ -47,7 +47,7 @@
     "multer-s3": "^2.9.0",
     "node-pg-migrate": "^3.21.1",
     "tslint": "^5.12.1",
-    "typescript": "^3.3.3"
+    "typescript": "^3.6.3"
   },
   "devDependencies": {
     "@types/node": "^11.9.0",

@@ -81,7 +81,9 @@ export class PoolRouter extends Router {
       s3Project.readFileBody(MANIFEST_FILENAME)
     ])
 
-    const promises: Promise<any>[] = [new Pool(project!).upsert()]
+    const promises: Promise<any>[] = [
+      new Pool({ ...project!, is_public: true }).upsert()
+    ]
 
     if (manifest) {
       const data = manifest.toString()

@@ -33,7 +33,8 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/publics/:id/manifest',
-      server.handleRequest(this.getPublicProjectManifest)
+      withProjectExists,
+      server.handleRequest(this.getProjectManifest)
     )
 
     /**
@@ -41,6 +42,7 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/pools/:id/manifest',
+      withProjectExists,
       server.handleRequest(this.getPoolManifest)
     )
 
@@ -66,14 +68,6 @@ export class ManifestRouter extends Router {
   }
 
   async getProjectManifest(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
-    if (body) {
-      return JSON.parse(body.toString())
-    }
-  }
-
-  async getPublicProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
     if (body) {

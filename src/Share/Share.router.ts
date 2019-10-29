@@ -33,7 +33,7 @@ export class ShareRouter extends Router {
       return res.redirect(301, url)
     }
 
-    const p = await this.findPoolOrProject(id, type)
+    const p = await this.findElementByType(id, type)
 
     if (!p) {
       return res.send(404)
@@ -50,7 +50,7 @@ export class ShareRouter extends Router {
     return res.status(200).send(template({ ...p, url, thumbnail }))
   }
 
-  private async findPoolOrProject(
+  private async findElementByType(
     id: string,
     type: 'pool' | 'scene'
   ): Promise<ProjectAttributes | PoolAttributes | undefined> {

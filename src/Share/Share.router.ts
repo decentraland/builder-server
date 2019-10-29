@@ -42,9 +42,9 @@ export class ShareRouter extends Router {
     const thumbnail =
       p.thumbnail &&
       format(
-        `http://localhost:5000/v1/projects/%s/media/thumbnail.png?updated_at=%s`,
-        p.id,
-        Date.parse(String(p.updated_at))
+        `${BUILDER_URL}/v1/projects/${
+          p.id
+        }/media/thumbnail.png?updated_at=${Date.parse(p.updated_at.toString())}`
       )
 
     return res.status(200).send(template({ ...p, url, thumbnail }))

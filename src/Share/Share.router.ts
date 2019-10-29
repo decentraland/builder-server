@@ -33,21 +33,23 @@ export class ShareRouter extends Router {
       return res.redirect(301, builderTarget)
     }
 
-    const p = await this.findElementByType(id, type)
+    const element = await this.findElementByType(id, type)
 
-    if (!p) {
+    if (!element) {
       return res.send(404)
     }
 
     const thumbnail =
-      p.thumbnail &&
+      element.thumbnail &&
       `${BUILDER_URL}/v1/projects/${
-        p.id
-      }/media/thumbnail.png?updated_at=${Date.parse(p.updated_at.toString())}`
+        element.id
+      }/media/thumbnail.png?updated_at=${Date.parse(
+        element.updated_at.toString()
+      )}`
 
     return res
       .status(200)
-      .send(template({ ...p, url: builderTarget, thumbnail }))
+      .send(template({ ...element, url: builderTarget, thumbnail }))
   }
 
   private async findElementByType(

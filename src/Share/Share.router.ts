@@ -1,12 +1,12 @@
+import * as url from 'url'
 import { Response } from 'express'
 import { env } from 'decentraland-commons'
-import * as url from 'url'
 
 import { Router } from '../common/Router'
 
 import { Project } from '../Project/Project.model'
 import { withSocialUserAgentDetector, SocialRequest } from '../middleware/share'
-import { Params } from './Share.types'
+import { Params, ElementType } from './Share.types'
 import { Pool, PoolAttributes } from '../Pool'
 import { ProjectAttributes } from '../Project'
 import template from './template'
@@ -54,12 +54,17 @@ export class ShareRouter extends Router {
 
   private async findElementByType(
     id: string,
-    type: 'pool' | 'scene'
+    type: ElementType
   ): Promise<ProjectAttributes | PoolAttributes | undefined> {
-    if (type === 'pool') {
-      return Pool.findOne<PoolAttributes>({ id })
-    } else {
-      return Project.findOne<ProjectAttributes>({ id, is_public: true })
+    switch (type) {
+      case ElementType.POOL:
+        return Pool.findOne<PoolAttributes>({ id })
+
+      case ElementType.SCENE:
+        return Project.findOne<ProjectAttributes>({ id, is_public: true })
+
+      default:
+        throw new Error(`Unknown type ${type} for id ${id}`)
     }
   }
 }

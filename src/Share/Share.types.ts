@@ -1,4 +1,9 @@
+export enum ElementType {
+  SCENE = 'scene',
+  POOL = 'pool'
+}
+
 export type Params = {
-  type: 'scene' | 'pool'
+  type: ElementType
   id: string
 }

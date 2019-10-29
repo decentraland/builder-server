@@ -1,5 +1,4 @@
 import { Request, Response, NextFunction } from 'express'
-// import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 
 const BUILDER_DOMAIN = env.get('BUILDER_DOMAIN')

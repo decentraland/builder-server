@@ -1,10 +1,4 @@
 import { Request, Response, NextFunction } from 'express'
-import { env } from 'decentraland-commons'
-
-const BUILDER_DOMAIN = env.get('BUILDER_DOMAIN')
-if (!BUILDER_DOMAIN) {
-  console.log('Builder domain is missing, will use default user id')
-}
 
 const crawlers = [
   {

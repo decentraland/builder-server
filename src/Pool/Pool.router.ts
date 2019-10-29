@@ -1,4 +1,5 @@
 import { server } from 'decentraland-server'
+import { utils } from 'decentraland-commons'
 
 import { Router } from '../common/Router'
 import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
@@ -81,7 +82,9 @@ export class PoolRouter extends Router {
       s3Project.readFileBody(MANIFEST_FILENAME)
     ])
 
-    const promises: Promise<any>[] = [new Pool(project!).upsert()]
+    const promises: Promise<any>[] = [
+      new Pool(utils.omit(project!, ['is_public'])).upsert()
+    ]
 
     if (manifest) {
       const data = manifest.toString()

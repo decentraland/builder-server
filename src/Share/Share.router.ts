@@ -1,6 +1,6 @@
 import { Response } from 'express'
 import { env } from 'decentraland-commons'
-import { format } from 'util'
+import * as url from 'url'
 
 import { Router } from '../common/Router'
 
@@ -28,9 +28,9 @@ export class ShareRouter extends Router {
   private redirectToBuilder = async (req: SocialRequest, res: Response) => {
     const { type, id } = req.params as Params
     const targetPath = type === 'scene' ? `/view/${id}` : `/view/${type}/${id}`
-    const url = BUILDER_URL + targetPath
+    const builderTarget = url.resolve(BUILDER_URL, targetPath)
     if (!req.socialAgent) {
-      return res.redirect(301, url)
+      return res.redirect(301, builderTarget)
     }
 
     const p = await this.findElementByType(id, type)
@@ -41,13 +41,13 @@ export class ShareRouter extends Router {
 
     const thumbnail =
       p.thumbnail &&
-      format(
-        `${BUILDER_URL}/v1/projects/${
-          p.id
-        }/media/thumbnail.png?updated_at=${Date.parse(p.updated_at.toString())}`
-      )
+      `${BUILDER_URL}/v1/projects/${
+        p.id
+      }/media/thumbnail.png?updated_at=${Date.parse(p.updated_at.toString())}`
 
-    return res.status(200).send(template({ ...p, url, thumbnail }))
+    return res
+      .status(200)
+      .send(template({ ...p, url: builderTarget, thumbnail }))
   }
 
   private async findElementByType(

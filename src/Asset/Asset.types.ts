@@ -1,14 +1,33 @@
 import { metricsSchema } from './Metrics'
+import { parametersSchema } from './Parameters'
+import { actionsSchema } from './Actions'
 
 export type AssetAttributes = {
   id: string
   asset_pack_id: string
   name: string
-  url: string
+  model: string
+  script: string | null
   thumbnail: string
   tags: string[]
   category: string
   contents: Record<string, string>
+  parameters: AssetParameter[]
+}
+
+export type AssetParameter = {
+  id: string
+  type: AssetParameterType
+  label: string
+  default?: boolean | string | boolean
+  options?: string[]
+}
+
+export enum AssetParameterType {
+  BOOLEAN = 'boolean',
+  STRING = 'string',
+  FLOAT = 'float',
+  INTEGER = 'integer'
 }
 
 export const assetSchema = Object.freeze({
@@ -17,7 +36,8 @@ export const assetSchema = Object.freeze({
     id: { type: 'string' },
     asset_pack_id: { type: 'string', format: 'uuid' },
     name: { type: 'string', minLength: 3, maxLength: 20 },
-    url: { type: 'string' },
+    model: { type: 'string' },
+    script: { type: ['string', 'null'] },
     thumbnail: { type: ['string', 'null'] },
     tags: { items: { type: 'string' } },
     category: { type: 'string' },
@@ -25,7 +45,9 @@ export const assetSchema = Object.freeze({
       type: 'object',
       additionalProperties: true
     },
-    metrics: metricsSchema
+    metrics: metricsSchema,
+    parameters: parametersSchema,
+    actions: actionsSchema
   },
   additionalProperties: false,
   removeAdditional: true,
@@ -33,7 +55,7 @@ export const assetSchema = Object.freeze({
     'id',
     'asset_pack_id',
     'name',
-    'url',
+    'model',
     'tags',
     'category',
     'contents'

@@ -20,7 +20,9 @@ export class Asset extends Model<AssetAttributes> {
   ): Promise<U> {
     const newAttributes = {
       ...attributes,
-      parameters: JSON.stringify(attributes.parameters) as any
+      // This is to prevent an "invalid input syntax for type json" error caused by node-posgres
+      parameters: JSON.stringify(attributes.parameters) as any,
+      actions: JSON.stringify(attributes.actions) as any
     }
     return super.upsert(newAttributes, onConflict)
   }

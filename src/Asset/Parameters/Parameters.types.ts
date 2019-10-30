@@ -35,6 +35,9 @@ export const parametersSchema = Object.freeze({
         items: {
           type: 'string'
         }
+      },
+      description: {
+        type: 'string'
       }
     },
     additionalProperties: false,

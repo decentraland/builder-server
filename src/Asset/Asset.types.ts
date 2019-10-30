@@ -7,7 +7,7 @@ export type AssetAttributes = {
   asset_pack_id: string
   name: string
   model: string
-  script: string
+  script: string | null
   thumbnail: string
   tags: string[]
   category: string

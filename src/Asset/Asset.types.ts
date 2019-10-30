@@ -1,4 +1,5 @@
 import { metricsSchema } from './Metrics'
+import { parametersSchema } from './Parameters'
 
 export type AssetAttributes = {
   id: string
@@ -10,6 +11,22 @@ export type AssetAttributes = {
   tags: string[]
   category: string
   contents: Record<string, string>
+  parameters: AssetParameter[]
+}
+
+export type AssetParameter = {
+  id: string
+  type: AssetParameterType
+  label: string
+  default?: boolean | string | boolean
+  options?: string[]
+}
+
+export enum AssetParameterType {
+  BOOLEAN = 'boolean',
+  STRING = 'string',
+  FLOAT = 'float',
+  INTEGER = 'integer'
 }
 
 export const assetSchema = Object.freeze({
@@ -27,7 +44,8 @@ export const assetSchema = Object.freeze({
       type: 'object',
       additionalProperties: true
     },
-    metrics: metricsSchema
+    metrics: metricsSchema,
+    parameters: parametersSchema
   },
   additionalProperties: false,
   removeAdditional: true,

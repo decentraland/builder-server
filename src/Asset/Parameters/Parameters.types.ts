@@ -12,7 +12,8 @@ export enum AssetParameterType {
   FLOAT = 'float',
   INTEGER = 'integer',
   ENUM = 'enum',
-  ENTITY = 'entity'
+  ENTITY = 'entity',
+  ACTION = 'action'
 }
 
 export type ParametersAttributes = AssetParameterType[]
@@ -24,7 +25,15 @@ export const parametersSchema = Object.freeze({
     properties: {
       id: { type: 'string' },
       type: {
-        enum: ['boolean', 'string', 'float', 'integer', 'enum', 'entity']
+        enum: [
+          'boolean',
+          'string',
+          'float',
+          'integer',
+          'enum',
+          'entity',
+          'action'
+        ]
       },
       label: { type: 'string' },
       default: {

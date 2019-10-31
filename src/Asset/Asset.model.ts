@@ -1,6 +1,8 @@
 import { Model, SQL, OnConflict, QueryPart } from 'decentraland-server'
 
 import { AssetAttributes } from './Asset.types'
+import { Parameters } from './Parameters'
+import { Actions } from './Actions'
 
 export class Asset extends Model<AssetAttributes> {
   static tableName = 'assets'
@@ -21,8 +23,12 @@ export class Asset extends Model<AssetAttributes> {
     const newAttributes = {
       ...attributes,
       // This is to prevent an "invalid input syntax for type json" error caused by node-posgres
-      parameters: JSON.stringify(attributes.parameters) as any,
-      actions: JSON.stringify(attributes.actions) as any
+      parameters: JSON.stringify(
+        attributes.parameters || new Parameters().getAttributes()
+      ),
+      actions: JSON.stringify(
+        attributes.actions || new Actions().getAttributes()
+      )
     }
     return super.upsert(newAttributes, onConflict)
   }

@@ -130,8 +130,11 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
         console.log(`Ignoring ERROR: ${error.message}`)
       }
     }
-
-    await Promise.all(assetPromises)
+    try {
+      await Promise.all(assetPromises)
+    } catch (error) {
+      console.log(`Error saving assets: ${error.message}`)
+    }
   }
 }
 
@@ -201,8 +204,7 @@ function getDirectories(source: string) {
 }
 
 if (require.main === module) {
-  db
-    .connect()
+  db.connect()
     .then(seed)
     .then(() => {
       console.log('All done!')

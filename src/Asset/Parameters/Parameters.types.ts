@@ -2,8 +2,13 @@ export type AssetParameter = {
   id: string
   type: AssetParameterType
   label: string
-  default?: any
-  options?: string[]
+  default?: number | string | boolean
+  options?: AssetParameterOption[]
+}
+
+export type AssetParameterOption = {
+  label: string
+  value: string
 }
 
 export enum AssetParameterType {
@@ -11,9 +16,9 @@ export enum AssetParameterType {
   STRING = 'string',
   FLOAT = 'float',
   INTEGER = 'integer',
-  ENUM = 'enum',
   ENTITY = 'entity',
-  ACTION = 'action'
+  ACTIONS = 'actions',
+  OPTIONS = 'options'
 }
 
 export type ParametersAttributes = AssetParameterType[]
@@ -30,9 +35,9 @@ export const parametersSchema = Object.freeze({
           'string',
           'float',
           'integer',
-          'enum',
+          'options',
           'entity',
-          'action'
+          'actions'
         ]
       },
       label: { type: 'string' },
@@ -42,7 +47,18 @@ export const parametersSchema = Object.freeze({
       options: {
         type: 'array',
         items: {
-          type: 'string'
+          type: 'object',
+          properties: {
+            label: {
+              type: 'string'
+            },
+            value: {
+              type: 'string'
+            }
+          },
+          additionalProperties: false,
+          removeAdditional: true,
+          required: ['label', 'value']
         }
       },
       description: {

@@ -1,5 +1,5 @@
 import { metricsSchema } from './Metrics'
-import { parametersSchema } from './Parameters'
+import { parametersSchema, AssetParameter } from './Parameters'
 import { actionsSchema } from './Actions'
 
 export type AssetAttributes = {
@@ -13,21 +13,6 @@ export type AssetAttributes = {
   category: string
   contents: Record<string, string>
   parameters: AssetParameter[]
-}
-
-export type AssetParameter = {
-  id: string
-  type: AssetParameterType
-  label: string
-  default?: boolean | string | boolean
-  options?: string[]
-}
-
-export enum AssetParameterType {
-  BOOLEAN = 'boolean',
-  STRING = 'string',
-  FLOAT = 'float',
-  INTEGER = 'integer'
 }
 
 export const assetSchema = Object.freeze({

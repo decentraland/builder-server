@@ -12,6 +12,7 @@ import { ProjectAttributes } from '../Project'
 import template from './template'
 
 const BUILDER_URL = env.get('BUILDER_URL', '')
+const BUILDER_SERVER_URL = env.get('BUILDER_SERVER_URL', '')
 
 export class ShareRouter extends Router {
   mount() {
@@ -41,7 +42,7 @@ export class ShareRouter extends Router {
 
     const thumbnail =
       element.thumbnail &&
-      `${BUILDER_URL}/v1/projects/${
+      `${BUILDER_SERVER_URL}/v1/projects/${
         element.id
       }/media/thumbnail.png?updated_at=${Date.parse(
         element.updated_at.toString()

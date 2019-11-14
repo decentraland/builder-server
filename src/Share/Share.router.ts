@@ -13,6 +13,7 @@ import template from './template'
 
 const BUILDER_URL = env.get('BUILDER_URL', '')
 const BUILDER_SERVER_URL = env.get('BUILDER_SERVER_URL', '')
+const BUILDER_SHARE_URL = env.get('BUILDER_SHARE_URL', BUILDER_URL)
 
 export class ShareRouter extends Router {
   mount() {
@@ -40,6 +41,7 @@ export class ShareRouter extends Router {
       return res.send(404)
     }
 
+    const publicTarget = url.resolve(BUILDER_SHARE_URL, targetPath)
     const thumbnail =
       element.thumbnail &&
       `${BUILDER_SERVER_URL}/v1/projects/${
@@ -50,7 +52,7 @@ export class ShareRouter extends Router {
 
     return res
       .status(200)
-      .send(template({ ...element, url: builderTarget, thumbnail }))
+      .send(template({ ...element, url: publicTarget, thumbnail }))
   }
 
   private async findElementByType(

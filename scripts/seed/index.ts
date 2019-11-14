@@ -97,8 +97,9 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       const thumbnail = path.basename(defaultAttributes.thumbnail)
 
       const attributes = {
-        ...utils.omit(defaultAttributes, ['variations']),
+        ...utils.omit(defaultAttributes, ['variations', 'url']),
         thumbnail,
+        model: defaultAttributes.url,
         asset_pack_id: id
       } as AssetAttributes
 
@@ -129,8 +130,11 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
         console.log(`Ignoring ERROR: ${error.message}`)
       }
     }
-
-    await Promise.all(assetPromises)
+    try {
+      await Promise.all(assetPromises)
+    } catch (error) {
+      console.log(`Error saving assets: ${error.message}`)
+    }
   }
 }
 
@@ -200,8 +204,7 @@ function getDirectories(source: string) {
 }
 
 if (require.main === module) {
-  db
-    .connect()
+  db.connect()
     .then(seed)
     .then(() => {
       console.log('All done!')

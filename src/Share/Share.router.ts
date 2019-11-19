@@ -41,7 +41,7 @@ export class ShareRouter extends Router {
       return res.send(404)
     }
 
-    const publicTarget = url.resolve(BUILDER_SHARE_URL, targetPath)
+    const publicTarget = url.resolve(BUILDER_SHARE_URL, `/b/${type}/${id}`)
     const thumbnail =
       element.thumbnail &&
       `${BUILDER_SERVER_URL}/v1/projects/${

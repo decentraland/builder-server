@@ -13,7 +13,7 @@ export type AssetParameterOption = {
 
 export enum AssetParameterType {
   BOOLEAN = 'boolean',
-  STRING = 'string',
+  TEXT = 'text',
   FLOAT = 'float',
   INTEGER = 'integer',
   ENTITY = 'entity',
@@ -33,7 +33,7 @@ export const parametersSchema = Object.freeze({
       type: {
         enum: [
           'boolean',
-          'string',
+          'text',
           'float',
           'integer',
           'options',

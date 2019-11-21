@@ -19,7 +19,8 @@ export enum AssetParameterType {
   ENTITY = 'entity',
   ACTIONS = 'actions',
   OPTIONS = 'options',
-  TEXTAREA = 'textarea'
+  TEXTAREA = 'textarea',
+  SLIDER = 'slider'
 }
 
 export type ParametersAttributes = AssetParameterType[]
@@ -39,7 +40,8 @@ export const parametersSchema = Object.freeze({
           'options',
           'entity',
           'actions',
-          'textarea'
+          'textarea',
+          'slider'
         ]
       },
       label: { type: 'string' },
@@ -62,6 +64,15 @@ export const parametersSchema = Object.freeze({
           removeAdditional: true,
           required: ['label', 'value']
         }
+      },
+      min: {
+        type: 'number'
+      },
+      max: {
+        type: 'number'
+      },
+      step: {
+        type: 'number'
       },
       description: {
         type: 'string'

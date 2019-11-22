@@ -1,11 +1,17 @@
 import { utils } from 'decentraland-commons'
 import { ProjectAttributes, projectSchema } from '../Project'
+import { AuthorDetailAttributes } from '../AuthorDetail'
 
 export type PoolAttributes = Pick<
   ProjectAttributes,
   Exclude<keyof ProjectAttributes, 'is_public'>
 > & {
   groups: number[]
+}
+
+export type PoolUpsertBody = {
+  group?: number
+  author_detail?: AuthorDetailAttributes
 }
 
 export const poolSchema = {
@@ -17,6 +23,9 @@ export const poolSchema = {
       items: {
         type: 'integer'
       }
+    },
+    author_detail: {
+      type: 'object'
     }
   }
 }

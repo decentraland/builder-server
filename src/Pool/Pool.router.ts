@@ -1,3 +1,4 @@
+import Ajv from 'ajv'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -16,10 +17,15 @@ import {
   PoolAttributes,
   searchablePoolProperties,
   sortablePoolProperties,
-  publicPoolProperties
+  publicPoolProperties,
+  PoolUpsertBody
 } from './Pool.types'
 import { PoolGroup } from '../PoolGroup'
 import { utils } from 'decentraland-commons'
+import { authorDetailSchema } from '../AuthorDetail'
+import { HTTPError } from '../common/HTTPError'
+
+const ajv = new Ajv({ removeAdditional: true })
 
 export class PoolRouter extends Router {
   mount() {
@@ -94,13 +100,24 @@ export class PoolRouter extends Router {
     const parameters = new RequestParameters(req)
     const id = parameters.getString('id')
     const s3Project = new S3Project(id)
-    const groupId = parameters.getInteger('group', 0)
+    const body = req.body as PoolUpsertBody
+    const group_id = Number(body.group)
+    const author_detail = body.author_detail || null
+
+    if (author_detail) {
+      const authorDetailValidator = ajv.compile(authorDetailSchema)
+      authorDetailValidator(author_detail)
+
+      if (authorDetailValidator.errors) {
+        throw new HTTPError('Invalid schema', authorDetailValidator.errors)
+      }
+    }
 
     const [project, manifest, pool, group] = await Promise.all([
       Project.findOne<ProjectAttributes>(id),
       s3Project.readFileBody(MANIFEST_FILENAME),
       Pool.findOne<PoolAttributes>(id),
-      PoolGroup.findOneByFilters({ id: groupId, activeOnly: true })
+      PoolGroup.findOneByFilters({ id: group_id, activeOnly: true })
     ])
 
     const { is_public, ...upsertPool } = (project || {}) as ProjectAttributes
@@ -113,7 +130,8 @@ export class PoolRouter extends Router {
     const promises: Promise<any>[] = [
       new Pool({
         ...upsertPool,
-        groups
+        groups,
+        author_detail
       } as any).upsert()
     ]
 

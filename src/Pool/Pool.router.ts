@@ -82,9 +82,10 @@ export class PoolRouter extends Router {
   }
 
   async upsertPool(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const groupId = Number(server.extractFromReq(req, 'group'))
+    const parameters = new RequestParameters(req)
+    const id = parameters.getString('id')
     const s3Project = new S3Project(id)
+    const groupId = parameters.getInteger('group', 0)
 
     const [project, manifest, pool, group] = await Promise.all([
       Project.findOne<ProjectAttributes>(id),

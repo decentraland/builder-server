@@ -15,9 +15,11 @@ import { Pool } from './Pool.model'
 import {
   PoolAttributes,
   searchablePoolProperties,
-  sortablePoolProperties
+  sortablePoolProperties,
+  publicPoolProperties
 } from './Pool.types'
 import { PoolGroup } from '../PoolGroup'
+import { utils } from 'decentraland-commons'
 
 export class PoolRouter extends Router {
   mount() {
@@ -50,7 +52,8 @@ export class PoolRouter extends Router {
     // TODO: This is the same code as Project.router#getProjects
     const requestParameters = new RequestParameters(req)
     const searchableProject = new SearchableModel<PoolAttributes>(
-      Pool.tableName
+      Pool.tableName,
+      publicPoolProperties
     )
     const parameters = new SearchableParameters<PoolAttributes>(
       requestParameters,
@@ -78,7 +81,13 @@ export class PoolRouter extends Router {
 
   async getPool(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return Pool.findOne({ id })
+    const result = await Pool.findOne({ id })
+
+    if (result) {
+      return utils.pick(result, publicPoolProperties)
+    }
+
+    return result
   }
 
   async upsertPool(req: AuthRequest) {
@@ -114,6 +123,6 @@ export class PoolRouter extends Router {
     }
 
     const [result] = await Promise.all(promises)
-    return result as ProjectAttributes
+    return utils.pick(result, publicPoolProperties) as ProjectAttributes
   }
 }

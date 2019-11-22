@@ -21,9 +21,9 @@ export const poolSchema = {
   }
 }
 
-// export const searchablePoolProperties: (keyof PoolAttributes)[] = [
-//   ...searchableProjectProperties
-// ]
+export const publicPoolProperties = Object.keys(
+  utils.omit(projectSchema.properties, ['is_public'])
+).concat(['groups'])
 
 export const searchablePoolProperties = {
   eq: utils.omit(poolSchema.properties, ['groups']) as (keyof PoolAttributes)[],

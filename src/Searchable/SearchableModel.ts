@@ -44,7 +44,7 @@ export class SearchableModel<T> {
     const conditionsQuery = SQL`WHERE 1 = 1`
 
     if (conditions) {
-      const { eq, notEq } = conditions.sanitize()
+      const { eq, notEq, includes } = conditions.sanitize()
 
       for (const columnName in eq) {
         conditionsQuery.append(SQL` AND ${raw(columnName)} = ${eq[columnName]}`)
@@ -52,6 +52,11 @@ export class SearchableModel<T> {
       for (const columnName in notEq) {
         conditionsQuery.append(
           SQL` AND ${raw(columnName)} != ${notEq[columnName]}`
+        )
+      }
+      for (const columnName in includes) {
+        conditionsQuery.append(
+          SQL` AND ${includes[columnName]} = ANY(${raw(columnName)})`
         )
       }
     }

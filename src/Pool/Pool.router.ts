@@ -1,5 +1,4 @@
 import { server } from 'decentraland-server'
-import { utils } from 'decentraland-commons'
 
 import { Router } from '../common/Router'
 import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
@@ -13,7 +12,12 @@ import {
   SearchableConditions
 } from '../Searchable'
 import { Pool } from './Pool.model'
-import { PoolAttributes, searchablePoolProperties } from './Pool.types'
+import {
+  PoolAttributes,
+  searchablePoolProperties,
+  sortablePoolProperties
+} from './Pool.types'
+import { PoolGroup } from '../PoolGroup'
 
 export class PoolRouter extends Router {
   mount() {
@@ -23,11 +27,7 @@ export class PoolRouter extends Router {
     /**
      * Get all pools
      */
-    this.router.get(
-      '/pools',
-      withAuthentication,
-      server.handleRequest(this.getPools)
-    )
+    this.router.get('/pools', server.handleRequest(this.getPools))
 
     /**
      * Get pool
@@ -47,8 +47,6 @@ export class PoolRouter extends Router {
   }
 
   async getPools(req: AuthRequest) {
-    const user_id = req.auth.sub
-
     // TODO: This is the same code as Project.router#getProjects
     const requestParameters = new RequestParameters(req)
     const searchableProject = new SearchableModel<PoolAttributes>(
@@ -56,13 +54,24 @@ export class PoolRouter extends Router {
     )
     const parameters = new SearchableParameters<PoolAttributes>(
       requestParameters,
-      { sort: { by: searchablePoolProperties } }
+      sortablePoolProperties
     )
     const conditions = new SearchableConditions<PoolAttributes>(
       requestParameters,
-      { eq: searchablePoolProperties }
+      searchablePoolProperties
     )
-    conditions.addExtras('eq', { user_id })
+
+    const user_id = requestParameters.get('user_id', null)
+    if (user_id === 'me') {
+      conditions.addExtras('eq', { user_id: req.auth.sub })
+    } else if (user_id) {
+      conditions.addExtras('eq', { user_id })
+    }
+
+    if (requestParameters.has('group')) {
+      const groups = requestParameters.getInteger('group')
+      conditions.addExtras('includes', { groups })
+    }
 
     return searchableProject.search(parameters, conditions)
   }
@@ -74,16 +83,28 @@ export class PoolRouter extends Router {
 
   async upsertPool(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-
+    const groupId = Number(server.extractFromReq(req, 'group'))
     const s3Project = new S3Project(id)
 
-    const [project, manifest] = await Promise.all([
+    const [project, manifest, pool, group] = await Promise.all([
       Project.findOne<ProjectAttributes>(id),
-      s3Project.readFileBody(MANIFEST_FILENAME)
+      s3Project.readFileBody(MANIFEST_FILENAME),
+      Pool.findOne<PoolAttributes>(id),
+      PoolGroup.findOneByFilters({ id: groupId, activeOnly: true })
     ])
 
+    const { is_public, ...upsertPool } = (project || {}) as ProjectAttributes
+
+    const groups = (pool && pool.groups) || []
+    if (group && group.id && !groups.includes(group.id)) {
+      groups.push(group.id)
+    }
+
     const promises: Promise<any>[] = [
-      new Pool(utils.omit(project!, ['is_public'])).upsert()
+      new Pool({
+        ...upsertPool,
+        groups
+      } as any).upsert()
     ]
 
     if (manifest) {
@@ -91,7 +112,7 @@ export class PoolRouter extends Router {
       promises.push(s3Project.saveFile(POOL_FILENAME, data, ACL.private))
     }
 
-    const [pool] = await Promise.all(promises)
-    return pool as ProjectAttributes
+    const [result] = await Promise.all(promises)
+    return result as ProjectAttributes
   }
 }

@@ -11,7 +11,8 @@ import {
 
 const DEFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   eq: [],
-  not_eq: []
+  not_eq: [],
+  includes: []
 }
 
 export class SearchableConditions<T> {
@@ -37,11 +38,12 @@ export class SearchableConditions<T> {
   sanitize() {
     return {
       eq: this.getEq(),
-      notEq: this.getNotEq()
+      notEq: this.getNotEq(),
+      includes: this.getIncludes()
     }
   }
 
-  addExtras(conditionName: ConditionName<T>, conditions: Condition<T>) {
+  addExtras(conditionName: ConditionName, conditions: Condition<T>) {
     this.extras[conditionName] = {
       ...this.extras[conditionName],
       ...conditions
@@ -49,7 +51,7 @@ export class SearchableConditions<T> {
   }
 
   removeExtra(
-    conditionName: ConditionName<T>,
+    conditionName: ConditionName,
     conditionNamesToRemove: (keyof Condition<T>)[]
   ) {
     for (const conditionNameToRemove of conditionNamesToRemove) {
@@ -61,21 +63,26 @@ export class SearchableConditions<T> {
     }
   }
 
-  private getEq(): Condition<T> {
+  private getCondition(name: ConditionName): Condition<T> {
     return {
-      ...this.getSanitizedCondition('eq'),
-      ...this.extras['eq']
+      ...this.getSanitizedCondition(name),
+      ...this.extras[name]
     }
+  }
+
+  private getEq(): Condition<T> {
+    return this.getCondition('eq')
   }
 
   private getNotEq(): Condition<T> {
-    return {
-      ...this.getSanitizedCondition('not_eq'),
-      ...this.extras['not_eq']
-    }
+    return this.getCondition('not_eq')
   }
 
-  private getSanitizedCondition(conditionName: ConditionName<T>) {
+  private getIncludes(): Condition<T> {
+    return this.getCondition('includes')
+  }
+
+  private getSanitizedCondition(conditionName: ConditionName) {
     const condition: Partial<Condition<T>> = {}
     const queryStringName = `_${conditionName}`
 
@@ -92,7 +99,7 @@ export class SearchableConditions<T> {
     return condition
   }
 
-  private isWhitelisted(conditionName: ConditionName<T>, columnName: string) {
+  private isWhitelisted(conditionName: ConditionName, columnName: string) {
     const finding = this.whitelist[conditionName].find(
       value => value === columnName
     )

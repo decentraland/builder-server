@@ -1,4 +1,3 @@
-import Ajv from 'ajv'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -17,15 +16,9 @@ import {
   PoolAttributes,
   searchablePoolProperties,
   sortablePoolProperties,
-  publicPoolProperties,
   PoolUpsertBody
 } from './Pool.types'
 import { PoolGroup } from '../PoolGroup'
-import { utils } from 'decentraland-commons'
-import { authorDetailSchema } from '../AuthorDetail'
-import { HTTPError } from '../common/HTTPError'
-
-const ajv = new Ajv({ removeAdditional: true })
 
 export class PoolRouter extends Router {
   mount() {
@@ -58,8 +51,7 @@ export class PoolRouter extends Router {
     // TODO: This is the same code as Project.router#getProjects
     const requestParameters = new RequestParameters(req)
     const searchableProject = new SearchableModel<PoolAttributes>(
-      Pool.tableName,
-      publicPoolProperties
+      Pool.tableName
     )
     const parameters = new SearchableParameters<PoolAttributes>(
       requestParameters,
@@ -87,13 +79,7 @@ export class PoolRouter extends Router {
 
   async getPool(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const result = await Pool.findOne({ id })
-
-    if (result) {
-      return utils.pick(result, publicPoolProperties)
-    }
-
-    return result
+    return Pool.findOne({ id })
   }
 
   async upsertPool(req: AuthRequest) {
@@ -101,37 +87,30 @@ export class PoolRouter extends Router {
     const id = parameters.getString('id')
     const s3Project = new S3Project(id)
     const body = req.body as PoolUpsertBody
-    const group_id = Number(body.group)
-    const author_detail = body.author_detail || null
+    const groupIds = body.groups || []
 
-    if (author_detail) {
-      const authorDetailValidator = ajv.compile(authorDetailSchema)
-      authorDetailValidator(author_detail)
-
-      if (authorDetailValidator.errors) {
-        throw new HTTPError('Invalid schema', authorDetailValidator.errors)
-      }
-    }
-
-    const [project, manifest, pool, group] = await Promise.all([
+    const [project, manifest, pool, groups] = await Promise.all([
       Project.findOne<ProjectAttributes>(id),
       s3Project.readFileBody(MANIFEST_FILENAME),
       Pool.findOne<PoolAttributes>(id),
-      PoolGroup.findOneByFilters({ id: group_id, activeOnly: true })
+      PoolGroup.findByFilters({ ids: groupIds, activeOnly: true })
     ])
 
     const { is_public, ...upsertPool } = (project || {}) as ProjectAttributes
 
-    const groups = (pool && pool.groups) || []
-    if (group && group.id && !groups.includes(group.id)) {
-      groups.push(group.id)
+    const groupList = (pool && pool.groups) || []
+    if (groups.length) {
+      for (const group of groups) {
+        if (!groupList.includes(group.id)) {
+          groupList.push(group.id)
+        }
+      }
     }
 
     const promises: Promise<any>[] = [
       new Pool({
         ...upsertPool,
-        groups,
-        author_detail
+        groups: groupList
       } as any).upsert()
     ]
 
@@ -141,6 +120,6 @@ export class PoolRouter extends Router {
     }
 
     const [result] = await Promise.all(promises)
-    return utils.pick(result, publicPoolProperties) as ProjectAttributes
+    return result
   }
 }

@@ -1,5 +1,5 @@
 export type PoolGroupAttributes = {
-  id: number
+  id: string
   name: string
   is_active?: boolean
   active_from: Date
@@ -10,8 +10,13 @@ export type PoolGroupAttributes = {
 export const poolGroupSchema = {}
 export const searchablePoolGroupProperties = ['active']
 
-export type GetPoolGroupFilters = {
-  id?: number
+export type GetOnePoolGroupFilters = {
+  id?: string
+  activeOnly?: boolean
+}
+
+export type GetPoolGroupsFilters = {
+  ids?: string[]
   activeOnly?: boolean
   limit?: number
 }

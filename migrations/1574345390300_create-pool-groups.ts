@@ -7,7 +7,7 @@ export const up = (pgm: MigrationBuilder) => {
   pgm.createTable(
     tableName,
     {
-      id: { type: 'SERIAL', primaryKey: true },
+      id: { type: 'UUID', primaryKey: true },
       name: { type: 'VARCHAR(100)', notNull: true, unique: true },
       active_from: { type: 'TIMESTAMP', notNull: true },
       active_until: { type: 'TIMESTAMP', notNull: true },

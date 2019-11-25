@@ -6,10 +6,7 @@ import { SearchableConditions } from './SearchableConditions'
 import { Pagination, Sort } from './Searchable.types'
 
 export class SearchableModel<T> {
-  constructor(
-    public readonly tableName: string,
-    public readonly fields: string[] = ['*']
-  ) {}
+  constructor(public readonly tableName: string) {}
 
   async search(
     parameters: SearchableParameters<T>,
@@ -23,7 +20,7 @@ export class SearchableModel<T> {
 
     const [items, counts] = await Promise.all([
       db.query(
-        SQL`SELECT ${raw(this.fields.join(', '))}
+        SQL`SELECT *
         FROM ${raw(this.tableName)}
         ${conditionsQuery}
         ${sortQuery}

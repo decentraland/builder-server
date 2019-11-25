@@ -1,17 +1,15 @@
 import { utils } from 'decentraland-commons'
 import { ProjectAttributes, projectSchema } from '../Project'
-import { AuthorDetailAttributes } from '../AuthorDetail'
 
 export type PoolAttributes = Pick<
   ProjectAttributes,
   Exclude<keyof ProjectAttributes, 'is_public'>
 > & {
-  groups: number[]
+  groups: string[]
 }
 
 export type PoolUpsertBody = {
-  group?: number
-  author_detail?: AuthorDetailAttributes
+  groups?: string[]
 }
 
 export const poolSchema = {
@@ -29,10 +27,6 @@ export const poolSchema = {
     }
   }
 }
-
-export const publicPoolProperties = Object.keys(
-  utils.omit(projectSchema.properties, ['is_public'])
-).concat(['groups'])
 
 export const searchablePoolProperties = {
   eq: utils.omit(poolSchema.properties, ['groups']) as (keyof PoolAttributes)[],

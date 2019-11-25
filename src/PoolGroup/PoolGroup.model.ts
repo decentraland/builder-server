@@ -1,14 +1,31 @@
 import { Model, SQL, raw } from 'decentraland-server'
 
-import { PoolGroupAttributes, GetPoolGroupFilters } from './PoolGroup.types'
+import {
+  PoolGroupAttributes,
+  GetPoolGroupsFilters,
+  GetOnePoolGroupFilters
+} from './PoolGroup.types'
 
 export class PoolGroup extends Model<PoolGroupAttributes> {
   static tableName = 'pool_groups'
 
-  static async findOneByFilters(
-    filters: Omit<GetPoolGroupFilters, 'limit'>
-  ): Promise<PoolGroupAttributes | null> {
-    const result = await this.findByFilters({ ...filters, limit: 1 })
+  static async findOneByFilters({
+    id,
+    ...extra
+  }: Omit<
+    GetOnePoolGroupFilters,
+    'limit'
+  >): Promise<PoolGroupAttributes | null> {
+    const filters: GetPoolGroupsFilters = {
+      ...extra,
+      limit: 1
+    }
+
+    if (id) {
+      filters.ids = [id]
+    }
+
+    const result = await this.findByFilters(filters)
 
     if (result.length) {
       return result[0]
@@ -18,19 +35,18 @@ export class PoolGroup extends Model<PoolGroupAttributes> {
   }
 
   static async findByFilters({
-    id,
+    ids,
     activeOnly,
     limit
-  }: GetPoolGroupFilters): Promise<PoolGroupAttributes[]> {
-    if (typeof id === 'number' && (Number.isNaN(id) || id <= 0)) {
-      return []
-    }
-
+  }: GetPoolGroupsFilters): Promise<PoolGroupAttributes[]> {
     const conditionStatement = SQL`WHERE 1 = 1`
     const limitStatement = SQL``
 
-    if (id) {
-      conditionStatement.append(SQL` AND id = ${id}`)
+    if (Array.isArray(ids)) {
+      if (ids.length === 0) {
+        return []
+      }
+      conditionStatement.append(SQL` AND id IN ${ids}`)
     }
 
     if (activeOnly) {

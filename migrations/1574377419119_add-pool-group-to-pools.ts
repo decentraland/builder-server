@@ -6,7 +6,7 @@ const tableName = Pool.tableName
 export const up = (pgm: MigrationBuilder) => {
   pgm.addColumns(tableName, {
     groups: {
-      type: 'INTEGER[]',
+      type: 'UUID[]',
       notNull: true,
       default: '{}'
     }

@@ -6,6 +6,8 @@ import {
   GetOnePoolGroupFilters
 } from './PoolGroup.types'
 
+const UUID = /^[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$/
+
 export class PoolGroup extends Model<PoolGroupAttributes> {
   static tableName = 'pool_groups'
 
@@ -43,10 +45,13 @@ export class PoolGroup extends Model<PoolGroupAttributes> {
     const limitStatement = SQL``
 
     if (Array.isArray(ids)) {
+      ids = ids.filter(id => UUID.test(String(id)))
       if (ids.length === 0) {
         return []
       }
-      conditionStatement.append(SQL` AND id IN ${ids}`)
+      conditionStatement.append(
+        SQL` AND id IN ${raw('(' + ids.map(id => `'${id}'`).join(', ') + ')')}`
+      )
     }
 
     if (activeOnly) {

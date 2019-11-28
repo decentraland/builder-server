@@ -19,11 +19,9 @@ export const poolSchema = {
     groups: {
       type: 'array',
       items: {
-        type: 'integer'
+        type: 'string',
+        format: 'uuid'
       }
-    },
-    author_detail: {
-      type: 'object'
     }
   }
 }

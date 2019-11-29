@@ -25,7 +25,7 @@ const DEFAULT_BOUNDS: Bounds = {
     limit: 100
   }
 }
-const MIN_PAGINATION_LIMIT = 1
+const MIN_PAGINATION_LIMIT = 0
 
 export class SearchableParameters<T = BaseAttributes> {
   requestParameters: RequestParameters

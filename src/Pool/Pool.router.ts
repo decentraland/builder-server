@@ -70,7 +70,7 @@ export class PoolRouter extends Router {
     }
 
     if (requestParameters.has('group')) {
-      const groups = requestParameters.getInteger('group')
+      const groups = requestParameters.getString('group')
       conditions.addExtras('includes', { groups })
     }
 

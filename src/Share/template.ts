@@ -1,7 +1,13 @@
 import escape from 'escape-html'
 import { ProjectAttributes } from '../Project'
+import { PoolAttributes } from '../Pool'
 
-const template = (project: ProjectAttributes & { url: string }) => html`
+const template = (
+  project: Pick<
+    ProjectAttributes,
+    Extract<keyof ProjectAttributes, keyof PoolAttributes>
+  > & { url: string }
+) => html`
   <!DOCTYPE html>
   <html lang="en">
     <head>

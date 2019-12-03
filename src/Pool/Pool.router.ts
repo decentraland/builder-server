@@ -138,7 +138,7 @@ export class PoolRouter extends Router {
         ...upsertPool,
         groups: groupList,
         created_at: pool ? pool.created_at : now,
-        update_at: now,
+        update_at: now
       } as any).upsert()
     ]
 

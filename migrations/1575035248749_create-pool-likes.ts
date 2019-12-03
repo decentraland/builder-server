@@ -17,8 +17,6 @@ export const up = (pgm: MigrationBuilder) => {
     },
     { ifNotExists: true }
   )
-
-  pgm.createIndex(tableName, ['pool', 'created_at'])
   pgm.createIndex(tableName, ['user', 'created_at'])
 }
 

@@ -4,6 +4,11 @@ export type PoolLikeAttributes = {
   created_at: string
 }
 
+export type PoolLikeCount = {
+  pool: string
+  user?: string
+}
+
 export const poolSchema = {
   type: 'object',
   properties: {

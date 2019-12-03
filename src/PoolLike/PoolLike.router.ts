@@ -4,15 +4,15 @@ import { Router } from '../common/Router'
 import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
 import { RequestParameters } from '../RequestParameters'
 import { PoolLike } from './PoolLike.model'
-import { Request } from 'express'
 import { Pool } from '../Pool'
+import { PoolLikeCount } from './PoolLike.types'
 
 export class PoolLikeRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Pool, 'id')
 
     /**
-     * Dislike pool
+     * Returns the total likes of a pool
      */
     this.router.get(
       '/pools/:id/likes',
@@ -41,10 +41,23 @@ export class PoolLikeRouter extends Router {
     )
   }
 
-  async countLikes(req: Request) {
+  async countLikes(req: AuthRequest) {
     const parameters = new RequestParameters(req)
     const pool = parameters.getString('id')
-    return PoolLike.count({ pool })
+    const currentUserId = (req.auth && req.auth.sub) || null
+
+    const filters: PoolLikeCount = { pool }
+    if (parameters.has('userId')) {
+      const userId = parameters.getString('userId')
+      if (userId === 'me' || userId === currentUserId) {
+        filters.user = req.auth.sub
+      } else {
+        // TODO: allow to filter by any users
+        return 0
+      }
+    }
+
+    return PoolLike.count(filters)
   }
 
   async likePool(req: AuthRequest) {

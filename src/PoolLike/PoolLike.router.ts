@@ -21,7 +21,7 @@ export class PoolLikeRouter extends Router {
     )
 
     /**
-     * Dislike pool
+     * Like pool
      */
     this.router.put(
       '/pools/:id/likes',
@@ -43,14 +43,14 @@ export class PoolLikeRouter extends Router {
 
   async countLikes(req: AuthRequest) {
     const parameters = new RequestParameters(req)
-    const pool = parameters.getString('id')
+    const pool_id = parameters.getString('id')
     const currentUserId = (req.auth && req.auth.sub) || null
 
-    const filters: PoolLikeCount = { pool }
+    const filters: PoolLikeCount = { pool_id }
     if (parameters.has('userId')) {
       const userId = parameters.getString('userId')
       if (userId === 'me' || userId === currentUserId) {
-        filters.user = req.auth.sub
+        filters.user_id = req.auth.sub
       } else {
         // TODO: allow to filter by any users
         return 0
@@ -62,33 +62,41 @@ export class PoolLikeRouter extends Router {
 
   async likePool(req: AuthRequest) {
     const parameters = new RequestParameters(req)
-    const pool = parameters.getString('id')
-    const user = req.auth.sub
+    const pool_id = parameters.getString('id')
+    const user_id = req.auth.sub
 
-    const exists = await PoolLike.count({ pool, user })
+    const [exists, currentLikes] = await Promise.all([
+      PoolLike.count({ pool_id, user_id }),
+      PoolLike.count({ pool_id })
+    ])
 
-    if (!exists) {
-      await PoolLike.create({ pool, user, created_at: new Date() })
-      const likes = await PoolLike.count({ pool })
-      await Pool.update({ likes }, { id: pool })
+    if (exists) {
+      return currentLikes
     }
 
-    return true
+    const likes = currentLikes + 1
+    await PoolLike.create({ pool_id, user_id, created_at: new Date() })
+    await Pool.update({ likes }, { id: pool_id })
+    return likes
   }
 
   async dislikePool(req: AuthRequest) {
     const parameters = new RequestParameters(req)
-    const pool = parameters.getString('id')
-    const user = req.auth.sub
+    const pool_id = parameters.getString('id')
+    const user_id = req.auth.sub
 
-    const exists = await PoolLike.count({ pool, user })
+    const [exists, currentLikes] = await Promise.all([
+      PoolLike.count({ pool_id, user_id }),
+      PoolLike.count({ pool_id })
+    ])
 
-    if (exists) {
-      await PoolLike.delete({ pool, user })
-      const likes = await PoolLike.count({ pool })
-      await Pool.update({ likes }, { id: pool })
+    if (!exists) {
+      return currentLikes
     }
 
-    return true
+    const likes = Math.max(currentLikes - 1, 0)
+    await PoolLike.delete({ pool_id, user_id })
+    await Pool.update({ likes }, { id: pool_id })
+    return likes
   }
 }

@@ -7,8 +7,8 @@ export const up = (pgm: MigrationBuilder) => {
   pgm.createTable(
     tableName,
     {
-      pool: { type: 'UUID', primaryKey: true },
-      user: { type: 'VARCHAR', primaryKey: true },
+      pool_id: { type: 'UUID', primaryKey: true },
+      user_id: { type: 'VARCHAR', primaryKey: true },
       created_at: {
         type: 'TIMESTAMP',
         notNull: true,
@@ -17,7 +17,7 @@ export const up = (pgm: MigrationBuilder) => {
     },
     { ifNotExists: true }
   )
-  pgm.createIndex(tableName, ['user', 'created_at'])
+  pgm.createIndex(tableName, ['user_id', 'created_at'])
 }
 
 export const down = (pgm: MigrationBuilder) => {

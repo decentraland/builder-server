@@ -92,14 +92,17 @@ export class PoolRouter extends Router {
   }
 
   async getPool(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
+    const pool_id = server.extractFromReq(req, 'id')
     const user_id = (req.auth && req.auth.sub) || null
 
     const likeCount = user_id
-      ? PoolLike.count({ pool: id, user: user_id })
+      ? PoolLike.count({ pool_id, user_id })
       : Promise.resolve(0)
 
-    const [pool, like] = await Promise.all([Pool.findOne({ id }), likeCount])
+    const [pool, like] = await Promise.all([
+      Pool.findOne({ id: pool_id }),
+      likeCount
+    ])
 
     return { ...pool, like: !!like }
   }

@@ -24,10 +24,6 @@ export const poolSchema = {
         type: 'string',
         format: 'uuid'
       }
-    },
-    likes: {
-      type: 'integer',
-      minimum: 0
     }
   }
 }

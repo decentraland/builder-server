@@ -7,10 +7,28 @@ export type ProjectAttributes = {
   user_id: string
   cols: number
   rows: number
+  parcels: number
+  transforms: number
+  gltf_shapes: number
+  nft_shapes: number
+  scripts: number
+  entities: number
   created_at: Date
   updated_at: Date
   is_public: boolean
 }
+
+export type ProjectStatisticsAttributes = Pick<
+  ProjectAttributes,
+  | 'cols'
+  | 'rows'
+  | 'parcels'
+  | 'transforms'
+  | 'scripts'
+  | 'entities'
+  | 'gltf_shapes'
+  | 'nft_shapes'
+>
 
 export const projectSchema = Object.freeze({
   type: 'object',

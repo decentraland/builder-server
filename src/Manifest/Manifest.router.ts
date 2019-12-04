@@ -117,8 +117,10 @@ export class ManifestRouter extends Router {
       project: { ...manifestJSON.project, user_id }
     } as ManifestAttributes
 
+    const statictis = {}
+
     const [project] = await Promise.all([
-      new Project(manifest.project).upsert(),
+      new Project({ ...manifest.project }).upsert(),
       new S3Project(id).saveFile(
         MANIFEST_FILENAME,
         JSON.stringify(manifest),

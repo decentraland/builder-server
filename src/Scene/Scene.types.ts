@@ -3,6 +3,8 @@ export type SceneAttributes = {
   components: Record<string, any>
 }
 
+export type SceneEntitiesAttributes = {}
+
 export const sceneSchema = {
   type: 'object',
   properties: {

@@ -5,7 +5,8 @@ import {
   withAuthentication,
   withModelExists,
   AuthRequest,
-  withPermissiveAuthentication
+  withPermissiveAuthentication,
+  PermissiveAuthRequest
 } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
@@ -61,7 +62,7 @@ export class PoolRouter extends Router {
     )
   }
 
-  async getPools(req: AuthRequest) {
+  async getPools(req: PermissiveAuthRequest) {
     // TODO: This is the same code as Project.router#getProjects
     const requestParameters = new RequestParameters(req)
     const searchableProject = new SearchableModel<PoolAttributes>(
@@ -77,10 +78,12 @@ export class PoolRouter extends Router {
     )
 
     const user_id = requestParameters.get('user_id', null)
-    if (user_id === 'me') {
-      conditions.addExtras('eq', { user_id: req.auth.sub })
-    } else if (user_id) {
-      conditions.addExtras('eq', { user_id })
+    if (user_id && req.auth) {
+      if (user_id === 'me') {
+        conditions.addExtras('eq', { user_id: req.auth.sub })
+      } else if (user_id) {
+        conditions.addExtras('eq', { user_id })
+      }
     }
 
     if (requestParameters.has('group')) {
@@ -91,7 +94,7 @@ export class PoolRouter extends Router {
     return searchableProject.search(parameters, conditions)
   }
 
-  async getPool(req: AuthRequest) {
+  async getPool(req: PermissiveAuthRequest) {
     const pool_id = server.extractFromReq(req, 'id')
     const user_id = (req.auth && req.auth.sub) || null
 

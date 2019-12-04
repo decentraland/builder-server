@@ -8,16 +8,3 @@ export type PoolLikeCount = {
   pool_id: string
   user_id?: string
 }
-
-export const poolLikeSchema = {
-  type: 'object',
-  properties: {
-    pool: {
-      type: 'string',
-      format: 'uuid'
-    },
-    user: {
-      type: 'string'
-    }
-  }
-}

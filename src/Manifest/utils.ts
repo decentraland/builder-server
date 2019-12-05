@@ -1,5 +1,6 @@
 import { ManifestAttributes } from './Manifest.types'
 import { ProjectStatisticsAttributes } from '../Project'
+import { ComponentType } from '../Scene'
 
 export function collectStatistics(
   manifest: ManifestAttributes
@@ -16,9 +17,26 @@ export function collectStatistics(
     nft_shapes: 0
   }
 
-  return Object.keys(scene.components).reduce((result, _key) => {
-    // const component = scene.components[key]
-    // switch (component.)
+  return Object.keys(scene.components).reduce((result, key) => {
+    const component = scene.components[key]
+
+    switch (component.type) {
+      case ComponentType.GLTFShape:
+        result.gltf_shapes += 1
+        break
+      case ComponentType.NFTShape:
+        result.nft_shapes += 1
+        break
+      case ComponentType.Script:
+        result.scripts += 1
+        break
+      case ComponentType.Transform:
+        result.transforms += 1
+        break
+    }
+
+    result.transforms = result.transforms - project.rows * project.cols
+    result.gltf_shapes -= 1
 
     return result
   }, result)

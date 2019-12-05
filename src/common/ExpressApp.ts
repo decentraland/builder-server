@@ -19,7 +19,7 @@ export class ExpressApp {
   }
 
   useCORS(origin: string, method: string) {
-    const cors = function(_: any, res: express.Response, next: Function) {
+    const cors = function (_: any, res: express.Response, next: Function) {
       res.setHeader('Access-Control-Allow-Origin', origin)
       res.setHeader('Access-Control-Request-Method', method)
       res.setHeader(
@@ -29,6 +29,10 @@ export class ExpressApp {
       res.setHeader(
         'Access-Control-Allow-Headers',
         'Content-Type,Authorization'
+      )
+      res.setHeader(
+        'Access-Control-Expose-Headers',
+        'ETag, Cache-Control, Content-Language, Content-Type, Expires, Last-Modified, Pragma'
       )
 
       next()

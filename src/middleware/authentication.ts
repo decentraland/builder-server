@@ -15,6 +15,12 @@ export type AuthRequest = Request & {
   }
 }
 
+export type PermissiveAuthRequest = Request & {
+  auth?: Record<string, string | number | boolean> & {
+    sub: string
+  }
+}
+
 const jwt = getJWTMiddleware()
 
 function getAuthenticationMiddleware() {

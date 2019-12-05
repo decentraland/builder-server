@@ -6,10 +6,12 @@ export type PoolAttributes = Pick<
   Exclude<keyof ProjectAttributes, 'is_public'>
 > & {
   groups: string[]
+  likes: number
 }
 
 export type PoolUpsertBody = {
   groups?: string[]
+  likes?: number
 }
 
 export const poolSchema = {

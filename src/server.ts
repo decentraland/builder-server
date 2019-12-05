@@ -6,6 +6,7 @@ import { AssetRouter } from './Asset'
 import { ProjectRouter } from './Project'
 import { PoolRouter } from './Pool'
 import { PoolGroupRouter } from './PoolGroup'
+import { PoolLikeRouter } from './PoolLike'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
 import { S3Router } from './S3'
@@ -32,8 +33,9 @@ new AppRouter(app).mount()
 new AssetPackRouter(app).mount()
 new AssetRouter(app).mount()
 new ProjectRouter(app).mount()
-new PoolRouter(app).mount()
+new PoolLikeRouter(app).mount()
 new PoolGroupRouter(app).mount()
+new PoolRouter(app).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
 new S3Router(app).mount()

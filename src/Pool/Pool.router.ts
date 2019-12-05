@@ -1,7 +1,13 @@
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
+import {
+  withAuthentication,
+  withModelExists,
+  AuthRequest,
+  withPermissiveAuthentication,
+  PermissiveAuthRequest
+} from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
@@ -19,6 +25,7 @@ import {
   PoolUpsertBody
 } from './Pool.types'
 import { PoolGroup } from '../PoolGroup'
+import { PoolLike } from '../PoolLike'
 
 export class PoolRouter extends Router {
   mount() {
@@ -28,12 +35,20 @@ export class PoolRouter extends Router {
     /**
      * Get all pools
      */
-    this.router.get('/pools', server.handleRequest(this.getPools))
+    this.router.get(
+      '/pools',
+      withPermissiveAuthentication,
+      server.handleRequest(this.getPools)
+    )
 
     /**
      * Get pool
      */
-    this.router.get('/projects/:id/pool', server.handleRequest(this.getPool))
+    this.router.get(
+      '/projects/:id/pool',
+      withPermissiveAuthentication,
+      server.handleRequest(this.getPool)
+    )
 
     /**
      * Upsert a new pool
@@ -47,7 +62,7 @@ export class PoolRouter extends Router {
     )
   }
 
-  async getPools(req: AuthRequest) {
+  async getPools(req: PermissiveAuthRequest) {
     // TODO: This is the same code as Project.router#getProjects
     const requestParameters = new RequestParameters(req)
     const searchableProject = new SearchableModel<PoolAttributes>(
@@ -63,10 +78,12 @@ export class PoolRouter extends Router {
     )
 
     const user_id = requestParameters.get('user_id', null)
-    if (user_id === 'me') {
-      conditions.addExtras('eq', { user_id: req.auth.sub })
-    } else if (user_id) {
-      conditions.addExtras('eq', { user_id })
+    if (user_id && req.auth) {
+      if (user_id === 'me') {
+        conditions.addExtras('eq', { user_id: req.auth.sub })
+      } else if (user_id) {
+        conditions.addExtras('eq', { user_id })
+      }
     }
 
     if (requestParameters.has('group')) {
@@ -77,12 +94,24 @@ export class PoolRouter extends Router {
     return searchableProject.search(parameters, conditions)
   }
 
-  async getPool(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    return Pool.findOne({ id })
+  async getPool(req: PermissiveAuthRequest) {
+    const pool_id = server.extractFromReq(req, 'id')
+    const user_id = (req.auth && req.auth.sub) || null
+
+    const likeCount = user_id
+      ? PoolLike.count({ pool_id, user_id })
+      : Promise.resolve(0)
+
+    const [pool, like] = await Promise.all([
+      Pool.findOne({ id: pool_id }),
+      likeCount
+    ])
+
+    return { ...pool, like: !!like }
   }
 
   async upsertPool(req: AuthRequest) {
+    const now = new Date()
     const parameters = new RequestParameters(req)
     const id = parameters.getString('id')
     const s3Project = new S3Project(id)
@@ -110,7 +139,10 @@ export class PoolRouter extends Router {
     const promises: Promise<any>[] = [
       new Pool({
         ...upsertPool,
-        groups: groupList
+        groups: groupList,
+        likes: pool ? pool.likes : 0,
+        created_at: pool ? pool.created_at : now,
+        updated_at: now
       } as any).upsert()
     ]
 

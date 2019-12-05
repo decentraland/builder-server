@@ -40,6 +40,7 @@ export const sortablePoolProperties = {
       'id',
       'title',
       'created_at',
+      'updated_at',
       'likes',
       'parcels',
       'transforms',

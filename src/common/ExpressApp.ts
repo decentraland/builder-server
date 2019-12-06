@@ -19,7 +19,7 @@ export class ExpressApp {
   }
 
   useCORS(origin: string, method: string) {
-    const cors = function (_: any, res: express.Response, next: Function) {
+    const cors = function(_: any, res: express.Response, next: Function) {
       res.setHeader('Access-Control-Allow-Origin', origin)
       res.setHeader('Access-Control-Request-Method', method)
       res.setHeader(

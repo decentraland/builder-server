@@ -210,4 +210,8 @@ if (require.main === module) {
       console.log('All done!')
       process.exit()
     })
+    .catch((err: Error) => {
+      console.error(err)
+      process.exit()
+    })
 }

@@ -29,7 +29,10 @@ export const poolSchema = {
 }
 
 export const searchablePoolProperties = {
-  eq: utils.omit<(keyof PoolAttributes)[]>(poolSchema.properties, ['groups']),
+  eq: utils.omit<(keyof PoolAttributes)[]>(poolSchema.properties, [
+    'groups',
+    'user_id'
+  ]),
   includes: ['groups'] as (keyof PoolAttributes)[]
 }
 

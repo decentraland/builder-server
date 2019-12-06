@@ -11,7 +11,9 @@ import { DeploymentAttributes, deploymentSchema } from './Deployment.types'
 
 const ajv = new Ajv()
 
-const withProjectExists = withModelExists(Project)
+const withProjectExists = withModelExists(Project, 'id', {
+  is_deleted: false
+})
 const withProjectAuthorization = withModelAuthorization(Project)
 const withDeploymentAuthorization = withModelAuthorization(Deployment)
 

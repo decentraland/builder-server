@@ -14,7 +14,10 @@ const ajv = new Ajv()
 
 export class ManifestRouter extends Router {
   mount() {
-    const withProjectExists = withModelExists(Project)
+    const withProjectExists = withModelExists(Project, 'id', {
+      is_deleted: false
+    })
+    const withPublishedProjectExists = withModelExists(Project)
     const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
@@ -42,7 +45,7 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/pools/:id/manifest',
-      withProjectExists,
+      withPublishedProjectExists,
       server.handleRequest(this.getPoolManifest)
     )
 

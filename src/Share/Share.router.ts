@@ -44,11 +44,9 @@ export class ShareRouter extends Router {
     const publicTarget = url.resolve(BUILDER_SHARE_URL, `/b/${type}/${id}`)
     const thumbnail =
       element.thumbnail &&
-      `${BUILDER_SERVER_URL}/v1/projects/${
-        element.id
-      }/media/thumbnail.png?updated_at=${Date.parse(
-        element.updated_at.toString()
-      )}`
+      `${BUILDER_SERVER_URL}/v1/projects/${element.id}/media/${
+        type === 'pool' ? 'preview' : 'thumbnail'
+      }.png?updated_at=${Date.parse(element.updated_at.toString())}`
 
     return res
       .status(200)

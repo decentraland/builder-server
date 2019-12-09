@@ -24,17 +24,23 @@ export class S3Router extends Router {
      */
     this.router.get(
       '/storage/assets/:filename',
-      this.getHandlerForModel(S3Asset)
+      this.getHandlerForModel(S3Asset, true)
     )
   }
 
-  private getHandlerForModel(Model: typeof S3AssetPack | typeof S3Asset) {
+  private getHandlerForModel(
+    Model: typeof S3AssetPack | typeof S3Asset,
+    cache: boolean = false
+  ) {
     return async (req: Request, res: Response) => {
       const filename = server.extractFromReq(req, 'filename')
       const file = await new Model('').readFile(filename)
 
       if (file) {
         res.setHeader('Content-Type', file.ContentType!)
+        if (cache) {
+          res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')
+        }
         return res.end(file.Body)
       } else {
         return res.status(404).send('Could not find file')

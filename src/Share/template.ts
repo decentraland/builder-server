@@ -2,6 +2,15 @@ import escape from 'escape-html'
 import { ProjectAttributes } from '../Project'
 import { PoolAttributes } from '../Pool'
 
+const html = (
+  template: TemplateStringsArray,
+  ...substitutions: any[]
+): string =>
+  String.raw(
+    template,
+    ...substitutions.map(substitution => escape(String(substitution || '')))
+  )
+
 const template = (
   project: Pick<
     ProjectAttributes,
@@ -23,14 +32,5 @@ const template = (
     <body></body>
   </html>
 `
-
-const html = (
-  template: TemplateStringsArray,
-  ...substitutions: any[]
-): string =>
-  String.raw(
-    template,
-    ...substitutions.map(substitution => escape(String(substitution || '')))
-  )
 
 export default template

@@ -30,7 +30,7 @@ import { PoolLike } from '../PoolLike'
 export class PoolRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
-      deleted_at: false
+      is_deleted: false
     })
     const withProjectAuthorization = withModelAuthorization(Project)
 

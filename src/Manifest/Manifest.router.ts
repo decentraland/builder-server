@@ -9,6 +9,7 @@ import { Ownable } from '../Ownable'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
+import { collectStatistics } from './utils'
 
 const ajv = new Ajv()
 
@@ -120,8 +121,10 @@ export class ManifestRouter extends Router {
       project: { ...manifestJSON.project, user_id }
     } as ManifestAttributes
 
+    const statistics = collectStatistics(manifest)
+
     const [project] = await Promise.all([
-      new Project(manifest.project).upsert(),
+      new Project({ ...manifest.project, ...statistics }).upsert(),
       new S3Project(id).saveFile(
         MANIFEST_FILENAME,
         JSON.stringify(manifest),

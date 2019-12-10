@@ -32,12 +32,27 @@ export const poolSchema = {
 }
 
 export const searchablePoolProperties = {
-  eq: utils.omit(poolSchema.properties, ['groups']) as (keyof PoolAttributes)[],
+  eq: utils.omit<(keyof PoolAttributes)[]>(poolSchema.properties, [
+    'groups',
+    'user_id'
+  ]),
   includes: ['groups'] as (keyof PoolAttributes)[]
 }
 
 export const sortablePoolProperties = {
   sort: {
-    by: ['user_id', 'id', 'title', 'created_at'] as (keyof PoolAttributes)[]
+    by: [
+      'user_id',
+      'id',
+      'title',
+      'created_at',
+      'updated_at',
+      'likes',
+      'parcels',
+      'transforms',
+      'scripts',
+      'gltf_shapes',
+      'nft_shapes'
+    ] as (keyof PoolAttributes)[]
   }
 }

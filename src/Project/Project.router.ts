@@ -10,8 +10,6 @@ import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
-import { Deployment } from '../Deployment'
-import { Pool } from '../Pool'
 import { RequestParameters } from '../RequestParameters'
 import {
   SearchableModel,
@@ -40,9 +38,12 @@ const ajv = new Ajv()
 
 export class ProjectRouter extends Router {
   mount() {
-    const withProjectExists = withModelExists(Project, 'id')
+    const withProjectExists = withModelExists(Project, 'id', {
+      is_deleted: false
+    })
     const withProjectExistsAndIsPublic = withModelExists(Project, 'id', {
-      is_public: true
+      is_public: true,
+      is_deleted: false
     })
     const withProjectAuthorization = withModelAuthorization(Project)
 
@@ -132,6 +133,7 @@ export class ProjectRouter extends Router {
       { eq: searchableProjectProperties }
     )
     conditions.addExtras('eq', { user_id })
+    conditions.addExtras('eq', { is_deleted: false })
 
     return searchableProject.search(parameters, conditions)
   }
@@ -139,12 +141,12 @@ export class ProjectRouter extends Router {
   async getProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const user_id = req.auth.sub
-    return Project.findOne({ id, user_id })
+    return Project.findOne({ id, user_id, is_deleted: false })
   }
 
   async getPublicProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return Project.findOne({ id, is_public: true })
+    return Project.findOne({ id, is_public: true, is_deleted: false })
   }
 
   async upsertProject(req: AuthRequest) {
@@ -182,14 +184,7 @@ export class ProjectRouter extends Router {
 
   async deleteProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-
-    await Promise.all([
-      new S3Project(id).delete(),
-      Deployment.delete({ id }),
-      Pool.delete({ id }),
-      Project.delete({ id })
-    ])
-
+    await Project.update({ updated_at: new Date(), is_deleted: true }, { id })
     return true
   }
 

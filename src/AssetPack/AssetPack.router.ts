@@ -25,6 +25,7 @@ const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
 const THUMBNAIL_MIME_TYPES = ['image/png', 'image/jpeg']
 const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
+const DEFAULT_ASSET_PACK_CACHE = env.get('DEFAULT_ASSET_PACK_CACHE', 1440000)
 
 const ajv = new Ajv()
 
@@ -215,7 +216,9 @@ export class AssetPackRouter extends Router {
   }
 
   private async getDefaultAssetPacks() {
-    const aDayPassed = Date.now() - this.lastDefaultAssetPacksFetch > 1440000 // 24 * 60 * 1000
+    const aDayPassed =
+      Date.now() - this.lastDefaultAssetPacksFetch >
+      Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
 
     if (this.defaultAssetPacks.length === 0 || aDayPassed) {
       const defaultAssetPacks = await AssetPack.findByUserIdWithAssets(

@@ -29,7 +29,9 @@ import { PoolLike } from '../PoolLike'
 
 export class PoolRouter extends Router {
   mount() {
-    const withProjectExists = withModelExists(Project)
+    const withProjectExists = withModelExists(Project, 'id', {
+      is_deleted: false
+    })
     const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
@@ -125,7 +127,8 @@ export class PoolRouter extends Router {
       PoolGroup.findByFilters({ ids: groupIds, activeOnly: true })
     ])
 
-    const { is_public, ...upsertPool } = (project || {}) as ProjectAttributes
+    const { is_public, is_deleted, ...upsertPool } = (project ||
+      {}) as ProjectAttributes
 
     const groupList = (pool && pool.groups) || []
     if (groups.length) {

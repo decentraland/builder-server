@@ -80,11 +80,14 @@ async function updateManifestThumbnail(
 }
 
 if (require.main === module) {
-  db
-    .connect()
+  db.connect()
     .then(updateProjectThumbnails)
     .then(() => {
       console.log('All done!')
+      process.exit()
+    })
+    .catch((err: Error) => {
+      console.error(err)
       process.exit()
     })
 }

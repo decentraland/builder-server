@@ -15,6 +15,7 @@ export type ProjectAttributes = {
   entities: number
   created_at: Date
   updated_at: Date
+  is_deleted: boolean
   is_public: boolean
 }
 

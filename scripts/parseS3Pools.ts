@@ -21,5 +21,7 @@ async function main() {
 }
 
 if (require.main === module) {
-  main().then(() => console.log('All done'))
+  main()
+    .then(() => console.log('All done'))
+    .catch((err: Error) => console.error(err))
 }

@@ -20,7 +20,7 @@ export const assetSchema = Object.freeze({
   properties: {
     id: { type: 'string' },
     asset_pack_id: { type: 'string', format: 'uuid' },
-    name: { type: 'string', minLength: 3, maxLength: 20 },
+    name: { type: 'string', minLength: 3, maxLength: 50 },
     model: { type: 'string' },
     script: { type: ['string', 'null'] },
     thumbnail: { type: ['string', 'null'] },

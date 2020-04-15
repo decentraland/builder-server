@@ -4,7 +4,7 @@ export type FullAssetPackAttributes = {
   id: string
   title: string
   thumbnail?: string
-  user_id: string
+  eth_address: string | null
   is_deleted: boolean
   assets: AssetAttributes[]
   created_at: Date
@@ -18,7 +18,7 @@ export const assetPackSchema = Object.freeze({
     id: { type: 'string', format: 'uuid' },
     title: { type: 'string', minLength: 3, maxLength: 20 },
     thumbnail: { type: ['string', 'null'] },
-    user_id: { type: ['string', 'null'] },
+    eth_address: { type: ['string', 'null'] },
     assets: { items: assetSchema, additionalProperties: false },
     created_at: { type: ['string', 'null'] },
     updated_at: { type: ['string', 'null'] }

@@ -2,11 +2,11 @@ import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
 import {
-  withAuthentication,
   withModelExists,
   AuthRequest,
   withPermissiveAuthentication,
-  PermissiveAuthRequest
+  PermissiveAuthRequest,
+  withAuthentication
 } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
@@ -79,12 +79,12 @@ export class PoolRouter extends Router {
       searchablePoolProperties
     )
 
-    const user_id = requestParameters.get('user_id', null)
-    if (user_id && req.auth) {
-      if (user_id === 'me') {
-        conditions.addExtras('eq', { user_id: req.auth.sub })
-      } else if (user_id) {
-        conditions.addExtras('eq', { user_id })
+    const eth_address = requestParameters.get('eth_address', null)
+    if (eth_address && req.auth && req.auth.ethAddress) {
+      if (eth_address === 'me') {
+        conditions.addExtras('eq', { eth_address: req.auth.ethAddress })
+      } else if (eth_address) {
+        conditions.addExtras('eq', { eth_address })
       }
     }
 
@@ -98,16 +98,20 @@ export class PoolRouter extends Router {
 
   async getPool(req: PermissiveAuthRequest) {
     const pool_id = server.extractFromReq(req, 'id')
-    const user_id = (req.auth && req.auth.sub) || null
+    const eth_address = (req.auth && req.auth.ethAddress) || null
 
-    const likeCount = user_id
-      ? PoolLike.count({ pool_id, user_id })
+    console.log('count likes for', pool_id, 'by', eth_address)
+
+    const likeCount = eth_address
+      ? PoolLike.count({ pool_id, eth_address })
       : Promise.resolve(0)
 
     const [pool, like] = await Promise.all([
       Pool.findOne({ id: pool_id }),
       likeCount
     ])
+
+    console.log('total', like)
 
     return { ...pool, like: !!like }
   }
@@ -125,7 +129,7 @@ export class PoolRouter extends Router {
       s3Project.readFileBody(MANIFEST_FILENAME),
       Pool.findOne<PoolAttributes>(id),
       PoolGroup.findByFilters({ ids: groupIds, activeOnly: true })
-    ])
+    ] as const)
 
     const { is_public, is_deleted, ...upsertPool } = (project ||
       {}) as ProjectAttributes

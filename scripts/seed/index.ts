@@ -41,10 +41,10 @@ type DefaultAssetResponse = {
   }
 }
 
-const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
-if (!DEFAULT_USER_ID) {
+const DEFAULT_ETH_ADDRESS = env.get('DEFAULT_ETH_ADDRESS', '')
+if (!DEFAULT_ETH_ADDRESS) {
   throw new Error(
-    'You need to set a DEFAULT_USER_ID on your env to set as the user_id of each asset pack'
+    'You need to set a DEFAULT_ETH_ADDRESS on your env to set as the eth_address of each asset pack'
   )
 }
 
@@ -69,13 +69,15 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
         const attributes = {
           ...utils.omit(defaultAssetPack, ['url']),
           thumbnail,
-          user_id: DEFAULT_USER_ID,
+          eth_address: DEFAULT_ETH_ADDRESS,
           created_at: now,
           updated_at: now
         } as AssetPackAttributes
 
         console.log(
-          `Upserting asset pack ${attributes.id} for user ${attributes.user_id}`
+          `Upserting asset pack ${attributes.id} for user ${
+            attributes.eth_address
+          }`
         )
 
         return new AssetPack(attributes).upsert()

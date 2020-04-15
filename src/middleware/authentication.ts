@@ -1,67 +1,79 @@
 import { Request, Response, NextFunction } from 'express'
-import { default as expressJwt } from 'express-jwt'
-import jwksRsa from 'jwks-rsa'
+import { WebsocketProvider } from 'web3x/providers/ws'
+import { AuthLink, Authenticator } from 'dcl-crypto'
 import { server } from 'decentraland-server'
-import { env } from 'decentraland-commons'
+import { STATUS_CODES } from '../common/HTTPError'
 
-const AUTH0_DOMAIN = env.get('AUTH0_DOMAIN')
-if (!AUTH0_DOMAIN) {
-  console.log('Auth0 domain is missing, will use default user id')
-}
+const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 
 export type AuthRequest = Request & {
   auth: Record<string, string | number | boolean> & {
-    sub: string
+    ethAddress: string
   }
 }
 
 export type PermissiveAuthRequest = Request & {
-  auth?: Record<string, string | number | boolean> & {
-    sub: string
+  auth: Record<string, string | number | boolean> & {
+    ethAddress: string | null
   }
 }
 
-const jwt = getJWTMiddleware()
+function extractIndex(header: string) {
+  return parseInt(header.substring(AUTH_CHAIN_HEADER_PREFIX.length), 10)
+}
 
-function getAuthenticationMiddleware() {
-  return (req: Request, res: Response, next: NextFunction) =>
-    jwt(req, res, err => {
-      if (err && err.name === 'UnauthorizedError') {
-        res
-          .status(err.status)
-          .json(server.sendError({ error: err.message }, 'Unauthenticated'))
-        return
+function buildAuthChain(req: Request) {
+  return Object.keys(req.headers)
+    .filter(header => header.includes(AUTH_CHAIN_HEADER_PREFIX))
+    .sort((a, b) => (extractIndex(a) > extractIndex(b) ? 1 : -1))
+    .map(header => JSON.parse(req.headers[header] as string) as AuthLink)
+}
+
+const provider = new WebsocketProvider('wss://mainnet.infura.io/ws')
+
+const getAuthenticationMiddleware = <
+  T extends AuthRequest | PermissiveAuthRequest = AuthRequest
+>(
+  isPermissive = false
+) => async (req: Request, res: Response, next: NextFunction) => {
+  const authChain = buildAuthChain(req)
+  let ethAddress: string | null = null
+  let errorMessage = null
+  if (authChain.length === 0) {
+    errorMessage = `Invalid auth chain`
+  } else {
+    ethAddress = authChain[0].payload
+    if (!ethAddress) {
+      errorMessage = 'Missing ETH address in auth chain'
+    } else {
+      try {
+        const endpoint = (req.method + ':' + req.url).toLowerCase()
+        const result = await Authenticator.validateSignature(
+          endpoint,
+          authChain,
+          provider
+        )
+        if (!result.ok) {
+          throw new Error(result.message)
+        }
+      } catch (error) {
+        errorMessage = error.message
       }
-      next(err)
-    })
-}
-
-function getPermissiveAuthenticationMiddleware() {
-  return (req: Request, res: Response, next: NextFunction) =>
-    jwt(req, res, () => next())
-}
-
-function getJWTMiddleware() {
-  if (!AUTH0_DOMAIN) {
-    return (req: Request, _: Response, next: NextFunction) => {
-      const authRequest = req as AuthRequest
-      authRequest.auth = { sub: 'fakeUserId' }
-      next()
     }
   }
 
-  return expressJwt({
-    secret: jwksRsa.expressJwtSecret({
-      cache: true,
-      rateLimit: true,
-      jwksRequestsPerMinute: 5,
-      jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`
-    }),
-    requestProperty: 'auth',
-    issuer: `https://${AUTH0_DOMAIN}/`,
-    algorithms: ['RS256']
-  })
+  if (errorMessage && !isPermissive) {
+    res
+      .status(STATUS_CODES.unauthorized)
+      .json(server.sendError({ message: errorMessage }, 'Unauthenticated'))
+  } else {
+    const cryptoAuthReq = req as T
+    cryptoAuthReq.auth = { ethAddress } as PermissiveAuthRequest['auth']
+    next()
+  }
 }
 
-export const withPermissiveAuthentication = getPermissiveAuthenticationMiddleware()
 export const withAuthentication = getAuthenticationMiddleware()
+export const withPermissiveAuthentication = getAuthenticationMiddleware<
+  PermissiveAuthRequest
+>(true)

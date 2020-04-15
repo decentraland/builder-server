@@ -26,10 +26,7 @@ export class ExpressApp {
         'Access-Control-Allow-Methods',
         'OPTIONS, GET, POST, PUT, DELETE'
       )
-      res.setHeader(
-        'Access-Control-Allow-Headers',
-        'Content-Type,Authorization'
-      )
+      res.setHeader('Access-Control-Allow-Headers', '*')
       res.setHeader(
         'Access-Control-Expose-Headers',
         'ETag, Cache-Control, Content-Language, Content-Type, Expires, Last-Modified, Pragma'

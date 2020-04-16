@@ -91,12 +91,7 @@ export class AssetPackRouter extends Router {
   getAssetPacks = async (req: AuthRequest) => {
     const ethAddress = req.auth ? req.auth.ethAddress : ''
     let assetPacks: FullAssetPackAttributes[] = []
-    console.log(
-      ethAddress,
-      DEFAULT_ETH_ADDRESS,
-      !ethAddress,
-      ethAddress !== DEFAULT_ETH_ADDRESS
-    )
+
     // Get default asset packs
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
       const defaultAssetPacks = await this.getDefaultAssetPacks()
@@ -237,9 +232,7 @@ export class AssetPackRouter extends Router {
       Date.now() - this.lastDefaultAssetPacksFetch >
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
 
-    console.log(this.defaultAssetPacks.length, aDayPassed)
     if (this.defaultAssetPacks.length === 0 || aDayPassed) {
-      console.log('default', DEFAULT_ETH_ADDRESS)
       const defaultAssetPacks = await AssetPack.findByEthAddressWithAssets(
         DEFAULT_ETH_ADDRESS
       )

@@ -29,7 +29,6 @@ export class MigrationRouter extends Router {
   async migrate(req: AuthRequest) {
     const user_id = req.authLegacy!.sub
     const eth_address = req.auth.ethAddress
-    console.log('migrate', user_id, eth_address)
 
     // migrate asset packs
     const assetPacks = await AssetPack.update({ eth_address }, { user_id })

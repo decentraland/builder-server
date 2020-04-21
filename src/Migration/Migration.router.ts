@@ -4,7 +4,8 @@ import { Router } from '../common/Router'
 import {
   withAuthentication,
   AuthRequest,
-  withAuthenticationLegacy
+  withAuthenticationLegacy,
+  AuthRequestLegacy
 } from '../middleware'
 import { AssetPack } from '../AssetPack'
 import { Deployment } from '../Deployment'
@@ -14,6 +15,15 @@ import { Project } from '../Project'
 
 export class MigrationRouter extends Router {
   mount() {
+    /**
+     * Retrieve projects to be migrated
+     */
+    this.router.get(
+      '/migrate',
+      withAuthenticationLegacy,
+      server.handleRequest(this.fetchProjectsToMigrate)
+    )
+
     /**
      * Performs a migration
      */
@@ -31,7 +41,10 @@ export class MigrationRouter extends Router {
     const eth_address = req.auth.ethAddress
 
     // migrate asset packs
-    const assetPacks = await AssetPack.update({ eth_address }, { user_id })
+    const assetPacks = await AssetPack.update(
+      { eth_address },
+      { user_id, is_deleted: false }
+    )
 
     // migrate deployments
     const deployments = await Deployment.update({ eth_address }, { user_id })
@@ -43,7 +56,10 @@ export class MigrationRouter extends Router {
     const pools = await Pool.update({ eth_address }, { user_id })
 
     // migrate projects
-    const projects = await Project.update({ eth_address }, { user_id })
+    const projects = await Project.update(
+      { eth_address },
+      { user_id, is_deleted: false }
+    )
 
     const result = {
       assetPacks,
@@ -61,5 +77,11 @@ export class MigrationRouter extends Router {
       }),
       {} as Record<string, number>
     )
+  }
+
+  async fetchProjectsToMigrate(req: AuthRequestLegacy) {
+    const user_id = req.auth.sub
+    const projects = await Project.find({ user_id, is_deleted: false })
+    return projects
   }
 }

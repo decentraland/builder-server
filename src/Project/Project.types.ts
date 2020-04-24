@@ -4,7 +4,7 @@ export type ProjectAttributes = {
   description?: string
   thumbnail?: string
   scene_id: string
-  user_id: string
+  eth_address: string | null
   cols: number
   rows: number
   parcels: number
@@ -39,7 +39,7 @@ export const projectSchema = Object.freeze({
     description: { type: 'string' },
     thumbnail: { type: ['string', 'null'] },
     scene_id: { type: 'string', format: 'uuid' },
-    user_id: { type: ['string', 'null'] },
+    eth_address: { type: ['string', 'null'] },
     cols: { type: 'number' },
     rows: { type: 'number' },
     is_public: { type: ['boolean', 'null'] },

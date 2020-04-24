@@ -44,13 +44,13 @@ export class PoolLikeRouter extends Router {
   async countLikes(req: AuthRequest) {
     const parameters = new RequestParameters(req)
     const pool_id = parameters.getString('id')
-    const currentUserId = (req.auth && req.auth.sub) || null
+    const currentEthAddress = (req.auth && req.auth.ethAddress) || null
 
     const filters: PoolLikeCount = { pool_id }
-    if (parameters.has('userId')) {
-      const userId = parameters.getString('userId')
-      if (userId === 'me' || userId === currentUserId) {
-        filters.user_id = req.auth.sub
+    if (parameters.has('address')) {
+      const eth_address = parameters.getString('address')
+      if (eth_address === 'me' || eth_address === currentEthAddress) {
+        filters.eth_address = req.auth.ethAddress
       } else {
         // TODO: allow to filter by any users
         return 0
@@ -63,10 +63,10 @@ export class PoolLikeRouter extends Router {
   async likePool(req: AuthRequest) {
     const parameters = new RequestParameters(req)
     const pool_id = parameters.getString('id')
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
     const [exists, currentLikes] = await Promise.all([
-      PoolLike.count({ pool_id, user_id }),
+      PoolLike.count({ pool_id, eth_address }),
       PoolLike.count({ pool_id })
     ])
 
@@ -75,7 +75,7 @@ export class PoolLikeRouter extends Router {
     }
 
     const likes = currentLikes + 1
-    await PoolLike.create({ pool_id, user_id, created_at: new Date() })
+    await PoolLike.create({ pool_id, eth_address, created_at: new Date() })
     await Pool.update({ likes }, { id: pool_id })
     return likes
   }
@@ -83,10 +83,10 @@ export class PoolLikeRouter extends Router {
   async dislikePool(req: AuthRequest) {
     const parameters = new RequestParameters(req)
     const pool_id = parameters.getString('id')
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
     const [exists, currentLikes] = await Promise.all([
-      PoolLike.count({ pool_id, user_id }),
+      PoolLike.count({ pool_id, eth_address }),
       PoolLike.count({ pool_id })
     ])
 
@@ -95,7 +95,7 @@ export class PoolLikeRouter extends Router {
     }
 
     const likes = Math.max(currentLikes - 1, 0)
-    await PoolLike.delete({ pool_id, user_id })
+    await PoolLike.delete({ pool_id, eth_address })
     await Pool.update({ likes }, { id: pool_id })
     return likes
   }

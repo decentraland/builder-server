@@ -6,9 +6,10 @@ import path from 'path'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
+import { withModelExists } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, getFileUploader, ACL } from '../S3'
+import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { RequestParameters } from '../RequestParameters'
 import {
@@ -117,7 +118,7 @@ export class ProjectRouter extends Router {
   }
 
   async getProjects(req: AuthRequest) {
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
     // TODO: This is the same code as Pool.router#getPools
     const requestParameters = new RequestParameters(req)
@@ -132,7 +133,7 @@ export class ProjectRouter extends Router {
       requestParameters,
       { eq: searchableProjectProperties }
     )
-    conditions.addExtras('eq', { user_id })
+    conditions.addExtras('eq', { eth_address })
     conditions.addExtras('eq', { is_deleted: false })
 
     return searchableProject.search(parameters, conditions)
@@ -140,8 +141,8 @@ export class ProjectRouter extends Router {
 
   async getProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth.sub
-    return Project.findOne({ id, user_id, is_deleted: false })
+    const eth_address = req.auth.ethAddress
+    return Project.findOne({ id, eth_address, is_deleted: false })
   }
 
   async getPublicProject(req: AuthRequest) {
@@ -152,7 +153,7 @@ export class ProjectRouter extends Router {
   async upsertProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const projectJSON: any = server.extractFromReq(req, 'project')
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
     const validator = ajv.compile(projectSchema)
     validator(projectJSON)
@@ -161,16 +162,16 @@ export class ProjectRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    const canUpsert = await new Ownable(Project).canUpsert(id, user_id)
+    const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
     if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
-        { id, user_id },
+        { id, eth_address },
         STATUS_CODES.unauthorized
       )
     }
 
-    const attributes = { ...projectJSON, user_id } as ProjectAttributes
+    const attributes = { ...projectJSON, eth_address } as ProjectAttributes
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL project ids do not match', {

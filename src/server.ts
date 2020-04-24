@@ -14,6 +14,7 @@ import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
 import { ShareRouter } from './Share'
+import { MigrationRouter } from './Migration'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
@@ -40,6 +41,7 @@ new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
 new S3Router(app).mount()
 new ShareRouter(app).mount()
+new MigrationRouter(app).mount()
 
 /* Start the server only if run directly */
 if (require.main === module) {

@@ -11,8 +11,10 @@ export class AssetPack extends Model<AssetPackAttributes> {
   }
 
   static async delete(conditions: Partial<AssetPackAttributes>) {
-    if (!conditions.user_id) {
-      throw new Error('You need to supply an user_id to delete an asset pack')
+    if (!conditions.eth_address) {
+      throw new Error(
+        'You need to supply an eth_address to delete an asset pack'
+      )
     }
     return this.update({ is_deleted: true }, conditions)
   }
@@ -21,12 +23,12 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return this.db.delete(this.tableName, conditions)
   }
 
-  static async findByUserIdWithAssets(userId: string | undefined) {
+  static async findByEthAddressWithAssets(ethAddress: string | undefined) {
     return this.query<FullAssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)}
         WHERE is_deleted = FALSE
-          AND user_id = ${userId}`)
+          AND eth_address = ${ethAddress}`)
   }
 
   static async findOneWithAssets(id: string) {
@@ -38,14 +40,22 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return assetPacks[0]
   }
 
-  static async isVisible(id: string, userIds: string[] = []) {
+  static async isVisible(id: string, ethAddresses: string[] = []) {
     const counts = await this.query(SQL`
       SELECT COUNT(*) as count
         FROM ${SQL.raw(this.tableName)} as asset_packs
         WHERE is_deleted = FALSE
           AND id = ${id}
-          AND user_id = ANY(${userIds})`)
+          AND eth_address = ANY(${ethAddresses})`)
 
     return counts[0].count > 0
+  }
+
+  static async LEGACY_findByUserIdWithAssets(userId: string | undefined) {
+    return this.query<FullAssetPackAttributes>(SQL`
+      SELECT *, ${AssetQueries.selectFromAssetPack()}
+        FROM ${SQL.raw(this.tableName)}
+        WHERE is_deleted = FALSE
+          AND user_id = ${userId}`)
   }
 }

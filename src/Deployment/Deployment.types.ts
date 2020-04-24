@@ -1,6 +1,6 @@
 export type DeploymentAttributes = {
   id: string
-  user_id: string
+  eth_address: string | null
   last_published_cid: string | null
   is_dirty: boolean
   x: number
@@ -18,7 +18,7 @@ export const deploymentSchema = Object.freeze({
     x: { type: 'number' },
     y: { type: 'number' },
     rotation: { type: 'string', pattern: 'north|east|south|west' },
-    user_id: { type: ['string', 'null'] },
+    eth_address: { type: ['string', 'null'] },
     created_at: { type: ['string', 'null'] },
     updated_at: { type: ['string', 'null'] }
   },

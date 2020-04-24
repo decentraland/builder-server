@@ -64,20 +64,20 @@ export class DeploymentRouter extends Router {
   }
 
   async getDeployments(req: AuthRequest) {
-    const user_id = req.auth.sub
-    return Deployment.find<DeploymentAttributes>({ user_id })
+    const eth_address = req.auth.ethAddress
+    return Deployment.find<DeploymentAttributes>({ eth_address })
   }
 
   async getProjectDeployment(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth.sub
-    return Deployment.findOne<DeploymentAttributes>({ id, user_id })
+    const eth_address = req.auth.ethAddress
+    return Deployment.findOne<DeploymentAttributes>({ id, eth_address })
   }
 
   async upsertDeployment(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const deploymentJSON: any = server.extractFromReq(req, 'deployment')
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
     const validator = ajv.compile(deploymentSchema)
     validator(deploymentJSON)
@@ -86,7 +86,10 @@ export class DeploymentRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    const attributes = { ...deploymentJSON, user_id } as DeploymentAttributes
+    const attributes = {
+      ...deploymentJSON,
+      eth_address
+    } as DeploymentAttributes
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL deployment ids do not match', {
@@ -100,9 +103,9 @@ export class DeploymentRouter extends Router {
 
   async deleteDeployment(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
-    await Deployment.delete({ id, user_id })
+    await Deployment.delete({ id, eth_address })
 
     return true
   }

@@ -98,7 +98,7 @@ export class ManifestRouter extends Router {
   async upsertManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const manifestJSON: any = server.extractFromReq(req, 'manifest')
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
     const validator = ajv.compile(manifestSchema)
     validator(manifestJSON)
@@ -107,18 +107,18 @@ export class ManifestRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    const canUpsert = await new Ownable(Project).canUpsert(id, user_id)
+    const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
     if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
-        { id, user_id },
+        { id, eth_address },
         STATUS_CODES.unauthorized
       )
     }
 
     const manifest = {
       ...manifestJSON,
-      project: { ...manifestJSON.project, user_id }
+      project: { ...manifestJSON.project, eth_address }
     } as ManifestAttributes
 
     const statistics = collectStatistics(manifest)

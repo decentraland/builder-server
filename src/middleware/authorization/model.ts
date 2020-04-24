@@ -3,24 +3,25 @@ import { server } from 'decentraland-server'
 
 import { AuthRequest } from '../authentication'
 import { Ownable, OwnableModel } from '../../Ownable'
+import { STATUS_CODES } from '../../common/HTTPError'
 
 export function withModelAuthorization(Model: OwnableModel, param = 'id') {
   return async (req: Request, res: Response, next: NextFunction) => {
     const id = server.extractFromReq(req, param)
-    const user_id = (req as AuthRequest).auth.sub
+    const ethAddress = (req as AuthRequest).auth.ethAddress
 
-    if (!user_id) {
+    if (!ethAddress) {
       throw new Error(
         'Unauthenticated request. You need to use the authentication middleware before this one'
       )
     }
 
-    const isOwnedByUser = await new Ownable(Model).isOwnedBy(id, user_id)
+    const isOwnedByUser = await new Ownable(Model).isOwnedBy(id, ethAddress)
     if (!isOwnedByUser) {
       res.setHeader('Content-Type', 'application/json')
-      res.status(401).json({
+      res.status(STATUS_CODES.unauthorized).json({
         ok: false,
-        error: `Unauthorized user ${user_id} for ${Model.tableName} ${id}`
+        error: `Unauthorized user ${ethAddress} for ${Model.tableName} ${id}`
       })
       return
     }

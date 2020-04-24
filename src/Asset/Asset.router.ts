@@ -4,15 +4,12 @@ import { utils } from 'decentraland-commons'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import {
-  withAuthentication,
-  withModelExists,
-  asMiddleware
-} from '../middleware'
+import { withModelExists, asMiddleware } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, S3Asset, getFileUploader, ACL } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'
+import { withAuthentication } from '../middleware/authentication'
 
 export class AssetRouter extends Router {
   assetFilesRequestHandler:

@@ -4,12 +4,7 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import {
-  withAuthentication,
-  withPermissiveAuthentication,
-  withModelExists,
-  AuthRequest
-} from '../middleware'
+import { withModelExists } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
@@ -20,11 +15,16 @@ import {
   FullAssetPackAttributes,
   assetPackSchema
 } from './AssetPack.types'
+import {
+  withPermissiveAuthentication,
+  withAuthentication,
+  AuthRequest
+} from '../middleware/authentication'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
 const THUMBNAIL_MIME_TYPES = ['image/png', 'image/jpeg']
-const DEFAULT_USER_ID = env.get('DEFAULT_USER_ID', '')
+const DEFAULT_ETH_ADDRESS = env.get('DEFAULT_ETH_ADDRESS', '')
 const DEFAULT_ASSET_PACK_CACHE = env.get('DEFAULT_ASSET_PACK_CACHE', 1440000)
 
 const ajv = new Ajv()
@@ -89,27 +89,39 @@ export class AssetPackRouter extends Router {
   }
 
   getAssetPacks = async (req: AuthRequest) => {
-    const user_id = req.auth ? req.auth.sub : ''
+    const ethAddress = req.auth ? req.auth.ethAddress : ''
+    let assetPacks: FullAssetPackAttributes[] = []
 
-    const defaultAssetPacks = await this.getDefaultAssetPacks()
-    const userAssetPacks =
-      user_id && user_id !== DEFAULT_USER_ID
-        ? await AssetPack.findByUserIdWithAssets(user_id)
-        : []
+    // Get default asset packs
+    if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
+      const defaultAssetPacks = await this.getDefaultAssetPacks()
+      assetPacks = [...assetPacks, ...defaultAssetPacks]
+    }
 
-    return defaultAssetPacks.concat(userAssetPacks)
+    // Get user asset packs
+    if (ethAddress) {
+      const userAssetPacks = await AssetPack.findByEthAddressWithAssets(
+        ethAddress
+      )
+      assetPacks = [...assetPacks, ...userAssetPacks]
+    }
+
+    return assetPacks
   }
 
   getAssetPack = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth ? req.auth.sub : ''
+    const eth_address = req.auth ? req.auth.ethAddress : ''
 
-    const isVisible = await AssetPack.isVisible(id, [user_id, DEFAULT_USER_ID])
+    const isVisible = await AssetPack.isVisible(id, [
+      eth_address,
+      DEFAULT_ETH_ADDRESS
+    ])
 
     if (!isVisible) {
       throw new HTTPError(
         'Unauthorized user',
-        { user_id },
+        { eth_address },
         STATUS_CODES.unauthorized
       )
     }
@@ -119,7 +131,7 @@ export class AssetPackRouter extends Router {
     if (!assetPack) {
       throw new HTTPError(
         'Asset pack not found',
-        { id, user_id },
+        { id, eth_address },
         STATUS_CODES.notFound
       )
     }
@@ -130,7 +142,7 @@ export class AssetPackRouter extends Router {
   async upsertAssetPack(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const assetPackJSON: any = server.extractFromReq(req, 'assetPack')
-    const user_id = req.auth.sub
+    const eth_address = req.auth.ethAddress
 
     const validator = ajv.compile(assetPackSchema)
     validator(assetPackJSON)
@@ -139,9 +151,9 @@ export class AssetPackRouter extends Router {
       throw new HTTPError('Invalid schema', validator.errors)
     }
 
-    const canUpsert = await new Ownable(AssetPack).canUpsert(id, user_id)
+    const canUpsert = await new Ownable(AssetPack).canUpsert(id, eth_address)
     if (!canUpsert) {
-      throw new HTTPError('Unauthorized user', { id, user_id })
+      throw new HTTPError('Unauthorized user', { id, eth_address })
     }
 
     const { assets } = utils.pick<Pick<FullAssetPackAttributes, 'assets'>>(
@@ -150,7 +162,7 @@ export class AssetPackRouter extends Router {
     )
     const attributes = {
       ...utils.omit(assetPackJSON, ['assets']),
-      user_id
+      eth_address
     } as AssetPackAttributes
 
     if (id !== attributes.id) {
@@ -184,8 +196,8 @@ export class AssetPackRouter extends Router {
 
   async deleteAssetPack(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const user_id = req.auth.sub
-    await AssetPack.delete({ id, user_id })
+    const eth_address = req.auth.ethAddress
+    await AssetPack.delete({ id, eth_address })
     return true
   }
 
@@ -221,8 +233,8 @@ export class AssetPackRouter extends Router {
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
 
     if (this.defaultAssetPacks.length === 0 || aDayPassed) {
-      const defaultAssetPacks = await AssetPack.findByUserIdWithAssets(
-        DEFAULT_USER_ID
+      const defaultAssetPacks = await AssetPack.findByEthAddressWithAssets(
+        DEFAULT_ETH_ADDRESS
       )
       this.defaultAssetPacks = this.sanitize(defaultAssetPacks)
       this.lastDefaultAssetPacksFetch = Date.now()

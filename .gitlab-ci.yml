@@ -2,11 +2,11 @@ image: docker:latest
 
 services:
   - docker:dind
-  
+
 before_script:
   - docker info
 
-docker-build-master:
+docker-build-release:
   image: docker:latest
   stage: build
   services:
@@ -33,3 +33,12 @@ docker-build:
     - docker push "$CI_REGISTRY_IMAGE:$CI_COMMIT_REF_SLUG"
   except:
     - release
+
+deploy-infra:
+  stage: deploy
+  image: decentraland/ci-node:latest
+  script:
+    - dcl-lock-sync
+    - cd .ci && npm install && dcl-up services-builder
+    - dcl-sync-release
+    - dcl-announce-docker-build

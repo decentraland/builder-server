@@ -3,9 +3,6 @@ image: docker:latest
 services:
   - docker:dind
 
-before_script:
-  - docker info
-
 docker-build-release:
   image: docker:latest
   stage: build

@@ -1,7 +1,7 @@
-import { createBucketWithUser } from "../../lib/createBucketWithUser";
-import { createFargateTask } from "../../lib/createFargateTask";
-import { database } from "../../lib/database";
-import { env, envTLD } from "../../lib/domain";
+import { createBucketWithUser } from "dcl-ops-lib/createBucketWithUser";
+import { createFargateTask } from "dcl-ops-lib/createFargateTask";
+import { database } from "dcl-ops-lib/database";
+import { env, envTLD } from "dcl-ops-lib/domain";
 
 export = async function main() {
   const db = database("builder");

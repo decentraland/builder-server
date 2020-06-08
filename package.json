@@ -36,6 +36,7 @@
     "aws-sdk": "^2.401.0",
     "body-parser": "^1.18.3",
     "dcl-crypto": "^2.1.0",
+    "dcl-ops-lib": "^1.0.1",
     "decentraland-commons": "^5.1.0",
     "decentraland-server": "^2.10.0",
     "escape-html": "^1.0.3",

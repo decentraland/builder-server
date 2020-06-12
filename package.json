@@ -9,7 +9,7 @@
     "build": "tsc -p tsconfig.json",
     "watch:build": "tsc -p tsconfig.json --watch",
     "start": "node ./dist/src/server.js",
-    "migrate": "./migrations/migrate.ts",
+    "migrate": "ts-node ./migrations/migrate.ts",
     "seed": "cp -r ./scripts/seed/*_data ./dist/scripts/seed && node ./dist/scripts/seed/index.js",
     "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js"
   },

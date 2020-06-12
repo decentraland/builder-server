@@ -8,7 +8,7 @@ export = async function main() {
 
   const connectionString = db.connectionString;
 
-  const revision = "ff55a6c3c1f4ae644753c4fe71dcc0a17e64264c";
+  const revision = process.env['CI_COMMIT_SHA'];
   const image = `decentraland/builder-server:${revision}`;
 
   const userAndBucket = createBucketWithUser(`${env}-builder`);
@@ -31,8 +31,8 @@ export = async function main() {
       { name: "CORS_METHOD", value: "*" },
       { name: "AWS_ACCESS_KEY", value: userAndBucket.accessKeyId },
       { name: "CONNECTION_STRING", value: db.connectionString },
+      { name: "DEFAULT_USER_ID", value: "email|5dee8964f0099a1255367a35" },
       { name: "AUTH0_DOMAIN", value: AUTH0_DOMAIN },
-      { name: "DEFAULT_USER_ID", value: "email|5deab040f0099a1255a4d1bc" },
       { name: "DEFAULT_ASSET_PACK_CACHE", value: "60000" },
       { name: "BUILDER_URL", value: "https://builder.decentraland." + envTLD },
       { name: "IMAGE", value: image },

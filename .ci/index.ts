@@ -4,7 +4,7 @@ import { database } from "dcl-ops-lib/database";
 import { env, envTLD } from "dcl-ops-lib/domain";
 
 export = async function main() {
-  const db = database("builder");
+  const db = database(`${env}-builder`);
 
   const connectionString = db.connectionString;
 
@@ -12,6 +12,10 @@ export = async function main() {
   const image = `decentraland/builder-server:${revision}`;
 
   const userAndBucket = createBucketWithUser(`${env}-builder`);
+
+  const AUTH0_DOMAIN = env === 'prd' ? 'decentraland.auth0.com'
+    : env === 'stg' ? 'dcl-stg.auth0.com'
+    : 'dcl-test.auth0.com'
 
   const builderApi = await createFargateTask(
     `${env}-builder-api`,
@@ -27,7 +31,7 @@ export = async function main() {
       { name: "CORS_METHOD", value: "*" },
       { name: "AWS_ACCESS_KEY", value: userAndBucket.accessKeyId },
       { name: "CONNECTION_STRING", value: db.connectionString },
-      { name: "AUTH0_DOMAIN", value: "dcl-test.auth0.com" },
+      { name: "AUTH0_DOMAIN", value: AUTH0_DOMAIN },
       { name: "DEFAULT_USER_ID", value: "email|5deab040f0099a1255a4d1bc" },
       { name: "DEFAULT_ASSET_PACK_CACHE", value: "60000" },
       { name: "BUILDER_URL", value: "https://builder.decentraland." + envTLD },

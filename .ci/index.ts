@@ -4,26 +4,26 @@ import { database } from "dcl-ops-lib/database";
 import { env, envTLD } from "dcl-ops-lib/domain";
 
 export = async function main() {
-  const db = database(`${env}-builder`);
+  const db = database(`builder`);
 
   const connectionString = db.connectionString;
 
   const revision = process.env['CI_COMMIT_SHA'];
   const image = `decentraland/builder-server:${revision}`;
 
-  const userAndBucket = createBucketWithUser(`${env}-builder`);
+  const userAndBucket = createBucketWithUser(`builder-${env}`);
 
   const AUTH0_DOMAIN = env === 'prd' ? 'decentraland.auth0.com'
     : env === 'stg' ? 'dcl-stg.auth0.com'
     : 'dcl-test.auth0.com'
 
   const builderApi = await createFargateTask(
-    `${env}-builder-api`,
+    `builder-api`,
     image,
     5000,
     [
-      { name: "hostname", value: `${env}-builder-server` },
-      { name: "name", value: `${env}-builder-server` },
+      { name: "hostname", value: `builder-server-${env}` },
+      { name: "name", value: `builder-server-${env}` },
       { name: "NODE_ENV", value: "production" },
       { name: "API_VERSION", value: "v1" },
       { name: "SERVER_PORT", value: "5000" },

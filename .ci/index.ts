@@ -60,7 +60,7 @@ export = async function main() {
         path: '/v1/assetPacks',
         interval: 90,
         timeout: 5,
-        unhealthyThreshold: 8
+        unhealthyThreshold: 5
       },
     }
   )

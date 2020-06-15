@@ -57,8 +57,10 @@ export = async function main() {
     'builder-api.decentraland.' + envTLD,
     {
       healthCheck: {
-        path: '/v1/assetPacks'
-      }
+        path: '/v1/assetPacks',
+        timeout: 30,
+        unhealthyThreshold: 10
+      },
     }
   )
 

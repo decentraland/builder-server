@@ -58,8 +58,9 @@ export = async function main() {
     {
       healthCheck: {
         path: '/v1/assetPacks',
-        timeout: 30,
-        unhealthyThreshold: 10
+        interval: 90,
+        timeout: 5,
+        unhealthyThreshold: 8
       },
     }
   )

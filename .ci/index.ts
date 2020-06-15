@@ -11,7 +11,7 @@ export = async function main() {
   const revision = process.env['CI_COMMIT_SHA'];
   const image = `decentraland/builder-server:${revision}`;
 
-  const userAndBucket = createBucketWithUser(`builder-${env}`);
+  const userAndBucket = createBucketWithUser(`builder-assetpacks-${env}`);
 
   const AUTH0_DOMAIN = env === 'prd' ? 'decentraland.auth0.com'
     : env === 'stg' ? 'dcl-stg.auth0.com'

@@ -17,8 +17,8 @@ export = async function main() {
     env === 'prd'
       ? 'decentraland.auth0.com'
       : env === 'stg'
-      ? 'dcl-stg.auth0.com'
-      : 'dcl-test.auth0.com'
+        ? 'dcl-stg.auth0.com'
+        : 'dcl-test.auth0.com'
 
   const builderApi = await createFargateTask(
     `builder-api`,
@@ -35,7 +35,7 @@ export = async function main() {
       { name: 'AWS_ACCESS_KEY', value: userAndBucket.accessKeyId },
       { name: 'CONNECTION_STRING', value: db.connectionString },
       { name: 'DEFAULT_USER_ID', value: 'email|5dee8964f0099a1255367a35' },
-      { name: 'AUTH0_DOMAIN', value: AUTH0_DOMAIN },
+      { name: 'AUTH0_DOMAIN', value: 'decentraland.auth0.com' },
       { name: 'DEFAULT_ASSET_PACK_CACHE', value: '60000' },
       { name: 'BUILDER_URL', value: 'https://builder.decentraland.' + envTLD },
       { name: 'IMAGE', value: image },
@@ -61,7 +61,7 @@ export = async function main() {
         interval: 90,
         timeout: 5,
         unhealthyThreshold: 5
-      },
+      }
     }
   )
 

@@ -49,16 +49,20 @@ export function migrate(
   })
 
   child.stdout.on('data', function (data) {
+    console.log('here stdout', data)
     emitter.emit('log', data.toString())
   })
 
   child.stderr.on('data', function (data) {
+    console.log('here stderr', data)
     emitter.emit('log', data.toString())
   })
 
   child.on('close', (code: number, signal: string) => {
     console.log(`child process exited with code: ${code} and signal: ${signal}`)
   })
+
+  console.log('Returninng child process')
 
   return child
 }

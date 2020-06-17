@@ -56,6 +56,10 @@ export function migrate(
     emitter.emit('log', data.toString())
   })
 
+  child.on('close', (code: number) => {
+    console.log(`child process exited with code ${code}`)
+  })
+
   return child
 }
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env ts-node
 
 import * as path from 'path'
-import { spawn } from 'child_process'
+import { spawnSync, execSync } from 'child_process'
 import { env } from 'decentraland-commons'
 
 export function migrate(
@@ -24,11 +24,14 @@ export function migrate(
     '--migrations-dir',
     migrationsDir,
     '--ignore-pattern',
-    '\\..*|.*migrate(.ts)?',
+    "'\\..*|.*migrate(.ts)?'",
     ...commandArguments
   ]
 
-  const child = spawn(
+  console.log('Running command:')
+  console.dir(`node-pg-migrate ${spawnArgs.join(' ')}`)
+
+  const child = spawnSync(
     path.resolve(migrationsDir, 'node-pg-migrate'),
     spawnArgs,
     {
@@ -36,24 +39,34 @@ export function migrate(
     }
   )
 
-  console.log('Running command:')
-  console.dir(`node-pg-migrate ${spawnArgs.join(' ')}`)
+  console.log(
+    `Status: ${child.status}\n`,
+    `Signal: ${child.signal}\n`,
+    `${child.stdout.length > 0 ? `${child.stdout.toString()}` : ''}\n`,
+    `${child.stderr.length > 0 ? `Error: ${child.stderr.toString()}` : ''}`
+  )
 
-  child.on('error', function (error) {
-    console.log(error.message)
-  })
+  const child2 = execSync(
+    `${path.resolve(migrationsDir, 'node-pg-migrate')} ${spawnArgs.join(' ')}`
+  )
 
-  child.stdout.on('data', function (data) {
-    console.log(data.toString())
-  })
+  console.log(child2.toString())
 
-  child.stderr.on('data', function (data) {
-    console.log(data.toString())
-  })
+  // child.on('error', function (error) {
+  //   console.log(error.message)
+  // })
 
-  child.on('close', (code: number, signal: string) => {
-    console.log(`child process exited with code: ${code} and signal: ${signal}`)
-  })
+  // child.stdout.on('data', function (data) {
+  //   console.log(data.toString())
+  // })
+
+  // child.stderr.on('data', function (data) {
+  //   console.log(data.toString())
+  // })
+
+  // child.on('close', (code: number, signal: string) => {
+  //   console.log(`child process exited with code: ${code} and signal: ${signal}`)
+  // })
 
   return child
 }

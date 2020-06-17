@@ -1,6 +1,6 @@
 ARG RUN
 
-FROM node:12.16.1 as builder
+FROM node:12-alpine as builder
 
 WORKDIR /app
 
@@ -14,7 +14,7 @@ COPY . /app
 
 RUN npm run build
 
-FROM node:12.16.1
+FROM node:12-alpine
 
 WORKDIR /app
 

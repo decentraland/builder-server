@@ -2,7 +2,6 @@
 
 import * as path from 'path'
 import { spawn } from 'child_process'
-import { EventEmitter } from 'events'
 import { env } from 'decentraland-commons'
 
 export function migrate(
@@ -37,32 +36,24 @@ export function migrate(
     }
   )
 
-  const emitter = new EventEmitter()
-
-  emitter.on('log', console.log)
-
   console.log('Running command:')
   console.dir(`node-pg-migrate ${spawnArgs.join(' ')}`)
 
   child.on('error', function (error) {
-    emitter.emit('log', error.message)
+    console.log(error.message)
   })
 
   child.stdout.on('data', function (data) {
-    console.log('here stdout', data)
-    emitter.emit('log', data.toString())
+    console.log(data.toString())
   })
 
   child.stderr.on('data', function (data) {
-    console.log('here stderr', data)
-    emitter.emit('log', data.toString())
+    console.log(data.toString())
   })
 
   child.on('close', (code: number, signal: string) => {
     console.log(`child process exited with code: ${code} and signal: ${signal}`)
   })
-
-  console.log('Returninng child process')
 
   return child
 }

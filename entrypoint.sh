@@ -1,6 +1,5 @@
 #!/bin/sh
 
-node -v
 npm run build || exit 1
 npm run migrate up || exit 1
 npm run seed || exit 1

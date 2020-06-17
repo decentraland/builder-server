@@ -44,11 +44,11 @@ export function migrate(
   })
 
   child.stdout.on('data', function(data) {
-    process.stdout.write(data.toString())
+    console.log(data.toString())
   })
 
   child.stderr.on('data', function(data) {
-    process.stdout.write(data.toString())
+    console.log(data.toString())
   })
 
   return child

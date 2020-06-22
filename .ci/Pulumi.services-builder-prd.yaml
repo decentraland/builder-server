@@ -1,0 +1,5 @@
+encryptionsalt: v1:wKmqaw4gH5U=:v1:2nptE66U5zgk6Hhq:9zdY/eedfyFYJqnM4ZOVbUiJEo7x6A==
+config:
+  aws:region: us-east-1
+  service-builder:db-password:
+    secure: v1:tPGZfdPTXkDvFM3S:p8qSfxiW/Cxn+h6pyK4JaxBkkwlTJtfffUBZKCHOPQJR9pRb

@@ -69,7 +69,7 @@ export = async function main() {
     new aws.alb.ListenerRule(`listenrl-builder-${env}`, {
       listenerArn:
         'arn:aws:elasticloadbalancing:us-east-1:619079673649:listener/app/prd-alb-all/c1757689c51d84c4/36125240631de786',
-      conditions: [{ hostHeader: { values: ['builder.decentraland.org'] } }],
+      conditions: [{ hostHeader: { values: ['builder-api.decentraland.org'] } }],
       actions: [
         {
           type: 'forward',

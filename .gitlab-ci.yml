@@ -34,6 +34,10 @@ docker-build:
 deploy-infra:
   stage: deploy
   image: decentraland/ci-node:latest
+  only:
+    - master
+    - staging
+    - release
   script:
     - dcl-lock-sync
     - cd .ci && npm install && cd node_modules/dcl-ops-lib && ./monkeyPatch.sh && dcl-up services-builder

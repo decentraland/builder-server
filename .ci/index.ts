@@ -1,3 +1,4 @@
+import * as aws from '@pulumi/aws'
 import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { database } from 'dcl-ops-lib/database'
@@ -17,8 +18,8 @@ export = async function main() {
     env === 'prd'
       ? 'decentraland.auth0.com'
       : env === 'stg'
-        ? 'dcl-stg.auth0.com'
-        : 'dcl-test.auth0.com'
+      ? 'dcl-stg.auth0.com'
+      : 'dcl-test.auth0.com'
 
   const builderApi = await createFargateTask(
     `builder-api`,
@@ -43,16 +44,16 @@ export = async function main() {
       { name: 'AWS_ACCESS_SECRET', value: userAndBucket.secretAccessKey },
       {
         name: 'DEFAULT_ETH_ADDRESS',
-        value: '0xdc1691F63a1c450543Dc8ba6909d8a3EfFAC51B4'
+        value: '0xdc1691F63a1c450543Dc8ba6909d8a3EfFAC51B4',
       },
       {
         name: 'BUILDER_SERVER_URL',
-        value: 'https://builder-api.decentraland.' + envTLD
+        value: 'https://builder-api.decentraland.' + envTLD,
       },
       {
         name: 'BUILDER_SHARE_URL',
-        value: 'https://share.decentraland.' + envTLD
-      }
+        value: 'https://share.decentraland.' + envTLD,
+      },
     ],
     'builder-api.decentraland.' + envTLD,
     {
@@ -60,16 +61,30 @@ export = async function main() {
         path: '/v1/assetPacks',
         interval: 90,
         timeout: 5,
-        unhealthyThreshold: 5
-      }
+        unhealthyThreshold: 5,
+      },
     }
   )
+  if (env === 'prd') {
+    new aws.alb.ListenerRule(`listenrl-builder-${env}`, {
+      listenerArn:
+        'arn:aws:elasticloadbalancing:us-east-1:619079673649:listener/app/prd-alb-all/c1757689c51d84c4/36125240631de786',
+      conditions: [{ hostHeader: { values: ['builder.decentraland.org'] } }],
+      actions: [
+        {
+          type: 'forward',
+          targetGroupArn:
+            'arn:aws:elasticloadbalancing:us-east-1:619079673649:targetgroup/targ-builder-api-9b34f22/27498775635fda40',
+        },
+      ],
+    })
+  }
 
   const publicUrl = builderApi.endpoint
 
   return {
     publicUrl,
     connectionString,
-    userAndBucket
+    userAndBucket,
   }
 }

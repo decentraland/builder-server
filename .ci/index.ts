@@ -44,7 +44,7 @@ export = async function main() {
       { name: 'AWS_ACCESS_SECRET', value: userAndBucket.secretAccessKey },
       {
         name: 'DEFAULT_ETH_ADDRESS',
-        value: '0xdc1691F63a1c450543Dc8ba6909d8a3EfFAC51B4',
+        value: '0xDc13378daFca7Fe2306368A16BCFac38c80BfCAD',
       },
       {
         name: 'BUILDER_SERVER_URL',

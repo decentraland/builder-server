@@ -56,7 +56,10 @@ export = async function main() {
       },
       {
         name: 'PEER_URL',
-        value: 'https://peer.decentraland.org'
+        value:
+          env === 'prd' || env === 'stg'
+            ? 'https://peer.decentraland.org'
+            : 'https://peer.decentraland.zone'
       }
     ],
     'builder-api.decentraland.' + envTLD,

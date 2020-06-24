@@ -44,6 +44,7 @@
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
     "express-jwt": "^5.3.1",
+    "isomorphic-fetch": "^2.2.1",
     "jwks-rsa": "^1.6.0",
     "mime-types": "^2.1.24",
     "morgan": "^1.9.1",

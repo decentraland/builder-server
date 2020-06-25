@@ -15,10 +15,8 @@ export = async function main() {
   const userAndBucket = createBucketWithUser(`builder-assetpacks-${env}`)
 
   const AUTH0_DOMAIN =
-    env === 'prd'
+    env === 'prd' || env === 'stg'
       ? 'decentraland.auth0.com'
-      : env === 'stg'
-      ? 'dcl-stg.auth0.com'
       : 'dcl-test.auth0.com'
 
   const builderApi = await createFargateTask(

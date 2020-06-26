@@ -36,7 +36,11 @@ export = async function main() {
       { name: 'DEFAULT_USER_ID', value: 'email|5dee8964f0099a1255367a35' },
       { name: 'AUTH0_DOMAIN', value: AUTH0_DOMAIN },
       { name: 'DEFAULT_ASSET_PACK_CACHE', value: '60000' },
-      { name: 'BUILDER_URL', value: 'https://builder.decentraland.' + envTLD },
+      {
+        name: 'BUILDER_URL',
+        value:
+          'https://builder.decentraland.' + (env === 'prd' ? 'org' : envTLD)
+      },
       { name: 'IMAGE', value: image },
       { name: 'AWS_BUCKET_NAME', value: userAndBucket.bucket },
       { name: 'AWS_ACCESS_SECRET', value: userAndBucket.secretAccessKey },
@@ -46,11 +50,14 @@ export = async function main() {
       },
       {
         name: 'BUILDER_SERVER_URL',
-        value: 'https://builder-api.decentraland.' + envTLD
+        value:
+          'https://builder-api.decentraland.' + (env === 'prd' ? 'org' : envTLD)
       },
       {
         name: 'BUILDER_SHARE_URL',
-        value: 'https://share.decentraland.' + envTLD
+        value:
+          'https://share.decentraland.' +
+          (env === 'prd' || env === 'stg' ? 'org' : 'zone')
       },
       {
         name: 'PEER_URL',

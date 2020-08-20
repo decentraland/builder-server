@@ -93,7 +93,7 @@ export class ItemRouter extends Router {
     }
 
     if (id !== attributes.id) {
-      throw new HTTPError('The body and URL project ids do not match', {
+      throw new HTTPError('The body and URL item ids do not match', {
         urlId: id,
         bodyId: attributes.id
       })

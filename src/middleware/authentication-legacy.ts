@@ -25,7 +25,7 @@ const jwt = getJWTMiddleware()
 
 function getAuthenticationMiddleware() {
   return (req: Request, res: Response, next: NextFunction) =>
-    jwt(req, res, err => {
+    jwt(req, res, (err?: any) => {
       if (err && err.name === 'UnauthorizedError') {
         res
           .status(err.status)

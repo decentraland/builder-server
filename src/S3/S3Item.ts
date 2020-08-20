@@ -1,13 +1,13 @@
 import { S3Model } from './S3Model'
 import { S3Type } from './types'
 
-export class S3AssetPack extends S3Model {
+export class S3Item extends S3Model {
   constructor(id: string) {
-    super(id, S3Type.ASSET_PACK)
+    super(id, S3Type.ITEM)
   }
 
   getThumbnailFilename() {
-    return `${this.id}.png`
+    return ''
   }
 
   getFolder(): string {

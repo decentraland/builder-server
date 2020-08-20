@@ -6,6 +6,7 @@ import { Pool } from '../Pool'
 import { Deployment } from '../Deployment'
 import { AssetPack } from '../AssetPack'
 import { Asset } from '../Asset'
+import { Item } from '../Item'
 
 export type QueryableModel =
   | typeof Project
@@ -13,6 +14,7 @@ export type QueryableModel =
   | typeof Deployment
   | typeof AssetPack
   | typeof Asset
+  | typeof Item
 
 export function withModelExists(
   Model: QueryableModel,

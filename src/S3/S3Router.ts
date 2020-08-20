@@ -4,11 +4,8 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { S3AssetPack } from './S3AssetPack'
 import { S3Asset } from './S3Asset'
+import { S3Item } from './S3Item'
 
-/*
- * This is moslty used for development purposes,
- * in production this endpoint is taken care of by a rewrite directly to S3
- */
 export class S3Router extends Router {
   mount() {
     /**
@@ -26,10 +23,18 @@ export class S3Router extends Router {
       '/storage/assets/:filename',
       this.getHandlerForModel(S3Asset, true)
     )
+
+    /**
+     * Get an asset file by file id
+     */
+    this.router.get(
+      '/storage/items/:filename',
+      this.getHandlerForModel(S3Item, true)
+    )
   }
 
   private getHandlerForModel(
-    Model: typeof S3AssetPack | typeof S3Asset,
+    Model: typeof S3AssetPack | typeof S3Asset | typeof S3Item,
     cache: boolean = false
   ) {
     return async (req: Request, res: Response) => {

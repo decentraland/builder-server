@@ -4,7 +4,7 @@ export type CollectionAttributes = {
   eth_address: string
   hash?: string
   contract_address?: string
-  isPublished: boolean
+  is_published: boolean
   created_at: Date
   updated_at: Date
 }

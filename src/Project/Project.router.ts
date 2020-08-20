@@ -98,11 +98,7 @@ export class ProjectRouter extends Router {
     /**
      * Get a project media attachment
      */
-    this.router.get(
-      '/projects/:id/media/:filename',
-      withProjectExists,
-      this.getMedia
-    )
+    this.router.get('/projects/:id/media/:filename', this.getMedia)
 
     /**
      * Upload a project media attachment

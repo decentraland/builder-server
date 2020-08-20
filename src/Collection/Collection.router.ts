@@ -55,8 +55,7 @@ export class CollectionRouter extends Router {
 
   async getCollection(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const eth_address = req.auth.ethAddress
-    return Collection.findOne({ id, eth_address })
+    return Collection.findOne({ id })
   }
 
   async upsertCollection(req: AuthRequest) {

@@ -9,6 +9,7 @@ import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item'
+import { Collection } from '../Collection'
 import { itemSchema } from './Item.types'
 import { S3Item, getFileUploader, ACL } from '../S3'
 
@@ -18,6 +19,7 @@ export class ItemRouter extends Router {
   mount() {
     const withItemExists = withModelExists(Item, 'id')
     const withItemAuthorization = withModelAuthorization(Item)
+    const withCollectionAuthorization = withModelAuthorization(Collection)
 
     /**
      * Returns the items for a user
@@ -34,6 +36,7 @@ export class ItemRouter extends Router {
     this.router.get(
       '/collections/:id/items',
       withAuthentication,
+      withCollectionAuthorization,
       server.handleRequest(this.getCollectionItems)
     )
 
@@ -67,8 +70,7 @@ export class ItemRouter extends Router {
 
   async getCollectionItems(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const eth_address = req.auth.ethAddress
-    return Item.find({ eth_address, collection_id: id })
+    return Item.find({ collection_id: id })
   }
 
   async upsertItem(req: AuthRequest) {

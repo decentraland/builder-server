@@ -8,7 +8,7 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { Ownable } from '../Ownable'
-import { Item } from '../Item'
+import { Item, ItemAttributes } from '../Item'
 import { Collection } from '../Collection'
 import { itemSchema } from './Item.types'
 import { S3Item, getFileUploader, ACL } from '../S3'
@@ -75,11 +75,11 @@ export class ItemRouter extends Router {
 
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const attributes: any = server.extractFromReq(req, 'item')
+    const itemJSON: any = server.extractFromReq(req, 'item')
     const eth_address = req.auth.ethAddress
 
     const validator = ajv.compile(itemSchema)
-    validator(attributes)
+    validator(itemJSON)
 
     if (validator.errors) {
       throw new HTTPError('Invalid schema', validator.errors)
@@ -93,6 +93,11 @@ export class ItemRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
+
+    const attributes = {
+      ...itemJSON,
+      eth_address
+    } as ItemAttributes
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL item ids do not match', {

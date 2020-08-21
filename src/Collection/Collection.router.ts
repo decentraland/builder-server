@@ -7,7 +7,7 @@ import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { Ownable } from '../Ownable'
 import { Salt } from '../Salt'
-import { Collection } from '../Collection'
+import { Collection, CollectionAttributes } from '../Collection'
 import { collectionSchema } from './Collection.types'
 
 const ajv = new Ajv()
@@ -61,11 +61,11 @@ export class CollectionRouter extends Router {
 
   async upsertCollection(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const attributes: any = server.extractFromReq(req, 'collection')
+    const collectionJSON: any = server.extractFromReq(req, 'collection')
     const eth_address = req.auth.ethAddress
 
     const validator = ajv.compile(collectionSchema)
-    validator(attributes)
+    validator(collectionJSON)
 
     if (validator.errors) {
       throw new HTTPError('Invalid schema', validator.errors)
@@ -80,6 +80,11 @@ export class CollectionRouter extends Router {
       )
     }
 
+    const attributes = {
+      ...collectionJSON,
+      eth_address
+    } as CollectionAttributes
+
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL collection ids do not match', {
         urlId: id,
@@ -87,7 +92,7 @@ export class CollectionRouter extends Router {
       })
     }
 
-    const salt = new Salt(id)
+    const salt = new Salt()
     attributes.salt = salt.generate(id)
     attributes.contract_address = salt.getContractAddress(
       attributes.salt,

@@ -65,7 +65,9 @@ export = async function main() {
           env === 'prd' || env === 'stg'
             ? 'https://peer.decentraland.org'
             : 'https://peer.decentraland.zone'
-      }
+      },
+      { name: 'FACTORY_COLLECTION_ADDRESS', value: '' },
+      { name: 'FACTORY_COLLECTION_CODE_HASH', value: '' }
     ],
     'builder-api.decentraland.' + envTLD,
     {

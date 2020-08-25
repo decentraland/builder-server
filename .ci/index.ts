@@ -66,8 +66,10 @@ export = async function main() {
             ? 'https://peer.decentraland.org'
             : 'https://peer.decentraland.zone'
       },
-      { name: 'FACTORY_COLLECTION_ADDRESS', value: '' },
-      { name: 'FACTORY_COLLECTION_CODE_HASH', value: '' }
+      {
+        name: 'ETHEREUM_NETWORK',
+        value: env === 'prd' || env === 'stg' ? 'mainnet' : 'ropsten'
+      }
     ],
     'builder-api.decentraland.' + envTLD,
     {

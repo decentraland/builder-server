@@ -6,7 +6,7 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
 import { Ownable } from '../Ownable'
-import { Salt } from '../Salt'
+import { FactoryCollection } from '../ethereum'
 import { Collection, CollectionAttributes } from '../Collection'
 import { collectionSchema } from './Collection.types'
 
@@ -92,9 +92,9 @@ export class CollectionRouter extends Router {
       })
     }
 
-    const salt = new Salt()
-    attributes.salt = salt.generate(id)
-    attributes.contract_address = salt.getContractAddress(
+    const factoryCollection = new FactoryCollection()
+    attributes.salt = factoryCollection.getSalt(id)
+    attributes.contract_address = factoryCollection.getContractAddress(
       attributes.salt,
       attributes.eth_address
     )

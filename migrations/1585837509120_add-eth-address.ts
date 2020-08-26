@@ -64,7 +64,7 @@ export const up = (pgm: MigrationBuilder) => {
 
 /*
   This might blow up if there are rows created with a null `user_id`,
-  if that's the case you should run a query to assign those rows to 
+  if that's the case you should run a query to assign those rows to
   some user or delete them before running the downgrade of the db
 */
 

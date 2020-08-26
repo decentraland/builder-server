@@ -75,9 +75,7 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
         } as AssetPackAttributes
 
         console.log(
-          `Upserting asset pack ${attributes.id} for user ${
-            attributes.eth_address
-          }`
+          `Upserting asset pack ${attributes.id} for user ${attributes.eth_address}`
         )
 
         return new AssetPack(attributes).upsert()

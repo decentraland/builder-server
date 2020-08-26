@@ -95,7 +95,7 @@ export class CollectionRouter extends Router {
     const factoryCollection = new FactoryCollection()
     attributes.salt = factoryCollection.getSalt(id)
     attributes.contract_address = factoryCollection.getContractAddress(
-      attributes.salt,
+      attributes.salt!,
       attributes.eth_address
     )
 

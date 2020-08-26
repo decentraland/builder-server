@@ -3,9 +3,9 @@ export type QueryString = Record<string, any>
 export type ColumnName<T> = keyof T
 
 export type Whitelist<T> = {
-  eq: (ColumnName<T>)[]
-  not_eq: (ColumnName<T>)[]
-  includes: (ColumnName<T>)[]
+  eq: ColumnName<T>[]
+  not_eq: ColumnName<T>[]
+  includes: ColumnName<T>[]
 }
 
 export type ConditionName = keyof Whitelist<any>

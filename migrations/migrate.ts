@@ -39,15 +39,15 @@ export function migrate(
     }
   )
 
-  child.on('error', function (error) {
+  child.on('error', function(error) {
     console.log(error.message)
   })
 
-  child.stdout.on('data', function (data) {
+  child.stdout.on('data', function(data) {
     console.log(data.toString())
   })
 
-  child.stderr.on('data', function (data) {
+  child.stderr.on('data', function(data) {
     console.log(data.toString())
   })
 

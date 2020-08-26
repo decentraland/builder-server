@@ -6,12 +6,13 @@ import {
   uploadFile,
   ACLValues
 } from './s3'
+import { S3Type } from './types'
 
 export class S3Model {
   id: string
-  type: string
+  type: S3Type
 
-  constructor(id: string, type: string) {
+  constructor(id: string, type: S3Type) {
     this.id = id
     this.type = type
   }

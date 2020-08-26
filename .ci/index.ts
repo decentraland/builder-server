@@ -65,6 +65,10 @@ export = async function main() {
           env === 'prd' || env === 'stg'
             ? 'https://peer.decentraland.org'
             : 'https://peer.decentraland.zone'
+      },
+      {
+        name: 'ETHEREUM_NETWORK',
+        value: env === 'prd' || env === 'stg' ? 'mainnet' : 'ropsten'
       }
     ],
     'builder-api.decentraland.' + envTLD,

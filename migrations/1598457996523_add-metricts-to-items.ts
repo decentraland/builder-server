@@ -1,8 +1,8 @@
 import { MigrationBuilder } from 'node-pg-migrate'
-import { Asset } from '../src/Asset'
+import { Item } from '../src/Item'
 import { Metrics } from '../src/Metrics'
 
-const tableName = Asset.tableName
+const tableName = Item.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   const attributes = new Metrics().getAttributes()

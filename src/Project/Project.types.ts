@@ -13,10 +13,10 @@ export type ProjectAttributes = {
   nft_shapes: number
   scripts: number
   entities: number
-  created_at: Date
-  updated_at: Date
   is_deleted: boolean
   is_public: boolean
+  created_at: Date
+  updated_at: Date
 }
 
 export type ProjectStatisticsAttributes = Pick<

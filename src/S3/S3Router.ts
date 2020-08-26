@@ -5,10 +5,6 @@ import { Router } from '../common/Router'
 import { S3AssetPack } from './S3AssetPack'
 import { S3Asset } from './S3Asset'
 
-/*
- * This is moslty used for development purposes,
- * in production this endpoint is taken care of by a rewrite directly to S3
- */
 export class S3Router extends Router {
   mount() {
     /**
@@ -20,7 +16,7 @@ export class S3Router extends Router {
     )
 
     /**
-     * Get an asset file by file id
+     * Get an asset file by file id (also contains items)
      */
     this.router.get(
       '/storage/assets/:filename',

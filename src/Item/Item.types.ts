@@ -1,3 +1,4 @@
+import { metricsSchema } from '../Metrics'
 import { WearableData, wearableSchema } from './wearable/types'
 
 enum ItemType {
@@ -27,6 +28,7 @@ export type ItemAttributes = {
   rarity?: ItemRarity
   type: ItemType
   data: WearableData
+  metrics: Record<string, string>
   contents: Record<string, string>
   created_at: Date
   updated_at: Date
@@ -47,6 +49,7 @@ export const itemSchema = Object.freeze({
     rarity: { enum: Object.values(ItemRarity) },
     type: { enum: Object.values(ItemType) },
     data: { type: 'object', oneOf: [wearableSchema] },
+    metrics: metricsSchema,
     contents: {
       type: 'object',
       additionalProperties: true

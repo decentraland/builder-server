@@ -1,4 +1,4 @@
-import { metricsSchema } from './Metrics'
+import { metricsSchema } from '../Metrics'
 import { parametersSchema, AssetParameter } from './Parameters'
 import { actionsSchema } from './Actions'
 
@@ -11,6 +11,7 @@ export type AssetAttributes = {
   thumbnail: string
   tags: string[]
   category: string
+  metrics: Record<string, string>
   contents: Record<string, string>
   parameters: AssetParameter[]
 }

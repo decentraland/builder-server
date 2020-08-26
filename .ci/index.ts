@@ -79,7 +79,8 @@ export = async function main() {
         interval: 90,
         timeout: 5,
         unhealthyThreshold: 5
-      }
+      },
+      memoryReservation: 1024
     }
   )
   if (env === 'prd') {

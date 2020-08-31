@@ -39,12 +39,11 @@ export class CollectionRouter extends Router {
 
     /**
      * Upserts the collection
+     * Important! Collection authorization is done inside the handler
      */
     this.router.put(
       '/collections/:id',
       withAuthentication,
-      withCollectionExists,
-      withCollectionAuthorization,
       server.handleRequest(this.upsertCollection)
     )
   }

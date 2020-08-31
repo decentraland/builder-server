@@ -42,12 +42,11 @@ export class ItemRouter extends Router {
 
     /**
      * Upserts the item
+     * Important! Item authorization is done inside the handler
      */
     this.router.put(
       '/items/:id',
       withAuthentication,
-      withItemExists,
-      withItemAuthorization,
       server.handleRequest(this.upsertItem)
     )
 

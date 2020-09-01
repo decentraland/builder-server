@@ -25,7 +25,7 @@ deploy-infra:
     - release
   script:
     - dcl-lock-sync
-    - cd .ci && npm install && cd node_modules/dcl-ops-lib && ./monkeyPatch.sh && dcl-up services-builder
+    - cd .ci && npm install && cd node_modules/dcl-ops-lib && dcl-up services-builder
     - cd ..
     - dcl-sync-release
     - dcl-announce-docker-build

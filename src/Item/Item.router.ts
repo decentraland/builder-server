@@ -111,15 +111,22 @@ export class ItemRouter extends Router {
   uploadItemFiles = async (req: Request) => {
     const id = server.extractFromReq(req, 'id')
     try {
-      const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) =>
-        new S3Item(id).getFileKey(file.fieldname)
-      )
-      return utils.promisify<boolean>(uploader.any())
+      const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) => {
+        console.log(file)
+        console.log(file.fieldname)
+        return new S3Item(id).getFileKey(file.fieldname)
+      })
+      console.log('pre')
+      const res = await utils.promisify<boolean>(uploader.any())
+      console.log('post')
+      return res
     } catch (error) {
+      console.log('errorrororo', error.message)
       try {
         await Promise.all([Item.delete({ id }), new S3Item(id).delete()])
       } catch (error) {
         // Skip
+        console.log('skip')
       }
 
       throw new HTTPError('An error occurred trying to upload item files', {

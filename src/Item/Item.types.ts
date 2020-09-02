@@ -43,7 +43,7 @@ export const itemSchema = Object.freeze({
     thumbnail: { type: 'string' },
     eth_address: { type: 'string' },
     collection_id: { type: 'string', format: 'uuid' },
-    blockchain_item_id: { type: ['string', 'null'] },
+    blockchain_item_id: { type: 'string' },
     price: { type: 'string' },
     beneficiary: { type: ['string', 'null'] },
     rarity: { enum: Object.values(ItemRarity) },
@@ -54,8 +54,8 @@ export const itemSchema = Object.freeze({
       type: 'object',
       additionalProperties: true
     },
-    created_at: { type: ['string', 'null'] },
-    updated_at: { type: ['string', 'null'] }
+    created_at: { type: 'string' },
+    updated_at: { type: 'string' }
   },
   additionalProperties: false,
   removeAdditional: true,
@@ -64,11 +64,6 @@ export const itemSchema = Object.freeze({
     'name',
     'description',
     'eth_address',
-    'collection_id',
-    'blockchain_item_id',
-    'price',
-    'beneficiary',
-    'rarity',
     'type',
     'data',
     'contents',

@@ -16,24 +16,65 @@ export enum WearableCategory {
   TOP_HEAD = 'top_head'
 }
 
-export enum WearableRepresentation {
-  MALE = 'BaseMale',
-  FEMALE = 'BaseFemale'
+export enum WearableBodyShape {
+  MALE = 'dcl://base-avatars/BaseMale',
+  FEMALE = 'dcl://base-avatars/BaseFemale'
+}
+
+export type WearableRepresentation = {
+  bodyShape: WearableBodyShape[]
+  mainFile: string
+  contents: string[]
+  overrideReplaces: WearableCategory[]
+  overrideHides: WearableCategory[]
 }
 
 export type WearableData = {
   category?: WearableCategory
-  representation?: WearableRepresentation
-  replaces?: WearableCategory[]
-  hides?: WearableCategory[]
-  tags?: string[]
+  representations: WearableRepresentation[]
+  replaces: WearableCategory[]
+  hides: WearableCategory[]
+  tags: string[]
 }
 
 export const wearableSchema = Object.freeze({
   type: 'object',
   properties: {
-    type: { enum: Object.values(WearableCategory) },
-    representation: { enum: Object.values(WearableRepresentation) },
+    category: { enum: Object.values(WearableCategory) },
+    representations: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          bodyShape: {
+            type: 'array',
+            items: { enum: Object.values(WearableBodyShape) }
+          },
+          mainFile: { type: 'string' },
+          contents: {
+            type: 'array',
+            items: { type: 'string' }
+          },
+          overrideReplaces: {
+            type: 'array',
+            items: { enum: Object.values(WearableCategory) }
+          },
+          overrideHides: {
+            type: 'array',
+            items: { enum: Object.values(WearableCategory) }
+          }
+        },
+        additionalProperties: false,
+        removeAdditional: true,
+        required: [
+          'bodyShape',
+          'mainFile',
+          'contents',
+          'overrideReplaces',
+          'overrideHides'
+        ]
+      }
+    },
     replaces: {
       type: 'array',
       items: { enum: Object.values(WearableCategory) }
@@ -49,5 +90,5 @@ export const wearableSchema = Object.freeze({
   },
   additionalProperties: false,
   removeAdditional: true,
-  required: ['type', 'representation', 'replaces', 'hides', 'tags']
+  required: ['representations', 'replaces', 'hides', 'tags']
 })

@@ -15,10 +15,20 @@ export const collectionSchema = Object.freeze({
     id: { type: 'string', format: 'uuid' },
     name: { type: 'string' },
     eth_address: { type: 'string' },
-    created_at: { type: ['string', 'null'] },
-    updated_at: { type: ['string', 'null'] }
+    salt: { type: 'string' },
+    contract_address: { type: 'string' },
+    is_published: { type: 'boolean' },
+    created_at: { type: 'string' },
+    updated_at: { type: 'string' }
   },
   additionalProperties: false,
   removeAdditional: true,
-  required: ['id', 'name', 'eth_address', 'created_at', 'updated_at']
+  required: [
+    'id',
+    'name',
+    'eth_address',
+    'is_published',
+    'created_at',
+    'updated_at'
+  ]
 })

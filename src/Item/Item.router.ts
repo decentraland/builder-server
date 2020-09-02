@@ -16,10 +16,16 @@ import { S3Item, getFileUploader, ACL } from '../S3'
 const ajv = new Ajv()
 
 export class ItemRouter extends Router {
+  itemFilesRequestHandler:
+    | ((req: Request, res: Response) => Promise<boolean>) // Promisified RequestHandler
+    | undefined
+
   mount() {
     const withItemExists = withModelExists(Item, 'id')
     const withItemAuthorization = withModelAuthorization(Item)
     const withCollectionAuthorization = withModelAuthorization(Collection)
+
+    this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
 
     /**
      * Returns the items for a user
@@ -111,11 +117,7 @@ export class ItemRouter extends Router {
   uploadItemFiles = async (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     try {
-      const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) => {
-        return new S3Item(id).getFileKey(file.fieldname)
-      })
-      const handler = utils.promisify<boolean>(uploader.any())
-      await handler(req, res)
+      await this.itemFilesRequestHandler!(req, res)
     } catch (error) {
       try {
         await Promise.all([Item.delete({ id }), new S3Item(id).delete()])
@@ -127,5 +129,12 @@ export class ItemRouter extends Router {
         message: error.message
       })
     }
+  }
+
+  private getItemFilesRequestHandler() {
+    const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) => {
+      return new S3Item().getFileKey(file.fieldname)
+    })
+    return utils.promisify<boolean>(uploader.any())
   }
 }

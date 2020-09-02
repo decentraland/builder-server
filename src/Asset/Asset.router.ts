@@ -73,11 +73,9 @@ export class AssetRouter extends Router {
   }
 
   private getAssetFilesRequestHandler() {
-    const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) => {
-      console.log(file)
-      console.log(file.fieldname)
-      return new S3Asset().getFileKey(file.fieldname)
-    })
+    const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) =>
+      new S3Asset().getFileKey(file.fieldname)
+    )
     return utils.promisify<boolean>(uploader.any())
   }
 }

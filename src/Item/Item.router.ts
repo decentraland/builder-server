@@ -1,4 +1,4 @@
-import { Request } from 'express'
+import { Request, Response } from 'express'
 import { utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
 import Ajv from 'ajv'
@@ -108,25 +108,19 @@ export class ItemRouter extends Router {
     return new Item(attributes).upsert()
   }
 
-  uploadItemFiles = async (req: Request) => {
+  uploadItemFiles = async (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     try {
       const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) => {
-        console.log(file)
-        console.log(file.fieldname)
         return new S3Item(id).getFileKey(file.fieldname)
       })
-      console.log('pre')
-      const res = await utils.promisify<boolean>(uploader.any())
-      console.log('post')
-      return res
+      const handler = utils.promisify<boolean>(uploader.any())
+      await handler(req, res)
     } catch (error) {
-      console.log('errorrororo', error.message)
       try {
         await Promise.all([Item.delete({ id }), new S3Item(id).delete()])
       } catch (error) {
         // Skip
-        console.log('skip')
       }
 
       throw new HTTPError('An error occurred trying to upload item files', {

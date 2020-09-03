@@ -6,7 +6,7 @@ import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
 import { withModelExists, asMiddleware } from '../middleware'
 import { withModelAuthorization } from '../middleware/authorization'
-import { S3AssetPack, S3Asset, getFileUploader, ACL } from '../S3'
+import { S3AssetPack, S3Content, getFileUploader, ACL } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'
 import { withAuthentication } from '../middleware/authentication'
@@ -74,7 +74,7 @@ export class AssetRouter extends Router {
 
   private getAssetFilesRequestHandler() {
     const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) =>
-      new S3Asset().getFileKey(file.fieldname)
+      new S3Content().getFileKey(file.fieldname)
     )
     return utils.promisify<boolean>(uploader.any())
   }

@@ -109,17 +109,17 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       )
 
       try {
-        const s3Asset = new S3Content()
+        const s3Content = new S3Content()
 
         for (const cid of Object.values(attributes.contents)) {
-          const promise = s3Asset.checkFile(cid).then(async exists => {
+          const promise = s3Content.checkFile(cid).then(async exists => {
             if (exists) {
               console.log(`File ${cid} already exists in S3`)
             } else {
               const file = await downloadAsset(cid)
 
               console.log(`Uploading file ${cid} to S3`)
-              await s3Asset.saveFile(cid, file, ACL.publicRead)
+              await s3Content.saveFile(cid, file, ACL.publicRead)
               console.log(`File ${cid} uploaded successfully`)
             }
           })

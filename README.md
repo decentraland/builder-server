@@ -50,7 +50,7 @@ projects
 | |____west.png
 asset_packs
 |____ASSET_PACK_ID.png
-assets
+contents
 |____HASH1
 |____HASH2
 |____HASH3

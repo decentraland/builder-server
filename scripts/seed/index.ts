@@ -4,7 +4,7 @@ import path from 'path'
 import { env, utils } from 'decentraland-commons'
 
 import { db } from '../../src/database'
-import { S3AssetPack, S3Asset, ACL } from '../../src/S3'
+import { S3AssetPack, S3Content, ACL } from '../../src/S3'
 import { AssetPack, AssetPackAttributes } from '../../src/AssetPack'
 import { Asset, AssetAttributes } from '../../src/Asset'
 
@@ -109,17 +109,17 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       )
 
       try {
-        const s3Asset = new S3Asset()
+        const s3Content = new S3Content()
 
         for (const cid of Object.values(attributes.contents)) {
-          const promise = s3Asset.checkFile(cid).then(async exists => {
+          const promise = s3Content.checkFile(cid).then(async exists => {
             if (exists) {
               console.log(`File ${cid} already exists in S3`)
             } else {
               const file = await downloadAsset(cid)
 
               console.log(`Uploading file ${cid} to S3`)
-              await s3Asset.saveFile(cid, file, ACL.publicRead)
+              await s3Content.saveFile(cid, file, ACL.publicRead)
               console.log(`File ${cid} uploaded successfully`)
             }
           })

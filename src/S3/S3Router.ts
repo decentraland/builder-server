@@ -3,7 +3,7 @@ import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
 import { S3AssetPack } from './S3AssetPack'
-import { S3Asset } from './S3Asset'
+import { S3Content } from './S3Content'
 
 export class S3Router extends Router {
   mount() {
@@ -19,13 +19,13 @@ export class S3Router extends Router {
      * Get an asset file by file id (also contains items)
      */
     this.router.get(
-      '/storage/assets/:filename',
-      this.getHandlerForModel(S3Asset, true)
+      '/storage/contents/:filename',
+      this.getHandlerForModel(S3Content, true)
     )
   }
 
   private getHandlerForModel(
-    Model: typeof S3AssetPack | typeof S3Asset,
+    Model: typeof S3AssetPack | typeof S3Content,
     cache: boolean = false
   ) {
     return async (req: Request, res: Response) => {

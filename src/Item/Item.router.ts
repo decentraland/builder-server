@@ -11,7 +11,7 @@ import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
 import { Collection } from '../Collection'
 import { itemSchema } from './Item.types'
-import { S3Item, getFileUploader, ACL } from '../S3'
+import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 
 const ajv = new Ajv()
 
@@ -133,7 +133,7 @@ export class ItemRouter extends Router {
 
   private getItemFilesRequestHandler() {
     const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) => {
-      return new S3Item().getFileKey(file.fieldname)
+      return new S3Content().getFileKey(file.fieldname)
     })
     return utils.promisify<boolean>(uploader.any())
   }

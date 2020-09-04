@@ -1,6 +1,6 @@
 export enum S3Type {
   PROJECT = 'projects',
-  ASSET = 'assets',
+  CONTENT = 'contents',
   ASSET_PACK = 'asset_packs',
   ITEM = 'items'
 }

@@ -57,6 +57,17 @@ export class ItemRouter extends Router {
     )
 
     /**
+     * Delete item
+     */
+    this.router.delete(
+      '/items/:id',
+      withAuthentication,
+      withItemExists,
+      withItemAuthorization,
+      server.handleRequest(this.deleteItem)
+    )
+
+    /**
      * Upload the files for an item
      */
     this.router.post(
@@ -112,6 +123,12 @@ export class ItemRouter extends Router {
     }
 
     return new Item(attributes).upsert()
+  }
+
+  async deleteItem(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    await Item.delete({ id })
+    return true
   }
 
   uploadItemFiles = async (req: Request, res: Response) => {

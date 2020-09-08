@@ -46,6 +46,17 @@ export class CollectionRouter extends Router {
       withAuthentication,
       server.handleRequest(this.upsertCollection)
     )
+
+    /**
+     * Deletes the collection
+     */
+    this.router.delete(
+      '/collections/:id',
+      withAuthentication,
+      withCollectionExists,
+      withCollectionAuthorization,
+      server.handleRequest(this.deleteCollection)
+    )
   }
 
   async getCollections(req: AuthRequest) {
@@ -99,5 +110,11 @@ export class CollectionRouter extends Router {
     )
 
     return new Collection(attributes).upsert()
+  }
+
+  async deleteCollection(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+    await Collection.delete({ id })
+    return true
   }
 }

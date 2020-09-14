@@ -1,10 +1,10 @@
-/* eslint-disable @typescript-eslint/camelcase */
-import { MigrationBuilder } from 'node-pg-migrate';
+import { MigrationBuilder } from 'node-pg-migrate'
+import { Item } from '../src/Item'
 
-export const shorthands = undefined;
+const tableName = Item.tableName
 
-export async function up(pgm: MigrationBuilder): Promise<void> {
-}
-
-export async function down(pgm: MigrationBuilder): Promise<void> {
+export const up = (pgm: MigrationBuilder) => {
+  pgm.addColumn(tableName, {
+    total_supply: { type: 'INT', default: 0, notNull: true }
+  })
 }

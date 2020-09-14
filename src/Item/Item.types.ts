@@ -26,6 +26,8 @@ export type ItemAttributes = {
   price?: string
   beneficiary?: string
   rarity?: ItemRarity
+  total_supply: number
+  is_published: boolean
   type: ItemType
   data: WearableData
   metrics: Record<string, string>
@@ -47,6 +49,8 @@ export const itemSchema = Object.freeze({
     price: { type: 'string' },
     beneficiary: { type: ['string', 'null'] },
     rarity: { enum: Object.values(ItemRarity) },
+    total_supply: { type: 'number', minimum: 0 },
+    is_published: { type: 'boolean' },
     type: { enum: Object.values(ItemType) },
     data: { type: 'object', oneOf: [wearableSchema] },
     metrics: metricsSchema,
@@ -63,9 +67,18 @@ export const itemSchema = Object.freeze({
     'id',
     'name',
     'description',
+    'thumbnail',
     'eth_address',
-    'type',
+    'collection_id',
+    'blockchain_item_id',
+    'price',
+    'beneficiary',
+    'rarity',
+    'total_supply',
+    'is_published',
     'data',
+    'type',
+    'metrics',
     'contents',
     'created_at',
     'updated_at'

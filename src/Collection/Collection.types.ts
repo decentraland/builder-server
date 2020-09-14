@@ -27,6 +27,8 @@ export const collectionSchema = Object.freeze({
     'id',
     'name',
     'eth_address',
+    'salt',
+    'contract_address',
     'is_published',
     'created_at',
     'updated_at'

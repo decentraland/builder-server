@@ -2,8 +2,8 @@ export type CollectionAttributes = {
   id: string // uuid
   name: string
   eth_address: string
-  salt?: string
-  contract_address?: string
+  salt: string | null
+  contract_address: string | null
   is_published: boolean
   created_at: Date
   updated_at: Date

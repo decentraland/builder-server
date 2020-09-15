@@ -21,11 +21,11 @@ export type ItemAttributes = {
   description: string
   thumbnail: string
   eth_address: string
-  collection_id?: string
-  blockchain_item_id?: string
-  price?: string
-  beneficiary?: string
-  rarity?: ItemRarity
+  collection_id: string | null
+  blockchain_item_id: string | null
+  price: string | null
+  beneficiary?: string | null
+  rarity: ItemRarity | null
   total_supply: number
   is_published: boolean
   type: ItemType
@@ -44,11 +44,14 @@ export const itemSchema = Object.freeze({
     description: { type: ['string', 'null'] },
     thumbnail: { type: 'string' },
     eth_address: { type: 'string' },
-    collection_id: { type: 'string', format: 'uuid' },
-    blockchain_item_id: { type: 'string' },
+    collection_id: { type: ['string', 'null'], format: 'uuid' },
+    blockchain_item_id: { type: ['string', 'null'] },
     price: { type: ['string', 'null'] },
     beneficiary: { type: ['string', 'null'] },
-    rarity: { enum: Object.values(ItemRarity) },
+    rarity: {
+      type: ['string', 'null'],
+      enum: [...Object.values(ItemRarity), null]
+    },
     total_supply: { type: 'number', minimum: 0 },
     is_published: { type: 'boolean' },
     type: { enum: Object.values(ItemType) },

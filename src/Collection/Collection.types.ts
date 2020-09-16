@@ -2,8 +2,8 @@ export type CollectionAttributes = {
   id: string // uuid
   name: string
   eth_address: string
-  salt?: string
-  contract_address?: string
+  salt: string | null
+  contract_address: string | null
   is_published: boolean
   created_at: Date
   updated_at: Date
@@ -15,8 +15,8 @@ export const collectionSchema = Object.freeze({
     id: { type: 'string', format: 'uuid' },
     name: { type: 'string' },
     eth_address: { type: 'string' },
-    salt: { type: 'string' },
-    contract_address: { type: 'string' },
+    salt: { type: ['string', 'null'] },
+    contract_address: { type: ['string', 'null'] },
     is_published: { type: 'boolean' },
     created_at: { type: 'string' },
     updated_at: { type: 'string' }

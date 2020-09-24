@@ -5,6 +5,7 @@ export type CollectionAttributes = {
   salt: string | null
   contract_address: string | null
   is_published: boolean
+  minters: string[]
   managers: string[]
   created_at: Date
   updated_at: Date
@@ -19,6 +20,12 @@ export const collectionSchema = Object.freeze({
     salt: { type: ['string', 'null'] },
     contract_address: { type: ['string', 'null'] },
     is_published: { type: 'boolean' },
+    minters: {
+      type: 'array',
+      items: {
+        type: { type: 'string' }
+      }
+    },
     managers: {
       type: 'array',
       items: {

@@ -6,9 +6,9 @@ import {
   AuthRequest,
   withPermissiveAuthentication,
   PermissiveAuthRequest,
-  withAuthentication
+  withAuthentication,
+  withModelAuthorization
 } from '../middleware'
-import { withModelAuthorization } from '../middleware/authorization'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import { Project, ProjectAttributes } from '../Project'

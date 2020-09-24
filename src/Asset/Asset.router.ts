@@ -4,8 +4,11 @@ import { utils } from 'decentraland-commons'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { withModelExists, asMiddleware } from '../middleware'
-import { withModelAuthorization } from '../middleware/authorization'
+import {
+  withModelExists,
+  asMiddleware,
+  withModelAuthorization
+} from '../middleware'
 import { S3AssetPack, S3Content, getFileUploader, ACL } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'

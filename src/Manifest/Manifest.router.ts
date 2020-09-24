@@ -3,8 +3,12 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
-import { withModelAuthorization } from '../middleware/authorization'
+import {
+  withModelAuthorization,
+  withAuthentication,
+  withModelExists,
+  AuthRequest
+} from '../middleware'
 import { Ownable } from '../Ownable'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'

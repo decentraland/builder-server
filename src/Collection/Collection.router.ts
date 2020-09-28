@@ -27,7 +27,7 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections',
-      // withAuthentication,
+      withAuthentication,
       server.handleRequest(this.getCollections)
     )
 
@@ -78,21 +78,12 @@ export class CollectionRouter extends Router {
     )
 
     for (const dbCollection of dbCollections) {
-      if (!dbCollection.eth_address) {
-        collections.push(dbCollection)
-        continue
-      }
-
       const index = remoteAddresses.indexOf(dbCollection.contract_address)
-      if (index === -1) {
-        continue
-      } else {
-        const remoteCollection = remoteCollections[index]
-        collections.push({
-          ...dbCollection,
-          ...remoteCollection
-        })
-      }
+      const collection =
+        index === -1
+          ? dbCollection
+          : { ...dbCollection, ...remoteCollections[index] }
+      collections.push(collection)
     }
 
     return collections

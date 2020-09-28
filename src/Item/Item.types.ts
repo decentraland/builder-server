@@ -1,4 +1,5 @@
 import { metricsSchema } from '../Metrics'
+import { CollectionAttributes } from '../Collection'
 import { WearableData, wearableSchema } from './wearable/types'
 
 enum ItemType {
@@ -28,12 +29,17 @@ export type ItemAttributes = {
   rarity: ItemRarity | null
   total_supply: number
   is_published: boolean
+  is_approved: boolean
   type: ItemType
   data: WearableData
   metrics: Record<string, string>
   contents: Record<string, string>
   created_at: Date
   updated_at: Date
+}
+
+export type CollectionItemAttributes = ItemAttributes & {
+  collection: Partial<CollectionAttributes>
 }
 
 export const itemSchema = Object.freeze({
@@ -54,6 +60,7 @@ export const itemSchema = Object.freeze({
     },
     total_supply: { type: 'number', minimum: 0 },
     is_published: { type: 'boolean' },
+    is_approved: { type: 'boolean' },
     type: { enum: Object.values(ItemType) },
     data: { type: 'object', oneOf: [wearableSchema] },
     metrics: metricsSchema,

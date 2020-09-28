@@ -1,87 +1,98 @@
 import gql from 'graphql-tag'
 import { env } from 'decentraland-commons'
 import { CollectionAttributes } from '../../Collection'
+import { ItemAttributes, CollectionItemAttributes } from '../../Item'
+import {
+  collectionFragment,
+  collectionFields,
+  CollectionFields,
+  CollectionFragment,
+  ItemFragment
+} from './fragments'
 import { createClient } from './client'
 
 export const COLLECTIONS_URL = env.get('COLLECTIONS_GRAPH_URL', '')
 const graphClient = createClient(COLLECTIONS_URL)
 
-const getCollectionsQuery = () => gql`
-  query getCollections($owner: String) {
-    collections(where: { owner: $owner }) {
-      id
-      owner
-      name
-      isApproved
-      minters
-      managers
+const getCollectionsByCreatorQuery = () => gql`
+  query getCollectionsByCreator($creator: String) {
+    collections(where: { creator: $creator }) {
+      ...collectionFields
     }
   }
+  ${collectionFields()}
 `
 
-type RemoteItem = {
-  id: string
-}
+const getCollectionsByAndItemsCreatorQuery = () => gql`
+  query getCollectionsByAndItemsCreatorQuery($creator: String) {
+    collections(where: { creator: $creator }) {
+      ...collectionFragment
+    }
+  }
+  ${collectionFragment()}
+`
 
-type RemoteCollection = {
-  id: string
-  owner: string
-  name: string
-  isApproved: boolean
-  minters: string[]
-  managers: string[]
-  items: RemoteItem[]
-}
-
-type CollectionsQueryResult = {
-  collections: RemoteCollection[]
-}
-
-/*
-Collection {
-  id: ID!
-  items: [Item!]
-  owner: String!
-  creator: String
-  name: String!
-  symbol: String!
-  isCompleted: Boolean
-  isApproved: Boolean
-  isEditable: Boolean
-  minters: [String!]
-  managers: [String!]
-}
- */
 export class CollectionAPI {
   fetchCollectionsByOwner = async (owner: string) => {
-    const { data } = await graphClient.query<CollectionsQueryResult>({
-      query: getCollectionsQuery(),
-      variables: { owner: owner.toLowerCase() }
+    const { data } = await graphClient.query<{
+      collections: CollectionFields[]
+    }>({
+      query: getCollectionsByCreatorQuery(),
+      variables: { creator: owner.toLowerCase() }
     })
 
     return data.collections.map(this.fromRemoteCollection)
   }
 
-  fromRemoteCollection(
-    collection: RemoteCollection
+  fetchCollectionsAndItemsByOwner = async (owner: string) => {
+    const { data } = await graphClient.query<{
+      collections: CollectionFragment[]
+    }>({
+      query: getCollectionsByAndItemsCreatorQuery(),
+      variables: { creator: owner.toLowerCase() }
+    })
+
+    const collections: Partial<CollectionAttributes>[] = data.collections.map(
+      this.fromRemoteCollection
+    )
+    let items: Partial<CollectionItemAttributes>[] = []
+
+    for (const collection of data.collections) {
+      for (const collectionItem of collection.items) {
+        const item = this.fromRemoteItem({
+          ...collectionItem,
+          collection
+        })
+
+        items.push({
+          ...item,
+          collection: this.fromRemoteCollection(collection)!
+        })
+      }
+    }
+
+    return { collections, items }
+  }
+
+  private fromRemoteCollection(
+    collection: CollectionFragment | CollectionFields
   ): Partial<CollectionAttributes> {
-    /*
-      id: string // uuid
-      name: string
-      eth_address: string
-      salt: string | null
-      contract_address: string | null
-      is_published: boolean
-      created_at: Date
-      updated_at: Date
-     */
     return {
       name: collection.name,
-      eth_address: collection.owner,
+      eth_address: collection.creator,
       contract_address: collection.id,
-      is_published: collection.isApproved,
+      is_published: true,
+      is_approved: true || collection.isApproved, // TODO: remove true
       minters: collection.minters,
       managers: collection.managers
+    }
+  }
+
+  private fromRemoteItem(item: ItemFragment): Partial<ItemAttributes> {
+    return {
+      blockchain_item_id: item.blockchainId,
+      is_published: true,
+      is_approved: item.collection.isApproved
     }
   }
 }

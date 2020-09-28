@@ -8,7 +8,7 @@ export class Item extends Model<ItemAttributes> {
 
   static findByEthAddressWithCollection(ethAddress: string) {
     return this.query<CollectionItemAttributes>(SQL`
-      SELECT *, row_to_json(collections.*) as collection
+      SELECT items.*, row_to_json(collections.*) as collection
         FROM ${SQL.raw(this.tableName)} as items
         JOIN ${SQL.raw(
           Collection.tableName

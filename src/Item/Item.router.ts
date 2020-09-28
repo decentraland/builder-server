@@ -83,13 +83,7 @@ export class ItemRouter extends Router {
     const remoteItems = remoteData.items
     const items: ItemAttributes[] = []
 
-    console.log(
-      'REMOTE WITHOUT COLLECTION',
-      remoteItems.filter(i => i.collection === undefined).length
-    )
-    console.log(JSON.stringify(remoteItems, null, 2))
     for (const dbItem of dbItems) {
-      console.log('dbItem collection', dbItem.collection)
       const index = remoteItems.findIndex(
         item =>
           item.blockchain_item_id === dbItem.blockchain_item_id &&
@@ -100,14 +94,6 @@ export class ItemRouter extends Router {
       const item = index === -1 ? dbItem : { ...dbItem, ...remoteItems[index] }
       items.push(item)
     }
-
-    console.log('------------------')
-    // console.log('DB', dbItems)
-    // console.log('------------------')
-    console.log('REMOTE', remoteItems)
-    console.log('------------------')
-    console.log('ITEMS', items)
-    console.log('------------------')
 
     return items
   }

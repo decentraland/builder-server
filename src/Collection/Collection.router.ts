@@ -12,6 +12,7 @@ import {
 import { Ownable } from '../Ownable'
 import { collectionAPI } from '../ethereum/api/collection'
 import { FactoryCollection } from '../ethereum'
+import { Item } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { collectionSchema } from './Collection.types'
 
@@ -143,7 +144,10 @@ export class CollectionRouter extends Router {
 
   async deleteCollection(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    await Collection.delete({ id })
+    await Promise.all([
+      Collection.delete({ id }),
+      Item.delete({ collection_id: id })
+    ])
     return true
   }
 }

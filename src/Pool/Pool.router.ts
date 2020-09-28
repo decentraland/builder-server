@@ -100,8 +100,6 @@ export class PoolRouter extends Router {
     const pool_id = server.extractFromReq(req, 'id')
     const eth_address = (req.auth && req.auth.ethAddress) || null
 
-    console.log('count likes for', pool_id, 'by', eth_address)
-
     const likeCount = eth_address
       ? PoolLike.count({ pool_id, eth_address })
       : Promise.resolve(0)
@@ -110,8 +108,6 @@ export class PoolRouter extends Router {
       Pool.findOne({ id: pool_id }),
       likeCount
     ])
-
-    console.log('total', like)
 
     return { ...pool, like: !!like }
   }

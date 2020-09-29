@@ -4,6 +4,7 @@ export const itemFields = () => gql`
   fragment itemFields on Item {
     id
     blockchainId
+    totalSupply
   }
 `
 
@@ -44,8 +45,7 @@ export const collectionFragment = () => gql`
 export type ItemFields = {
   id: string
   blockchainId: string
-  totaSupply: string
-  maxSupply: string
+  totalSupply: string
 }
 
 export type CollectionFields = {

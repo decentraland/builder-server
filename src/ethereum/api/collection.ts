@@ -82,7 +82,7 @@ export class CollectionAPI {
       eth_address: collection.creator,
       contract_address: collection.id,
       is_published: true,
-      is_approved: true || collection.isApproved, // TODO: remove true
+      is_approved: collection.isApproved,
       minters: collection.minters,
       managers: collection.managers
     }
@@ -92,7 +92,8 @@ export class CollectionAPI {
     return {
       blockchain_item_id: item.blockchainId,
       is_published: true,
-      is_approved: item.collection.isApproved
+      is_approved: item.collection.isApproved,
+      total_supply: Number(item.totalSupply)
     }
   }
 }

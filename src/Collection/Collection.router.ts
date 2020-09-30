@@ -136,7 +136,7 @@ export class CollectionRouter extends Router {
         attributes.eth_address
       )
 
-      await new Collection(attributes).upsert()
+      return new Collection(attributes).upsert()
     } catch (error) {
       throw error
     }

@@ -5,11 +5,15 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
-import { withModelAuthorization } from '../middleware/authorization'
+import { collectionAPI } from '../ethereum/api/collection'
+import {
+  withModelAuthorization,
+  withAuthentication,
+  withModelExists,
+  AuthRequest
+} from '../middleware'
 import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
-import { Collection } from '../Collection'
 import { itemSchema } from './Item.types'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 
@@ -23,7 +27,6 @@ export class ItemRouter extends Router {
   mount() {
     const withItemExists = withModelExists(Item, 'id')
     const withItemAuthorization = withModelAuthorization(Item)
-    const withCollectionAuthorization = withModelAuthorization(Collection)
 
     this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
 
@@ -34,16 +37,6 @@ export class ItemRouter extends Router {
       '/items',
       withAuthentication,
       server.handleRequest(this.getItems)
-    )
-
-    /**
-     * Returns the collection items for a user
-     */
-    this.router.get(
-      '/collections/:id/items',
-      withAuthentication,
-      withCollectionAuthorization,
-      server.handleRequest(this.getCollectionItems)
     )
 
     /**
@@ -81,12 +74,28 @@ export class ItemRouter extends Router {
 
   async getItems(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
-    return Item.find({ eth_address })
-  }
 
-  async getCollectionItems(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    return Item.find({ collection_id: id })
+    const [dbItems, remoteData] = await Promise.all([
+      Item.findByEthAddressWithCollection(eth_address),
+      collectionAPI.fetchCollectionsAndItemsByOwner(eth_address)
+    ])
+
+    const remoteItems = remoteData.items
+    const items: ItemAttributes[] = []
+
+    for (const dbItem of dbItems) {
+      const index = remoteItems.findIndex(
+        item =>
+          item.blockchain_item_id === dbItem.blockchain_item_id &&
+          item.collection!.contract_address ===
+            dbItem.collection.contract_address
+      )
+
+      const item = index === -1 ? dbItem : { ...dbItem, ...remoteItems[index] }
+      items.push(item)
+    }
+
+    return items
   }
 
   async upsertItem(req: AuthRequest) {

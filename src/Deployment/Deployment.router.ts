@@ -3,8 +3,12 @@ import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
-import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
-import { withModelAuthorization } from '../middleware/authorization'
+import {
+  withModelAuthorization,
+  withAuthentication,
+  withModelExists,
+  AuthRequest
+} from '../middleware'
 import { Project } from '../Project'
 import { Deployment } from './Deployment.model'
 import { DeploymentAttributes, deploymentSchema } from './Deployment.types'

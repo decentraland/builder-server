@@ -2,9 +2,12 @@ export type CollectionAttributes = {
   id: string // uuid
   name: string
   eth_address: string
-  salt: string | null
-  contract_address: string | null
+  salt: string
+  contract_address: string
   is_published: boolean
+  is_approved: boolean
+  minters: string[]
+  managers: string[]
   created_at: Date
   updated_at: Date
 }
@@ -18,6 +21,15 @@ export const collectionSchema = Object.freeze({
     salt: { type: ['string', 'null'] },
     contract_address: { type: ['string', 'null'] },
     is_published: { type: 'boolean' },
+    is_approved: { type: 'boolean' },
+    minters: {
+      type: 'array',
+      items: { type: 'string' }
+    },
+    managers: {
+      type: 'array',
+      items: { type: 'string' }
+    },
     created_at: { type: 'string' },
     updated_at: { type: 'string' }
   },
@@ -29,7 +41,6 @@ export const collectionSchema = Object.freeze({
     'eth_address',
     'salt',
     'contract_address',
-    'is_published',
     'created_at',
     'updated_at'
   ]

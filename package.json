@@ -25,6 +25,7 @@
     "printWidth": 80
   },
   "dependencies": {
+    "@apollo/client": "^3.2.1",
     "@ethersproject/solidity": "^5.0.2",
     "@types/body-parser": "^1.17.0",
     "@types/escape-html": "0.0.20",
@@ -45,6 +46,7 @@
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
     "express-jwt": "^5.3.1",
+    "graphql": "^15.3.0",
     "isomorphic-fetch": "^2.2.1",
     "jwks-rsa": "^1.6.0",
     "mime-types": "^2.1.24",
@@ -53,11 +55,11 @@
     "multer-s3": "^2.9.0",
     "node-pg-migrate": "^3.21.1",
     "tslint": "^5.12.1",
-    "typescript": "^3.8.3",
+    "typescript": "^3.9.7",
     "web3x": "^4.0.6"
   },
   "devDependencies": {
-    "@types/node": "^11.9.0",
+    "@types/node": "^11.15.27",
     "@types/uuid": "^3.4.6",
     "dcl-tslint-config-standard": "^1.1.0",
     "prettier": "^1.16.4",

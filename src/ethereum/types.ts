@@ -11,5 +11,5 @@ export const FACTORY_COLLECTION_ADDRESS = {
 export const FACTORY_COLLECTION_CODE_HASH = {
   [Network.MAINNET]: '',
   [Network.ROPSTEN]:
-    '0x91b457a218bd3fdd716b2f8558cba38904a45d0b7d394be81e507ab69ef93305'
+    '0x5a2f39d04b74b899c9f56f226dde8160642dd5772ba44d3a9c9db3a7db8488e1'
 }

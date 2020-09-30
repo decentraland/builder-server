@@ -5,6 +5,8 @@ export const itemFields = () => gql`
     id
     blockchainId
     totalSupply
+    price
+    beneficiary
   }
 `
 
@@ -46,6 +48,8 @@ export type ItemFields = {
   id: string
   blockchainId: string
   totalSupply: string
+  price: string
+  beneficiary: string
 }
 
 export type CollectionFields = {

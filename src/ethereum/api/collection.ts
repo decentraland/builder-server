@@ -90,6 +90,8 @@ export class CollectionAPI {
 
   private fromRemoteItem(item: ItemFragment): Partial<ItemAttributes> {
     return {
+      price: item.price,
+      beneficiary: item.beneficiary,
       blockchain_item_id: item.blockchainId,
       is_published: true,
       is_approved: item.collection.isApproved,

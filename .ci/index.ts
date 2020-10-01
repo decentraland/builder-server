@@ -69,6 +69,13 @@ export = async function main() {
       {
         name: 'ETHEREUM_NETWORK',
         value: env === 'prd' || env === 'stg' ? 'mainnet' : 'ropsten'
+      },
+      {
+        name: 'COLLECTIONS_GRAPH_URL',
+        value:
+          env === 'prd' || env === 'stg'
+            ? 'https://api.thegraph.com/subgraphs/name/decentraland/collections'
+            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections_ropsten'
       }
     ],
     'builder-api.decentraland.' + envTLD,

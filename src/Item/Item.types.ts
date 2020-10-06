@@ -30,6 +30,7 @@ export type ItemAttributes = {
   total_supply: number
   is_published: boolean
   is_approved: boolean
+  in_catalyst: boolean
   type: ItemType
   data: WearableData
   metrics: Record<string, string>
@@ -61,6 +62,7 @@ export const itemSchema = Object.freeze({
     total_supply: { type: 'number', minimum: 0 },
     is_published: { type: 'boolean' },
     is_approved: { type: 'boolean' },
+    in_catalyst: { type: 'boolean' },
     type: { enum: Object.values(ItemType) },
     data: { type: 'object', oneOf: [wearableSchema] },
     metrics: metricsSchema,

@@ -11,9 +11,14 @@ import {
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { collectionAPI } from '../ethereum/api/collection'
+import { Bridge } from '../ethereum/api/Bridge'
 import { FactoryCollection } from '../ethereum'
-import { Item } from '../Item'
-import { Collection, CollectionAttributes } from '../Collection'
+import { Item, ItemAttributes, CollectionItem } from '../Item'
+import {
+  Collection,
+  CollectionAttributes,
+  CollectionWithItems
+} from '../Collection'
 import { collectionSchema } from './Collection.types'
 
 const ajv = new Ajv()
@@ -37,7 +42,6 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id',
-      withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
     )
@@ -72,39 +76,41 @@ export class CollectionRouter extends Router {
       collectionAPI.fetchCollectionsByOwner(eth_address)
     ])
 
-    const collections: CollectionAttributes[] = []
-    const remoteAddresses = remoteCollections.map(
-      collection => collection.contract_address
-    )
-
-    for (const dbCollection of dbCollections) {
-      const index = remoteAddresses.indexOf(dbCollection.contract_address)
-      const collection =
-        index === -1
-          ? dbCollection
-          : { ...dbCollection, ...remoteCollections[index] }
-      collections.push(collection)
-    }
-
-    return collections
+    return new Bridge().consolidateCollections(dbCollections, remoteCollections)
   }
 
   async getCollection(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
-    let dbCollection = await Collection.findOne<CollectionAttributes>({ id })
+    let dbCollection = await Collection.findOne<CollectionAttributes>(id)
+    let collection: CollectionWithItems | undefined
 
-    if (dbCollection && dbCollection.contract_address) {
-      const remoteCollection = await collectionAPI.fetchCollectionById(
-        dbCollection.contract_address
-      )
-      dbCollection = {
+    if (dbCollection) {
+      const [dbItems, remoteData] = await Promise.all([
+        Item.find<ItemAttributes>({ collection_id: dbCollection.id }),
+        collectionAPI.fetchCollectionWithItemsById(
+          dbCollection.contract_address
+        )
+      ])
+      const collectionItems: CollectionItem[] = dbItems.map(item => ({
+        ...item,
+        collection: dbCollection!
+      }))
+
+      collection = {
         ...dbCollection,
-        ...remoteCollection
+        items: new Bridge().consolidateItems(collectionItems, remoteData.items)
+      }
+
+      if (dbCollection.contract_address) {
+        collection = {
+          ...collection,
+          ...remoteData.collection
+        }
       }
     }
 
-    return dbCollection
+    return collection
   }
 
   async upsertCollection(req: AuthRequest) {

@@ -39,7 +39,7 @@ export type ItemAttributes = {
   updated_at: Date
 }
 
-export type CollectionItemAttributes = ItemAttributes & {
+export type CollectionItem = ItemAttributes & {
   collection: Partial<CollectionAttributes>
 }
 

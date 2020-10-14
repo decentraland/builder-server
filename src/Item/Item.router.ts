@@ -40,6 +40,15 @@ export class ItemRouter extends Router {
     )
 
     /**
+     * Returns the item
+     */
+    this.router.get(
+      '/items/:id',
+      withAuthentication,
+      server.handleRequest(this.getItem)
+    )
+
+    /**
      * Upserts the item
      * Important! Item authorization is done inside the handler
      */
@@ -96,6 +105,24 @@ export class ItemRouter extends Router {
     }
 
     return items
+  }
+
+  async getItem(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+
+    let dbItem = await Item.findOne<ItemAttributes>({ id })
+
+    if (dbItem && dbItem.blockchain_item_id) {
+      const remoteItem = await collectionAPI.fetchItemByBlockchainId(
+        dbItem.blockchain_item_id
+      )
+      dbItem = {
+        ...dbItem,
+        ...remoteItem
+      }
+    }
+
+    return dbItem
   }
 
   async upsertItem(req: AuthRequest) {

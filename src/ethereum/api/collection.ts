@@ -5,6 +5,7 @@ import { ItemAttributes, CollectionItemAttributes } from '../../Item'
 import {
   collectionFragment,
   collectionFields,
+  itemFields,
   CollectionFields,
   CollectionFragment,
   ItemFragment
@@ -14,25 +15,20 @@ import { createClient } from './client'
 export const COLLECTIONS_URL = env.get('COLLECTIONS_GRAPH_URL', '')
 const graphClient = createClient(COLLECTIONS_URL)
 
-const getCollectionsByCreatorQuery = () => gql`
-  query getCollectionsByCreator($creator: String) {
-    collections(where: { creator: $creator }) {
-      ...collectionFields
-    }
-  }
-  ${collectionFields()}
-`
-
-const getCollectionsByAndItemsCreatorQuery = () => gql`
-  query getCollectionsByAndItemsCreatorQuery($creator: String) {
-    collections(where: { creator: $creator }) {
-      ...collectionFragment
-    }
-  }
-  ${collectionFragment()}
-`
-
 export class CollectionAPI {
+  fetchCollectionById = async (id: string) => {
+    const { data } = await graphClient.query<{
+      collections: CollectionFields[]
+    }>({
+      query: getCollection(),
+      variables: { id: id.toLowerCase() }
+    })
+
+    return data.collections.length > 0
+      ? this.fromRemoteCollection(data.collections[0])
+      : undefined
+  }
+
   fetchCollectionsByOwner = async (owner: string) => {
     const { data } = await graphClient.query<{
       collections: CollectionFields[]
@@ -48,16 +44,35 @@ export class CollectionAPI {
     const { data } = await graphClient.query<{
       collections: CollectionFragment[]
     }>({
-      query: getCollectionsByAndItemsCreatorQuery(),
+      query: getCollectionsAndItemsByCreatorQuery(),
       variables: { creator: owner.toLowerCase() }
     })
 
     const collections: Partial<CollectionAttributes>[] = data.collections.map(
       this.fromRemoteCollection
     )
+    let items: Partial<CollectionItemAttributes>[] = this.extractItems(
+      data.collections
+    )
+
+    return { collections, items }
+  }
+
+  fetchItemByBlockchainId = async (blockchainId: string) => {
+    const { data } = await graphClient.query<{ items: ItemFragment[] }>({
+      query: getItem(),
+      variables: { blockchainId }
+    })
+
+    return data.items.length > 0
+      ? this.fromRemoteItem(data.items[0])
+      : undefined
+  }
+
+  private extractItems(collections: CollectionFragment[]) {
     let items: Partial<CollectionItemAttributes>[] = []
 
-    for (const collection of data.collections) {
+    for (const collection of collections) {
       for (const collectionItem of collection.items) {
         const item = this.fromRemoteItem({
           ...collectionItem,
@@ -71,7 +86,7 @@ export class CollectionAPI {
       }
     }
 
-    return { collections, items }
+    return items
   }
 
   private fromRemoteCollection(
@@ -101,3 +116,39 @@ export class CollectionAPI {
 }
 
 export const collectionAPI = new CollectionAPI()
+
+const getCollection = () => gql`
+  query getCollection($id: String) {
+    collections(where: { id: $id }) {
+      ...collectionFields
+    }
+  }
+  ${collectionFields()}
+`
+
+const getCollectionsByCreatorQuery = () => gql`
+  query getCollectionsByCreator($creator: String) {
+    collections(where: { creator: $creator }) {
+      ...collectionFields
+    }
+  }
+  ${collectionFields()}
+`
+
+const getCollectionsAndItemsByCreatorQuery = () => gql`
+  query getCollectionsAndItemsByCreatorQuery($creator: String) {
+    collections(where: { creator: $creator }) {
+      ...collectionFragment
+    }
+  }
+  ${collectionFragment()}
+`
+
+const getItem = () => gql`
+  query getItem($blockchainId: String) {
+    items(where: { blockchainId: $blockchainId }) {
+      ...itemFields
+    }
+  }
+  ${itemFields()}
+`

@@ -39,7 +39,6 @@ export class CollectionRouter extends Router {
       '/collections/:id',
       withAuthentication,
       withCollectionExists,
-      withCollectionAuthorization,
       server.handleRequest(this.getCollection)
     )
 
@@ -92,7 +91,20 @@ export class CollectionRouter extends Router {
 
   async getCollection(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return Collection.findOne({ id })
+
+    let dbCollection = await Collection.findOne<CollectionAttributes>({ id })
+
+    if (dbCollection && dbCollection.contract_address) {
+      const remoteCollection = await collectionAPI.fetchCollectionById(
+        dbCollection.contract_address
+      )
+      dbCollection = {
+        ...dbCollection,
+        ...remoteCollection
+      }
+    }
+
+    return dbCollection
   }
 
   async upsertCollection(req: AuthRequest) {

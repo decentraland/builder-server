@@ -1,23 +1,32 @@
-import { CollectionAttributes } from '../../Collection'
+import { CollectionAttributes, CollectionWithItems } from '../../Collection'
 import { ItemAttributes, CollectionItem } from '../../Item'
 import { CollectionFields, CollectionFragment, ItemFragment } from './fragments'
 
 export class Bridge {
   consolidateCollections(
-    dbCollections: CollectionAttributes[],
-    remoteCollections: Partial<CollectionAttributes>[]
+    dbCollections: CollectionWithItems[],
+    remoteCollections: Partial<CollectionAttributes>[],
+    remoteItems: Partial<CollectionItem>[] = []
   ) {
-    const collections: CollectionAttributes[] = []
+    const collections: CollectionWithItems[] = []
     const remoteAddresses = remoteCollections.map(
       collection => collection.contract_address
     )
 
     for (const dbCollection of dbCollections) {
       const index = remoteAddresses.indexOf(dbCollection.contract_address)
+      const remoteCollection = remoteCollections[index]
       const collection =
-        index === -1
-          ? dbCollection
-          : { ...dbCollection, ...remoteCollections[index] }
+        index === -1 ? dbCollection : { ...dbCollection, ...remoteCollection }
+
+      const remoteCollectionItems = remoteItems.filter(
+        item => item.collection_id === collection.id
+      )
+      collection.items = this.consolidateItems(
+        dbCollection.items,
+        remoteCollectionItems
+      )
+
       collections.push(collection)
     }
 
@@ -31,14 +40,30 @@ export class Bridge {
     const items: ItemAttributes[] = []
 
     for (const dbItem of dbItems) {
-      const index = remoteItems.findIndex(
-        item =>
-          item.blockchain_item_id === dbItem.blockchain_item_id &&
-          item.collection!.contract_address ===
-            dbItem.collection.contract_address
-      )
+      let item = dbItem
 
-      const item = index === -1 ? dbItem : { ...dbItem, ...remoteItems[index] }
+      if (dbItem.collection) {
+        const index = remoteItems.findIndex(
+          item =>
+            item.blockchain_item_id === dbItem.blockchain_item_id &&
+            item.collection!.contract_address ===
+              dbItem.collection!.contract_address
+        )
+
+        if (index !== -1) {
+          const remoteItem = remoteItems[index]
+
+          item = {
+            ...dbItem,
+            ...remoteItem,
+            collection: {
+              ...dbItem.collection,
+              ...remoteItem.collection
+            }
+          }
+        }
+      }
+
       items.push(item)
     }
 

@@ -97,7 +97,7 @@ export class ItemRouter extends Router {
   async getItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
-    let dbItem = await Item.findOne<ItemAttributes>({ id })
+    let dbItem = await Item.findOneWithCollection(id)
 
     if (dbItem && dbItem.blockchain_item_id) {
       const remoteItem = await collectionAPI.fetchItemByBlockchainId(

@@ -4,7 +4,7 @@ import { CollectionItem } from '../../Item'
 import {
   collectionFragment,
   collectionFields,
-  itemFields,
+  itemFragment,
   CollectionFields,
   CollectionFragment,
   ItemFragment
@@ -64,7 +64,7 @@ export class CollectionAPI {
 
   fetchItemByBlockchainId = async (blockchainId: string) => {
     const { data } = await graphClient.query<{ items: ItemFragment[] }>({
-      query: getItem(),
+      query: getItemWithCollection(),
       variables: { blockchainId }
     })
 
@@ -123,11 +123,11 @@ const getCollectionsWithItemsByCreatorQuery = () => gql`
   ${collectionFragment()}
 `
 
-const getItem = () => gql`
-  query getItem($blockchainId: String) {
+const getItemWithCollection = () => gql`
+  query getItemWithCollection($blockchainId: String) {
     items(where: { blockchainId: $blockchainId }) {
-      ...itemFields
+      ...itemFragment
     }
   }
-  ${itemFields()}
+  ${itemFragment()}
 `

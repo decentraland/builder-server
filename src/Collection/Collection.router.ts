@@ -13,7 +13,7 @@ import { Ownable } from '../Ownable'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { FactoryCollection } from '../ethereum'
-import { Item, ItemAttributes, CollectionItem } from '../Item'
+import { Item, CollectionItem } from '../Item'
 import {
   Collection,
   CollectionAttributes,
@@ -71,31 +71,31 @@ export class CollectionRouter extends Router {
   async getCollections(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
 
-    const [dbCollections, remoteCollections] = await Promise.all([
-      Collection.find<CollectionAttributes>({ eth_address }),
-      collectionAPI.fetchCollectionsByOwner(eth_address)
+    const [dbCollections, remoteData] = await Promise.all([
+      Collection.findByEthAddressWithItems(eth_address),
+      collectionAPI.fetchCollectionsWithItemsByOwner(eth_address)
     ])
 
-    return new Bridge().consolidateCollections(dbCollections, remoteCollections)
+    return new Bridge().consolidateCollections(
+      dbCollections,
+      remoteData.collections,
+      remoteData.items
+    )
   }
 
   async getCollection(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
-    let dbCollection = await Collection.findOne<CollectionAttributes>(id)
+    let dbCollection = await Collection.findOneWithItems(id)
     let collection: CollectionWithItems | undefined
 
     if (dbCollection) {
-      const [dbItems, remoteData] = await Promise.all([
-        Item.find<ItemAttributes>({ collection_id: dbCollection.id }),
-        collectionAPI.fetchCollectionWithItemsById(
-          dbCollection.contract_address
-        )
-      ])
-      const collectionItems: CollectionItem[] = dbItems.map(item => ({
-        ...item,
-        collection: dbCollection!
-      }))
+      const remoteData = await collectionAPI.fetchCollectionWithItemsById(
+        dbCollection.contract_address
+      )
+      const collectionItems: CollectionItem[] = dbCollection.items.map(
+        item => ({ ...item, collection: dbCollection! })
+      )
 
       collection = {
         ...dbCollection,

@@ -40,7 +40,7 @@ export type ItemAttributes = {
 }
 
 export type CollectionItem = ItemAttributes & {
-  collection: Partial<CollectionAttributes>
+  collection?: Partial<CollectionAttributes>
 }
 
 export const itemSchema = Object.freeze({

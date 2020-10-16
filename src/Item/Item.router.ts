@@ -6,6 +6,7 @@ import Ajv from 'ajv'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
+import { Bridge } from '../ethereum/api/Bridge'
 import {
   withModelAuthorization,
   withAuthentication,
@@ -13,9 +14,9 @@ import {
   AuthRequest
 } from '../middleware'
 import { Ownable } from '../Ownable'
+import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
 import { itemSchema } from './Item.types'
-import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 
 const ajv = new Ajv()
 
@@ -37,6 +38,15 @@ export class ItemRouter extends Router {
       '/items',
       withAuthentication,
       server.handleRequest(this.getItems)
+    )
+
+    /**
+     * Returns the item
+     */
+    this.router.get(
+      '/items/:id',
+      withItemExists,
+      server.handleRequest(this.getItem)
     )
 
     /**
@@ -77,25 +87,29 @@ export class ItemRouter extends Router {
 
     const [dbItems, remoteData] = await Promise.all([
       Item.findByEthAddressWithCollection(eth_address),
-      collectionAPI.fetchCollectionsAndItemsByOwner(eth_address)
+      collectionAPI.fetchCollectionsWithItemsByOwner(eth_address)
     ])
-
     const remoteItems = remoteData.items
-    const items: ItemAttributes[] = []
 
-    for (const dbItem of dbItems) {
-      const index = remoteItems.findIndex(
-        item =>
-          item.blockchain_item_id === dbItem.blockchain_item_id &&
-          item.collection!.contract_address ===
-            dbItem.collection.contract_address
+    return new Bridge().consolidateItems(dbItems, remoteItems)
+  }
+
+  async getItem(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+
+    let dbItem = await Item.findOneWithCollection(id)
+
+    if (dbItem && dbItem.blockchain_item_id) {
+      const remoteItem = await collectionAPI.fetchItemByBlockchainId(
+        dbItem.blockchain_item_id
       )
-
-      const item = index === -1 ? dbItem : { ...dbItem, ...remoteItems[index] }
-      items.push(item)
+      dbItem = {
+        ...dbItem,
+        ...remoteItem
+      }
     }
 
-    return items
+    return dbItem
   }
 
   async upsertItem(req: AuthRequest) {

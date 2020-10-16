@@ -1,18 +1,21 @@
 import { Model, SQL } from 'decentraland-server'
 
-import { Collection } from '../Collection'
-import { ItemAttributes, CollectionItemAttributes } from './Item.types'
+import { ItemQueries } from './Item.queries'
+import { ItemAttributes, CollectionItem } from './Item.types'
 
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
+  static async findOneWithCollection(id: string) {
+    const items = await this.query<CollectionItem>(SQL`
+      ${ItemQueries.selectWithCollection()}
+        WHERE items.id = ${id}`)
+    return items[0]
+  }
+
   static findByEthAddressWithCollection(ethAddress: string) {
-    return this.query<CollectionItemAttributes>(SQL`
-      SELECT items.*, row_to_json(collections.*) as collection
-        FROM ${SQL.raw(this.tableName)} as items
-        LEFT JOIN ${SQL.raw(
-          Collection.tableName
-        )} as collections ON collections.id = items.collection_id
+    return this.query<CollectionItem>(SQL`
+      ${ItemQueries.selectWithCollection()}
         WHERE items.eth_address = ${ethAddress}`)
   }
 }

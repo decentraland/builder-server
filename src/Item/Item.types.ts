@@ -39,8 +39,8 @@ export type ItemAttributes = {
   updated_at: Date
 }
 
-export type CollectionItemAttributes = ItemAttributes & {
-  collection: Partial<CollectionAttributes>
+export type CollectionItem = ItemAttributes & {
+  collection?: Partial<CollectionAttributes>
 }
 
 export const itemSchema = Object.freeze({

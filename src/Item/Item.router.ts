@@ -103,9 +103,9 @@ export class ItemRouter extends Router {
       const remoteItem = await collectionAPI.fetchItemByBlockchainId(
         dbItem.blockchain_item_id
       )
-      dbItem = {
-        ...dbItem,
-        ...remoteItem
+      if (remoteItem) {
+        const [item] = new Bridge().consolidateItems([dbItem], [remoteItem])
+        return item
       }
     }
 

@@ -22,7 +22,7 @@ export const collectionSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
-    name: { type: 'string' },
+    name: { type: 'string', maxLength: 32 },
     eth_address: { type: 'string' },
     salt: { type: ['string', 'null'] },
     contract_address: { type: ['string', 'null'] },

@@ -75,7 +75,7 @@ export = async function main() {
         value:
           env === 'prd' || env === 'stg'
             ? 'https://api.thegraph.com/subgraphs/name/decentraland/collections'
-            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections_ropsten'
+            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections-ropsten'
       }
     ],
     'builder-api.decentraland.' + envTLD,

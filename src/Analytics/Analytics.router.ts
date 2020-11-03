@@ -6,7 +6,7 @@ import { Request } from 'express'
 export class AnalyticsRouter extends Router {
   mount() {
     /**
-     * Get all deployments
+     * Get weekly stats
      */
     this.router.get('/analytics/weekly', server.handleRequest(this.getWeekly))
   }

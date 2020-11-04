@@ -1,10 +1,13 @@
 import * as aws from '@pulumi/aws'
+import * as pulumi from '@pulumi/pulumi'
 import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { database } from 'dcl-ops-lib/database'
 import { env, envTLD } from 'dcl-ops-lib/domain'
 
 export = async function main() {
+  const config = new pulumi.Config()
+
   const db = database(`builder`)
 
   const connectionString = db.connectionString
@@ -76,6 +79,10 @@ export = async function main() {
           env === 'prd' || env === 'stg'
             ? 'https://api.thegraph.com/subgraphs/name/decentraland/collections'
             : 'https://api.thegraph.com/subgraphs/name/decentraland/collections-ropsten'
+      },
+      {
+        name: 'ANALYTICS_CONNECTION_STRING',
+        value: config.requireSecret('ANALYTICS_CONNECTION_STRING')
       }
     ],
     'builder-api.decentraland.' + envTLD,

@@ -1,3 +1,4 @@
+import { exit } from 'process'
 import { env } from 'decentraland-commons'
 
 import { AppRouter } from './App'
@@ -12,11 +13,12 @@ import { CollectionRouter } from './Collection'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
 import { S3Router } from './S3'
-import { db } from './database'
+import { db, analytics } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
 import { ShareRouter } from './Share'
 import { MigrationRouter } from './Migration'
+import { AnalyticsRouter, TIMEOUT_ERROR, CONNECTION_ERROR } from './Analytics'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
@@ -46,6 +48,7 @@ new DeploymentRouter(app).mount()
 new S3Router(app).mount()
 new ShareRouter(app).mount()
 new MigrationRouter(app).mount()
+new AnalyticsRouter(app).mount()
 
 /* Start the server only if run directly */
 if (require.main === module) {
@@ -55,5 +58,24 @@ if (require.main === module) {
 async function startServer() {
   console.log('Connecting database')
   await db.connect()
+  console.log('Connecting analytics')
+  try {
+    await analytics.connect()
+  } catch (error) {
+    console.log('Error connecting to analytics database:', error.message)
+  }
+
+  // handle uncaught exceptions
+  process.on('uncaughtException', function(err) {
+    if (
+      err.message.includes(TIMEOUT_ERROR) ||
+      err.message.toLowerCase().includes(CONNECTION_ERROR)
+    ) {
+      // ignore timeouts and terminated connections
+    } else {
+      exit(1)
+    }
+  })
+
   return app.listen(SERVER_PORT)
 }

@@ -1,5 +1,6 @@
-import { Router } from '../common/Router'
+import cacheControl from 'express-cache-controller'
 import { server } from 'decentraland-server'
+import { Router } from '../common/Router'
 import { Analytics } from './Analytics.model'
 import { Request } from 'express'
 
@@ -8,7 +9,11 @@ export class AnalyticsRouter extends Router {
     /**
      * Get weekly stats
      */
-    this.router.get('/analytics/weekly', server.handleRequest(this.getWeekly))
+    this.router.get(
+      '/analytics/weekly',
+      cacheControl({ maxAge: 7200, public: true }),
+      server.handleRequest(this.getWeekly)
+    )
   }
 
   async getWeekly(req: Request) {

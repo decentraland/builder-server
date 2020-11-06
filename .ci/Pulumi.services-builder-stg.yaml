@@ -2,6 +2,6 @@ encryptionsalt: v1:GT57rsjuaOU=:v1:4rMPhDNIql7YOr+3:wVxNTJN7F3SXKieNT7pd0NZjKHwd
 config:
   aws:region: us-east-1
   service-builder:ANALYTICS_CONNECTION_STRING:
-    secure: v1:XP3Q4YHz/WTUl6CL:b+MxQHszKoNr5WNGQ+5EB2C/E/yBoH/b+jHI+u3k6a/sfxKJ2EMXHR+/ugNolxTfrhXAYUy0ctnhnI6vDvsBuStCJT1CAfjSrtgumKoW3oSF22IjO8kue0DAgeXH+V3JXdDsqIY=
+    secure: v1:j7nvSxhIdBBYDEC5:k+iSA56/KfZiYmTlvRHgFf7SpCk9E0IYuXcQ5rckei7QwDrwbvpxctgcGmTVfkRdN2tFWt8WwOUrPEo=
   service-builder:db-password:
     secure: v1:O2975S6HrBPdgHKA:S2vZRRPGNQBb0Vr45e7gxzIC0f50afSx7Em6RSleBUoxlANT

@@ -11,7 +11,7 @@ export class AnalyticsRouter extends Router {
      */
     this.router.get(
       '/analytics/weekly',
-      cacheControl({ maxAge: 7200, public: true }),
+      cacheControl({ maxAge: 43200, public: true }),
       server.handleRequest(this.getWeekly)
     )
   }

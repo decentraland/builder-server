@@ -20,7 +20,7 @@ if (!BUCKET_NAME) {
   )
 }
 
-const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 5000000
+const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
 
 export const ACL = {
   private: 'private' as 'private',

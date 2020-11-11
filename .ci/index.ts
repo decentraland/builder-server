@@ -35,6 +35,7 @@ export = async function main() {
       { name: 'CORS_ORIGIN', value: '*' },
       { name: 'CORS_METHOD', value: '*' },
       { name: 'AWS_ACCESS_KEY', value: userAndBucket.accessKeyId },
+      { name: 'AWS_MAX_FILE_SIZE', value: '10000000' },
       { name: 'CONNECTION_STRING', value: db.connectionString },
       { name: 'DEFAULT_USER_ID', value: 'email|5dee8964f0099a1255367a35' },
       { name: 'AUTH0_DOMAIN', value: AUTH0_DOMAIN },

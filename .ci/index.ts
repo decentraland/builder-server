@@ -4,6 +4,7 @@ import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { database } from './legacy-database'
 import { env, envTLD, publicTLD } from 'dcl-ops-lib/domain'
+import { acceptDbSecurityGroup } from 'dcl-ops-lib/acceptDb'
 
 export = async function main() {
   const config = new pulumi.Config()
@@ -102,6 +103,7 @@ export = async function main() {
       },
       version: '1',
       memoryReservation: 1024,
+      securityGroups: [(await acceptDbSecurityGroup()).id],
     }
   )
 

@@ -5,6 +5,7 @@ import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { database } from './legacy-database'
 import { env, envTLD, publicTLD } from 'dcl-ops-lib/domain'
 import { acceptDbSecurityGroup } from 'dcl-ops-lib/acceptDb'
+import { supra } from 'dcl-ops-lib/supra'
 
 export = async function main() {
   const config = new pulumi.Config()
@@ -15,7 +16,8 @@ export = async function main() {
   // THIS IS THE NEW DATABASE
   const dbname = `builder`
   const dbpassword = config.requireSecret('db-password')
-  const dbhost = config.require('db-host')
+  const dbhost = supra.requireOutput('db').apply(db => db.endpoint)
+
   const connectionString = pulumi.interpolate`postgres://${dbname}:${dbpassword}@${dbhost}/${dbname}`
 
   const revision = process.env['CI_COMMIT_SHA']

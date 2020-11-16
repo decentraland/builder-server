@@ -3,5 +3,8 @@ config:
   aws:region: us-east-1
   service-builder:ANALYTICS_CONNECTION_STRING:
     secure: v1:otw+92ejjeAgoBNw:au9UYhAZ0iHuFuFHMyRFVg==
+  service-builder:db-host:
+    secure: v1:llIq6qX2eLCZ+RQZ:5oSwtB+mi0CuivRklyVLxhqQoIkl1ulYWhnRR+zhlla0va0NvERo+keAXTAYANoDDGIyKntPjvntPxz1w9UWg+j+
   service-builder:db-password:
     secure: v1:tGQDAgILOTpxsaYk:wxIXvnzKXdBet7D1mksngaJ3Auq9iYtQceOOw+wENYr/R3F6EukcMQ==
+  service-builder:db-user: builder

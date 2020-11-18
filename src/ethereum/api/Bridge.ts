@@ -1,31 +1,23 @@
-import { CollectionAttributes, CollectionWithItems } from '../../Collection'
-import { ItemAttributes, CollectionItem } from '../../Item'
-import { CollectionFields, CollectionFragment, ItemFragment } from './fragments'
+import { CollectionAttributes, Collection } from '../../Collection'
+import { ItemAttributes } from '../../Item'
+import { ItemFragment, CollectionFragment } from './fragments'
+import { collectionAPI } from './collection'
 
 export class Bridge {
-  consolidateCollections(
-    dbCollections: CollectionWithItems[],
-    remoteCollections: Partial<CollectionAttributes>[],
-    remoteItems: Partial<CollectionItem>[] = []
+  static consolidateCollections(
+    dbCollections: CollectionAttributes[],
+    remoteCollections: CollectionFragment[]
   ) {
-    const collections: CollectionWithItems[] = []
-    const remoteAddresses = remoteCollections.map(
-      collection => collection.contract_address
-    )
+    const collections: CollectionAttributes[] = []
 
     for (const dbCollection of dbCollections) {
-      const index = remoteAddresses.indexOf(dbCollection.contract_address)
-      const remoteCollection = remoteCollections[index]
-      const collection =
-        index === -1 ? dbCollection : { ...dbCollection, ...remoteCollection }
-
-      const remoteCollectionItems = remoteItems.filter(
-        item => item.collection_id === collection.id
+      const remoteCollection = remoteCollections.find(
+        remoteCollection =>
+          remoteCollection.id === dbCollection.contract_address
       )
-      collection.items = this.consolidateItems(
-        dbCollection.items,
-        remoteCollectionItems
-      )
+      const collection = remoteCollection
+        ? Bridge.mergeCollection(dbCollection, remoteCollection)
+        : dbCollection
 
       collections.push(collection)
     }
@@ -33,33 +25,76 @@ export class Bridge {
     return collections
   }
 
-  consolidateItems(
-    dbItems: CollectionItem[],
-    remoteItems: Partial<CollectionItem>[]
+  static async consolidateItems(
+    dbItems: ItemAttributes[],
+    remoteItems: ItemFragment[]
   ) {
     const items: ItemAttributes[] = []
+
+    // Get collections from DB
+    const collectionIds = dbItems.reduce<string[]>((ids, dbItem) => {
+      if (dbItem.collection_id) {
+        ids.push(dbItem.collection_id)
+      }
+      return ids
+    }, [])
+
+    const dbResults = await Promise.all(
+      collectionIds.map(collectionId =>
+        Collection.findOne<CollectionAttributes>(collectionId)
+      )
+    )
+    const dbCollections = dbResults.reduce((obj, result) => {
+      if (result) {
+        obj[result.id] = result
+      }
+      return obj
+    }, {} as Record<string, CollectionAttributes>)
+
+    // Get remote collections
+    const contractAddresses = Object.values(dbCollections).map(
+      dbCollection => dbCollection.contract_address
+    )
+    const remoteResults = await Promise.all(
+      contractAddresses.map(contractAddress =>
+        collectionAPI.fetchCollection(contractAddress)
+      )
+    )
+    const remoteCollections = remoteResults.reduce((obj, result) => {
+      if (result) {
+        obj[result.id] = result
+      }
+      return obj
+    }, {} as Record<string, CollectionFragment>)
+
+    // Reduce it to a map for fast lookup
 
     for (const dbItem of dbItems) {
       let item = dbItem
 
-      if (dbItem.collection) {
-        const index = remoteItems.findIndex(
-          item =>
-            item.blockchain_item_id === dbItem.blockchain_item_id &&
-            item.collection!.contract_address ===
-              dbItem.collection!.contract_address
-        )
+      // Check if DB item has a collection
+      if (dbItem.collection_id) {
+        const dbCollection = dbCollections[dbItem.collection_id]
+        if (dbCollection) {
+          // Find remote item
+          const remoteItem = dbItem.blockchain_item_id
+            ? remoteItems.find(
+                remoteItem =>
+                  remoteItem.id ===
+                  collectionAPI.buildItemId(
+                    dbCollection.contract_address,
+                    dbItem.blockchain_item_id!
+                  )
+              )
+            : null
 
-        if (index !== -1) {
-          const remoteItem = remoteItems[index]
+          // Find remote collection
+          const remoteCollection =
+            remoteCollections[dbCollection.contract_address]
 
-          item = {
-            ...dbItem,
-            ...remoteItem,
-            collection: {
-              ...dbItem.collection,
-              ...remoteItem.collection
-            }
+          // Merge item from DB with remote data
+          if (remoteItem && remoteCollection) {
+            item = this.mergeItem(dbItem, remoteItem, remoteCollection)
           }
         }
       }
@@ -70,28 +105,35 @@ export class Bridge {
     return items
   }
 
-  fromRemoteCollection(
-    collection: CollectionFragment | CollectionFields
-  ): Partial<CollectionAttributes> {
+  static mergeCollection(
+    dbCollection: CollectionAttributes,
+    remoteCollection: CollectionFragment
+  ) {
     return {
-      name: collection.name,
-      eth_address: collection.creator,
-      contract_address: collection.id,
+      ...dbCollection,
+      name: remoteCollection.name,
+      eth_address: remoteCollection.creator,
+      contract_address: remoteCollection.id,
       is_published: true,
-      is_approved: collection.isApproved,
-      minters: collection.minters,
-      managers: collection.managers
+      is_approved: remoteCollection.isApproved,
+      minters: remoteCollection.minters,
+      managers: remoteCollection.managers
     }
   }
 
-  fromRemoteItem(item: ItemFragment): Partial<ItemAttributes> {
+  static mergeItem(
+    dbItem: ItemAttributes,
+    remoteItem: ItemFragment,
+    remoteCollection: CollectionFragment
+  ) {
     return {
-      price: item.price,
-      beneficiary: item.beneficiary,
-      blockchain_item_id: item.blockchainId,
+      ...dbItem,
+      price: remoteItem.price,
+      beneficiary: remoteItem.beneficiary,
+      blockchain_item_id: remoteItem.blockchainId,
       is_published: true,
-      is_approved: item.collection.isApproved,
-      total_supply: Number(item.totalSupply)
+      is_approved: remoteCollection.isApproved,
+      total_supply: Number(remoteItem.totalSupply)
     }
   }
 }

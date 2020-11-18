@@ -1,17 +1,20 @@
 import gql from 'graphql-tag'
 
-export const itemFields = () => gql`
-  fragment itemFields on Item {
+export const itemFragment = () => gql`
+  fragment itemFragment on Item {
     id
     blockchainId
     totalSupply
     price
     beneficiary
+    collection {
+      id
+    }
   }
 `
 
-export const collectionFields = () => gql`
-  fragment collectionFields on Collection {
+export const collectionFragment = () => gql`
+  fragment collectionFragment on Collection {
     id
     creator
     owner
@@ -22,37 +25,18 @@ export const collectionFields = () => gql`
   }
 `
 
-export const itemFragment = () => gql`
-  fragment itemFragment on Item {
-    ...itemFields
-    collection {
-      ...collectionFields
-    }
-  }
-  ${itemFields()}
-  ${collectionFields()}
-`
-
-export const collectionFragment = () => gql`
-  fragment collectionFragment on Collection {
-    ...collectionFields
-    items {
-      ...itemFields
-    }
-  }
-  ${itemFields()}
-  ${collectionFields()}
-`
-
-export type ItemFields = {
+export type ItemFragment = {
   id: string
   blockchainId: string
   totalSupply: string
   price: string
   beneficiary: string
+  collection: {
+    id: string
+  }
 }
 
-export type CollectionFields = {
+export type CollectionFragment = {
   id: string
   creator: string
   owner: string
@@ -60,12 +44,4 @@ export type CollectionFields = {
   isApproved: boolean
   minters: string[]
   managers: string[]
-}
-
-export type ItemFragment = ItemFields & {
-  collection: CollectionFields
-}
-
-export type CollectionFragment = CollectionFields & {
-  items: ItemFields[]
 }

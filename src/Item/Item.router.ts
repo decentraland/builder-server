@@ -17,6 +17,7 @@ import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
 import { itemSchema } from './Item.types'
+import { Collection, CollectionAttributes } from '../Collection'
 
 const ajv = new Ajv()
 
@@ -27,6 +28,7 @@ export class ItemRouter extends Router {
 
   mount() {
     const withItemExists = withModelExists(Item, 'id')
+    const withCollectionExist = withModelExists(Collection, 'id')
     const withItemAuthorization = withModelAuthorization(Item)
 
     this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
@@ -41,12 +43,21 @@ export class ItemRouter extends Router {
     )
 
     /**
-     * Returns the item
+     * Returns an item
      */
     this.router.get(
       '/items/:id',
       withItemExists,
       server.handleRequest(this.getItem)
+    )
+
+    /**
+     * Returns the item's of a collection
+     */
+    this.router.get(
+      '/collections/:id/items',
+      withCollectionExist,
+      server.handleRequest(this.getCollectionItems)
     )
 
     /**
@@ -85,31 +96,57 @@ export class ItemRouter extends Router {
   async getItems(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
 
-    const [dbItems, remoteData] = await Promise.all([
-      Item.findByEthAddressWithCollection(eth_address),
-      collectionAPI.fetchCollectionsWithItemsByOwner(eth_address)
+    const [dbItems, remoteItems] = await Promise.all([
+      Item.findByEthAddress(eth_address),
+      collectionAPI.fetchItemsByOwner(eth_address)
     ])
-    const remoteItems = remoteData.items
 
-    return new Bridge().consolidateItems(dbItems, remoteItems)
+    return Bridge.consolidateItems(dbItems, remoteItems)
   }
 
   async getItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
-    let dbItem = await Item.findOneWithCollection(id)
+    const dbItem = await Item.findOne<ItemAttributes>(id)
 
-    if (dbItem && dbItem.blockchain_item_id) {
-      const remoteItem = await collectionAPI.fetchItemByBlockchainId(
-        dbItem.blockchain_item_id
+    // Check if item has a collection and a blockchain id
+    if (dbItem && dbItem.collection_id && dbItem.blockchain_item_id) {
+      const dbCollection = await Collection.findOne<CollectionAttributes>(
+        dbItem.collection_id
       )
-      if (remoteItem) {
-        const [item] = new Bridge().consolidateItems([dbItem], [remoteItem])
-        return item
+      if (dbCollection) {
+        // Find remote item and collection
+        const [remoteItem, remoteCollection] = await Promise.all([
+          collectionAPI.fetchItem(
+            dbItem.blockchain_item_id,
+            dbCollection.contract_address
+          ),
+          collectionAPI.fetchCollection(dbCollection.contract_address)
+        ])
+
+        // Merge
+        if (remoteItem && remoteCollection) {
+          return Bridge.mergeItem(dbItem, remoteItem, remoteCollection)
+        }
       }
     }
 
     return dbItem
+  }
+
+  async getCollectionItems(req: AuthRequest) {
+    const id = server.extractFromReq(req, 'id')
+
+    const dbCollection = await Collection.findOne<CollectionAttributes>(id)
+
+    if (!dbCollection) return []
+
+    const [dbItems, remoteItems] = await Promise.all([
+      Item.findByCollectionId(id),
+      collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address)
+    ])
+
+    return Bridge.consolidateItems(dbItems, remoteItems)
   }
 
   async upsertItem(req: AuthRequest) {

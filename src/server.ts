@@ -73,6 +73,7 @@ async function startServer() {
     ) {
       // ignore timeouts and terminated connections
     } else {
+      console.error(err.message)
       exit(1)
     }
   })

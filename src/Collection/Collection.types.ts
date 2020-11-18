@@ -1,5 +1,3 @@
-import { ItemAttributes } from '../Item'
-
 export type CollectionAttributes = {
   id: string // uuid
   name: string
@@ -12,10 +10,6 @@ export type CollectionAttributes = {
   managers: string[]
   created_at: Date
   updated_at: Date
-}
-
-export type CollectionWithItems = CollectionAttributes & {
-  items: ItemAttributes[]
 }
 
 export const collectionSchema = Object.freeze({

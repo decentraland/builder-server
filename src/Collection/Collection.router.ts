@@ -71,7 +71,6 @@ export class CollectionRouter extends Router {
       Collection.findByEthAddress(eth_address),
       collectionAPI.fetchCollectionsByOwner(eth_address)
     ])
-
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
 
@@ -79,6 +78,7 @@ export class CollectionRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)
+
     if (dbCollection) {
       const remoteCollection = await collectionAPI.fetchCollection(
         dbCollection.contract_address
@@ -86,11 +86,9 @@ export class CollectionRouter extends Router {
       if (remoteCollection) {
         return Bridge.mergeCollection(dbCollection, remoteCollection)
       }
-
-      return dbCollection
     }
 
-    return null
+    return dbCollection
   }
 
   async upsertCollection(req: AuthRequest) {

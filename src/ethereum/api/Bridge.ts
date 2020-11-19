@@ -38,34 +38,15 @@ export class Bridge {
       }
       return ids
     }, [])
-
-    const dbResults = await Promise.all(
-      collectionIds.map(collectionId =>
-        Collection.findOne<CollectionAttributes>(collectionId)
-      )
-    )
-    const dbCollections = dbResults.reduce((obj, result) => {
-      if (result) {
-        obj[result.id] = result
-      }
-      return obj
-    }, {} as Record<string, CollectionAttributes>)
+    const dbResults = await Collection.findByIds(collectionIds)
+    const dbCollections = this.indexById(dbResults)
 
     // Get remote collections
-    const contractAddresses = Object.values(dbCollections).map(
+    const addresses = Object.values(dbCollections).map(
       dbCollection => dbCollection.contract_address
     )
-    const remoteResults = await Promise.all(
-      contractAddresses.map(contractAddress =>
-        collectionAPI.fetchCollection(contractAddress)
-      )
-    )
-    const remoteCollections = remoteResults.reduce((obj, result) => {
-      if (result) {
-        obj[result.id] = result
-      }
-      return obj
-    }, {} as Record<string, CollectionFragment>)
+    const remoteResults = await collectionAPI.fetchCollections(addresses)
+    const remoteCollections = this.indexById(remoteResults)
 
     // Reduce it to a map for fast lookup
 
@@ -94,7 +75,7 @@ export class Bridge {
 
           // Merge item from DB with remote data
           if (remoteItem && remoteCollection) {
-            item = this.mergeItem(dbItem, remoteItem, remoteCollection)
+            item = Bridge.mergeItem(dbItem, remoteItem, remoteCollection)
           }
         }
       }
@@ -135,5 +116,14 @@ export class Bridge {
       is_approved: remoteCollection.isApproved,
       total_supply: Number(remoteItem.totalSupply)
     }
+  }
+
+  static indexById<T extends { id: string }>(list: (T | undefined)[]) {
+    return list.reduce((obj, result) => {
+      if (result) {
+        obj[result.id] = result
+      }
+      return obj
+    }, {} as Record<string, T>)
   }
 }

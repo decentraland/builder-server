@@ -29,6 +29,19 @@ export class CollectionAPI {
     return data.collections.length > 0 ? data.collections[0] : null
   }
 
+  fetchCollections = async (contractAddresses: string[]) => {
+    const { data } = await graphClient.query<{
+      collections: CollectionFragment[]
+    }>({
+      query: getCollectionsByIdQuery(),
+      variables: {
+        ids: contractAddresses.map(address => address.toLowerCase())
+      }
+    })
+
+    return data.collections
+  }
+
   fetchCollectionsByOwner = async (owner: string) => {
     const { data } = await graphClient.query<{
       collections: CollectionFragment[]
@@ -82,8 +95,17 @@ export class CollectionAPI {
 export const collectionAPI = new CollectionAPI()
 
 const getCollectionByIdQuery = () => gql`
-  query getCollectionWithItems($id: String) {
+  query getCollectionById($id: String) {
     collections(where: { id: $id }) {
+      ...collectionFragment
+    }
+  }
+  ${collectionFragment()}
+`
+
+const getCollectionsByIdQuery = () => gql`
+  query getCollectionsById($ids: [ID!]!) {
+    collections(where: { id_in: $ids }) {
       ...collectionFragment
     }
   }

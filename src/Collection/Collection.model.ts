@@ -11,4 +11,11 @@ export class Collection extends Model<CollectionAttributes> {
       FROM ${raw(Collection.tableName)}
       WHERE eth_address = ${ethAddress}`)
   }
+
+  static findByIds(ids: string[]) {
+    return this.query<CollectionAttributes>(SQL`
+    SELECT *
+      FROM ${raw(Collection.tableName)}
+      WHERE id = ANY(${ids})`)
+  }
 }

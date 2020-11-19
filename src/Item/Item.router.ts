@@ -52,7 +52,7 @@ export class ItemRouter extends Router {
     )
 
     /**
-     * Returns the item's of a collection
+     * Returns the items of a collection
      */
     this.router.get(
       '/collections/:id/items',

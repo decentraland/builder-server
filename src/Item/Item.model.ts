@@ -1,21 +1,21 @@
-import { Model, SQL } from 'decentraland-server'
+import { Model, SQL, raw } from 'decentraland-server'
 
-import { ItemQueries } from './Item.queries'
-import { ItemAttributes, CollectionItem } from './Item.types'
+import { ItemAttributes } from './Item.types'
 
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
-  static async findOneWithCollection(id: string) {
-    const items = await this.query<CollectionItem>(SQL`
-      ${ItemQueries.selectWithCollection()}
-        WHERE items.id = ${id}`)
-    return items[0]
+  static findByEthAddress(ethAddress: string) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE eth_address = ${ethAddress}`)
   }
 
-  static findByEthAddressWithCollection(ethAddress: string) {
-    return this.query<CollectionItem>(SQL`
-      ${ItemQueries.selectWithCollection()}
-        WHERE items.eth_address = ${ethAddress}`)
+  static findByCollectionId(collectionId: string) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ${collectionId}`)
   }
 }

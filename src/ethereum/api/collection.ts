@@ -1,11 +1,8 @@
 import gql from 'graphql-tag'
 import { env } from 'decentraland-commons'
-import { CollectionItem } from '../../Item'
 import {
   collectionFragment,
-  collectionFields,
   itemFragment,
-  CollectionFields,
   CollectionFragment,
   ItemFragment
 } from './fragments'
@@ -22,83 +19,93 @@ export class CollectionAPI {
     this.bridge = new Bridge()
   }
 
-  fetchCollectionWithItemsById = async (id: string) => {
+  fetchCollection = async (contractAddress: string) => {
     const { data } = await graphClient.query<{
       collections: CollectionFragment[]
     }>({
-      query: getCollectionWithItems(),
-      variables: { id: id.toLowerCase() }
+      query: getCollectionByIdQuery(),
+      variables: { id: contractAddress.toLowerCase() }
     })
-    const remoteCollection = data.collections[0]
+    return data.collections.length > 0 ? data.collections[0] : null
+  }
 
-    return {
-      collection: this.bridge.fromRemoteCollection(remoteCollection),
-      items: this.extractItems([remoteCollection])
-    }
+  fetchCollections = async (contractAddresses: string[]) => {
+    const { data } = await graphClient.query<{
+      collections: CollectionFragment[]
+    }>({
+      query: getCollectionsByIdQuery(),
+      variables: {
+        ids: contractAddresses.map(address => address.toLowerCase())
+      }
+    })
+
+    return data.collections
   }
 
   fetchCollectionsByOwner = async (owner: string) => {
     const { data } = await graphClient.query<{
-      collections: CollectionFields[]
+      collections: CollectionFragment[]
     }>({
       query: getCollectionsByCreatorQuery(),
       variables: { creator: owner.toLowerCase() }
     })
 
-    return data.collections.map(this.bridge.fromRemoteCollection)
+    return data.collections
   }
 
-  fetchCollectionsWithItemsByOwner = async (owner: string) => {
+  fetchItem = async (contractAddress: string, tokenId: string) => {
+    const { data } = await graphClient.query<{ items: ItemFragment[] }>({
+      query: getItemByIdQuery(),
+      variables: { id: this.buildItemId(contractAddress, tokenId) }
+    })
+
+    return data.items.length > 0 ? data.items[0] : null
+  }
+
+  fetchItemsByOwner = async (owner: string) => {
     const { data } = await graphClient.query<{
-      collections: CollectionFragment[]
+      collections: { items: ItemFragment[] }[]
     }>({
-      query: getCollectionsWithItemsByCreatorQuery(),
+      query: getItemsByOwnerQuery(),
       variables: { creator: owner.toLowerCase() }
     })
 
-    return {
-      collections: data.collections.map(this.bridge.fromRemoteCollection),
-      items: this.extractItems(data.collections)
-    }
+    return data.collections.reduce(
+      (items, collection) => [...items, ...collection.items],
+      [] as ItemFragment[]
+    )
   }
 
-  fetchItemByBlockchainId = async (blockchainId: string) => {
-    const { data } = await graphClient.query<{ items: ItemFragment[] }>({
-      query: getItemWithCollection(),
-      variables: { blockchainId }
+  fetchItemsByContractAddress = async (contractAddress: string) => {
+    const { data } = await graphClient.query<{
+      collections: { items: ItemFragment[] }[]
+    }>({
+      query: getItemsByContractAddressQuery(),
+      variables: { id: contractAddress.toLowerCase() }
     })
 
-    return data.items.length > 0
-      ? this.bridge.fromRemoteItem(data.items[0])
-      : undefined
+    return data.collections.length > 0 ? data.collections[0].items : []
   }
 
-  private extractItems(collections: CollectionFragment[]) {
-    let items: Partial<CollectionItem>[] = []
-
-    for (const collection of collections) {
-      for (const collectionItem of collection.items) {
-        const item = this.bridge.fromRemoteItem({
-          ...collectionItem,
-          collection
-        })
-
-        items.push({
-          ...item,
-          collection: this.bridge.fromRemoteCollection(collection)!
-        })
-      }
-    }
-
-    return items
+  buildItemId = (contractAddress: string, tokenId: string) => {
+    return contractAddress + '-' + tokenId
   }
 }
 
 export const collectionAPI = new CollectionAPI()
 
-const getCollectionWithItems = () => gql`
-  query getCollectionWithItems($id: String) {
+const getCollectionByIdQuery = () => gql`
+  query getCollectionById($id: String) {
     collections(where: { id: $id }) {
+      ...collectionFragment
+    }
+  }
+  ${collectionFragment()}
+`
+
+const getCollectionsByIdQuery = () => gql`
+  query getCollectionsById($ids: [ID!]!) {
+    collections(where: { id_in: $ids }) {
       ...collectionFragment
     }
   }
@@ -108,25 +115,38 @@ const getCollectionWithItems = () => gql`
 const getCollectionsByCreatorQuery = () => gql`
   query getCollectionsByCreator($creator: String) {
     collections(where: { creator: $creator }) {
-      ...collectionFields
-    }
-  }
-  ${collectionFields()}
-`
-
-const getCollectionsWithItemsByCreatorQuery = () => gql`
-  query getCollectionsWithItemsByCreatorQuery($creator: String) {
-    collections(where: { creator: $creator }) {
       ...collectionFragment
     }
   }
   ${collectionFragment()}
 `
 
-const getItemWithCollection = () => gql`
-  query getItemWithCollection($blockchainId: String) {
-    items(where: { blockchainId: $blockchainId }) {
+const getItemByIdQuery = () => gql`
+  query getItem($id: String) {
+    items(where: { id: $id }) {
       ...itemFragment
+    }
+  }
+  ${itemFragment()}
+`
+
+const getItemsByOwnerQuery = () => gql`
+  query getItemsByOwnerCreator($creator: String) {
+    collections(where: { creator: $creator }) {
+      items {
+        ...itemFragment
+      }
+    }
+  }
+  ${itemFragment()}
+`
+
+const getItemsByContractAddressQuery = () => gql`
+  query getItemsByContractAddress($id: String) {
+    collections(where: { id: $id }) {
+      items {
+        ...itemFragment
+      }
     }
   }
   ${itemFragment()}

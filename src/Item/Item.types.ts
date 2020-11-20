@@ -1,5 +1,4 @@
 import { metricsSchema } from '../Metrics'
-import { CollectionAttributes } from '../Collection'
 import { WearableData, wearableSchema } from './wearable/types'
 
 enum ItemType {
@@ -37,10 +36,6 @@ export type ItemAttributes = {
   contents: Record<string, string>
   created_at: Date
   updated_at: Date
-}
-
-export type CollectionItem = ItemAttributes & {
-  collection?: Partial<CollectionAttributes>
 }
 
 export const itemSchema = Object.freeze({

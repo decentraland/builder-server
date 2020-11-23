@@ -28,7 +28,7 @@ export = async function main() {
   const hostname = 'builder-api.decentraland.' + envTLD
 
   const builderApi = await createFargateTask(
-    `builder-api-2`,
+    `builder-api`,
     image,
     5000,
     [
@@ -94,9 +94,10 @@ export = async function main() {
       // @ts-ignore
       healthCheck: {
         path: '/v1/assetPacks',
-        interval: 90,
-        timeout: 5,
-        unhealthyThreshold: 5,
+        interval: 60,
+        timeout: 10,
+        unhealthyThreshold: 15,
+        healthyThreshold: 3
       },
       version: '1',
       memoryReservation: 1024,

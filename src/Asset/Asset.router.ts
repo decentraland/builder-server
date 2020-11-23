@@ -103,16 +103,8 @@ export class AssetRouter extends Router {
   }
 
   private getAssets(req: Request) {
-    const ids = req.query.id
-      ? Array.isArray(req.query.id)
-        ? (req.query.id as string[])
-        : [req.query.id as string]
-      : []
-
-    if (ids.length === 0) {
-      throw new Error('You must provide at least one "id" via query params')
-    }
-
+    const reqIds = server.extractFromReq(req, 'id')
+    const ids: string[] = Array.isArray(reqIds) ? reqIds : [reqIds]
     return Asset.findByIds(ids)
   }
 }

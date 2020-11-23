@@ -103,7 +103,7 @@ export class AssetRouter extends Router {
   }
 
   private getAssets(req: Request) {
-    const reqIds = server.extractFromReq(req, 'id')
+    const reqIds = server.extractFromReq<string | string[]>(req, 'id')
     const ids: string[] = Array.isArray(reqIds) ? reqIds : [reqIds]
     return Asset.findByIds(ids)
   }

@@ -2,21 +2,16 @@ import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
 import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
-import { database } from './legacy-database'
 import { env, envTLD, publicTLD } from 'dcl-ops-lib/domain'
 import { acceptDbSecurityGroup } from 'dcl-ops-lib/acceptDb'
-import { supra } from 'dcl-ops-lib/supra'
+import {getDbHostAndPort} from 'dcl-ops-lib/supra'
 
 export = async function main() {
   const config = new pulumi.Config()
 
-  // THIS DB SHOULD BE REMOVED AS SOON AS WE GET THE NEW DATABASE MIGRATED
-  database(`builder`)
-
-  // THIS IS THE NEW DATABASE
   const dbname = `builder`
   const dbpassword = config.requireSecret('db-password')
-  const dbhost = supra.requireOutput('db').apply(db => db.endpoint)
+  const dbhost = await getDbHostAndPort()
 
   const connectionString = pulumi.interpolate`postgres://${dbname}:${dbpassword}@${dbhost}/${dbname}`
 
@@ -33,7 +28,7 @@ export = async function main() {
   const hostname = 'builder-api.decentraland.' + envTLD
 
   const builderApi = await createFargateTask(
-    `builder-api`,
+    `builder-api-2`,
     image,
     5000,
     [
@@ -109,22 +104,22 @@ export = async function main() {
     }
   )
 
-  if (env === 'prd') {
-    new aws.alb.ListenerRule(`listenrl-builder-${env}`, {
-      listenerArn:
-        'arn:aws:elasticloadbalancing:us-east-1:619079673649:listener/app/prd-alb-all/c1757689c51d84c4/36125240631de786',
-      conditions: [
-        { hostHeader: { values: ['builder-api.decentraland.org'] } },
-      ],
-      actions: [
-        {
-          type: 'forward',
-          targetGroupArn:
-            'arn:aws:elasticloadbalancing:us-east-1:619079673649:targetgroup/targ-builder-api-9b34f22/27498775635fda40',
-        },
-      ],
-    })
-  }
+  // if (env === 'prd') {
+  //   new aws.alb.ListenerRule(`listenrl-builder-${env}`, {
+  //     listenerArn:
+  //       'arn:aws:elasticloadbalancing:us-east-1:619079673649:listener/app/prd-alb-all/c1757689c51d84c4/36125240631de786',
+  //     conditions: [
+  //       { hostHeader: { values: ['builder-api.decentraland.org'] } },
+  //     ],
+  //     actions: [
+  //       {
+  //         type: 'forward',
+  //         targetGroupArn:
+  //           'arn:aws:elasticloadbalancing:us-east-1:619079673649:targetgroup/targ-builder-api-9b34f22/27498775635fda40',
+  //       },
+  //     ],
+  //   })
+  // }
 
   const publicUrl = builderApi.endpoint
 

@@ -16,6 +16,13 @@ export class Asset extends Model<AssetAttributes> {
     )
   }
 
+  static findByIds(ids: string[]) {
+    return this.query<AssetAttributes>(SQL`
+    SELECT *
+      FROM ${SQL.raw(this.tableName)}
+      WHERE id = ANY(${ids})`)
+  }
+
   static async upsert<U extends QueryPart = any>(
     attributes: U,
     onConflict?: OnConflict<U, Partial<U>> | undefined

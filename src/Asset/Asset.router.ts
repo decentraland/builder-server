@@ -20,7 +20,8 @@ export class AssetRouter extends Router {
     | undefined
 
   mount() {
-    const withassetPackExists = withModelExists(AssetPack, 'assetPackId')
+    const withAssetExists = withModelExists(Asset)
+    const withAssetPackExists = withModelExists(AssetPack, 'assetPackId')
     const withAssetPackAuthorization = withModelAuthorization(
       AssetPack,
       'assetPackId'
@@ -34,11 +35,25 @@ export class AssetRouter extends Router {
     this.router.post(
       '/assetPacks/:assetPackId/assets/:id/files',
       withAuthentication,
-      withassetPackExists,
+      withAssetPackExists,
       withAssetPackAuthorization,
       asMiddleware(this.assetBelongsToPackMiddleware),
       server.handleRequest(this.uploadAssetFiles)
     )
+
+    /**
+     * Get a single asset
+     */
+    this.router.get(
+      '/assets/:id',
+      withAssetExists,
+      server.handleRequest(this.getAsset)
+    )
+
+    /**
+     * Get a multiple assets
+     */
+    this.router.get('/assets', server.handleRequest(this.getAssets))
   }
 
   async assetBelongsToPackMiddleware(req: Request) {
@@ -80,5 +95,16 @@ export class AssetRouter extends Router {
       new S3Content().getFileKey(file.fieldname)
     )
     return utils.promisify<boolean>(uploader.any())
+  }
+
+  private getAsset(req: Request) {
+    const id = server.extractFromReq(req, 'id')
+    return Asset.findOne(id)
+  }
+
+  private getAssets(req: Request) {
+    const reqIds = server.extractFromReq<string | string[]>(req, 'id')
+    const ids: string[] = Array.isArray(reqIds) ? reqIds : [reqIds]
+    return Asset.findByIds(ids)
   }
 }

@@ -50,12 +50,4 @@ export class AssetPack extends Model<AssetPackAttributes> {
 
     return counts[0].count > 0
   }
-
-  static async LEGACY_findByUserIdWithAssets(userId: string | undefined) {
-    return this.query<FullAssetPackAttributes>(SQL`
-      SELECT *, ${AssetQueries.selectFromAssetPack()}
-        FROM ${SQL.raw(this.tableName)}
-        WHERE is_deleted = FALSE
-          AND user_id = ${userId}`)
-  }
 }

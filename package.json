@@ -35,7 +35,7 @@
     "@types/multer": "^1.4.5",
     "@types/multer-s3": "^2.7.9",
     "@types/pg": "^7.14.9",
-    "ajv": "^6.12.6",
+    "ajv": "^7.1.0",
     "aws-sdk": "^2.841.0",
     "body-parser": "^1.18.3",
     "dcl-crypto": "^2.1.0",
@@ -46,7 +46,7 @@
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
     "express-cache-controller": "^1.1.0",
-    "express-jwt": "^5.3.1",
+    "express-jwt": "^6.0.0",
     "graphql": "^15.5.0",
     "isomorphic-fetch": "^2.2.1",
     "jwks-rsa": "^1.12.2",
@@ -63,9 +63,9 @@
     "@types/node": "^11.15.44",
     "@types/uuid": "^3.4.6",
     "dcl-tslint-config-standard": "^1.1.0",
-    "prettier": "^1.16.4",
-    "ts-node": "^8.3.0",
+    "prettier": "^2.2.1",
+    "ts-node": "^9.1.1",
     "tslint-plugin-prettier": "^2.0.1",
-    "uuid": "^3.3.3"
+    "uuid": "^8.3.2"
   }
 }

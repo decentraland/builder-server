@@ -63,7 +63,7 @@
     "@types/node": "^11.15.44",
     "@types/uuid": "^3.4.6",
     "dcl-tslint-config-standard": "^1.1.0",
-    "prettier": "^1.16.4",
+    "prettier": "^2.2.1",
     "ts-node": "^8.3.0",
     "tslint-plugin-prettier": "^2.0.1",
     "uuid": "^3.3.3"

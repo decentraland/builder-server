@@ -46,7 +46,7 @@
     "express": "^4.16.4",
     "express-basic-auth": "^1.2.0",
     "express-cache-controller": "^1.1.0",
-    "express-jwt": "^5.3.1",
+    "express-jwt": "^6.0.0",
     "graphql": "^15.5.0",
     "isomorphic-fetch": "^2.2.1",
     "jwks-rsa": "^1.12.2",

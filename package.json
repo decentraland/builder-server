@@ -66,6 +66,6 @@
     "prettier": "^1.16.4",
     "ts-node": "^8.3.0",
     "tslint-plugin-prettier": "^2.0.1",
-    "uuid": "^3.3.3"
+    "uuid": "^8.3.2"
   }
 }

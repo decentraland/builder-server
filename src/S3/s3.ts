@@ -29,7 +29,7 @@ export const ACL = {
   authenticatedRead: 'authenticated-read' as 'authenticated-read',
   awsExecRead: 'aws-exec-read' as 'aws-exec-read',
   bucketOwnerRead: 'bucket-owner-read' as 'bucket-owner-read',
-  bucketOwnerFullControl: 'bucket-owner-full-control' as 'bucket-owner-full-control'
+  bucketOwnerFullControl: 'bucket-owner-full-control' as 'bucket-owner-full-control',
 }
 export type ACLValues = typeof ACL[keyof typeof ACL]
 
@@ -37,13 +37,13 @@ const log = new Log('s3')
 
 export const s3 = new AWS.S3({
   accessKeyId: ACCESS_KEY,
-  secretAccessKey: ACCESS_SECRET
+  secretAccessKey: ACCESS_SECRET,
 })
 
 export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
   const params = {
     Bucket: BUCKET_NAME,
-    Key: key
+    Key: key,
   }
   log.info(`Reading file "${key}"`)
   return utils.promisify<AWS.S3.GetObjectOutput>(s3.getObject.bind(s3))(params)
@@ -56,7 +56,7 @@ export async function listFiles(
 ): Promise<AWS.S3.ObjectList> {
   const params: AWS.S3.ListObjectsV2Request = {
     Bucket: BUCKET_NAME,
-    Prefix: key
+    Prefix: key,
   }
   if (continuationToken) {
     params.ContinuationToken = continuationToken
@@ -78,7 +78,7 @@ export async function listFiles(
 export async function deleteFile(key: string) {
   const params = {
     Bucket: BUCKET_NAME,
-    Key: key
+    Key: key,
   }
   log.info(`Deleting "${key}"`)
   return utils.promisify<AWS.S3.DeleteObjectOutput>(s3.deleteObject.bind(s3))(
@@ -105,7 +105,7 @@ export async function deleteFolder(key: string) {
 export async function checkFile(key: string): Promise<boolean> {
   const params = {
     Bucket: BUCKET_NAME,
-    Key: key
+    Key: key,
   }
   log.info(`Checking file "${key}"`)
 
@@ -131,7 +131,7 @@ export function uploadFile(
     Key: key,
     Body: data,
     ACL: acl,
-    ContentType
+    ContentType,
   }
   log.info(`Uploading file "${key}"`)
 
@@ -148,9 +148,9 @@ export function getFileUploader(
 
   return multer({
     limits: {
-      fileSize: maxFileSize
+      fileSize: maxFileSize,
     },
-    fileFilter: function(_, file, cb) {
+    fileFilter: function (_, file, cb) {
       if (mimeTypes.length > 0) {
         cb(null, mimeTypes.includes(file.mimetype))
       } else {
@@ -167,7 +167,7 @@ export function getFileUploader(
         } catch (error) {
           next(error, '')
         }
-      }
-    })
+      },
+    }),
   })
 }

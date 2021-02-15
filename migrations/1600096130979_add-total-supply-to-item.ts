@@ -5,6 +5,6 @@ const tableName = Item.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   pgm.addColumn(tableName, {
-    total_supply: { type: 'INT', default: 0, notNull: true }
+    total_supply: { type: 'INT', default: 0, notNull: true },
   })
 }

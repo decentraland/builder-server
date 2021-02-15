@@ -1,6 +1,7 @@
 {
   "extends": ["dcl-tslint-config-standard", "tslint-plugin-prettier"],
   "rules": {
+    "trailing-comma": false,
     "no-commented-out-code": false,
     "variable-name": [true, "ban-keywords", "allow-leading-underscore"],
     "prettier": [true, { "printWidth": 80, "singleQuote": true, "semi": false }]

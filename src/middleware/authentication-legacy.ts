@@ -55,11 +55,11 @@ function getJWTMiddleware() {
       cache: true,
       rateLimit: true,
       jwksRequestsPerMinute: 5,
-      jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`
+      jwksUri: `https://${AUTH0_DOMAIN}/.well-known/jwks.json`,
     }),
     requestProperty: 'auth',
     issuer: `https://${AUTH0_DOMAIN}/`,
-    algorithms: ['RS256']
+    algorithms: ['RS256'],
   })
 }
 

@@ -12,9 +12,8 @@ export const manifestSchema = Object.freeze({
   properties: {
     version: { type: 'number' },
     project: projectSchema,
-    scene: sceneSchema
+    scene: sceneSchema,
   },
   additionalProperties: false,
-  removeAdditional: true,
-  required: ['version', 'project', 'scene']
+  required: ['version', 'project', 'scene'],
 })

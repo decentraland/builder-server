@@ -19,12 +19,12 @@ function addEthAddress(
 
   pgm.addColumns(tableName, {
     [ethAddressColumnName]: {
-      type: 'TEXT'
-    }
+      type: 'TEXT',
+    },
   })
 
   pgm.alterColumn(tableName, userIdColumnName, {
-    notNull: false
+    notNull: false,
   })
 
   pgm.addIndex(tableName, ethAddressColumnName)
@@ -42,12 +42,12 @@ function removeEthAddress(
   }
 
   pgm.alterColumn(tableName, userIdColumnName, {
-    notNull: true
+    notNull: true,
   })
 
   if (hasPrimaryKey) {
     pgm.addConstraint(tableName, tableName + '_pkey', {
-      primaryKey: userIdColumnName
+      primaryKey: userIdColumnName,
     })
   }
 

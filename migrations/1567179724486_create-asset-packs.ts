@@ -14,7 +14,7 @@ export const up = (pgm: MigrationBuilder) => {
       user_id: { type: 'TEXT', notNull: true },
       is_deleted: { type: 'BOOLEAN', default: false, notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
-      updated_at: { type: 'TIMESTAMP', notNull: true }
+      updated_at: { type: 'TIMESTAMP', notNull: true },
     },
     { ifNotExists: true }
   )

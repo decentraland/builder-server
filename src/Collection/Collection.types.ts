@@ -24,17 +24,16 @@ export const collectionSchema = Object.freeze({
     is_approved: { type: 'boolean' },
     minters: {
       type: 'array',
-      items: { type: 'string' }
+      items: { type: 'string' },
     },
     managers: {
       type: 'array',
-      items: { type: 'string' }
+      items: { type: 'string' },
     },
     created_at: { type: 'string' },
-    updated_at: { type: 'string' }
+    updated_at: { type: 'string' },
   },
   additionalProperties: false,
-  removeAdditional: true,
   required: [
     'id',
     'name',
@@ -42,6 +41,6 @@ export const collectionSchema = Object.freeze({
     'salt',
     'contract_address',
     'created_at',
-    'updated_at'
-  ]
+    'updated_at',
+  ],
 })

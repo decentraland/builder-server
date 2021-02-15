@@ -2,7 +2,7 @@ import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client/core'
 
 export function createClient(url: string) {
   const link = new HttpLink({
-    uri: url
+    uri: url,
   })
 
   const client = new ApolloClient({
@@ -10,9 +10,9 @@ export function createClient(url: string) {
     cache: new InMemoryCache(),
     defaultOptions: {
       query: {
-        fetchPolicy: 'no-cache'
-      }
-    }
+        fetchPolicy: 'no-cache',
+      },
+    },
   })
 
   return client

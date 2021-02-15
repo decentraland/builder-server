@@ -11,7 +11,7 @@ export const up = (pgm: MigrationBuilder) => {
     metrics: {
       type: 'JSON',
       default: JSON.stringify(attributes),
-      notNull: true
-    }
+      notNull: true,
+    },
   })
 }

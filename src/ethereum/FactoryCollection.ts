@@ -4,7 +4,7 @@ import { keccak256 } from '@ethersproject/solidity'
 import {
   FACTORY_COLLECTION_ADDRESS,
   FACTORY_COLLECTION_CODE_HASH,
-  Network
+  Network,
 } from './types'
 
 export class FactoryCollection {
@@ -35,7 +35,7 @@ export class FactoryCollection {
         '0xff',
         address,
         keccak256(['bytes32', 'address'], [salt, userAddress]),
-        codeHash
+        codeHash,
       ]
     ).slice(-40)
 

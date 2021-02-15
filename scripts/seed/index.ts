@@ -1,5 +1,5 @@
 import https from 'https'
-import fs from 'fs'
+import fs, { BaseEncodingOptions } from 'fs'
 import path from 'path'
 import { env, utils } from 'decentraland-commons'
 
@@ -65,13 +65,13 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
 
   for (const defaultAssetPack of assetPacks) {
     const assetPackUpsert = uploadThumbnail(defaultAssetPack).then(
-      thumbnail => {
+      (thumbnail) => {
         const attributes = {
           ...utils.omit(defaultAssetPack, ['url']),
           thumbnail,
           eth_address: DEFAULT_ETH_ADDRESS,
           created_at: now,
-          updated_at: now
+          updated_at: now,
         } as AssetPackAttributes
 
         console.log(
@@ -100,7 +100,7 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
         ...utils.omit(defaultAttributes, ['variations', 'url']),
         thumbnail,
         model: defaultAttributes.url,
-        asset_pack_id: id
+        asset_pack_id: id,
       } as AssetAttributes
 
       console.log(`Upserting asset ${attributes.id} for asset pack ${id}`)
@@ -112,7 +112,7 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
         const s3Content = new S3Content()
 
         for (const cid of Object.values(attributes.contents)) {
-          const promise = s3Content.checkFile(cid).then(async exists => {
+          const promise = s3Content.checkFile(cid).then(async (exists) => {
             if (exists) {
               console.log(`File ${cid} already exists in S3`)
             } else {
@@ -163,13 +163,13 @@ async function downloadAsset(cid: string): Promise<Buffer> {
     const chunks: any[] = []
     let file = Buffer.concat([])
 
-    https.get(url, function(response) {
-      response.on('data', chunk => chunks.push(chunk))
+    https.get(url, function (response) {
+      response.on('data', (chunk) => chunks.push(chunk))
       response.on('end', () => {
         file = Buffer.concat(chunks)
         resolve(file)
       })
-      response.on('error', error => reject(error))
+      response.on('error', (error) => reject(error))
     })
   })
 }
@@ -178,11 +178,14 @@ function readJSON(filename: string) {
   return JSON.parse(readFileSync(filename, 'utf8') as string)
 }
 
-function readFileSync(filename: string, encoding?: string) {
+function readFileSync(
+  filename: string,
+  encoding?: BaseEncodingOptions['encoding']
+) {
   const dataPath = getDataPath()
   const path = `${dataPath}/${filename}`
   console.log(`Reading file ${path}`)
-  return fs.readFileSync(path, encoding)
+  return fs.readFileSync(path, { encoding })
 }
 
 function getAssetsUrl() {
@@ -199,8 +202,8 @@ function getDataPath() {
 function getDirectories(source: string) {
   return fs
     .readdirSync(source, { withFileTypes: true })
-    .filter(directory => directory.isDirectory())
-    .map(directory => directory.name)
+    .filter((directory) => directory.isDirectory())
+    .map((directory) => directory.name)
 }
 
 if (require.main === module) {

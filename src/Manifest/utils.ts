@@ -37,7 +37,7 @@ export function collectStatistics(
       transforms: 0,
       scripts: 0,
       gltf_shapes: 0,
-      nft_shapes: 0
+      nft_shapes: 0,
     } as ProjectStatisticsAttributes
   )
 

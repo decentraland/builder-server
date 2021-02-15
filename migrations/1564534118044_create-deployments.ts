@@ -15,7 +15,7 @@ export const up = (pgm: MigrationBuilder) => {
       y: { type: 'INT', notNull: true },
       rotation: { type: 'TEXT', notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
-      updated_at: { type: 'TIMESTAMP', notNull: true }
+      updated_at: { type: 'TIMESTAMP', notNull: true },
     },
     { ifNotExists: true }
   )

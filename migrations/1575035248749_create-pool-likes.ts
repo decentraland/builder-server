@@ -12,8 +12,8 @@ export const up = (pgm: MigrationBuilder) => {
       created_at: {
         type: 'TIMESTAMP',
         notNull: true,
-        default: pgm.func('now()')
-      }
+        default: pgm.func('now()'),
+      },
     },
     { ifNotExists: true }
   )

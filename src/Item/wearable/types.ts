@@ -13,12 +13,12 @@ export enum WearableCategory {
   HELMET = 'helmet',
   MASK = 'mask',
   TIARA = 'tiara',
-  TOP_HEAD = 'top_head'
+  TOP_HEAD = 'top_head',
 }
 
 export enum WearableBodyShape {
   MALE = 'dcl://base-avatars/BaseMale',
-  FEMALE = 'dcl://base-avatars/BaseFemale'
+  FEMALE = 'dcl://base-avatars/BaseFemale',
 }
 
 export type WearableRepresentation = {
@@ -48,47 +48,45 @@ export const wearableSchema = Object.freeze({
         properties: {
           bodyShape: {
             type: 'array',
-            items: { enum: Object.values(WearableBodyShape) }
+            items: { enum: Object.values(WearableBodyShape) },
           },
           mainFile: { type: 'string' },
           contents: {
             type: 'array',
-            items: { type: 'string' }
+            items: { type: 'string' },
           },
           overrideReplaces: {
             type: 'array',
-            items: { enum: Object.values(WearableCategory) }
+            items: { enum: Object.values(WearableCategory) },
           },
           overrideHides: {
             type: 'array',
-            items: { enum: Object.values(WearableCategory) }
-          }
+            items: { enum: Object.values(WearableCategory) },
+          },
         },
         additionalProperties: false,
-        removeAdditional: true,
         required: [
           'bodyShape',
           'mainFile',
           'contents',
           'overrideReplaces',
-          'overrideHides'
-        ]
-      }
+          'overrideHides',
+        ],
+      },
     },
     replaces: {
       type: 'array',
-      items: { enum: Object.values(WearableCategory) }
+      items: { enum: Object.values(WearableCategory) },
     },
     hides: {
       type: 'array',
-      items: { enum: Object.values(WearableCategory) }
+      items: { enum: Object.values(WearableCategory) },
     },
     tags: {
       type: 'array',
-      items: { type: 'string' }
-    }
+      items: { type: 'string' },
+    },
   },
   additionalProperties: false,
-  removeAdditional: true,
-  required: ['representations', 'replaces', 'hides', 'tags']
+  required: ['representations', 'replaces', 'hides', 'tags'],
 })

@@ -8,8 +8,8 @@ export const up = (pgm: MigrationBuilder) => {
     likes: {
       type: 'INTEGER',
       notNull: true,
-      default: 0
-    }
+      default: 0,
+    },
   })
 }
 

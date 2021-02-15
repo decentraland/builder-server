@@ -7,7 +7,7 @@ import { HTTPError } from '../common/HTTPError'
 import {
   withModelExists,
   asMiddleware,
-  withModelAuthorization
+  withModelAuthorization,
 } from '../middleware'
 import { S3AssetPack, S3Content, getFileUploader, ACL } from '../S3'
 import { AssetPack } from '../AssetPack'
@@ -78,14 +78,14 @@ export class AssetRouter extends Router {
       try {
         await Promise.all([
           AssetPack.hardDelete({ id: assetPackId }),
-          s3AssetPack.deleteFile(s3AssetPack.getThumbnailFilename())
+          s3AssetPack.deleteFile(s3AssetPack.getThumbnailFilename()),
         ])
       } catch (error) {
         // Skip
       }
 
       throw new HTTPError('An error occurred trying to upload asset files', {
-        message: error.message
+        message: error.message,
       })
     }
   }

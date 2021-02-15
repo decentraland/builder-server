@@ -29,14 +29,13 @@ export const assetSchema = Object.freeze({
     category: { type: 'string' },
     contents: {
       type: 'object',
-      additionalProperties: true
+      additionalProperties: true,
     },
     metrics: metricsSchema,
     parameters: parametersSchema,
-    actions: actionsSchema
+    actions: actionsSchema,
   },
   additionalProperties: false,
-  removeAdditional: true,
   required: [
     'id',
     'asset_pack_id',
@@ -44,6 +43,6 @@ export const assetSchema = Object.freeze({
     'model',
     'tags',
     'category',
-    'contents'
-  ]
+    'contents',
+  ],
 })

@@ -49,7 +49,7 @@ new AnalyticsRouter(app).mount()
 
 /* Start the server only if run directly */
 if (require.main === module) {
-  startServer().catch(error => {
+  startServer().catch((error) => {
     console.error(error)
     process.exit(1)
   })

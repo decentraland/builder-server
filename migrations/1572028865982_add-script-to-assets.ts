@@ -5,6 +5,6 @@ const tableName = Asset.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   pgm.addColumn(tableName, {
-    script: { type: 'TEXT' }
+    script: { type: 'TEXT' },
   })
 }

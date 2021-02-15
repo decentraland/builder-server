@@ -10,7 +10,7 @@ export class AppRouter extends Router {
 
   getVersion() {
     return {
-      version: env.get('npm_package_version', '')
+      version: env.get('npm_package_version', ''),
     }
   }
 }

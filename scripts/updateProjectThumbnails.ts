@@ -38,7 +38,7 @@ async function updateS3() {
 
     const [manifest, poolManifest] = await Promise.all([
       s3Project.readFileBody(MANIFEST_FILENAME),
-      s3Project.readFileBody(POOL_FILENAME)
+      s3Project.readFileBody(POOL_FILENAME),
     ])
 
     if (manifest) {

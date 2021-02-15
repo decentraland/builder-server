@@ -10,7 +10,7 @@ const tableNames = [
   Deployment.tableName,
   Pool.tableName,
   AssetPack.tableName,
-  PoolLike.tableName
+  PoolLike.tableName,
 ]
 
 export const up = (pgm: MigrationBuilder) => {

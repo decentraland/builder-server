@@ -7,8 +7,8 @@ const columns = {
   [columnName]: {
     type: 'BOOLEAN',
     default: false,
-    notNull: true
-  }
+    notNull: true,
+  },
 }
 
 export const up = (pgm: MigrationBuilder) => {

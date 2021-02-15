@@ -5,12 +5,12 @@ import { WeeklyStats } from './Analytics.types'
 export namespace Analytics {
   export async function getWeekly(base: string): Promise<WeeklyStats | null> {
     try {
-      return await getAnalyticsClient(async client => {
+      return await getAnalyticsClient(async (client) => {
         const result = await client.query(
-          SQL`SELECT * 
-            FROM analytics.scene_open_data_weekly 
-            WHERE base = ${base} 
-            ORDER BY week DESC 
+          SQL`SELECT *
+            FROM analytics.scene_open_data_weekly
+            WHERE base = ${base}
+            ORDER BY week DESC
             LIMIT 1`
         )
 
@@ -30,7 +30,7 @@ export namespace Analytics {
             direct_users,
             direct_sessions,
             max_concurrent_users,
-            max_concurrent_users_time
+            max_concurrent_users_time,
           } = result.rows[0]
 
           weekly = {
@@ -46,7 +46,7 @@ export namespace Analytics {
             direct_users: parseInt(direct_users, 10),
             direct_sessions: parseInt(direct_sessions, 10),
             max_concurrent_users: parseInt(max_concurrent_users, 10),
-            max_concurrent_users_time
+            max_concurrent_users_time,
           }
         }
 

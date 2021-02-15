@@ -15,16 +15,15 @@ export const metricsSchema = Object.freeze({
     materials: { type: 'number', minimum: 0 },
     textures: { type: 'number', minimum: 0 },
     triangles: { type: 'number', minimum: 0 },
-    entities: { type: 'number', minimum: 0 }
+    entities: { type: 'number', minimum: 0 },
   },
   additionalProperties: false,
-  removeAdditional: true,
   required: [
     'meshes',
     'bodies',
     'materials',
     'textures',
     'triangles',
-    'entities'
-  ]
+    'entities',
+  ],
 })

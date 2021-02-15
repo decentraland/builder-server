@@ -1,17 +1,17 @@
 import { Request, Response } from 'express'
 import { utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
-import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
+import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
-  AuthRequest
+  AuthRequest,
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
@@ -19,7 +19,7 @@ import { Item, ItemAttributes } from '../Item'
 import { itemSchema } from './Item.types'
 import { Collection, CollectionAttributes } from '../Collection'
 
-const ajv = new Ajv()
+const validator = getValidator()
 
 export class ItemRouter extends Router {
   itemFilesRequestHandler:
@@ -98,7 +98,7 @@ export class ItemRouter extends Router {
 
     const [dbItems, remoteItems] = await Promise.all([
       Item.findByEthAddress(eth_address),
-      collectionAPI.fetchItemsByOwner(eth_address)
+      collectionAPI.fetchItemsByOwner(eth_address),
     ])
 
     return Bridge.consolidateItems(dbItems, remoteItems)
@@ -121,7 +121,7 @@ export class ItemRouter extends Router {
             dbItem.blockchain_item_id,
             dbCollection.contract_address
           ),
-          collectionAPI.fetchCollection(dbCollection.contract_address)
+          collectionAPI.fetchCollection(dbCollection.contract_address),
         ])
 
         // Merge
@@ -143,7 +143,7 @@ export class ItemRouter extends Router {
 
     const [dbItems, remoteItems] = await Promise.all([
       Item.findByCollectionId(id),
-      collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address)
+      collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address),
     ])
 
     return Bridge.consolidateItems(dbItems, remoteItems)
@@ -154,11 +154,11 @@ export class ItemRouter extends Router {
     const itemJSON: any = server.extractFromReq(req, 'item')
     const eth_address = req.auth.ethAddress
 
-    const validator = ajv.compile(itemSchema)
-    validator(itemJSON)
+    const validate = validator.compile(itemSchema)
+    validate(itemJSON)
 
-    if (validator.errors) {
-      throw new HTTPError('Invalid schema', validator.errors)
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
     }
 
     const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
@@ -172,13 +172,13 @@ export class ItemRouter extends Router {
 
     const attributes = {
       ...itemJSON,
-      eth_address
+      eth_address,
     } as ItemAttributes
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL item ids do not match', {
         urlId: id,
-        bodyId: attributes.id
+        bodyId: attributes.id,
       })
     }
 
@@ -203,7 +203,7 @@ export class ItemRouter extends Router {
       }
 
       throw new HTTPError('An error occurred trying to upload item files', {
-        message: error.message
+        message: error.message,
       })
     }
   }

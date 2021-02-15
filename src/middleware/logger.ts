@@ -1,7 +1,7 @@
 import morgan = require('morgan')
 import { AuthRequest } from './authentication'
 
-morgan.token('eth-address', req => {
+morgan.token('eth-address', (req) => {
   const authRequest = req as AuthRequest
   return authRequest.auth && authRequest.auth.ethAddress
     ? authRequest.auth.ethAddress

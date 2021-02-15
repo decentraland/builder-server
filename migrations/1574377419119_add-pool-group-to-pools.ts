@@ -8,8 +8,8 @@ export const up = (pgm: MigrationBuilder) => {
     groups: {
       type: 'UUID[]',
       notNull: true,
-      default: '{}'
-    }
+      default: '{}',
+    },
   })
 }
 

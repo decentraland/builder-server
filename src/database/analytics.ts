@@ -6,10 +6,10 @@ console.assert(ANALYTICS_CONNECTION_STRING, 'No connection string')
 
 export const analyticsPool = new Pool({
   connectionString: ANALYTICS_CONNECTION_STRING,
-  query_timeout: 30000
+  query_timeout: 30000,
 })
 
-analyticsPool.on('error', error => console.error(error))
+analyticsPool.on('error', (error) => console.error(error))
 
 export async function getAnalyticsClient<T>(
   cb: (client: PoolClient) => Promise<T>

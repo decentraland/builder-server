@@ -14,7 +14,7 @@ export class Ownable {
   async canUpsert(id: string, ethAddress: string) {
     const [count, isOwner] = await Promise.all([
       this.Model.count({ id }),
-      this.isOwnedBy(id, ethAddress)
+      this.isOwnedBy(id, ethAddress),
     ])
     return count === 0 || isOwner
   }

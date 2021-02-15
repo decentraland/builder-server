@@ -2,7 +2,7 @@ import { metricsSchema } from '../Metrics'
 import { WearableData, wearableSchema } from './wearable/types'
 
 enum ItemType {
-  WEARABLE = 'wearable'
+  WEARABLE = 'wearable',
 }
 
 enum ItemRarity {
@@ -12,7 +12,7 @@ enum ItemRarity {
   EPIC = 'epic',
   RARE = 'rare',
   UNCOMMON = 'uncommon',
-  COMMON = 'common'
+  COMMON = 'common',
 }
 
 export type ItemAttributes = {
@@ -52,7 +52,7 @@ export const itemSchema = Object.freeze({
     beneficiary: { type: ['string', 'null'] },
     rarity: {
       type: ['string', 'null'],
-      enum: [...Object.values(ItemRarity), null]
+      enum: [...Object.values(ItemRarity), null],
     },
     total_supply: { type: 'number', minimum: 0 },
     is_published: { type: 'boolean' },
@@ -63,13 +63,12 @@ export const itemSchema = Object.freeze({
     metrics: metricsSchema,
     contents: {
       type: 'object',
-      additionalProperties: true
+      additionalProperties: true,
     },
     created_at: { type: 'string' },
-    updated_at: { type: 'string' }
+    updated_at: { type: 'string' },
   },
   additionalProperties: false,
-  removeAdditional: true,
   required: [
     'id',
     'name',
@@ -80,6 +79,6 @@ export const itemSchema = Object.freeze({
     'metrics',
     'contents',
     'created_at',
-    'updated_at'
-  ]
+    'updated_at',
+  ],
 })

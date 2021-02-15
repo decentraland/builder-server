@@ -15,7 +15,7 @@ export class Metrics {
       textures: 0,
       triangles: 0,
       entities: 0,
-      ...this.attributes
+      ...this.attributes,
     }
   }
 }

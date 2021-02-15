@@ -5,6 +5,6 @@ const tableName = Item.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   pgm.addColumn(tableName, {
-    contents: { type: 'JSON', notNull: true }
+    contents: { type: 'JSON', notNull: true },
   })
 }

@@ -20,9 +20,8 @@ export const deploymentSchema = Object.freeze({
     rotation: { type: 'string', pattern: 'north|east|south|west' },
     eth_address: { type: ['string', 'null'] },
     created_at: { type: ['string', 'null'] },
-    updated_at: { type: ['string', 'null'] }
+    updated_at: { type: ['string', 'null'] },
   },
   additionalProperties: false,
-  removeAdditional: true,
-  required: ['id', 'last_published_cid', 'is_dirty', 'x', 'y', 'rotation']
+  required: ['id', 'last_published_cid', 'is_dirty', 'x', 'y', 'rotation'],
 })

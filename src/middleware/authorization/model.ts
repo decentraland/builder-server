@@ -21,7 +21,7 @@ export function withModelAuthorization(Model: OwnableModel, param = 'id') {
       res.setHeader('Content-Type', 'application/json')
       res.status(STATUS_CODES.unauthorized).json({
         ok: false,
-        error: `Unauthorized user ${ethAddress} for ${Model.tableName} ${id}`
+        error: `Unauthorized user ${ethAddress} for ${Model.tableName} ${id}`,
       })
       return
     }

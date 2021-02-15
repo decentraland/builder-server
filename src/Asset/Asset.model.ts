@@ -35,7 +35,7 @@ export class Asset extends Model<AssetAttributes> {
       ),
       actions: JSON.stringify(
         attributes.actions || new Actions().getAttributes()
-      )
+      ),
     }
     return super.upsert(newAttributes, onConflict)
   }

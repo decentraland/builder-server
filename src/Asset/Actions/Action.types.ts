@@ -16,10 +16,9 @@ export const actionsSchema = Object.freeze({
       id: { type: 'string' },
       label: { type: 'string' },
       description: { type: 'string' },
-      parameters: parametersSchema
+      parameters: parametersSchema,
     },
     additionalProperties: false,
-    removeAdditional: true,
-    required: ['id', 'label', 'parameters']
-  }
+    required: ['id', 'label', 'parameters'],
+  },
 })

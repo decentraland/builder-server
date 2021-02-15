@@ -31,7 +31,7 @@ export function withModelExists(
       res.setHeader('Content-Type', 'application/json')
       res.status(404).json({
         ok: false,
-        error: `Couldn't find "${id}" on ${Model.tableName}`
+        error: `Couldn't find "${id}" on ${Model.tableName}`,
       })
       return
     }

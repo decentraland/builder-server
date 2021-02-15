@@ -19,24 +19,24 @@ export const poolSchema = {
   properties: {
     ...(utils.omit(projectSchema.properties, [
       'is_public',
-      'is_deleted'
+      'is_deleted',
     ]) as PoolAttributes),
     groups: {
       type: 'array',
       items: {
         type: 'string',
-        format: 'uuid'
-      }
-    }
-  }
+        format: 'uuid',
+      },
+    },
+  },
 }
 
 export const searchablePoolProperties = {
   eq: utils.omit<(keyof PoolAttributes)[]>(poolSchema.properties, [
     'groups',
-    'eth_address'
+    'eth_address',
   ]),
-  includes: ['groups'] as (keyof PoolAttributes)[]
+  includes: ['groups'] as (keyof PoolAttributes)[],
 }
 
 export const sortablePoolProperties = {
@@ -52,7 +52,7 @@ export const sortablePoolProperties = {
       'transforms',
       'scripts',
       'gltf_shapes',
-      'nft_shapes'
-    ] as (keyof PoolAttributes)[]
-  }
+      'nft_shapes',
+    ] as (keyof PoolAttributes)[],
+  },
 }

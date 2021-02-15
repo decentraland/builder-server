@@ -12,7 +12,7 @@ export class Bridge {
 
     for (const dbCollection of dbCollections) {
       const remoteCollection = remoteCollections.find(
-        remoteCollection =>
+        (remoteCollection) =>
           remoteCollection.id === dbCollection.contract_address
       )
       const collection = remoteCollection
@@ -43,7 +43,7 @@ export class Bridge {
 
     // Get remote collections
     const addresses = Object.values(dbCollections).map(
-      dbCollection => dbCollection.contract_address
+      (dbCollection) => dbCollection.contract_address
     )
     const remoteResults = await collectionAPI.fetchCollections(addresses)
     const remoteCollections = this.indexById(remoteResults)
@@ -60,7 +60,7 @@ export class Bridge {
           // Find remote item
           const remoteItem = dbItem.blockchain_item_id
             ? remoteItems.find(
-                remoteItem =>
+                (remoteItem) =>
                   remoteItem.id ===
                   collectionAPI.buildItemId(
                     dbCollection.contract_address,
@@ -98,7 +98,7 @@ export class Bridge {
       is_published: true,
       is_approved: remoteCollection.isApproved,
       minters: remoteCollection.minters,
-      managers: remoteCollection.managers
+      managers: remoteCollection.managers,
     }
   }
 
@@ -114,7 +114,7 @@ export class Bridge {
       blockchain_item_id: remoteItem.blockchainId,
       is_published: true,
       is_approved: remoteCollection.isApproved,
-      total_supply: Number(remoteItem.totalSupply)
+      total_supply: Number(remoteItem.totalSupply),
     }
   }
 

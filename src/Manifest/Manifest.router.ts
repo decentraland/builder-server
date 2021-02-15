@@ -1,13 +1,13 @@
 import { server } from 'decentraland-server'
-import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
+import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
-  AuthRequest
+  AuthRequest,
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { Project } from '../Project'
@@ -15,12 +15,12 @@ import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { collectStatistics } from './utils'
 
-const ajv = new Ajv()
+const validator = getValidator()
 
 export class ManifestRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
-      is_deleted: false
+      is_deleted: false,
     })
     const withPublishedProjectExists = withModelExists(Project)
     const withProjectAuthorization = withModelAuthorization(Project)
@@ -104,11 +104,11 @@ export class ManifestRouter extends Router {
     const manifestJSON: any = server.extractFromReq(req, 'manifest')
     const eth_address = req.auth.ethAddress
 
-    const validator = ajv.compile(manifestSchema)
-    validator(manifestJSON)
+    const validate = validator.compile(manifestSchema)
+    validate(manifestJSON)
 
-    if (validator.errors) {
-      throw new HTTPError('Invalid schema', validator.errors)
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
     }
 
     const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
@@ -122,7 +122,7 @@ export class ManifestRouter extends Router {
 
     const manifest = {
       ...manifestJSON,
-      project: { ...manifestJSON.project, eth_address }
+      project: { ...manifestJSON.project, eth_address },
     } as ManifestAttributes
 
     const statistics = collectStatistics(manifest)
@@ -133,7 +133,7 @@ export class ManifestRouter extends Router {
         MANIFEST_FILENAME,
         JSON.stringify(manifest),
         ACL.private
-      )
+      ),
     ])
     return project
   }

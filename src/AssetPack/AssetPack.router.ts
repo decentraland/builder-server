@@ -1,10 +1,15 @@
 import { server } from 'decentraland-server'
 import { env, utils } from 'decentraland-commons'
-import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
+import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
+import {
+  withPermissiveAuthentication,
+  withAuthentication,
+  AuthRequest,
+} from '../middleware/authentication'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
 import { Ownable } from '../Ownable'
 import { Asset } from '../Asset'
@@ -12,13 +17,8 @@ import { AssetPack } from './AssetPack.model'
 import {
   AssetPackAttributes,
   FullAssetPackAttributes,
-  assetPackSchema
+  assetPackSchema,
 } from './AssetPack.types'
-import {
-  withPermissiveAuthentication,
-  withAuthentication,
-  AuthRequest
-} from '../middleware/authentication'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -26,7 +26,7 @@ const THUMBNAIL_MIME_TYPES = ['image/png', 'image/jpeg']
 const DEFAULT_ETH_ADDRESS = env.get('DEFAULT_ETH_ADDRESS', '')
 const DEFAULT_ASSET_PACK_CACHE = env.get('DEFAULT_ASSET_PACK_CACHE', 1440000)
 
-const ajv = new Ajv()
+const validator = getValidator()
 
 export class AssetPackRouter extends Router {
   defaultAssetPacks: FullAssetPackAttributes[] = []
@@ -114,7 +114,7 @@ export class AssetPackRouter extends Router {
 
     const isVisible = await AssetPack.isVisible(id, [
       eth_address,
-      DEFAULT_ETH_ADDRESS
+      DEFAULT_ETH_ADDRESS,
     ])
 
     if (!isVisible) {
@@ -143,11 +143,11 @@ export class AssetPackRouter extends Router {
     const assetPackJSON: any = server.extractFromReq(req, 'assetPack')
     const eth_address = req.auth.ethAddress
 
-    const validator = ajv.compile(assetPackSchema)
-    validator(assetPackJSON)
+    const validate = validator.compile(assetPackSchema)
+    validate(assetPackJSON)
 
-    if (validator.errors) {
-      throw new HTTPError('Invalid schema', validator.errors)
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
     }
 
     const canUpsert = await new Ownable(AssetPack).canUpsert(id, eth_address)
@@ -161,13 +161,13 @@ export class AssetPackRouter extends Router {
     )
     const attributes = {
       ...utils.omit(assetPackJSON, ['assets']),
-      eth_address
+      eth_address,
     } as AssetPackAttributes
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL assetPack ids do not match', {
         urlId: id,
-        bodyId: attributes.id
+        bodyId: attributes.id,
       })
     }
 
@@ -176,7 +176,7 @@ export class AssetPackRouter extends Router {
       // Only delete assets that no longer exist
       const assetIdsToDelete: string[] = []
       for (const currentAsset of currentAssetPack.assets) {
-        if (!assets.find(asset => asset.id === currentAsset.id)) {
+        if (!assets.find((asset) => asset.id === currentAsset.id)) {
           assetIdsToDelete.push(currentAsset.id)
         }
       }
@@ -185,7 +185,7 @@ export class AssetPackRouter extends Router {
 
     const upsertResult = await new AssetPack(attributes).upsert()
     await Promise.all(
-      assets.map(asset =>
+      assets.map((asset) =>
         new Asset(asset).upsert({ target: ['id', 'asset_pack_id'] })
       )
     )
@@ -215,7 +215,7 @@ export class AssetPackRouter extends Router {
   private getFileUploaderMiddleware() {
     const uploader = getFileUploader(
       { acl: ACL.publicRead, mimeTypes: THUMBNAIL_MIME_TYPES },
-      req => {
+      (req) => {
         const id = server.extractFromReq(req, 'id')
         const s3AssetPack = new S3AssetPack(id)
         const filename = s3AssetPack.getThumbnailFilename()

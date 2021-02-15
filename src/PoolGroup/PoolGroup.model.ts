@@ -3,7 +3,7 @@ import { Model, SQL, raw } from 'decentraland-server'
 import {
   PoolGroupAttributes,
   GetPoolGroupsFilters,
-  GetOnePoolGroupFilters
+  GetOnePoolGroupFilters,
 } from './PoolGroup.types'
 
 const UUID = /^[0-9a-fA-F]{8}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{4}\-[0-9a-fA-F]{12}$/
@@ -20,7 +20,7 @@ export class PoolGroup extends Model<PoolGroupAttributes> {
   >): Promise<PoolGroupAttributes | null> {
     const filters: GetPoolGroupsFilters = {
       ...extra,
-      limit: 1
+      limit: 1,
     }
 
     if (id) {
@@ -39,18 +39,20 @@ export class PoolGroup extends Model<PoolGroupAttributes> {
   static async findByFilters({
     ids,
     activeOnly,
-    limit
+    limit,
   }: GetPoolGroupsFilters): Promise<PoolGroupAttributes[]> {
     const conditionStatement = SQL`WHERE 1 = 1`
     const limitStatement = SQL``
 
     if (Array.isArray(ids)) {
-      ids = ids.filter(id => UUID.test(String(id)))
+      ids = ids.filter((id) => UUID.test(String(id)))
       if (ids.length === 0) {
         return []
       }
       conditionStatement.append(
-        SQL` AND id IN ${raw('(' + ids.map(id => `'${id}'`).join(', ') + ')')}`
+        SQL` AND id IN ${raw(
+          '(' + ids.map((id) => `'${id}'`).join(', ') + ')'
+        )}`
       )
     }
 

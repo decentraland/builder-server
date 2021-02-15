@@ -37,9 +37,9 @@ function extractIndex(header: string) {
 
 function buildAuthChain(req: Request) {
   return Object.keys(req.headers)
-    .filter(header => header.includes(AUTH_CHAIN_HEADER_PREFIX))
+    .filter((header) => header.includes(AUTH_CHAIN_HEADER_PREFIX))
     .sort((a, b) => (extractIndex(a) > extractIndex(b) ? 1 : -1))
-    .map(header => JSON.parse(req.headers[header] as string) as AuthLink)
+    .map((header) => JSON.parse(req.headers[header] as string) as AuthLink)
 }
 
 const getAuthenticationMiddleware = <
@@ -65,9 +65,9 @@ const getAuthenticationMiddleware = <
           {
             method: 'post',
             headers: {
-              'Content-Type': 'application/json'
+              'Content-Type': 'application/json',
             },
-            body
+            body,
           }
         )
         const result = (await resp.json()) as ValidateSignatureResponse
@@ -95,6 +95,6 @@ const getAuthenticationMiddleware = <
 }
 
 export const withAuthentication = getAuthenticationMiddleware()
-export const withPermissiveAuthentication = getAuthenticationMiddleware<
-  PermissiveAuthRequest
->(true)
+export const withPermissiveAuthentication = getAuthenticationMiddleware<PermissiveAuthRequest>(
+  true
+)

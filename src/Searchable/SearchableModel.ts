@@ -30,7 +30,7 @@ export class SearchableModel<T> {
         SQL`SELECT COUNT(*)
         FROM ${raw(this.tableName)}
         ${conditionsQuery}`
-      )
+      ),
     ])
 
     return { items, total: Number(counts[0].count) }

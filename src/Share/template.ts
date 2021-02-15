@@ -8,7 +8,7 @@ const html = (
 ): string =>
   String.raw(
     template,
-    ...substitutions.map(substitution => escape(String(substitution || '')))
+    ...substitutions.map((substitution) => escape(String(substitution || '')))
   )
 
 const template = (

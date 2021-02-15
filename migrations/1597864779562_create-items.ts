@@ -19,7 +19,7 @@ export const up = (pgm: MigrationBuilder) => {
       type: { type: 'TEXT', notNull: true },
       data: { type: 'JSON', notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
-      updated_at: { type: 'TIMESTAMP', notNull: true }
+      updated_at: { type: 'TIMESTAMP', notNull: true },
     },
     { ifNotExists: true }
   )

@@ -5,7 +5,7 @@ const pg = db.clients.postgres
 
 export const database: typeof pg = Object.create(pg)
 
-pg.setTypeParser(1114, date => {
+pg.setTypeParser(1114, (date) => {
   const utcStr = `${date}Z`
   return new Date(utcStr).toISOString()
 })

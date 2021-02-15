@@ -1,6 +1,6 @@
 export enum ElementType {
   SCENE = 'scene',
-  POOL = 'pool'
+  POOL = 'pool',
 }
 
 export type Params = {

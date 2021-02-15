@@ -67,7 +67,7 @@ export class PoolLikeRouter extends Router {
 
     const [exists, currentLikes] = await Promise.all([
       PoolLike.count({ pool_id, eth_address }),
-      PoolLike.count({ pool_id })
+      PoolLike.count({ pool_id }),
     ])
 
     if (exists) {
@@ -87,7 +87,7 @@ export class PoolLikeRouter extends Router {
 
     const [exists, currentLikes] = await Promise.all([
       PoolLike.count({ pool_id, eth_address }),
-      PoolLike.count({ pool_id })
+      PoolLike.count({ pool_id }),
     ])
 
     if (!exists) {

@@ -25,7 +25,7 @@ export function migrate(
     migrationsDir,
     '--ignore-pattern',
     '\\..*|.*migrate(.ts)?',
-    ...commandArguments
+    ...commandArguments,
   ]
 
   console.log('Running command:')
@@ -35,19 +35,19 @@ export function migrate(
     path.resolve(migrationsDir, 'node-pg-migrate'),
     spawnArgs,
     {
-      env: { ...process.env, CONNECTION_STRING }
+      env: { ...process.env, CONNECTION_STRING },
     }
   )
 
-  child.on('error', function(error) {
+  child.on('error', function (error) {
     console.log(error.message)
   })
 
-  child.stdout.on('data', function(data) {
+  child.stdout.on('data', function (data) {
     console.log(data.toString())
   })
 
-  child.stderr.on('data', function(data) {
+  child.stderr.on('data', function (data) {
     console.log(data.toString())
   })
 

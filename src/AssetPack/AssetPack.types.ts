@@ -21,9 +21,8 @@ export const assetPackSchema = Object.freeze({
     eth_address: { type: ['string', 'null'] },
     assets: { items: assetSchema, additionalProperties: false },
     created_at: { type: ['string', 'null'] },
-    updated_at: { type: ['string', 'null'] }
+    updated_at: { type: ['string', 'null'] },
   },
   additionalProperties: false,
-  removeAdditional: true,
-  required: ['id', 'title', 'assets']
+  required: ['id', 'title', 'assets'],
 })

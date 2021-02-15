@@ -4,26 +4,26 @@ import {
   Sort,
   Pagination,
   Parameters,
-  BaseAttributes
+  BaseAttributes,
 } from './Searchable.types'
 import {
   Whitelist,
   Bounds,
   PartialWhitelist,
-  PartialBounds
+  PartialBounds,
 } from './SearchableParameters.types'
 
 const DEFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   sort: {
     by: [],
-    order: ['ASC', 'DESC']
-  }
+    order: ['ASC', 'DESC'],
+  },
 }
 const DEFAULT_BOUNDS: Bounds = {
   pagination: {
     offset: 0,
-    limit: 100
-  }
+    limit: 100,
+  },
 }
 const MIN_PAGINATION_LIMIT = 0
 
@@ -43,13 +43,13 @@ export class SearchableParameters<T = BaseAttributes> {
 
     if (whitelist) {
       this.whitelist = {
-        sort: { ...this.whitelist.sort, ...whitelist.sort }
+        sort: { ...this.whitelist.sort, ...whitelist.sort },
       }
     }
 
     if (bounds) {
       this.bounds = {
-        pagination: { ...this.bounds.pagination, ...bounds.pagination }
+        pagination: { ...this.bounds.pagination, ...bounds.pagination },
       }
     }
   }
@@ -57,7 +57,7 @@ export class SearchableParameters<T = BaseAttributes> {
   sanitize(): Parameters<T> {
     return {
       sort: this.getSort(),
-      pagination: this.getPagination()
+      pagination: this.getPagination(),
     }
   }
 
@@ -80,9 +80,9 @@ export class SearchableParameters<T = BaseAttributes> {
     const sortResult: Sort<T> = {}
 
     for (let i = 0; i < sortBy.length; i++) {
-      const by = sort.by.find(value => value === sortBy[i])
+      const by = sort.by.find((value) => value === sortBy[i])
       const order = sort.order.find(
-        value => value === sortOrder[i].toUpperCase()
+        (value) => value === sortOrder[i].toUpperCase()
       )
 
       if (by && order) {

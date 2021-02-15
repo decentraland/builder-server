@@ -8,5 +8,5 @@ export const AssetQueries = Object.freeze({
       SELECT row_to_json(a.*)
         FROM ${raw(Asset.tableName)} as a
         WHERE a.asset_pack_id = ${raw(AssetPack.tableName)}.id
-      ) as ${raw(alias)}`
+      ) as ${raw(alias)}`,
 })

@@ -14,13 +14,10 @@ export class AnalyticsRouter extends Router {
       cacheControl({ maxAge: 43200, public: true }),
       server.handleRequest(this.getWeekly)
     ),
-    /**
-     * Get status
-     */
-    this.router.get(
-      '/analytics/status',
-      server.handleRequest(this.getStatus)
-    )
+      /**
+       * Get status
+       */
+      this.router.get('/analytics/status', server.handleRequest(this.getStatus))
   }
 
   async getWeekly(req: Request) {

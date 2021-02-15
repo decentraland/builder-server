@@ -1,23 +1,23 @@
 import { server } from 'decentraland-server'
-import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
+import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
-  AuthRequest
+  AuthRequest,
 } from '../middleware'
-import { Ownable } from '../Ownable'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { FactoryCollection } from '../ethereum'
+import { Ownable } from '../Ownable'
 import { Item } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { collectionSchema } from './Collection.types'
 
-const ajv = new Ajv()
+const validator = getValidator()
 
 export class CollectionRouter extends Router {
   mount() {
@@ -69,7 +69,7 @@ export class CollectionRouter extends Router {
 
     const [dbCollections, remoteCollections] = await Promise.all([
       Collection.findByEthAddress(eth_address),
-      collectionAPI.fetchCollectionsByOwner(eth_address)
+      collectionAPI.fetchCollectionsByOwner(eth_address),
     ])
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
@@ -97,11 +97,11 @@ export class CollectionRouter extends Router {
       const collectionJSON: any = server.extractFromReq(req, 'collection')
       const eth_address = req.auth.ethAddress
 
-      const validator = ajv.compile(collectionSchema)
-      validator(collectionJSON)
+      const validate = validator.compile(collectionSchema)
+      validate(collectionJSON)
 
-      if (validator.errors) {
-        throw new HTTPError('Invalid schema', validator.errors)
+      if (validate.errors) {
+        throw new HTTPError('Invalid schema', validate.errors)
       }
 
       const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
@@ -115,20 +115,20 @@ export class CollectionRouter extends Router {
 
       const attributes = {
         ...collectionJSON,
-        eth_address
+        eth_address,
       } as CollectionAttributes
 
       if (id !== attributes.id) {
         throw new HTTPError('The body and URL collection ids do not match', {
           urlId: id,
-          bodyId: attributes.id
+          bodyId: attributes.id,
         })
       }
 
       const factoryCollection = new FactoryCollection()
       attributes.salt = factoryCollection.getSalt(id)
       attributes.contract_address = factoryCollection.getContractAddress(
-        attributes.salt!,
+        attributes.salt,
         attributes.eth_address
       )
 
@@ -142,7 +142,7 @@ export class CollectionRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     await Promise.all([
       Collection.delete({ id }),
-      Item.delete({ collection_id: id })
+      Item.delete({ collection_id: id }),
     ])
     return true
   }

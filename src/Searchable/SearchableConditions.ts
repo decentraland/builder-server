@@ -6,13 +6,13 @@ import {
   Whitelist,
   ConditionName,
   Condition,
-  Extra
+  Extra,
 } from './SearchableConditions.types'
 
 const DEFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   eq: [],
   not_eq: [],
-  includes: []
+  includes: [],
 }
 
 export class SearchableConditions<T> {
@@ -39,14 +39,14 @@ export class SearchableConditions<T> {
     return {
       eq: this.getEq(),
       notEq: this.getNotEq(),
-      includes: this.getIncludes()
+      includes: this.getIncludes(),
     }
   }
 
   addExtras(conditionName: ConditionName, conditions: Condition<T>) {
     this.extras[conditionName] = {
       ...this.extras[conditionName],
-      ...conditions
+      ...conditions,
     }
   }
 
@@ -66,7 +66,7 @@ export class SearchableConditions<T> {
   private getCondition(name: ConditionName): Condition<T> {
     return {
       ...this.getSanitizedCondition(name),
-      ...this.extras[name]
+      ...this.extras[name],
     }
   }
 
@@ -101,7 +101,7 @@ export class SearchableConditions<T> {
 
   private isWhitelisted(conditionName: ConditionName, columnName: string) {
     const finding = this.whitelist[conditionName].find(
-      value => value === columnName
+      (value) => value === columnName
     )
     return !!finding
   }

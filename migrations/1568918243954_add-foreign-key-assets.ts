@@ -9,7 +9,7 @@ export const up = (pgm: MigrationBuilder) => {
     foreignKeys: {
       columns: ['asset_pack_id'],
       references: AssetPack.tableName,
-      onDelete: 'CASCADE'
-    }
+      onDelete: 'CASCADE',
+    },
   })
 }

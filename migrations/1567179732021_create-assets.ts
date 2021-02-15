@@ -16,7 +16,7 @@ export const up = (pgm: MigrationBuilder) => {
       category: { type: 'TEXT', notNull: true },
       contents: { type: 'JSON', notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
-      updated_at: { type: 'TIMESTAMP', notNull: true }
+      updated_at: { type: 'TIMESTAMP', notNull: true },
     },
     { ifNotExists: true }
   )

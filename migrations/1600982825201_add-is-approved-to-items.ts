@@ -5,6 +5,6 @@ const tableName = Item.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   pgm.addColumn(tableName, {
-    is_approved: { type: 'BOOLEAN', default: false, notNull: true }
+    is_approved: { type: 'BOOLEAN', default: false, notNull: true },
   })
 }

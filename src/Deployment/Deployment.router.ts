@@ -1,22 +1,22 @@
 import { server } from 'decentraland-server'
-import Ajv from 'ajv'
 
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
+import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
-  AuthRequest
+  AuthRequest,
 } from '../middleware'
 import { Project } from '../Project'
 import { Deployment } from './Deployment.model'
 import { DeploymentAttributes, deploymentSchema } from './Deployment.types'
 
-const ajv = new Ajv()
+const validator = getValidator()
 
 const withProjectExists = withModelExists(Project, 'id', {
-  is_deleted: false
+  is_deleted: false,
 })
 const withProjectAuthorization = withModelAuthorization(Project)
 const withDeploymentAuthorization = withModelAuthorization(Deployment)
@@ -83,22 +83,22 @@ export class DeploymentRouter extends Router {
     const deploymentJSON: any = server.extractFromReq(req, 'deployment')
     const eth_address = req.auth.ethAddress
 
-    const validator = ajv.compile(deploymentSchema)
-    validator(deploymentJSON)
+    const validate = validator.compile(deploymentSchema)
+    validate(deploymentJSON)
 
-    if (validator.errors) {
-      throw new HTTPError('Invalid schema', validator.errors)
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
     }
 
     const attributes = {
       ...deploymentJSON,
-      eth_address
+      eth_address,
     } as DeploymentAttributes
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL deployment ids do not match', {
         urlId: id,
-        bodyId: attributes.id
+        bodyId: attributes.id,
       })
     }
 

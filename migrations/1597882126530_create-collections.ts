@@ -14,7 +14,7 @@ export const up = (pgm: MigrationBuilder) => {
       contract_address: { type: 'TEXT' },
       is_published: { type: 'BOOLEAN', default: false, notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
-      updated_at: { type: 'TIMESTAMP', notNull: true }
+      updated_at: { type: 'TIMESTAMP', notNull: true },
     },
     { ifNotExists: true }
   )

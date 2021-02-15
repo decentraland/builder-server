@@ -4,7 +4,7 @@ import {
   deleteFile,
   deleteFolder,
   uploadFile,
-  ACLValues
+  ACLValues,
 } from './s3'
 import { S3Type } from './types'
 

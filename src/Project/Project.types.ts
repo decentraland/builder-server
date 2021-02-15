@@ -44,11 +44,10 @@ export const projectSchema = Object.freeze({
     rows: { type: 'number' },
     is_public: { type: ['boolean', 'null'] },
     created_at: { type: ['string', 'null'] },
-    updated_at: { type: ['string', 'null'] }
+    updated_at: { type: ['string', 'null'] },
   },
   additionalProperties: false,
-  removeAdditional: true,
-  required: ['id', 'title', 'description', 'scene_id', 'cols', 'rows']
+  required: ['id', 'title', 'description', 'scene_id', 'cols', 'rows'],
 })
 
 export const searchableProjectProperties: (keyof ProjectAttributes)[] = [
@@ -57,5 +56,5 @@ export const searchableProjectProperties: (keyof ProjectAttributes)[] = [
   'cols',
   'rows',
   'created_at',
-  'updated_at'
+  'updated_at',
 ]

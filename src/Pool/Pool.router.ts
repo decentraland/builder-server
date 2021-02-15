@@ -7,7 +7,7 @@ import {
   withPermissiveAuthentication,
   PermissiveAuthRequest,
   withAuthentication,
-  withModelAuthorization
+  withModelAuthorization,
 } from '../middleware'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
@@ -15,14 +15,14 @@ import { Project, ProjectAttributes } from '../Project'
 import {
   SearchableModel,
   SearchableParameters,
-  SearchableConditions
+  SearchableConditions,
 } from '../Searchable'
 import { Pool } from './Pool.model'
 import {
   PoolAttributes,
   searchablePoolProperties,
   sortablePoolProperties,
-  PoolUpsertBody
+  PoolUpsertBody,
 } from './Pool.types'
 import { PoolGroup } from '../PoolGroup'
 import { PoolLike } from '../PoolLike'
@@ -30,7 +30,7 @@ import { PoolLike } from '../PoolLike'
 export class PoolRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
-      is_deleted: false
+      is_deleted: false,
     })
     const withProjectAuthorization = withModelAuthorization(Project)
 
@@ -106,7 +106,7 @@ export class PoolRouter extends Router {
 
     const [pool, like] = await Promise.all([
       Pool.findOne({ id: pool_id }),
-      likeCount
+      likeCount,
     ])
 
     return { ...pool, like: !!like }
@@ -124,7 +124,7 @@ export class PoolRouter extends Router {
       Project.findOne<ProjectAttributes>(id),
       s3Project.readFileBody(MANIFEST_FILENAME),
       Pool.findOne<PoolAttributes>(id),
-      PoolGroup.findByFilters({ ids: groupIds, activeOnly: true })
+      PoolGroup.findByFilters({ ids: groupIds, activeOnly: true }),
     ] as const)
 
     const { is_public, is_deleted, ...upsertPool } = (project ||
@@ -145,8 +145,8 @@ export class PoolRouter extends Router {
         groups: groupList,
         likes: pool ? pool.likes : 0,
         created_at: pool ? pool.created_at : now,
-        updated_at: now
-      } as any).upsert()
+        updated_at: now,
+      } as any).upsert(),
     ]
 
     if (manifest) {

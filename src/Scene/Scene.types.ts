@@ -19,7 +19,7 @@ export enum ComponentType {
   GLTFShape = 'GLTFShape',
   Transform = 'Transform',
   NFTShape = 'NFTShape',
-  Script = 'Script'
+  Script = 'Script',
 }
 
 export const sceneSchema = {
@@ -27,13 +27,13 @@ export const sceneSchema = {
   properties: {
     entities: {
       type: 'object',
-      additionalProperties: true
+      additionalProperties: true,
     },
     components: {
       type: 'object',
-      additionalProperties: true
-    }
+      additionalProperties: true,
+    },
   },
   additionalProperties: true,
-  required: ['entities', 'components']
+  required: ['entities', 'components'],
 }

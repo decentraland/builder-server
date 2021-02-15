@@ -1,11 +1,11 @@
 import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
-import Ajv from 'ajv'
 import mimeTypes from 'mime-types'
 import path from 'path'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
+import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { S3Project, getFileUploader, ACL } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
@@ -14,13 +14,13 @@ import { RequestParameters } from '../RequestParameters'
 import {
   SearchableModel,
   SearchableParameters,
-  SearchableConditions
+  SearchableConditions,
 } from '../Searchable'
 import { Project } from './Project.model'
 import {
   ProjectAttributes,
   projectSchema,
-  searchableProjectProperties
+  searchableProjectProperties,
 } from './Project.types'
 
 export const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -30,20 +30,20 @@ const FILE_NAMES = [
   'north',
   'east',
   'south',
-  'west'
+  'west',
 ]
 const MIME_TYPES = ['image/png', 'image/jpeg']
 
-const ajv = new Ajv()
+const validator = getValidator()
 
 export class ProjectRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
-      is_deleted: false
+      is_deleted: false,
     })
     const withProjectExistsAndIsPublic = withModelExists(Project, 'id', {
       is_public: true,
-      is_deleted: false
+      is_deleted: false,
     })
     const withProjectAuthorization = withModelAuthorization(Project)
 
@@ -150,11 +150,11 @@ export class ProjectRouter extends Router {
     const projectJSON: any = server.extractFromReq(req, 'project')
     const eth_address = req.auth.ethAddress
 
-    const validator = ajv.compile(projectSchema)
-    validator(projectJSON)
+    const validate = validator.compile(projectSchema)
+    validate(projectJSON)
 
-    if (validator.errors) {
-      throw new HTTPError('Invalid schema', validator.errors)
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
     }
 
     const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
@@ -171,7 +171,7 @@ export class ProjectRouter extends Router {
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL project ids do not match', {
         urlId: id,
-        bodyId: attributes.id
+        bodyId: attributes.id,
       })
     }
 
@@ -220,9 +220,11 @@ export class ProjectRouter extends Router {
     // So the array will always have only one item on it
     // We cast req.files for easier access of each file. The field name is still accessible on each File
     const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
-    const files = Object.values(reqFiles).map(files => files[0])
+    const files = Object.values(reqFiles).map((files) => files[0])
 
-    const thumbnail = files.find(file => file.fieldname === THUMBNAIL_FILE_NAME)
+    const thumbnail = files.find(
+      (file) => file.fieldname === THUMBNAIL_FILE_NAME
+    )
 
     if (thumbnail) {
       const extension = mimeTypes.extension(thumbnail.mimetype)
@@ -249,9 +251,9 @@ export class ProjectRouter extends Router {
       }
     )
 
-    const uploadFileFields = FILE_NAMES.map(fieldName => ({
+    const uploadFileFields = FILE_NAMES.map((fieldName) => ({
       name: fieldName,
-      maxCount: 1
+      maxCount: 1,
     }))
 
     return uploader.fields(uploadFileFields)

@@ -34,7 +34,7 @@
     "@types/morgan": "^1.9.2",
     "@types/multer": "^1.4.5",
     "@types/multer-s3": "^2.7.9",
-    "@types/pg": "^7.14.9",
+    "@types/pg": "^7.14.10",
     "ajv": "^7.1.0",
     "ajv-formats": "^1.5.1",
     "aws-sdk": "^2.841.0",

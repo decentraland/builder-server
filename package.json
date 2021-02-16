@@ -49,7 +49,7 @@
     "express-cache-controller": "^1.1.0",
     "express-jwt": "^6.0.0",
     "graphql": "^15.5.0",
-    "isomorphic-fetch": "^2.2.1",
+    "isomorphic-fetch": "^3.0.0",
     "jwks-rsa": "^1.12.2",
     "mime-types": "^2.1.28",
     "morgan": "^1.9.1",

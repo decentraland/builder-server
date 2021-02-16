@@ -28,7 +28,7 @@
     "@apollo/client": "^3.3.9",
     "@ethersproject/solidity": "^5.0.9",
     "@types/body-parser": "^1.17.0",
-    "@types/escape-html": "0.0.20",
+    "@types/escape-html": "1.0.0",
     "@types/express": "^4.17.11",
     "@types/mime-types": "^2.1.0",
     "@types/morgan": "^1.9.2",

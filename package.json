@@ -63,7 +63,7 @@
   "devDependencies": {
     "@types/node": "^14.14.28",
     "@types/uuid": "^3.4.6",
-    "dcl-tslint-config-standard": "^1.1.0",
+    "dcl-tslint-config-standard": "^3.0.0",
     "prettier": "^2.2.1",
     "ts-node": "^9.1.1",
     "tslint-plugin-prettier": "^2.0.1",

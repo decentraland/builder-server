@@ -66,10 +66,9 @@ export class CollectionRouter extends Router {
 
   async getCollections(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
-
     const [dbCollections, remoteCollections] = await Promise.all([
       Collection.findByEthAddress(eth_address),
-      collectionAPI.fetchCollectionsByOwner(eth_address),
+      collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
     ])
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }

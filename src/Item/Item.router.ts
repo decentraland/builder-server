@@ -67,7 +67,7 @@ export class ItemRouter extends Router {
     this.router.put(
       '/items/:id',
       withAuthentication,
-      server.handleRequest(this.upsertItem)
+      server.handleRequest(this.upsertItem.bind(this))
     )
 
     /**
@@ -98,7 +98,7 @@ export class ItemRouter extends Router {
 
     const [dbItems, remoteItems] = await Promise.all([
       Item.findByEthAddress(eth_address),
-      collectionAPI.fetchItemsByOwner(eth_address),
+      collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
 
     return Bridge.consolidateItems(dbItems, remoteItems)
@@ -161,8 +161,13 @@ export class ItemRouter extends Router {
       throw new HTTPError('Invalid schema', validate.errors)
     }
 
-    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
-    if (!canUpsert) {
+    const isUpdateAuthorized = this.isUpdateAuthorized(
+      eth_address,
+      id,
+      itemJSON
+    )
+
+    if (!isUpdateAuthorized) {
       throw new HTTPError(
         'Unauthorized user',
         { id, eth_address },
@@ -213,5 +218,46 @@ export class ItemRouter extends Router {
       return new S3Content().getFileKey(file.fieldname)
     })
     return utils.promisify<boolean>(uploader.any())
+  }
+
+  private async isUpdateAuthorized(
+    ethAddress: string,
+    dbItemId: string,
+    item: ItemAttributes
+  ) {
+    const isOwner = await new Ownable(Item).canUpsert(dbItemId, ethAddress)
+    if (isOwner) {
+      return true
+    }
+
+    if (item.collection_id && item.blockchain_item_id) {
+      const collectionDB = await Collection.findOne<CollectionAttributes>(
+        item.collection_id
+      )
+
+      if (!collectionDB) {
+        return false
+      }
+
+      const remoteItem = await collectionAPI.fetchItem(
+        collectionDB?.contract_address,
+        item.blockchain_item_id
+      )
+
+      if (!remoteItem) {
+        return false
+      }
+
+      const {
+        managers: itemManagers,
+        collection: { managers: collectionManager, creator },
+      } = remoteItem
+
+      return [...itemManagers, ...collectionManager, creator].some(
+        (address) => address === ethAddress
+      )
+    }
+
+    return false
   }
 }

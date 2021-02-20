@@ -1,10 +1,12 @@
+import { getAddress } from '@ethersproject/address'
+
 import { CollectionAttributes, Collection } from '../../Collection'
-import { ItemAttributes } from '../../Item'
+import { ItemAttributes, Item } from '../../Item'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 
 export class Bridge {
-  static consolidateCollections(
+  static async consolidateCollections(
     dbCollections: CollectionAttributes[],
     remoteCollections: CollectionFragment[]
   ) {
@@ -22,6 +24,28 @@ export class Bridge {
       collections.push(collection)
     }
 
+    const remoteCollectionCreators = remoteCollections.map((collection) =>
+      getAddress(collection.creator)
+    )
+    const dbCollectionsByRemotes = await Collection.findByEthAddresses(
+      remoteCollectionCreators
+    )
+    for (const remoteCollection of remoteCollections) {
+      // Get only db collections that has not been added in the collection array
+      const dbCollection = dbCollectionsByRemotes.find(
+        (collection) =>
+          collection.contract_address === remoteCollection.id &&
+          !collections.some(
+            (collection) => collection.contract_address === remoteCollection.id
+          )
+      )
+
+      // Do not display collections that was not created outside the server
+      if (dbCollection) {
+        collections.push(Bridge.mergeCollection(dbCollection, remoteCollection))
+      }
+    }
+
     return collections
   }
 
@@ -31,7 +55,7 @@ export class Bridge {
   ) {
     const items: ItemAttributes[] = []
 
-    // Get collections from DB
+    // Get db collections from DB items
     const collectionIds = dbItems.reduce<string[]>((ids, dbItem) => {
       if (dbItem.collection_id) {
         ids.push(dbItem.collection_id)
@@ -39,18 +63,31 @@ export class Bridge {
       return ids
     }, [])
     const dbResults = await Collection.findByIds(collectionIds)
-    const dbCollections = this.indexById(dbResults)
+    let dbCollections = this.indexById(dbResults)
 
-    // Get remote collections
-    const addresses = Object.values(dbCollections).map(
-      (dbCollection) => dbCollection.contract_address
+    // Get db collections from remote items
+    const addresses = remoteItems
+      .filter(
+        (remoteItem) =>
+          !dbResults.some(
+            (collection) =>
+              collection.contract_address === remoteItem.collection.id
+          )
+      )
+      .map((item) => item.collection.id)
+    const collectionsDBFromremoteResults = await Collection.findByAddresses(
+      addresses
     )
-    const remoteResults = await collectionAPI.fetchCollections(addresses)
-    const remoteCollections = this.indexById(remoteResults)
+    dbCollections = {
+      ...dbCollections,
+      ...this.indexById(collectionsDBFromremoteResults),
+    }
+    const remoteDbItems = await Item.findByBlockchainItemIds(
+      remoteItems.map((remoteItem) => remoteItem.blockchainId)
+    )
 
     // Reduce it to a map for fast lookup
-
-    for (const dbItem of dbItems) {
+    for (const dbItem of [...dbItems, ...remoteDbItems]) {
       let item = dbItem
 
       // Check if DB item has a collection
@@ -60,18 +97,20 @@ export class Bridge {
           // Find remote item
           const remoteItem = dbItem.blockchain_item_id
             ? remoteItems.find(
-                (remoteItem) =>
-                  remoteItem.id ===
-                  collectionAPI.buildItemId(
-                    dbCollection.contract_address,
-                    dbItem.blockchain_item_id!
-                  )
-              )
+              (remoteItem) =>
+                remoteItem.id ===
+                collectionAPI.buildItemId(
+                  dbCollection.contract_address,
+                  dbItem.blockchain_item_id!
+                )
+            )
             : null
 
           // Find remote collection
-          const remoteCollection =
-            remoteCollections[dbCollection.contract_address]
+          const remoteCollection = remoteItems.find(
+            (remoteItem) =>
+              remoteItem.collection.id === dbCollection.contract_address
+          )?.collection
 
           // Merge item from DB with remote data
           if (remoteItem && remoteCollection) {

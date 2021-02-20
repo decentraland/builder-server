@@ -7,8 +7,16 @@ export const itemFragment = () => gql`
     totalSupply
     price
     beneficiary
+    managers
+    minters
     collection {
       id
+      creator
+      owner
+      name
+      isApproved
+      minters
+      managers
     }
   }
 `
@@ -31,9 +39,9 @@ export type ItemFragment = {
   totalSupply: string
   price: string
   beneficiary: string
-  collection: {
-    id: string
-  }
+  minters: string[]
+  managers: string[]
+  collection: CollectionFragment
 }
 
 export type CollectionFragment = {

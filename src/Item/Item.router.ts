@@ -67,7 +67,7 @@ export class ItemRouter extends Router {
     this.router.put(
       '/items/:id',
       withAuthentication,
-      server.handleRequest(this.upsertItem.bind(this))
+      server.handleRequest(this.upsertItem)
     )
 
     /**
@@ -161,18 +161,57 @@ export class ItemRouter extends Router {
       throw new HTTPError('Invalid schema', validate.errors)
     }
 
-    const isUpdateAuthorized = this.isUpdateAuthorized(
-      eth_address,
-      id,
-      itemJSON
-    )
-
-    if (!isUpdateAuthorized) {
+    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
+    if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
         { id, eth_address },
         STATUS_CODES.unauthorized
       )
+    }
+
+    if (itemJSON.collection_id) {
+      const dbCollectionToAddItem = await Collection.findOne<CollectionAttributes>(
+        itemJSON.collection_id
+      )
+      // So far, only the owner can add item if the collection was not published
+      if (
+        !dbCollectionToAddItem ||
+        dbCollectionToAddItem.eth_address.toLowerCase() !==
+        eth_address.toLowerCase()
+      ) {
+        throw new HTTPError(
+          'Unauthorized user',
+          { id, eth_address, collection_id: itemJSON.collection_id },
+          STATUS_CODES.unauthorized
+        )
+      }
+    }
+
+    const dbItem = await Item.findOne<ItemAttributes>(id)
+
+    if (dbItem && dbItem.collection_id) {
+      if (dbItem.collection_id !== itemJSON.collection_id) {
+        throw new HTTPError(
+          "Item can't change between collections",
+          { id },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      const dbCollection = await Collection.findOne<CollectionAttributes>(
+        dbItem.collection_id
+      )
+
+      const remoteCollection = await collectionAPI.fetchCollection(
+        dbCollection!.contract_address
+      )
+
+      if (remoteCollection) {
+        // @TODO: throw here if the collection is published. At the UI we need to stop sending updates for price/metadata changes by
+        // sending the corresponding transaction directly
+        console.warn("Published collections items can't be updated")
+      }
     }
 
     const attributes = {
@@ -218,46 +257,5 @@ export class ItemRouter extends Router {
       return new S3Content().getFileKey(file.fieldname)
     })
     return utils.promisify<boolean>(uploader.any())
-  }
-
-  private async isUpdateAuthorized(
-    ethAddress: string,
-    dbItemId: string,
-    item: ItemAttributes
-  ) {
-    const isOwner = await new Ownable(Item).canUpsert(dbItemId, ethAddress)
-    if (isOwner) {
-      return true
-    }
-
-    if (item.collection_id && item.blockchain_item_id) {
-      const collectionDB = await Collection.findOne<CollectionAttributes>(
-        item.collection_id
-      )
-
-      if (!collectionDB) {
-        return false
-      }
-
-      const remoteItem = await collectionAPI.fetchItem(
-        collectionDB?.contract_address,
-        item.blockchain_item_id
-      )
-
-      if (!remoteItem) {
-        return false
-      }
-
-      const {
-        managers: itemManagers,
-        collection: { managers: collectionManager, creator },
-      } = remoteItem
-
-      return [...itemManagers, ...collectionManager, creator].some(
-        (address) => address === ethAddress
-      )
-    }
-
-    return false
   }
 }

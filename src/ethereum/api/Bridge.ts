@@ -55,39 +55,31 @@ export class Bridge {
   ) {
     const items: ItemAttributes[] = []
 
-    // Get db collections from DB items
-    const collectionIds = dbItems.reduce<string[]>((ids, dbItem) => {
-      if (dbItem.collection_id) {
-        ids.push(dbItem.collection_id)
-      }
-      return ids
-    }, [])
-    const dbResults = await Collection.findByIds(collectionIds)
-    let dbCollections = this.indexById(dbResults)
+    // To avoid multiple queries to the db, we will fetch all the items that match the blockchain_id and their collections
+    // to filter them later
+    let remoteDBItems = await Item.findByBlockchainIdsAndContractAddresses(
+      remoteItems.map((remoteItem) => ({
+        blockchainId: remoteItem.blockchainId,
+        collectionAddress: remoteItem.collection.id,
+      }))
+    )
 
-    // Get db collections from remote items
-    const addresses = remoteItems
-      .filter(
-        (remoteItem) =>
-          !dbResults.some(
-            (collection) =>
-              collection.contract_address === remoteItem.collection.id
-          )
-      )
-      .map((item) => item.collection.id)
-    const collectionsDBFromremoteResults = await Collection.findByAddresses(
-      addresses
+    // Get db collections from DB items
+    const collectionIds = [...dbItems, ...remoteDBItems].reduce<string[]>(
+      (ids, dbItem) => {
+        if (dbItem.collection_id) {
+          ids.push(dbItem.collection_id)
+        }
+        return ids
+      },
+      []
     )
-    dbCollections = {
-      ...dbCollections,
-      ...this.indexById(collectionsDBFromremoteResults),
-    }
-    const remoteDbItems = await Item.findByBlockchainItemIds(
-      remoteItems.map((remoteItem) => remoteItem.blockchainId)
-    )
+
+    const dbResults = await Collection.findByIds(collectionIds)
+    const dbCollections = this.indexById(dbResults)
 
     // Reduce it to a map for fast lookup
-    for (const dbItem of [...dbItems, ...remoteDbItems]) {
+    for (let dbItem of [...dbItems, ...remoteDBItems]) {
       let item = dbItem
 
       // Check if DB item has a collection
@@ -95,26 +87,17 @@ export class Bridge {
         const dbCollection = dbCollections[dbItem.collection_id]
         if (dbCollection) {
           // Find remote item
+          const remoteItemId = collectionAPI.buildItemId(
+            dbCollection.contract_address,
+            dbItem.blockchain_item_id!
+          )
           const remoteItem = dbItem.blockchain_item_id
-            ? remoteItems.find(
-              (remoteItem) =>
-                remoteItem.id ===
-                collectionAPI.buildItemId(
-                  dbCollection.contract_address,
-                  dbItem.blockchain_item_id!
-                )
-            )
+            ? remoteItems.find((remoteItem) => remoteItem.id === remoteItemId)
             : null
 
-          // Find remote collection
-          const remoteCollection = remoteItems.find(
-            (remoteItem) =>
-              remoteItem.collection.id === dbCollection.contract_address
-          )?.collection
-
           // Merge item from DB with remote data
-          if (remoteItem && remoteCollection) {
-            item = Bridge.mergeItem(dbItem, remoteItem, remoteCollection)
+          if (remoteItem && remoteItem.collection) {
+            item = Bridge.mergeItem(dbItem, remoteItem, remoteItem.collection)
           }
         }
       }

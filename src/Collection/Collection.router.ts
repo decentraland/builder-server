@@ -123,7 +123,7 @@ export class CollectionRouter extends Router {
 
       if (await this.isCollectionPublished(id)) {
         throw new HTTPError(
-          "The collection can't be updated because it is published",
+          "The collection is published. It can't be updated",
           {
             id,
           },
@@ -161,7 +161,7 @@ export class CollectionRouter extends Router {
 
     if (await this.isCollectionPublished(id)) {
       throw new HTTPError(
-        "The collection was published. It can't be deleted",
+        "The collection is published. It can't be deleted",
         {
           id,
         },

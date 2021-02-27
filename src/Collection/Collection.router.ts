@@ -49,7 +49,7 @@ export class CollectionRouter extends Router {
     this.router.put(
       '/collections/:id',
       withAuthentication,
-      server.handleRequest(this.upsertCollection)
+      server.handleRequest(this.upsertCollection.bind(this))
     )
 
     /**
@@ -113,6 +113,14 @@ export class CollectionRouter extends Router {
         )
       }
 
+      if (!(await this.isCollectionNameAvailable(collectionJSON))) {
+        throw new HTTPError(
+          'Name already in use',
+          { id, name: collectionJSON.name },
+          STATUS_CODES.unauthorized
+        )
+      }
+
       const attributes = {
         ...collectionJSON,
         eth_address,
@@ -145,5 +153,11 @@ export class CollectionRouter extends Router {
       Item.delete({ collection_id: id }),
     ])
     return true
+  }
+
+  async isCollectionNameAvailable(collection: CollectionAttributes) {
+    const dbCollection = await Collection.findByName(collection.name.trim())
+
+    return dbCollection.length === 0
   }
 }

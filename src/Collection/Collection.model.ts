@@ -18,4 +18,11 @@ export class Collection extends Model<CollectionAttributes> {
       FROM ${raw(this.tableName)}
       WHERE id = ANY(${ids})`)
   }
+
+  static findByName(name: string) {
+    return this.query<CollectionAttributes>(SQL`
+    SELECT *
+      FROM ${raw(this.tableName)}
+      WHERE LOWER(name) = ${name.toLowerCase()}`)
+  }
 }

@@ -19,10 +19,12 @@ export class Collection extends Model<CollectionAttributes> {
       WHERE id = ANY(${ids})`)
   }
 
-  static findByName(name: string) {
-    return this.query<CollectionAttributes>(SQL`
-    SELECT *
+  static async nameExist(name: string) {
+    const res = await this.query(SQL`
+    SELECT count(*)
       FROM ${raw(this.tableName)}
       WHERE LOWER(name) = ${name.toLowerCase()}`)
+
+    return res.length > 0 && res[0].count > 0
   }
 }

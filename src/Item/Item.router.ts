@@ -98,7 +98,7 @@ export class ItemRouter extends Router {
 
     const [dbItems, remoteItems] = await Promise.all([
       Item.findByEthAddress(eth_address),
-      collectionAPI.fetchItemsByOwner(eth_address),
+      collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
 
     return Bridge.consolidateItems(dbItems, remoteItems)
@@ -168,6 +168,50 @@ export class ItemRouter extends Router {
         { id, eth_address },
         STATUS_CODES.unauthorized
       )
+    }
+
+    if (itemJSON.collection_id) {
+      const dbCollectionToAddItem = await Collection.findOne<CollectionAttributes>(
+        itemJSON.collection_id
+      )
+      // So far, only the owner can add item if the collection was not published
+      if (
+        !dbCollectionToAddItem ||
+        dbCollectionToAddItem.eth_address.toLowerCase() !==
+        eth_address.toLowerCase()
+      ) {
+        throw new HTTPError(
+          'Unauthorized user',
+          { id, eth_address, collection_id: itemJSON.collection_id },
+          STATUS_CODES.unauthorized
+        )
+      }
+    }
+
+    const dbItem = await Item.findOne<ItemAttributes>(id)
+
+    if (dbItem && dbItem.collection_id) {
+      if (dbItem.collection_id !== itemJSON.collection_id) {
+        throw new HTTPError(
+          "Item can't change between collections",
+          { id },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      const dbCollection = await Collection.findOne<CollectionAttributes>(
+        dbItem.collection_id
+      )
+
+      const remoteCollection = await collectionAPI.fetchCollection(
+        dbCollection!.contract_address
+      )
+
+      if (remoteCollection) {
+        // @TODO: throw here if the collection is published. At the UI we need to stop sending updates for price/metadata changes by
+        // sending the corresponding transaction directly
+        console.warn("Published collections items can't be updated")
+      }
     }
 
     const attributes = {

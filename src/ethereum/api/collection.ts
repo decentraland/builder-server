@@ -27,9 +27,15 @@ const getCollectionsByIdQuery = () => gql`
   ${collectionFragment()}
 `
 
-const getCollectionsByCreatorQuery = () => gql`
-  query getCollectionsByCreator($creator: String) {
-    collections(where: { creator: $creator }) {
+const getCollectionsByAuthorizedUserQuery = () => gql`
+  query getCollectionsByCreator($user: String, $users: [String!]) {
+    creator: collections(where: { creator: $user }) {
+      ...collectionFragment
+    }
+    manager: collections(where: { managers_contains: $users }) {
+      ...collectionFragment
+    }
+    minter: collections(where: { minters_contains: $users }) {
       ...collectionFragment
     }
   }
@@ -45,9 +51,19 @@ const getItemByIdQuery = () => gql`
   ${itemFragment()}
 `
 
-const getItemsByOwnerQuery = () => gql`
-  query getItemsByOwnerCreator($creator: String) {
-    collections(where: { creator: $creator }) {
+const getItemsByAuthorizedUserQuery = () => gql`
+  query getItemsByOwnerCreator($user: String, $users: [String]) {
+    creator: collections(where: { creator: $user }) {
+      items {
+        ...itemFragment
+      }
+    }
+    manager: collections(where: { managers_contains: $users }) {
+      items {
+        ...itemFragment
+      }
+    }
+    minter: collections(where: { minters_contains: $users }) {
       items {
         ...itemFragment
       }
@@ -100,15 +116,22 @@ export class CollectionAPI {
     return data.collections
   }
 
-  fetchCollectionsByOwner = async (owner: string) => {
-    const { data } = await graphClient.query<{
-      collections: CollectionFragment[]
+  fetchCollectionsByAuthorizedUser = async (userAddress: string) => {
+    const {
+      data: { creator, manager, minter },
+    } = await graphClient.query<{
+      creator: CollectionFragment[]
+      manager: CollectionFragment[]
+      minter: CollectionFragment[]
     }>({
-      query: getCollectionsByCreatorQuery(),
-      variables: { creator: owner.toLowerCase() },
+      query: getCollectionsByAuthorizedUserQuery(),
+      variables: {
+        user: userAddress.toLowerCase(),
+        users: [userAddress.toLowerCase()],
+      },
     })
 
-    return data.collections
+    return [...creator, ...manager, ...minter]
   }
 
   fetchItem = async (contractAddress: string, tokenId: string) => {
@@ -120,15 +143,22 @@ export class CollectionAPI {
     return data.items.length > 0 ? data.items[0] : null
   }
 
-  fetchItemsByOwner = async (owner: string) => {
-    const { data } = await graphClient.query<{
-      collections: { items: ItemFragment[] }[]
+  fetchItemsByAuthorizedUser = async (userAddress: string) => {
+    const {
+      data: { creator, manager, minter },
+    } = await graphClient.query<{
+      creator: { items: ItemFragment[] }[]
+      manager: { items: ItemFragment[] }[]
+      minter: { items: ItemFragment[] }[]
     }>({
-      query: getItemsByOwnerQuery(),
-      variables: { creator: owner.toLowerCase() },
+      query: getItemsByAuthorizedUserQuery(),
+      variables: {
+        user: userAddress.toLowerCase(),
+        users: [userAddress.toLowerCase()],
+      },
     })
 
-    return data.collections.reduce(
+    return [...creator, ...manager, ...minter].reduce(
       (items, collection) => [...items, ...collection.items],
       [] as ItemFragment[]
     )

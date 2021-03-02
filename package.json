@@ -27,7 +27,6 @@
   },
   "dependencies": {
     "@apollo/client": "^3.3.9",
-    "@ethersproject/address": "^5.0.10",
     "@ethersproject/solidity": "^5.0.9",
     "@types/body-parser": "^1.17.0",
     "@types/escape-html": "0.0.20",

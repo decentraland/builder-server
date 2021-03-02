@@ -23,15 +23,13 @@ export class Item extends Model<ItemAttributes> {
   static findByBlockchainIdsAndContractAddresses(
     data: { blockchainId: string; collectionAddress: string }[]
   ) {
-    const where = data.reduce(
-      (query, { blockchainId, collectionAddress }, index) =>
-        query.append(
-          SQL`${raw(
-            index > 0 ? ' OR ' : ''
-          )} (i.blockchain_item_id = ${blockchainId} AND c.contract_address = ${collectionAddress})`
-        ),
-      SQL``
-    )
+    const where = SQL``
+    for (const [index, { blockchainId, collectionAddress }] of data.entries()) {
+      const or = index > 0 ? SQL` OR ` : SQL``
+      where.append(
+        SQL`${or} (i.blockchain_item_id = ${blockchainId} AND c.contract_address = ${collectionAddress})`
+      )
+    }
 
     return this.query<ItemAttributes>(SQL`
       SELECT i.*

@@ -1,5 +1,3 @@
-import { getAddress } from '@ethersproject/address'
-
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item } from '../../Item'
 import { ItemFragment, CollectionFragment } from './fragments'
@@ -12,38 +10,21 @@ export class Bridge {
   ) {
     const collections: CollectionAttributes[] = []
 
-    for (const dbCollection of dbCollections) {
+    const dbCollectionsByRemotes = await Collection.findByAddresses(
+      remoteCollections.map((collection) => collection.id)
+    )
+
+    for (const dbCollection of [...dbCollections, ...dbCollectionsByRemotes]) {
       const remoteCollection = remoteCollections.find(
         (remoteCollection) =>
-          remoteCollection.id === dbCollection.contract_address
+          remoteCollection.id.toLowerCase() ===
+          dbCollection.contract_address.toLowerCase()
       )
       const collection = remoteCollection
         ? Bridge.mergeCollection(dbCollection, remoteCollection)
         : dbCollection
 
       collections.push(collection)
-    }
-
-    const remoteCollectionCreators = remoteCollections.map((collection) =>
-      getAddress(collection.creator)
-    )
-    const dbCollectionsByRemotes = await Collection.findByEthAddresses(
-      remoteCollectionCreators
-    )
-    for (const remoteCollection of remoteCollections) {
-      // Get only db collections that has not been added in the collection array
-      const dbCollection = dbCollectionsByRemotes.find(
-        (collection) =>
-          collection.contract_address === remoteCollection.id &&
-          !collections.some(
-            (collection) => collection.contract_address === remoteCollection.id
-          )
-      )
-
-      // Do not display collections that was not created outside the server
-      if (dbCollection) {
-        collections.push(Bridge.mergeCollection(dbCollection, remoteCollection))
-      }
     }
 
     return collections
@@ -65,15 +46,12 @@ export class Bridge {
     )
 
     // Get db collections from DB items
-    const collectionIds = [...dbItems, ...remoteDBItems].reduce<string[]>(
-      (ids, dbItem) => {
-        if (dbItem.collection_id) {
-          ids.push(dbItem.collection_id)
-        }
-        return ids
-      },
-      []
-    )
+    const collectionIds = []
+    for (const item of [...dbItems, ...remoteDBItems]) {
+      if (item.collection_id) {
+        collectionIds.push(item.collection_id)
+      }
+    }
 
     const dbResults = await Collection.findByIds(collectionIds)
     const dbCollections = this.indexById(dbResults)

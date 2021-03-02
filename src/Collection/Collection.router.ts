@@ -113,6 +113,14 @@ export class CollectionRouter extends Router {
         )
       }
 
+      if (await Collection.nameExist(collectionJSON.name.trim())) {
+        throw new HTTPError(
+          'Name already in use',
+          { id, name: collectionJSON.name },
+          STATUS_CODES.unauthorized
+        )
+      }
+
       const attributes = {
         ...collectionJSON,
         eth_address,

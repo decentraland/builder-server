@@ -12,13 +12,6 @@ export class Collection extends Model<CollectionAttributes> {
       WHERE eth_address = ${ethAddress}`)
   }
 
-  static findByEthAddresses(ethAddresses: string[]) {
-    return this.query<CollectionAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)}
-      WHERE eth_address = ANY(${ethAddresses})`)
-  }
-
   static findByIds(ids: string[]) {
     return this.query<CollectionAttributes>(SQL`
     SELECT *

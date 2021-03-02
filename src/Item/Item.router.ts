@@ -189,9 +189,9 @@ export class ItemRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     const dbItem = await Item.findOne<ItemAttributes>({ id })
-    const dbCollection = await Collection.findOne<CollectionAttributes>({
-      id: dbItem!.collection_id!,
-    })
+    const dbCollection = await Collection.findOne<CollectionAttributes>(
+      dbItem!.collection_id!
+    )
 
     if (dbCollection) {
       const remoteCollections = await collectionAPI.fetchCollection(

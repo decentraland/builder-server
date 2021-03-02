@@ -175,9 +175,9 @@ export class CollectionRouter extends Router {
   }
 
   async isCollectionPublished(collectionId: string) {
-    const dbCollection = await Collection.findOne<CollectionAttributes>({
-      id: collectionId,
-    })
+    const dbCollection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
 
     if (!dbCollection) {
       return false

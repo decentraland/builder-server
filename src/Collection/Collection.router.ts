@@ -91,7 +91,7 @@ export class CollectionRouter extends Router {
     return dbCollection
   }
 
-  async upsertCollection(req: AuthRequest) {
+  upsertCollection = async (req: AuthRequest) => {
     try {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
@@ -121,6 +121,16 @@ export class CollectionRouter extends Router {
         )
       }
 
+      if (await this.isCollectionPublished(id)) {
+        throw new HTTPError(
+          "The collection is published. It can't be updated",
+          {
+            id,
+          },
+          STATUS_CODES.unauthorized
+        )
+      }
+
       const attributes = {
         ...collectionJSON,
         eth_address,
@@ -146,12 +156,37 @@ export class CollectionRouter extends Router {
     }
   }
 
-  async deleteCollection(req: AuthRequest) {
+  deleteCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
+
+    if (await this.isCollectionPublished(id)) {
+      throw new HTTPError(
+        "The collection is published. It can't be deleted",
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     await Promise.all([
       Collection.delete({ id }),
       Item.delete({ collection_id: id }),
     ])
     return true
+  }
+
+  async isCollectionPublished(collectionId: string) {
+    const dbCollection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
+
+    if (!dbCollection) {
+      return false
+    }
+
+    const remoteCollections = await collectionAPI.fetchCollection(
+      dbCollection.contract_address
+    )
+
+    return !!remoteCollections
   }
 }

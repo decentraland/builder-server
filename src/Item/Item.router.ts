@@ -187,6 +187,30 @@ export class ItemRouter extends Router {
 
   async deleteItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+
+    const dbItem = await Item.findOne<ItemAttributes>({ id })
+    const dbCollection = await Collection.findOne<CollectionAttributes>(
+      dbItem!.collection_id!
+    )
+
+    if (dbCollection) {
+      const remoteCollections = await collectionAPI.fetchCollection(
+        dbCollection.contract_address
+      )
+
+      if (remoteCollections) {
+        throw new HTTPError(
+          "The item was published. It can't be deleted",
+          {
+            id,
+            blockchain_item_id: dbItem!.blockchain_item_id,
+            contract_address: dbCollection.contract_address,
+          },
+          STATUS_CODES.unauthorized
+        )
+      }
+    }
+
     await Item.delete({ id })
     return true
   }

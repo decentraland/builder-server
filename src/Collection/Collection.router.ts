@@ -49,7 +49,7 @@ export class CollectionRouter extends Router {
     this.router.put(
       '/collections/:id',
       withAuthentication,
-      server.handleRequest(this.upsertCollection.bind(this))
+      server.handleRequest(this.upsertCollection)
     )
 
     /**
@@ -60,7 +60,7 @@ export class CollectionRouter extends Router {
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,
-      server.handleRequest(this.deleteCollection.bind(this))
+      server.handleRequest(this.deleteCollection)
     )
   }
 
@@ -91,7 +91,7 @@ export class CollectionRouter extends Router {
     return dbCollection
   }
 
-  async upsertCollection(req: AuthRequest) {
+  upsertCollection = async (req: AuthRequest) => {
     try {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
@@ -156,15 +156,13 @@ export class CollectionRouter extends Router {
     }
   }
 
-  async deleteCollection(req: AuthRequest) {
+  deleteCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
 
     if (await this.isCollectionPublished(id)) {
       throw new HTTPError(
         "The collection is published. It can't be deleted",
-        {
-          id,
-        },
+        { id },
         STATUS_CODES.unauthorized
       )
     }

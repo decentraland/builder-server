@@ -10,7 +10,7 @@ export class Bridge {
   ) {
     const collections: CollectionAttributes[] = []
 
-    const dbCollectionsByRemotes = await Collection.findByAddresses(
+    const dbCollectionsByRemotes = await Collection.findByContractAddresses(
       remoteCollections.map((collection) => collection.id)
     )
 

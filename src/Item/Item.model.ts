@@ -23,8 +23,13 @@ export class Item extends Model<ItemAttributes> {
   static findByBlockchainIdsAndContractAddresses(
     data: { blockchainId: string; collectionAddress: string }[]
   ) {
+    if (data.length === 0) {
+      return []
+    }
+
     const where = SQL``
-    for (const [index, { blockchainId, collectionAddress }] of data.entries()) {
+    for (const [index, entry] of data.entries()) {
+      const { blockchainId, collectionAddress } = entry
       const or = index > 0 ? SQL` OR ` : SQL``
       where.append(
         SQL`${or} (i.blockchain_item_id = ${blockchainId} AND c.contract_address = ${collectionAddress})`

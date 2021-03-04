@@ -95,7 +95,6 @@ export class ItemRouter extends Router {
 
   async getItems(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
-
     const [dbItems, remoteItems] = await Promise.all([
       Item.findByEthAddress(eth_address),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
@@ -178,7 +177,7 @@ export class ItemRouter extends Router {
       if (
         !dbCollectionToAddItem ||
         dbCollectionToAddItem.eth_address.toLowerCase() !==
-        eth_address.toLowerCase()
+          eth_address.toLowerCase()
       ) {
         throw new HTTPError(
           'Unauthorized user',

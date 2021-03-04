@@ -38,7 +38,7 @@ export class Bridge {
 
     // To avoid multiple queries to the db, we will fetch all the items that match the blockchain_id and their collections
     // to filter them later
-    let remoteDBItems = await Item.findByBlockchainIdsAndContractAddresses(
+    const remoteDBItems = await Item.findByBlockchainIdsAndContractAddresses(
       remoteItems.map((remoteItem) => ({
         blockchainId: remoteItem.blockchainId,
         collectionAddress: remoteItem.collection.id,

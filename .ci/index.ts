@@ -70,7 +70,7 @@ export = async function main() {
         name: 'PEER_URL',
         value:
           env === 'prd' || env === 'stg'
-            ? 'https://peer.decentraland.org'
+            ? 'https://peer-ec1.decentraland.org'
             : 'https://peer.decentraland.zone',
       },
       {

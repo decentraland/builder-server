@@ -9,7 +9,7 @@ import 'isomorphic-fetch'
 declare const fetch: any
 
 const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
-const PEER_URL = env.get('PEER_URL', 'https://peer.decentraland.org')
+const PEER_URL = env.get('PEER_URL', 'https://peer-ec1.decentraland.org')
 
 export type AuthRequest = Request & {
   authLegacy?: AuthRequestLegacy['auth']

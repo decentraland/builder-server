@@ -13,7 +13,7 @@ export class FactoryCollection {
     return keccak256(['string'], [seed])
   }
 
-  getContractAddress(salt: string, userAddress: string): string {
+  getContractAddress(salt: string): string {
     const network = env.get('ETHEREUM_NETWORK') as Network
 
     const address = FACTORY_COLLECTION_ADDRESS[network]

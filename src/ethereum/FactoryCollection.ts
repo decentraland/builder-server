@@ -4,6 +4,7 @@ import { keccak256 } from '@ethersproject/solidity'
 import {
   FACTORY_COLLECTION_ADDRESS,
   FACTORY_COLLECTION_CODE_HASH,
+  FORWARDER_CONTRACT_ADDRESS,
   Network,
 } from './types'
 
@@ -12,7 +13,7 @@ export class FactoryCollection {
     return keccak256(['string'], [seed])
   }
 
-  getContractAddress(salt: string, userAddress: string): string {
+  getContractAddress(salt: string): string {
     const network = env.get('ETHEREUM_NETWORK') as Network
 
     const address = FACTORY_COLLECTION_ADDRESS[network]
@@ -29,12 +30,19 @@ export class FactoryCollection {
       )
     }
 
+    const forwarderAddress = FORWARDER_CONTRACT_ADDRESS[network]
+    if (!forwarderAddress) {
+      throw new Error(
+        `Could not find a forwarder contract address for network ${network}`
+      )
+    }
+
     const encoded = keccak256(
       ['bytes1', 'address', 'bytes32', 'bytes32'],
       [
         '0xff',
         address,
-        keccak256(['bytes32', 'address'], [salt, userAddress]),
+        keccak256(['bytes32', 'address'], [salt, forwarderAddress]),
         codeHash,
       ]
     ).slice(-40)

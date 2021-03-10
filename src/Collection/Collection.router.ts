@@ -123,9 +123,7 @@ export class CollectionRouter extends Router {
       if (await this.isCollectionPublished(id)) {
         throw new HTTPError(
           "The collection is published. It can't be updated",
-          {
-            id,
-          },
+          { id },
           STATUS_CODES.unauthorized
         )
       }
@@ -145,8 +143,7 @@ export class CollectionRouter extends Router {
       const factoryCollection = new FactoryCollection()
       attributes.salt = factoryCollection.getSalt(id)
       attributes.contract_address = factoryCollection.getContractAddress(
-        attributes.salt,
-        attributes.eth_address
+        attributes.salt
       )
 
       return new Collection(attributes).upsert()

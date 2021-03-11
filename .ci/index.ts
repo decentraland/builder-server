@@ -81,8 +81,8 @@ export = async function main() {
         name: 'COLLECTIONS_GRAPH_URL',
         value:
           env === 'prd' || env === 'stg'
-            ? 'https://api.thegraph.com/subgraphs/name/decentraland/collections'
-            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections-ropsten',
+            ? 'https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mainnet'
+            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mumbai',
       },
       {
         name: 'ANALYTICS_CONNECTION_STRING',

@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -16,6 +17,7 @@ import { Ownable } from '../Ownable'
 import { Item } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { collectionSchema } from './Collection.types'
+import { RequestParameters } from '../RequestParameters'
 
 const validator = getValidator()
 
@@ -68,18 +70,33 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections() {
+  async getCollections(req: Request) {
+    let isPublished: boolean | undefined
+    try {
+      isPublished = new RequestParameters(req).getBoolean('isPublished')
+    } catch (error) {
+      // No isPublished param
+    }
+
+    // The current implementation only supports fetching published/unpublished collections and items
+    // If, in the future we need to add multiple query params, a more flexible implementation is required
     const [dbCollections, remoteCollections] = await Promise.all([
-      Collection.find(),
+      typeof isPublished === 'undefined'
+        ? Collection.find<CollectionAttributes>()
+        : Collection.find<CollectionAttributes>({
+            is_published: isPublished,
+          }),
       collectionAPI.fetchCollections(),
     ])
+
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
 
   async getAddressCollections(req: AuthRequest) {
-    const eth_address = req.auth.ethAddress
+    const eth_address = server.extractFromReq(req, 'address')
+
     const [dbCollections, remoteCollections] = await Promise.all([
-      Collection.findByEthAddress(eth_address),
+      Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
     ])
     return Bridge.consolidateCollections(dbCollections, remoteCollections)

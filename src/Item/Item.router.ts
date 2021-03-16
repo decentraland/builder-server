@@ -109,7 +109,7 @@ export class ItemRouter extends Router {
   async getAddressItems(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
     const [dbItems, remoteItems] = await Promise.all([
-      Item.findByEthAddress(eth_address),
+      Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
 
@@ -154,7 +154,7 @@ export class ItemRouter extends Router {
     if (!dbCollection) return []
 
     const [dbItems, remoteItems] = await Promise.all([
-      Item.findByCollectionId(id),
+      Item.find<ItemAttributes>({ collection_id: id }),
       collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address),
     ])
 

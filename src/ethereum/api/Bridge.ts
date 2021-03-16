@@ -10,8 +10,14 @@ export class Bridge {
   ) {
     const collections: CollectionAttributes[] = []
 
+    // Filter collections already found on the database to avoid duplicates
+    const dbAddresses = dbCollections.map((collection) => collection.id)
+    const remoteAddresses = remoteCollections
+      .filter((remoteCollection) => dbAddresses.includes(remoteCollection.id))
+      .map((collection) => collection.id)
+
     const dbCollectionsByRemotes = await Collection.findByContractAddresses(
-      remoteCollections.map((collection) => collection.id)
+      remoteAddresses
     )
 
     for (const dbCollection of [...dbCollections, ...dbCollectionsByRemotes]) {
@@ -36,13 +42,24 @@ export class Bridge {
   ) {
     const items: ItemAttributes[] = []
 
-    // To avoid multiple queries to the db, we will fetch all the items that match the blockchain_id and their collections
-    // to filter them later
-    const remoteDBItems = await Item.findByBlockchainIdsAndContractAddresses(
-      remoteItems.map((remoteItem) => ({
+    // Filter items already found on the database to avoid duplicates
+    const remoteItemData = remoteItems
+      .filter((remoteItem) =>
+        dbItems.some(
+          (item) =>
+            item.blockchain_item_id === remoteItem.blockchainId &&
+            item.collection_id === remoteItem.collection.id
+        )
+      )
+      .map((remoteItem) => ({
         blockchainId: remoteItem.blockchainId,
         collectionAddress: remoteItem.collection.id,
       }))
+
+    // To avoid multiple queries to the db, we will fetch all the items that match the blockchain_id and their collections
+    // to filter them later
+    const remoteDBItems = await Item.findByBlockchainIdsAndContractAddresses(
+      remoteItemData
     )
 
     // Get db collections from DB items

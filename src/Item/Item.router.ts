@@ -17,6 +17,7 @@ import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
 import { itemSchema } from './Item.types'
+import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
 
 const validator = getValidator()
@@ -97,9 +98,20 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems() {
+  async getItems(req: Request) {
+    let isPublished: boolean | undefined
+    try {
+      isPublished = new RequestParameters(req).getBoolean('isPublished')
+    } catch (error) {
+      // No isPublished param
+    }
+
     const [dbItems, remoteItems] = await Promise.all([
-      Item.find(),
+      typeof isPublished === 'undefined'
+        ? Item.find<ItemAttributes>()
+        : Item.find<ItemAttributes>({
+            is_published: isPublished,
+          }),
       collectionAPI.fetchItems(),
     ])
 
@@ -107,7 +119,8 @@ export class ItemRouter extends Router {
   }
 
   async getAddressItems(req: AuthRequest) {
-    const eth_address = req.auth.ethAddress
+    const eth_address = server.extractFromReq(req, 'address')
+
     const [dbItems, remoteItems] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),

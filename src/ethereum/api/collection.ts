@@ -3,8 +3,10 @@ import { env } from 'decentraland-commons'
 import {
   collectionFragment,
   itemFragment,
+  accountFragment,
   CollectionFragment,
   ItemFragment,
+  AccountFragment,
 } from './fragments'
 import { createClient } from './client'
 import { Bridge } from './Bridge'
@@ -18,8 +20,17 @@ const getCollectionByIdQuery = () => gql`
   ${collectionFragment()}
 `
 
+const getCollectionsQuery = () => gql`
+  query getCollections {
+    collections {
+      ...collectionFragment
+    }
+  }
+  ${collectionFragment()}
+`
+
 const getCollectionsByIdQuery = () => gql`
-  query getCollectionsById($ids: [ID!]!) {
+  query getCollectionsById($ids: [ID!]) {
     collections(where: { id_in: $ids }) {
       ...collectionFragment
     }
@@ -40,6 +51,15 @@ const getCollectionsByAuthorizedUserQuery = () => gql`
     }
   }
   ${collectionFragment()}
+`
+
+const getItemsQuery = () => gql`
+  query getItems {
+    items {
+      ...itemFragment
+    }
+  }
+  ${itemFragment()}
 `
 
 const getItemByIdQuery = () => gql`
@@ -83,6 +103,15 @@ const getItemsByContractAddressQuery = () => gql`
   ${itemFragment()}
 `
 
+const getCommitteeQuery = () => gql`
+  query getCommitteeAccounts {
+    accounts(where: { isCommitteeMember: true }) {
+      ...accountFragment
+    }
+  }
+  ${accountFragment()}
+`
+
 export const COLLECTIONS_URL = env.get('COLLECTIONS_GRAPH_URL', '')
 const graphClient = createClient(COLLECTIONS_URL)
 
@@ -103,7 +132,15 @@ export class CollectionAPI {
     return data.collections.length > 0 ? data.collections[0] : null
   }
 
-  fetchCollections = async (contractAddresses: string[]) => {
+  fetchCollections = async () => {
+    const { data } = await graphClient.query<{
+      collections: CollectionFragment[]
+    }>({ query: getCollectionsQuery() })
+
+    return data.collections
+  }
+
+  fetchCollectionsByAddress = async (contractAddresses: string[]) => {
     const { data } = await graphClient.query<{
       collections: CollectionFragment[]
     }>({
@@ -132,6 +169,14 @@ export class CollectionAPI {
     })
 
     return [...creator, ...manager, ...minter]
+  }
+
+  fetchItems = async () => {
+    const { data } = await graphClient.query<{ items: ItemFragment[] }>({
+      query: getItemsQuery(),
+    })
+
+    return data.items
   }
 
   fetchItem = async (contractAddress: string, tokenId: string) => {
@@ -173,6 +218,14 @@ export class CollectionAPI {
     })
 
     return data.collections.length > 0 ? data.collections[0].items : []
+  }
+
+  fetchCommittee = async () => {
+    const { data } = await graphClient.query<{
+      accounts: AccountFragment[]
+    }>({ query: getCommitteeQuery() })
+
+    return data.accounts
   }
 
   buildItemId = (contractAddress: string, tokenId: string) => {

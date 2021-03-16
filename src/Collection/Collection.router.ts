@@ -25,12 +25,16 @@ export class CollectionRouter extends Router {
     const withCollectionAuthorization = withModelAuthorization(Collection)
 
     /**
-     * Returns the collections for a user
+     * Returns all collections
+     */
+    this.router.get('/collections', server.handleRequest(this.getCollections))
+
+    /**
+     * Returns the collections for an address
      */
     this.router.get(
-      '/collections',
-      withAuthentication,
-      server.handleRequest(this.getCollections)
+      '/:address/collections',
+      server.handleRequest(this.getAddressCollections)
     )
 
     /**
@@ -64,7 +68,15 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections(req: AuthRequest) {
+  async getCollections() {
+    const [dbCollections, remoteCollections] = await Promise.all([
+      Collection.find(),
+      collectionAPI.fetchCollections(),
+    ])
+    return Bridge.consolidateCollections(dbCollections, remoteCollections)
+  }
+
+  async getAddressCollections(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
     const [dbCollections, remoteCollections] = await Promise.all([
       Collection.findByEthAddress(eth_address),

@@ -34,12 +34,16 @@ export class ItemRouter extends Router {
     this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
 
     /**
-     * Returns the items for a user
+     * Returns all items
+     */
+    this.router.get('/items', server.handleRequest(this.getItems))
+
+    /**
+     * Returns the items for an address
      */
     this.router.get(
-      '/items',
-      withAuthentication,
-      server.handleRequest(this.getItems)
+      '/:address/items',
+      server.handleRequest(this.getAddressItems)
     )
 
     /**
@@ -93,7 +97,16 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems(req: AuthRequest) {
+  async getItems() {
+    const [dbItems, remoteItems] = await Promise.all([
+      Item.find(),
+      collectionAPI.fetchItems(),
+    ])
+
+    return Bridge.consolidateItems(dbItems, remoteItems)
+  }
+
+  async getAddressItems(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
     const [dbItems, remoteItems] = await Promise.all([
       Item.findByEthAddress(eth_address),

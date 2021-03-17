@@ -17,6 +17,7 @@ import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
 import { itemSchema } from './Item.types'
+import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
 
 const validator = getValidator()
@@ -34,12 +35,16 @@ export class ItemRouter extends Router {
     this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
 
     /**
-     * Returns the items for a user
+     * Returns all items
+     */
+    this.router.get('/items', server.handleRequest(this.getItems))
+
+    /**
+     * Returns the items for an address
      */
     this.router.get(
-      '/items',
-      withAuthentication,
-      server.handleRequest(this.getItems)
+      '/:address/items',
+      server.handleRequest(this.getAddressItems)
     )
 
     /**
@@ -93,17 +98,36 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems(req: AuthRequest) {
-    const eth_address = req.auth.ethAddress
+  async getItems(req: Request) {
+    let is_published: boolean | undefined
+    try {
+      is_published = new RequestParameters(req).getBoolean('is_published')
+    } catch (error) {
+      // No is_published param
+    }
+
     const [dbItems, remoteItems] = await Promise.all([
-      Item.findByEthAddress(eth_address),
+      typeof is_published === 'undefined'
+        ? Item.find<ItemAttributes>()
+        : Item.find<ItemAttributes>({ is_published }),
+      collectionAPI.fetchItems(),
+    ])
+
+    return Bridge.consolidateItems(dbItems, remoteItems)
+  }
+
+  async getAddressItems(req: AuthRequest) {
+    const eth_address = server.extractFromReq(req, 'address')
+
+    const [dbItems, remoteItems] = await Promise.all([
+      Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
 
     return Bridge.consolidateItems(dbItems, remoteItems)
   }
 
-  async getItem(req: AuthRequest) {
+  async getItem(req: Request) {
     const id = server.extractFromReq(req, 'id')
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
@@ -133,7 +157,7 @@ export class ItemRouter extends Router {
     return dbItem
   }
 
-  async getCollectionItems(req: AuthRequest) {
+  async getCollectionItems(req: Request) {
     const id = server.extractFromReq(req, 'id')
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)
@@ -141,7 +165,7 @@ export class ItemRouter extends Router {
     if (!dbCollection) return []
 
     const [dbItems, remoteItems] = await Promise.all([
-      Item.findByCollectionId(id),
+      Item.find<ItemAttributes>({ collection_id: id }),
       collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address),
     ])
 

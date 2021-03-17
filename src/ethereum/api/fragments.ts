@@ -33,6 +33,14 @@ export const collectionFragment = () => gql`
   }
 `
 
+export const accountFragment = () => gql`
+  fragment accountFragment on Account {
+    id
+    address
+    isCommitteeMember
+  }
+`
+
 export type ItemFragment = {
   id: string
   blockchainId: string
@@ -52,4 +60,10 @@ export type CollectionFragment = {
   isApproved: boolean
   minters: string[]
   managers: string[]
+}
+
+export type AccountFragment = {
+  id: string
+  address: string
+  isCommitteeMember: boolean
 }

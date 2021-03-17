@@ -6,20 +6,6 @@ import { ItemAttributes } from './Item.types'
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
-  static findByEthAddress(ethAddress: string) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT *
-        FROM ${raw(this.tableName)}
-        WHERE eth_address = ${ethAddress}`)
-  }
-
-  static findByCollectionId(collectionId: string) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT *
-        FROM ${raw(this.tableName)}
-        WHERE collection_id = ${collectionId}`)
-  }
-
   static findByBlockchainIdsAndContractAddresses(
     data: { blockchainId: string; collectionAddress: string }[]
   ) {

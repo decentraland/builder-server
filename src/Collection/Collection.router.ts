@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -16,6 +17,7 @@ import { Ownable } from '../Ownable'
 import { Item } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { collectionSchema } from './Collection.types'
+import { RequestParameters } from '../RequestParameters'
 
 const validator = getValidator()
 
@@ -25,12 +27,16 @@ export class CollectionRouter extends Router {
     const withCollectionAuthorization = withModelAuthorization(Collection)
 
     /**
-     * Returns the collections for a user
+     * Returns all collections
+     */
+    this.router.get('/collections', server.handleRequest(this.getCollections))
+
+    /**
+     * Returns the collections for an address
      */
     this.router.get(
-      '/collections',
-      withAuthentication,
-      server.handleRequest(this.getCollections)
+      '/:address/collections',
+      server.handleRequest(this.getAddressCollections)
     )
 
     /**
@@ -64,16 +70,37 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections(req: AuthRequest) {
-    const eth_address = req.auth.ethAddress
+  async getCollections(req: Request) {
+    let is_published: boolean | undefined
+    try {
+      is_published = new RequestParameters(req).getBoolean('isPublished')
+    } catch (error) {
+      // No is_published param
+    }
+
+    // The current implementation only supports fetching published/unpublished collections and items
+    // If, in the future we need to add multiple query params, a more flexible implementation is required
     const [dbCollections, remoteCollections] = await Promise.all([
-      Collection.findByEthAddress(eth_address),
+      typeof is_published === 'undefined'
+        ? Collection.find<CollectionAttributes>()
+        : Collection.find<CollectionAttributes>({ is_published }),
+      collectionAPI.fetchCollections(),
+    ])
+
+    return Bridge.consolidateCollections(dbCollections, remoteCollections)
+  }
+
+  async getAddressCollections(req: AuthRequest) {
+    const eth_address = server.extractFromReq(req, 'address')
+
+    const [dbCollections, remoteCollections] = await Promise.all([
+      Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
     ])
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
 
-  async getCollection(req: AuthRequest) {
+  async getCollection(req: Request) {
     const id = server.extractFromReq(req, 'id')
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)

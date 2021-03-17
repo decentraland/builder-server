@@ -9,14 +9,15 @@ import { PoolGroupRouter } from './PoolGroup'
 import { PoolLikeRouter } from './PoolLike'
 import { ItemRouter } from './Item'
 import { CollectionRouter } from './Collection'
+import { CommitteeRouter } from './Committee'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
 import { S3Router } from './S3'
+import { ShareRouter } from './Share'
+import { AnalyticsRouter } from './Analytics'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
-import { ShareRouter } from './Share'
-import { AnalyticsRouter } from './Analytics'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
@@ -41,6 +42,7 @@ new PoolGroupRouter(app).mount()
 new PoolRouter(app).mount()
 new ItemRouter(app).mount()
 new CollectionRouter(app).mount()
+new CommitteeRouter(app).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
 new S3Router(app).mount()

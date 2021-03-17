@@ -14,7 +14,13 @@ export class Bridge {
       remoteCollections.map((collection) => collection.id)
     )
 
-    for (const dbCollection of [...dbCollections, ...dbCollectionsByRemotes]) {
+    // Filter collections already found on the database to avoid duplicates
+    const allDbCollections = this.distinctById<CollectionAttributes>([
+      ...dbCollections,
+      ...dbCollectionsByRemotes,
+    ])
+
+    for (const dbCollection of allDbCollections) {
       const remoteCollection = remoteCollections.find(
         (remoteCollection) =>
           remoteCollection.id.toLowerCase() ===
@@ -45,9 +51,15 @@ export class Bridge {
       }))
     )
 
+    // Filter items to avoid duplicates
+    const allDbItems = this.distinctById<ItemAttributes>([
+      ...dbItems,
+      ...remoteDBItems,
+    ])
+
     // Get db collections from DB items
     const collectionIds = []
-    for (const item of [...dbItems, ...remoteDBItems]) {
+    for (const item of allDbItems) {
       if (item.collection_id) {
         collectionIds.push(item.collection_id)
       }
@@ -125,5 +137,12 @@ export class Bridge {
       }
       return obj
     }, {} as Record<string, T>)
+  }
+
+  static distinctById<T extends { id: string }>(list: T[]): T[] {
+    return list.filter(
+      (obj, index, self) =>
+        self.findIndex((innerObj) => innerObj.id === obj.id) === index
+    )
   }
 }

@@ -99,19 +99,17 @@ export class ItemRouter extends Router {
   }
 
   async getItems(req: Request) {
-    let isPublished: boolean | undefined
+    let is_published: boolean | undefined
     try {
-      isPublished = new RequestParameters(req).getBoolean('isPublished')
+      is_published = new RequestParameters(req).getBoolean('is_published')
     } catch (error) {
-      // No isPublished param
+      // No is_published param
     }
 
     const [dbItems, remoteItems] = await Promise.all([
-      typeof isPublished === 'undefined'
+      typeof is_published === 'undefined'
         ? Item.find<ItemAttributes>()
-        : Item.find<ItemAttributes>({
-            is_published: isPublished,
-          }),
+        : Item.find<ItemAttributes>({ is_published }),
       collectionAPI.fetchItems(),
     ])
 
@@ -119,11 +117,11 @@ export class ItemRouter extends Router {
   }
 
   async getAddressItems(req: AuthRequest) {
-    const eth_address = server.extractFromReq(req, 'address')
+    const ethAddress = server.extractFromReq(req, 'address')
 
     const [dbItems, remoteItems] = await Promise.all([
-      Item.find<ItemAttributes>({ eth_address }),
-      collectionAPI.fetchItemsByAuthorizedUser(eth_address),
+      Item.find<ItemAttributes>({ eth_address: ethAddress }),
+      collectionAPI.fetchItemsByAuthorizedUser(ethAddress),
     ])
 
     return Bridge.consolidateItems(dbItems, remoteItems)
@@ -177,7 +175,7 @@ export class ItemRouter extends Router {
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: any = server.extractFromReq(req, 'item')
-    const eth_address = req.auth.ethAddress
+    const ethAddress = req.auth.ethAddress
 
     const validate = validator.compile(itemSchema)
     validate(itemJSON)
@@ -186,11 +184,11 @@ export class ItemRouter extends Router {
       throw new HTTPError('Invalid schema', validate.errors)
     }
 
-    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
+    const canUpsert = await new Ownable(Item).canUpsert(id, ethAddress)
     if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
-        { id, eth_address },
+        { id, ethAddress },
         STATUS_CODES.unauthorized
       )
     }
@@ -203,11 +201,11 @@ export class ItemRouter extends Router {
       if (
         !dbCollectionToAddItem ||
         dbCollectionToAddItem.eth_address.toLowerCase() !==
-          eth_address.toLowerCase()
+          ethAddress.toLowerCase()
       ) {
         throw new HTTPError(
           'Unauthorized user',
-          { id, eth_address, collection_id: itemJSON.collection_id },
+          { id, ethAddress, collection_id: itemJSON.collection_id },
           STATUS_CODES.unauthorized
         )
       }
@@ -241,7 +239,7 @@ export class ItemRouter extends Router {
 
     const attributes = {
       ...itemJSON,
-      eth_address,
+      eth_address: ethAddress,
     } as ItemAttributes
 
     if (id !== attributes.id) {

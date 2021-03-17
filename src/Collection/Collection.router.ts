@@ -71,21 +71,19 @@ export class CollectionRouter extends Router {
   }
 
   async getCollections(req: Request) {
-    let isPublished: boolean | undefined
+    let is_published: boolean | undefined
     try {
-      isPublished = new RequestParameters(req).getBoolean('isPublished')
+      is_published = new RequestParameters(req).getBoolean('isPublished')
     } catch (error) {
-      // No isPublished param
+      // No is_published param
     }
 
     // The current implementation only supports fetching published/unpublished collections and items
     // If, in the future we need to add multiple query params, a more flexible implementation is required
     const [dbCollections, remoteCollections] = await Promise.all([
-      typeof isPublished === 'undefined'
+      typeof is_published === 'undefined'
         ? Collection.find<CollectionAttributes>()
-        : Collection.find<CollectionAttributes>({
-            is_published: isPublished,
-          }),
+        : Collection.find<CollectionAttributes>({ is_published }),
       collectionAPI.fetchCollections(),
     ])
 
@@ -93,11 +91,11 @@ export class CollectionRouter extends Router {
   }
 
   async getAddressCollections(req: AuthRequest) {
-    const eth_address = server.extractFromReq(req, 'address')
+    const ethAddress = server.extractFromReq(req, 'address')
 
     const [dbCollections, remoteCollections] = await Promise.all([
-      Collection.find<CollectionAttributes>({ eth_address }),
-      collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
+      Collection.find<CollectionAttributes>({ eth_address: ethAddress }),
+      collectionAPI.fetchCollectionsByAuthorizedUser(ethAddress),
     ])
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
@@ -123,7 +121,7 @@ export class CollectionRouter extends Router {
     try {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
-      const eth_address = req.auth.ethAddress
+      const ethAddress = req.auth.ethAddress
 
       const validate = validator.compile(collectionSchema)
       validate(collectionJSON)
@@ -132,11 +130,11 @@ export class CollectionRouter extends Router {
         throw new HTTPError('Invalid schema', validate.errors)
       }
 
-      const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
+      const canUpsert = await new Ownable(Collection).canUpsert(id, ethAddress)
       if (!canUpsert) {
         throw new HTTPError(
           'Unauthorized user',
-          { id, eth_address },
+          { id, ethAddress },
           STATUS_CODES.unauthorized
         )
       }
@@ -159,7 +157,7 @@ export class CollectionRouter extends Router {
 
       const attributes = {
         ...collectionJSON,
-        eth_address,
+        eth_address: ethAddress,
       } as CollectionAttributes
 
       if (id !== attributes.id) {

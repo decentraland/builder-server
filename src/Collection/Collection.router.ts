@@ -91,11 +91,11 @@ export class CollectionRouter extends Router {
   }
 
   async getAddressCollections(req: AuthRequest) {
-    const ethAddress = server.extractFromReq(req, 'address')
+    const eth_address = server.extractFromReq(req, 'address')
 
     const [dbCollections, remoteCollections] = await Promise.all([
-      Collection.find<CollectionAttributes>({ eth_address: ethAddress }),
-      collectionAPI.fetchCollectionsByAuthorizedUser(ethAddress),
+      Collection.find<CollectionAttributes>({ eth_address }),
+      collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
     ])
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
@@ -121,7 +121,7 @@ export class CollectionRouter extends Router {
     try {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
-      const ethAddress = req.auth.ethAddress
+      const eth_address = req.auth.ethAddress
 
       const validate = validator.compile(collectionSchema)
       validate(collectionJSON)
@@ -130,11 +130,11 @@ export class CollectionRouter extends Router {
         throw new HTTPError('Invalid schema', validate.errors)
       }
 
-      const canUpsert = await new Ownable(Collection).canUpsert(id, ethAddress)
+      const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
       if (!canUpsert) {
         throw new HTTPError(
           'Unauthorized user',
-          { id, ethAddress },
+          { id, eth_address },
           STATUS_CODES.unauthorized
         )
       }
@@ -157,7 +157,7 @@ export class CollectionRouter extends Router {
 
       const attributes = {
         ...collectionJSON,
-        eth_address: ethAddress,
+        eth_address,
       } as CollectionAttributes
 
       if (id !== attributes.id) {

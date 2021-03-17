@@ -117,11 +117,11 @@ export class ItemRouter extends Router {
   }
 
   async getAddressItems(req: AuthRequest) {
-    const ethAddress = server.extractFromReq(req, 'address')
+    const eth_address = server.extractFromReq(req, 'address')
 
     const [dbItems, remoteItems] = await Promise.all([
-      Item.find<ItemAttributes>({ eth_address: ethAddress }),
-      collectionAPI.fetchItemsByAuthorizedUser(ethAddress),
+      Item.find<ItemAttributes>({ eth_address }),
+      collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
 
     return Bridge.consolidateItems(dbItems, remoteItems)
@@ -175,7 +175,7 @@ export class ItemRouter extends Router {
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: any = server.extractFromReq(req, 'item')
-    const ethAddress = req.auth.ethAddress
+    const eth_address = req.auth.ethAddress
 
     const validate = validator.compile(itemSchema)
     validate(itemJSON)
@@ -184,11 +184,11 @@ export class ItemRouter extends Router {
       throw new HTTPError('Invalid schema', validate.errors)
     }
 
-    const canUpsert = await new Ownable(Item).canUpsert(id, ethAddress)
+    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
     if (!canUpsert) {
       throw new HTTPError(
         'Unauthorized user',
-        { id, ethAddress },
+        { id, eth_address },
         STATUS_CODES.unauthorized
       )
     }
@@ -201,11 +201,11 @@ export class ItemRouter extends Router {
       if (
         !dbCollectionToAddItem ||
         dbCollectionToAddItem.eth_address.toLowerCase() !==
-          ethAddress.toLowerCase()
+          eth_address.toLowerCase()
       ) {
         throw new HTTPError(
           'Unauthorized user',
-          { id, ethAddress, collection_id: itemJSON.collection_id },
+          { id, eth_address, collection_id: itemJSON.collection_id },
           STATUS_CODES.unauthorized
         )
       }
@@ -239,7 +239,7 @@ export class ItemRouter extends Router {
 
     const attributes = {
       ...itemJSON,
-      eth_address: ethAddress,
+      eth_address,
     } as ItemAttributes
 
     if (id !== attributes.id) {

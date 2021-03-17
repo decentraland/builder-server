@@ -127,7 +127,7 @@ export class ItemRouter extends Router {
     return Bridge.consolidateItems(dbItems, remoteItems)
   }
 
-  async getItem(req: AuthRequest) {
+  async getItem(req: Request) {
     const id = server.extractFromReq(req, 'id')
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
@@ -157,7 +157,7 @@ export class ItemRouter extends Router {
     return dbItem
   }
 
-  async getCollectionItems(req: AuthRequest) {
+  async getCollectionItems(req: Request) {
     const id = server.extractFromReq(req, 'id')
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)

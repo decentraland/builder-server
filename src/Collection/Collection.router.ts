@@ -100,7 +100,7 @@ export class CollectionRouter extends Router {
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
 
-  async getCollection(req: AuthRequest) {
+  async getCollection(req: Request) {
     const id = server.extractFromReq(req, 'id')
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)

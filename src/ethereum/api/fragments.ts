@@ -30,6 +30,9 @@ export const collectionFragment = () => gql`
     isApproved
     minters
     managers
+    reviewedAt
+    updatedAt
+    createdAt
   }
 `
 
@@ -60,6 +63,9 @@ export type CollectionFragment = {
   isApproved: boolean
   minters: string[]
   managers: string[]
+  reviewedAt: string
+  updatedAt: string
+  createdAt: string
 }
 
 export type AccountFragment = {

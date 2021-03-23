@@ -2,6 +2,7 @@ import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item } from '../../Item'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
+import { fromUnixTimestamp } from '../../utils/parse'
 
 export class Bridge {
   static async consolidateCollections(
@@ -101,7 +102,7 @@ export class Bridge {
   static mergeCollection(
     dbCollection: CollectionAttributes,
     remoteCollection: CollectionFragment
-  ) {
+  ): CollectionAttributes {
     return {
       ...dbCollection,
       name: remoteCollection.name,
@@ -111,6 +112,9 @@ export class Bridge {
       is_approved: remoteCollection.isApproved,
       minters: remoteCollection.minters,
       managers: remoteCollection.managers,
+      reviewed_at: fromUnixTimestamp(remoteCollection.reviewedAt),
+      updated_at: fromUnixTimestamp(remoteCollection.updatedAt),
+      created_at: fromUnixTimestamp(remoteCollection.createdAt),
     }
   }
 
@@ -118,7 +122,7 @@ export class Bridge {
     dbItem: ItemAttributes,
     remoteItem: ItemFragment,
     remoteCollection: CollectionFragment
-  ) {
+  ): ItemAttributes {
     return {
       ...dbItem,
       price: remoteItem.price,

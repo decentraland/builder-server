@@ -7,6 +7,10 @@ Exposes endpoints for the Builder.
 Check `.env.example` and create your own `.env` file. Some properties have defaults.
 
 ```bash
+
+#Create database (Only the first time)
+createdb <DatabaseName>
+
 # Update env. The DEFAULT_USER_ID is important
 
 # Update state
@@ -55,3 +59,8 @@ contents
 |____HASH2
 |____HASH3
 ```
+
+#Extra Info
+If you are usign windows subsystem, you will need to start the postgresql service each time 
+
+`sudo service postgresql start`

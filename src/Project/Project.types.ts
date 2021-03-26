@@ -17,6 +17,7 @@ export type ProjectAttributes = {
   is_public: boolean
   created_at: Date
   updated_at: Date
+  builder_in_world_created_from_xy: string
 }
 
 export type ProjectStatisticsAttributes = Pick<
@@ -45,6 +46,7 @@ export const projectSchema = Object.freeze({
     is_public: { type: ['boolean', 'null'] },
     created_at: { type: ['string', 'null'] },
     updated_at: { type: ['string', 'null'] },
+    builder_in_world_created_from_xy: { type: 'string' },
   },
   additionalProperties: false,
   required: ['id', 'title', 'description', 'scene_id', 'cols', 'rows'],
@@ -57,4 +59,5 @@ export const searchableProjectProperties: (keyof ProjectAttributes)[] = [
   'rows',
   'created_at',
   'updated_at',
+  'builder_in_world_created_from_xy'
 ]

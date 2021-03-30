@@ -1,3 +1,9 @@
+import {
+  ApolloQueryResult,
+  NetworkStatus,
+  OperationVariables,
+  QueryOptions,
+} from '@apollo/client/core'
 import gql from 'graphql-tag'
 import { env } from 'decentraland-commons'
 import {
@@ -123,25 +129,31 @@ export class CollectionAPI {
   }
 
   fetchCollection = async (contractAddress: string) => {
-    const { data } = await graphClient.query<{
+    const {
+      data: { collections = [] },
+    } = await this.query<{
       collections: CollectionFragment[]
     }>({
       query: getCollectionByIdQuery(),
       variables: { id: contractAddress.toLowerCase() },
     })
-    return data.collections.length > 0 ? data.collections[0] : null
+    return collections.length > 0 ? collections[0] : null
   }
 
   fetchCollections = async () => {
-    const { data } = await graphClient.query<{
+    const {
+      data: { collections = [] },
+    } = await this.query<{
       collections: CollectionFragment[]
     }>({ query: getCollectionsQuery() })
 
-    return data.collections
+    return collections
   }
 
   fetchCollectionsByAddress = async (contractAddresses: string[]) => {
-    const { data } = await graphClient.query<{
+    const {
+      data: { collections = [] },
+    } = await this.query<{
       collections: CollectionFragment[]
     }>({
       query: getCollectionsByIdQuery(),
@@ -150,13 +162,13 @@ export class CollectionAPI {
       },
     })
 
-    return data.collections
+    return collections
   }
 
   fetchCollectionsByAuthorizedUser = async (userAddress: string) => {
     const {
-      data: { creator, manager, minter },
-    } = await graphClient.query<{
+      data: { creator = [], manager = [], minter = [] },
+    } = await this.query<{
       creator: CollectionFragment[]
       manager: CollectionFragment[]
       minter: CollectionFragment[]
@@ -172,26 +184,30 @@ export class CollectionAPI {
   }
 
   fetchItems = async () => {
-    const { data } = await graphClient.query<{ items: ItemFragment[] }>({
+    const {
+      data: { items = [] },
+    } = await this.query<{ items: ItemFragment[] }>({
       query: getItemsQuery(),
     })
 
-    return data.items
+    return items
   }
 
   fetchItem = async (contractAddress: string, tokenId: string) => {
-    const { data } = await graphClient.query<{ items: ItemFragment[] }>({
+    const {
+      data: { items = [] },
+    } = await this.query<{ items: ItemFragment[] }>({
       query: getItemByIdQuery(),
       variables: { id: this.buildItemId(contractAddress, tokenId) },
     })
 
-    return data.items.length > 0 ? data.items[0] : null
+    return items.length > 0 ? items[0] : null
   }
 
   fetchItemsByAuthorizedUser = async (userAddress: string) => {
     const {
-      data: { creator, manager, minter },
-    } = await graphClient.query<{
+      data: { creator = [], manager = [], minter = [] },
+    } = await this.query<{
       creator: { items: ItemFragment[] }[]
       manager: { items: ItemFragment[] }[]
       minter: { items: ItemFragment[] }[]
@@ -210,26 +226,42 @@ export class CollectionAPI {
   }
 
   fetchItemsByContractAddress = async (contractAddress: string) => {
-    const { data } = await graphClient.query<{
+    const {
+      data: { collections = [] },
+    } = await this.query<{
       collections: { items: ItemFragment[] }[]
     }>({
       query: getItemsByContractAddressQuery(),
       variables: { id: contractAddress.toLowerCase() },
     })
 
-    return data.collections.length > 0 ? data.collections[0].items : []
+    return collections.length > 0 ? collections[0].items : []
   }
 
   fetchCommittee = async () => {
-    const { data } = await graphClient.query<{
-      accounts: AccountFragment[]
+    const {
+      data: { accounts = [] },
+    } = await this.query<{
+      accounts?: AccountFragment[]
     }>({ query: getCommitteeQuery() })
 
-    return data.accounts
+    return accounts
   }
 
   buildItemId = (contractAddress: string, tokenId: string) => {
     return contractAddress + '-' + tokenId
+  }
+
+  private async query<T = any, TVariables = OperationVariables>(
+    options: QueryOptions<TVariables, T>
+  ): Promise<ApolloQueryResult<T>> {
+    try {
+      const result = await graphClient.query<T, TVariables>(options)
+      return result
+    } catch (error) {
+      const data = {} as T
+      return { data, loading: false, networkStatus: NetworkStatus.error }
+    }
   }
 }
 

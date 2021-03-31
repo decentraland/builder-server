@@ -1,12 +1,10 @@
 import { Request, Response, NextFunction } from 'express'
+import fetch from 'isomorphic-fetch'
 import { AuthLink } from 'dcl-crypto'
 import { env } from 'decentraland-commons'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { AuthRequestLegacy } from './authentication-legacy'
-import 'isomorphic-fetch'
-
-declare const fetch: any
 
 const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 const PEER_URL = env.get('PEER_URL', 'https://peer-ec1.decentraland.org')

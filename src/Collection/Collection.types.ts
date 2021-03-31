@@ -44,7 +44,6 @@ export const collectionSchema = Object.freeze({
     'eth_address',
     'salt',
     'contract_address',
-    'forum_link',
     'reviewed_at',
     'created_at',
     'updated_at',

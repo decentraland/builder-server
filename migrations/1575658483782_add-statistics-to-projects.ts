@@ -6,8 +6,7 @@ const tableName = Project.tableName
 export const up = (pgm: MigrationBuilder) => {
   const statisticsType = {
     type: 'INTEGER',
-    notNull: false,
-    default: null,
+    default: null
   }
 
   pgm.addColumns(tableName, {

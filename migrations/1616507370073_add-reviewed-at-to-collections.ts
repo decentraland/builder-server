@@ -5,6 +5,6 @@ const tableName = Collection.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   pgm.addColumn(tableName, {
-    reviewed_at: { type: 'TIMESTAMP', notNull: false },
+    reviewed_at: { type: 'TIMESTAMP' },
   })
 }

@@ -22,7 +22,7 @@ export enum WearableBodyShape {
 }
 
 export type WearableRepresentation = {
-  bodyShape: WearableBodyShape[]
+  bodyShapes: WearableBodyShape[]
   mainFile: string
   contents: string[]
   overrideReplaces: WearableCategory[]
@@ -46,7 +46,7 @@ export const wearableSchema = Object.freeze({
       items: {
         type: 'object',
         properties: {
-          bodyShape: {
+          bodyShapes: {
             type: 'array',
             items: { enum: Object.values(WearableBodyShape) },
           },
@@ -66,7 +66,7 @@ export const wearableSchema = Object.freeze({
         },
         additionalProperties: false,
         required: [
-          'bodyShape',
+          'bodyShapes',
           'mainFile',
           'contents',
           'overrideReplaces',

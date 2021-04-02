@@ -5,7 +5,6 @@ const tableName = Collection.tableName
 
 export const up = (pgm: MigrationBuilder) => {
   pgm.alterColumn(tableName, 'salt', {
-    type: 'TEXT',
-    notNull: false,
+    type: 'TEXT'
   })
 }

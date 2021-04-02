@@ -23,9 +23,7 @@ function addEthAddress(
     },
   })
 
-  pgm.alterColumn(tableName, userIdColumnName, {
-    notNull: false,
-  })
+  pgm.alterColumn(tableName, userIdColumnName, {})
 
   pgm.addIndex(tableName, ethAddressColumnName)
 }

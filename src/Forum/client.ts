@@ -22,15 +22,17 @@ type CreateResponse = CreateSuccess | CreateError
 
 export const FORUM_URL = env.get('REACT_APP_FORUM_URL', '')
 const FORUM_API_KEY = env.get('REACT_APP_FORUM_API_KEY', '')
+const FORUM_CATEGORY = env.get('REACT_APP_FORUM_CATEGORY')
 
 export async function createPost(post: ForumPost): Promise<string> {
+  const forumPost = { ...post, category: FORUM_CATEGORY }
   const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Content-Type': 'application/json',
     },
     method: 'POST',
-    body: JSON.stringify(post),
+    body: JSON.stringify(forumPost),
   })
   const result: CreateResponse = await response.json()
 

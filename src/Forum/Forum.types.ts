@@ -7,6 +7,24 @@ export type ForumPost = {
   created_at?: string
 }
 
+export type CreateSuccess = {
+  id: number
+  name: string
+  username: string
+  topic_slug: string
+  display_username: string
+  created_at: string
+  cooked: string
+  errors: undefined
+}
+
+export type CreateError = {
+  action: string
+  errors: string[]
+}
+
+export type CreateResponse = CreateSuccess | CreateError
+
 export const forumPostSchema = Object.freeze({
   type: 'object',
   properties: {

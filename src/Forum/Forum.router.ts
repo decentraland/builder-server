@@ -1,4 +1,3 @@
-// import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'

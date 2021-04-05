@@ -8,6 +8,7 @@ export type CollectionAttributes = {
   is_approved: boolean
   minters: string[]
   managers: string[]
+  forum_link?: string
   reviewed_at: Date
   created_at: Date
   updated_at: Date
@@ -31,6 +32,7 @@ export const collectionSchema = Object.freeze({
       type: 'array',
       items: { type: 'string' },
     },
+    forum_link: { type: ['string', 'null'] },
     reviewed_at: { type: 'string' },
     created_at: { type: 'string' },
     updated_at: { type: 'string' },

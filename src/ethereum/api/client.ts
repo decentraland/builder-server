@@ -1,4 +1,5 @@
 import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client/core'
+import 'isomorphic-fetch'
 
 export function createClient(url: string) {
   const link = new HttpLink({

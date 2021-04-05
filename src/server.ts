@@ -10,6 +10,7 @@ import { PoolLikeRouter } from './PoolLike'
 import { ItemRouter } from './Item'
 import { CollectionRouter } from './Collection'
 import { CommitteeRouter } from './Committee'
+import { RarityRouter } from './Rarity'
 import { ForumRouter } from './Forum/Forum.router'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
@@ -44,6 +45,7 @@ new PoolRouter(app).mount()
 new ItemRouter(app).mount()
 new CollectionRouter(app).mount()
 new CommitteeRouter(app).mount()
+new RarityRouter(app).mount()
 new ForumRouter(app).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()

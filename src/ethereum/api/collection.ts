@@ -10,9 +10,11 @@ import {
   collectionFragment,
   itemFragment,
   accountFragment,
+  rarityFragment,
   CollectionFragment,
   ItemFragment,
   AccountFragment,
+  RarityFragment
 } from './fragments'
 import { createClient } from './client'
 import { Bridge } from './Bridge'
@@ -116,6 +118,15 @@ const getCommitteeQuery = () => gql`
     }
   }
   ${accountFragment()}
+`
+
+const getrRaritiesQuery = () => gql`
+  query getRaritiesQuery {
+    rarities {
+      ...rarityFragment
+    }
+  }
+  ${rarityFragment()}
 `
 
 export const COLLECTIONS_URL = env.get('COLLECTIONS_GRAPH_URL', '')
@@ -246,6 +257,16 @@ export class CollectionAPI {
     }>({ query: getCommitteeQuery() })
 
     return accounts
+  }
+
+  fetchRarities = async () => {
+    const {
+      data: { rarities = [] },
+    } = await this.query<{
+      rarities?: RarityFragment[]
+    }>({ query: getrRaritiesQuery() })
+
+    return rarities
   }
 
   buildItemId = (contractAddress: string, tokenId: string) => {

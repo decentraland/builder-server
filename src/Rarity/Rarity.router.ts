@@ -13,7 +13,7 @@ export class RarityRouter extends Router {
   }
 
   async getRarities() {
-    const committee = await collectionAPI.fetchRarities()
-    return utils.mapOmit(committee, ['__typename'])
+    const rarities = await collectionAPI.fetchRarities()
+    return utils.mapOmit(rarities, ['__typename'])
   }
 }

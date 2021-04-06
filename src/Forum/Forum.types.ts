@@ -11,6 +11,7 @@ export type CreateSuccess = {
   id: number
   name: string
   username: string
+  topic_id: string
   topic_slug: string
   display_username: string
   created_at: string

@@ -3,6 +3,8 @@ config:
   aws:region: us-east-1
   service-builder:ANALYTICS_CONNECTION_STRING:
     secure: v1:otw+92ejjeAgoBNw:au9UYhAZ0iHuFuFHMyRFVg==
+  service-builder:REACT_APP_FORUM_API_KEY:
+    secure: v1:aTitxhnCy08XDRzt:gQksrO1C5zjAnKuTkZu/Qfb/63//Fa1vZVlRKgH55HTPkI8ksKBbvmvf/4iidMhmmi9KuJqabTriiHWDEU81MDF13JeMi+kzXve3l43hQLg=
   service-builder:db-password:
     secure: v1:tGQDAgILOTpxsaYk:wxIXvnzKXdBet7D1mksngaJ3Auq9iYtQceOOw+wENYr/R3F6EukcMQ==
   service-builder:db-user: builder

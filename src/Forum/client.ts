@@ -26,6 +26,6 @@ export async function createPost(post: ForumPost): Promise<string> {
     )
   }
 
-  const { id, topic_slug } = result as CreateSuccess
-  return `${FORUM_URL}/t/${topic_slug}/${id}`
+  const { topic_id, topic_slug } = result as CreateSuccess
+  return `${FORUM_URL}/t/${topic_slug}/${topic_id}`
 }

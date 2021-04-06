@@ -89,15 +89,15 @@ export = async function main() {
         value: config.requireSecret('ANALYTICS_CONNECTION_STRING'),
       },
       {
-        name: 'REACT_APP_FORUM_API_KEY',
-        value: config.requireSecret('REACT_APP_FORUM_API_KEY'),
+        name: 'FORUM_API_KEY',
+        value: config.requireSecret('FORUM_API_KEY'),
       },
       {
-        name: 'REACT_APP_FORUM_URL',
+        name: 'FORUM_URL',
         value: 'https://forum.decentraland.org',
       },
       {
-        name: 'REACT_APP_FORUM_CATEGORY',
+        name: 'FORUM_CATEGORY',
         value: env === 'prd' ? '' : '14',
       },
     ],

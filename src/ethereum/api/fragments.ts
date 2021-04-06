@@ -44,6 +44,16 @@ export const accountFragment = () => gql`
   }
 `
 
+
+export const rarityFragment = () => gql`
+  fragment rarityFragment on Rarity {
+    id
+    name
+    price
+    maxSupply
+  }
+`
+
 export type ItemFragment = {
   id: string
   blockchainId: string
@@ -72,4 +82,11 @@ export type AccountFragment = {
   id: string
   address: string
   isCommitteeMember: boolean
+}
+
+export type RarityFragment = {
+  id: string
+  name: string
+  price: string
+  maxSupply: string
 }

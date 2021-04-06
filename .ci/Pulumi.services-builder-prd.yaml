@@ -1,5 +1,6 @@
 encryptionsalt: v1:wKmqaw4gH5U=:v1:2nptE66U5zgk6Hhq:9zdY/eedfyFYJqnM4ZOVbUiJEo7x6A==
 config:
+  supra:stack-id: blue
   aws:region: us-east-1
   service-builder:ANALYTICS_CONNECTION_STRING:
     secure: v1:HNZMo29miOz4dVR6:+omHZh9/0MbGCOA9bsRBU4qYQFSQe5Tai/LrnzO4b2+rDiXOu1N+ZpdpAv0uqJnYZf5ZFpY8NGTWPUT/TI1wnOOpSzT1fi4YxbtQ/dvrmF/4qEaO+8Ugit62g7OKJFU6lo3ubxbKR+aHrh/T1dYPUg==

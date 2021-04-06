@@ -2,9 +2,9 @@ import fetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
 import { CreateResponse, CreateSuccess, ForumPost } from './Forum.types'
 
-const FORUM_URL = env.get('REACT_APP_FORUM_URL', '')
-const FORUM_API_KEY = env.get('REACT_APP_FORUM_API_KEY', '')
-const FORUM_CATEGORY = env.get('REACT_APP_FORUM_CATEGORY')
+const FORUM_URL = env.get('FORUM_URL', '')
+const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
+const FORUM_CATEGORY = env.get('FORUM_CATEGORY')
 
 export async function createPost(post: ForumPost): Promise<string> {
   const forumPost = { ...post, category: FORUM_CATEGORY }

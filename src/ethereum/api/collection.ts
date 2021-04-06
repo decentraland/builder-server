@@ -16,7 +16,7 @@ import {
   AccountFragment,
   RarityFragment
 } from './fragments'
-import { createClient } from './client'
+import { createClient } from './graphClient'
 import { Bridge } from './Bridge'
 
 const getCollectionByIdQuery = () => gql`

@@ -2,6 +2,7 @@ import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item } from '../../Item'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
+import { Wearable } from './peer'
 import { fromUnixTimestamp } from '../../utils/parse'
 
 export class Bridge {
@@ -39,7 +40,8 @@ export class Bridge {
 
   static async consolidateItems(
     dbItems: ItemAttributes[],
-    remoteItems: ItemFragment[]
+    remoteItems: ItemFragment[],
+    catalystItems: Wearable[]
   ) {
     const items: ItemAttributes[] = []
 
@@ -67,15 +69,17 @@ export class Bridge {
     }
 
     const dbResults = await Collection.findByIds(collectionIds)
-    const dbCollections = this.indexById(dbResults)
 
     // Reduce it to a map for fast lookup
+    const dbCollectionsIndex = this.indexById(dbResults)
+    const catalystItemsIndex = this.indexById(catalystItems)
+
     for (let dbItem of [...dbItems, ...remoteDBItems]) {
       let item = dbItem
 
       // Check if DB item has a collection
       if (dbItem.collection_id) {
-        const dbCollection = dbCollections[dbItem.collection_id]
+        const dbCollection = dbCollectionsIndex[dbItem.collection_id]
         if (dbCollection) {
           // Find remote item
           const remoteItemId = collectionAPI.buildItemId(
@@ -88,7 +92,13 @@ export class Bridge {
 
           // Merge item from DB with remote data
           if (remoteItem && remoteItem.collection) {
-            item = Bridge.mergeItem(dbItem, remoteItem, remoteItem.collection)
+            const catalystItem = catalystItemsIndex[remoteItem.blockchainId]
+            item = Bridge.mergeItem(
+              dbItem,
+              remoteItem,
+              catalystItem,
+              remoteItem.collection
+            )
           }
         }
       }
@@ -121,8 +131,13 @@ export class Bridge {
   static mergeItem(
     dbItem: ItemAttributes,
     remoteItem: ItemFragment,
+    catalystItem: Wearable,
     remoteCollection: CollectionFragment
   ): ItemAttributes {
+    const { wearable } = remoteItem.metadata
+
+    // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
+    // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
     return {
       ...dbItem,
       price: remoteItem.price,
@@ -131,6 +146,13 @@ export class Bridge {
       is_published: true,
       is_approved: remoteCollection.isApproved,
       total_supply: Number(remoteItem.totalSupply),
+      name: wearable.name,
+      description: wearable.description,
+      rarity: wearable.rarity,
+      data: {
+        ...catalystItem.data,
+        category: wearable.category,
+      },
     }
   }
 

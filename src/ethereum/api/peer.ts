@@ -13,8 +13,8 @@ export type Wearable = {
   collectionAddress: string
   rarity: ItemRarity
   data: WearableData
-  image: 'https://peer-uw-1.decentraland.zone/content/contents/QmeYuykvChyfPwXkSLdzjCfnkGqDz3j2uppxJSXJrj66zN'
-  thumbnail: 'https://peer-uw-1.decentraland.zone/content/contents/QmTide9Tm18GJtmpSNwvHajetQitP6VWr8q4c8uVSb1gBv'
+  image: string
+  thumbnail: string
   metrics: MetricsAttributes
   createdAt: number
   updatedAt: number

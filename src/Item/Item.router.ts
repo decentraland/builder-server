@@ -230,7 +230,10 @@ export class ItemRouter extends Router {
     const dbItem = await Item.findOne<ItemAttributes>(id)
 
     if (dbItem && dbItem.collection_id) {
-      if (dbItem.collection_id !== itemJSON.collection_id) {
+      if (
+        dbItem.is_published &&
+        dbItem.collection_id !== itemJSON.collection_id
+      ) {
         throw new HTTPError(
           "Item can't change between collections",
           { id },

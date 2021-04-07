@@ -1,9 +1,12 @@
 import gql from 'graphql-tag'
+import { ItemRarity } from '../../Item'
+import { WearableCategory } from '../../Item/wearable/types'
 
 export const itemFragment = () => gql`
   fragment itemFragment on Item {
     id
     blockchainId
+    urn
     totalSupply
     price
     beneficiary
@@ -17,6 +20,15 @@ export const itemFragment = () => gql`
       isApproved
       minters
       managers
+    }
+    metadata {
+      wearable {
+        name
+        description
+        category
+        rarity
+        bodyShapes
+      }
     }
   }
 `
@@ -44,7 +56,6 @@ export const accountFragment = () => gql`
   }
 `
 
-
 export const rarityFragment = () => gql`
   fragment rarityFragment on Rarity {
     id
@@ -57,12 +68,14 @@ export const rarityFragment = () => gql`
 export type ItemFragment = {
   id: string
   blockchainId: string
+  urn: string
   totalSupply: string
   price: string
   beneficiary: string
   minters: string[]
   managers: string[]
   collection: CollectionFragment
+  metadata: MetadataFragment
 }
 
 export type CollectionFragment = {
@@ -89,4 +102,16 @@ export type RarityFragment = {
   name: string
   price: string
   maxSupply: string
+}
+
+export type MetadataFragment = {
+  wearable: WearableFragment
+}
+
+export type WearableFragment = {
+  name: string
+  description: string
+  category: WearableCategory
+  rarity: ItemRarity
+  bodyShapes: string[]
 }

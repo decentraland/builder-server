@@ -1,11 +1,11 @@
-import { metricsSchema } from '../Metrics'
+import { MetricsAttributes, metricsSchema } from '../Metrics'
 import { WearableData, wearableSchema } from './wearable/types'
 
-enum ItemType {
+export enum ItemType {
   WEARABLE = 'wearable',
 }
 
-enum ItemRarity {
+export enum ItemRarity {
   UNIQUE = 'unique',
   MYTHIC = 'mythic',
   LEGENDARY = 'legendary',
@@ -32,7 +32,7 @@ export type ItemAttributes = {
   in_catalyst: boolean
   type: ItemType
   data: WearableData
-  metrics: Record<string, string>
+  metrics: MetricsAttributes
   contents: Record<string, string>
   created_at: Date
   updated_at: Date

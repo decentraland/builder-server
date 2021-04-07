@@ -6,6 +6,7 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
+import { peerAPI } from '../ethereum/api/peer'
 import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
@@ -112,8 +113,11 @@ export class ItemRouter extends Router {
         : Item.find<ItemAttributes>({ is_published }),
       collectionAPI.fetchItems(),
     ])
+    const catalystItems = await peerAPI.fetchWearables(
+      remoteItems.map((item) => item.urn)
+    )
 
-    return Bridge.consolidateItems(dbItems, remoteItems)
+    return await Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
   async getAddressItems(req: AuthRequest) {
@@ -123,8 +127,11 @@ export class ItemRouter extends Router {
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
+    const catalystItems = await peerAPI.fetchWearables(
+      remoteItems.map((item) => item.urn)
+    )
 
-    return Bridge.consolidateItems(dbItems, remoteItems)
+    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
   async getItem(req: Request) {
@@ -149,7 +156,13 @@ export class ItemRouter extends Router {
 
         // Merge
         if (remoteItem && remoteCollection) {
-          return Bridge.mergeItem(dbItem, remoteItem, remoteCollection)
+          const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
+          return Bridge.mergeItem(
+            dbItem,
+            remoteItem,
+            catalystItem,
+            remoteCollection
+          )
         }
       }
     }
@@ -168,8 +181,11 @@ export class ItemRouter extends Router {
       Item.find<ItemAttributes>({ collection_id: id }),
       collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address),
     ])
+    const catalystItems = await peerAPI.fetchWearables(
+      remoteItems.map((item) => item.urn)
+    )
 
-    return Bridge.consolidateItems(dbItems, remoteItems)
+    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
   async upsertItem(req: AuthRequest) {

@@ -40,6 +40,7 @@
     "ajv-formats": "^1.5.1",
     "aws-sdk": "^2.841.0",
     "body-parser": "^1.18.3",
+    "dcl-catalyst-client": "^4.0.5",
     "dcl-crypto": "^2.1.0",
     "dcl-ops-lib": "^1.0.6",
     "decentraland-commons": "^5.1.0",

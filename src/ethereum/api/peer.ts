@@ -60,7 +60,9 @@ export class PeerAPI {
   }
 
   async fetchWearables(urns: string[]): Promise<Wearable[]> {
-    return this.lambdasClient.fetchWearables({ wearableIds: urns })
+    return urns.length > 0
+      ? this.lambdasClient.fetchWearables({ wearableIds: urns })
+      : []
   }
 }
 

@@ -241,6 +241,9 @@ export class ItemRouter extends Router {
         )
       }
 
+      // @TODO: throw below if the collection is published. At the UI we need to stop sending updates for price/metadata changes by
+      // sending the corresponding transaction directly
+      /*
       const dbCollection = await Collection.findOne<CollectionAttributes>(
         dbItem.collection_id
       )
@@ -250,10 +253,8 @@ export class ItemRouter extends Router {
       )
 
       if (remoteCollection) {
-        // @TODO: throw here if the collection is published. At the UI we need to stop sending updates for price/metadata changes by
-        // sending the corresponding transaction directly
         console.warn("Published collections items can't be updated")
-      }
+      }*/
     }
 
     const attributes = {

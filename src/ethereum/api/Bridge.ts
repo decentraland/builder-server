@@ -92,7 +92,7 @@ export class Bridge {
 
           // Merge item from DB with remote data
           if (remoteItem && remoteItem.collection) {
-            const catalystItem = catalystItemsIndex[remoteItem.blockchainId]
+            const catalystItem = catalystItemsIndex[remoteItem.urn]
             item = Bridge.mergeItem(
               dbItem,
               remoteItem,
@@ -135,6 +135,7 @@ export class Bridge {
     remoteCollection: CollectionFragment
   ): ItemAttributes {
     const { wearable } = remoteItem.metadata
+    const data = catalystItem ? catalystItem.data : dbItem.data
 
     // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
@@ -150,7 +151,7 @@ export class Bridge {
       description: wearable.description,
       rarity: wearable.rarity,
       data: {
-        ...catalystItem.data,
+        ...data,
         category: wearable.category,
       },
     }

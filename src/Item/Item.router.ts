@@ -230,7 +230,10 @@ export class ItemRouter extends Router {
     const dbItem = await Item.findOne<ItemAttributes>(id)
 
     if (dbItem && dbItem.collection_id) {
-      if (dbItem.collection_id !== itemJSON.collection_id) {
+      if (
+        itemJSON.collection_id !== null &&
+        dbItem.collection_id !== itemJSON.collection_id
+      ) {
         throw new HTTPError(
           "Item can't change between collections",
           { id },
@@ -241,15 +244,16 @@ export class ItemRouter extends Router {
       const dbCollection = await Collection.findOne<CollectionAttributes>(
         dbItem.collection_id
       )
-
       const remoteCollection = await collectionAPI.fetchCollection(
         dbCollection!.contract_address
       )
 
-      if (remoteCollection) {
-        // @TODO: throw here if the collection is published. At the UI we need to stop sending updates for price/metadata changes by
-        // sending the corresponding transaction directly
-        console.warn("Published collections items can't be updated")
+      if (dbItem.is_published || remoteCollection) {
+        throw new HTTPError(
+          "Published collection items can't be updated",
+          { id },
+          STATUS_CODES.error
+        )
       }
     }
 

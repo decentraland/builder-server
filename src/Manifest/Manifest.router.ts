@@ -37,6 +37,15 @@ export class ManifestRouter extends Router {
     )
 
     /**
+     * Returns the manifest of a land associated project  (Builder In World)
+     */
+    this.router.get(
+      '/projects/:land/manifestFromCoordinates',
+      withAuthentication,
+      server.handleRequest(this.getProjectManifestByCoordinates)
+    )
+
+    /**
      * Returns the manifest of a pool
      */
     this.router.get(
@@ -81,6 +90,26 @@ export class ManifestRouter extends Router {
     if (body) {
       return JSON.parse(body.toString())
     }
+  }
+
+  async getProjectManifestByCoordinates(req: AuthRequest) {
+    const created_location = server.extractFromReq(req, 'land')
+    const eth_address = req.auth.ethAddress
+
+    const project : any = await Project.findOne({
+      created_location,
+      eth_address,
+      is_deleted: false,
+    })
+    if (project) {
+      const body = await new S3Project(project.id).readFileBody(
+        MANIFEST_FILENAME
+      )
+      if (body) {
+        return JSON.parse(body.toString())
+      }
+    }
+    return 'false'
   }
 
   async getPublicProjectManifest(req: AuthRequest) {

@@ -67,27 +67,6 @@ export class ProjectRouter extends Router {
       server.handleRequest(this.getProject)
     )
 
-     /**
-     * Get project by coords
-     */
-      this.router.get(
-        '/projects/:x/:y',
-        withAuthentication,
-        withProjectExists,
-        withProjectAuthorization,
-        server.handleRequest(this.getProjectByCoords)
-      )
-
-    /**
-     * Upsert a new project with coords
-     * Important! Project authorization is done inside the handler
-     */
-     this.router.put(
-      '/projects/:id/:x/:y',
-      withAuthentication,
-      server.handleRequest(this.upsertProjectWithCoords)
-    )
-
     /**
      * Upsert a new project
      * Important! Project authorization is done inside the handler
@@ -155,15 +134,6 @@ export class ProjectRouter extends Router {
     return searchableProject.search(parameters, conditions)
   }
 
-  
-  async getProjectByCoords(req: AuthRequest) {
-    const x = server.extractFromReq(req, 'x')
-    const y = server.extractFromReq(req, 'y')
-    const builder_in_world_created_from_xy = x+','+y
-    const eth_address = req.auth.ethAddress
-    return Project.findOne({ builder_in_world_created_from_xy, eth_address, is_deleted: false })
-  }
-
   async getProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
@@ -197,42 +167,6 @@ export class ProjectRouter extends Router {
     }
 
     const attributes = { ...projectJSON, eth_address } as ProjectAttributes
-
-    if (id !== attributes.id) {
-      throw new HTTPError('The body and URL project ids do not match', {
-        urlId: id,
-        bodyId: attributes.id,
-      })
-    }
-
-    return new Project(attributes).upsert()
-  }
-
-  async upsertProjectWithCoords(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const x = server.extractFromReq(req, 'x')
-    const y = server.extractFromReq(req, 'y')
-    const builder_in_world_created_from_xy = x+','+y
-    const projectJSON: any = server.extractFromReq(req, 'project')
-    const eth_address = req.auth.ethAddress
-
-    const validate = validator.compile(projectSchema)
-    validate(projectJSON)
-
-    if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
-    }
-
-    const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
-    if (!canUpsert) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    const attributes = { ...projectJSON, eth_address, builder_in_world_created_from_xy } as ProjectAttributes
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL project ids do not match', {

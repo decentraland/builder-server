@@ -1,5 +1,5 @@
-import { MigrationBuilder } from 'node-pg-migrate'
 import { Project } from '../src/Project'
+import { MigrationBuilder } from 'node-pg-migrate'
 
 const tableName = Project.tableName
 const columnName = 'created_location'

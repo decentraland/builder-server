@@ -2,7 +2,7 @@ import { Project } from '../src/Project'
 import { MigrationBuilder } from 'node-pg-migrate'
 
 const tableName = Project.tableName
-const columnName = 'created_location'
+const columnName = 'creation_coords'
 const columns = {
   [columnName]: {
     type: 'TEXT',

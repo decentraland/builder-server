@@ -10,18 +10,9 @@ import { withModelExists, withModelAuthorization } from '../middleware'
 import { S3Project, getFileUploader, ACL } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
-import { RequestParameters } from '../RequestParameters'
-import {
-  SearchableModel,
-  SearchableParameters,
-  SearchableConditions,
-} from '../Searchable'
 import { Project } from './Project.model'
-import {
-  ProjectAttributes,
-  projectSchema,
-  searchableProjectProperties,
-} from './Project.types'
+import { ProjectAttributes, projectSchema } from './Project.types'
+import { SearchableProject } from './SearchableProject'
 
 export const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
@@ -114,24 +105,8 @@ export class ProjectRouter extends Router {
 
   async getProjects(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
-
-    // TODO: This is the same code as Pool.router#getPools
-    const requestParameters = new RequestParameters(req)
-    const searchableProject = new SearchableModel<ProjectAttributes>(
-      Project.tableName
-    )
-    const parameters = new SearchableParameters<ProjectAttributes>(
-      requestParameters,
-      { sort: { by: searchableProjectProperties } }
-    )
-    const conditions = new SearchableConditions<ProjectAttributes>(
-      requestParameters,
-      { eq: searchableProjectProperties }
-    )
-    conditions.addExtras('eq', { eth_address })
-    conditions.addExtras('eq', { is_deleted: false })
-
-    return searchableProject.search(parameters, conditions)
+    const projectSearcher = new SearchableProject(req)
+    return await projectSearcher.searchByEthAddress(eth_address)
   }
 
   async getProject(req: AuthRequest) {

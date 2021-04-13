@@ -10,10 +10,11 @@ import {
   AuthRequest,
 } from '../middleware'
 import { Ownable } from '../Ownable'
-import { Project, ProjectAttributes } from '../Project'
+import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { collectStatistics } from './utils'
+import { SearchableProject } from '../Project/SearchableProject'
 
 const validator = getValidator()
 
@@ -37,12 +38,12 @@ export class ManifestRouter extends Router {
     )
 
     /**
-     * Returns the manifest of a land associated project  (Builder In World)
+     * Returns the manifest of a land coordinates associated project  (Builder In World)
      */
     this.router.get(
-      '/projects/:created_location/manifestFromCoordinates',
+      '/manifests',
       withAuthentication,
-      server.handleRequest(this.getProjectManifestByCoordinates)
+      server.handleRequest(this.getManifests)
     )
 
     /**
@@ -86,28 +87,30 @@ export class ManifestRouter extends Router {
 
   async getProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+
     const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
     if (body) {
       return JSON.parse(body.toString())
     }
   }
 
-  async getProjectManifestByCoordinates(req: AuthRequest) {
-    const created_location = server.extractFromReq(req, 'created_location')
-    const eth_address = req.auth.ethAddress
+  async getManifests(req: AuthRequest) {
+    let eth_address = req.auth.ethAddress
 
-    const project = await Project.findOne<ProjectAttributes>({
-      created_location,
-      eth_address,
-      is_deleted: false,
-    })
-    if (project) {
-      const body = await new S3Project(project.id).readFileBody(
-        MANIFEST_FILENAME
-      )
-      if (body) {
-        return JSON.parse(body.toString())
+    const projectSearcher = new SearchableProject(req)
+    const projects = await projectSearcher.searchByEthAddress(eth_address)
+
+    if (projects) {
+      let manifests: any[] = []
+      for (const project of projects.items) {
+        const body = await new S3Project(project.id).readFileBody(
+          MANIFEST_FILENAME
+        )
+
+        if (body) manifests.push(JSON.parse(body.toString()))
       }
+
+      if (manifests) return manifests
     }
     return false
   }

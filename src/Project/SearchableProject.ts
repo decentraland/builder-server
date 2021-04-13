@@ -26,6 +26,6 @@ export class SearchableProject {
     conditions.addExtras('eq', { eth_address })
     conditions.addExtras('eq', { is_deleted: false })
 
-    return await searchableProject.search(parameters, conditions)
+    return searchableProject.search(parameters, conditions)
   }
 }

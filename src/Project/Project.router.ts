@@ -106,7 +106,7 @@ export class ProjectRouter extends Router {
   async getProjects(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
     const projectSearcher = new SearchableProject(req)
-    return await projectSearcher.searchByEthAddress(eth_address)
+    return projectSearcher.searchByEthAddress(eth_address)
   }
 
   async getProject(req: AuthRequest) {

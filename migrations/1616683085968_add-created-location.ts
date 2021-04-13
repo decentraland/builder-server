@@ -8,7 +8,7 @@ const columns = {
     type: 'TEXT',
     default: null,
     notNull: false,
-    unique: true
+    unique: true,
   },
 }
 

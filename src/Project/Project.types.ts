@@ -59,5 +59,5 @@ export const searchableProjectProperties: (keyof ProjectAttributes)[] = [
   'rows',
   'created_at',
   'updated_at',
-  'created_location'
+  'created_location',
 ]

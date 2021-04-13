@@ -39,6 +39,8 @@ npm start
 - `GET /v1/pools/:id/manifest` => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/pool.json
 - `GET /v1/projects/:id/media/:filename` => https://s3.amazonaws.com/nico.decentraland.zone/projects/:id/filename
 
+Take into account that `/v1/` correspond to the version that you specify in the file `.env` with `API_VERSION`
+
 # S3 structure
 
 ```bash

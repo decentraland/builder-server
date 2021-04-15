@@ -99,9 +99,9 @@ export class ManifestRouter extends Router {
 
     const projectSearcher = new SearchableProject(req)
     const projects = await projectSearcher.searchByEthAddress(eth_address)
-
+    let manifests: any[] = []
     if (projects) {
-      let manifests: any[] = []
+
       for (const project of projects.items) {
         const body = await new S3Project(project.id).readFileBody(
           MANIFEST_FILENAME
@@ -112,7 +112,7 @@ export class ManifestRouter extends Router {
 
       if (manifests) return manifests
     }
-    return false
+    return manifests
   }
 
   async getPublicProjectManifest(req: AuthRequest) {

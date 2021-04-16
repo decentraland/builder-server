@@ -14,6 +14,7 @@ import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { collectStatistics } from './utils'
+import { SearchableProject } from '../Project/SearchableProject'
 
 const validator = getValidator()
 
@@ -34,6 +35,15 @@ export class ManifestRouter extends Router {
       withProjectExists,
       withProjectAuthorization,
       server.handleRequest(this.getProjectManifest)
+    )
+
+    /**
+     * Returns the manifest of a land coordinates associated project  (Builder In World)
+     */
+    this.router.get(
+      '/manifests',
+      withAuthentication,
+      server.handleRequest(this.getManifests)
     )
 
     /**
@@ -77,10 +87,32 @@ export class ManifestRouter extends Router {
 
   async getProjectManifest(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+
     const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
     if (body) {
       return JSON.parse(body.toString())
     }
+  }
+
+  async getManifests(req: AuthRequest) {
+    let eth_address = req.auth.ethAddress
+
+    const projectSearcher = new SearchableProject(req)
+    const projects = await projectSearcher.searchByEthAddress(eth_address)
+    let manifests: ManifestAttributes[] = []
+    if (projects) {
+      for (const project of projects.items) {
+        const body = await new S3Project(project.id).readFileBody(
+          MANIFEST_FILENAME
+        )
+
+        if (body)
+          manifests.push(JSON.parse(body.toString()) as ManifestAttributes)
+      }
+
+      if (manifests) return manifests
+    }
+    return manifests
   }
 
   async getPublicProjectManifest(req: AuthRequest) {

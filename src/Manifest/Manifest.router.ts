@@ -99,15 +99,15 @@ export class ManifestRouter extends Router {
 
     const projectSearcher = new SearchableProject(req)
     const projects = await projectSearcher.searchByEthAddress(eth_address)
-    let manifests: any[] = []
+    let manifests: ManifestAttributes[] = []
     if (projects) {
-
       for (const project of projects.items) {
         const body = await new S3Project(project.id).readFileBody(
           MANIFEST_FILENAME
         )
 
-        if (body) manifests.push(JSON.parse(body.toString()))
+        if (body)
+          manifests.push(JSON.parse(body.toString()) as ManifestAttributes)
       }
 
       if (manifests) return manifests

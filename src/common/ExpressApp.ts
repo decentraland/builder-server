@@ -1,5 +1,8 @@
 import express = require('express')
 import bodyParser = require('body-parser')
+import { collectDefaultMetrics } from 'prom-client'
+import { createTestMetricsComponent } from '@well-known-components/metrics'
+import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
 
 export class ExpressApp {
   protected app: express.Application
@@ -41,6 +44,48 @@ export class ExpressApp {
 
   useVersion(version: string) {
     this.app.use(`/${version}`, this.router)
+    return this
+  }
+
+  useMetrics() {
+    const base = createTestMetricsComponent(getDefaultHttpMetrics())
+    const register = base.register
+
+    this.router.get('/metrics', async (_: any, res: express.Response) => {
+      res.setHeader("content-type", register.contentType)
+      return res.send(await register.metrics())
+    })
+
+    const metrics = async (req: express.Request, res: express.Response, next: Function) => {
+      let labels = {
+        method: req.method,
+        handler: "",
+        code: 200,
+      }
+
+      const { end } = base.startTimer("http_request_duration_seconds", labels)
+
+      res.on('finish', () => {
+        labels.code = (res && res.statusCode) || labels.code
+
+        if (req.path) {
+          labels.handler = req.path
+        }
+
+        const contentLength = req.headers['content-length']
+        if (contentLength) {
+          base.observe("http_request_size_bytes", labels, parseInt(contentLength, 10))
+        }
+        base.increment("http_requests_total", labels)
+        end(labels)
+      })
+
+      next()
+    }
+
+    collectDefaultMetrics({ register })
+
+    this.router.all('*', metrics)
     return this
   }
 

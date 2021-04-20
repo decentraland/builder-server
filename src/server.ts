@@ -33,6 +33,7 @@ app
   .useJSON()
   .useVersion(API_VERSION)
   .useCORS(CORS_ORIGIN, CORS_METHOD)
+  .useMetrics()
 
 // Mount routers
 new AppRouter(app).mount()

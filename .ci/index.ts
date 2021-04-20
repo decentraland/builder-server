@@ -117,23 +117,6 @@ export = async function main() {
     }
   )
 
-  // if (env === 'prd') {
-  //   new aws.alb.ListenerRule(`listenrl-builder-${env}`, {
-  //     listenerArn:
-  //       'arn:aws:elasticloadbalancing:us-east-1:619079673649:listener/app/prd-alb-all/c1757689c51d84c4/36125240631de786',
-  //     conditions: [
-  //       { hostHeader: { values: ['builder-api.decentraland.org'] } },
-  //     ],
-  //     actions: [
-  //       {
-  //         type: 'forward',
-  //         targetGroupArn:
-  //           'arn:aws:elasticloadbalancing:us-east-1:619079673649:targetgroup/targ-builder-api-9b34f22/27498775635fda40',
-  //       },
-  //     ],
-  //   })
-  // }
-
   const publicUrl = builderApi.endpoint
 
   return {

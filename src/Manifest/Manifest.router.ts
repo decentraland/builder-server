@@ -50,15 +50,6 @@ export class ManifestRouter extends Router {
      * Returns the manifest of a pool
      */
     this.router.get(
-      '/publics/:id/manifest',
-      withProjectExists,
-      server.handleRequest(this.getProjectManifest)
-    )
-
-    /**
-     * Returns the manifest of a pool
-     */
-    this.router.get(
       '/pools/:id/manifest',
       withPublishedProjectExists,
       server.handleRequest(this.getPoolManifest)

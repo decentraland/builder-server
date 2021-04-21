@@ -114,9 +114,6 @@ export = async function main() {
       metrics: {
         path: '/metrics',
       },
-      extraExposedServiceOptions: {
-        createCloudflareProxiedSubdomain: true,
-      },
       version: '1',
       memoryReservation: 1024,
       securityGroups: [(await acceptDbSecurityGroup()).id],

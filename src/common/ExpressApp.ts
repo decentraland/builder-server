@@ -51,7 +51,8 @@ export class ExpressApp {
     const base = createTestMetricsComponent(getDefaultHttpMetrics())
     const register = base.register
 
-    this.router.get('/metrics', async (_: express.Request, res: express.Response) => {
+    // Metrics should not use /{version} until we add the `metrics` property to the CI.
+    this.app.use('/metrics', async (_: express.Request, res: express.Response) => {
       res.setHeader("content-type", register.contentType)
       return res.send(await register.metrics())
     })

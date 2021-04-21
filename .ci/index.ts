@@ -111,9 +111,6 @@ export = async function main() {
         unhealthyThreshold: 10,
         healthyThreshold: 3
       },
-      metrics: {
-        path: '/v1/metrics',
-      },
       version: '1',
       memoryReservation: 1024,
       securityGroups: [(await acceptDbSecurityGroup()).id],

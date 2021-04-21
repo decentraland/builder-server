@@ -111,6 +111,12 @@ export = async function main() {
         unhealthyThreshold: 10,
         healthyThreshold: 3
       },
+      metrics: {
+        path: '/metrics',
+      },
+      extraExposedServiceOptions: {
+        createCloudflareProxiedSubdomain: true,
+      },
       version: '1',
       memoryReservation: 1024,
       securityGroups: [(await acceptDbSecurityGroup()).id],

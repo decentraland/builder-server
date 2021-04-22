@@ -148,13 +148,15 @@ export class ItemRouter extends Router {
         // Find remote item and collection
         const [remoteItem, remoteCollection] = await Promise.all([
           collectionAPI.fetchItem(
-            dbItem.blockchain_item_id,
-            dbCollection.contract_address
+            dbCollection.contract_address,
+            dbItem.blockchain_item_id
           ),
           collectionAPI.fetchCollection(dbCollection.contract_address),
         ])
 
         // Merge
+        console.log('DB item', dbItem)
+        console.log('remote item', remoteItem)
         if (remoteItem && remoteCollection) {
           const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
           return Bridge.mergeItem(

@@ -14,7 +14,7 @@ import {
   CollectionFragment,
   ItemFragment,
   AccountFragment,
-  RarityFragment
+  RarityFragment,
 } from './fragments'
 import { createClient } from './graphClient'
 import { Bridge } from './Bridge'

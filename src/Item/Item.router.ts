@@ -148,8 +148,8 @@ export class ItemRouter extends Router {
         // Find remote item and collection
         const [remoteItem, remoteCollection] = await Promise.all([
           collectionAPI.fetchItem(
-            dbItem.blockchain_item_id,
-            dbCollection.contract_address
+            dbCollection.contract_address,
+            dbItem.blockchain_item_id
           ),
           collectionAPI.fetchCollection(dbCollection.contract_address),
         ])

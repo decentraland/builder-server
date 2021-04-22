@@ -136,6 +136,7 @@ export class Bridge {
   ): ItemAttributes {
     const { wearable } = remoteItem.metadata
     const data = catalystItem ? catalystItem.data : dbItem.data
+    const contents = catalystItem ? catalystItem.contents : dbItem.contents
 
     // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
@@ -154,6 +155,7 @@ export class Bridge {
         ...data,
         category: wearable.category,
       },
+      contents,
     }
   }
 

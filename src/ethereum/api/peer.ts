@@ -16,6 +16,7 @@ export type Wearable = {
   image: string
   thumbnail: string
   metrics: MetricsAttributes
+  contents: Record<string, string>
   createdAt: number
   updatedAt: number
 }

@@ -90,7 +90,7 @@ export = async function main() {
       },
       {
         name: 'FORUM_API_KEY',
-        value: config.requireSecret('FORUM_API_KEY'),
+        value: env === 'prd' ? '' : config.requireSecret('FORUM_API_KEY'),
       },
       {
         name: 'FORUM_URL',

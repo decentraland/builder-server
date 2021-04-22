@@ -155,8 +155,6 @@ export class ItemRouter extends Router {
         ])
 
         // Merge
-        console.log('DB item', dbItem)
-        console.log('remote item', remoteItem)
         if (remoteItem && remoteCollection) {
           const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
           return Bridge.mergeItem(

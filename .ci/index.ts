@@ -109,13 +109,14 @@ export = async function main() {
         interval: 60,
         timeout: 10,
         unhealthyThreshold: 10,
-        healthyThreshold: 3
+        healthyThreshold: 3,
       },
       metrics: {
         path: '/metrics',
       },
       version: '1',
       memoryReservation: 1024,
+      cpuReservation: 1024,
       securityGroups: [(await acceptDbSecurityGroup()).id],
     }
   )

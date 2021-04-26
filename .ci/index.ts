@@ -6,6 +6,8 @@ import { env, envTLD, publicTLD } from 'dcl-ops-lib/domain'
 import { acceptDbSecurityGroup } from 'dcl-ops-lib/acceptDb'
 import { getDbHostAndPort } from 'dcl-ops-lib/supra'
 
+const prometheusStack = new pulumi.StackReference(`prometheus-${env}`)
+
 export = async function main() {
   const config = new pulumi.Config()
 
@@ -100,6 +102,7 @@ export = async function main() {
         name: 'FORUM_CATEGORY',
         value: env === 'prd' ? '' : '14',
       },
+      { name: 'WKC_METRICS_BEARER_TOKEN', value: prometheusStack.getOutput('serviceMetricsBearerToken') },
     ],
     hostname,
     {

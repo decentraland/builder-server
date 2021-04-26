@@ -97,8 +97,9 @@ export class ManifestRouter extends Router {
           MANIFEST_FILENAME
         )
 
-        if (body)
+        if (body) {
           manifests.push(JSON.parse(body.toString()) as ManifestAttributes)
+        }
       }
 
       if (manifests) return manifests

@@ -276,8 +276,12 @@ export class ItemRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     const dbItem = await Item.findOne<ItemAttributes>({ id })
+    if (!dbItem) {
+      throw new HTTPError('Invalid item', { id }, STATUS_CODES.notFound)
+    }
+
     const dbCollection = await Collection.findOne<CollectionAttributes>(
-      dbItem!.collection_id!
+      dbItem.collection_id!
     )
 
     if (dbCollection) {

@@ -51,33 +51,63 @@ export class ExpressApp {
     const base = createTestMetricsComponent(getDefaultHttpMetrics())
     const register = base.register
 
-    // Metrics should not use /{version} until we add the `metrics` property to the CI.
-    this.app.use('/metrics', async (_: express.Request, res: express.Response) => {
-      res.setHeader("content-type", register.contentType)
-      return res.send(await register.metrics())
-    })
+    const bearerToken = process.env.WKC_METRICS_BEARER_TOKEN
 
-    const metrics = async (req: express.Request, res: express.Response, next: Function) => {
+    // Metrics should not use /{version} until we add the `metrics` property to the CI.
+    this.app.use(
+      '/metrics',
+      async (req: express.Request, res: express.Response) => {
+        if (bearerToken) {
+          const header = req.header('authorization')
+          if (!header) {
+            res.end(401)
+            return
+          }
+          if (Array.isArray(header)) {
+            res.end(401)
+            return
+          }
+          const [, value] = header.split(' ')
+          if (value !== bearerToken) {
+            res.end(401)
+            return
+          }
+        }
+
+        res.setHeader('content-type', register.contentType)
+        return res.send(await register.metrics())
+      }
+    )
+
+    const metrics = async (
+      req: express.Request,
+      res: express.Response,
+      next: Function
+    ) => {
       let labels = {
         method: req.method,
-        handler: "",
+        handler: '',
         code: 200,
       }
 
-      const { end } = base.startTimer("http_request_duration_seconds", labels)
+      const { end } = base.startTimer('http_request_duration_seconds', labels)
 
       res.on('finish', () => {
         labels.code = (res && res.statusCode) || labels.code
 
-        if (req.path) {
-          labels.handler = req.path
+        if (req.route && req.route.path) {
+          labels.handler = (req.baseUrl || '') + req.route.path
         }
 
-        const contentLength = req.headers['content-length']
-        if (contentLength) {
-          base.observe("http_request_size_bytes", labels, parseInt(contentLength, 10))
+        const contentLength = res.getHeader('content-length')
+        if (typeof contentLength === 'string') {
+          base.observe(
+            'http_request_size_bytes',
+            labels,
+            parseInt(contentLength, 10)
+          )
         }
-        base.increment("http_requests_total", labels)
+        base.increment('http_requests_total', labels)
         end(labels)
       })
 

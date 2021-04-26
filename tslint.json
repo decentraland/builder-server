@@ -7,6 +7,6 @@
     "prettier": [true, { "printWidth": 80, "singleQuote": true, "semi": false }]
   },
   "linterOptions": {
-    "exclude": ["./**/*.js"]
+    "exclude": ["./**/*.js", "./migrations/**/*", "node_modules"]
   }
 }

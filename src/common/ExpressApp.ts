@@ -67,7 +67,7 @@ export class ExpressApp {
             res.end(401)
             return
           }
-          const [_, value] = header.split(' ')
+          const [, value] = header.split(' ')
           if (value !== bearerToken) {
             res.end(401)
             return

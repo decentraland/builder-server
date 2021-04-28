@@ -40,6 +40,11 @@ export class ForumRouter extends Router {
     }
     const forumPost: ForumPost = forumPostJSON as ForumPost
 
+    const collection = await Collection.findOne(id)
+    if (collection.forum_link) {
+      throw new HTTPError('Forum post already exists', { id })
+    }
+
     try {
       const forum_link = await createPost(forumPost)
       await Collection.update<CollectionAttributes>({ forum_link }, { id })

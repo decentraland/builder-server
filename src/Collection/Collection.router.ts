@@ -121,6 +121,7 @@ export class CollectionRouter extends Router {
     try {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
+      const data: string = server.extractFromReq(req, 'data')
       const eth_address = req.auth.ethAddress
 
       const validate = validator.compile(collectionSchema)
@@ -170,7 +171,8 @@ export class CollectionRouter extends Router {
       const factoryCollection = new FactoryCollection()
       attributes.salt = factoryCollection.getSalt(id)
       attributes.contract_address = factoryCollection.getContractAddress(
-        attributes.salt
+        attributes.salt,
+        data
       )
 
       return new Collection(attributes).upsert()

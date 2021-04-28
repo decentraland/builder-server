@@ -42,7 +42,7 @@ export class ForumRouter extends Router {
 
     const collection = await Collection.findOne(id)
     if (collection.forum_link) {
-      throw new HTTPError('Forum post already exists' { id })
+      throw new HTTPError('Forum post already exists', { id })
     }
 
     try {

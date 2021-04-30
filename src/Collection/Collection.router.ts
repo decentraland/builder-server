@@ -121,6 +121,7 @@ export class CollectionRouter extends Router {
     try {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
+      const data: string = server.extractFromReq(req, 'data')
       const eth_address = req.auth.ethAddress
 
       const validate = validator.compile(collectionSchema)
@@ -139,10 +140,15 @@ export class CollectionRouter extends Router {
         )
       }
 
-      if (await Collection.nameExist(collectionJSON.name.trim())) {
+      const attributes = {
+        ...collectionJSON,
+        eth_address,
+      } as CollectionAttributes
+
+      if (!(await Collection.isValidName(id, attributes.name.trim()))) {
         throw new HTTPError(
           'Name already in use',
-          { id, name: collectionJSON.name },
+          { id, name: attributes.name },
           STATUS_CODES.unauthorized
         )
       }
@@ -155,11 +161,6 @@ export class CollectionRouter extends Router {
         )
       }
 
-      const attributes = {
-        ...collectionJSON,
-        eth_address,
-      } as CollectionAttributes
-
       if (id !== attributes.id) {
         throw new HTTPError('The body and URL collection ids do not match', {
           urlId: id,
@@ -170,7 +171,8 @@ export class CollectionRouter extends Router {
       const factoryCollection = new FactoryCollection()
       attributes.salt = factoryCollection.getSalt(id)
       attributes.contract_address = factoryCollection.getContractAddress(
-        attributes.salt
+        attributes.salt,
+        data
       )
 
       return new Collection(attributes).upsert()
@@ -206,10 +208,10 @@ export class CollectionRouter extends Router {
       return false
     }
 
-    const remoteCollections = await collectionAPI.fetchCollection(
+    const remoteCollection = await collectionAPI.fetchCollection(
       dbCollection.contract_address
     )
 
-    return !!remoteCollections
+    return !!remoteCollection
   }
 }

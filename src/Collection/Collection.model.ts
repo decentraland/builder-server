@@ -19,12 +19,13 @@ export class Collection extends Model<CollectionAttributes> {
       WHERE id = ANY(${ids})`)
   }
 
-  static async nameExist(name: string) {
-    const res = await this.query(SQL`
-    SELECT count(*)
+  static async isValidName(id: string, name: string) {
+    const counts = await this.query(SQL`
+    SELECT count(*) as count
       FROM ${raw(this.tableName)}
-      WHERE LOWER(name) = ${name.toLowerCase()}`)
+      WHERE id != ${id}
+        AND LOWER(name) = ${name.toLowerCase()}`)
 
-    return res.length > 0 && res[0].count > 0
+    return counts.length > 0 && counts[0].count <= 0
   }
 }

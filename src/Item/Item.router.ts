@@ -248,7 +248,7 @@ export class ItemRouter extends Router {
         dbCollection!.contract_address
       )
 
-      if (dbItem.is_published || remoteCollection) {
+      if (remoteCollection && dbItem.in_catalyst) {
         throw new HTTPError(
           "Published collection items can't be updated",
           { id },

@@ -92,7 +92,8 @@ export class Bridge {
 
           // Merge item from DB with remote data
           if (remoteItem && remoteItem.collection) {
-            const catalystItem = catalystItemsIndex[remoteItem.urn]
+            const urn = remoteItem.urn.toLowerCase()
+            const catalystItem = catalystItemsIndex[urn]
             item = Bridge.mergeItem(
               dbItem,
               remoteItem,

@@ -163,7 +163,7 @@ export class Bridge {
   static indexById<T extends { id: string }>(list: (T | undefined)[]) {
     return list.reduce((obj, result) => {
       if (result) {
-        obj[result.id] = result
+        obj[result.id.toLowerCase()] = result
       }
       return obj
     }, {} as Record<string, T>)

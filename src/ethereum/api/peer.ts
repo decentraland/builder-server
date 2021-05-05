@@ -1,10 +1,10 @@
 import fetch from 'isomorphic-fetch'
 import { env } from 'decentraland-commons'
+import { LambdasClient } from 'dcl-catalyst-client'
 import { AuthLink } from 'dcl-crypto'
-import { WearableData } from '../../Item/wearable/types'
+import { WearableData, WearableRepresentation } from '../../Item/wearable/types'
 import { ItemRarity } from '../../Item'
 import { MetricsAttributes } from '../../Metrics'
-import { LambdasClient } from 'dcl-catalyst-client'
 
 export type Wearable = {
   id: string
@@ -12,13 +12,24 @@ export type Wearable = {
   description: string
   collectionAddress: string
   rarity: ItemRarity
-  data: WearableData
   image: string
   thumbnail: string
   metrics: MetricsAttributes
   contents: Record<string, string>
+  data: WearableData
   createdAt: number
   updatedAt: number
+}
+
+export type PeerRepresentation = Omit<WearableRepresentation, 'contents'> & {
+  contents: { key: string; url: string }[]
+}
+export type PeerData = Omit<WearableData, 'representations'> & {
+  representations: PeerRepresentation[]
+}
+
+export type PeerWearable = Omit<Wearable, 'data'> & {
+  data: PeerData
 }
 
 export type ValidateSignatureResponse = {
@@ -61,9 +72,26 @@ export class PeerAPI {
   }
 
   async fetchWearables(urns: string[]): Promise<Wearable[]> {
-    return urns.length > 0
-      ? this.lambdasClient.fetchWearables({ wearableIds: urns })
-      : []
+    const wearables: PeerWearable[] =
+      urns.length > 0
+        ? await this.lambdasClient.fetchWearables({ wearableIds: urns })
+        : []
+    return wearables.map(this.toWearable)
+  }
+
+  private toWearable(peerWearable: PeerWearable): Wearable {
+    return {
+      ...peerWearable,
+      data: {
+        ...peerWearable.data,
+        representations: [
+          ...peerWearable.data.representations.map((representation) => ({
+            ...representation,
+            contents: representation.contents.map((content) => content.key),
+          })),
+        ],
+      },
+    }
   }
 }
 

@@ -84,12 +84,12 @@ export class PeerAPI {
       ...peerWearable,
       data: {
         ...peerWearable.data,
-        representations: {
+        representations: [
           ...peerWearable.data.representations.map((representation) => ({
             ...representation,
             contents: representation.contents.map((content) => content.key),
           })),
-        },
+        ],
       },
     }
   }

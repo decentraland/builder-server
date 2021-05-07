@@ -3,7 +3,10 @@ import { ProjectAttributes, projectSchema } from '../Project'
 
 export type PoolAttributes = Pick<
   ProjectAttributes,
-  Exclude<keyof ProjectAttributes, 'is_public' | 'is_deleted'>
+  Exclude<
+    keyof ProjectAttributes,
+    'creation_coords' | 'is_public' | 'is_deleted'
+  >
 > & {
   groups: string[]
   likes: number
@@ -17,10 +20,11 @@ export type PoolUpsertBody = {
 export const poolSchema = {
   projectSchema,
   properties: {
-    ...(utils.omit(projectSchema.properties, [
+    ...utils.omit<PoolAttributes>(projectSchema.properties, [
+      'creation_coords',
       'is_public',
       'is_deleted',
-    ]) as PoolAttributes),
+    ]),
     groups: {
       type: 'array',
       items: {

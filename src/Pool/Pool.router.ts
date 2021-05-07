@@ -127,8 +127,12 @@ export class PoolRouter extends Router {
       PoolGroup.findByFilters({ ids: groupIds, activeOnly: true }),
     ] as const)
 
-    const { is_public, is_deleted, ...upsertPool } = (project ||
-      {}) as ProjectAttributes
+    const {
+      is_public,
+      is_deleted,
+      creation_coords,
+      ...upsertPool
+    } = (project || {}) as ProjectAttributes
 
     const groupList = (pool && pool.groups) || []
     if (groups.length) {

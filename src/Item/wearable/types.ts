@@ -10,6 +10,7 @@ export enum WearableCategory {
   EARRING = 'earring',
   EYEWEAR = 'eyewear',
   HAT = 'hat',
+  HEAD = 'head',
   HELMET = 'helmet',
   MASK = 'mask',
   TIARA = 'tiara',

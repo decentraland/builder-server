@@ -191,7 +191,7 @@ export class ItemRouter extends Router {
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: any = server.extractFromReq(req, 'item')
-    const eth_address = req.auth.ethAddress
+    const eth_address = req.auth.ethAddress.toLowerCase()
 
     const validate = validator.compile(itemSchema)
     validate(itemJSON)
@@ -216,8 +216,7 @@ export class ItemRouter extends Router {
       // So far, only the owner can add item if the collection was not published
       if (
         !dbCollectionToAddItem ||
-        dbCollectionToAddItem.eth_address.toLowerCase() !==
-          eth_address.toLowerCase()
+        dbCollectionToAddItem.eth_address.toLowerCase() !== eth_address
       ) {
         throw new HTTPError(
           'Unauthorized user',

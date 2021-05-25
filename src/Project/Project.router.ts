@@ -104,14 +104,14 @@ export class ProjectRouter extends Router {
   }
 
   async getProjects(req: AuthRequest) {
-    const eth_address = req.auth.ethAddress.toLowerCase()
+    const eth_address = req.auth.ethAddress
     const projectSearcher = new SearchableProject(req)
     return projectSearcher.searchByEthAddress(eth_address)
   }
 
   async getProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const eth_address = req.auth.ethAddress.toLowerCase()
+    const eth_address = req.auth.ethAddress
     return Project.findOne({ id, eth_address, is_deleted: false })
   }
 
@@ -123,7 +123,7 @@ export class ProjectRouter extends Router {
   async upsertProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const projectJSON: any = server.extractFromReq(req, 'project')
-    const eth_address = req.auth.ethAddress.toLowerCase()
+    const eth_address = req.auth.ethAddress
 
     const validate = validator.compile(projectSchema)
     validate(projectJSON)

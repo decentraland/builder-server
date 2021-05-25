@@ -122,7 +122,7 @@ export class CollectionRouter extends Router {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
       const data: string = server.extractFromReq(req, 'data')
-      const eth_address = req.auth.ethAddress
+      const eth_address = req.auth.ethAddress.toLowerCase()
 
       const validate = validator.compile(collectionSchema)
       validate(collectionJSON)

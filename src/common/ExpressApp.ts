@@ -1,5 +1,4 @@
-import express = require('express')
-import bodyParser = require('body-parser')
+import express from 'express'
 import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
 import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
@@ -15,14 +14,18 @@ export class ExpressApp {
 
   useJSON() {
     this.app.use(
-      bodyParser.urlencoded({ extended: false, limit: '2mb' }),
-      bodyParser.json({ limit: '5mb' })
+      express.urlencoded({ extended: false, limit: '2mb' }),
+      express.json({ limit: '5mb' })
     )
     return this
   }
 
   useCORS(origin: string, method: string) {
-    const cors = function (_: any, res: express.Response, next: Function) {
+    const cors = function (
+      _req: express.Request,
+      res: express.Response,
+      next: Function
+    ) {
       res.setHeader('Access-Control-Allow-Origin', origin)
       res.setHeader('Access-Control-Request-Method', method)
       res.setHeader(

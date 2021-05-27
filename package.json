@@ -28,7 +28,6 @@
   "dependencies": {
     "@apollo/client": "^3.3.9",
     "@ethersproject/solidity": "^5.0.9",
-    "@types/body-parser": "^1.17.0",
     "@types/escape-html": "0.0.20",
     "@types/express": "^4.17.11",
     "@types/mime-types": "^2.1.0",
@@ -42,7 +41,6 @@
     "ajv": "^7.1.0",
     "ajv-formats": "^1.5.1",
     "aws-sdk": "^2.841.0",
-    "body-parser": "^1.18.3",
     "dcl-catalyst-client": "^4.0.5",
     "dcl-crypto": "^2.1.0",
     "dcl-ops-lib": "^1.0.6",

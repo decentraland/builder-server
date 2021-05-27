@@ -37,13 +37,39 @@ const getAuthenticationMiddleware = <
 >(
   isPermissive = false
 ) => async (req: Request, res: Response, next: NextFunction) => {
+  let ethAddress: string = ''
+  let errorMessage: string = ''
+  try {
+    ethAddress = await decodeAuthChain(req)
+  } catch (error) {
+    errorMessage = error.message
+  }
+
+  if (errorMessage && !isPermissive) {
+    res
+      .status(STATUS_CODES.unauthorized)
+      .json(server.sendError({ message: errorMessage }, 'Unauthenticated'))
+  } else {
+    const cryptoAuthReq = req as T
+    if (cryptoAuthReq.auth) {
+      cryptoAuthReq.authLegacy = (cryptoAuthReq as any).auth
+    }
+    const auth: PermissiveAuthRequest['auth'] = { ethAddress }
+    cryptoAuthReq.auth = auth
+    next()
+  }
+}
+
+async function decodeAuthChain(req: Request): Promise<string> {
   const authChain = buildAuthChain(req)
   let ethAddress: string | null = null
-  let errorMessage = null
+  let errorMessage: string | null = null
+
   if (authChain.length === 0) {
     errorMessage = `Invalid auth chain`
   } else {
     ethAddress = authChain[0].payload
+
     if (!ethAddress) {
       errorMessage = 'Missing ETH address in auth chain'
     } else {
@@ -57,18 +83,11 @@ const getAuthenticationMiddleware = <
     }
   }
 
-  if (errorMessage && !isPermissive) {
-    res
-      .status(STATUS_CODES.unauthorized)
-      .json(server.sendError({ message: errorMessage }, 'Unauthenticated'))
-  } else {
-    const cryptoAuthReq = req as T
-    if (cryptoAuthReq.auth) {
-      cryptoAuthReq.authLegacy = (cryptoAuthReq as any).auth
-    }
-    cryptoAuthReq.auth = { ethAddress } as PermissiveAuthRequest['auth']
-    next()
+  if (errorMessage) {
+    throw new Error(errorMessage)
   }
+
+  return ethAddress!.toLowerCase()
 }
 
 export const withAuthentication = getAuthenticationMiddleware()

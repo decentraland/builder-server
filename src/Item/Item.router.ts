@@ -13,6 +13,7 @@ import {
   withAuthentication,
   withModelExists,
   AuthRequest,
+  withLowercasedParams,
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
@@ -32,6 +33,7 @@ export class ItemRouter extends Router {
     const withItemExists = withModelExists(Item, 'id')
     const withCollectionExist = withModelExists(Collection, 'id')
     const withItemAuthorization = withModelAuthorization(Item)
+    const withLowercasedAddress = withLowercasedParams(['address'])
 
     this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
 
@@ -45,6 +47,8 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/:address/items',
+      withLowercasedAddress,
+
       server.handleRequest(this.getAddressItems)
     )
 

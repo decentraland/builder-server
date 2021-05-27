@@ -79,7 +79,7 @@ export class PoolRouter extends Router {
       searchablePoolProperties
     )
 
-    const eth_address = requestParameters.get('eth_address', null)
+    const eth_address = requestParameters.get('eth_address', '').toLowerCase()
     if (eth_address && req.auth && req.auth.ethAddress) {
       if (eth_address === 'me') {
         conditions.addExtras('eq', { eth_address: req.auth.ethAddress })
@@ -98,7 +98,7 @@ export class PoolRouter extends Router {
 
   async getPool(req: PermissiveAuthRequest) {
     const pool_id = server.extractFromReq(req, 'id')
-    const eth_address = (req.auth && req.auth.ethAddress) || null
+    const eth_address = req.auth && req.auth.ethAddress
 
     const likeCount = eth_address
       ? PoolLike.count({ pool_id, eth_address })

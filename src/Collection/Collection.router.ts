@@ -8,6 +8,7 @@ import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
+  withLowercasedParams,
   AuthRequest,
 } from '../middleware'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -25,6 +26,7 @@ export class CollectionRouter extends Router {
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(Collection)
+    const withLowercasedAddress = withLowercasedParams(['address'])
 
     /**
      * Returns all collections
@@ -36,6 +38,7 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/:address/collections',
+      withLowercasedAddress,
       server.handleRequest(this.getAddressCollections)
     )
 

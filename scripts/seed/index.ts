@@ -5,7 +5,11 @@ import { env, utils } from 'decentraland-commons'
 
 import { db } from '../../src/database'
 import { S3AssetPack, S3Content, ACL } from '../../src/S3'
-import { AssetPack, AssetPackAttributes } from '../../src/AssetPack'
+import {
+  AssetPack,
+  AssetPackAttributes,
+  getDefaultEthAddress,
+} from '../../src/AssetPack'
 import { Asset, AssetAttributes } from '../../src/Asset'
 
 type DefaultAssetPack = {
@@ -41,13 +45,6 @@ type DefaultAssetResponse = {
   }
 }
 
-const DEFAULT_ETH_ADDRESS = env.get('DEFAULT_ETH_ADDRESS', '')
-if (!DEFAULT_ETH_ADDRESS) {
-  throw new Error(
-    'You need to set a DEFAULT_ETH_ADDRESS on your env to set as the eth_address of each asset pack'
-  )
-}
-
 export async function seed() {
   const packsResponse: DefaultAssetPackResponse = readJSON('packs.json')
   const assetPacks = packsResponse.data.packs
@@ -69,7 +66,7 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
         const attributes = {
           ...utils.omit(defaultAssetPack, ['url']),
           thumbnail,
-          eth_address: DEFAULT_ETH_ADDRESS,
+          eth_address: getDefaultEthAddress(),
           created_at: now,
           updated_at: now,
         } as AssetPackAttributes

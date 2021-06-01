@@ -1,8 +1,10 @@
 encryptionsalt: v1:wKmqaw4gH5U=:v1:2nptE66U5zgk6Hhq:9zdY/eedfyFYJqnM4ZOVbUiJEo7x6A==
 config:
-  supra:stack-id: blue
   aws:region: us-east-1
   service-builder:ANALYTICS_CONNECTION_STRING:
     secure: v1:HNZMo29miOz4dVR6:+omHZh9/0MbGCOA9bsRBU4qYQFSQe5Tai/LrnzO4b2+rDiXOu1N+ZpdpAv0uqJnYZf5ZFpY8NGTWPUT/TI1wnOOpSzT1fi4YxbtQ/dvrmF/4qEaO+8Ugit62g7OKJFU6lo3ubxbKR+aHrh/T1dYPUg==
+  service-builder:FORUM_API_KEY:
+    secure: v1:xw9q2g5u4lcmsM/1:7rS7AYKWSM5uwZvTcWC0J1zzD+K2skTTKrIOXtKogD5yl4UERSGASK7Y3mWjzT47I0VQuS1J41Y9/NO+WCS9YmAUyIZNu+lzASXFpL/q35g=
   service-builder:db-password:
     secure: v1:tPGZfdPTXkDvFM3S:p8qSfxiW/Cxn+h6pyK4JaxBkkwlTJtfffUBZKCHOPQJR9pRb
+  supra:stack-id: blue

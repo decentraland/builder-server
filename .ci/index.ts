@@ -92,7 +92,7 @@ export = async function main() {
       },
       {
         name: 'FORUM_API_KEY',
-        value: env === 'prd' ? '' : config.requireSecret('FORUM_API_KEY'),
+        value: config.requireSecret('FORUM_API_KEY')
       },
       {
         name: 'FORUM_URL',
@@ -100,7 +100,7 @@ export = async function main() {
       },
       {
         name: 'FORUM_CATEGORY',
-        value: env === 'prd' ? '' : '14',
+        value: env === 'prd' ? '12' : '14',
       },
       { name: 'WKC_METRICS_BEARER_TOKEN', value: prometheusStack.getOutput('serviceMetricsBearerToken') },
     ],

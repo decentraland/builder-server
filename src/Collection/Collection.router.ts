@@ -17,6 +17,7 @@ import { FactoryCollection } from '../ethereum'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
+import { isCommitteeMember } from '../Committee'
 import { collectionSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
 
@@ -31,7 +32,11 @@ export class CollectionRouter extends Router {
     /**
      * Returns all collections
      */
-    this.router.get('/collections', server.handleRequest(this.getCollections))
+    this.router.get(
+      '/collections',
+      withAuthentication,
+      server.handleRequest(this.getCollections)
+    )
 
     /**
      * Returns the collections for an address
@@ -73,7 +78,18 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections(req: Request) {
+  async getCollections(req: AuthRequest) {
+    const eth_address = req.auth.ethAddress
+    const canRequestCollections = await isCommitteeMember(eth_address)
+
+    if (!canRequestCollections) {
+      throw new HTTPError(
+        'Only committee members can access this endpoint',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     let is_published: boolean | undefined
     try {
       is_published = new RequestParameters(req).getBoolean('isPublished')
@@ -125,7 +141,7 @@ export class CollectionRouter extends Router {
       const id = server.extractFromReq(req, 'id')
       const collectionJSON: any = server.extractFromReq(req, 'collection')
       const data: string = server.extractFromReq(req, 'data')
-      const eth_address = req.auth.ethAddress.toLowerCase()
+      const eth_address = req.auth.ethAddress
 
       const validate = validator.compile(collectionSchema)
       validate(collectionJSON)

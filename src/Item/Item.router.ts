@@ -18,9 +18,10 @@ import {
 import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
-import { itemSchema } from './Item.types'
 import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
+import { isCommitteeMember } from '../Committee'
+import { itemSchema } from './Item.types'
 
 const validator = getValidator()
 
@@ -40,7 +41,11 @@ export class ItemRouter extends Router {
     /**
      * Returns all items
      */
-    this.router.get('/items', server.handleRequest(this.getItems))
+    this.router.get(
+      '/items',
+      withAuthentication,
+      server.handleRequest(this.getItems)
+    )
 
     /**
      * Returns the items for an address
@@ -103,7 +108,18 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems(req: Request) {
+  async getItems(req: AuthRequest) {
+    const eth_address = req.auth.ethAddress
+    const canRequestCollections = await isCommitteeMember(eth_address)
+
+    if (!canRequestCollections) {
+      throw new HTTPError(
+        'Only committee members can access this endpoint',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     let is_published: boolean | undefined
     try {
       is_published = new RequestParameters(req).getBoolean('is_published')

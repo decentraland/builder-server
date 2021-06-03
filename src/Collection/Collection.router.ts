@@ -1,4 +1,3 @@
-import { Request } from 'express'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -20,6 +19,7 @@ import { Collection, CollectionAttributes } from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import { collectionSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
+import { hasAccess } from './access'
 
 const validator = getValidator()
 
@@ -43,6 +43,7 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/:address/collections',
+      withAuthentication,
       withLowercasedAddress,
       server.handleRequest(this.getAddressCollections)
     )
@@ -52,6 +53,7 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id',
+      withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
     )
@@ -84,7 +86,7 @@ export class CollectionRouter extends Router {
 
     if (!canRequestCollections) {
       throw new HTTPError(
-        'Only committee members can access this endpoint',
+        'Unauthorized',
         { eth_address },
         STATUS_CODES.unauthorized
       )
@@ -111,6 +113,15 @@ export class CollectionRouter extends Router {
 
   async getAddressCollections(req: AuthRequest) {
     const eth_address = server.extractFromReq(req, 'address')
+    const auth_address = req.auth.ethAddress
+
+    if (eth_address === auth_address) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
 
     const [dbCollections, remoteCollections] = await Promise.all([
       Collection.find<CollectionAttributes>({ eth_address }),
@@ -119,21 +130,36 @@ export class CollectionRouter extends Router {
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
 
-  async getCollection(req: Request) {
+  async getCollection(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)
-
-    if (dbCollection) {
-      const remoteCollection = await collectionAPI.fetchCollection(
-        dbCollection.contract_address
+    if (!dbCollection) {
+      throw new HTTPError(
+        'Not found',
+        { id, eth_address },
+        STATUS_CODES.notFound
       )
-      if (remoteCollection) {
-        return Bridge.mergeCollection(dbCollection, remoteCollection)
-      }
     }
 
-    return dbCollection
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection.contract_address
+    )
+
+    const fullCollection = remoteCollection
+      ? Bridge.mergeCollection(dbCollection, remoteCollection)
+      : dbCollection
+
+    if (!hasAccess(eth_address, fullCollection)) {
+      throw new HTTPError(
+        'Unauthorized',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    return fullCollection
   }
 
   upsertCollection = async (req: AuthRequest) => {
@@ -153,7 +179,7 @@ export class CollectionRouter extends Router {
       const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
       if (!canUpsert) {
         throw new HTTPError(
-          'Unauthorized user',
+          'Unauthorized',
           { id, eth_address },
           STATUS_CODES.unauthorized
         )

@@ -22,6 +22,7 @@ import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import { itemSchema } from './Item.types'
+import { hasAccess } from './access'
 
 const validator = getValidator()
 
@@ -52,8 +53,8 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/:address/items',
+      withAuthentication,
       withLowercasedAddress,
-
       server.handleRequest(this.getAddressItems)
     )
 
@@ -62,6 +63,7 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/items/:id',
+      withAuthentication,
       withItemExists,
       server.handleRequest(this.getItem)
     )
@@ -110,11 +112,11 @@ export class ItemRouter extends Router {
 
   async getItems(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
-    const canRequestCollections = await isCommitteeMember(eth_address)
+    const canRequestItems = await isCommitteeMember(eth_address)
 
-    if (!canRequestCollections) {
+    if (!canRequestItems) {
       throw new HTTPError(
-        'Only committee members can access this endpoint',
+        'Unauthorized',
         { eth_address },
         STATUS_CODES.unauthorized
       )
@@ -142,6 +144,15 @@ export class ItemRouter extends Router {
 
   async getAddressItems(req: AuthRequest) {
     const eth_address = server.extractFromReq(req, 'address')
+    const auth_address = req.auth.ethAddress
+
+    if (eth_address === auth_address) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
 
     const [dbItems, remoteItems] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
@@ -154,30 +165,49 @@ export class ItemRouter extends Router {
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
-  async getItem(req: Request) {
+  async getItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+    const eth_address = server.extractFromReq(req, 'address')
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
+    if (!dbItem) {
+      throw new HTTPError(
+        'Not found',
+        { id, eth_address },
+        STATUS_CODES.notFound
+      )
+    }
 
-    // Check if item has a collection and a blockchain id
-    if (dbItem && dbItem.collection_id && dbItem.blockchain_item_id) {
+    let fullItem: ItemAttributes = dbItem
+    let fullCollection: CollectionAttributes | undefined = undefined
+
+    if (dbItem.collection_id && dbItem.blockchain_item_id) {
       const dbCollection = await Collection.findOne<CollectionAttributes>(
         dbItem.collection_id
       )
-      if (dbCollection) {
-        // Find remote item and collection
-        const [remoteItem, remoteCollection] = await Promise.all([
-          collectionAPI.fetchItem(
-            dbCollection.contract_address,
-            dbItem.blockchain_item_id
-          ),
-          collectionAPI.fetchCollection(dbCollection.contract_address),
-        ])
 
-        // Merge
-        if (remoteItem && remoteCollection) {
+      if (!dbCollection) {
+        throw new HTTPError(
+          "Invalid item. It's collection seems to be missing",
+          { id, eth_address, collection_id: dbItem.collection_id },
+          STATUS_CODES.error
+        )
+      }
+
+      const [remoteItem, remoteCollection] = await Promise.all([
+        collectionAPI.fetchItem(
+          dbCollection.contract_address,
+          dbItem.blockchain_item_id
+        ),
+        collectionAPI.fetchCollection(dbCollection.contract_address),
+      ])
+
+      if (remoteCollection) {
+        fullCollection = Bridge.mergeCollection(dbCollection, remoteCollection)
+
+        if (remoteItem) {
           const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
-          return Bridge.mergeItem(
+          fullItem = Bridge.mergeItem(
             dbItem,
             remoteItem,
             catalystItem,
@@ -185,6 +215,14 @@ export class ItemRouter extends Router {
           )
         }
       }
+    }
+
+    if (hasAccess(eth_address, fullItem, fullCollection)) {
+      throw new HTTPError(
+        'Unauthorized',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
     }
 
     return dbItem
@@ -239,7 +277,7 @@ export class ItemRouter extends Router {
         dbCollectionToAddItem.eth_address.toLowerCase() !== eth_address
       ) {
         throw new HTTPError(
-          'Unauthorized user',
+          'Unauthorized',
           { id, eth_address, collection_id: itemJSON.collection_id },
           STATUS_CODES.unauthorized
         )

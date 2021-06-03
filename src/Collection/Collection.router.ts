@@ -115,7 +115,7 @@ export class CollectionRouter extends Router {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
-    if (eth_address === auth_address) {
+    if (eth_address !== auth_address) {
       throw new HTTPError(
         'Unauthorized',
         { eth_address },

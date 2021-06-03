@@ -146,7 +146,7 @@ export class ItemRouter extends Router {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
-    if (eth_address === auth_address) {
+    if (eth_address !== auth_address) {
       throw new HTTPError(
         'Unauthorized',
         { eth_address },
@@ -277,7 +277,7 @@ export class ItemRouter extends Router {
         dbCollectionToAddItem.eth_address.toLowerCase() !== eth_address
       ) {
         throw new HTTPError(
-          'Unauthorized',
+          'Unauthorized user',
           { id, eth_address, collection_id: itemJSON.collection_id },
           STATUS_CODES.unauthorized
         )

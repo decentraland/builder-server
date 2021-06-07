@@ -20,6 +20,7 @@ import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
 import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
+import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
 import { itemSchema } from './Item.types'
 import { hasAccess } from './access'
@@ -73,6 +74,7 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/collections/:id/items',
+      withAuthentication,
       withCollectionExist,
       server.handleRequest(this.getCollectionItems)
     )
@@ -228,20 +230,39 @@ export class ItemRouter extends Router {
     return dbItem
   }
 
-  async getCollectionItems(req: Request) {
+  async getCollectionItems(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)
+    if (!dbCollection) {
+      throw new HTTPError(
+        'Not found',
+        { id, eth_address },
+        STATUS_CODES.notFound
+      )
+    }
 
-    if (!dbCollection) return []
-
-    const [dbItems, remoteItems] = await Promise.all([
+    const [dbItems, remoteItems, remoteCollection] = await Promise.all([
       Item.find<ItemAttributes>({ collection_id: id }),
       collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address),
+      collectionAPI.fetchCollection(dbCollection.contract_address),
     ])
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )
+
+    const fullCollection = remoteCollection
+      ? Bridge.mergeCollection(dbCollection, remoteCollection)
+      : dbCollection
+
+    if (!hasCollectionAccess(eth_address, fullCollection)) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
 
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }

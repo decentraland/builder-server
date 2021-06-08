@@ -18,9 +18,12 @@ import {
 import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
-import { itemSchema } from './Item.types'
 import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
+import { hasAccess as hasCollectionAccess } from '../Collection/access'
+import { isCommitteeMember } from '../Committee'
+import { itemSchema } from './Item.types'
+import { hasAccess } from './access'
 
 const validator = getValidator()
 
@@ -40,15 +43,19 @@ export class ItemRouter extends Router {
     /**
      * Returns all items
      */
-    this.router.get('/items', server.handleRequest(this.getItems))
+    this.router.get(
+      '/items',
+      withAuthentication,
+      server.handleRequest(this.getItems)
+    )
 
     /**
      * Returns the items for an address
      */
     this.router.get(
       '/:address/items',
+      withAuthentication,
       withLowercasedAddress,
-
       server.handleRequest(this.getAddressItems)
     )
 
@@ -57,6 +64,7 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/items/:id',
+      withAuthentication,
       withItemExists,
       server.handleRequest(this.getItem)
     )
@@ -66,6 +74,7 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/collections/:id/items',
+      withAuthentication,
       withCollectionExist,
       server.handleRequest(this.getCollectionItems)
     )
@@ -103,7 +112,18 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems(req: Request) {
+  async getItems(req: AuthRequest) {
+    const eth_address = req.auth.ethAddress
+    const canRequestItems = await isCommitteeMember(eth_address)
+
+    if (!canRequestItems) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     let is_published: boolean | undefined
     try {
       is_published = new RequestParameters(req).getBoolean('is_published')
@@ -126,6 +146,15 @@ export class ItemRouter extends Router {
 
   async getAddressItems(req: AuthRequest) {
     const eth_address = server.extractFromReq(req, 'address')
+    const auth_address = req.auth.ethAddress
+
+    if (eth_address !== auth_address) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
 
     const [dbItems, remoteItems] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
@@ -138,30 +167,49 @@ export class ItemRouter extends Router {
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
-  async getItem(req: Request) {
+  async getItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+    const eth_address = server.extractFromReq(req, 'address')
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
+    if (!dbItem) {
+      throw new HTTPError(
+        'Not found',
+        { id, eth_address },
+        STATUS_CODES.notFound
+      )
+    }
 
-    // Check if item has a collection and a blockchain id
-    if (dbItem && dbItem.collection_id && dbItem.blockchain_item_id) {
+    let fullItem: ItemAttributes = dbItem
+    let fullCollection: CollectionAttributes | undefined = undefined
+
+    if (dbItem.collection_id && dbItem.blockchain_item_id) {
       const dbCollection = await Collection.findOne<CollectionAttributes>(
         dbItem.collection_id
       )
-      if (dbCollection) {
-        // Find remote item and collection
-        const [remoteItem, remoteCollection] = await Promise.all([
-          collectionAPI.fetchItem(
-            dbCollection.contract_address,
-            dbItem.blockchain_item_id
-          ),
-          collectionAPI.fetchCollection(dbCollection.contract_address),
-        ])
 
-        // Merge
-        if (remoteItem && remoteCollection) {
+      if (!dbCollection) {
+        throw new HTTPError(
+          "Invalid item. It's collection seems to be missing",
+          { id, eth_address, collection_id: dbItem.collection_id },
+          STATUS_CODES.error
+        )
+      }
+
+      const [remoteItem, remoteCollection] = await Promise.all([
+        collectionAPI.fetchItem(
+          dbCollection.contract_address,
+          dbItem.blockchain_item_id
+        ),
+        collectionAPI.fetchCollection(dbCollection.contract_address),
+      ])
+
+      if (remoteCollection) {
+        fullCollection = Bridge.mergeCollection(dbCollection, remoteCollection)
+
+        if (remoteItem) {
           const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
-          return Bridge.mergeItem(
+          fullItem = Bridge.mergeItem(
             dbItem,
             remoteItem,
             catalystItem,
@@ -171,23 +219,50 @@ export class ItemRouter extends Router {
       }
     }
 
+    if (hasAccess(eth_address, fullItem, fullCollection)) {
+      throw new HTTPError(
+        'Unauthorized',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     return dbItem
   }
 
-  async getCollectionItems(req: Request) {
+  async getCollectionItems(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
 
     const dbCollection = await Collection.findOne<CollectionAttributes>(id)
+    if (!dbCollection) {
+      throw new HTTPError(
+        'Not found',
+        { id, eth_address },
+        STATUS_CODES.notFound
+      )
+    }
 
-    if (!dbCollection) return []
-
-    const [dbItems, remoteItems] = await Promise.all([
+    const [dbItems, remoteItems, remoteCollection] = await Promise.all([
       Item.find<ItemAttributes>({ collection_id: id }),
       collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address),
+      collectionAPI.fetchCollection(dbCollection.contract_address),
     ])
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )
+
+    const fullCollection = remoteCollection
+      ? Bridge.mergeCollection(dbCollection, remoteCollection)
+      : dbCollection
+
+    if (!hasCollectionAccess(eth_address, fullCollection)) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
 
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }

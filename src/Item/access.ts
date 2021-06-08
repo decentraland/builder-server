@@ -11,11 +11,11 @@ export async function hasAccess(
   collection?: CollectionAttributes
 ) {
   const isOwner = new Ownable(Item).isOwnedBy(item.id, eth_address)
-  const isMember: boolean = await isCommitteeMember(eth_address)
+  const isCommittee: boolean = await isCommitteeMember(eth_address)
 
   const isManager: boolean = collection
     ? isCollectionManager(eth_address, collection)
     : false
 
-  return isOwner || isMember || isManager
+  return isOwner || isCommittee || isManager
 }

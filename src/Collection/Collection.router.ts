@@ -176,6 +176,14 @@ export class CollectionRouter extends Router {
         throw new HTTPError('Invalid schema', validate.errors)
       }
 
+      if (collectionJSON.is_published || collectionJSON.is_approved) {
+        throw new HTTPError(
+          'Can not change is_published or is_approved property',
+          { id, eth_address },
+          STATUS_CODES.unauthorized
+        )
+      }
+
       const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
       if (!canUpsert) {
         throw new HTTPError(

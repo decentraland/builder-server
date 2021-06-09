@@ -288,9 +288,9 @@ export class ItemRouter extends Router {
       )
     }
 
-    if (itemJSON.is_published) {
+    if (itemJSON.is_published || itemJSON.is_approved) {
       throw new HTTPError(
-        'Can not change the is_published property',
+        'Can not change is_published or is_approved property',
         { id, eth_address },
         STATUS_CODES.unauthorized
       )

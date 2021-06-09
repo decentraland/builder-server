@@ -176,9 +176,9 @@ export class CollectionRouter extends Router {
         throw new HTTPError('Invalid schema', validate.errors)
       }
 
-      if (collectionJSON.is_published) {
+      if (collectionJSON.is_published || collectionJSON.is_approved) {
         throw new HTTPError(
-          'Can not change the is_published property',
+          'Can not change is_published or is_approved property',
           { id, eth_address },
           STATUS_CODES.unauthorized
         )

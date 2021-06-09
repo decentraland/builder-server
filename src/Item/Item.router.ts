@@ -141,7 +141,7 @@ export class ItemRouter extends Router {
       remoteItems.map((item) => item.urn)
     )
 
-    return await Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
   async getAddressItems(req: AuthRequest) {
@@ -219,7 +219,7 @@ export class ItemRouter extends Router {
       }
     }
 
-    if (hasAccess(eth_address, fullItem, fullCollection)) {
+    if (!(await hasAccess(eth_address, fullItem, fullCollection))) {
       throw new HTTPError(
         'Unauthorized',
         { id, eth_address },
@@ -256,7 +256,7 @@ export class ItemRouter extends Router {
       ? Bridge.mergeCollection(dbCollection, remoteCollection)
       : dbCollection
 
-    if (!hasCollectionAccess(eth_address, fullCollection)) {
+    if (!(await hasCollectionAccess(eth_address, fullCollection))) {
       throw new HTTPError(
         'Unauthorized',
         { eth_address },
@@ -360,7 +360,7 @@ export class ItemRouter extends Router {
 
     if (dbItem.collection_id) {
       const dbCollection = await Collection.findOne<CollectionAttributes>(
-        dbItem.collection_id!
+        dbItem.collection_id
       )
 
       if (dbCollection) {
@@ -373,7 +373,7 @@ export class ItemRouter extends Router {
             "The item was published. It can't be deleted",
             {
               id,
-              blockchain_item_id: dbItem!.blockchain_item_id,
+              blockchain_item_id: dbItem.blockchain_item_id,
               contract_address: dbCollection.contract_address,
             },
             STATUS_CODES.unauthorized

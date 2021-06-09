@@ -6,9 +6,11 @@ import { Ownable } from '../Ownable'
 export async function hasAccess(
   eth_address: string,
   collection: CollectionAttributes
-) {
-  const isOwner = new Ownable(Collection).isOwnedBy(collection.id, eth_address)
-  const isCommittee: boolean = await isCommitteeMember(eth_address)
+): Promise<boolean> {
+  const [isOwner, isCommittee] = await Promise.all([
+    new Ownable(Collection).isOwnedBy(collection.id, eth_address),
+    isCommitteeMember(eth_address),
+  ])
 
   return isOwner || isCommittee || isManager(eth_address, collection)
 }
@@ -16,7 +18,7 @@ export async function hasAccess(
 export function isManager(
   eth_address: string,
   collection: CollectionAttributes
-) {
+): boolean {
   return collection.managers.some(
     (manager: string) => manager.toLowerCase() === eth_address
   )

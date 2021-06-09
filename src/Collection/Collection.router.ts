@@ -151,7 +151,7 @@ export class CollectionRouter extends Router {
       ? Bridge.mergeCollection(dbCollection, remoteCollection)
       : dbCollection
 
-    if (!hasAccess(eth_address, fullCollection)) {
+    if (!(await hasAccess(eth_address, fullCollection))) {
       throw new HTTPError(
         'Unauthorized',
         { id, eth_address },

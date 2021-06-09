@@ -288,6 +288,14 @@ export class ItemRouter extends Router {
       )
     }
 
+    if (itemJSON.is_published) {
+      throw new HTTPError(
+        'Can not change the is_published property',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     if (itemJSON.collection_id) {
       const dbCollectionToAddItem = await Collection.findOne<CollectionAttributes>(
         itemJSON.collection_id

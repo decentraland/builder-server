@@ -4,6 +4,7 @@ import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { Wearable } from './peer'
 import { fromUnixTimestamp } from '../../utils/parse'
+import { WearableCategory } from '../../Item/wearable/types'
 
 export class Bridge {
   static async consolidateCollections(
@@ -138,23 +139,40 @@ export class Bridge {
     const { wearable } = remoteItem.metadata
     const data = catalystItem ? catalystItem.data : dbItem.data
     const contents = catalystItem ? catalystItem.contents : dbItem.contents
+    let name: string
+    let description: string
+    let category: WearableCategory | undefined
+
+    if (wearable) {
+      name = wearable.name
+      description = wearable.description
+      category = wearable.category
+    } else if (catalystItem) {
+      name = catalystItem.name
+      description = catalystItem.description
+      category = data.category
+    } else {
+      name = dbItem.name
+      description = dbItem.description
+      category = data.category
+    }
 
     // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
     return {
       ...dbItem,
+      name,
+      description,
       price: remoteItem.price,
       beneficiary: remoteItem.beneficiary,
       blockchain_item_id: remoteItem.blockchainId,
       is_published: true,
       is_approved: remoteCollection.isApproved,
       total_supply: Number(remoteItem.totalSupply),
-      name: wearable.name,
-      description: wearable.description,
       rarity: wearable.rarity,
       data: {
         ...data,
-        category: wearable.category,
+        category,
       },
       contents,
     }

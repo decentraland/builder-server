@@ -7,6 +7,10 @@ export async function hasAccess(
   eth_address: string,
   collection: CollectionAttributes
 ): Promise<boolean> {
+  if (collection.is_published) {
+    return true
+  }
+
   const [isOwner, isCommittee] = await Promise.all([
     new Ownable(Collection).isOwnedBy(collection.id, eth_address),
     isCommitteeMember(eth_address),

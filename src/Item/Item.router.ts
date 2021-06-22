@@ -169,7 +169,7 @@ export class ItemRouter extends Router {
 
   async getItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const eth_address = server.extractFromReq(req, 'address')
+    const eth_address = req.auth.ethAddress
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
     if (!dbItem) {

@@ -75,7 +75,7 @@ export class Bridge {
     const dbCollectionsIndex = this.indexById(dbResults)
     const catalystItemsIndex = this.indexById(catalystItems)
 
-    for (let dbItem of [...dbItems, ...remoteDBItems]) {
+    for (let dbItem of allDbItems) {
       let item = dbItem
 
       // Check if DB item has a collection

@@ -227,7 +227,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    return dbItem
+    return fullItem
   }
 
   async getCollectionItems(req: AuthRequest) {

@@ -1,10 +1,11 @@
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, ItemRarity } from '../../Item'
+import { MetricsAttributes } from '../../Metrics'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { Wearable } from './peer'
 import { fromUnixTimestamp } from '../../utils/parse'
-import { WearableCategory } from '../../Item/wearable/types'
+import { WearableCategory, WearableData } from '../../Item/wearable/types'
 
 export class Bridge {
   static async consolidateCollections(
@@ -98,8 +99,8 @@ export class Bridge {
             item = Bridge.mergeItem(
               dbItem,
               remoteItem,
-              catalystItem,
-              remoteItem.collection
+              remoteItem.collection,
+              catalystItem
             )
           }
         }
@@ -133,16 +134,28 @@ export class Bridge {
   static mergeItem(
     dbItem: ItemAttributes,
     remoteItem: ItemFragment,
-    catalystItem: Wearable,
-    remoteCollection: CollectionFragment
+    remoteCollection: CollectionFragment,
+    catalystItem?: Wearable
   ): ItemAttributes {
     const { wearable } = remoteItem.metadata
-    const data = catalystItem ? catalystItem.data : dbItem.data
-    const contents = catalystItem ? catalystItem.contents : dbItem.contents
+
     let name: string
     let description: string
     let category: WearableCategory | undefined
     let rarity: ItemRarity | null
+    let data: WearableData
+    let contents: Record<string, string>
+    let metrics: MetricsAttributes
+
+    if (catalystItem) {
+      data = catalystItem.data
+      contents = catalystItem.contents
+      metrics = catalystItem.metrics
+    } else {
+      data = dbItem.data
+      contents = dbItem.contents
+      metrics = dbItem.metrics
+    }
 
     if (wearable) {
       name = wearable.name
@@ -174,11 +187,12 @@ export class Bridge {
       is_published: true,
       is_approved: remoteCollection.isApproved,
       total_supply: Number(remoteItem.totalSupply),
+      metrics,
+      contents,
       data: {
         ...data,
         category,
       },
-      contents,
     }
   }
 

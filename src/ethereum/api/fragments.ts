@@ -105,7 +105,7 @@ export type RarityFragment = {
 }
 
 export type MetadataFragment = {
-  wearable: WearableFragment
+  wearable?: WearableFragment
 }
 
 export type WearableFragment = {

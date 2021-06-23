@@ -212,8 +212,8 @@ export class ItemRouter extends Router {
           fullItem = Bridge.mergeItem(
             dbItem,
             remoteItem,
-            catalystItem,
-            remoteCollection
+            remoteCollection,
+            catalystItem
           )
         }
       }

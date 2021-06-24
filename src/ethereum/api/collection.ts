@@ -19,7 +19,7 @@ import {
 import { createClient } from './graphClient'
 import { Bridge } from './Bridge'
 
-const MAX_RESULTS = 2
+const MAX_RESULTS = 1000
 
 const PAGINATION_VARIABLES = `
   $first: Int = ${MAX_RESULTS}

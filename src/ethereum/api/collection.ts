@@ -19,6 +19,22 @@ import {
 import { createClient } from './graphClient'
 import { Bridge } from './Bridge'
 
+const MAX_RESULTS = 1000
+
+const PAGINATION_VARIABLES = `
+  $first: Int = ${MAX_RESULTS}
+  $skip: Int = 0
+  $orderBy: String
+  $orderDirection: String
+`
+
+const PAGINATION_ARGUMENTS = `
+  first: $first
+  skip: $skip
+  orderBy: $orderBy
+  orderDirection: $orderDirection
+`
+
 const getCollectionByIdQuery = () => gql`
   query getCollectionById($id: String) {
     collections(where: { id: $id }) {
@@ -29,17 +45,8 @@ const getCollectionByIdQuery = () => gql`
 `
 
 const getCollectionsQuery = () => gql`
-  query getCollections {
-    collections {
-      ...collectionFragment
-    }
-  }
-  ${collectionFragment()}
-`
-
-const getCollectionsByIdQuery = () => gql`
-  query getCollectionsById($ids: [ID!]) {
-    collections(where: { id_in: $ids }) {
+  query getCollections(${PAGINATION_VARIABLES}) {
+    collections(${PAGINATION_ARGUMENTS}) {
       ...collectionFragment
     }
   }
@@ -47,27 +54,18 @@ const getCollectionsByIdQuery = () => gql`
 `
 
 const getCollectionsByAuthorizedUserQuery = () => gql`
-  query getCollectionsByCreator($user: String, $users: [String!]) {
-    creator: collections(where: { creator: $user }) {
+  query getCollectionsByCreator(${PAGINATION_VARIABLES}, $user: String, $users: [String!]) {
+    creator: collections(${PAGINATION_ARGUMENTS}, where: { creator: $user }) {
       ...collectionFragment
     }
-    manager: collections(where: { managers_contains: $users }) {
+    manager: collections(${PAGINATION_ARGUMENTS}, where: { managers_contains: $users }) {
       ...collectionFragment
     }
-    minter: collections(where: { minters_contains: $users }) {
+    minter: collections(${PAGINATION_ARGUMENTS}, where: { minters_contains: $users }) {
       ...collectionFragment
     }
   }
   ${collectionFragment()}
-`
-
-const getItemsQuery = () => gql`
-  query getItems {
-    items {
-      ...itemFragment
-    }
-  }
-  ${itemFragment()}
 `
 
 const getItemByIdQuery = () => gql`
@@ -79,19 +77,28 @@ const getItemByIdQuery = () => gql`
   ${itemFragment()}
 `
 
+const getItemsQuery = () => gql`
+  query getItems(${PAGINATION_VARIABLES}) {
+    items(${PAGINATION_ARGUMENTS}) {
+      ...itemFragment
+    }
+  }
+  ${itemFragment()}
+`
+
 const getItemsByAuthorizedUserQuery = () => gql`
-  query getItemsByOwnerCreator($user: String, $users: [String]) {
-    creator: collections(where: { creator: $user }) {
+  query getItemsByOwnerCreator(${PAGINATION_VARIABLES}, $user: String, $users: [String]) {
+    creator: collections(${PAGINATION_ARGUMENTS}, where: { creator: $user }) {
       items {
         ...itemFragment
       }
     }
-    manager: collections(where: { managers_contains: $users }) {
+    manager: collections(${PAGINATION_ARGUMENTS}, where: { managers_contains: $users }) {
       items {
         ...itemFragment
       }
     }
-    minter: collections(where: { minters_contains: $users }) {
+    minter: collections(${PAGINATION_ARGUMENTS}, where: { minters_contains: $users }) {
       items {
         ...itemFragment
       }
@@ -102,7 +109,7 @@ const getItemsByAuthorizedUserQuery = () => gql`
 
 const getItemsByContractAddressQuery = () => gql`
   query getItemsByContractAddress($id: String) {
-    collections(where: { id: $id }) {
+    collections(first: ${MAX_RESULTS}, where: { id: $id }) {
       items {
         ...itemFragment
       }
@@ -112,8 +119,8 @@ const getItemsByContractAddressQuery = () => gql`
 `
 
 const getCommitteeQuery = () => gql`
-  query getCommitteeAccounts {
-    accounts(where: { isCommitteeMember: true }) {
+  query getCommitteeAccounts(${PAGINATION_VARIABLES}) {
+    accounts(${PAGINATION_ARGUMENTS}, where: { isCommitteeMember: true }) {
       ...accountFragment
     }
   }
@@ -151,57 +158,26 @@ export class CollectionAPI {
     return collections.length > 0 ? collections[0] : null
   }
 
-  fetchCollections = async () => {
-    const {
-      data: { collections = [] },
-    } = await this.query<{
-      collections: CollectionFragment[]
-    }>({ query: getCollectionsQuery() })
-
-    return collections
-  }
-
-  fetchCollectionsByAddress = async (contractAddresses: string[]) => {
-    const {
-      data: { collections = [] },
-    } = await this.query<{
-      collections: CollectionFragment[]
-    }>({
-      query: getCollectionsByIdQuery(),
-      variables: {
-        ids: contractAddresses.map((address) => address.toLowerCase()),
-      },
+  fetchCollections = async (): Promise<CollectionFragment[]> => {
+    return this.paginate(['collections'], {
+      query: getCollectionsQuery(),
     })
-
-    return collections
   }
 
-  fetchCollectionsByAuthorizedUser = async (userAddress: string) => {
-    const {
-      data: { creator = [], manager = [], minter = [] },
-    } = await this.query<{
-      creator: CollectionFragment[]
-      manager: CollectionFragment[]
-      minter: CollectionFragment[]
-    }>({
+  fetchCollectionsByAuthorizedUser = async (
+    userAddress: string
+  ): Promise<CollectionFragment[]> => {
+    return this.paginate(['creator', 'manager', 'minter'], {
       query: getCollectionsByAuthorizedUserQuery(),
       variables: {
         user: userAddress.toLowerCase(),
         users: [userAddress.toLowerCase()],
       },
     })
-
-    return [...creator, ...manager, ...minter]
   }
 
-  fetchItems = async () => {
-    const {
-      data: { items = [] },
-    } = await this.query<{ items: ItemFragment[] }>({
-      query: getItemsQuery(),
-    })
-
-    return items
+  fetchItems = async (): Promise<ItemFragment[]> => {
+    return this.paginate(['items'], { query: getItemsQuery() })
   }
 
   fetchItem = async (contractAddress: string, tokenId: string) => {
@@ -215,22 +191,21 @@ export class CollectionAPI {
     return items.length > 0 ? items[0] : null
   }
 
-  fetchItemsByAuthorizedUser = async (userAddress: string) => {
-    const {
-      data: { creator = [], manager = [], minter = [] },
-    } = await this.query<{
-      creator: { items: ItemFragment[] }[]
-      manager: { items: ItemFragment[] }[]
-      minter: { items: ItemFragment[] }[]
-    }>({
-      query: getItemsByAuthorizedUserQuery(),
-      variables: {
-        user: userAddress.toLowerCase(),
-        users: [userAddress.toLowerCase()],
-      },
-    })
+  fetchItemsByAuthorizedUser = async (
+    userAddress: string
+  ): Promise<ItemFragment[]> => {
+    const result: { items: ItemFragment[] }[] = await this.paginate(
+      ['creator', 'manager', 'minter'],
+      {
+        query: getItemsByAuthorizedUserQuery(),
+        variables: {
+          user: userAddress.toLowerCase(),
+          users: [userAddress.toLowerCase()],
+        },
+      }
+    )
 
-    return [...creator, ...manager, ...minter].reduce(
+    return result.reduce(
       (items, collection) => [...items, ...collection.items],
       [] as ItemFragment[]
     )
@@ -249,14 +224,8 @@ export class CollectionAPI {
     return collections.length > 0 ? collections[0].items : []
   }
 
-  fetchCommittee = async () => {
-    const {
-      data: { accounts = [] },
-    } = await this.query<{
-      accounts?: AccountFragment[]
-    }>({ query: getCommitteeQuery() })
-
-    return accounts
+  fetchCommittee = async (): Promise<AccountFragment[]> => {
+    return this.paginate(['accounts'], { query: getCommitteeQuery() })
   }
 
   fetchRarities = async () => {
@@ -283,6 +252,32 @@ export class CollectionAPI {
       const data = {} as T
       return { data, loading: false, networkStatus: NetworkStatus.error }
     }
+  }
+
+  private async paginate<T, K extends string, TVariables = OperationVariables>(
+    keys: K[],
+    options: QueryOptions<TVariables, T>
+  ): Promise<T[]> {
+    const queryOptions = {
+      ...options,
+      variables: { ...options.variables, skip: 0 },
+    }
+    let pagination: T[] = []
+    let partialResult: T[] | undefined
+
+    while (!partialResult || partialResult.length === MAX_RESULTS) {
+      const queryResult = await this.query<Record<K, T[]>, TVariables>(
+        queryOptions as any // forcing typescript to accept the skip variable
+      )
+      partialResult = []
+      for (const key of keys) {
+        partialResult = partialResult.concat(queryResult.data[key])
+      }
+      pagination = pagination.concat(partialResult)
+      queryOptions.variables.skip += MAX_RESULTS
+    }
+
+    return pagination
   }
 }
 

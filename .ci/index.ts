@@ -105,6 +105,10 @@ export = async function main() {
         name: 'WKC_METRICS_BEARER_TOKEN',
         value: prometheusStack.getOutput('serviceMetricsBearerToken')
       },
+      {
+        name: 'MATIC_CHAIN_ID',
+        value: env === 'prd' || env === 'stg' ? '137' : '80001'
+      }
     ],
     hostname,
     {

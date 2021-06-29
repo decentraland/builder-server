@@ -3,7 +3,7 @@ import { AuthLink } from 'dcl-crypto'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { AuthRequestLegacy } from './authentication-legacy'
-//import { peerAPI } from '../ethereum/api/peer'
+import { peerAPI } from '../ethereum/api/peer'
 
 const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 
@@ -73,13 +73,13 @@ async function decodeAuthChain(req: Request): Promise<string> {
     if (!ethAddress) {
       errorMessage = 'Missing ETH address in auth chain'
     } else {
-     /* try {
+      try {
         const endpoint = (req.method + ':' + req.url).toLowerCase()
         // We don't use the response, just want to make sure it does not blow up
         await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
       } catch (error) {
         errorMessage = error.message
-      }^*/
+      }
     }
   }
 

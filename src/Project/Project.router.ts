@@ -171,7 +171,10 @@ export class ProjectRouter extends Router {
   async removeCoordsFromProjects(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
     const creation_coords = server.extractFromReq(req, 'coords')
-    await Project.update({ updated_at: new Date(), creation_coords: undefined }, { creation_coords, eth_address })
+    await Project.update(
+      { updated_at: new Date(), creation_coords: undefined },
+      { creation_coords, eth_address }
+    )
     return true
   }
 

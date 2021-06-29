@@ -1,5 +1,4 @@
 import { server } from 'decentraland-server'
-
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -8,7 +7,7 @@ import {
   withAuthentication,
   withModelExists,
   withLowercasedParams,
-  AuthRequest,
+  AuthRequest
 } from '../middleware'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
@@ -105,7 +104,7 @@ export class CollectionRouter extends Router {
       typeof is_published === 'undefined'
         ? Collection.find<CollectionAttributes>()
         : Collection.find<CollectionAttributes>({ is_published }),
-      collectionAPI.fetchCollections(),
+      collectionAPI.fetchCollections()
     ])
 
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
@@ -125,7 +124,7 @@ export class CollectionRouter extends Router {
 
     const [dbCollections, remoteCollections] = await Promise.all([
       Collection.find<CollectionAttributes>({ eth_address }),
-      collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
+      collectionAPI.fetchCollectionsByAuthorizedUser(eth_address)
     ])
     return Bridge.consolidateCollections(dbCollections, remoteCollections)
   }
@@ -195,7 +194,7 @@ export class CollectionRouter extends Router {
 
       const attributes = {
         ...collectionJSON,
-        eth_address,
+        eth_address
       } as CollectionAttributes
 
       if (!(await Collection.isValidName(id, attributes.name.trim()))) {
@@ -217,7 +216,7 @@ export class CollectionRouter extends Router {
       if (id !== attributes.id) {
         throw new HTTPError('The body and URL collection ids do not match', {
           urlId: id,
-          bodyId: attributes.id,
+          bodyId: attributes.id
         })
       }
 
@@ -247,7 +246,7 @@ export class CollectionRouter extends Router {
 
     await Promise.all([
       Collection.delete({ id }),
-      Item.delete({ collection_id: id }),
+      Item.delete({ collection_id: id })
     ])
     return true
   }

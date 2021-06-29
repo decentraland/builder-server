@@ -9,9 +9,9 @@ export const MATIC_CHAIN_ID = env.get(
   ChainId.MATIC_MAINNET
 ) as ChainId
 
+const rpcUrl = RPC_URLS[MATIC_CHAIN_ID]
+const provider = new providers.JsonRpcProvider(rpcUrl)
+
 export async function isPublished(collectionAddress: string) {
-  const rpcUrl = RPC_URLS[MATIC_CHAIN_ID]
-  const provider = new providers.JsonRpcProvider(rpcUrl)
-  const result = await isContract(provider, collectionAddress)
-  return result
+  return await isContract(provider, collectionAddress)
 }

@@ -1,5 +1,4 @@
 import { server } from 'decentraland-server'
-
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -20,6 +19,7 @@ import { isCommitteeMember } from '../Committee'
 import { collectionSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
 import { hasAccess } from './access'
+import { isPublished } from '../utils/eth'
 
 const validator = getValidator()
 
@@ -265,6 +265,14 @@ export class CollectionRouter extends Router {
       dbCollection.contract_address
     )
 
-    return !!remoteCollection
+    // Fallback: check against the blockchain, in case the subgraph is lagging
+    if (!remoteCollection) {
+      const result = await isPublished(dbCollection.contract_address)
+      if (!result) {
+        return false
+      }
+    }
+
+    return true
   }
 }

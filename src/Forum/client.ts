@@ -1,6 +1,6 @@
 import fetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
-import { CreateResponse, CreateSuccess, ForumPost } from './Forum.types'
+import { CreateResponse, ForumPost } from './Forum.types'
 
 const FORUM_URL = env.get('FORUM_URL', '')
 const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
@@ -26,6 +26,6 @@ export async function createPost(post: ForumPost): Promise<string> {
     )
   }
 
-  const { topic_id, topic_slug } = result as CreateSuccess
+  const { topic_id, topic_slug } = result
   return `${FORUM_URL}/t/${topic_slug}/${topic_id}`
 }

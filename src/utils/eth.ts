@@ -13,5 +13,5 @@ const rpcUrl = RPC_URLS[MATIC_CHAIN_ID]
 const provider = new providers.JsonRpcProvider(rpcUrl)
 
 export async function isPublished(collectionAddress: string) {
-  return await isContract(provider, collectionAddress)
+  return isContract(provider, collectionAddress)
 }

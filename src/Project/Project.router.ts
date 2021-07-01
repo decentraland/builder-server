@@ -82,7 +82,7 @@ export class ProjectRouter extends Router {
     /**
      * Update all projects with coords to null
      */
-    this.router.post(
+    this.router.delete(
       '/projects/coords/:coords',
       withAuthentication,
       server.handleRequest(this.removeCoordsFromProjects)

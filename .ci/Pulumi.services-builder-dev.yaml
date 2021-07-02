@@ -1,11 +1,13 @@
 encryptionsalt: v1:bUwQiO7ZLhk=:v1:bXs69eQDpK4yYaV1:dJ+RnDhKiRxdkCRJjAEnfgrtLi/BKQ==
 config:
-  supra:stack-id: blue
   aws:region: us-east-1
   service-builder:ANALYTICS_CONNECTION_STRING:
     secure: v1:otw+92ejjeAgoBNw:au9UYhAZ0iHuFuFHMyRFVg==
   service-builder:FORUM_API_KEY:
     secure: v1:9g2YpG9znPOm6Q0v:3IejzyF0ZJAOOF2LKKXfD0LmmLUI0POIflwvn6W7DihG6KPyKYsLeVLX+9tdjdvp15pahMkcivURZg/wfsH++N7GBOzVkaNj4NcwxcqFQNs=
+  service-builder:MATIC_RPC_URL:
+    secure: v1:y/iM1Wm+dYBLHDYj:M0aTQQ/VY1MFxHisx+WOX4IppE1CTMrd2VS7PFf16HdlQEgNPYdJvBaZX/O2mrMDxhe5MBJFJZBCL5hYCZSx88IhmoRky59nYiQeCJAueH000Vtch0SOtv+/UrdY
   service-builder:db-password:
     secure: v1:tGQDAgILOTpxsaYk:wxIXvnzKXdBet7D1mksngaJ3Auq9iYtQceOOw+wENYr/R3F6EukcMQ==
   service-builder:db-user: builder
+  supra:stack-id: blue

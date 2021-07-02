@@ -5,6 +5,8 @@ config:
     secure: v1:HNZMo29miOz4dVR6:+omHZh9/0MbGCOA9bsRBU4qYQFSQe5Tai/LrnzO4b2+rDiXOu1N+ZpdpAv0uqJnYZf5ZFpY8NGTWPUT/TI1wnOOpSzT1fi4YxbtQ/dvrmF/4qEaO+8Ugit62g7OKJFU6lo3ubxbKR+aHrh/T1dYPUg==
   service-builder:FORUM_API_KEY:
     secure: v1:xw9q2g5u4lcmsM/1:7rS7AYKWSM5uwZvTcWC0J1zzD+K2skTTKrIOXtKogD5yl4UERSGASK7Y3mWjzT47I0VQuS1J41Y9/NO+WCS9YmAUyIZNu+lzASXFpL/q35g=
+  service-builder:MATIC_RPC_URL:
+    secure: v1:rlJUnHubQnu9din0:bYMrrBvWby6RV4EFau1pECrbQFbJeY8LuG7QbnaJCltVwgRjjOzKcU8jNk2Me4FIXHOe1OjIJMJtUODbkRUq1gKqh9UjJlcOOCvI4LmT5w+o236V73SySI47hSZXhw==
   service-builder:db-password:
     secure: v1:tPGZfdPTXkDvFM3S:p8qSfxiW/Cxn+h6pyK4JaxBkkwlTJtfffUBZKCHOPQJR9pRb
   supra:stack-id: blue

@@ -106,8 +106,8 @@ export = async function main() {
         value: prometheusStack.getOutput('serviceMetricsBearerToken')
       },
       {
-        name: 'MATIC_CHAIN_ID',
-        value: env === 'prd' || env === 'stg' ? '137' : '80001'
+        name: 'MATIC_RPC_URL',
+        value: config.requireSecret('MATIC_RPC_URL')
       }
     ],
     hostname,

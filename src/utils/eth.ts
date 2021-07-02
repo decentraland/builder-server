@@ -1,16 +1,14 @@
 import { providers } from 'ethers'
-import { ChainId } from '@dcl/schemas'
-import { RPC_URLS } from 'decentraland-connect'
 import { env } from 'decentraland-commons'
 import { isContract } from 'decentraland-transactions'
 
-export const MATIC_CHAIN_ID = env.get(
-  'MATIC_CHAIN_ID',
-  ChainId.MATIC_MAINNET
-) as ChainId
+export const MATIC_RPC_URL = env.get('MATIC_RPC_URL', '')
 
-const rpcUrl = RPC_URLS[MATIC_CHAIN_ID]
-const provider = new providers.JsonRpcProvider(rpcUrl)
+if (!MATIC_RPC_URL) {
+  throw new Error('Please set a MATIC_RPC_URL env variable')
+}
+
+const provider = new providers.JsonRpcProvider(MATIC_RPC_URL)
 
 export async function isPublished(collectionAddress: string) {
   return isContract(provider, collectionAddress)

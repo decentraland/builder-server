@@ -3,7 +3,7 @@ import { AuthLink } from 'dcl-crypto'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { AuthRequestLegacy } from './authentication-legacy'
-import { peerAPI } from '../ethereum/api/peer'
+//import { peerAPI } from '../ethereum/api/peer'
 
 const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 
@@ -70,7 +70,7 @@ async function decodeAuthChain(req: Request): Promise<string> {
   } else {
     ethAddress = authChain[0].payload
 
-    if (!ethAddress) {
+   /* if (!ethAddress) {
       errorMessage = 'Missing ETH address in auth chain'
     } else {
       try {
@@ -80,7 +80,7 @@ async function decodeAuthChain(req: Request): Promise<string> {
       } catch (error) {
         errorMessage = error.message
       }
-    }
+    }*/
   }
 
   if (errorMessage) {

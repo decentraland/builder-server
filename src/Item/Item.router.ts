@@ -243,10 +243,14 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [dbItems, remoteItems, remoteCollection] = await Promise.all([
+    const [
+      dbItems,
+      { collection: remoteCollection, items: remoteItems },
+    ] = await Promise.all([
       Item.find<ItemAttributes>({ collection_id: id }),
-      collectionAPI.fetchItemsByContractAddress(dbCollection.contract_address),
-      collectionAPI.fetchCollection(dbCollection.contract_address),
+      collectionAPI.fetchCollectionWithItemsByContractAddress(
+        dbCollection.contract_address
+      ),
     ])
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
@@ -331,11 +335,12 @@ export class ItemRouter extends Router {
         dbItem.collection_id
       )
 
-      const [remoteItems, remoteCollection] = await Promise.all([
-        collectionAPI.fetchItemsByContractAddress(
+      const [
+        { collection: remoteCollection, items: remoteItems },
+      ] = await Promise.all([
+        collectionAPI.fetchCollectionWithItemsByContractAddress(
           dbCollection!.contract_address
         ),
-        collectionAPI.fetchCollection(dbCollection!.contract_address),
       ])
       const catalystItems = await peerAPI.fetchWearables(
         remoteItems.map((item) => item.urn)

@@ -57,7 +57,6 @@ export const itemSchema = Object.freeze({
     total_supply: { type: 'number', minimum: 0 },
     is_published: { type: 'boolean' },
     is_approved: { type: 'boolean' },
-    in_catalyst: { type: 'boolean' },
     type: { enum: Object.values(ItemType) },
     data: { type: 'object', oneOf: [wearableSchema] },
     metrics: metricsSchema,

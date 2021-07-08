@@ -228,8 +228,12 @@ export class CollectionAPI {
       variables: { id: contractAddress.toLowerCase() },
     })
 
-    const [{ items, ...collection }] = collections
-    return { collection, items }
+    if (collections.length > 0) {
+      const [{ items, ...collection }] = collections
+      return { collection, items }
+    }
+
+    return { collection: undefined, items: [] }
   }
 
   fetchCommittee = async (): Promise<AccountFragment[]> => {

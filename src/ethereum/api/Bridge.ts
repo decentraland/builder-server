@@ -146,15 +146,18 @@ export class Bridge {
     let data: WearableData
     let contents: Record<string, string>
     let metrics: MetricsAttributes
+    let in_catalyst: boolean
 
     if (catalystItem) {
       data = catalystItem.data
       contents = catalystItem.contents
       metrics = catalystItem.metrics
+      in_catalyst = true
     } else {
       data = dbItem.data
       contents = dbItem.contents
       metrics = dbItem.metrics
+      in_catalyst = false
     }
 
     if (wearable) {
@@ -187,6 +190,7 @@ export class Bridge {
       is_published: true,
       is_approved: remoteCollection.isApproved,
       total_supply: Number(remoteItem.totalSupply),
+      in_catalyst,
       metrics,
       contents,
       data: {

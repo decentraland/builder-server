@@ -330,11 +330,18 @@ export class ItemRouter extends Router {
       const dbCollection = await Collection.findOne<CollectionAttributes>(
         dbItem.collection_id
       )
-      const remoteCollection = await collectionAPI.fetchCollection(
-        dbCollection!.contract_address
+
+      const [remoteItems, remoteCollection] = await Promise.all([
+        collectionAPI.fetchItemsByContractAddress(
+          dbCollection!.contract_address
+        ),
+        collectionAPI.fetchCollection(dbCollection!.contract_address),
+      ])
+      const catalystItems = await peerAPI.fetchWearables(
+        remoteItems.map((item) => item.urn)
       )
 
-      if (remoteCollection && dbItem.in_catalyst) {
+      if (remoteCollection && catalystItems.length >= 1) {
         throw new HTTPError(
           "Published collection items can't be updated",
           { id },

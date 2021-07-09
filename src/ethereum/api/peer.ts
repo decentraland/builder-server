@@ -80,6 +80,13 @@ export class PeerAPI {
   }
 
   private toWearable(peerWearable: PeerWearable): Wearable {
+    const contents: Record<string, string> = {}
+    for (let representation of peerWearable.data.representations) {
+      for (let content of representation.contents) {
+        contents[content.key] = content.url.split('/').pop()!
+      }
+    }
+
     return {
       ...peerWearable,
       data: {
@@ -91,6 +98,7 @@ export class PeerAPI {
           })),
         ],
       },
+      contents,
     }
   }
 }

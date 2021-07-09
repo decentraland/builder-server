@@ -6,6 +6,8 @@ import { WearableData, WearableRepresentation } from '../../Item/wearable/types'
 import { ItemRarity } from '../../Item'
 import { MetricsAttributes } from '../../Metrics'
 
+export const THUMBNAIL_PATH = 'thumbnail.png'
+
 export type Wearable = {
   id: string
   name: string
@@ -86,6 +88,8 @@ export class PeerAPI {
         contents[content.key] = content.url.split('/').pop()!
       }
     }
+
+    contents[THUMBNAIL_PATH] = peerWearable.thumbnail.split('/').pop()!
 
     return {
       ...peerWearable,

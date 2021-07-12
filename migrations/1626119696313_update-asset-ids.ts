@@ -18,13 +18,13 @@ export const up = (pgm: MigrationBuilder) => {
 }
 
 export const down = (pgm: MigrationBuilder) => {
-	// We can't regeneate truncated assets but they're regenerated with the seed command
+	// We can't regeneate truncated assets but they're regenerated with the seed command so we truncate again
+	pgm.sql(`TRUNCATE TABLE ${tableName};`)
 
 	pgm.dropConstraint(tableName, 'assets_pkey')
 	pgm.addConstraint(tableName, 'assets_pkey', {
 		primaryKey: columns,
 	})
 
-	pgm.dropIndex(tableName, 'id')
 	pgm.addIndex(tableName, columns, { unique: true })
 }

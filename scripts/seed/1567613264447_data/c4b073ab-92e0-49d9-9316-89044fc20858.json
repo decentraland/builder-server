@@ -6,18 +6,12 @@
     "title": "Sci-fi",
     "assets": [
       {
-        "id": "9ded3e8b3dde279ef6cb22043bd0c2c4d548d134b660273d139a7f14f70569e9",
+        "id": "06cc7e83-9cef-4c88-bcbf-6538b2976f43",
         "name": "Vent Cover",
         "thumbnail": "https://assets.decentraland.org/QmT5xDjUe4pQ95UQ1xAfZyHtgUWpHfNjVD3VFou9G2AxKX",
         "url": "AirVent_Cap_01/AirVent_Cap_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "vent",
-          "round",
-          "grey",
-          "air"
-        ],
+        "tags": ["scifi", "vent", "round", "grey", "air"],
         "variations": [],
         "contents": {
           "AirVent_Cap_01/AirVent_Cap_01.glb": "QmdDJ9UHrh97CrAbTdVVs6WQ6QXhN4Fz192p4rueDL2ShN",
@@ -26,18 +20,12 @@
         }
       },
       {
-        "id": "21f70b856207c5743cac09bdcdbdb78114cd2fa896355dee6a34f3a6834981c2",
+        "id": "42f5e2ed-816b-4e4d-ac47-2dce781c73ab",
         "name": "Long Curved Vent",
         "thumbnail": "https://assets.decentraland.org/QmSdBTs2LADVavWueoewwyPEvMaGbAzmDKvHp5KBeJguFT",
         "url": "AirVent_Curve_01/AirVent_Curve_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "vent",
-          "arc",
-          "long",
-          "air"
-        ],
+        "tags": ["scifi", "vent", "arc", "long", "air"],
         "variations": [],
         "contents": {
           "AirVent_Curve_01/AirVent_Curve_01.glb": "QmVTgr9QoWveUhFAQXsBuDFnp6uyTE2wscKv1jTMg5Y65Z",
@@ -46,18 +34,12 @@
         }
       },
       {
-        "id": "0591b31534b28eb9753f35181b4b04eefc5a59cea6eb9166e8611b2e97552ea4",
+        "id": "1d3f3357-b635-48bd-9b08-0886c8bfaa20",
         "name": "Short Curved Vent",
         "thumbnail": "https://assets.decentraland.org/QmXsRXxzzWgxC5qS6fg1PBBPKWVB6azZPtXe26eD9BdVhd",
         "url": "AirVent_Curve_02/AirVent_Curve_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "vent",
-          "arc",
-          "wide",
-          "air"
-        ],
+        "tags": ["scifi", "vent", "arc", "wide", "air"],
         "variations": [],
         "contents": {
           "AirVent_Curve_02/AirVent_Curve_02.glb": "QmVJspJVy8SuwaxtARnWZu4FxkEa56tc7nxoXFmjPdoPXL",
@@ -66,18 +48,12 @@
         }
       },
       {
-        "id": "1223f41335d616ddd630ca802565e7d1c20998f40f3e1cd1ccba614284ae86da",
+        "id": "7f8a3f48-d97e-448e-89eb-c33aea983e42",
         "name": "Exhaust Box",
         "thumbnail": "https://assets.decentraland.org/QmYCB4dRT7JUgtnhYUMJ5zgohUGK16EbdvSTKwb4UhQzat",
         "url": "AirVent_Exhaust_01/AirVent_Exhaust_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "vent",
-          "exhaust",
-          "air",
-          "square"
-        ],
+        "tags": ["scifi", "vent", "exhaust", "air", "square"],
         "variations": [],
         "contents": {
           "AirVent_Exhaust_01/AirVent_Exhaust_01.glb": "QmeuL9m2hrxmM6RvDcHtFCdepTtsQaMjLhMQzMQzTDmha5",
@@ -86,18 +62,12 @@
         }
       },
       {
-        "id": "22a2633b0d6301754e91ae692bf65d2ba59ee6573bc2aae7101a97960764b900",
+        "id": "5903ff4d-0c42-48fa-96f4-94c5c497b8cf",
         "name": "Exhaust Flat",
         "thumbnail": "https://assets.decentraland.org/Qmb2dVEWprrgxvKsqSk1cGg8F85uskouEUagMzxhRw3ZrK",
         "url": "AirVent_Exhaust_02/AirVent_Exhaust_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "vent",
-          "exhaust",
-          "air",
-          "yellow"
-        ],
+        "tags": ["scifi", "vent", "exhaust", "air", "yellow"],
         "variations": [],
         "contents": {
           "AirVent_Exhaust_02/AirVent_Exhaust_02.glb": "QmRgu8oCYkvCgkV2RmD34TxMa6gAviMmZ3cuyV8yS44XTh",
@@ -106,17 +76,12 @@
         }
       },
       {
-        "id": "9bf7251382b4cdd6fc3505c73ba9a8e0fbe6e97871c429e45d1ba89c73ecb9a0",
+        "id": "42223b4b-7c29-4cda-97d0-7bc7ae0e49dc",
         "name": "Hanging Vent Holder",
         "thumbnail": "https://assets.decentraland.org/QmTFu9QPfiZpYyabeN7ubpJNgmuoKBt5PTYRJE8xsTQ3PB",
         "url": "AirVent_Hang_01/AirVent_Hang_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "air",
-          "vent",
-          "hang"
-        ],
+        "tags": ["scifi", "air", "vent", "hang"],
         "variations": [],
         "contents": {
           "AirVent_Hang_01/AirVent_Hang_01.glb": "QmSQxKDCG1wu4GYUpSr9eXMnTUpFC6LgjJKyELLj5DLPFD",
@@ -125,18 +90,12 @@
         }
       },
       {
-        "id": "9c5f71056bf096e92de725580bd4e2503bfe38b38b3b104493bfa2bce9c305bf",
+        "id": "ecdaa8db-cf20-4226-8291-aa45aa80f0d1",
         "name": "Long Straight Vent",
         "thumbnail": "https://assets.decentraland.org/QmXXHgXYqosiFwxoAgCbUbD23bojQz4XAWGsnSPBUSDwwi",
         "url": "AirVent_Straight_Long_01/AirVent_Straight_Long_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "air",
-          "vent",
-          "straight",
-          "long"
-        ],
+        "tags": ["scifi", "air", "vent", "straight", "long"],
         "variations": [],
         "contents": {
           "AirVent_Straight_Long_01/AirVent_Straight_Long_01.glb": "QmWJghsTmLYpSiCkBxGcVTqpDi5g6ngN5vaxWvXAuUVYdt",
@@ -145,18 +104,12 @@
         }
       },
       {
-        "id": "f971e9ae5140c9ffdc26948835e4e0994a73af753868d1f4dc24b6744e90d333",
+        "id": "d7d2a664-f4ad-47ea-8ae2-7fb89d7d3584",
         "name": "Short Straight Vent",
         "thumbnail": "https://assets.decentraland.org/QmXgpFRQbH3LVLqHJ7tLWvmu6brwQSg9shZL3uuvmokAjX",
         "url": "AirVent_Straight_Short_01/AirVent_Straight_Short_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "air",
-          "vent",
-          "straight",
-          "short"
-        ],
+        "tags": ["scifi", "air", "vent", "straight", "short"],
         "variations": [],
         "contents": {
           "AirVent_Straight_Short_01/AirVent_Straight_Short_01.glb": "QmXdofWcH7Z8DAbhnwcZARJr4Wr8iDkZd8puAeDh3U1KuF",
@@ -165,17 +118,12 @@
         }
       },
       {
-        "id": "eb4a4ca8db9be5a29e44978c325541bcb73a46e19b5f7b71b5a02a9dd6e2a50a",
+        "id": "22c3eda0-29ce-409c-babc-7d3b13f85de4",
         "name": "Vent Junction",
         "thumbnail": "https://assets.decentraland.org/QmSmxMxdagbAVHNjA2WDzQWQoEVy9N9C9DLdjrffmJegVb",
         "url": "AirVent_Union_01/AirVent_Union_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "air",
-          "vent",
-          "union"
-        ],
+        "tags": ["scifi", "air", "vent", "union"],
         "variations": [],
         "contents": {
           "AirVent_Union_01/AirVent_Union_01.glb": "QmNxjA1NLb8uZHAUkkfD5F9bFmmGLgkZQuoJFzy1yYQvC7",
@@ -184,7 +132,7 @@
         }
       },
       {
-        "id": "02874fe49c65bda1ffa6775dc246646086de3e7df0f5f688a823c54dba89bdc5",
+        "id": "2cf42fb3-2290-4398-a3fb-7a78980300ec",
         "name": "Yellow Antenna Dish",
         "thumbnail": "https://assets.decentraland.org/QmSr2ujFAXfpzmZZcrFwf7rcbrjmydWNunBVw1r5GRe6nF",
         "url": "Antenna_01/Antenna_01.glb",
@@ -206,7 +154,7 @@
         }
       },
       {
-        "id": "86d1babec6d8b7b5e105bdf04bb6d296eaab8b88cebb4bcdacedd94731a28885",
+        "id": "638b6464-498d-487a-af4b-2d2154ed85c2",
         "name": "Blue Antenna Dish",
         "thumbnail": "https://assets.decentraland.org/QmZ3HP8gGH2bRHj9S8L6gcndYKh2ogG3ASw5asB25sx7cC",
         "url": "Antenna_02/Antenna_02.glb",
@@ -227,7 +175,7 @@
         }
       },
       {
-        "id": "67edc740a8d749886d843734e0774ba2ebaaadda4ab8d028253fc1dc386a7111",
+        "id": "539e691e-f336-46fd-8b09-3f4ada9b5516",
         "name": "Rabbit Ears Antenna",
         "thumbnail": "https://assets.decentraland.org/QmZVf1NGj2W4c2ZQVjdijj9rwGbEs9pXh8LahxKWAJMVE1",
         "url": "Antenna_03/Antenna_03.glb",
@@ -248,19 +196,12 @@
         }
       },
       {
-        "id": "e607f1290d2fe9a0f7cb6a56675419995ad65000c161e96c10a9a025f2ed834f",
+        "id": "e2b11b54-a7fb-4508-ab90-94cfc107136a",
         "name": "Yellow Tube Battery",
         "thumbnail": "https://assets.decentraland.org/QmXcUfQYuB2pb4yHikBBNb6CgiEPv96GZca9fhikHvUPnh",
         "url": "Battery_01/Battery_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "supply",
-          "electricity",
-          "plasma"
-        ],
+        "tags": ["scifi", "energy", "power", "supply", "electricity", "plasma"],
         "variations": [],
         "contents": {
           "Battery_01/Battery_01.glb": "QmcVgh5tEwUuX7hWWkf1KffBPxRokt3FgrB4W6xBeZQwZ5",
@@ -269,19 +210,12 @@
         }
       },
       {
-        "id": "11adf82e81b1cb20cb09e5a353f6628bb00dc1c2deb7f569595b620bed253621",
+        "id": "c8f787fc-b2dd-4d89-8d02-932efcdaa3d0",
         "name": "Yellow Box Battery",
         "thumbnail": "https://assets.decentraland.org/QmPKMyUEsKUKEKsz4uGDF7D1MaQt8mF4HDw7rU3czArvRQ",
         "url": "Battery_02/Battery_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "supply",
-          "electricity",
-          "plasma"
-        ],
+        "tags": ["scifi", "energy", "power", "supply", "electricity", "plasma"],
         "variations": [],
         "contents": {
           "Battery_02/Battery_02.glb": "QmT993gC1ASQd1N5vBXCSVxZDdSuG33TT2MnXV2dvw3kZL",
@@ -291,19 +225,12 @@
         }
       },
       {
-        "id": "025f6123f7ffce96a439035ac36adbdde4c711d14695c853f645a995c2cdd05a",
+        "id": "fb653355-21e6-42cc-9951-27a333a5b11c",
         "name": "Wired Battery Pack",
         "thumbnail": "https://assets.decentraland.org/QmTDM8YDcxUN5Aiq4oB677aHmeNJDjXLKQrhGLu5kHsAP7",
         "url": "Battery_03/Battery_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "supply",
-          "electricity",
-          "plasma"
-        ],
+        "tags": ["scifi", "energy", "power", "supply", "electricity", "plasma"],
         "variations": [],
         "contents": {
           "Battery_03/Battery_03.glb": "QmbyazUYyzcb8GwMz973qNiMMixR9cSk5VawZJCLUkt8yD",
@@ -312,18 +239,12 @@
         }
       },
       {
-        "id": "4ea51cca41b86a0fc7da4bf49c34b262b1a27f1d6eb635dbd424a752d905422c",
+        "id": "a923d912-638c-4eb7-bfa3-ee7f2e2a5b12",
         "name": "Small Bench",
         "thumbnail": "https://assets.decentraland.org/QmUcCuUtHY7dvyrKPW8GeN8dnxbyw8fpMJHH5GQv6R25dq",
         "url": "BenchSmall_01/BenchSmall_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "lab",
-          "table",
-          "work",
-          "tools"
-        ],
+        "tags": ["scifi", "lab", "table", "work", "tools"],
         "variations": [],
         "contents": {
           "BenchSmall_01/BenchSmall_01.glb": "QmaqdTsLQAcyNAsS9RKvXKhDCg3FLuoRhYCpsEG2mypwSQ",
@@ -332,16 +253,12 @@
         }
       },
       {
-        "id": "01e15982b7b4631d9e8eca04e134a6eee06677cb7c3ee70db9cd9de1077299f6",
+        "id": "643daa6d-5ede-4386-a67b-f3a9f11285ce",
         "name": "Button Panel",
         "thumbnail": "https://assets.decentraland.org/QmZCppEZZoqXCoyhNLwATwzsMDLnDY868bREGqrx2jmHLq",
         "url": "ButtonPanel_01/ButtonPanel_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "controls",
-          "trigger"
-        ],
+        "tags": ["scifi", "controls", "trigger"],
         "variations": [],
         "contents": {
           "ButtonPanel_01/ButtonPanel_01.glb": "QmWHHrSJihCSs64bmAicb4J2DaxYfWKHVAV71VQKihg3PM",
@@ -350,18 +267,12 @@
         }
       },
       {
-        "id": "d7a2bf5d80a03c700be9e3e39c5651cab899b6f3dd060a82af83f883a32f3033",
+        "id": "773df0a4-5e1a-4b7d-a1f9-5d97e9e17aa4",
         "name": "1M Orange Striped Cable",
         "thumbnail": "https://assets.decentraland.org/QmQPaxdzUya2GSvrWRhP4ygy3zNRLRVAkbT78NcxxHTh6j",
         "url": "Cable_1M_Curve_01/Cable_1M_Curve_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_1M_Curve_01/Cable_1M_Curve_01.glb": "QmW8S6gMGjeVFR565BHmqmA2MAsKqXe32RJoV4yYWt6CYw",
@@ -370,18 +281,12 @@
         }
       },
       {
-        "id": "7285aeda9dbe75d7e5dea12ce19ea44ab122e5069505aee228d4318464129ee2",
+        "id": "8317e1f0-df36-41d4-97e4-ed356acce924",
         "name": "1M Curved Cable",
         "thumbnail": "https://assets.decentraland.org/Qme2qG5ZPPgBREn6Cnnc6tbE4JD3qRkQoZ8dnaAbWXJyyp",
         "url": "Cable_1M_Curve_02/Cable_1M_Curve_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_1M_Curve_02/Cable_1M_Curve_02.glb": "QmfDLFYUhFwdi2C2UrtZWLXuEHyZTAE4KFosTawszwMMaw",
@@ -390,18 +295,12 @@
         }
       },
       {
-        "id": "dd49ec84599a29da7246151bb84775ea86dd8c47b7827bcbe71e807d61750931",
+        "id": "a1a6798b-ddf8-47b3-9c02-15a049c17f4c",
         "name": "1M Kinked Cable",
         "thumbnail": "https://assets.decentraland.org/Qmae8hYDtrZASscwD55WZfHE4x5KYHkHVUkRdL1BgHx8hm",
         "url": "Cable_1M_Curve_03/Cable_1M_Curve_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_1M_Curve_03/Cable_1M_Curve_03.glb": "QmUAWf3C3UytQjtrUzzXgxt9hw6EVLcmdVdG7CUKxKeyMt",
@@ -410,18 +309,12 @@
         }
       },
       {
-        "id": "3992bb751378a3348d659302f9607cd87a99b5bdd782ce2434a47eead939d3ee",
+        "id": "86d47db2-ae12-4b70-b922-0999396be879",
         "name": "2M Straight Cable",
         "thumbnail": "https://assets.decentraland.org/QmR675ETKc6t2efZXRZK9ciVGHE3ckGLxDTLodT54bXU4S",
         "url": "Cable_2M_01/Cable_2M_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_2M_01/Cable_2M_01.glb": "QmQg89YWx7xKLNiEjTxadQ4zHput3K4DaZQEoKrNi6nEhC",
@@ -430,18 +323,12 @@
         }
       },
       {
-        "id": "b5a79ed714489ba14aac87308a8b6e933dd2e3f5e8616bd575f9e9135cf9872d",
+        "id": "a0ec71ee-fef7-4e31-969e-1f6686f0d071",
         "name": "2M Orange Striped Cable",
         "thumbnail": "https://assets.decentraland.org/QmY6G1WSzKt8DFoFeQF9ZQ2twnU28JV5XvdVfLAs9tdnTa",
         "url": "Cable_2M_02/Cable_2M_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_2M_02/Cable_2M_02.glb": "QmQnAtbV3VRhNjgJTvdMa5vEWkv5BaBEJcwF6Yvb6mneSk",
@@ -450,18 +337,12 @@
         }
       },
       {
-        "id": "42e5d282ea149b4099d784fd2ccbe24b43c055b8c1bb352742efad86d86e56a6",
+        "id": "67342245-2fcd-4e86-8818-8cc786cb4db2",
         "name": "2M Straight Cable",
         "thumbnail": "https://assets.decentraland.org/QmekCfSmwsq3XWRmUJKDzSokEdrDdfHiKuoXqAFH5ukYDz",
         "url": "Cable_2M_03/Cable_2M_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_2M_03/Cable_2M_03.glb": "QmXqdNoofZZ7xkdtDxapJzSKLypVJiNH6rPk6VkLr98xqD",
@@ -470,18 +351,12 @@
         }
       },
       {
-        "id": "75f88a1bd787daa66700692b8fc47d3673c3f72d57c1ec6c8dcec3816fdec825",
+        "id": "8ccb7f52-098d-4fb1-94cf-19b5a6a5f094",
         "name": "2M Looped Cable",
         "thumbnail": "https://assets.decentraland.org/Qmf31TtDQeAjzqB3QvLJCX8NzNmKyMSk6YvTdLor6kt3gN",
         "url": "Cable_2M_04/Cable_2M_04.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_2M_04/Cable_2M_04.glb": "QmTAmWr6MgwiBKpqSvsbkrwe5KDGGf2tYwHkLoihZgyHFU",
@@ -490,18 +365,12 @@
         }
       },
       {
-        "id": "74b001a695b33c586aa278b402c06fcb22784a8091632145a47471f5be861161",
+        "id": "91086b68-5f16-451b-8a2d-f24618bd2604",
         "name": "2M Curved Cable",
         "thumbnail": "https://assets.decentraland.org/QmdzVekdMu51a5Gxkbq3R6Q6Cz8bN6WbCaPjxdVw1fFXVw",
         "url": "Cable_2M_Curve_01/Cable_2M_Curve_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_2M_Curve_01/Cable_2M_Curve_01.glb": "QmRsYXQ6JmPLjVxurDRq1zTv7PDV39YotariHTsAjnZyvw",
@@ -510,18 +379,12 @@
         }
       },
       {
-        "id": "72be10910e7de6bf18b096b4e60c3f93c21fae64e5b149947b54ac72e76365ed",
+        "id": "4c4a8e4f-66fb-47ed-a168-7bd6c699568b",
         "name": "2M Long Looped Cable",
         "thumbnail": "https://assets.decentraland.org/QmUCzYXr9AzWUqbHZ42i6vivN2uVWrorGCxbtYSGgnCtNE",
         "url": "Cable_2M_Curve_02/Cable_2M_Curve_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_2M_Curve_02/Cable_2M_Curve_02.glb": "QmbojEvbAVjoxSseKyEDB8HCncwwvP2Xn9XPgtoBZy9KDo",
@@ -530,18 +393,12 @@
         }
       },
       {
-        "id": "6b2b0538e5e6a0a9f74aee158442b0708bae9ba9d1a15953c95d856b7b8f284f",
+        "id": "c2fbfc64-cf55-4678-b0c3-142b2ff7c21f",
         "name": "2M Long Curved Cable",
         "thumbnail": "https://assets.decentraland.org/QmS3MKbkUSLbBVhs78GVzkZLFMCQQeuHrtgHFhsHgYCdEz",
         "url": "Cable_2M_Curve_03/Cable_2M_Curve_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_2M_Curve_03/Cable_2M_Curve_03.glb": "QmVprhNUcJNSz9AQipbiPyKvxG37aJdfvZvELhqfoy54Ft",
@@ -550,18 +407,12 @@
         }
       },
       {
-        "id": "e5f23823970619849585f484a3cccfed2c779cc0af403234b5978078416f6edb",
+        "id": "807aba49-bb6d-4a5f-89f4-452c6c0b5abd",
         "name": "4M Long Cable",
         "thumbnail": "https://assets.decentraland.org/Qmd8FWjhTAsRKkUzi9zar6A76NkLqSJJJZRubek2cxyasN",
         "url": "Cable_4M_01/Cable_4M_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_4M_01/Cable_4M_01.glb": "QmeGsTQbeH7UWvXgGyv7hC9KCaiH3gFa2VAjnphiohStU6",
@@ -570,18 +421,12 @@
         }
       },
       {
-        "id": "6c22a5a06ea34fb55668c7a5633c843dd8eb02a07df468121e1a6d92f91b3161",
+        "id": "952ada29-eb37-45c2-8f3f-4dcc7b99ef6f",
         "name": "4M Long Looped Cable",
         "thumbnail": "https://assets.decentraland.org/QmV1pYgsqMQSmgds4SqggM4VmUCDbx56wrC9gCKEEyFSq6",
         "url": "Cable_4M_02/Cable_4M_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_4M_02/Cable_4M_02.glb": "QmesUmT4kKgrTM9UWhKfCwtwpigcksBVC1rUrkbsp1H1r7",
@@ -590,18 +435,12 @@
         }
       },
       {
-        "id": "e26e03a48d5c616ab0370fef25376f6f9c93373bd927c1012edf21b6dd5cf72d",
+        "id": "d395f52d-71cd-44f9-890d-2201c78fd123",
         "name": "4M Long Thin Cable",
         "thumbnail": "https://assets.decentraland.org/QmdDANLL1bcptQzTCUVyZigscBUi2vaWiUoUBrbho81C5Q",
         "url": "Cable_4M_03/Cable_4M_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_4M_03/Cable_4M_03.glb": "QmZYViEPoC9BJ6bf1XyHRkUyaPcZJr6mtoAQWdArffVaXo",
@@ -610,18 +449,12 @@
         }
       },
       {
-        "id": "1b94cbaeb6cb3551466411cb1976dc0623436da3b5ec44c864b6a17c975dec5d",
+        "id": "c4297d72-4641-4aac-b75a-039414869a9d",
         "name": "4M Long Coiled Cable",
         "thumbnail": "https://assets.decentraland.org/QmRUZnUZZkTm6YLFTQU6heXuZERkiZDbeGmauuisrVV9th",
         "url": "Cable_4M_04/Cable_4M_04.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_4M_04/Cable_4M_04.glb": "QmNSoYbSQza4a5fWL9hUsT1PJuJULneL1p4E7CcBWKi4fL",
@@ -630,18 +463,12 @@
         }
       },
       {
-        "id": "b30a7624fb63fe3bd48b82191f97a067fd27af3d136b987ce923779653a606fd",
+        "id": "c7948f1c-8a0d-4a0e-a620-f380ac86d7cf",
         "name": "Short Cable Adapter",
         "thumbnail": "https://assets.decentraland.org/QmQBhrrkbju6xCDr7PNCg2Agw9c15QBK7BydHRZaLkHpFX",
         "url": "Cable_Adapter_01/Cable_Adapter_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_Adapter_01/Cable_Adapter_01.glb": "QmX1SQ8p5VgYRkewbEqGwizf7Lj7jVrxDiS2ri3rB9MLet",
@@ -650,18 +477,12 @@
         }
       },
       {
-        "id": "904408f4313c54d4772fb4e60d31fff4d84dd8ec6a7c5ac14f7721f6c85a67d5",
+        "id": "a508235f-9df3-4f74-8dbc-32a2d873706e",
         "name": "Curved Cable Adapter",
         "thumbnail": "https://assets.decentraland.org/QmctfMWXFhJgW5rLAAHQHsnphNNNqyRERjrVkF5RcQyegn",
         "url": "Cable_Adapter_02/Cable_Adapter_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "electricity",
-          "connectors"
-        ],
+        "tags": ["scifi", "energy", "power", "electricity", "connectors"],
         "variations": [],
         "contents": {
           "Cable_Adapter_02/Cable_Adapter_02.glb": "QmZR36FiFAXyvgCY7GKnG8Fgv13AgFuGWqfX3itdCQkUUU",
@@ -670,18 +491,12 @@
         }
       },
       {
-        "id": "ee2f241deb88d9f6aabd12339d03f2647af176bb46db6111c7435d4dae67338f",
+        "id": "98b18145-66b5-45ac-ae35-1766e54c263e",
         "name": "Surveillance Camera",
         "thumbnail": "https://assets.decentraland.org/QmXRLebSPsaoFyGa99uh1buyTjz84oBtAZvUctV6f26Nk9",
         "url": "Camera_01/Camera_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "monitoring",
-          "surveillance",
-          "lens",
-          "optics"
-        ],
+        "tags": ["scifi", "monitoring", "surveillance", "lens", "optics"],
         "variations": [],
         "contents": {
           "Camera_01/Camera_01.glb": "QmaMnZyZnyjDaFSiRCBBKEjJM18HDuSX75eNgsF3abnZkw",
@@ -690,18 +505,12 @@
         }
       },
       {
-        "id": "0416058ef90761507c971dbc88b231fc4b66764ced364fe4e6cb3d708b861b36",
+        "id": "9e2af6ab-8350-40a9-ae67-9cf729463a32",
         "name": "Briefcase",
         "thumbnail": "https://assets.decentraland.org/QmSXYy3WA7LaYGVXudzcoaRAz6vPNRFv7CndrkhUu2E5zw",
         "url": "CaseSciFi_01/CaseSciFi_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "kit",
-          "tech",
-          "computer",
-          "equipment"
-        ],
+        "tags": ["scifi", "kit", "tech", "computer", "equipment"],
         "variations": [],
         "contents": {
           "CaseSciFi_01/CaseSciFi_01.glb": "QmWxGemrx7MjF4FQTkgFJ83ocPiwChDc6ZdZNbX62B4ZD2",
@@ -711,16 +520,12 @@
         }
       },
       {
-        "id": "c5912dca8d5d5840e8914ce1e055411f426de47ad150e79f6eb8681505035bda",
+        "id": "ec571ada-20fd-4da0-93ef-46e7c0434cb5",
         "name": "Spaceship Chair",
         "thumbnail": "https://assets.decentraland.org/QmZp5jFrovhzpno7163hD3JiYJnZLbpHqvpXRxJdAgmk3Z",
         "url": "ChairShip_01/ChairShip_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "parts"
-        ],
+        "tags": ["scifi", "spaceship", "parts"],
         "variations": [],
         "contents": {
           "ChairShip_01/ChairShip_01.glb": "QmeAxj8SVPaGGYmWHWnByHp1nViz2ehda3ZLYdpR7CsBmb",
@@ -729,16 +534,12 @@
         }
       },
       {
-        "id": "1c0c4670f76810d4dc859134877b079aa99718cc3d407a63b1a27a2cfc55b798",
+        "id": "45d11c58-37ec-4876-a993-0b741cfe3a40",
         "name": "Folding Chair",
         "thumbnail": "https://assets.decentraland.org/QmNc9r17rH3g1Ao3rVqE5zAo8nSdTUJG542yMysueNY93v",
         "url": "Chair_01/Chair_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "parts"
-        ],
+        "tags": ["scifi", "spaceship", "parts"],
         "variations": [],
         "contents": {
           "Chair_01/Chair_01.glb": "QmXRwE4pDSsC7uCP4FWCTPqTrNWUrQVR6XJ7958rBMH68y",
@@ -747,19 +548,12 @@
         }
       },
       {
-        "id": "4d89d229cc7d6d65d7e25234fe538a6a30e95bd8042b7394207f16900431ffb1",
+        "id": "9fbccdb4-efc2-4fba-b4ad-cf2f900cc170",
         "name": "Vertical Charger",
         "thumbnail": "https://assets.decentraland.org/QmQiyMvenL3nfQHvQ31tz7AXKM81guu2xaBuprFy2GU5UF",
         "url": "Charger_01/Charger_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "supply",
-          "electricity",
-          "plasma"
-        ],
+        "tags": ["scifi", "energy", "power", "supply", "electricity", "plasma"],
         "variations": [],
         "contents": {
           "Charger_01/Charger_01.glb": "QmPZUNpE94UNd4aZkGmqbh1NqvUbVaWESiTKg1AVGnhBv7",
@@ -768,19 +562,12 @@
         }
       },
       {
-        "id": "9a7f129037e6f2ef1d7ad374fedc28b029622c1bfdac8172cadf74b26680988e",
+        "id": "0bce4891-e4bf-441b-80c3-eb6c85304d3f",
         "name": "Horizontal Charger",
         "thumbnail": "https://assets.decentraland.org/QmQAjLo38tw9e6uQ35nSkPBYQK8ihova2zeFtjbNGsbS9X",
         "url": "Charger_02/Charger_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "power",
-          "supply",
-          "electricity",
-          "plasma"
-        ],
+        "tags": ["scifi", "energy", "power", "supply", "electricity", "plasma"],
         "variations": [],
         "contents": {
           "Charger_02/Charger_02.glb": "QmdcbgKZ3wXxoNMibY8SXSWjgPDwncXVkJMBv198jNnYFk",
@@ -789,17 +576,12 @@
         }
       },
       {
-        "id": "4855d4c5747b91860563397e2017db43c482cd3c9a7d13dc7307d2941e061d8b",
+        "id": "03dc2f33-9697-407b-bd83-0219642fb798",
         "name": "Horizontal Chip",
         "thumbnail": "https://assets.decentraland.org/QmdCyej46BN2juao4wdpUuaV6hGUgQdfT6E8kt4bVCEK4k",
         "url": "Chip_01/Chip_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "parts",
-          "computer",
-          "electric"
-        ],
+        "tags": ["scifi", "parts", "computer", "electric"],
         "variations": [],
         "contents": {
           "Chip_01/Chip_01.glb": "Qmb3oikWTCCXKNW1HunjuWJQy7CVcnEADyhE4GEd1NTWSK",
@@ -808,17 +590,12 @@
         }
       },
       {
-        "id": "8979716a1fd840e39f4914e35f9b44431d4454642b2c6149a21ea39a4cce93fc",
+        "id": "1050e2a8-f0d4-4e07-a098-c051a0d74529",
         "name": "Flat Chip",
         "thumbnail": "https://assets.decentraland.org/QmUShB91Rwnuwst7QkeX73eNFvDzu9Yf9JHBWFVwauGcUQ",
         "url": "Chip_02/Chip_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "parts",
-          "computer",
-          "electric"
-        ],
+        "tags": ["scifi", "parts", "computer", "electric"],
         "variations": [],
         "contents": {
           "Chip_02/Chip_02.glb": "QmXUurqJtTqzZSbUusD6MUbsf1vbSQWzt1u1BZW4x1mdJJ",
@@ -827,17 +604,12 @@
         }
       },
       {
-        "id": "ba621c740eed6b8357a627fd74e43cdd2a845da1e2701581733556be6fdc3ddb",
+        "id": "dda428bb-83d4-4ccf-8b8d-3bb18881fe22",
         "name": "Vertical Chip",
         "thumbnail": "https://assets.decentraland.org/QmSSvnQKKnYsQiNHRV3eKfDaSZ776mNEmvfXCcsreMipbx",
         "url": "Chip_03/Chip_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "parts",
-          "computer",
-          "electric"
-        ],
+        "tags": ["scifi", "parts", "computer", "electric"],
         "variations": [],
         "contents": {
           "Chip_03/Chip_03.glb": "QmemfjY37xko2rucemGXecivoEq4G8VPb6fRp7Yw6sxdno",
@@ -846,16 +618,12 @@
         }
       },
       {
-        "id": "c9858891d7148ac84f94d1511460b05e7fed527a850f2f264dcb6a7b9d25cd6c",
+        "id": "3cebe451-8cce-4825-a7a6-ae0bcc128090",
         "name": "Vertical Column",
         "thumbnail": "https://assets.decentraland.org/Qma7Svg7cg5ExgrJ4uqidjMKfNFjsPvCufQFq4CiGb3nwY",
         "url": "Column_01/Column_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "high",
-          "support"
-        ],
+        "tags": ["scifi", "high", "support"],
         "variations": [],
         "contents": {
           "Column_01/Column_01.glb": "QmQ3XfdWNF7LFSdDUJmAYLEpkZEWCPDPo17wPxEq6nSqvA",
@@ -864,17 +632,12 @@
         }
       },
       {
-        "id": "ee82ab1fc777767e37dabd48b0ba519111e13a1a11a835364d421a8b553751ac",
+        "id": "5c371786-7fac-4e84-996b-fda76f9533dd",
         "name": "Small Comet",
         "thumbnail": "https://assets.decentraland.org/QmXpNqkUs1pN6WjBFUhUzoVSdgNmTPC2P5MfD3X9NkQe6x",
         "url": "Comet_01/Comet_01.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "space",
-          "cosmic"
-        ],
+        "tags": ["scifi", "rock", "space", "cosmic"],
         "variations": [],
         "contents": {
           "Comet_01/Comet_01.glb": "QmdUhsZkKgPNZjcWiUPXLys6U61CHKB9gXNWZVQRd15HXP",
@@ -883,17 +646,12 @@
         }
       },
       {
-        "id": "b75e031859bc838027b2e077a50d0577c900daf59053b166ff3ae927ede0fe1a",
+        "id": "1e0bc005-9f41-4409-8c5a-1ed5e8d203dc",
         "name": "Heart Comet",
         "thumbnail": "https://assets.decentraland.org/QmbFwpj1pEViwyEj7MtEvxQhopK6arcCTDg1SyxoFGFkzg",
         "url": "Comet_02/Comet_02.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "space",
-          "cosmic"
-        ],
+        "tags": ["scifi", "rock", "space", "cosmic"],
         "variations": [],
         "contents": {
           "Comet_02/Comet_02.glb": "QmfMLbZgtYt3sNXMVF74L7bCGB3UHitjca3hfmvBTTWFMK",
@@ -902,17 +660,12 @@
         }
       },
       {
-        "id": "35453dec2c4bf8aa7ba31164426e334fadb840e8e1595121fc72373d6aeeb01e",
+        "id": "267cb358-581f-41e6-a93b-65f7eabe0107",
         "name": "Disc Comet",
         "thumbnail": "https://assets.decentraland.org/QmXAVxjANYxBj2X4v6STiTbnwsiXgKZ1YNzkvXYJUK4Jei",
         "url": "Comet_03/Comet_03.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "space",
-          "cosmic"
-        ],
+        "tags": ["scifi", "rock", "space", "cosmic"],
         "variations": [],
         "contents": {
           "Comet_03/Comet_03.glb": "Qmf39fCvfJE5dTLKjfCrKiysquD7h7shKj5KSUZt9LY28y",
@@ -921,17 +674,12 @@
         }
       },
       {
-        "id": "b260b89eaff38ad083baae76771e76994a8545b765f5ec6984f00b337c84bf3c",
+        "id": "2f0662fc-1294-4a5b-955e-c11298b734ed",
         "name": "Large Comet",
         "thumbnail": "https://assets.decentraland.org/QmP6W8QGU1xJAzn2NsUpLRrYrYA2MBED3EkjCxRCuK3vip",
         "url": "Comet_04/Comet_04.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "space",
-          "cosmic"
-        ],
+        "tags": ["scifi", "rock", "space", "cosmic"],
         "variations": [],
         "contents": {
           "Comet_04/Comet_04.glb": "Qmb2xPrJtVdfj2oPZ2KUvx5aWbE2f1MQADemGvaam2MYBW",
@@ -940,17 +688,12 @@
         }
       },
       {
-        "id": "410b8c9c9425cf87914b40ed8777c62470289fb3e960892c5fd0a8a802abb14e",
+        "id": "5f119f89-9e5d-4bc2-9374-18b25402b494",
         "name": "Command Console",
         "thumbnail": "https://assets.decentraland.org/QmZ5EMmxdx7JgFsXmRm6qYLG5aPKY5bnRLusVSKkmjF7Co",
         "url": "CommandControl_01/CommandControl_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "parts",
-          "computer"
-        ],
+        "tags": ["scifi", "spaceship", "parts", "computer"],
         "variations": [],
         "contents": {
           "CommandControl_01/CommandControl_01.glb": "QmS8qDpxJ4TRA2fEZv4fADBSEVA9HSGpLEjjwTaGd4yPzV",
@@ -960,17 +703,12 @@
         }
       },
       {
-        "id": "70fc2b92e637d7d65830bd4c8e8b83afe7e9b9e77d55382022c514402811fbe0",
+        "id": "687b7c46-eed8-4b9c-ad40-d131cc85dfb7",
         "name": "Computer Thin",
         "thumbnail": "https://assets.decentraland.org/QmPPuMJFaNYhbX4rtV5Q2R7EoREiWeT3zWXkCv5RndUe8n",
         "url": "Computer_01/Computer_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "parts",
-          "computer"
-        ],
+        "tags": ["scifi", "spaceship", "parts", "computer"],
         "variations": [],
         "contents": {
           "Computer_01/Computer_01.glb": "QmYTSRf4keZ3vDbPHha1V2X9Er7stgwtyfA6svDWDcUYBv",
@@ -980,17 +718,12 @@
         }
       },
       {
-        "id": "b87d1f3f277bf2ed74ba88866cce32f70c12cc167a4b69e2fef60820b236ca7c",
+        "id": "b36000dd-7a00-497b-9fc5-752de2efbe67",
         "name": "Computer Wide",
         "thumbnail": "https://assets.decentraland.org/QmciTtGatfDr7qazspeaWbih21V3dzm5TGhnpcbsXxB6RS",
         "url": "Computer_02/Computer_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "parts",
-          "computer"
-        ],
+        "tags": ["scifi", "spaceship", "parts", "computer"],
         "variations": [],
         "contents": {
           "Computer_02/Computer_02.glb": "QmWka8aoiHu9gYLx4UrGBFbH8CXHL5t1aR4QFk5jcJJwtX",
@@ -1000,16 +733,12 @@
         }
       },
       {
-        "id": "40821100359655df843f136f9a3d1f1ffdb1f889f05bd27b82bf1f5062138498",
+        "id": "4a4baa03-f4a4-4c7f-8180-d8cc9ecbbb5e",
         "name": "Container Shelf",
         "thumbnail": "https://assets.decentraland.org/QmTwPiK6nZwjomnJ9UGmbSKw2r2HppJfT5zLPYGsbiNPEf",
         "url": "ContainerSmall_01/ContainerSmall_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "box",
-          "storage"
-        ],
+        "tags": ["scifi", "box", "storage"],
         "variations": [],
         "contents": {
           "ContainerSmall_01/ContainerSmall_01.glb": "QmUCa29QJC9xQGLNQbbrBFZsbtpMyzPuK8bXWX3BGGzgiz",
@@ -1018,16 +747,12 @@
         }
       },
       {
-        "id": "0a00797daa6f1aa3b22eaf5fe5280004a5f861eab7e9b6da2397edb1c6600fc2",
+        "id": "d9eeed6c-703c-42ba-9610-ea1bdf6950ba",
         "name": "Canister",
         "thumbnail": "https://assets.decentraland.org/QmQ18f3QeaojkbMiQmwxXfaBeCYDcibTSc7W1Xa2YuNPmM",
         "url": "Containers_01/Containers_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "box",
-          "storage"
-        ],
+        "tags": ["scifi", "box", "storage"],
         "variations": [],
         "contents": {
           "Containers_01/Containers_01.glb": "QmYZDi5bYBdzMV3vfEPG7q1c7Mkq4ur5rtHHjRp22KoZuS",
@@ -1036,16 +761,12 @@
         }
       },
       {
-        "id": "4c2ecd30f5aa24b9d7d81fc30c846328fac79f36e9bcc1242eb49d57f5aa2f6c",
+        "id": "285948da-29d0-4357-a66e-457f9cd9be27",
         "name": "Grey Blue Crate",
         "thumbnail": "https://assets.decentraland.org/QmaVf1Kupp8CNrmd5KLkjA1U2DUETc9B1aaBLUEjMxvoH8",
         "url": "CrateBlueBig_01/CrateBlueBig_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "box",
-          "storage"
-        ],
+        "tags": ["scifi", "box", "storage"],
         "variations": [],
         "contents": {
           "CrateBlueBig_01/CrateBlueBig_01.glb": "QmPy9eGtRQr7TjtuBM9yKiSCdZhdbJ5XvGwN4eHwopqZ66",
@@ -1054,16 +775,12 @@
         }
       },
       {
-        "id": "38890cdf45c945fb6c3b6da6dbf4ddf0013b4f0073bab6655bd17a5a43cfb2fc",
+        "id": "3c86ca8f-b69e-44fc-99f9-34bdaa708750",
         "name": "Small Blue Crate",
         "thumbnail": "https://assets.decentraland.org/QmPW88ibgXWemEKJwSfuPjX1k5gbppwyPLundVZpqEmS2J",
         "url": "CrateBlue_01/CrateBlue_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "box",
-          "storage"
-        ],
+        "tags": ["scifi", "box", "storage"],
         "variations": [],
         "contents": {
           "CrateBlue_01/CrateBlue_01.glb": "QmYtGn2yaqzeFCC2RbYcgv46BohVMuceHEK55B81xH6UDL",
@@ -1072,16 +789,12 @@
         }
       },
       {
-        "id": "110de27e51a37bf4a12f9ed332c921cf39684830faa41e78e0db160503401a67",
+        "id": "7b9faffc-b03d-4088-bb93-8d33b92a457e",
         "name": "Orange Crate",
         "thumbnail": "https://assets.decentraland.org/QmNeTYkx2dX38VKpymXSHF7fCfkVipLbPuTvKk43cm6gox",
         "url": "CrateOrange_01/CrateOrange_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "box",
-          "storage"
-        ],
+        "tags": ["scifi", "box", "storage"],
         "variations": [],
         "contents": {
           "CrateOrange_01/CrateOrange_01.glb": "QmY7EzduQUCegUXmRs72nPLQw6pETpV2VxK2mZUB97Bpas",
@@ -1090,16 +803,12 @@
         }
       },
       {
-        "id": "ffed93941afe40bb042977172d6e242a431332c0685278b5d15668b05828c24a",
+        "id": "04955036-ada7-4d35-a4be-b632c1aa957e",
         "name": "Yellow Crate",
         "thumbnail": "https://assets.decentraland.org/QmezjxWX3DyNubThDVSSEFyV6KcGL9BQpu3z7RijMU7gc8",
         "url": "CrateYellowBig_01/CrateYellowBig_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "box",
-          "storage"
-        ],
+        "tags": ["scifi", "box", "storage"],
         "variations": [],
         "contents": {
           "CrateYellowBig_01/CrateYellowBig_01.glb": "QmTXkMcCq3pkHpuXAFL6ZLdrNmTXxujMRURqLSWk3QQzpj",
@@ -1108,17 +817,12 @@
         }
       },
       {
-        "id": "9d7d156a0124a0f7589e304a97aca092f9f4f4f81d7bb0a9e2cba78af152d19d",
+        "id": "18193202-641f-4505-a1c6-de747ecd175f",
         "name": "Wide Crater",
         "thumbnail": "https://assets.decentraland.org/QmUt46rfUBnPppT4ctWnTbyqP57wP596jMRBC9f5cWexyk",
         "url": "Crater_01/Crater_01.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic",
-          "hole",
-          "planet"
-        ],
+        "tags": ["scifi", "cosmic", "hole", "planet"],
         "variations": [],
         "contents": {
           "Crater_01/Crater_01.glb": "QmTTWyhGraRkGThYZJnoLw9Gh9fnYKyBLoDfdUKNjSZUxH",
@@ -1127,17 +831,12 @@
         }
       },
       {
-        "id": "2f9038b66133f9d252e4eee39a7461c970f5d30c49aee6bbaee182bb8a20ab32",
+        "id": "e98b0a5d-24a7-4b98-a656-106ba5018a35",
         "name": "Narrow Crater",
         "thumbnail": "https://assets.decentraland.org/Qmd6BaomNmXDDdsPKHovkK8oxXPLL4yz1K5nwHtgzaHavo",
         "url": "Crater_02/Crater_02.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic",
-          "hole",
-          "planet"
-        ],
+        "tags": ["scifi", "cosmic", "hole", "planet"],
         "variations": [],
         "contents": {
           "Crater_02/Crater_02.glb": "Qme7yjdemL2K5SN5Up2ofXvZqVLbG4GvUpD3iELcCEXYzv",
@@ -1146,17 +845,12 @@
         }
       },
       {
-        "id": "721e131a984bd2d9bcdf0e7422f1d9032f2ee0eefd4864605888af3509212e9a",
+        "id": "2c1fe210-a1e0-4529-bae4-1181b6412d6f",
         "name": "Medium Crater",
         "thumbnail": "https://assets.decentraland.org/QmZEKzgtd1fNm2fw91nR26wqjFLXCsAC3A4FRcaVXqBZsm",
         "url": "Crater_03/Crater_03.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic",
-          "hole",
-          "planet"
-        ],
+        "tags": ["scifi", "cosmic", "hole", "planet"],
         "variations": [],
         "contents": {
           "Crater_03/Crater_03.glb": "QmVDPTPzFZdmqAaEEkinnzGQp2KXxp4dftQdD3eQU82WNA",
@@ -1165,16 +859,12 @@
         }
       },
       {
-        "id": "a29657d3a832140ae7f8aa71a5974b30402816114deeeacad014939902cf0f79",
+        "id": "2d61f9cb-92ab-4691-a1fa-fdaf44682abd",
         "name": "Cryogenic Chamber",
         "thumbnail": "https://assets.decentraland.org/QmbUfVywzkgiyar6XWHaWUE81RvvXHd9w8sAkkZcWF2Y8K",
         "url": "CrygenicChamberTop_01/CrygenicChamberTop_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "tech"
-        ],
+        "tags": ["scifi", "spaceship", "tech"],
         "variations": [],
         "contents": {
           "CrygenicChamberTop_01/CrygenicChamberTop_01.glb": "QmTzEWKCBJGYiMPQTVJwjRhmDTwqWT5yX8mGAarADZYHTd",
@@ -1184,16 +874,12 @@
         }
       },
       {
-        "id": "0465e071e7e78048c1a73096a1d796a7afcdce94bf9647bfa531e807bede51aa",
+        "id": "07e53eb7-1bf3-4e48-8a64-7d1178e9fd78",
         "name": "Cryogenic Chamber Base",
         "thumbnail": "https://assets.decentraland.org/QmeLqiPSrwqbcfyyg368y6umd37haUdXFVCgSo3dCdL1yP",
         "url": "CryogenicChamberBase_01/CryogenicChamberBase_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "tech"
-        ],
+        "tags": ["scifi", "spaceship", "tech"],
         "variations": [],
         "contents": {
           "CryogenicChamberBase_01/CryogenicChamberBase_01.glb": "QmPEgN8VR5vgtW9WS5UpybXyWV8ZaVptfyH8B6RHzBdP2N",
@@ -1203,18 +889,12 @@
         }
       },
       {
-        "id": "fc0f2eba9875dd0788d80630152263588ff15769476ecb07c2ca1c4b3e8fc1f1",
+        "id": "d913332f-3dae-4d4b-a553-621d0015ef54",
         "name": "Tiered Desk",
         "thumbnail": "https://assets.decentraland.org/QmPEEuBzVMREnS32p7GZeRrdeeaHTVcyNA4cT1Tq3aXvoU",
         "url": "Desk_01/Desk_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "lab",
-          "table",
-          "work",
-          "tools"
-        ],
+        "tags": ["scifi", "lab", "table", "work", "tools"],
         "variations": [],
         "contents": {
           "Desk_01/Desk_01.glb": "Qmduqr4q49P7FdLAYgtmBpejYPT4ygwxXQxYJ5DFeNLtSE",
@@ -1224,18 +904,12 @@
         }
       },
       {
-        "id": "0ed3852b3c784d747260d7f475dfd9dfdad128d01d96d92e9594ced376d37543",
+        "id": "e7fe91b0-b934-4bda-a465-026ce9fe168c",
         "name": "Octagonal Table",
         "thumbnail": "https://assets.decentraland.org/QmePzetUDtqpy7JViHmXSWF6Z7RBFtmjnqip6vhhXZaHoE",
         "url": "DigitalTable_01/DigitalTable_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "lab",
-          "table",
-          "work",
-          "tools"
-        ],
+        "tags": ["scifi", "lab", "table", "work", "tools"],
         "variations": [],
         "contents": {
           "DigitalTable_01/DigitalTable_01.glb": "QmS11E8EqJEsBpbeJw3VkSpKWgjwe2rrAs15Z2aEjG2XAL",
@@ -1245,17 +919,12 @@
         }
       },
       {
-        "id": "158b935cfe1bc8bd39021f6f366b2a397724ed797320dbbbf91cb3e21ca4ec6d",
+        "id": "b5336edd-5db2-421a-a14a-e1fcfb6a5331",
         "name": "Dirt Splat",
         "thumbnail": "https://assets.decentraland.org/QmPnakMw782twqNk78BLRk2QLJhFmpZu5djsRJyEKZZNEy",
         "url": "Dirt_01/Dirt_01.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "space",
-          "planet",
-          "soil"
-        ],
+        "tags": ["scifi", "space", "planet", "soil"],
         "variations": [],
         "contents": {
           "Dirt_01/Dirt_01.glb": "QmWu2smocecfBV15svvZ3o26akYse1SiLWsxqedh8SkJx6",
@@ -1264,17 +933,12 @@
         }
       },
       {
-        "id": "9c9584fc56ac7aca79aef53b80339419e054e54d2874074183b94a651bda14b2",
+        "id": "13f42973-cab6-4cd0-a1ba-5ae7fa7ecbd2",
         "name": "Dirt Clump",
         "thumbnail": "https://assets.decentraland.org/QmPKVjTm1PNkkEd8QkPmM3DMKefcLNV9kxURKfpfsDL2sF",
         "url": "Dirt_02/Dirt_02.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "space",
-          "planet",
-          "soil"
-        ],
+        "tags": ["scifi", "space", "planet", "soil"],
         "variations": [],
         "contents": {
           "Dirt_02/Dirt_02.glb": "QmaiJz2R144ffbzpuEPtTF4vsXx3suGaB7PJxew9NxeBLA",
@@ -1283,17 +947,12 @@
         }
       },
       {
-        "id": "6b7d5320b6779b4537c052b075b88197f46af9cfa602729f0082e03866e04fef",
+        "id": "42bc6ee9-66db-42bd-9c72-17090888c501",
         "name": "Dirt Mound",
         "thumbnail": "https://assets.decentraland.org/QmVGdkk4VTAqGKqWwcEjC9NR6eKKh4DqZ4osSBLpAHpqy5",
         "url": "Dirt_03/Dirt_03.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "space",
-          "planet",
-          "soil"
-        ],
+        "tags": ["scifi", "space", "planet", "soil"],
         "variations": [],
         "contents": {
           "Dirt_03/Dirt_03.glb": "QmSjAFtJqdbjprdA7LD2DfzFZDGzegnFPgjgP939fsYivH",
@@ -1302,17 +961,12 @@
         }
       },
       {
-        "id": "0f18e59aa469148223db01fac5da39b9a7cfc645276b9ff51b869ac26cd5e0cd",
+        "id": "7c8e4de6-4e51-4a6f-8f91-c72ab9e39475",
         "name": "Dirt Patch",
         "thumbnail": "https://assets.decentraland.org/QmXuRLZqFdPgCUR83wM2qcE7M1UhchJAsWc2zztRCEDvMh",
         "url": "Dirt_04/Dirt_04.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "space",
-          "planet",
-          "soil"
-        ],
+        "tags": ["scifi", "space", "planet", "soil"],
         "variations": [],
         "contents": {
           "Dirt_04/Dirt_04.glb": "QmZkr3DcyJkh1hk4ND6Wzi6oWQdFcZ1Cwhdj5EUtoYQfQF",
@@ -1321,17 +975,12 @@
         }
       },
       {
-        "id": "fee8631547e0449d71a27ea85aef12504b2bb3c2e9168a2d9e89905fe8a96088",
+        "id": "3f0c1b22-afb1-47b2-86c5-6ed0231917c4",
         "name": "Info Disc",
         "thumbnail": "https://assets.decentraland.org/QmbxBPi5Fhnu7X4Rm2QPwjWFppqPvv6RBoRu37HoB8QBuu",
         "url": "DiscSciFi_01/DiscSciFi_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "parts",
-          "computer"
-        ],
+        "tags": ["scifi", "spaceship", "parts", "computer"],
         "variations": [],
         "contents": {
           "DiscSciFi_01/DiscSciFi_01.glb": "QmZ3jWMZ6cbXbejFDSGoKVxnm9fbAxvysJg6AoXdYrFmrt",
@@ -1340,17 +989,12 @@
         }
       },
       {
-        "id": "eac79123b06b2c685059b125f31ea72d5f2f54958031e3df06a25c7f7b52e09a",
+        "id": "d77c59f2-a6e6-445e-84b4-bd339b1de3f5",
         "name": "Dock Column",
         "thumbnail": "https://assets.decentraland.org/QmXuMdvjFVunXRZmLuyyvC1pe5ZHzvbirdx92xJZgE4rdZ",
         "url": "Dock_Column_01/Dock_Column_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "dock",
-          "port",
-          "metal"
-        ],
+        "tags": ["scifi", "dock", "port", "metal"],
         "variations": [],
         "contents": {
           "Dock_Column_01/Dock_Column_01.glb": "QmNQqr9RgwHysYjR5GvopySSYehBcXKVU3zH8QJFabAZqg",
@@ -1359,17 +1003,12 @@
         }
       },
       {
-        "id": "d7b0e84a64a4d13ae590f616a4c5d53eb4b3e1ae9c46228649b702d6ee8d1827",
+        "id": "ef75a0cb-f268-435b-b7a0-3542b41a7c2a",
         "name": "Curved Platform",
         "thumbnail": "https://assets.decentraland.org/QmVgVApKkU3SDutdjuWBT4qqbH26i1EsCXR5HaDJ8DSWf3",
         "url": "Dock_Curve_01/Dock_Curve_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "dock",
-          "port",
-          "metal"
-        ],
+        "tags": ["scifi", "dock", "port", "metal"],
         "variations": [],
         "contents": {
           "Dock_Curve_01/Dock_Curve_01.glb": "Qmaobq51vEFjt5ByDxyu5PgKvArUBWryyCKgoxGQspWeRH",
@@ -1378,17 +1017,12 @@
         }
       },
       {
-        "id": "f004e53216a9a83694638133f5de13eead58bb6d1a35854e3b2f94f6f02dc77d",
+        "id": "fe8b3d99-1b92-415d-98a7-b75d716884df",
         "name": "Section Platform",
         "thumbnail": "https://assets.decentraland.org/QmceKz4k2vvqoLY9FnG5WanrDbLryYjEcUrUE8hQiePQdX",
         "url": "Dock_DoorAdapter_01/Dock_DoorAdapter_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "dock",
-          "port",
-          "metal"
-        ],
+        "tags": ["scifi", "dock", "port", "metal"],
         "variations": [],
         "contents": {
           "Dock_DoorAdapter_01/Dock_DoorAdapter_01.glb": "QmWKkNLaekpfVSpwYws1DduaKzFJoaBM768aDGP7eZZzQ8",
@@ -1397,17 +1031,12 @@
         }
       },
       {
-        "id": "b2ab9335baffb19c99c395e9854399f39356db46e19756653e555dc10748c9eb",
+        "id": "cca718b4-dd0c-4520-8b95-3b2065459d65",
         "name": "Short Ramp",
         "thumbnail": "https://assets.decentraland.org/QmdvtUDX8ePL5Wz8T3RNGAtjb4fbBfUBBCJzSrHsysbco1",
         "url": "Dock_Ramp_01/Dock_Ramp_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "dock",
-          "port",
-          "metal"
-        ],
+        "tags": ["scifi", "dock", "port", "metal"],
         "variations": [],
         "contents": {
           "Dock_Ramp_01/Dock_Ramp_01.glb": "QmfFwbE8AY8JzuMP9WffnBqbDNkMKK9e87m7jac9f72AdS",
@@ -1416,17 +1045,12 @@
         }
       },
       {
-        "id": "0bd69fda3b82e1d739a3acc7c6f2a58dd44792d0b1943d5f4174adbaa14a3cda",
+        "id": "3bbf74ba-3350-4d0d-b95c-32164828d785",
         "name": "Stairs",
         "thumbnail": "https://assets.decentraland.org/QmQvgLGvKQ4bxnoUZx8YZ35Mj9ecWSkpt4AgsZMkSCE5Hv",
         "url": "Dock_Stair_01/Dock_Stair_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "dock",
-          "port",
-          "metal"
-        ],
+        "tags": ["scifi", "dock", "port", "metal"],
         "variations": [],
         "contents": {
           "Dock_Stair_01/Dock_Stair_01.glb": "QmUy6eNGPr68F1rBsCo68PVgugQYEdwn4kF9ab7GFiZX3u",
@@ -1435,17 +1059,12 @@
         }
       },
       {
-        "id": "f63a324d74c63439d0086edc6d334c654f56c2870528329688f93de5e25af8bc",
+        "id": "aae9553e-8269-4d91-911c-ccef188929e0",
         "name": "Straight Platform",
         "thumbnail": "https://assets.decentraland.org/QmcNV9Ms72W56qHkua3rVwuNiGzny9MkgXkBUNEQz7QmRc",
         "url": "Dock_Straight_01/Dock_Straight_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "dock",
-          "port",
-          "metal"
-        ],
+        "tags": ["scifi", "dock", "port", "metal"],
         "variations": [],
         "contents": {
           "Dock_Straight_01/Dock_Straight_01.glb": "QmTtSVBW3yiTwQAhVCap9iMUfzxZzkokNyxdKhh5mJC1HB",
@@ -1454,16 +1073,12 @@
         }
       },
       {
-        "id": "8ef0598375697a4ba85017b31b8bab4c1c04e680e52664fda81c76c3083b1e37",
+        "id": "74c137dc-b5d2-46c8-bcd0-f9f6a945eb5b",
         "name": "Dome Frame",
         "thumbnail": "https://assets.decentraland.org/QmRdz8BzNzKpz5tZ4a5AJTfCCJZytAhxvXtJzDnkpK69Gc",
         "url": "Dome_01/Dome_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "bio",
-          "metal"
-        ],
+        "tags": ["scifi", "bio", "metal"],
         "variations": [],
         "contents": {
           "Dome_01/Dome_01.glb": "QmRjKpDypX5jbQxZDue9o2Zb7gx3q8YCiNccH8TsQzPgoZ",
@@ -1472,16 +1087,12 @@
         }
       },
       {
-        "id": "a28280525a9f235ad4ee9576748f000121dcb615d6f73874e81b618936466554",
+        "id": "467ab8d7-cc0b-46ba-89f9-bc45930d4c6d",
         "name": "Grey Drawers",
         "thumbnail": "https://assets.decentraland.org/QmaN94TxQPnAuamStjk4Mx5mNzmSuYrKfb5BC3LrYkWM7n",
         "url": "Drawer_01/Drawer_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship"
-        ],
+        "tags": ["scifi", "storage", "spaceship"],
         "variations": [],
         "contents": {
           "Drawer_01/Drawer_01.glb": "QmYatKEFFNPQNwEuRYrHpyF46VDHUoSow7zHNJA6G7gxrS",
@@ -1490,16 +1101,12 @@
         }
       },
       {
-        "id": "d69f8574ea66b4c59561d5afa6659c8b10aef8638a9d043ba47fa92e6ad20534",
+        "id": "e964e3c1-df17-4524-af0d-4c9d30894d39",
         "name": "Black Drawers",
         "thumbnail": "https://assets.decentraland.org/QmTFEu3cUNipgD4YwfUUedcgT45WfoD5cjD4fd7dGj5sXV",
         "url": "Drawer_02/Drawer_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship"
-        ],
+        "tags": ["scifi", "storage", "spaceship"],
         "variations": [],
         "contents": {
           "Drawer_02/Drawer_02.glb": "QmRutxzspqUSi1LWebTEfrp17tSbwU8xMmbt5Wnhhzsbbc",
@@ -1508,16 +1115,12 @@
         }
       },
       {
-        "id": "3ef4442542cedaff6301590af2ac12aede270f1a37b6afade59e00b3f1e373ba",
+        "id": "e52c4d0d-a47d-48b1-b2ca-867df0b18972",
         "name": "Curved Grey Drawers",
         "thumbnail": "https://assets.decentraland.org/QmcFo2WsHpPuFfj12MTXNXs8TFczQJVtxFLPxRFUdZ7oFM",
         "url": "Drawer_03/Drawer_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship"
-        ],
+        "tags": ["scifi", "storage", "spaceship"],
         "variations": [],
         "contents": {
           "Drawer_03/Drawer_03.glb": "QmZNYamHrdVd5KYryAvWk7RLA3P4Zujpx8XxdvUgxkDiPa",
@@ -1526,16 +1129,12 @@
         }
       },
       {
-        "id": "d7de8ccc10ef72c4b2b0eaedf69e62144996092c52d75821a852176b55f01d47",
+        "id": "26c35325-f45a-4878-8aa7-f2f491e6ac92",
         "name": "Ball Droid",
         "thumbnail": "https://assets.decentraland.org/QmRCHd5GC7eDYrmYfkwVnzdCfgEWBy7fXxfuQUndBCPC6o",
         "url": "Droid_01/Droid_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "robot",
-          "tech"
-        ],
+        "tags": ["scifi", "robot", "tech"],
         "variations": [],
         "contents": {
           "Droid_01/Droid_01.glb": "QmQKJMo2SnmFzRAc19j9yAwMzaZgDNr4T1Cm2Dc3n3b9fX",
@@ -1544,16 +1143,12 @@
         }
       },
       {
-        "id": "0bb0af513bf2d289586a6fcc6cc9dcb6f62a3f178fac4c28336f02ae27e118a6",
+        "id": "1b8ee9e2-39ab-4927-9a23-766a0c74a8f8",
         "name": "Radiator Droid",
         "thumbnail": "https://assets.decentraland.org/QmUvaozdnvdL4fW1mCh8NPeZY4CvL4yYmoiJQxijDpxmqT",
         "url": "Droid_02/Droid_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "robot",
-          "tech"
-        ],
+        "tags": ["scifi", "robot", "tech"],
         "variations": [],
         "contents": {
           "Droid_02/Droid_02.glb": "QmPQ6GNfDEDGi8nhWMaeEVZB8axYUJPmCPWmAbrCrTPA8o",
@@ -1562,18 +1157,12 @@
         }
       },
       {
-        "id": "305468788370de2f2ac9d2e52bf6fa0744bf080a462e11c21c3d2308c2cc9606",
+        "id": "92ce516e-9285-4e55-ba12-ead7b556bfbc",
         "name": "Electricity Tower",
         "thumbnail": "https://assets.decentraland.org/QmbjFYV9ZRVZkVVDCYLuDf2HsgZRjaqLdStUvE9Le6nbg9",
         "url": "ElectricTower_01/ElectricTower_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "electric",
-          "electricity",
-          "power",
-          "laser"
-        ],
+        "tags": ["scifi", "electric", "electricity", "power", "laser"],
         "variations": [],
         "contents": {
           "ElectricTower_01/ElectricTower_01.glb": "QmUEw8HZGA89kYEU9xcwuuuSuiEhpyenawZE1Q3TdzrHLs",
@@ -1582,17 +1171,12 @@
         }
       },
       {
-        "id": "d3ceb5ee76ba84b2c049d29c7a11ce415d8102c305a1c7466e9787fb792b07d6",
+        "id": "b034d30c-765a-4a53-b716-a69a5072b412",
         "name": "Tube Barrier",
         "thumbnail": "https://assets.decentraland.org/QmY3diDzZRuezaJBeevVHC77xLWVoM9tTgpPzaNZRVi7vf",
         "url": "Fence_01/Fence_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "guard",
-          "wall",
-          "split"
-        ],
+        "tags": ["scifi", "guard", "wall", "split"],
         "variations": [],
         "contents": {
           "Fence_01/Fence_01.glb": "QmVid4upPUr5Lc8HeNbEz7dmMuwFMzRtzFe4BE7rTXmRK9",
@@ -1601,17 +1185,12 @@
         }
       },
       {
-        "id": "ed3f37297e09aea405f8a8fd5c3448465a4d40a7bdad244b29f828ea91d1ef6c",
+        "id": "36835705-616d-49d3-a85b-16b32322f20b",
         "name": "Curved Barrier End",
         "thumbnail": "https://assets.decentraland.org/QmPcJTfpDZ7YspJ1ZaqWkZwcWjYdHcR9Kz19Wt7FN83jhJ",
         "url": "Fence_End_01/Fence_End_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "guard",
-          "wall",
-          "split"
-        ],
+        "tags": ["scifi", "guard", "wall", "split"],
         "variations": [],
         "contents": {
           "Fence_End_01/Fence_End_01.glb": "QmUBrkY8BisAH6W2UjJNQkBW1sjUhNFhAChZVtDx6umjZV",
@@ -1620,17 +1199,12 @@
         }
       },
       {
-        "id": "0fa437e722bcfe5b3a76cd828903af05dab5e9f9ddf699cf3712fafe2bc82a05",
+        "id": "25681deb-28c4-421d-88e8-d4e35a003328",
         "name": "Straight Barrier",
         "thumbnail": "https://assets.decentraland.org/QmR7W35ihfyDmYb3nGUf2tkt4mXUt1opzEWzE9VM34iZg9",
         "url": "Fence_Straight_01/Fence_Straight_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "guard",
-          "wall",
-          "split"
-        ],
+        "tags": ["scifi", "guard", "wall", "split"],
         "variations": [],
         "contents": {
           "Fence_Straight_01/Fence_Straight_01.glb": "QmRhe7y6khYi7p8KRgi4kFiV4MQ4x3iQfJTxsFwAAvPxgR",
@@ -1639,17 +1213,12 @@
         }
       },
       {
-        "id": "4d00d9fb631d99e2e5fa6baa10358f49f341c11a2e3d9633dbb501d427b7d954",
+        "id": "7907ea3e-cb2c-4ac6-b273-162edab03fc6",
         "name": "Full Curved Barrier",
         "thumbnail": "https://assets.decentraland.org/QmQh9Yz4U2B2WDaSGiguCsPZbtmUffKG3xeJjT6j1WXtm1",
         "url": "Fence_Straight_02/Fence_Straight_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "guard",
-          "wall",
-          "split"
-        ],
+        "tags": ["scifi", "guard", "wall", "split"],
         "variations": [],
         "contents": {
           "Fence_Straight_02/Fence_Straight_02.glb": "QmVzc1wcJ24YabaTLVGneUWqi9RvzZPZ3dgQw6g92TzQvu",
@@ -1658,16 +1227,12 @@
         }
       },
       {
-        "id": "272952635038fdc52244e59f9989e3a457b0f3d72f699ad7d028f76b82518c89",
+        "id": "0cdab776-db21-4aa5-a643-6660a80a3b82",
         "name": "Hexagonal Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmbM7383P6aw2EBxPu4w9tDMBGshWV2j4gL5HB3EgDEcUM",
         "url": "FloorHexa_01/FloorHexa_01.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "FloorHexa_01/FloorHexa_01.glb": "QmZ4TQrrwSFh8hUqXFANLC8GzgVxpg9gHH6x9i1JkXWLPR",
@@ -1676,16 +1241,12 @@
         }
       },
       {
-        "id": "b9aac35bc2b7d795422a7b290f80b131f8a9e7c3bd30f4630621856d76de5b42",
+        "id": "be0862c0-5db0-49b0-8d24-0b6449b9d1c1",
         "name": "Half Hex Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmXeQMrU7sfAiGjEBmYRPNQ8f9K226uVBHPcCtN3UR5yKC",
         "url": "FloorHexa_02/FloorHexa_02.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "FloorHexa_02/FloorHexa_02.glb": "Qmd3gK4fWJ3jvGADwrtdGEg1GDn941WEvHARJrTgRa2y3q",
@@ -1694,16 +1255,12 @@
         }
       },
       {
-        "id": "a3eb93315c22220fa118bdce2ab58fd6c3c14ed63aea9dfbd973ea462eea4c3c",
+        "id": "19e79c03-d8d7-4297-bcf7-a4a00f86b3dd",
         "name": "White Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmebAUK9apoXexzApDstfotj4ToMuYRwUpRYDpez2uvfoz",
         "url": "FloorModuleSciFi_01/FloorModuleSciFi_01.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "FloorModuleSciFi_01/FloorModuleSciFi_01.glb": "QmTTieem4NyAT3AQQ7xWAsvGCPUv6LFUokVkkSvuXqgzGn",
@@ -1712,16 +1269,12 @@
         }
       },
       {
-        "id": "dcee949e415381d7c3fa1f23aa7011d59e8c638be259398684d0e30d9f51cbe0",
+        "id": "188ee943-9efb-4ffd-9119-1b1ac6402dd3",
         "name": "Grey Floor Panel",
         "thumbnail": "https://assets.decentraland.org/Qmbr9VwQi4nE4QVXaBLm79esVnFrMiMYWPQFhrfpDBKeuP",
         "url": "FloorSciFiPanel_01/FloorSciFiPanel_01.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "FloorSciFiPanel_01/FloorSciFiPanel_01.glb": "Qme75Y8SszKhYgnxxq6hYr5L2hH9wtkdwRSu3eKrW9vgRy",
@@ -1730,16 +1283,12 @@
         }
       },
       {
-        "id": "1ec11a28ea950da868ed20f79708c5d2fa2d20266437dbe65a00aa774e29d1e2",
+        "id": "8ef6b7fb-23b1-4bb0-a781-cae340a7d72c",
         "name": "Four Square Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmSwahjDS4ezWM4W5pSfDyQUAaBcDUV1UggtPHbh1AffcC",
         "url": "FloorSciFiPanel_02/FloorSciFiPanel_02.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "FloorSciFiPanel_02/FloorSciFiPanel_02.glb": "QmdLLXePKbvCg4PijqEJNnEEBjHhSvrMnG1HP9z7ZMLb9n",
@@ -1748,16 +1297,12 @@
         }
       },
       {
-        "id": "88a0577cd3ece19fa36147ed65cd691d20004b4791ee1720f2dbc2034b76b3d8",
+        "id": "3bb72752-751f-4ba5-8b7d-35eb81d06f1a",
         "name": "Checkerboard Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmV18eQtQhreLapC1eyDZySGr6VSJ5s3cNEogaRjr7HMJs",
         "url": "FloorSciFiPanel_03/FloorSciFiPanel_03.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "FloorSciFiPanel_03/FloorSciFiPanel_03.glb": "QmSCrMYT88FxT8jbw36SJan7fRyax2pY7jPJUCjgb9K2vF",
@@ -1766,16 +1311,12 @@
         }
       },
       {
-        "id": "68f54b8a4afbccb5f873132a730e18ffdd8df461272322741d926771109a303e",
+        "id": "c2bfbb57-9576-43af-90a3-a7f4388945ab",
         "name": "Component Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmVjYYXaz7DQr2KshuCMYiS5ZAVkkVeepJEpEkiCg3rxmh",
         "url": "FloorSciFiPanel_04/FloorSciFiPanel_04.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "FloorSciFiPanel_04/FloorSciFiPanel_04.glb": "QmNi5DN2mNz24xRLfwwXZzDgyb4hEvRoS48p2GY5fJfgFP",
@@ -1784,16 +1325,12 @@
         }
       },
       {
-        "id": "4fdc7ffe53174baea82c7b832fc8d1fd967eaeac439f2dd2493f8849632e004e",
+        "id": "08aeb2d5-9917-4cb3-bdf0-8f7a7beff403",
         "name": "Simple Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmQmaz9g9nxwjbex9AYcQyVNTyEcNfChjv6KK15SZPdvmD",
         "url": "Floor_Module_01/Floor_Module_01.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "Floor_Module_01/Floor_Module_01.glb": "QmWNaTVrpd6K4Xc6dc75i81fT7wyCNfLmTQRxd6y4XZ9fq",
@@ -1802,16 +1339,12 @@
         }
       },
       {
-        "id": "914e827a0f11af6a08db43ae2c69b96c45cc0449f6e51e23d2ec39e284117c96",
+        "id": "05594cc3-a021-4efb-be70-3cd26b650bf1",
         "name": "Grid Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmYVwNnpVW8aRdVNqgt3mmvhc6Hj2iMrvnh2xnZCjFK83o",
         "url": "Floor_Module_02/Floor_Module_02.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "Floor_Module_02/Floor_Module_02.glb": "QmNZ9qpxiDPtdMJRqFDBsxmrpKBVi4MiVHGmSS7E6NZrJu",
@@ -1820,16 +1353,12 @@
         }
       },
       {
-        "id": "5e6cb8b3f915f299f54247c8f2500cdd6c273bc2ed0bd93d9c9dd816ae64ae34",
+        "id": "4599ad13-73c9-4b73-bcbe-0789169c60b1",
         "name": "Cross Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmVr8gPVYTA3YgSdPwzu61pusFkKJzU6FQ8i3ZVJtr49V1",
         "url": "Floor_Module_03/Floor_Module_03.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "Floor_Module_03/Floor_Module_03.glb": "QmSEFcSxUjFeQq74SJGVqqun9DZLRmVrAGaswjGCqwqNSn",
@@ -1838,16 +1367,12 @@
         }
       },
       {
-        "id": "9d0ff1706413a04e99dc22444b88cdab9ca3ae758c89094e19aab9e49bf97d9c",
+        "id": "8938a922-7e8f-499d-b22d-a9e299fcc4bd",
         "name": "Squared Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmcrreYuYWBYmBKqWuF3Fj4wtur4LLcMT3oLY3C1wVgwBD",
         "url": "Floor_Module_04/Floor_Module_04.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "Floor_Module_04/Floor_Module_04.glb": "QmXpEAyMuhDnRciSDJryiGXdbrWZRMsKdsZ4n3aqPVAF8K",
@@ -1856,17 +1381,12 @@
         }
       },
       {
-        "id": "289cddc4f8ba1415d81dc410c700d915a3492360fa89465ee455787b29915287",
+        "id": "450871ea-41cd-409b-bc79-421e6ac3acfc",
         "name": "Vent Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmbXeqkktpePa963QAHGcvG5vX6tyrB7xu1B5adr2YMZBB",
         "url": "Floor_Module_05/Floor_Module_05.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground",
-          "vent"
-        ],
+        "tags": ["scifi", "tile", "ground", "vent"],
         "variations": [],
         "contents": {
           "Floor_Module_05/Floor_Module_05.glb": "QmQkN3yVQDenhXFeAtF6e9h5qeVZwQMpEqM8RXCDU6BSx3",
@@ -1875,16 +1395,12 @@
         }
       },
       {
-        "id": "67d4eb617fdc0260b328b2a8eeefbffcf582f07225661fb756797346f717bdf9",
+        "id": "bc633af4-1f5d-46d8-959b-12798c88dd70",
         "name": "Orange Floor Panel",
         "thumbnail": "https://assets.decentraland.org/QmRCYi3Fu6q9cyeonYcs9kh66S5axXqz5CoJ16raoBSE74",
         "url": "Floor_Module_06/Floor_Module_06.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "ground"
-        ],
+        "tags": ["scifi", "tile", "ground"],
         "variations": [],
         "contents": {
           "Floor_Module_06/Floor_Module_06.glb": "QmYoiH5cdXYu2K8ywxoFikUDL2VDGY5tvX1HBxhks1fvRw",
@@ -1893,17 +1409,12 @@
         }
       },
       {
-        "id": "979ff28aeced181fc1b0dbc53ce73a0c7243af98d44642041b9fdeaa1156ebc7",
+        "id": "35370236-46b7-4d52-8e1f-1b5d6a10727e",
         "name": "Gas Charger",
         "thumbnail": "https://assets.decentraland.org/QmRDS5KAUNi2gTbodm7wPjqUJdDeSefJZKPNhgvVit5pTn",
         "url": "GasCharger_01/GasCharger_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "fuel",
-          "energy",
-          "boom"
-        ],
+        "tags": ["scifi", "fuel", "energy", "boom"],
         "variations": [],
         "contents": {
           "GasCharger_01/GasCharger_01.glb": "QmS6Zje3PjQWfjwNgRU4zaycoMeoFkmqgr6QcZEynmtqke",
@@ -1913,16 +1424,12 @@
         }
       },
       {
-        "id": "aca8a77102949d06eb84974ec9426e8ab4ea78fb4ec9ac282bd3fc7627213979",
+        "id": "1845ea5c-6362-4f27-8378-f66cce41f91a",
         "name": "Dome Greenhouse",
         "thumbnail": "https://assets.decentraland.org/QmY7eQtfbcimad9uBPc96XQkCGuGnqASWm5NZeBKDvPUSB",
         "url": "GreenHouse_01/GreenHouse_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "living",
-          "environment"
-        ],
+        "tags": ["scifi", "living", "environment"],
         "variations": [],
         "contents": {
           "GreenHouse_01/GreenHouse_01.glb": "QmPCgzZC9maS6e5yAtFcJoa6HuLnPcCHQSkmjev7ZPSq2K",
@@ -1932,16 +1439,12 @@
         }
       },
       {
-        "id": "37db3d46b1e0a1d91c62f1ef7413348e4073edc5fb33fe4d4c52602a591ebe01",
+        "id": "05c33867-6e66-41bf-802e-c291af405bbc",
         "name": "NO IMAGE",
         "thumbnail": "https://assets.decentraland.org/QmZryBHKh2Eo9ghAgZBiwtgHEH4RfyGxxHqzGSqA33Z7Pi",
         "url": "GreenHouse_02/GreenHouse_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "living",
-          "environment"
-        ],
+        "tags": ["scifi", "living", "environment"],
         "variations": [],
         "contents": {
           "GreenHouse_02/GreenHouse_02.glb": "QmZWgjhd9pmYZiFaQNfUcDrHPeCFuDjR3mJ4mpnd947J77",
@@ -1951,15 +1454,12 @@
         }
       },
       {
-        "id": "4af85d418ee266c6d6c7e3a3e60a55b10d2b0fd57bf1d3bec21933c332c678b8",
+        "id": "436be34a-6dbf-4410-a25f-eff895ffcfcc",
         "name": "Venus Orange",
         "thumbnail": "https://assets.decentraland.org/QmNnFPSf8DDAzghVZpHJFdNjntUMPnw8o95VRv7aw2k5nd",
         "url": "GroundFloorSciFi_01/GroundFloorSciFi_01.glb",
         "category": "ground",
-        "tags": [
-          "scifi",
-          "ground"
-        ],
+        "tags": ["scifi", "ground"],
         "variations": [],
         "contents": {
           "GroundFloorSciFi_01/GroundFloorSciFi_01.glb": "QmR8Kom1ZZDV2qJcresT6eovsebiz6JdQX5eptKwX4ooRy",
@@ -1968,15 +1468,12 @@
         }
       },
       {
-        "id": "813548c34bfacc59b596659c509dcaef767885738bf801e033d4dc54d00f481a",
+        "id": "3b9d167e-4dd6-4c0d-ab05-fe8813d6185d",
         "name": "Martian Reddish",
         "thumbnail": "https://assets.decentraland.org/QmQNEzMRtatGwy6zvRUuRn3sCCjcFie9MMYGsjP9FWQkye",
         "url": "GroundFloorSciFi_02/GroundFloorSciFi_02.glb",
         "category": "ground",
-        "tags": [
-          "scifi",
-          "ground"
-        ],
+        "tags": ["scifi", "ground"],
         "variations": [],
         "contents": {
           "GroundFloorSciFi_02/GroundFloorSciFi_02.glb": "QmS86VNZgscVfg29TwnAFCLk5fak4cSjZCgtT2xypcv3yE",
@@ -1985,15 +1482,12 @@
         }
       },
       {
-        "id": "671ecd182d9216ecdce855c45ea00ac1365172255a4cf5bf6fb1f91ea8acb5cf",
+        "id": "413f2b8c-e982-4149-910c-dd32dd4c3c6c",
         "name": "Red Giant",
         "thumbnail": "https://assets.decentraland.org/Qmd3M3AdxhYzaYu6G7gA3raQwmDGyE7J7fY4PZnXjwygfJ",
         "url": "GroundFloorSciFi_03/GroundFloorSciFi_03.glb",
         "category": "ground",
-        "tags": [
-          "scifi",
-          "ground"
-        ],
+        "tags": ["scifi", "ground"],
         "variations": [],
         "contents": {
           "GroundFloorSciFi_03/GroundFloorSciFi_03.glb": "QmZEHF9vVY1fdeC9bosDEBxu26KkithoQVabUszrbBJLgc",
@@ -2002,15 +1496,12 @@
         }
       },
       {
-        "id": "5e0bb90ad36ce0df3e89e9df63a01edaab7107c091f31f9ae075f7c56b76e81e",
+        "id": "cc4e91eb-1ee4-4198-b7bd-09b83736735b",
         "name": "Purple Dust",
         "thumbnail": "https://assets.decentraland.org/QmVFmHn65TktL3oGWWsvee6mEMfhfDkBsDy8xwCLp7LnPy",
         "url": "GroundFloorSciFi_04/GroundFloorSciFi_04.glb",
         "category": "ground",
-        "tags": [
-          "scifi",
-          "ground"
-        ],
+        "tags": ["scifi", "ground"],
         "variations": [],
         "contents": {
           "GroundFloorSciFi_04/GroundFloorSciFi_04.glb": "QmUrpChVZM3PdtzghuSR4Nf8Yxe3A3kNLPCzwbsjsbZ5Uu",
@@ -2019,17 +1510,12 @@
         }
       },
       {
-        "id": "4442d46ab07bc418e14ebce1c28c8a06d1dbe6a44814a12e99c23908815183ca",
+        "id": "b8b6ee14-7fba-4a04-8b46-b69bfa244a35",
         "name": "HAL9000 Eye",
         "thumbnail": "https://assets.decentraland.org/Qmb3P2vrhfwNfCJqR3rqVyaUT8PMXCfqyWowzLCuVgwpJD",
         "url": "HAL9000_01/HAL9000_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "computer",
-          "parts",
-          "spaceship"
-        ],
+        "tags": ["scifi", "computer", "parts", "spaceship"],
         "variations": [],
         "contents": {
           "HAL9000_01/HAL9000_01.glb": "QmR7hKVthkqi7EBK37Tw4akYjnw8oMhxWMM7uAjeu3bECv",
@@ -2038,17 +1524,12 @@
         }
       },
       {
-        "id": "a2fdaf5882a4d17ec58178983a0c255bf0f0995c0459fbaaf5eb4919ad03ec12",
+        "id": "493ef324-4373-478e-a373-6939d1b03041",
         "name": "HAL9000 Unit",
         "thumbnail": "https://assets.decentraland.org/QmbhV754Awq8zHjS4VoYbc7Le5A26Go6AzMb3uAKRJo1AY",
         "url": "HAL9000_02/HAL9000_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "computer",
-          "parts",
-          "spaceship"
-        ],
+        "tags": ["scifi", "computer", "parts", "spaceship"],
         "variations": [],
         "contents": {
           "HAL9000_02/HAL9000_02.glb": "QmcReNiBFQvrDXtujnfVmX3FQ3E6N1pdxEqUJBTqoEBQRz",
@@ -2057,16 +1538,12 @@
         }
       },
       {
-        "id": "2cc380ef2c10770ba8c846d39755e36facc2d624e9fc7906fdbbd441898b3417",
+        "id": "b7a8d1af-735d-4891-b98b-db4f36bf4b86",
         "name": "Enclosed Hall Junction",
         "thumbnail": "https://assets.decentraland.org/QmWQ7d1Zx7ezpt5zc3gwiR8dPfsoNEKQxpUhoKyFJQv6Nd",
         "url": "Hallway_Big_Module_01/Hallway_Big_Module_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Big_Module_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -2075,16 +1552,12 @@
         }
       },
       {
-        "id": "92ccb059313869e6b30c84df20f3c90295c9b0c5e9ccc0156efd3a1c32107ad9",
+        "id": "db308581-b4fe-44a1-a516-d15b90e505f3",
         "name": "Open Hall Junction",
         "thumbnail": "https://assets.decentraland.org/QmZfSPM28U4zxUfv9bsWPhwS7CxNmZ3awbidBE55KnEUGp",
         "url": "Hallway_Module_Cross_01/Hallway_Module_Cross_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Module_Cross_01/Hallway_Module_Cross_01.glb": "Qma42ofmi5sxBTHNgA2QnE3p4xDpQzjjDZ6zRrTBLNj78z",
@@ -2093,16 +1566,12 @@
         }
       },
       {
-        "id": "b8a822a2f8daa3614c07d89fb5a728cb903d30f604e195126b4d05f7bab6eee5",
+        "id": "e0d78276-6cef-43a9-bcd0-7bc19af08c3d",
         "name": "Curved Hall Junction",
         "thumbnail": "https://assets.decentraland.org/QmZujbAwmuc7BUAM4DejnQGENGDrPxsauMfe67jC3GHaQi",
         "url": "Hallway_Module_Curve_01/Hallway_Module_Curve_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Module_Curve_01/Hallway_Module_Curve_01.glb": "QmaodS4P6pms9otmiSVpLibKS8yTwBjh7xaddYDQftzABA",
@@ -2111,16 +1580,12 @@
         }
       },
       {
-        "id": "70f9b4e28c4dd72e61ac6482688d82817e17e2ac540759959624e92d78c1e177",
+        "id": "9fc33d23-06c1-4871-881a-c5030083ff06",
         "name": "Hallway Door Closed",
         "thumbnail": "https://assets.decentraland.org/QmeZamPXwKqvWxQpin88aQEkHjm4D1Fw6oXtY5Zqv1uV6N",
         "url": "Hallway_Module_Door_01/Hallway_Module_Door_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Module_Door_01/Hallway_Module_Door_01.glb": "QmdkEfFTSSZEspm1TvrcZ1aqyALwTuYF6yrdzxFdnYYiJV",
@@ -2129,16 +1594,12 @@
         }
       },
       {
-        "id": "5a7640bdac9f7ecd54a02bc5c086e5e8a3f297c1d1faa5ae830883ae35166cfd",
+        "id": "593b8cc9-d2f5-49da-8f21-434d0e240840",
         "name": "Hallway Door Open",
         "thumbnail": "https://assets.decentraland.org/QmPom2qW2bTGd6t3DndHWAGWJRbUxCrrYvag4TdmVZuhK1",
         "url": "Hallway_Module_Door_02/Hallway_Module_Door_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Module_Door_02/Hallway_Module_Door_02.glb": "QmXqt93kSBvwznCqhejGHR3cnMptGi8c79mxRNbkFuFY8D",
@@ -2147,16 +1608,12 @@
         }
       },
       {
-        "id": "37e92443fcbe3ec29ec2a110e659f462b8c0828d3607606618d2795c40e25af2",
+        "id": "2db13212-7e92-4af7-9d13-47612dd044fd",
         "name": "Utility Hallway",
         "thumbnail": "https://assets.decentraland.org/QmSzi64o5PYCE2inwBdZejmETK3UdjZnxFXcAYwMWtcyCn",
         "url": "Hallway_Module_StraightHalf_01/Hallway_Module_StraightHalf_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Module_StraightHalf_01/Hallway_Module_StraightHalf_01.glb": "QmPdrd4cXF1fsMLbLHKT7Sw9T4moy7NbdE9aA5pPezw8Cm",
@@ -2165,16 +1622,12 @@
         }
       },
       {
-        "id": "5d411ae2cb5c16374a7e7e8c85aae83387375ac709f437a22bdcb21a9a604ecc",
+        "id": "0f7f52c3-7606-4a01-8ba6-39cb141664e2",
         "name": "Component Hallway",
         "thumbnail": "https://assets.decentraland.org/QmR46bsyxNcMoLFbCoGen1CByFnznDDdtFnMhit1SUUEbG",
         "url": "Hallway_Module_Straight_01/Hallway_Module_Straight_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Module_Straight_01/Hallway_Module_Straight_01.glb": "QmQeFj4pv4Cfs7yjZrdkZ6ewnNXZLAdmdQWAj5dsMz9XYR",
@@ -2183,16 +1636,12 @@
         }
       },
       {
-        "id": "b048d77defb28bc176f1be540c6bf7e917471abbd57ca44a213ab6b976e06634",
+        "id": "c9b37fe7-9970-4124-8947-60be0b61be64",
         "name": "Short Hallway",
         "thumbnail": "https://assets.decentraland.org/Qmdfnj8moUMykGuv46zTh8NkSFM3RH7WCZyovZVV87feL2",
         "url": "Hallway_Module_Straight_02/Hallway_Module_Straight_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "alien",
-          "base"
-        ],
+        "tags": ["scifi", "alien", "base"],
         "variations": [],
         "contents": {
           "Hallway_Module_Straight_02/Hallway_Module_Straight_02.glb": "QmPDHRcsSgPFgpUbiBLvbZ3A2gcTXHBzcya9SQYaPg1LMp",
@@ -2201,17 +1650,12 @@
         }
       },
       {
-        "id": "0e9205a127c06a6ec01c3dbd33b065fa0716906472960221bb4fb0d79573b205",
+        "id": "b4ef59b5-ab35-421f-ac30-50ead97cd8f8",
         "name": "Medical Bay Scanner",
         "thumbnail": "https://assets.decentraland.org/QmPKj9QQaAdMonjnK4H78EJr8oytGtwThshBQ2ARAmkY6C",
         "url": "HealthBed_01/HealthBed_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "health",
-          "recovery",
-          "base"
-        ],
+        "tags": ["scifi", "health", "recovery", "base"],
         "variations": [],
         "contents": {
           "HealthBed_01/HealthBed_01.glb": "QmRmPKMFoU64v5Xg3SbsvzuqqdJEjQkkMBswC6Nv14MDQs",
@@ -2221,17 +1665,12 @@
         }
       },
       {
-        "id": "ea17bead5ff8228eeaf13b6018b368ed39b5ba66affb31f0fa08271b2d49faf9",
+        "id": "42d0ff84-7819-4b6c-843d-70f0b8fe0c2a",
         "name": "Vertical Console",
         "thumbnail": "https://assets.decentraland.org/QmYqDtVeVxi3PrgqpdpTttSzxLUSqdZKmBbXqNHXPmCBVW",
         "url": "KeyboardSciFi_01/KeyboardSciFi_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "buttons",
-          "trigger",
-          "base"
-        ],
+        "tags": ["scifi", "buttons", "trigger", "base"],
         "variations": [],
         "contents": {
           "KeyboardSciFi_01/KeyboardSciFi_01.glb": "QmUEc93EUqzSFxKYTsWt9aDjyUpsnnNN6zyg4E8gzDRCLL",
@@ -2240,16 +1679,12 @@
         }
       },
       {
-        "id": "90f8cd89c66afe9438b14c4c1dd3ae38fde294ac411da43b9e73c77304d136e1",
+        "id": "113e285c-0679-443a-9b11-4d2db1404f70",
         "name": "Lamp Post",
         "thumbnail": "https://assets.decentraland.org/QmQFmVtfiWqBHCnDUeQnhuygErdTxFkSJw1CWyTozFPNhi",
         "url": "LampPostSciFi_01/LampPostSciFi_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "light",
-          "tall"
-        ],
+        "tags": ["scifi", "light", "tall"],
         "variations": [],
         "contents": {
           "LampPostSciFi_01/LampPostSciFi_01.glb": "Qmbu84Y1de9AcqKoY8rr3HQLBj1SArPv3g3G2X8kjjgy3D",
@@ -2258,17 +1693,12 @@
         }
       },
       {
-        "id": "8966edcceeef351ba98aeba03e9a4bdd68a696fdd1ae7b8cd7bf296a3e8dadd3",
+        "id": "c8165c04-c373-43bc-9594-bc44c8a2f295",
         "name": "Lever Console",
         "thumbnail": "https://assets.decentraland.org/QmeuJv6pqkQqhyc6hJ1eikPGFeb5gvi53K4riVqiBStJk6",
         "url": "Lever_01/Lever_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "trigger",
-          "button",
-          "enable"
-        ],
+        "tags": ["scifi", "trigger", "button", "enable"],
         "variations": [],
         "contents": {
           "Lever_01/Lever_01.glb": "QmZra1A1r2fa9pahaZvKurs18swbG6XjKcJvtcZZtncYPY",
@@ -2277,18 +1707,12 @@
         }
       },
       {
-        "id": "9558715045bb74d13b3a8565caf9690388039ed1b885f4a256e6bf476dd98ddb",
+        "id": "2109491d-d40a-47b3-970d-2f668489df62",
         "name": "Yellow Light Block",
         "thumbnail": "https://assets.decentraland.org/QmPC7xUt2es9kBhCSXkC1DccGB9yhb59PS6nGzEJGydCKF",
         "url": "LightBlock_01/LightBlock_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightBlock_01/LightBlock_01.glb": "QmbxyJxpFCv9EdgRhCxxEL58wP2FYKzNuqrPwAjbKFiBQ5",
@@ -2297,18 +1721,12 @@
         }
       },
       {
-        "id": "7b513b289d971dacf333cec8ea2df69d61ab6110e3f3cea776ab4327cf8b11bc",
+        "id": "d8e55a84-b5a3-475e-b32d-0e9cdbfa1744",
         "name": "Blue Light Block",
         "thumbnail": "https://assets.decentraland.org/QmXZ6a72mm7YAhUxYscegvM8U2gmPDu97MjC7T8Rs5PFU6",
         "url": "LightBlock_02/LightBlock_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightBlock_02/LightBlock_02.glb": "QmRCmhdvbWsc7wkQ6bJrhQu1s6MW2QCVcQ8pPU1X2RAgZn",
@@ -2317,18 +1735,12 @@
         }
       },
       {
-        "id": "1ab35e12030b99d86dc0fd865c5987f839fc7716f0bf13ad02d94456bf53a87c",
+        "id": "319a0bd7-a500-47c1-a034-d2e8c1ea185e",
         "name": "White Light Block",
         "thumbnail": "https://assets.decentraland.org/QmUKcW13Dr9AKnxcvJWugAhPjW8M7LL3DJehESXpMkv3Cn",
         "url": "LightBlock_03/LightBlock_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightBlock_03/LightBlock_03.glb": "QmSFNLftWL8evC1YQ4K5fzjMxSYziMu5sXnhV3cKn6r167",
@@ -2337,18 +1749,12 @@
         }
       },
       {
-        "id": "130bf10e76372c61bef618407e7fed69f33445cb49dc08dd813f0652801d716a",
+        "id": "33b640b3-72d4-4c82-adb9-c40c8de02779",
         "name": "Yellow Light Corner",
         "thumbnail": "https://assets.decentraland.org/QmXrrnhg9aM7XHwxSAuXDT1yz1wjSiF7uzPBj11fpbnpdC",
         "url": "LightCorner_01/LightCorner_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCorner_01/LightCorner_01.glb": "QmSZrf4BYm5PkjzYYRoPaQ9VC4oQPcoY43W3MfzS8HMh2E",
@@ -2357,18 +1763,12 @@
         }
       },
       {
-        "id": "44c269fce962c176a28d48a0e30ac85bfb1698a4dc4a46a7091a2a9ee1d30310",
+        "id": "e722a296-159b-4ad9-a4e9-2dd63a0d7fd5",
         "name": "Blue Light Corner",
         "thumbnail": "https://assets.decentraland.org/QmQEysboJS9PKXZoQxgWNdxTjVuPEgHgiv992q7zmgn5bH",
         "url": "LightCorner_02/LightCorner_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCorner_02/LightCorner_02.glb": "QmdVjXkpskuaxpUe4JaVzEA75X1RdGtvB4vvijF2YiTMfL",
@@ -2377,18 +1777,12 @@
         }
       },
       {
-        "id": "3cbf19910006745d7fba7b3c960ed31c9889c7f8e416640967eeb9c674bbb086",
+        "id": "4998a2bc-6849-4dae-82d4-2ef066f275bc",
         "name": "White Light Corner",
         "thumbnail": "https://assets.decentraland.org/QmSbuqUqAfTgZV1VN9c5Nh4Ht79w43KFHYv5oahVsG8vH2",
         "url": "LightCorner_03/LightCorner_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCorner_03/LightCorner_03.glb": "QmTzptLi7cTb4o5s9afPyD4d9CxHz3GistuYDyNVDrumyC",
@@ -2397,18 +1791,12 @@
         }
       },
       {
-        "id": "5096bd60db8469bae7b4fc8260b57ede1999d51e3705e47194d6a1ee0055867f",
+        "id": "dec08fc2-3caf-4dba-8cab-8cee0f5669e9",
         "name": "Yellow Light Cross",
         "thumbnail": "https://assets.decentraland.org/QmWVkqA2uCeWcm3vfgVpXK2qgcGeoXpH9tsihi8uswP3Mu",
         "url": "LightCross_01/LightCross_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCross_01/LightCross_01.glb": "QmZBrCXzgQpFveNWnHLPvehmG7moYBbcvnnRZF5Yf2q96V",
@@ -2417,18 +1805,12 @@
         }
       },
       {
-        "id": "c504e6a5439a4eaa879251d067e82db585986e47fe211beebced3059e77a9a5f",
+        "id": "0e161f29-419e-46da-9194-d3142e830dba",
         "name": "Blue Light Cross",
         "thumbnail": "https://assets.decentraland.org/QmefQqumPB2uR3XeWP2uXhpvoMcLQK9MNddDLLX9tfKYxX",
         "url": "LightCross_02/LightCross_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCross_02/LightCross_02.glb": "QmXr5pp67Nk7v7JyAjfpqQ3bYVYGR3VPRNeSj5YbCwaDsq",
@@ -2437,18 +1819,12 @@
         }
       },
       {
-        "id": "44fc94852d6ef6a07389ac05a191e7c47cd7e3e0c882d7e9fb4321b0ed454720",
+        "id": "070e9135-b6c8-4536-b3fb-740c73c7c2b1",
         "name": "White Light Cross",
         "thumbnail": "https://assets.decentraland.org/QmUwtwfqwDknDts6LgJtP5MkJ3kTbfpoWGNzgZvwF5QisU",
         "url": "LightCross_03/LightCross_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCross_03/LightCross_03.glb": "QmfXoCrg2bAEtF2PaXZNFZjypL9oNvHUPJGTuu4znGBAq2",
@@ -2457,18 +1833,12 @@
         }
       },
       {
-        "id": "27e3d683adc472f825c4be977c9b743cd77e1252d4f8b698571f2662e00aa9ff",
+        "id": "22aa255a-3116-4954-acf3-ff13837219f8",
         "name": "Yellow Light Cube",
         "thumbnail": "https://assets.decentraland.org/Qmda8nfTAA71RCE27B19rX84yZifpjU1cQmSg1wyMRgpTM",
         "url": "LightCube_01/LightCube_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCube_01/LightCube_01.glb": "Qmamt9see1oF2CMngLB4qfqZ2Ljh1kvRcbQFXzu1LhHi2j",
@@ -2477,18 +1847,12 @@
         }
       },
       {
-        "id": "dcac7848dcae870c9ccedeb2e0acc1e13143040cf70d230cc72759e0fafb1f59",
+        "id": "ab38c9a7-f0ee-4e6d-adea-79464c4d4dc2",
         "name": "Blue Light Cube",
         "thumbnail": "https://assets.decentraland.org/QmbFzR22yRbzHQ5VFjqNZ5JD7ZiMQJkat8pzUmLCpKgNdx",
         "url": "LightCube_02/LightCube_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCube_02/LightCube_02.glb": "QmeT9dC76f851EbUCchpqZ6qopavo9YEHXWxSPThXgAMoC",
@@ -2497,18 +1861,12 @@
         }
       },
       {
-        "id": "b2698886f7e9c04af1bd85b5091cb9013dbde9d5b2664bd50059ecbb7080f83d",
+        "id": "d8517bf3-fbf3-4784-bcfd-652592b409a2",
         "name": "White Light Cube",
         "thumbnail": "https://assets.decentraland.org/QmUKZeRuHKHyGpXth8QE9zYBpmyvWnjdBU812nC697aRxY",
         "url": "LightCube_03/LightCube_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCube_03/LightCube_03.glb": "QmYpnUZH7mog3EzFa7hChhEYB1co8nYvxFt1gQCEHJTNCd",
@@ -2517,18 +1875,12 @@
         }
       },
       {
-        "id": "387c6a9a0472cf15efaf6d65cb4a35a75099d4c940aa8b55d63355c4cce6f331",
+        "id": "4fa0d033-c53a-4b67-bcc2-ee25bc89f5f8",
         "name": "Yellow Light Pagoda",
         "thumbnail": "https://assets.decentraland.org/QmPLBU2xxWyqxNV9YkRBd4GFx95HpDdfDmsBVRseCJvY3E",
         "url": "LightCylinder_01/LightCylinder_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCylinder_01/LightCylinder_01.glb": "QmYzeaSFFRVFhUXTXbFT1xYyiY7LGyGzDpwwx8EsynLSpo",
@@ -2537,18 +1889,12 @@
         }
       },
       {
-        "id": "e0d4424e81ecdea1669971ba4d603ae2aaece842c829070c328901c1c28475a1",
+        "id": "e5b04257-cfe6-4d96-9fdd-681f6d3b4bb2",
         "name": "Blue Light Pagoda",
         "thumbnail": "https://assets.decentraland.org/QmT2us8Evifu66gke4k6oj5vzXJgQ7nRh98FPoU3aMrmcM",
         "url": "LightCylinder_02/LightCylinder_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCylinder_02/LightCylinder_02.glb": "QmbDb8kk3tSnwGtKPQZBTsNcXQemamPonYSJZCnJE2RaM6",
@@ -2557,18 +1903,12 @@
         }
       },
       {
-        "id": "591278e585fee31de0bd710148f788a97b67b82ba6e333b56592eea0a22084a9",
+        "id": "e6f56fb2-65e9-47ff-907d-8442c272090b",
         "name": "White Light Pagoda",
         "thumbnail": "https://assets.decentraland.org/Qmbx5CVTXeGVoGRRqcvUu88F1A3P353bzP8GYYxR9jfjWh",
         "url": "LightCylinder_03/LightCylinder_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightCylinder_03/LightCylinder_03.glb": "QmTCUTzBSmoNyqjzoR8UmHzfA8VduEUXkCTHjnhA41nbkp",
@@ -2577,18 +1917,12 @@
         }
       },
       {
-        "id": "eba06d63301c85ba33c17d2ad3bfb1497cdb3b28f5fd19ebcd11c716276d17b7",
+        "id": "6dff5a9e-3e73-483f-95c2-a3aad74542b9",
         "name": "Vertical Floor Light",
         "thumbnail": "https://assets.decentraland.org/QmaEoQWaUCAg8k3AGzDtaKWLgmk77xvwpxc4o1S9BiyMm2",
         "url": "LightFloor_01/LightFloor_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightFloor_01/LightFloor_01.glb": "QmUGXLMZMAQcyESpHt714MtjRDJcq79gTSRRSwsAuoVjUg",
@@ -2597,18 +1931,12 @@
         }
       },
       {
-        "id": "1a20c6229630105e6d65991cb0bf97cb9d620e8e1c71a62e1acf04fb4251f06a",
+        "id": "531ac806-e62c-4559-9db9-3eeaa99118e8",
         "name": "Wall Light",
         "thumbnail": "https://assets.decentraland.org/QmS82ViPEtwBwFYgaK4AoyuE9DfEYLkzYJL3SZkkCLxGMq",
         "url": "LightWall_01/LightWall_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "LightWall_01/LightWall_01.glb": "QmW4o9rT1MgJvyrNc1QGBXUmR7jUmgQjJiUgkoAnQQCpV4",
@@ -2617,18 +1945,12 @@
         }
       },
       {
-        "id": "5d94956ed927aaf75dc68aa00df693798adf8dc108a5dec38dd05065e610babb",
+        "id": "1489a32f-a6bf-4ca9-8020-c01157e1702b",
         "name": "Vertical Triangular Light",
         "thumbnail": "https://assets.decentraland.org/QmNLuDwpVwVahz24LTGQTYNBka1oCy1T1oNRVTuFuFMMPY",
         "url": "Light_01/Light_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "Light_01/Light_01.glb": "QmcCSpKfUh9e8AEgXDokigwPwHwjTg1o9ZyxgQg1hhRhxW",
@@ -2637,18 +1959,12 @@
         }
       },
       {
-        "id": "d57cee1c796014cfc55c4c4570397b8573b7670c2e86952734b5858595d8a90a",
+        "id": "fe592f81-8de8-4cae-8eb4-2804166de556",
         "name": "Light Column",
         "thumbnail": "https://assets.decentraland.org/QmaktEZNrzHUPCCJ2pCPUj6Lnomu8J9ptiwq4xzVrUgwru",
         "url": "Light_02/Light_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "Light_02/Light_02.glb": "QmbUGYLHyeJCuQSYDYhEdPYuRxeAN1i9Eb9M1FMA5nUNzp",
@@ -2657,18 +1973,12 @@
         }
       },
       {
-        "id": "5e5666d323b3d57d963111cce8dbf7219baf1bea923f6283bb481386b8dbdd9e",
+        "id": "754681c4-b755-4699-ad70-15c4652da00f",
         "name": "Floor Light",
         "thumbnail": "https://assets.decentraland.org/QmZHxvD1ta5EXK6ApMmZaiz7PQ64NJH8MJz8dMqriZPcQf",
         "url": "Light_03/Light_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "Light_03/Light_03.glb": "QmSb8Ainf19aNqxHtUhdEz4kKXcpQuSJNevFvJzChk2g4a",
@@ -2677,18 +1987,12 @@
         }
       },
       {
-        "id": "98124c57726d0c6494443c3dc5f5cf732b32e768cd2bbf181a76955da9d30649",
+        "id": "680bfff9-7425-4b2e-9ca8-81a8b629fff3",
         "name": "Floor Light Disc",
         "thumbnail": "https://assets.decentraland.org/Qmbwyb6xs2hHhv5zvEvUGsyrMcBFNBVnEMCk4EkBunEqV4",
         "url": "Light_04/Light_04.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "Light_04/Light_04.glb": "QmfJUoYRto5AX9GRWyq2yYjzWfjg8G4p1CepgebQU5KqSo",
@@ -2697,17 +2001,12 @@
         }
       },
       {
-        "id": "4c9cf07ac5806a7d568e992773b157b984d8e27936de71faf7459cc88f3084e9",
+        "id": "048ed991-453d-49c5-a395-388e48beed85",
         "name": "Silver Manhole",
         "thumbnail": "https://assets.decentraland.org/QmXcTagroD2s9d83VXcCWiQGxAHfoFoVjUoVWqJvF64ysq",
         "url": "Manhole_01/Manhole_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "base",
-          "hole"
-        ],
+        "tags": ["scifi", "spaceship", "base", "hole"],
         "variations": [],
         "contents": {
           "Manhole_01/Manhole_01.glb": "QmXUM3AvPhxvHFkkaMgrsjkrsf5pB9DdkR3KbED5XE8yAy",
@@ -2716,16 +2015,12 @@
         }
       },
       {
-        "id": "80932d52e323da0bd67a0705f2e29651760b18e575ffd36c632e2ff5ac1cd1ba",
+        "id": "73710262-c416-4173-85e8-ed8166ad9178",
         "name": "Monitor Screen",
         "thumbnail": "https://assets.decentraland.org/QmYBmzrVzwfn674ezXC819d2nWB7shZz8iLAKQW1tfjTcd",
         "url": "Monitor_01/Monitor_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "computer"
-        ],
+        "tags": ["scifi", "spaceship", "computer"],
         "variations": [],
         "contents": {
           "Monitor_01/Monitor_01.glb": "Qmcd2kd3i7QQLSZEB9uurwh8Zpwmcx4AK8ADTCGojTCU4a",
@@ -2735,18 +2030,12 @@
         }
       },
       {
-        "id": "89f1810f933f4ca73f090900df10c01d351faae3fdd5856bbb554dc2fa1cb2a9",
+        "id": "060b723a-b304-461c-a5da-bbc2c3bda090",
         "name": "Yellow Neon Tube Off",
         "thumbnail": "https://assets.decentraland.org/QmS9vtHuvoSXnmT7gi4P4qPgqMWJFfqPXqgX2QxGaJw1AT",
         "url": "NeonLightTube_01/NeonLightTube_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLightTube_01/NeonLightTube_01.glb": "QmeVxBPA2ddqKueUuqpbuCX32yi43hNPAZN9gWqEkqMNqX",
@@ -2755,18 +2044,12 @@
         }
       },
       {
-        "id": "7a39147ee3758c6276e00abb854f5fb5ca863cd39bea9d549b1f5e6be3da0632",
+        "id": "8243e0fe-76f6-47f6-b5ec-a226f6990468",
         "name": "Yellow Neon Tube On",
         "thumbnail": "https://assets.decentraland.org/QmT3sNzw8jsRxrfP2MyUZuxjjMGXtum2fCD9pkFpuWVzdK",
         "url": "NeonLightTube_02/NeonLightTube_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLightTube_02/NeonLightTube_02.glb": "QmcUDSnc3UoPMNkNSZUdnSAXMi4QKcbDa1w2jYk27ya27p",
@@ -2775,18 +2058,12 @@
         }
       },
       {
-        "id": "00275d6f5388dcf1693543bf5b54f855f5ef5bb6669e2a57cb7932bb876ccf57",
+        "id": "bf3c5e6b-f4e6-4836-887c-f4c86a8e53a7",
         "name": "Purple Neon Tube",
         "thumbnail": "https://assets.decentraland.org/Qmei61wYCfQPKSbJyFFTMpzED47npAiKxT9AfzV6ncN7Sh",
         "url": "NeonLightTube_03/NeonLightTube_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLightTube_03/NeonLightTube_03.glb": "QmSzUF17hfMG75fRaqdp2ZiM6E9PU6y9XKY7D4jRxkWoPN",
@@ -2795,18 +2072,12 @@
         }
       },
       {
-        "id": "5287dee154b36f5774cd251c16e19cf3c9e01d86c83887d3919ef9eaf6c54f9f",
+        "id": "da2d117c-ca88-4c87-9ca6-aef8fe506b18",
         "name": "Blue Neon Tube",
         "thumbnail": "https://assets.decentraland.org/QmYkycdfy4Zui3g8qc9KkAAdbCRua8F1dcDoyhmqF4SEtG",
         "url": "NeonLightTube_04/NeonLightTube_04.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLightTube_04/NeonLightTube_04.glb": "QmUuqGfYZ1yNbHjNbq42KaMpaaUqU4vDR9GV6AHLMxf5Qr",
@@ -2815,18 +2086,12 @@
         }
       },
       {
-        "id": "0ae6c1ca8330479d14631630916abe5e9aa4a8c364232dc22884bec85b6707d5",
+        "id": "814f65ca-6d83-4658-8e4b-56aef277f397",
         "name": "Green Neon Tube",
         "thumbnail": "https://assets.decentraland.org/Qmb9eX1ZquX2dPBStjuYxqbLAM4gUs21DmqQdeCZH9RUgQ",
         "url": "NeonLightTube_05/NeonLightTube_05.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLightTube_05/NeonLightTube_05.glb": "QmNrJV8Vqd4bYJAbNdeNuNScYiKuNrgYTYtdGrB5ki6bmH",
@@ -2835,18 +2100,12 @@
         }
       },
       {
-        "id": "0164b32d524bb895e2bfd83b09c7e1a9cbd0b669c3840a7e748cbe214c4975fb",
+        "id": "3c2fcdef-7fe9-40e1-bfee-01ce250044ab",
         "name": "Red Neon Tube",
         "thumbnail": "https://assets.decentraland.org/QmRyCLjndwFosJX2xzAV6YwCmpqnRctLi3r3YZdYUJoXQ3",
         "url": "NeonLightTube_06/NeonLightTube_06.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLightTube_06/NeonLightTube_06.glb": "QmcRjC6Fy2zXR85jvPWSNTWyCAmen6rz9ET3XPV6o9th2Y",
@@ -2855,18 +2114,12 @@
         }
       },
       {
-        "id": "9e9afd75475fa0fe2df867c97dd291c29dbc07af31cbb7846b48d9027d6de9c0",
+        "id": "57028015-059b-479a-ba6b-07daa1fdd5c6",
         "name": "IDENTICAL TO NeonLightTube_03",
         "thumbnail": "https://assets.decentraland.org/QmXZfevU1hxuvUBktTrtuWLUcofGrroQ87ZnKuizUADwX2",
         "url": "NeonLightTube_07/NeonLightTube_07.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLightTube_07/NeonLightTube_07.glb": "QmdJkpX9GEh4K7BGUJz2TbrKZEqYXxgJ1F4NEZkAyt1iAB",
@@ -2875,18 +2128,12 @@
         }
       },
       {
-        "id": "31a0f2226eef208506b8753d76e53b76094ce62a16d4a6f1206dc65ba6067c4b",
+        "id": "07aab015-e267-4868-8f9f-d5844c971738",
         "name": "Neon Light Grill",
         "thumbnail": "https://assets.decentraland.org/QmV1gWbnW88YvPZVXoagqswFrRiSAZn3q8ND3fx6oFcuxY",
         "url": "NeonLight_01/NeonLight_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLight_01/NeonLight_01.glb": "QmanQkkCt8Mu8LKyutwoJgub7rkPwBGSRPHYcyKDsENWkp",
@@ -2895,18 +2142,12 @@
         }
       },
       {
-        "id": "ba3bbabc9f1abffaa7b065333e06bfb40a41adb775c243d733849be6e3c8621f",
+        "id": "408a676d-c2b7-4a13-9af6-1afe854fc1d5",
         "name": "Square Yellow Neon",
         "thumbnail": "https://assets.decentraland.org/QmfPn9HTEyPK4Mskf4Hr4Q24Ydorh9kAW8u6rZJfG4WijM",
         "url": "NeonLight_02/NeonLight_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "power",
-          "spark",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "power", "spark", "base", "spaceship"],
         "variations": [],
         "contents": {
           "NeonLight_02/NeonLight_02.glb": "QmSpc4zDpNKSLuRD5DK4aefYfA3F1KBCih7us9muugR9cv",
@@ -2915,16 +2156,12 @@
         }
       },
       {
-        "id": "c8118054ea7e6ba09fea82b8b1d664f1a9798e363f4943cf05e6b4edb50918b8",
+        "id": "f6f827f2-6d5b-456e-9a34-b19606d6853e",
         "name": "Oxygen Tank Storage",
         "thumbnail": "https://assets.decentraland.org/QmRVZSzzAZSKVnZu2oNWbEeAwAEf19azU9muo7jStxJcss",
         "url": "OxygenStorage_01/OxygenStorage_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "life",
-          "support"
-        ],
+        "tags": ["scifi", "life", "support"],
         "variations": [],
         "contents": {
           "OxygenStorage_01/OxygenStorage_01.glb": "QmPLFPjjTcJZb9L541bNkDVRFZGC2YqEwnQwrPzNUDBau8",
@@ -2933,16 +2170,12 @@
         }
       },
       {
-        "id": "745a83a5d72921f0a09490244bcbd17b84c6363b21162bb9f74e2b58906bdf21",
+        "id": "ce0b45e5-c463-4092-94a4-a81d2ab4311d",
         "name": "Oxygen Tank",
         "thumbnail": "https://assets.decentraland.org/QmPMMC8fSGkXFwWdR12x8x4VnpauuMLxCtn3z56dR5SHYC",
         "url": "OxygenTube_01/OxygenTube_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "life",
-          "support"
-        ],
+        "tags": ["scifi", "life", "support"],
         "variations": [],
         "contents": {
           "OxygenTube_01/OxygenTube_01.glb": "QmY5zYZ53knhjnr821cv248dqRh3nyZzkXBW4HtitRZRV8",
@@ -2951,16 +2184,12 @@
         }
       },
       {
-        "id": "2b1ea664b493b74b5409263af20491e5fcac5d8b740df4b36a5e1d4adfd10cc9",
+        "id": "d1117688-b4b5-455e-b49f-e05e6f0aa7f3",
         "name": "Emergency Oxygen Tank Storage",
         "thumbnail": "https://assets.decentraland.org/QmQWmBMpYMfC64x6f9HaP8L12eUsRtVHndHT87FCGc1rNY",
         "url": "OxygenWall_01/OxygenWall_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "life",
-          "support"
-        ],
+        "tags": ["scifi", "life", "support"],
         "variations": [],
         "contents": {
           "OxygenWall_01/OxygenWall_01.glb": "QmbLUg5umsc11QBwydeN2HcLL7mGE1s4jGeL4drT6BRV37",
@@ -2969,16 +2198,12 @@
         }
       },
       {
-        "id": "c57cd5fbf21b4c2705f210ba1c9828c8a1504516cfabd7b89212e60f31ee840b",
+        "id": "b93650aa-967a-4b38-b1b6-f2898ab01e41",
         "name": "Emergency Panel",
         "thumbnail": "https://assets.decentraland.org/QmSL3JgUtfyFTmKniEKPuUj5XhmaT1yS2AbaKqsw8jxHXK",
         "url": "PanelSciFi_01/PanelSciFi_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "floor",
-          "tile"
-        ],
+        "tags": ["scifi", "floor", "tile"],
         "variations": [],
         "contents": {
           "PanelSciFi_01/PanelSciFi_01.glb": "QmVqM5S8rxmoWrYmz19TjZfKHwDfipC1wniudKuxo9tefP",
@@ -2987,16 +2212,12 @@
         }
       },
       {
-        "id": "9163263e755a03d6fedbab13356140b06bae052382fde3f6ae32ac20b4ea8afd",
+        "id": "6839989f-834d-4c0c-a977-d0a61677beed",
         "name": "Cross Panel",
         "thumbnail": "https://assets.decentraland.org/Qme8D8gQmqM95v5BYEghdAkbHU9Hak4PtQh9J2F7v9Ax4d",
         "url": "PanelSciFi_02/PanelSciFi_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "floor",
-          "tile"
-        ],
+        "tags": ["scifi", "floor", "tile"],
         "variations": [],
         "contents": {
           "PanelSciFi_02/PanelSciFi_02.glb": "QmUy1CgFBQEvmGVq9wjmDwLWseFHHYBZmNckyao4HPas55",
@@ -3005,16 +2226,12 @@
         }
       },
       {
-        "id": "a141325f0fbb2c1e50c0743923f3d474f5f7be08ad83a16cb172cc2f0359f9c4",
+        "id": "0f96410a-d69d-429d-84b0-c755f0a1baae",
         "name": "Curved Pipe",
         "thumbnail": "https://assets.decentraland.org/QmYCvFaRf9NFbbMWdufXQvKVtdN3Ep7dPfgUcVyMhotCYF",
         "url": "Pipe_Curve_05M_01/Pipe_Curve_05M_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "base", "spaceship"],
         "variations": [],
         "contents": {
           "Pipe_Curve_05M_01/Pipe_Curve_05M_01.glb": "QmdDRbaBb4s8A2q53sPvGMHGwKfoRfhzBLSQVR7tBJCNEe",
@@ -3023,16 +2240,12 @@
         }
       },
       {
-        "id": "f279dd234471e48eaad033c3c72217ad7d565353c69e70f90870776487669fef",
+        "id": "1bd0ea4a-a1a5-40ed-8276-4ef33bd88e7d",
         "name": "Vertical Pipe Long",
         "thumbnail": "https://assets.decentraland.org/QmWoodPSGE7VmTzMguhR6acKPiY52ULEmfxx63vzE3MGMM",
         "url": "Pipe_Straight_05M_01/Pipe_Straight_05M_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "base", "spaceship"],
         "variations": [],
         "contents": {
           "Pipe_Straight_05M_01/Pipe_Straight_05M_01.glb": "QmYRjgD4mmdkXPoNuDSRirzVzGvs1KZYEuNjcSSRahEnPC",
@@ -3041,16 +2254,12 @@
         }
       },
       {
-        "id": "66b75a36a6fd4edb857b8bb50ad03c7245699b886936d2bb2374e81feaf90baa",
+        "id": "f971f30e-1b60-47b4-82de-2895492e1e2b",
         "name": "Vertical Pipe Short",
         "thumbnail": "https://assets.decentraland.org/QmYUTGLyKnEJARsQ7yPwTdVMo8RPxrNAHo6FYEmvpAopQq",
         "url": "Pipe_Straight_1M_01/Pipe_Straight_1M_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "base",
-          "spaceship"
-        ],
+        "tags": ["scifi", "base", "spaceship"],
         "variations": [],
         "contents": {
           "Pipe_Straight_1M_01/Pipe_Straight_1M_01.glb": "QmQNnrq2YdG5tEkefnQhRLCoXSkRDZ7KPdmmSrWTDBqVEp",
@@ -3059,16 +2268,12 @@
         }
       },
       {
-        "id": "cdeecf398c6710cc29d7bdedc36427ba41de8c3acbe40f53c22f840eee4c8f70",
+        "id": "c002214f-76c8-4fd1-9f40-c34f6f5f2ad9",
         "name": "Planet Surface Orange",
         "thumbnail": "https://assets.decentraland.org/QmZk8DVjbHfUhKMrfD3BM4uxephfcV9ALpZAPFZbLX9Ygy",
         "url": "PlanetFloorOrange_01/PlanetFloorOrange_01.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "planet"
-        ],
+        "tags": ["scifi", "tile", "planet"],
         "variations": [],
         "contents": {
           "PlanetFloorOrange_01/PlanetFloorOrange_01.glb": "QmeBiAU24BrpXxC46CnfiAtnixWxLqkeA36QZL8cdctMnp",
@@ -3077,16 +2282,12 @@
         }
       },
       {
-        "id": "e20d5bc535a8376d026d29c8d71aabb2723c3caf7111752be693853380ac220a",
+        "id": "469c4793-c374-467f-957e-003e19397e35",
         "name": "Planet Surface Red",
         "thumbnail": "https://assets.decentraland.org/QmXKf2dj8yEpuZhLUT2QbKpxWkaNKnfWgXk5RaTEMtvi5K",
         "url": "PlanetFloorRed_01/PlanetFloorRed_01.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "planet"
-        ],
+        "tags": ["scifi", "tile", "planet"],
         "variations": [],
         "contents": {
           "PlanetFloorRed_01/PlanetFloorRed_01.glb": "QmWsG1YFqpWBTuNSJwbF6anAkvxpULQVeeWDZqdpDWhhAp",
@@ -3095,15 +2296,12 @@
         }
       },
       {
-        "id": "c38f9b0790b8fa2e4913e0a4e7994959cf1430a623fa0bd241a17c7e70b3dff3",
+        "id": "551c29d1-a1cc-4547-80c5-4a6e58a1c70a",
         "name": "Planet Surface Crimson",
         "thumbnail": "https://assets.decentraland.org/QmUR68ZtLoiGRoFishfb3mVTvqUkghXHb7R6zaifddPgyg",
         "url": "PlanetFloorRed_02/PlanetFloorRed_02.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile"
-        ],
+        "tags": ["scifi", "tile"],
         "variations": [],
         "contents": {
           "PlanetFloorRed_02/PlanetFloorRed_02.glb": "QmU7e1QGT79NeThzqCEDy4bzpNtdrhdo37iXHrqFiYZ6Dg",
@@ -3112,16 +2310,12 @@
         }
       },
       {
-        "id": "594065dd174224ad2f4fdfd3118d1a912e92c2e5a09c3728f71e04f8da2b2019",
+        "id": "51778995-9491-49b6-b81a-c134580d33b5",
         "name": "Planet Surface Violet",
         "thumbnail": "https://assets.decentraland.org/QmNnUcpASkKA7FMA7WCtPd35aajPmcgwVSWnY3qJakQDrQ",
         "url": "PlanetFloorViolet_01/PlanetFloorViolet_01.glb",
         "category": "tiles",
-        "tags": [
-          "scifi",
-          "tile",
-          "planet"
-        ],
+        "tags": ["scifi", "tile", "planet"],
         "variations": [],
         "contents": {
           "PlanetFloorViolet_01/PlanetFloorViolet_01.glb": "QmSK8HbWuSmkoyRw9jX9Kx9ni9Nx5YzByvgStQYKXC5MmF",
@@ -3130,15 +2324,12 @@
         }
       },
       {
-        "id": "3c5c7fd6f3c8b2bbb7de8bb20cc7bc5aba86604fbb68971fbc5659837f9e57cf",
+        "id": "4054e448-065e-4007-bd33-b053e8194687",
         "name": "Orange Planet",
         "thumbnail": "https://assets.decentraland.org/QmVfzFyf5hcjhTszPGKSC8Z458BaC2PV7vSqK6MQarfQg2",
         "url": "Planet_01/Planet_01.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic"
-        ],
+        "tags": ["scifi", "cosmic"],
         "variations": [],
         "contents": {
           "Planet_01/Planet_01.glb": "QmcDWxMg43cdwRBuy92cciHx2LiXm4Y2nCVUd3HjkrjjCZ",
@@ -3147,15 +2338,12 @@
         }
       },
       {
-        "id": "79ab1c3052f9201f1c4d0833d60ffd5f514f6c96b76be9cea5a1427bfce38bc4",
+        "id": "522fe22e-9bf0-4bec-8033-26ed7704091f",
         "name": "Strange Planet",
         "thumbnail": "https://assets.decentraland.org/QmfTkmd2YdCgLNnS4tvkwDBEKNXectjfTk1ph6emGBWAmJ",
         "url": "Planet_02/Planet_02.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic"
-        ],
+        "tags": ["scifi", "cosmic"],
         "variations": [],
         "contents": {
           "Planet_02/Planet_02.glb": "Qmew3T2vsCeV9SwkvWqDBT4q98q1Si7Dmd1tab5KjAgtGY",
@@ -3164,15 +2352,12 @@
         }
       },
       {
-        "id": "1ac319f6fd518af6789f95ce5f05aff2f5109445c0f5d3d7b334f77155fe2c31",
+        "id": "5bcf9c8a-008a-4c3a-99c0-93565ec1e232",
         "name": "Spiky Planet",
         "thumbnail": "https://assets.decentraland.org/Qmae5DHQ5WiHh6H7bNQzyovjdgK9y2PPSVKouYyhDajcJr",
         "url": "Planet_03/Planet_03.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic"
-        ],
+        "tags": ["scifi", "cosmic"],
         "variations": [],
         "contents": {
           "Planet_03/Planet_03.glb": "QmcE4CzN9DAH5ZHqWD7XTC9pR8dZUevFvtBtXt2sytVh5P",
@@ -3181,15 +2366,12 @@
         }
       },
       {
-        "id": "f03a97e696834ac6e19938d09ccc1816013f310d2a6fa919ee57d0a32cbc9d88",
+        "id": "5985d5a4-de21-4e20-b262-a0683da2c958",
         "name": "Ringed Planet",
         "thumbnail": "https://assets.decentraland.org/QmVu4RTJeDjV8k7xhEGcPetLY6gpmxqLqysHcrw6Gy79RD",
         "url": "Planet_04/Planet_04.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic"
-        ],
+        "tags": ["scifi", "cosmic"],
         "variations": [],
         "contents": {
           "Planet_04/Planet_04.glb": "QmbRietqfhgqGMMZDkzQMJxAYuC116HWcDkoW16e7XjChu",
@@ -3198,15 +2380,12 @@
         }
       },
       {
-        "id": "7cfe1cf6f2b4ae2471b7d18aa4db0c2367f8fd7797fddb78c00665dd1708e38a",
+        "id": "7fe3120d-695e-4a84-8d1d-a35de24cbeb4",
         "name": "Moon",
         "thumbnail": "https://assets.decentraland.org/QmNsqCRznfcwWCu4mzQpZUz2nvgv8ddy7LKEEYNLR1Q7jn",
         "url": "Planet_05/Planet_05.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "cosmic"
-        ],
+        "tags": ["scifi", "cosmic"],
         "variations": [],
         "contents": {
           "Planet_05/Planet_05.glb": "Qmc23LP3UDZ8z565JGnywRzPuQLULty39SBvBwPNbpCGBV",
@@ -3215,15 +2394,12 @@
         }
       },
       {
-        "id": "641475ab607a7575f88b86bb7335a742ff1a5d0f67b7205c431840b48bde17a6",
+        "id": "e719c75c-f904-4e79-9343-512da68e1f55",
         "name": "Purple Palm",
         "thumbnail": "https://assets.decentraland.org/QmNdtpq4aku1VQ4BgRFRU9FN6WKE2Ldqe1Lm7vCa9PKBpk",
         "url": "PlantSF_01/PlantSF_01.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_01/PlantSF_01.glb": "QmeA4WoFtVMh2Y6r4oEsSJk562Kjf1Vs6Np11hceyf4Q79",
@@ -3232,15 +2408,12 @@
         }
       },
       {
-        "id": "437ac0a71b875be051aefc67f41b69f3a62339afd36fa7d763fd8a0ee8cce1b4",
+        "id": "9cc40bbf-5f25-4a86-b9c2-f1026f89b3d7",
         "name": "Yellow Buds",
         "thumbnail": "https://assets.decentraland.org/QmbXmiMr8Cx7dmn5q2QUPxNGLXHnQm7Fxo5T1t6ksdBWXu",
         "url": "PlantSF_02/PlantSF_02.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_02/PlantSF_02.glb": "QmebmHcSaWhiPQCQwDfGMzDia1Qv3VNtgGyYUKto6ziF8n",
@@ -3249,15 +2422,12 @@
         }
       },
       {
-        "id": "1e6ab967258a6a94dc1e05046ebc76eafe226ce41f1b99390119e93a73a29f24",
+        "id": "364a87e9-a63d-47e8-ac6f-702c46aa2036",
         "name": "Smooth Cactus",
         "thumbnail": "https://assets.decentraland.org/QmYAkxWPHaZAFRihwPqmXpCE6SuzdJThB6SfoJBxj5fhnC",
         "url": "PlantSF_03/PlantSF_03.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_03/PlantSF_03.glb": "QmZ9XD7gUizypkh2ZgFUecYcSma2prXzz42PbdZuaxsFw8",
@@ -3266,15 +2436,12 @@
         }
       },
       {
-        "id": "919a386cc2eeb26d9bbb4b58821ddcae424e9bfce37dcd5627efad71c3d91d1a",
+        "id": "02b932d6-4d5b-4b3c-b774-fe08f5797661",
         "name": "Mound Pansy",
         "thumbnail": "https://assets.decentraland.org/QmPVHrhq4GFrQ17Rk4ZrdKoqA2YzZo5bhc2bTzyKzb6bSm",
         "url": "PlantSF_04/PlantSF_04.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_04/PlantSF_04.glb": "QmbifDqHf7ZBbFUWt13zHXiRWmcuK8feLYEuWBB4WwZoZz",
@@ -3283,15 +2450,12 @@
         }
       },
       {
-        "id": "fec9da6b4c5147bc05ced4e21523e42e3cc4c3147ae054a29651e9c1a7140ede",
+        "id": "838f9dcc-2fb5-4740-8e2e-4fda0552b659",
         "name": "Fern Rose",
         "thumbnail": "https://assets.decentraland.org/QmdLr3sBwBtKZphmtUihPRLPcVgBBsm42gHdDzMLoY34cB",
         "url": "PlantSF_05/PlantSF_05.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_05/PlantSF_05.glb": "QmNccPNvuFrBHtCVTffKzsE7sjZ8EYRiVYcnoWy74ZNeqW",
@@ -3300,15 +2464,12 @@
         }
       },
       {
-        "id": "c2691290583efe8b02142800d44c43661f33f5b5e94e0a8903b6afcbb7e0d600",
+        "id": "2bae47e7-1e88-403c-a3b1-fee961e79cb4",
         "name": "Orange Trumpet Succulent",
         "thumbnail": "https://assets.decentraland.org/Qmc59npftqvtujXgREBVzdHY2yf4xF6n76hH54hu8S8x5b",
         "url": "PlantSF_06/PlantSF_06.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_06/PlantSF_06.glb": "Qmf6JnUaD5xxwj3YzTv1sexevbDp1LCM9isTpatvRPh1gx",
@@ -3317,16 +2478,12 @@
         }
       },
       {
-        "id": "2b0e7168fd92ec109611ef140a40aa5f4e48e809df209ba2be46b6f82a717e8a",
+        "id": "3582f988-1c7f-40ef-b23a-83568992456f",
         "name": "Cactus Wand",
         "thumbnail": "https://assets.decentraland.org/QmcnmgZxymf4CSbJwpCqHGGNCW6uLZvQhhjiyMXwHFqV8p",
         "url": "PlantSF_07/PlantSF_07.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree",
-          "crystal"
-        ],
+        "tags": ["scifi", "tree", "crystal"],
         "variations": [],
         "contents": {
           "PlantSF_07/PlantSF_07.glb": "QmaK8sxPcFqPck7PpQbiYZi2QrhSZzbi4rb2rCPyoL5TBS",
@@ -3335,15 +2492,12 @@
         }
       },
       {
-        "id": "394b614ef52bff94922b03a9f4499905fcfca4e19d8f729a43bc7ee4cf620e84",
+        "id": "be810580-4df5-471b-8879-8708abbd747c",
         "name": "Electric Blue Palm",
         "thumbnail": "https://assets.decentraland.org/QmPVdZoS9Df6VJGCiWSo6CTDGoJS5tPAUhewdhMFXZTDZj",
         "url": "PlantSF_08/PlantSF_08.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_08/PlantSF_08.glb": "QmYQY2RoV2d1PqqnJA2o5hzVFEYvF29YokJYqygdBsF3yE",
@@ -3352,15 +2506,12 @@
         }
       },
       {
-        "id": "2c9bd3520add45304d42ceea84420be063c1e41759503aa3b585a7bfe525f21d",
+        "id": "aeaba51b-9224-4da3-aab1-1f1a8d0a9d5a",
         "name": "Tubular Fronds",
         "thumbnail": "https://assets.decentraland.org/QmVf9wUywqj6w9QkAGGbW2JKviyvMDprkg9yJpASvFNd85",
         "url": "PlantSF_09/PlantSF_09.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_09/PlantSF_09.glb": "QmXNFXuhZbLYxJhU6EcSyLjWTWmPoE1vJftx4ZEyjBhobc",
@@ -3369,15 +2520,12 @@
         }
       },
       {
-        "id": "7a64c0d89e92ece46e33adb0f09c0a00a2d2dcfc8918cee6a6bace344eeaab54",
+        "id": "17a3fbb1-9a81-4193-a80c-e44dbf5e079b",
         "name": "Burgundy Kale",
         "thumbnail": "https://assets.decentraland.org/QmPiAVTLssPda2BfT4RTYVbNWaF11czAUsVCYnfpmawykC",
         "url": "PlantSF_10/PlantSF_10.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_10/PlantSF_10.glb": "QmZMV4ZZbfWiKRe9mWvfijmKq3dueZ5eDXRSwoAuvryKMy",
@@ -3386,16 +2534,12 @@
         }
       },
       {
-        "id": "835be854ec9a0d9eadf2076eef84361ae8c22217dccd53bee5c842b193956c12",
+        "id": "a1a2fa72-4c28-4190-ae25-dc59d5af8aac",
         "name": "Pink Hyacinth",
         "thumbnail": "https://assets.decentraland.org/QmPnCCzfiVipxwyB6GZjrvh8oEtuo8hFCNtfZ7XYRHPHHi",
         "url": "PlantSF_11/PlantSF_11.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree",
-          "crystal"
-        ],
+        "tags": ["scifi", "tree", "crystal"],
         "variations": [],
         "contents": {
           "PlantSF_11/PlantSF_11.glb": "QmRSEK7YGWm9GNhwBTNctRZkHNdTmRNv3Cv9vjJKMnmkAG",
@@ -3404,15 +2548,12 @@
         }
       },
       {
-        "id": "10e7d8fb51db352ccf004b9842a0aec1cabdb63e698a809c24b9390bbfaab438",
+        "id": "25e6a707-b92a-47d6-a4c1-18c5ac15e869",
         "name": "Purple Fuschia",
         "thumbnail": "https://assets.decentraland.org/QmVmGxG92zG1se436TotDhJDhr7FxATow6VvovVJNEsCph",
         "url": "PlantSF_12/PlantSF_12.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_12/PlantSF_12.glb": "QmdW97Scz7tf6vzFJRGbJHPw5Mf98s8a9gPmUZrpqXphmt",
@@ -3421,15 +2562,12 @@
         }
       },
       {
-        "id": "2279dd17668af2871189f6601f29f23c4276d778781a663bd85d93ee7f4d75e1",
+        "id": "9957e018-f9a0-43cf-a7b4-a94d7664b8be",
         "name": "Teal Tree Bulb",
         "thumbnail": "https://assets.decentraland.org/QmSksVyjeWm81c8sLP4kTmPkKFPnULMQ44MFVkoMHdguGX",
         "url": "PlantSF_13/PlantSF_13.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "tree"
-        ],
+        "tags": ["scifi", "tree"],
         "variations": [],
         "contents": {
           "PlantSF_13/PlantSF_13.glb": "QmUzFB5mcKHZUztpw3CeNXXb7xnRtuZZwU6ZPz8HprpV1j",
@@ -3439,17 +2577,12 @@
         }
       },
       {
-        "id": "d2cb8cf96e5faf45ca34c2feab628a3e68d086c1be044a8a3eff61bd5c11cff9",
+        "id": "e39af02d-8acf-46e6-8a98-a183b53e323d",
         "name": "Blue Plasma",
         "thumbnail": "https://assets.decentraland.org/Qmbdns5GhjmeYoWHxqpqHB3xjUwgTGgJGuKKxkHTX5AnTM",
         "url": "PlasmaBlue_01/PlasmaBlue_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "supply",
-          "power"
-        ],
+        "tags": ["scifi", "energy", "supply", "power"],
         "variations": [],
         "contents": {
           "PlasmaBlue_01/PlasmaBlue_01.glb": "QmXsD4q9Jes8RsMoJ1v7AL2QQoXjoAFSmqrBgft3W3TGJf",
@@ -3459,17 +2592,12 @@
         }
       },
       {
-        "id": "7330ed624d8f254caa3e1a259d0a78b3cd17f452b882d0cda9c2ab867b9f7144",
+        "id": "c98d2645-67bb-4064-a987-9b149dd7c2ec",
         "name": "Green Plasma",
         "thumbnail": "https://assets.decentraland.org/QmNMfyC5bNyioJCSnUNvDxcXNzQcg4zuMceJkfB1pzt4Zy",
         "url": "PlasmaGreen_01/PlasmaGreen_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "supply",
-          "power"
-        ],
+        "tags": ["scifi", "energy", "supply", "power"],
         "variations": [],
         "contents": {
           "PlasmaGreen_01/PlasmaGreen_01.glb": "QmWQnH9vWKw6bt5CWjjAsAwvVCCD1ajGkjBBUTdhYzCdmN",
@@ -3479,17 +2607,12 @@
         }
       },
       {
-        "id": "4f8d0d33d5daaf7bd26bab6ffd7f96519d710c44d9d67fcf222b01922db12ff1",
+        "id": "3192bf22-da43-405e-a135-bd05e02507c1",
         "name": "Pink Plasma",
         "thumbnail": "https://assets.decentraland.org/QmZHqgHzjTZ2amGrztC1dAQVf6bGs3mwVnngx8G6voU8Yh",
         "url": "PlasmaPink_01/PlasmaPink_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "supply",
-          "power"
-        ],
+        "tags": ["scifi", "energy", "supply", "power"],
         "variations": [],
         "contents": {
           "PlasmaPink_01/PlasmaPink_01.glb": "Qma6WJwYWEV7fSY4gCxJBcdrRTFC8LpiNvRDB7bxb8Kv86",
@@ -3499,17 +2622,12 @@
         }
       },
       {
-        "id": "bb569122bb5dcb9a29068e72e29ffbda64f2e54a1eee868766f23d39a7af3791",
+        "id": "f3f88a7d-29db-43d4-a64d-035dc0a1d3db",
         "name": "Yellow Plasma",
         "thumbnail": "https://assets.decentraland.org/QmfNqqsavjZaRsLP3F6Pn2RavgJ8PMZhjEcmJzEYN1j5Co",
         "url": "PlasmaYellow_01/PlasmaYellow_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "energy",
-          "supply",
-          "power"
-        ],
+        "tags": ["scifi", "energy", "supply", "power"],
         "variations": [],
         "contents": {
           "PlasmaYellow_01/PlasmaYellow_01.glb": "Qmd3oiMaW1HtVozL1Huyy3tURbbbTNqGJCb2FP5AwZNo9H",
@@ -3519,16 +2637,12 @@
         }
       },
       {
-        "id": "711301ae6b8b0dd1fa129ae0ab071469eb7c83c111dcefaedabca776f788054c",
+        "id": "aaec6330-2af1-4054-90bc-facbdfde0de7",
         "name": "Thin Vertical Pod",
         "thumbnail": "https://assets.decentraland.org/QmeiChT6134b9z1sSE4hfkc5Qqc5f5GvwRftBQt5KqnCEj",
         "url": "Pod_01/Pod_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship"
-        ],
+        "tags": ["scifi", "storage", "spaceship"],
         "variations": [],
         "contents": {
           "Pod_01/Pod_01.glb": "QmXC3KoDYDZqUwqGwoQEFHe6zWRJromik1vmYoCCutDEAN",
@@ -3537,16 +2651,12 @@
         }
       },
       {
-        "id": "0ec03ded8ccecc6ca93d06762dd37961f612648d78b143a398cfde8ea8425a01",
+        "id": "5954e959-9169-474e-807c-7a622712e8d5",
         "name": "Wide Vertical Pod",
         "thumbnail": "https://assets.decentraland.org/Qmc1rKmrSsthkmnNyetKVaFPtpFQx8G3xx4sngxod2D6D8",
         "url": "Pod_02/Pod_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship"
-        ],
+        "tags": ["scifi", "storage", "spaceship"],
         "variations": [],
         "contents": {
           "Pod_02/Pod_02.glb": "QmXv8tS4jnfynyYmZg4Fu29uYGTUA7k7eFKhnVa4rcu44L",
@@ -3555,16 +2665,12 @@
         }
       },
       {
-        "id": "e4a936470030935c9e7e9145c32d86689f8cd6fc1b5e9710fd8c6e0170a0782d",
+        "id": "b03e7a8f-d9f8-4790-aeac-3bafa01e704f",
         "name": "Horizontal Pod",
         "thumbnail": "https://assets.decentraland.org/Qmce9dSPcqMLBjdCCpcoDxFh57vFm5NXgFMhDpH5hoT1Qf",
         "url": "Pod_03/Pod_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship"
-        ],
+        "tags": ["scifi", "storage", "spaceship"],
         "variations": [],
         "contents": {
           "Pod_03/Pod_03.glb": "QmRoMr18acwmLWN5RCCYPgyuW5td5VdE8dyF8s4VEiBbJF",
@@ -3573,16 +2679,12 @@
         }
       },
       {
-        "id": "e76ed0bd1aebda5d33be0f9d4084b4f8817308067e1ad9737f28bf7a6a4082cc",
+        "id": "9f57219a-a3a8-4e3c-aaa4-ffb77ffa545c",
         "name": "Rotating Roof Vent",
         "thumbnail": "https://assets.decentraland.org/QmZw9AxJ8Uez1wAGkJbDQiH59EYoaCyNrF75G8xvj5QXL4",
         "url": "RoofVent_01/RoofVent_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "air",
-          "vent"
-        ],
+        "tags": ["scifi", "air", "vent"],
         "variations": [],
         "contents": {
           "RoofVent_01/RoofVent_01.glb": "QmbhGiKXFV6s9CuTUfkS4Z59NKVSKtZmEeVW9wA6YPnQ1r",
@@ -3591,17 +2693,12 @@
         }
       },
       {
-        "id": "ad38f38c1145013b50d059ba871be51a3df2432efa35aa086df6b67421549b50",
+        "id": "8cd922bd-0afb-4d0f-95ed-ab27b1b5d364",
         "name": "Wheeled Rover",
         "thumbnail": "https://assets.decentraland.org/QmR7U9jwSxd5CGzFoRY6UUmUM738uppuwmB2u1sK9fv34F",
         "url": "Rover_01/Rover_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "robot",
-          "tech",
-          "machine"
-        ],
+        "tags": ["scifi", "robot", "tech", "machine"],
         "variations": [],
         "contents": {
           "Rover_01/Rover_01.glb": "QmQibLfQSAR6MYeMg3Y2EPXjxHaYrhMNi9ULS9oCsr9MoX",
@@ -3611,17 +2708,12 @@
         }
       },
       {
-        "id": "cb4275371eb40a9e2a239316f872c9e3801544a56261fb4520d2f075540740af",
+        "id": "39a94064-2d68-4208-b629-5185d4d70959",
         "name": "Elevated Rover",
         "thumbnail": "https://assets.decentraland.org/QmXvC3f14uKJ8kUSGRiYzxL7ZKSM1o2Md1aJ5MWo8b98dn",
         "url": "Rover_02/Rover_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "robot",
-          "tech",
-          "machine"
-        ],
+        "tags": ["scifi", "robot", "tech", "machine"],
         "variations": [],
         "contents": {
           "Rover_02/Rover_02.glb": "QmQxpg6PJQ5ETc6JvozhVSHt9RybFgS15ruQKfc37qDXxY",
@@ -3630,16 +2722,12 @@
         }
       },
       {
-        "id": "38dc88a0aac5d2d41c46c101e77e5775d34df34c354818961ad83be808fe9667",
+        "id": "97ef8cdf-57d0-403a-be20-591e8852d5fc",
         "name": "Satellite",
         "thumbnail": "https://assets.decentraland.org/QmTihSaMXUrh6QcZ7US8QP8974SbvT5MVR1ac8uaRW681W",
         "url": "Satellite_01/Satellite_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "space",
-          "comms"
-        ],
+        "tags": ["scifi", "space", "comms"],
         "variations": [],
         "contents": {
           "Satellite_01/Satellite_01.glb": "QmNycQ6spQ7tJLk582g5bce4jNS2A2xZZBhhtbpbaUknJu",
@@ -3648,17 +2736,12 @@
         }
       },
       {
-        "id": "531546a7424e91eeed7272f293ac560030cc414c3403a0194af01c7af518e20a",
+        "id": "996b603b-3c6a-40cd-b709-e1d8b50130ff",
         "name": "Tube Container",
         "thumbnail": "https://assets.decentraland.org/QmUxKfJ8sNTrRN8bxCGLj5PZtmoNMPDZZv2mS7sCqC4PyH",
         "url": "ScienceContainer_01/ScienceContainer_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship",
-          "lab"
-        ],
+        "tags": ["scifi", "storage", "spaceship", "lab"],
         "variations": [],
         "contents": {
           "ScienceContainer_01/SciFiPackTransp_TX.png": "QmS8ow5tnopyj4KuXGGj8FXh5DLX431fsB3pDPLMNCnuYj",
@@ -3668,17 +2751,12 @@
         }
       },
       {
-        "id": "337b229c05afb972c62b1a8ed344f74363a2ee38c95c713a39ac3ac097b4296c",
+        "id": "d58d2279-9658-423a-a386-f05510a3c1d2",
         "name": "Hexagonal Container",
         "thumbnail": "https://assets.decentraland.org/QmP8No5owHdqmep6zZGYvMgqdydCM3LHWVvp8sZhLza8nu",
         "url": "ScienceContainer_02/ScienceContainer_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "storage",
-          "spaceship",
-          "lab"
-        ],
+        "tags": ["scifi", "storage", "spaceship", "lab"],
         "variations": [],
         "contents": {
           "ScienceContainer_02/SciFiPackTransp_TX.png": "QmS8ow5tnopyj4KuXGGj8FXh5DLX431fsB3pDPLMNCnuYj",
@@ -3688,16 +2766,12 @@
         }
       },
       {
-        "id": "42479c714289ba09e1e67623beed930af936494c7b6ca9014b9503bf78f39fa5",
+        "id": "7b14e557-689c-4e09-af24-716113f46787",
         "name": "Four-Seat Row",
         "thumbnail": "https://assets.decentraland.org/QmViQuGDxReDPLDcgmB9HZ2xRerunTfz4jDPn1Q2pDVniE",
         "url": "Seats_01/Seats_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "parts"
-        ],
+        "tags": ["scifi", "spaceship", "parts"],
         "variations": [],
         "contents": {
           "Seats_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3706,17 +2780,12 @@
         }
       },
       {
-        "id": "708c0043d00da4d20bebc95a7dd6ff17921a3d062b5fc7914883e15598c7c158",
+        "id": "36933185-2cd3-4ce6-a73a-301afb0e180a",
         "name": "Sensor",
         "thumbnail": "https://assets.decentraland.org/QmU2tLdNkxMGgirehW4PnmrCukHRkiNw7DC43sGLcfAheT",
         "url": "Sensor_01/Sensor_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "tech",
-          "comms",
-          "detector"
-        ],
+        "tags": ["scifi", "tech", "comms", "detector"],
         "variations": [],
         "contents": {
           "Sensor_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3725,19 +2794,12 @@
         }
       },
       {
-        "id": "318c13dd9a08d5c0a15bf2924b0eb21ef6986fb3a9cb34c50490cdc02c2dffcd",
+        "id": "666264b8-18d7-48f8-a10c-ea5155e9cdad",
         "name": "Solar Panel",
         "thumbnail": "https://assets.decentraland.org/QmTmMM7iaN5oLDNBS4xbA7xVVddbpQbxyrE9GcnTUL5SSV",
         "url": "SolarPanel_01/SolarPanel_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "tech",
-          "parts",
-          "power",
-          "energy",
-          "sun"
-        ],
+        "tags": ["scifi", "tech", "parts", "power", "energy", "sun"],
         "variations": [],
         "contents": {
           "SolarPanel_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3746,16 +2808,12 @@
         }
       },
       {
-        "id": "052d14959efa8a3cb27f49069ed9d5e3cac6574a9fc865909011b242b7184cde",
+        "id": "ea072ffb-fdbb-456e-a260-b5e8fed27115",
         "name": "Space Room with Stairs",
         "thumbnail": "https://assets.decentraland.org/Qmbf8CJGFeQJiRNq2mPduJSV6rof7yd7DbgyAN7kJnJAt6",
         "url": "SpaceRoom_01/SpaceRoom_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "parts",
-          "base"
-        ],
+        "tags": ["scifi", "parts", "base"],
         "variations": [],
         "contents": {
           "SpaceRoom_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3764,17 +2822,12 @@
         }
       },
       {
-        "id": "90917686802e89df3b74aaaf95a8b0dfc2ede9c08725be6941356dcd86379e2e",
+        "id": "1145b6ea-0d66-4c0a-9b2f-08396cb4fb1a",
         "name": "Spaceship Platform",
         "thumbnail": "https://assets.decentraland.org/QmX9iyA5qcoHBCEe8shzV1yYfpa7k3CKZ53ZRSn3w1MtGP",
         "url": "SpaceShipBase_01/SpaceShipBase_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "port",
-          "dock",
-          "spaceship"
-        ],
+        "tags": ["scifi", "port", "dock", "spaceship"],
         "variations": [],
         "contents": {
           "SpaceShipBase_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3783,16 +2836,12 @@
         }
       },
       {
-        "id": "4b89aa4ebf5e81e3ac6003e711ffed7aa71b1c8f333816bebf5dd8e2b60ba3e5",
+        "id": "c0f25f92-6412-4774-bf12-be98f145fd1d",
         "name": "Orange Space Pod",
         "thumbnail": "https://assets.decentraland.org/QmfHWQgZXV3bhXvqFy6MeFp38XGh6hrBUqawutAo4j6xmo",
         "url": "SpaceShip_01/SpaceShip_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "drone"
-        ],
+        "tags": ["scifi", "spaceship", "drone"],
         "variations": [],
         "contents": {
           "SpaceShip_01/SciFiPackTransp_TX.png": "QmS8ow5tnopyj4KuXGGj8FXh5DLX431fsB3pDPLMNCnuYj",
@@ -3803,16 +2852,12 @@
         }
       },
       {
-        "id": "7ac481d9ffaf0ec99fda682f93312d78c295611b68c5f0cfb79699912d0b617d",
+        "id": "c5510bc2-a379-402f-9c21-c3c1711e9ca3",
         "name": "Blue Space Pod",
         "thumbnail": "https://assets.decentraland.org/QmRtUySMCUhkdVGbfkN7kkyPLKPKd6udsPJgqJNNa6Mfh6",
         "url": "SpaceShip_02/SpaceShip_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "drone"
-        ],
+        "tags": ["scifi", "spaceship", "drone"],
         "variations": [],
         "contents": {
           "SpaceShip_02/SciFiPackTransp_TX.png": "QmS8ow5tnopyj4KuXGGj8FXh5DLX431fsB3pDPLMNCnuYj",
@@ -3823,16 +2868,12 @@
         }
       },
       {
-        "id": "93e8bf7f39fd7845c25061a4e549abaa11abb53c0ac345c34634454cc1242806",
+        "id": "75289fa0-07da-4a41-b25b-7a5da16fc5ab",
         "name": "Orange Spaceship",
         "thumbnail": "https://assets.decentraland.org/Qmbc74i19QYakbNQhyu86pa3qmYJ8umrYKwGriDXqmvhDD",
         "url": "SpaceShip_03/SpaceShip_03.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "spaceship",
-          "drone"
-        ],
+        "tags": ["scifi", "spaceship", "drone"],
         "variations": [],
         "contents": {
           "SpaceShip_03/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3841,17 +2882,12 @@
         }
       },
       {
-        "id": "fa11fb3c77d234c34ed7e3959af520c6ec63bec14f9157064ae172bd3bbc77ec",
+        "id": "82ecdea9-8e76-458c-9705-2908d12c3369",
         "name": "Green Star",
         "thumbnail": "https://assets.decentraland.org/QmZkF6uGwrzMv4LmLSEkAw43nuN357ivzNg7Y2yvgEygT2",
         "url": "Star_01/Star_01.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "planet",
-          "round",
-          "spike"
-        ],
+        "tags": ["scifi", "planet", "round", "spike"],
         "variations": [],
         "contents": {
           "Star_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3860,16 +2896,12 @@
         }
       },
       {
-        "id": "b8c0b0ab226d927af4fc79068d6c3962c5bd33389fbe37c2cfc09b4bc4ad8acf",
+        "id": "2d8552b9-8a0d-402d-9e5c-396cd9f068df",
         "name": "Moon Stone",
         "thumbnail": "https://assets.decentraland.org/QmTfTYVWLNjK9dhk7UrpoYUtHhwbMwEXpf718KPNrJXTMf",
         "url": "Stone_01/Stone_01.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "planet"
-        ],
+        "tags": ["scifi", "rock", "planet"],
         "variations": [],
         "contents": {
           "Stone_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3878,16 +2910,12 @@
         }
       },
       {
-        "id": "c9ba04ef0ae996c6b0590c89fecbc0251af19abfba57bb3b053e0df9c86daf40",
+        "id": "d4101d8b-ea82-4e34-a77d-8567bd47cf69",
         "name": "Rose Stone",
         "thumbnail": "https://assets.decentraland.org/QmeT3adoX3rkYGTgThCBmBfjhUHwkF36oKqXdWiiyijfAR",
         "url": "Stone_02/Stone_02.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "planet"
-        ],
+        "tags": ["scifi", "rock", "planet"],
         "variations": [],
         "contents": {
           "Stone_02/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3896,16 +2924,12 @@
         }
       },
       {
-        "id": "05209b1832cb9a84ed5dda41ba15a598fc5db40d8a993547e0131ddc75633a29",
+        "id": "f8cf4bde-c1fc-4245-ac21-ed725b2606a5",
         "name": "Ball Stone",
         "thumbnail": "https://assets.decentraland.org/QmbeRW33xG61hmBPzDXRCyZBm2YzhRAByrkAXnauV5RTPW",
         "url": "Stone_03/Stone_03.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "planet"
-        ],
+        "tags": ["scifi", "rock", "planet"],
         "variations": [],
         "contents": {
           "Stone_03/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3914,16 +2938,12 @@
         }
       },
       {
-        "id": "3aa79ac3fce3557fcf465d7c005f397587fbb87d02259a0a74d38adb4b2f8180",
+        "id": "b4f4b165-5d04-484a-a69f-70e0ddf5219f",
         "name": "Orange Asteroid",
         "thumbnail": "https://assets.decentraland.org/QmZvrfQLRe1X1ooTpKrUk9qMnSvq9KHaD8JfvYBLESdVTD",
         "url": "Stone_04/Stone_04.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "planet"
-        ],
+        "tags": ["scifi", "rock", "planet"],
         "variations": [],
         "contents": {
           "Stone_04/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3932,16 +2952,12 @@
         }
       },
       {
-        "id": "ae1abbff73be829e61ec5576cc579c2b718e4b84574a9c22df7b68805771ec7d",
+        "id": "3f41ab91-ac92-48af-b244-616ba7ef6ca1",
         "name": "Orange Projectile Asteroid",
         "thumbnail": "https://assets.decentraland.org/QmSgS5YtALmiSvP3aqJQiCFpRbWtk4NVCvee3JWbZS7Em3",
         "url": "Stone_05/Stone_05.glb",
         "category": "nature",
-        "tags": [
-          "scifi",
-          "rock",
-          "planet"
-        ],
+        "tags": ["scifi", "rock", "planet"],
         "variations": [],
         "contents": {
           "Stone_05/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3950,16 +2966,12 @@
         }
       },
       {
-        "id": "752163d8dabab04514aad08d754efa113b26fcaed3536b949159137730b453f7",
+        "id": "b0989c0b-e691-4095-a0c7-b5c8e8ebe220",
         "name": "Street Barrier",
         "thumbnail": "https://assets.decentraland.org/QmPkGUzTpVacKrhmLGCrkEW1fqmUoSaYMVEpK7RRSj9Kp2",
         "url": "StreetFence_01/StreetFence_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "city",
-          "wall"
-        ],
+        "tags": ["scifi", "city", "wall"],
         "variations": [],
         "contents": {
           "StreetFence_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3968,17 +2980,12 @@
         }
       },
       {
-        "id": "826ab646881310484cbee7ab46d2674bd84baeb0c7c9281ea6214b98c0236221",
+        "id": "6ac21a9b-4018-457f-94ad-4386bfd3c29e",
         "name": "Upright Work Table",
         "thumbnail": "https://assets.decentraland.org/QmVYedDzBAdBDMNsgkE2H7McMUDcs5vLvhUWUKVVUPqde4",
         "url": "TableSciFi_01/TableSciFi_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "base",
-          "tool",
-          "work"
-        ],
+        "tags": ["scifi", "base", "tool", "work"],
         "variations": [],
         "contents": {
           "TableSciFi_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -3987,17 +2994,12 @@
         }
       },
       {
-        "id": "289133f66146e26b45953899199722d3cceb50af0a8c85573b1a77228aa676c8",
+        "id": "02186faf-ebeb-4022-97fe-a24be03d431e",
         "name": "Yellow Dinner Table",
         "thumbnail": "https://assets.decentraland.org/QmaDdVzq85dHHQMtAPerx75E81pTVvcc6fbfG96AAxJvcu",
         "url": "TableSciFi_02/TableSciFi_02.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "base",
-          "tool",
-          "work"
-        ],
+        "tags": ["scifi", "base", "tool", "work"],
         "variations": [],
         "contents": {
           "TableSciFi_02/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4006,17 +3008,12 @@
         }
       },
       {
-        "id": "c51dfea9223957a2a9bb32507f01f455017393a2bad89040b5e946b45e948920",
+        "id": "ad13e653-cd75-4f64-8c56-97b99affb21c",
         "name": "Low Dinner Table",
         "thumbnail": "https://assets.decentraland.org/QmVQjpyforHrNaiCZZxsjLiPnbf46Y6hY15C2VJ6JZkPvn",
         "url": "Table_dinner_01/Table_dinner_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "base",
-          "tool",
-          "work"
-        ],
+        "tags": ["scifi", "base", "tool", "work"],
         "variations": [],
         "contents": {
           "Table_dinner_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4025,16 +3022,12 @@
         }
       },
       {
-        "id": "9d4618b8c760cb7eb19196ee7498a5e0380ee668b12ff2a218f57aae4253337c",
+        "id": "b6f1f396-61b4-4d50-b48c-5918a431edaa",
         "name": "Teleporter Base",
         "thumbnail": "https://assets.decentraland.org/QmbQiNCsEcfiqWfhLg3ULrKs8HvXsCEn29H3UTS5XVoZWq",
         "url": "Teleporter_01/Teleporter_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "tech",
-          "spaceship"
-        ],
+        "tags": ["scifi", "tech", "spaceship"],
         "variations": [],
         "contents": {
           "Teleporter_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4043,16 +3036,12 @@
         }
       },
       {
-        "id": "92a96bb0e682057aa942a4c9e4a56969af4dbc9de7ba74eeb60accec17b1dfc8",
+        "id": "508a701a-f898-4258-8857-5c3b4b836f66",
         "name": "Terminal",
         "thumbnail": "https://assets.decentraland.org/QmeH3eZac1E4X86tbRFCTFyAr2NdovFKHZZVtkLgPikMPv",
         "url": "Terminal_01/Terminal_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "computer",
-          "parts"
-        ],
+        "tags": ["scifi", "computer", "parts"],
         "variations": [],
         "contents": {
           "Terminal_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4062,15 +3051,12 @@
         }
       },
       {
-        "id": "cd3ba126dce54b957c31cfdd592c11146e606312d14b49f931691fb504df6ad8",
+        "id": "b08d5662-6b4c-433d-8153-d1aae3cab4df",
         "name": "Curved Tube",
         "thumbnail": "https://assets.decentraland.org/QmNuKvP4XVSiuskASTm5MSHChAmfkcNeVpGzg25zkWtx4q",
         "url": "TubeCurve_01/TubeCurve_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "tube"
-        ],
+        "tags": ["scifi", "tube"],
         "variations": [],
         "contents": {
           "TubeCurve_01/SciFiPackTransp_TX.png": "QmS8ow5tnopyj4KuXGGj8FXh5DLX431fsB3pDPLMNCnuYj",
@@ -4080,15 +3066,12 @@
         }
       },
       {
-        "id": "0255e1962d5b6465f00d3c0bf98a255d4701ffb4f30d630344eea7a5e46d1c80",
+        "id": "8b2bbf97-03f5-4882-8927-2a0a48d7c22c",
         "name": "Straight Tubing",
         "thumbnail": "https://assets.decentraland.org/QmWvEEnCMDiGr1rFq39ByvVaJv8gFFFRjFgpBZHfqs7H2r",
         "url": "TubePiece_01/TubePiece_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "tube"
-        ],
+        "tags": ["scifi", "tube"],
         "variations": [],
         "contents": {
           "TubePiece_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4097,15 +3080,12 @@
         }
       },
       {
-        "id": "7a2d72fa5851e39db30cfe3c1db9bfcb4d29703481cccdc40d26aadb6881cdf6",
+        "id": "99819cd1-f7ee-43ee-b2fa-80bc6e7c3f5b",
         "name": "Bent Tubing",
         "thumbnail": "https://assets.decentraland.org/QmdY7gzAABk4XZYiEzqh5GhYDTa128HudHLNiuFL13gr6i",
         "url": "TubePiece_02/TubePiece_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "tube"
-        ],
+        "tags": ["scifi", "tube"],
         "variations": [],
         "contents": {
           "TubePiece_02/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4114,15 +3094,12 @@
         }
       },
       {
-        "id": "b9a94ce190207c2101dd8098ea478ffd6997ea8b82e7ef46faa3563cd85e5e39",
+        "id": "6db0675c-25ed-4aad-9194-a34aec6735f9",
         "name": "Curved Tubing",
         "thumbnail": "https://assets.decentraland.org/QmXXaM6LBx7t3dXSgPhh7okAbt15rd2fYCB4eypYtSyXbe",
         "url": "TubePiece_03/TubePiece_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "tube"
-        ],
+        "tags": ["scifi", "tube"],
         "variations": [],
         "contents": {
           "TubePiece_03/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4131,15 +3108,12 @@
         }
       },
       {
-        "id": "f7fc7b402c6bf9130fc36015998edad3952e57d66289769e6d974ce6308b82fb",
+        "id": "21900519-ef9b-423e-874c-2e472a8669eb",
         "name": "Straight Tube",
         "thumbnail": "https://assets.decentraland.org/QmQerDhH8gqwi3eidDLBcF3ti2F8PzSMDYqnb4iGe3YdFG",
         "url": "Tube_01/Tube_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "tube"
-        ],
+        "tags": ["scifi", "tube"],
         "variations": [],
         "contents": {
           "Tube_01/SciFiPackTransp_TX.png": "QmS8ow5tnopyj4KuXGGj8FXh5DLX431fsB3pDPLMNCnuYj",
@@ -4149,16 +3123,12 @@
         }
       },
       {
-        "id": "9f59f80f69b5c6a4cfc315e75192cfc326e53b64d845ec6509a1e0a3b624f5c9",
+        "id": "ce283bf2-f8c4-456b-9831-3c167d92669e",
         "name": "Bulky Turret Base",
         "thumbnail": "https://assets.decentraland.org/QmPSpwcrLJaKFouDsUpTqBvNub9fosn8mG9FbuFzgWRyzd",
         "url": "TurretBase_01/TurretBase_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "weapon",
-          "laser"
-        ],
+        "tags": ["scifi", "weapon", "laser"],
         "variations": [],
         "contents": {
           "TurretBase_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4167,16 +3137,12 @@
         }
       },
       {
-        "id": "ee80aff6ed4689c1d1d5fb87418580611ce73ac8c1f4cf0efb98df202d7394df",
+        "id": "dd03bd09-d90b-4082-8c08-c0475394f4d0",
         "name": "Slimline Turret Base",
         "thumbnail": "https://assets.decentraland.org/QmeLM1hxRSscnh8p4gS4dYBqr1VhswmwvHnxFFY8tx4FC3",
         "url": "TurretBase_02/TurretBase_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "weapon",
-          "laser"
-        ],
+        "tags": ["scifi", "weapon", "laser"],
         "variations": [],
         "contents": {
           "TurretBase_02/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4185,16 +3151,12 @@
         }
       },
       {
-        "id": "8f9a2b3257ab1c6a2e6f3a17db7c381f2c201f3e160eee9992dae989d53f6466",
+        "id": "977818ef-6cf2-4d7a-b21f-b5e86ad795a1",
         "name": "Single Turret",
         "thumbnail": "https://assets.decentraland.org/QmQbmKfChoLJSKuQJyt6pp8RMvp3oHCsbTn1TArsaJHpSi",
         "url": "Turret_01/Turret_01.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "weapon",
-          "laser"
-        ],
+        "tags": ["scifi", "weapon", "laser"],
         "variations": [],
         "contents": {
           "Turret_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4203,16 +3165,12 @@
         }
       },
       {
-        "id": "8154987f012361d356ed9916563a82c1d1281f544b2741b556ac60434568db7c",
+        "id": "6a8c9b63-3369-44af-897f-1d27fbb5133d",
         "name": "Dual Turret",
         "thumbnail": "https://assets.decentraland.org/QmNa3urxHZpDDmms5UUnGWo3zc577KgoymKgnX3S7Ji9Kw",
         "url": "Turret_02/Turret_02.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "weapon",
-          "laser"
-        ],
+        "tags": ["scifi", "weapon", "laser"],
         "variations": [],
         "contents": {
           "Turret_02/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4221,16 +3179,12 @@
         }
       },
       {
-        "id": "83705d08e08e2609c11a695a8c2dd891ea57f69af8e9b35951b83e378b02f9ce",
+        "id": "ef767fb3-995e-4b8a-a07f-6119d34fa9c1",
         "name": "Turret Array",
         "thumbnail": "https://assets.decentraland.org/QmNPeaonETCQribyCDVLR6WbiSYp66aoo27fczs76VhWS7",
         "url": "Turret_03/Turret_03.glb",
         "category": "structures",
-        "tags": [
-          "scifi",
-          "weapon",
-          "laser"
-        ],
+        "tags": ["scifi", "weapon", "laser"],
         "variations": [],
         "contents": {
           "Turret_03/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",
@@ -4239,17 +3193,12 @@
         }
       },
       {
-        "id": "8c91cb2f82ee0e58f6a8afe18beeea8e4e97d037a96c33c5c0bad5fee1f2798a",
+        "id": "03a965da-3968-4bc9-a73a-c866e6f80e3f",
         "name": "Vault",
         "thumbnail": "https://assets.decentraland.org/QmSqvgvqyrisiCSx8TR9SSTBk3Eo2qEMFtaCnVSm2VhH3z",
         "url": "Vault_01/Vault_01.glb",
         "category": "decorations",
-        "tags": [
-          "scifi",
-          "box",
-          "storage",
-          "safe"
-        ],
+        "tags": ["scifi", "box", "storage", "safe"],
         "variations": [],
         "contents": {
           "Vault_01/SciFiPack_TX.png": "QmbQt5kjT5u8Y6TzGXiHwyqMn1FxF7UMEXoxt8opTsciby",

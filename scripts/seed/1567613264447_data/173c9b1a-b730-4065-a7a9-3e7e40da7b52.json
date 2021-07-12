@@ -6,7 +6,7 @@
     "title": "HTC Exodus",
     "assets": [
       {
-        "id": "2606c0cc18bb6184dd9cee0ed7eba7a3fa549bf08299ef20d83715be507149f3",
+        "id": "09c9fb65-306e-4c73-8430-4a0b1a4a6311",
         "name": "Exodus Base",
         "thumbnail": "https://assets.decentraland.org/QmTD3FR7gJErBTHCpYBhkVizhdwbhuSMVfsAjGdXSaohrA",
         "url": "HTC_Base/HTC_Base.glb",
@@ -22,7 +22,7 @@
         }
       },
       {
-        "id": "0b87cd20e649cb63821e4bf67784bb5c3b727a901660687de6c6630a5553ccd8",
+        "id": "e8711840-5b22-4569-8bfe-15c2613e4e0e",
         "name": "Exodus Rings",
         "thumbnail": "https://assets.decentraland.org/QmPmgLpVqpddYjzzYEUxEeSmskaL94XQEJEx2oYyz8qwf3",
         "url": "HTC_CircularBase/HTC_CircularBase.glb",
@@ -38,7 +38,7 @@
         }
       },
       {
-        "id": "6a3058141cd03627b753ad1c2f9abb605cc313215486e011a3558b0013807bdc",
+        "id": "1d7ab787-2d74-46c9-8b27-2fe96f794d90",
         "name": "Zion All-in-One Private Blockchain Vault",
         "thumbnail": "https://assets.decentraland.org/QmXeZfdmeHZdCCfVBJVxpEKA3ZAbDMwUBVDaNnyA4UJLZA",
         "url": "HTC_Cube/HTC_Cube.glb",
@@ -54,7 +54,7 @@
         }
       },
       {
-        "id": "871297e81ec2da3f6129051a0074e6e10dc0da2f335a5d559af418cb5b0a2ef2",
+        "id": "f218c4b9-4bfa-4e39-9f41-e260e67f4ce7",
         "name": "Exodus Phone",
         "thumbnail": "https://assets.decentraland.org/QmaykX42Qrcb43i9DSPdKXxHJ7hqKwDPbSQ4FK7tnz6eDv",
         "url": "HTC_Phone/HTC_Phone.glb",
@@ -72,7 +72,7 @@
         }
       },
       {
-        "id": "861e8cc0235cff81ad01c9019b352f9805b66a87925015ee11d4fc1177551c78",
+        "id": "22929287-f1c9-4847-9372-b0df1da4c61a",
         "name": "Exodus Portal",
         "thumbnail": "https://assets.decentraland.org/QmduQzLFy26KktHvUzAieHtPAQQFU6qhCHbyF8w9CRyof7",
         "url": "HTC_Portal/HTC_Portal.glb",
@@ -88,7 +88,7 @@
         }
       },
       {
-        "id": "5831fc2773700a41916f53a72368a470b53cedb1d65f7f25869ccd8f426bf13c",
+        "id": "ac5dfb63-0ff4-4c4f-b8a1-7ce7f6d1475d",
         "name": "Exodus Blockchain Vault",
         "thumbnail": "https://assets.decentraland.org/QmZQjtbBvtAMx5ZXAJ97fTcft6UwSAvBbeA4oeVJoDUt3p",
         "url": "HTC_Vault/HTC_Vault.glb",
@@ -106,7 +106,7 @@
         }
       },
       {
-        "id": "b79e4d44d540ee1d53c9da275d9b7d01581a6689386f461ee414d3ab4b21b39c",
+        "id": "37ea419e-c215-4bc5-b18d-f6257cc626a8",
         "name": "Zion Logo",
         "thumbnail": "https://assets.decentraland.org/QmbjxNvoSi6qTVF66qZXH1u1CQNRDyxSgK1AMfUa2eZx18",
         "url": "HTC_ZionLogo/HTC_ZionLogo.glb",

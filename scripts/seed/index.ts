@@ -101,9 +101,7 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       } as AssetAttributes
 
       console.log(`Upserting asset ${attributes.id} for asset pack ${id}`)
-      assetPromises.push(
-        new Asset(attributes).upsert({ target: ['id', 'asset_pack_id'] })
-      )
+      assetPromises.push(new Asset(attributes).upsert())
 
       try {
         const s3Content = new S3Content()

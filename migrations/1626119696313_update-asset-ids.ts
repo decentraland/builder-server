@@ -15,6 +15,11 @@ export const up = (pgm: MigrationBuilder) => {
 		name: 'assets_id_asset_pack_id_unique_index',
 	})
 	pgm.addIndex(tableName, 'id', { unique: true })
+
+	pgm.alterColumn(tableName, 'id', {
+		type: 'uuid',
+		using: 'id::uuid',
+	})
 }
 
 export const down = (pgm: MigrationBuilder) => {
@@ -26,5 +31,10 @@ export const down = (pgm: MigrationBuilder) => {
 		primaryKey: columns,
 	})
 
+	pgm.dropIndex(tableName, 'id', {
+		name: 'assets_id_unique_index',
+	})
 	pgm.addIndex(tableName, columns, { unique: true })
+
+	pgm.alterColumn(tableName, 'id', { type: 'TEXT' })
 }

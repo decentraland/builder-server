@@ -1,16 +1,10 @@
 import { MigrationBuilder } from 'node-pg-migrate'
-import {
-  updateAssetIds,
-  restoreLegacyAssetIds,
-} from '../scripts/manageAssetIds'
 import { Asset } from '../src/Asset'
 
 const tableName = Asset.tableName
 const columns = ['id', 'asset_pack_id']
 
 export const up = async (pgm: MigrationBuilder) => {
-  await updateAssetIds()
-
   pgm.dropConstraint(tableName, 'assets_pkey')
   pgm.addConstraint(tableName, 'assets_pkey', { primaryKey: 'id' })
 
@@ -38,6 +32,4 @@ export const down = async (pgm: MigrationBuilder) => {
   pgm.addIndex(tableName, columns, { unique: true })
 
   pgm.alterColumn(tableName, 'id', { type: 'TEXT' })
-
-  await restoreLegacyAssetIds()
 }

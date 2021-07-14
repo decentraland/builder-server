@@ -14,19 +14,25 @@ const ASSET_PACK_FILES_NAMES = [
   'e6fa9601-3e47-4dff-9a84-e8e017add15a',
 ]
 
-export async function updateAssetIds() {
-  return mapAssets((assetPack, asset) =>
-    Asset.update(
+export async function dedupAssetIds() {
+  return mapAssets((assetPack, asset) => {
+    console.log(
+      `Updating Asset ${asset.name} id from ${asset.legacy_id} to ${asset.id}`
+    )
+    return Asset.update(
       { id: asset.id },
       { id: asset.legacy_id, asset_pack_id: assetPack.id }
     )
-  )
+  })
 }
 
 export async function restoreLegacyAssetIds() {
-  return mapAssets((_assetPack, asset) =>
-    Asset.update({ id: asset.legacy_id }, { id: asset.id })
-  )
+  return mapAssets((_assetPack, asset) => {
+    console.log(
+      `Restoring Asset ${asset.name} id from ${asset.id} to ${asset.legacy_id}`
+    )
+    return Asset.update({ id: asset.legacy_id }, { id: asset.id })
+  })
 }
 
 async function mapAssets(
@@ -71,7 +77,7 @@ async function readJSON<T>(
 
 if (require.main === module) {
   db.connect()
-    .then(updateAssetIds)
+    .then(dedupAssetIds)
     .then(() => console.log('Done'))
     .then(() => {
       console.log('All done!')

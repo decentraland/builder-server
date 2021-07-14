@@ -6,7 +6,8 @@
     "title": "Genesis City",
     "assets": [
       {
-        "id": "908c71c6-f5cd-4241-9ca6-ed1f32ce5c33",
+        "id": "16888533-8bdd-4dc3-8694-738018f29133",
+        "legacy_id": "227727a7e8d9d265cc55ce4dcbbad2c3a582d792a8792d1ff07cc36ab2c3b049",
         "name": "Barbacue",
         "thumbnail": "https://assets.decentraland.org/QmRBuZoF2TiD8Egonw5Y6g7AfqgVKGihPwtE4pG5uxLtHX",
         "url": "Barbacue_01/Barbacue_01.glb",
@@ -33,7 +34,8 @@
         }
       },
       {
-        "id": "77430904-8bf2-4bda-a62c-ce5331bfba1a",
+        "id": "2cd78a5d-d01d-4d31-8940-c7fb8948e14e",
+        "legacy_id": "83e130eca0cace5feaed18875115035e1a70d79c435aa0e2b4e8913a1b99946f",
         "name": "Classic Bench",
         "thumbnail": "https://assets.decentraland.org/QmSgFW3JyxbTCDntx63WDQicbUajofM9Z2sR7Z2XsQW2L4",
         "url": "Bench_01/Bench_01.glb",
@@ -55,7 +57,8 @@
         }
       },
       {
-        "id": "54445ee5-6686-48a7-9e1b-447764033a43",
+        "id": "9ffe3ab2-e17a-4aab-8959-34e62791d084",
+        "legacy_id": "42449aab7a9beaac5459602532195950e60349d2f78288d89dddcb37021680f6",
         "name": "Stool",
         "thumbnail": "https://assets.decentraland.org/QmaWvUZ6PeuYVhembg8PVZcLUoW7c59iQMasxWqS1Ehxsu",
         "url": "Bench_02/Bench_02.glb",
@@ -69,7 +72,8 @@
         }
       },
       {
-        "id": "e4129503-bad9-4d71-b221-7e5e7af14fd9",
+        "id": "1a66d011-0a1e-430e-bc04-0f389c241d06",
+        "legacy_id": "2e4451b0384242d746ab8e489cb7dd26051ee96588f4eaa1b0cee8c898eff39d",
         "name": "Bicycle Parking Rack",
         "thumbnail": "https://assets.decentraland.org/QmVoWec68RWHFyjJX1d1vpGwgYpGooH7YtMDQNDit6CT9b",
         "url": "BicycleParking_01/BicycleParking_01.glb",
@@ -93,7 +97,8 @@
         }
       },
       {
-        "id": "512b7b11-2ad0-4475-94c2-5a6b346ca4aa",
+        "id": "6ca825e8-3955-480f-867f-7a64af316e64",
+        "legacy_id": "677bf52ab14a30bac6d5610dfc54ccef3b63344cb8f1371da6d1b13ae911d1af",
         "name": "Red Bicycle",
         "thumbnail": "https://assets.decentraland.org/QmaDSq8LnUQHKmeQqtvyFiKTYuXUbt6T6jabNDDSiDJq2o",
         "url": "Bicycle_01/Bicycle_01.glb",
@@ -118,7 +123,8 @@
         }
       },
       {
-        "id": "0654984a-e939-488c-9766-f9cfabf770bf",
+        "id": "51f9b4b2-6711-4877-94a1-a6f2213e01c1",
+        "legacy_id": "fe705ea4dc5cc0f690aea1957c471e4795f751e049234d052c067012ddfe9076",
         "name": "Blue Bicycle",
         "thumbnail": "https://assets.decentraland.org/QmUQZQEGF2tSz2hBy4xyKZ4uoWoURvQUcTxJMEyHPEWjhX",
         "url": "Bicycle_02/Bicycle_02.glb",
@@ -143,7 +149,8 @@
         }
       },
       {
-        "id": "982ee786-9aa0-45d7-acbb-eff2821fe751",
+        "id": "d7aa5ac8-ead7-4efb-8fe7-a3ec00322cc1",
+        "legacy_id": "a47ecc1be7f6a236796ae12424795d0c83433683716ce5558926d25b853bced0",
         "name": "Brown Bicycle",
         "thumbnail": "https://assets.decentraland.org/QmNV4Bup89KC29PN8su3zWoUY9gTf2UCjmWt5TsMWcsmhC",
         "url": "Bicycle_03/Bicycle_03.glb",
@@ -168,7 +175,8 @@
         }
       },
       {
-        "id": "72067abf-77b4-4cdd-9e63-4b96230189ee",
+        "id": "13f3da80-42e0-4e3b-a8b0-567ca1e28d34",
+        "legacy_id": "c29a8a4cc5ffb00751a11015e4e4f35f82224ce838ce18a28599d8abdc52a443",
         "name": "Bird Fountain",
         "thumbnail": "https://assets.decentraland.org/QmbhBsdVAKeagntaEY4NdwMsoUm8miCJutStR8c1et6gbx",
         "url": "BirdFountain_01/BirdFountain_01.glb",
@@ -192,7 +200,8 @@
         }
       },
       {
-        "id": "3401b3cd-f198-4f0b-a2d3-392122d83a99",
+        "id": "71ccbcba-7d68-4089-8002-44f5bca5a874",
+        "legacy_id": "53dfd232094e3339433de5e1f978f10599dc97a2c256e7c14f3804a68a242988",
         "name": "Boombox",
         "thumbnail": "https://assets.decentraland.org/QmeU7Fm2RBDjHnwND6w6Yt7BcE5uYw2Ee695hDQYT3QraK",
         "url": "Boombox_01/Boombox_01.glb",
@@ -215,7 +224,8 @@
         }
       },
       {
-        "id": "f0515d5b-d3df-4561-b6ba-42f4e23a2bb9",
+        "id": "2749a65e-6f27-4f07-b4b0-e3965712dfd1",
+        "legacy_id": "3e557d6727ae22e4dcfdc028f105ade5803c068bf3c1414ddda75b73fc3e705e",
         "name": "Hardwood Bridge",
         "thumbnail": "https://assets.decentraland.org/QmRkfh4VisPNWYKRamcLEBRnnVAL26KhvhyFMjmqw9nTVG",
         "url": "Bridge_01/Bridge_01.glb",
@@ -238,7 +248,8 @@
         }
       },
       {
-        "id": "7521eff3-c2c8-45b4-bf93-1e470c5f16a8",
+        "id": "66e51890-1a70-48cb-af0a-20fa115882f6",
+        "legacy_id": "913a7906b6ab942004843c03eb3217a962882cda9385b93657389ea2c5c77852",
         "name": "Softwood Bridge",
         "thumbnail": "https://assets.decentraland.org/QmecMiwmZzUmAtZM8v1yMBEczadLtuoXTb1t1gMzNPnkLi",
         "url": "Bridge_02/Bridge_02.glb",
@@ -261,7 +272,8 @@
         }
       },
       {
-        "id": "659c1a36-8596-4c28-8f74-5fff02447eb6",
+        "id": "f9f8de37-8131-4e8a-b593-38cbac147001",
+        "legacy_id": "9e52aa1de7419ef3110bdd7ce416a21c8bc8b29c61423a5bd190e781b89fe26f",
         "name": "Hardwood Rounded Bridge",
         "thumbnail": "https://assets.decentraland.org/Qma1pKBA2GznkZRNKmDub6gHekoDoQ1crdSxubxaGPWya2",
         "url": "Bridge_03/Bridge_03.glb",
@@ -286,7 +298,8 @@
         }
       },
       {
-        "id": "f39ccd80-a1ea-40df-8a35-82f64f41d49d",
+        "id": "9d5229f7-0ca7-4165-bd68-481911c86fcd",
+        "legacy_id": "13f23f10143b1735ee43799c428bd3bbb96b5791276e02bd59c173a57698fd14",
         "name": "Softwood Rounded Bridge",
         "thumbnail": "https://assets.decentraland.org/QmfYSGtHqgYH7q2gW3oiy285BzsgCjEbEGyUGsfy5SFnUw",
         "url": "Bridge_04/Bridge_04.glb",
@@ -311,7 +324,8 @@
         }
       },
       {
-        "id": "bff2cbe8-1476-4b6f-852e-65036cb61343",
+        "id": "5778e895-b89c-4d86-9cd5-ca958d39692c",
+        "legacy_id": "c97517087e4e8b193235b7a2a0b5ace666d28b269225cef5a6baa0874994613b",
         "name": "Rope Bridge",
         "thumbnail": "https://assets.decentraland.org/QmXUqRV6EgnMoMJsBoPfpXk2EBLXkH1ty5GgqKmZoDnobQ",
         "url": "Bridge_05/Bridge_05.glb",
@@ -336,7 +350,8 @@
         }
       },
       {
-        "id": "11c46fb4-b345-4b10-87a2-c717b0a52fad",
+        "id": "0520e968-0399-47ac-919c-612b20a96930",
+        "legacy_id": "55812911c5444a4d9c52cdab058ce3ce32163b897a0c6651a249bcbc62d034b5",
         "name": "Modern Bridge",
         "thumbnail": "https://assets.decentraland.org/QmYnBs9pW2mGXRPgiEdB5gDkWqhmk19fKccYDjYeDW77sy",
         "url": "Bridge_06/Bridge_06.glb",
@@ -361,7 +376,8 @@
         }
       },
       {
-        "id": "7cb253fd-cb98-4cbf-b5c9-b959536a7c28",
+        "id": "52256125-cdc9-493d-9bda-cb7bf4ac7609",
+        "legacy_id": "8f5c3fefe4f8138d705c45cdd67525f45aa7aeb2c1f25cb418e1fa48988dabfc",
         "name": "Grass Row",
         "thumbnail": "https://assets.decentraland.org/QmeenNxwwyzw8PzTd97TpWfm4ALcSHdx5sMGHzCoZzeyzW",
         "url": "BushPatch_01/BushPatch_01.glb",
@@ -384,7 +400,8 @@
         }
       },
       {
-        "id": "06bff7bf-a59a-4b4d-9f9d-da50045254b9",
+        "id": "fb7e1284-521b-477f-b255-4b986c8b131e",
+        "legacy_id": "0abf8009cca3e1fadbc9c852afa83bd97b8aea46102a1482aca9ea7c32833418",
         "name": "Shrub Row",
         "thumbnail": "https://assets.decentraland.org/QmaMXvX4isaMfxdm1VM99HUeQcQEhY6JSJ1znu15zjj6GB",
         "url": "BushPatch_02/BushPatch_02.glb",
@@ -409,7 +426,8 @@
         }
       },
       {
-        "id": "866a864f-49ee-411b-969b-7414def9adef",
+        "id": "4db158c0-a44f-4f79-a9e6-c5d6a219d48d",
+        "legacy_id": "6b50215f938c044aa350d90a11dfa5f269b35d319c9c47d5b1cc496bb4f0dbbd",
         "name": "Shrub",
         "thumbnail": "https://assets.decentraland.org/QmYwJnsm4A9WqySfNFegfuzHmEoeCapjb3X4bgurtM3WHG",
         "url": "Bush_01/Bush_01.glb",
@@ -433,7 +451,8 @@
         }
       },
       {
-        "id": "6dcf09c3-eef1-4257-8ecf-adcb95fbbf15",
+        "id": "3168d3fe-8f93-4a1a-81f4-689780f2a373",
+        "legacy_id": "5e89b441c4b716115bf6f1676b18fbe2f19ac9199f015cd68913e325482bb175",
         "name": "Bush",
         "thumbnail": "https://assets.decentraland.org/QmZSe9cNWZjLj98TxYbjXELLFHntGNBkeg325Gbbi8HW9s",
         "url": "Bush_02/Bush_02.glb",
@@ -458,7 +477,8 @@
         }
       },
       {
-        "id": "bea81383-31a7-46e4-8fa3-f2a881db984b",
+        "id": "0d4f1e28-c9bd-4f3e-9605-c76c84702742",
+        "legacy_id": "4af86fc699c0e76144f88cbcb972d9f04579b60ba79cd072549b151ca438ad64",
         "name": "Evergreen Shrub",
         "thumbnail": "https://assets.decentraland.org/QmU8eDszvZkTa14QcZNNpsURTfZgbSkFqoUu6W476ND7vX",
         "url": "Bush_03/Bush_03.glb",
@@ -483,7 +503,8 @@
         }
       },
       {
-        "id": "730a320f-aae1-4c5a-b270-d174d9050a6f",
+        "id": "ac4bee02-ae33-4788-a041-183781554855",
+        "legacy_id": "7aca5ad1b2f52b0911427b1f78c854a2f848cb3e9b206666ea4315a12671d086",
         "name": "Cactus",
         "thumbnail": "https://assets.decentraland.org/QmchFPfqes7J8JQPxQ6DsBXcBeZGF5m7TRkafw6XdrGCyv",
         "url": "Cactus_01/Cactus_01.glb",
@@ -506,7 +527,8 @@
         }
       },
       {
-        "id": "cd790268-ddff-4063-ac0b-cb3b3a2b74d8",
+        "id": "bc789145-d689-4559-a1ff-71c2da79b7de",
+        "legacy_id": "b9a489a0f3b14920bc2b7379ad2394038065f72efe891590f5068bd9f0f6aab3",
         "name": "Square Canopy",
         "thumbnail": "https://assets.decentraland.org/QmNYwGk6JsUejiKwqykKQSs9iKEQ4zDSDsRA7Yg6qWch9U",
         "url": "Canopy_01/Canopy_01.glb",
@@ -530,7 +552,8 @@
         }
       },
       {
-        "id": "71104b72-2093-4f14-9c6a-1789eb1bd2ac",
+        "id": "b822fad3-67d2-472b-aaf2-84fffad00b8c",
+        "legacy_id": "9fcf2601a242432e7b234edc5790b484497dd7896d922d704aeb083fae30a2a4",
         "name": "Rectangular Canopy",
         "thumbnail": "https://assets.decentraland.org/QmXTEedeCFvJMDRsVjEFf5mbFEgXrQB7DRaYYRkpqBCUSM",
         "url": "Canopy_02/Canopy_02.glb",
@@ -554,7 +577,8 @@
         }
       },
       {
-        "id": "b234c8a4-29a5-4f15-9757-5e851d732451",
+        "id": "fbe621ac-b07d-40f3-94c6-3a3e0cbddefb",
+        "legacy_id": "c2c4957775ed19774c495d7fb78902548a3300ed9465019fd8d11ecf1dbd1c98",
         "name": "Rectangular Cardboard Box",
         "thumbnail": "https://assets.decentraland.org/QmTe7jLnduwpsJzhzynSBqpUE4qqiifvgj8qFpdZcwAw4K",
         "url": "CardboardBox_01/CardboardBox_01.glb",
@@ -577,7 +601,8 @@
         }
       },
       {
-        "id": "2ebfede5-9830-4954-bdc1-1b98731067c7",
+        "id": "2352b9f4-aabc-431b-a52e-201ff2bd01d0",
+        "legacy_id": "0eeb989756736801d59aa43f9dba50dcdc37eb14d9429e74ddacd3f5f3251a21",
         "name": "Square Cardboard Box",
         "thumbnail": "https://assets.decentraland.org/QmabiKLrxi7rNgUmT5VBzizrHv3LVnzwGNpjFTMuKZwc1r",
         "url": "CardboardBox_02/CardboardBox_02.glb",
@@ -600,7 +625,8 @@
         }
       },
       {
-        "id": "96f26bb1-befe-4bba-87c0-6330f5811a56",
+        "id": "1c9d6c7e-aeda-4c34-be6f-1ada660422e6",
+        "legacy_id": "d2e5cb31f8a0ac3d038489390522599d71cb2a460ceadbee6a14c4a46435e048",
         "name": "Round Rug",
         "thumbnail": "https://assets.decentraland.org/QmcSjHTKr6QYWHFq6VKZaijJC9KBxMziBnbh5jvZd2iPzC",
         "url": "Carpet_01/Carpet_01.glb",
@@ -623,7 +649,8 @@
         }
       },
       {
-        "id": "6e58c3a9-0d89-470c-a25e-c659e1ea9e6b",
+        "id": "8ccdbe7a-cddf-4920-bc11-245ebeb90200",
+        "legacy_id": "2c9ee78672fa1700750ac424bc55de6b11f8234a9f7aa7e5810628cf193d57ba",
         "name": "Checkered Rug",
         "thumbnail": "https://assets.decentraland.org/QmfY8koHoi9Zdn8dLqip7DP3W3Kj3FxLWWCbLhfXE9tqs6",
         "url": "Carpet_02/Carpet_02.glb",
@@ -645,7 +672,8 @@
         }
       },
       {
-        "id": "3734e1c1-0b5d-43c8-a5cf-d693e754b5af",
+        "id": "bf08e109-d3ef-42d2-8691-7817449a8a3d",
+        "legacy_id": "0cfe407d20f0d266487863ebb21fbf5157ace22a35c9fc268824cac6bc34af68",
         "name": "Rug",
         "thumbnail": "https://assets.decentraland.org/QmYQWuAGtkzuKhCMJARFuEQuDrBU7ngpuZ3caUkQW9x2Ps",
         "url": "Carpet_03/Carpet_03.glb",
@@ -668,7 +696,8 @@
         }
       },
       {
-        "id": "c1947bb7-7cf4-4ff2-8164-cb278eca2d10",
+        "id": "d7776dc9-5746-44ea-9f3b-5c2ecead4e1c",
+        "legacy_id": "1c0c4670f76810d4dc859134877b079aa99718cc3d407a63b1a27a2cfc55b798",
         "name": "Segmented Chair",
         "thumbnail": "https://assets.decentraland.org/QmYZfUKsHVHCaajKFRkJfXVzaE42izSKGfQ6GpyQqSZjLb",
         "url": "Chair_01/Chair_01.glb",
@@ -692,7 +721,8 @@
         }
       },
       {
-        "id": "a63d988f-31eb-441a-b220-355e06af748c",
+        "id": "aebf6e6b-4839-47de-a0c7-79877085dc13",
+        "legacy_id": "8792252eb79e610ace91db2aa7a3814f9b1d7723b0b45162db19bada466284f5",
         "name": "Classroom Chair",
         "thumbnail": "https://assets.decentraland.org/QmP5t5ua8PnAE4qgwVvuVF54X4Vzb7qZW5vExoByDYjrTx",
         "url": "Chair_02/Chair_02.glb",
@@ -715,7 +745,8 @@
         }
       },
       {
-        "id": "281aadc2-ee2b-41de-9901-01196ecf6db3",
+        "id": "d9eb4464-55fe-4b35-9933-246b2a423793",
+        "legacy_id": "445d935a60f57511580341c7126d08c5f8db0f0ef98b09fe870c4c3dcf27bc94",
         "name": "Simple Chair",
         "thumbnail": "https://assets.decentraland.org/QmSD1uMyFbb3ohxPpeXAmhUxN6SNiek8jtQD2GHYtygN6T",
         "url": "Chair_03/Chair_03.glb",
@@ -738,7 +769,8 @@
         }
       },
       {
-        "id": "06d9222a-b020-4ebf-9efb-d6c9c7c937c1",
+        "id": "5e074edf-f83b-48ff-a7f0-f7f3302a20d8",
+        "legacy_id": "c433395d7ddafcbacf9a1bfe6850472fdf3a2cbb87e665257395d985b3193f67",
         "name": "Dining Chair",
         "thumbnail": "https://assets.decentraland.org/QmckH1ZLzyW4brGa1KhyapHHTcnjrGuUCBSqgWrDR3L6MK",
         "url": "Chair_04/Chair_04.glb",
@@ -762,7 +794,8 @@
         }
       },
       {
-        "id": "2b43bec5-90c7-4745-967e-6c83937ccf8f",
+        "id": "27cfd632-905a-4659-81cb-62a9e3c0d0ba",
+        "legacy_id": "cb42d86674ddd674bb45bf5ec286c70cc42e094ff0c7555d0fb8810155dea15e",
         "name": "Folding Chair",
         "thumbnail": "https://assets.decentraland.org/QmNRDFGTJLQxubiytVRCTvXqHxgE6YCrht1wp2TmjW4cHE",
         "url": "Chair_05/Chair_05.glb",
@@ -788,7 +821,8 @@
         }
       },
       {
-        "id": "38eaaf1b-ab5e-4b93-bc22-3ef3bed60534",
+        "id": "3f47c09f-afb5-4568-8237-a07b25e03046",
+        "legacy_id": "a91f27849d5d85120beeb3004c59d3d548217c52a1afb0b4cb4b531b3868b17a",
         "name": "Striped Folding Chair",
         "thumbnail": "https://assets.decentraland.org/QmdW3bJqtKpSzAohpnx9YCZ1P1xnBc3bSqpiXKesddUFjd",
         "url": "Chair_06/Chair_06.glb",
@@ -815,7 +849,8 @@
         }
       },
       {
-        "id": "c7e63ae0-c09c-43be-a919-34fbdbd449ab",
+        "id": "8707b21f-e3a0-4d8b-8da0-60d8927de229",
+        "legacy_id": "93c0cb0d571c734ca7fa6ca361860b56276bbef3e19f1a374373b5661827501c",
         "name": "Outdoor Chair",
         "thumbnail": "https://assets.decentraland.org/QmbntRNKWxwvaTFTJovXXDfNXGaYoN9jy8zHUbTeg1mm7Y",
         "url": "Chair_07/Chair_07.glb",
@@ -837,7 +872,8 @@
         }
       },
       {
-        "id": "b9f61551-15a7-4e5f-8a22-de49b2f57cdb",
+        "id": "0c343f45-3fc1-4133-a05f-4fab9f25728c",
+        "legacy_id": "c45af4b8392fae4dbc6992a7a1de38701c5b60b2056304d9468a8891889022d8",
         "name": "Folding Stool",
         "thumbnail": "https://assets.decentraland.org/QmZASraxCcNbT3XECvmPgMgGWftuMqtfSEyPBTgqXgbWpW",
         "url": "Chair_08/Chair_08.glb",
@@ -860,7 +896,8 @@
         }
       },
       {
-        "id": "8269a640-b659-4ff8-8569-f48afc64c8ce",
+        "id": "6d34e8ad-f4e6-482c-8b86-5b7169854a97",
+        "legacy_id": "71425ae3703802337616116295364f6d521d772fc2bb847009ff77d0740c7470",
         "name": "Mana Coin",
         "thumbnail": "https://assets.decentraland.org/QmSZfYr21VDJ1oURrWiWZepzSJeu8to38QQsCumhXwDi7U",
         "url": "CoinMana_01/CoinMana_01.glb",
@@ -884,7 +921,8 @@
         }
       },
       {
-        "id": "54c2d12d-1bd2-4b41-96fc-8caf986a4c75",
+        "id": "250aff0f-bfc5-4a40-a163-72dca28606cb",
+        "legacy_id": "b248ee137a8cb1af8653e19ef75bea4a2fb9e497393ed09f41bd6453bfbdf250",
         "name": "Construction Cone",
         "thumbnail": "https://assets.decentraland.org/QmZaCNJAfRPMrLzQqJRDZmZTB7vkMpuYCrR7PQ4wNZT6zQ",
         "url": "ConstructionCone_01/ConstructionCone_01.glb",
@@ -908,7 +946,8 @@
         }
       },
       {
-        "id": "7276ee52-490d-4d7b-925e-bc922df0aa6f",
+        "id": "6ccfdb53-b17e-4035-8dea-d0b0dca49041",
+        "legacy_id": "36a2aafaf46c37fed961cb3b5db363d5a449af455851f60896d20ddfaa58eb0b",
         "name": "Construction Materials",
         "thumbnail": "https://assets.decentraland.org/QmXWTbFtXHKP6ipkYxXePM4Q8wr1us79HrucJ5sD54WuTW",
         "url": "ConstructionDebris_01/ConstructionDebris_01.glb",
@@ -932,7 +971,8 @@
         }
       },
       {
-        "id": "7e472e30-9a9f-4bd0-bc34-b1c708bedd9d",
+        "id": "03635caa-b836-446a-9797-4850f1f668df",
+        "legacy_id": "312a6f0dc40633e74333fc516b1cf71abcaa824ce0137f528ee1d34427ad4007",
         "name": "Construction Fence",
         "thumbnail": "https://assets.decentraland.org/QmTP6DoJwKtrbtrZu7rPFdSkAAfvi6BpAAfVdYELZFCrGT",
         "url": "ConstructionFence_01/ConstructionFence_01.glb",
@@ -957,7 +997,8 @@
         }
       },
       {
-        "id": "9ac8f07b-f092-4f09-abb7-b51b191b485e",
+        "id": "a66ffa82-0161-4a32-93b0-66626d72e87e",
+        "legacy_id": "6d1baf30027b20f64ae37f8e2eeddbaa4ab4cc4a0939d58c368caf75c935148a",
         "name": "Construction Metal Fence",
         "thumbnail": "https://assets.decentraland.org/QmYptmPNHrZPHMmN74U4aZCAg7DEgnY6mRmjprK7vUXQHP",
         "url": "ConstructionFence_02/ConstructionFence_02.glb",
@@ -982,7 +1023,8 @@
         }
       },
       {
-        "id": "7351fc1a-66d5-401c-af4c-3b0850ce2623",
+        "id": "561e49d0-0cec-4a1e-82f8-1cf6eedc7d12",
+        "legacy_id": "c36231702c5933af01b04470493cc4219853a36dfeed04d52543669f76499636",
         "name": "Hard Hat",
         "thumbnail": "https://assets.decentraland.org/Qmavc2tuXMVziazgxb7RVzVBBksXmDJRyYaNym9cw19MyC",
         "url": "ConstructionHat_01/ConstructionHat_01.glb",
@@ -1004,7 +1046,8 @@
         }
       },
       {
-        "id": "41f24e33-afe2-4573-a646-e4b5ce7689df",
+        "id": "32a90a74-dec8-49ae-8a5c-ecedaa0cd744",
+        "legacy_id": "00f0f9c72c22b099717c08150acb6caa3c86bdf1cc37f6916da34546ae2e62a2",
         "name": "Construction Ladder",
         "thumbnail": "https://assets.decentraland.org/Qmf1KpRexrzJNqjCAdDcyuN8FQjSGcMeBcUsZGQ9J7aWHy",
         "url": "ConstructionLadder_01/ConstructionLadder_01.glb",
@@ -1027,7 +1070,8 @@
         }
       },
       {
-        "id": "dac94778-8671-4005-8e72-5e2f9abd2b39",
+        "id": "e380eca1-bc03-493a-832b-03a49e43066b",
+        "legacy_id": "8b3c5462d70e9af40de80af79bc4a5f4770df4f68347b1f453def6ce3cbafb89",
         "name": "Construction Light",
         "thumbnail": "https://assets.decentraland.org/QmRL2M9xXj9PstAXD8kGfMEU2JviGRiVeWeKqfUozJzhp3",
         "url": "ConstructionLight_01/ConstructionLight_01.glb",
@@ -1049,7 +1093,8 @@
         }
       },
       {
-        "id": "b76d4298-cdd8-4db2-b9ca-7909b24917a5",
+        "id": "13955b74-3cb4-4fb5-a02d-1b7bf53097e8",
+        "legacy_id": "5791ac94030233560f7cd7c64b413fd994e0e551e41d35ad447c3fba102b56f7",
         "name": "Pallet",
         "thumbnail": "https://assets.decentraland.org/QmXAX1JtnuE1k2TXscSvegUhqPTkP9yXNK1dGZuoUynreA",
         "url": "ConstructionPallet_01/ConstructionPallet_01.glb",
@@ -1071,7 +1116,8 @@
         }
       },
       {
-        "id": "116f4df5-5f21-44c9-8637-c958a9074071",
+        "id": "bae698f6-8492-4830-a8e8-1e04bdb86f37",
+        "legacy_id": "6cfdf58725842413c453695e8d3c9bb40250f9e1882ae9dcf30a6a89a5e4f649",
         "name": "Construction Site",
         "thumbnail": "https://assets.decentraland.org/QmQNERspBqDGDq3eAAk1j4RAQavx4hf6VJ6AUkwRMdE6Qq",
         "url": "ConstructionScene_01/ConstructionScene_01.glb",
@@ -1099,7 +1145,8 @@
         }
       },
       {
-        "id": "ee57c39b-0710-4bfe-8370-510ffacc52b0",
+        "id": "552e9281-df22-462d-9125-3c66853505d0",
+        "legacy_id": "68b9fc16b18d07afad94e522d26d8cfe50235b7899dff0f88f1b0be439e69460",
         "name": "Under Construction Sign",
         "thumbnail": "https://assets.decentraland.org/QmcJSCui2y1bocqyvtPUntPMDNE6N8pcAmpLmfmL9CBU19",
         "url": "ConstructionSign_01/ConstructionSign_01.glb",
@@ -1124,7 +1171,8 @@
         }
       },
       {
-        "id": "fff8b5e3-6214-454e-99c5-0283066a4a67",
+        "id": "c162b72f-3a64-4593-aaa1-a42f614cf9e5",
+        "legacy_id": "d60b9f34a9940fa28ad1b53da65d3883e5eaddfbb94a3b7bd4e9c34d350d2e4a",
         "name": "Loveseat",
         "thumbnail": "https://assets.decentraland.org/QmSgFC8wR55opdshYrrnKv894Du2FKVTUGFW3AkyCkMPeq",
         "url": "Couch_01/Couch_01.glb",
@@ -1146,7 +1194,8 @@
         }
       },
       {
-        "id": "b5aba17e-9b50-4343-8b77-82db279191cb",
+        "id": "6ef496c2-4ccd-49ab-a12f-6c9c25b6f92c",
+        "legacy_id": "6a09b69d9bd6387f570965f9bec91a62ca5b2fa6e3c8077010b855c25a137173",
         "name": "Industrial Couch",
         "thumbnail": "https://assets.decentraland.org/QmbPGBs1JeR1cSVmcPvq1AXMybMpRj4DzshYUDZUUJXamY",
         "url": "Couch_02/Couch_02.glb",
@@ -1169,7 +1218,8 @@
         }
       },
       {
-        "id": "2415a7ca-6848-42c6-be62-ccd09b61d6c8",
+        "id": "d04df6aa-16e6-4282-98e0-21e97ac8450a",
+        "legacy_id": "f9b92a3955f5b1d0941ace3a9eff1d08cb4026c929d7bb1923d9cdeeaed3c83e",
         "name": "Deck Chair",
         "thumbnail": "https://assets.decentraland.org/Qmd7N96rupxCLr3mWwRfgsM6Pwnf7k2SUemvxTjYvSddgN",
         "url": "Couch_03/Couch_03.glb",
@@ -1193,7 +1243,8 @@
         }
       },
       {
-        "id": "a60eaa78-337c-4309-971b-05936cf6ebd9",
+        "id": "a1b295ff-ce79-4615-9891-e76aa50b12a8",
+        "legacy_id": "096328824448d45480a4e7d7870cf89bb71a3b64c9b253739ebd02ad5607b61f",
         "name": "DCL Logo",
         "thumbnail": "https://assets.decentraland.org/QmTGnhow4SoNoUPux5Tp9sDd3xdX9hu9b592kG6BLUjEK2",
         "url": "DecentralandLogo_01/DecentralandLogo_01.glb",
@@ -1218,7 +1269,8 @@
         }
       },
       {
-        "id": "afa8d6b3-460d-45c1-96cd-a4156889c405",
+        "id": "ba63bfc0-f373-4c76-8363-48899aca87bf",
+        "legacy_id": "2338ac13f07dae10a8768696393e6e1b25ad673d76f6d94e1d77c8aea4857eac",
         "name": "Sweet Pea Crop",
         "thumbnail": "https://assets.decentraland.org/QmU7psfo54xdLhbpZnRrR4T5vcd6ootuxyGxdZZ4vAC5vq",
         "url": "FarmVegetation_01/FarmVegetation_01.glb",
@@ -1242,7 +1294,8 @@
         }
       },
       {
-        "id": "65747055-0a30-474c-a8cc-d7676bd9c6b4",
+        "id": "30d789e8-783a-4e78-9dd3-400add3b6716",
+        "legacy_id": "d3e92c9dc2b3989b8a4a93a809b65561d2c4c2d625b09c60d4ccdd7553cb7fa6",
         "name": "Lettuce crop",
         "thumbnail": "https://assets.decentraland.org/QmfDTfXAxKyLShoYLKvn78rFLiakw1i4eZXJh6CPxq64H3",
         "url": "FarmVegetation_02/FarmVegetation_02.glb",
@@ -1265,7 +1318,8 @@
         }
       },
       {
-        "id": "85004224-a44f-4e28-99fd-a089ab8f732b",
+        "id": "f0be2c8d-4fd5-4cc3-9ae6-21ff9752445c",
+        "legacy_id": "00f7c069e928fe216cf7e7ff7769db068d96cd066a179de8dc11bfffa5ef94a0",
         "name": "Flower crop",
         "thumbnail": "https://assets.decentraland.org/QmYnKQEWPrZTos4NNpkQVdDTYCirvL7iscZ81BziEWo3kB",
         "url": "FarmVegetation_03/FarmVegetation_03.glb",
@@ -1288,7 +1342,8 @@
         }
       },
       {
-        "id": "be787c59-5e2c-4c08-af72-c3eb25756ed6",
+        "id": "d8bf7ea7-a7a3-4d42-af28-10b3e9d6e603",
+        "legacy_id": "2ddfccc5f82dc2e8c43b168088b1867d674ffa0a1b9746d6a2e1eadcc8d6fe18",
         "name": "Succulent crop",
         "thumbnail": "https://assets.decentraland.org/QmTF1GAJvW3DDUA7nSZsttJ1TRcgaqtMdXJove7DM9wwNX",
         "url": "FarmVegetation_04/FarmVegetation_04.glb",
@@ -1312,7 +1367,8 @@
         }
       },
       {
-        "id": "ad1ad970-7bb9-4a47-8240-58d5f455f496",
+        "id": "3c1b0a40-3225-49e0-b3ff-de947afe8306",
+        "legacy_id": "d5dfad3c1254d237e01c3d115e6d6b0666e8d8102b149eff1350331e2a487b2f",
         "name": "Iron Fence Door",
         "thumbnail": "https://assets.decentraland.org/QmXy71cPGWNhfknv29VQs68ecuscrszcZ47PjEzJwi4Rth",
         "url": "FenceIronDoor_01/FenceIronDoor_01.glb",
@@ -1339,7 +1395,8 @@
         }
       },
       {
-        "id": "4b6ceb38-c002-456e-89de-f702acc11e38",
+        "id": "0c6019a7-a521-4804-9535-4d432f756a7f",
+        "legacy_id": "25899fe1e17b6b44cc13c94db9bd276e4b7a1020cee5bfd6b9a684ea369d605e",
         "name": "Iron Fence End Module",
         "thumbnail": "https://assets.decentraland.org/QmXU3221XuKs7UaKanZzUy2wrrZQwVLUZuhWVuF98Q1ao2",
         "url": "FenceIronEnd_01/FenceIronEnd_01.glb",
@@ -1364,7 +1421,8 @@
         }
       },
       {
-        "id": "8b7e5860-79d5-4c89-a69f-8fbe8c0851b8",
+        "id": "1bea49b5-528b-48cf-8d97-8aef8c86bbd0",
+        "legacy_id": "adbd975706479e7496a81339e0ea92f9785259fb81df726d722220cd0f56a8a4",
         "name": "Large Iron Fence",
         "thumbnail": "https://assets.decentraland.org/QmdweJs6EScfmQi5YjesbWmNrMhRkdQEQjL9wXoyAhmyXD",
         "url": "FenceIronLarge_01/FenceIronLarge_01.glb",
@@ -1389,7 +1447,8 @@
         }
       },
       {
-        "id": "99f7d974-80b5-4f90-ad8c-3116ad5d9197",
+        "id": "fee59c38-29ec-471e-ae6d-48bc9b799991",
+        "legacy_id": "c45270050437f381cf370f4b9a916be76a20e56b108102303cd9f40de2de0ac5",
         "name": "Medium Iron Fence",
         "thumbnail": "https://assets.decentraland.org/QmYAgQG6eiYmPqpnv5Fnp13f1ZeX5jLDfkTBbwWcQpqK5v",
         "url": "FenceIronMedium_01/FenceIronMedium_01.glb",
@@ -1414,7 +1473,8 @@
         }
       },
       {
-        "id": "cc81b7ea-0b51-4b56-87c1-3d7f14320c15",
+        "id": "e71a9b70-42a6-43b5-8585-cbb45701d84b",
+        "legacy_id": "906c610418c1059107a38e1fd309d394cb9e74b6e265fd2231f8ee35963cc052",
         "name": "Small Iron Fence",
         "thumbnail": "https://assets.decentraland.org/QmfERSHUGjPSa2XD67xr9RCN7dcMgKJoSHLaq9yhVeNKog",
         "url": "FenceIronSmall_01/FenceIronSmall_01.glb",
@@ -1439,7 +1499,8 @@
         }
       },
       {
-        "id": "b325218d-861c-4b35-b3f9-00d994cba360",
+        "id": "d7fa26cb-8cfe-41bf-83b0-71e627a94897",
+        "legacy_id": "bea7a14ddc683425093358d69786a421da8e01516bdb1d1aac4a6b9324a61a34",
         "name": "Fence Door",
         "thumbnail": "https://assets.decentraland.org/Qmb8jSLHXfNNNCwAcT6tAreLZF61tQVvH64wQPihCxQgar",
         "url": "FencePicketDoor_01/FencePicketDoor_01.glb",
@@ -1468,7 +1529,8 @@
         }
       },
       {
-        "id": "7f888372-be71-42a4-a2ae-b312d62844d6",
+        "id": "b024429e-71ed-46f9-81c2-c992d32aab46",
+        "legacy_id": "29f12713afdc90b495c0e2fdead6dbd21fbf169dc08f09338133744582f787cc",
         "name": "Fence End Module",
         "thumbnail": "https://assets.decentraland.org/QmXawi2L5FNRwBWc451ubNAbTp26i7MNQyRjn6L4DVcMWk",
         "url": "FencePicketEnd_01/FencePicketEnd_01.glb",
@@ -1495,7 +1557,8 @@
         }
       },
       {
-        "id": "43b51e71-9549-4ed4-80e5-dd64b21f96f2",
+        "id": "6018e89d-e995-476a-ae26-deab3628cf29",
+        "legacy_id": "1eef923919157f30460c426d79ca4d11d51bad6d52bb887b55aadd5b2ba762f2",
         "name": "Large Fence",
         "thumbnail": "https://assets.decentraland.org/QmZPZY3r44YJVELg7wsXpeRKi8T5gmdYN19M4SLZX9KiAE",
         "url": "FencePicketLarge_01/FencePicketLarge_01.glb",
@@ -1522,7 +1585,8 @@
         }
       },
       {
-        "id": "34398212-b915-4955-acc9-5771bd97d224",
+        "id": "6d0465a4-549e-4126-b5b8-906c4132f6d8",
+        "legacy_id": "5df7000e1a1b6695e7143cbad7f4ccd1d70b106a19bd46c621ff0c61180b8c68",
         "name": "Medium Fence",
         "thumbnail": "https://assets.decentraland.org/QmcSv2tmi29FHASd5WTW4uUgrsymNcRx1oemDCJ66eewTm",
         "url": "FencePicketMedium_01/FencePicketMedium_01.glb",
@@ -1549,7 +1613,8 @@
         }
       },
       {
-        "id": "425e3500-8e1f-4550-a8a6-5b672753eae9",
+        "id": "38256766-1b32-41c7-bfd2-9906de4a0e6e",
+        "legacy_id": "c21a6a3a898a2402924a6036a7c783ba7b1dfd0ae5fa1228204ad3f67d4f5fc2",
         "name": "Small Fence",
         "thumbnail": "https://assets.decentraland.org/QmULVpmS1VkUwqqBBXmDAtM9CfAbWb23WdRHNA2LwUa6Dr",
         "url": "FencePicketSmall_01/FencePicketSmall_01.glb",
@@ -1576,7 +1641,8 @@
         }
       },
       {
-        "id": "6cd59c44-d8df-4970-a990-935c89fae008",
+        "id": "6401422b-bebb-41a8-9d2e-f6fd32669c03",
+        "legacy_id": "0aeb8ca1197578326dc4ff369e9958bd9ae24334f542782da63d7d247aa716af",
         "name": "White Fence Door",
         "thumbnail": "https://assets.decentraland.org/QmSnFb7aA7a2D7sBTcsEvXrTdoAMajUTZgp3Nxq8u5RpZJ",
         "url": "FencePicketWhiteDoor_01/FencePicketWhiteDoor_01.glb",
@@ -1606,7 +1672,8 @@
         }
       },
       {
-        "id": "8744b0ba-df6f-491c-bb65-c253aa0e9200",
+        "id": "20649bd1-2b3a-4e97-909c-36065c693a21",
+        "legacy_id": "c0a10fe6257037326c2d62e4eb5b219207468a7d8c9d68b730401ffdc5e96b93",
         "name": "White Fence End Module",
         "thumbnail": "https://assets.decentraland.org/QmTNwm6rayQCSQdDpvxdM7MtPWkk2g7UJec6t3pyCTPgNu",
         "url": "FencePicketWhiteEnd_01/FencePicketWhiteEnd_01.glb",
@@ -1634,7 +1701,8 @@
         }
       },
       {
-        "id": "8f9c4248-1dfb-408c-9f75-6f6d2da41fe6",
+        "id": "d5f636b7-538f-446d-8429-56f62a4f9540",
+        "legacy_id": "14b11b01b2181a3958afa1202fefb0936b507a9f8c68bcfbdd85e980db5bf527",
         "name": "White Large Fence",
         "thumbnail": "https://assets.decentraland.org/QmRKU9sevbWqzm4CW9WwdC1rKmybVfcJNjicPohH93VRL5",
         "url": "FencePicketWhiteLarge_01/FencePicketWhiteLarge_01.glb",
@@ -1662,7 +1730,8 @@
         }
       },
       {
-        "id": "ee69a616-a35f-4848-9759-8e2ca6771fe8",
+        "id": "46351f8d-3498-40e7-87c8-70627ba59e81",
+        "legacy_id": "c2f8a0f867e370e55d72e936ff4d6de743ef5461d691f6e73ff3c3db826e2a17",
         "name": "White Medium Fence",
         "thumbnail": "https://assets.decentraland.org/QmUhF3ukwo1fc9mamE7UoGkK9X35iXaFPktoFAehVtRFaX",
         "url": "FencePicketWhiteMedium_01/FencePicketWhiteMedium_01.glb",
@@ -1690,7 +1759,8 @@
         }
       },
       {
-        "id": "02e97b9f-9023-4700-be14-0b3b816bda43",
+        "id": "965dcf91-178e-4632-ade0-84f9ac97e93a",
+        "legacy_id": "15375794159378fdb49e0b43fb9fb806459182abc85d5a17efc0ca8799c0b0a5",
         "name": "White Small Fence",
         "thumbnail": "https://assets.decentraland.org/QmZ2gP1xmExQa2eQGviag24NxsPXeqa6Kvxvejb2Zm5CPv",
         "url": "FencePicketWhiteSmall_01/FencePicketWhiteSmall_01.glb",
@@ -1718,7 +1788,8 @@
         }
       },
       {
-        "id": "cb7efdda-c7a2-4222-a4ab-8dd740e5b056",
+        "id": "e7f7a10a-995d-48a7-bc32-68a357f7dfe9",
+        "legacy_id": "69a706e1195715b5823fc1cf2b3bd752e8b4b04d7f857ec9ee6e9328ebdd1988",
         "name": "Large Ornamented Stone Rail",
         "thumbnail": "https://assets.decentraland.org/QmZ6paWsc4BS6a3BhaWLQJ6c2N47KH1dLkS4x4VKFVfe6e",
         "url": "FenceStoneLarge_01/FenceStoneLarge_01.glb",
@@ -1744,7 +1815,8 @@
         }
       },
       {
-        "id": "f2c1cbda-e6b1-4d8e-a39f-4485c4a061df",
+        "id": "0647e344-28de-4590-b5da-a476fe7dcf99",
+        "legacy_id": "191097bc4ef3007004026e61612b9c04d0af7386f204274ee19997e9ef4a9fbe",
         "name": "Large Low Stone Wall",
         "thumbnail": "https://assets.decentraland.org/QmX7KpTBLsDe3RbrjSs7s4wKPuxw9ib8JYXh47i4EKfk8m",
         "url": "FenceStoneLarge_02/FenceStoneLarge_02.glb",
@@ -1772,7 +1844,8 @@
         }
       },
       {
-        "id": "8bd37eaa-8e27-4e40-a55a-6291f0c7545f",
+        "id": "e4586159-443d-44f0-a26d-f5b90a148cb2",
+        "legacy_id": "3e58f3a7f5273c94d7580c4cedd8ec100da718816c71fb0a3850a65a29cbd37c",
         "name": "Medium Ornamented Stone Rail",
         "thumbnail": "https://assets.decentraland.org/QmQRmxfKhFxsZjgGc9pKNJuoeCmSGzgv2FovFR2MTDs6Eq",
         "url": "FenceStoneMedium_01/FenceStoneMedium_01.glb",
@@ -1798,7 +1871,8 @@
         }
       },
       {
-        "id": "90d64c37-9e48-4c34-9dcf-2882b59cc620",
+        "id": "6dc1e158-4ebe-4b70-b079-df21548aaec2",
+        "legacy_id": "c727f2e6ffedbbb4fe502a8536fcd4d11dd3f41829885cf9175c04a5103867c0",
         "name": "Medium Low Stone Wall",
         "thumbnail": "https://assets.decentraland.org/QmSir8kx6tJQzpwiyZU7XsE2r6QBnkGgd4JSYSRe7oer5j",
         "url": "FenceStoneMedium_02/FenceStoneMedium_02.glb",
@@ -1825,7 +1899,8 @@
         }
       },
       {
-        "id": "1be2d8f1-6d4b-4ff3-8361-cee77fdf53c1",
+        "id": "1a2ce913-4f5f-4f72-9974-b2878b65505a",
+        "legacy_id": "3d13d7df9f277b1be71cb5f7453bfb7019d160760ad7812a45e7d7069bd9f55e",
         "name": "Stone Pillar",
         "thumbnail": "https://assets.decentraland.org/QmXD728bu7gvSyKLxhG6nZ9Fvbggn6US5z5ucb9p3U1YkX",
         "url": "FenceStonePillarTall_01/FenceStonePillarTall_01.glb",
@@ -1850,7 +1925,8 @@
         }
       },
       {
-        "id": "9d1a1c06-1942-40fb-afba-8d7b7d8cfe83",
+        "id": "29df1bf7-2421-4e42-aafd-b448aa1f17d1",
+        "legacy_id": "4b0d5ea20786c1df88405ac7107738c816fddd9b05c822c2ce4733f2c8dab231",
         "name": "Low Stone Pillar",
         "thumbnail": "https://assets.decentraland.org/QmanCvBDPCRN2qDRW6iTvtKzZux36P6t1DsdhTURu427hR",
         "url": "FenceStonePillar_01/FenceStonePillar_01.glb",
@@ -1875,7 +1951,8 @@
         }
       },
       {
-        "id": "f939376b-1919-4680-97cc-ae8111d75759",
+        "id": "0943ed01-6d21-4f33-987d-7a21a4bed1c5",
+        "legacy_id": "3b73114d2f6ecc00b2a7e03886172206612a252de84e2411f41f0348696ca209",
         "name": "Small Ornamented Stone Rail",
         "thumbnail": "https://assets.decentraland.org/Qme15L6oTnjfAuCs9ayTDPNEBhPRJukcLVFDNw43UXUaLA",
         "url": "FenceStoneSmall_01/FenceStoneSmall_01.glb",
@@ -1901,7 +1978,8 @@
         }
       },
       {
-        "id": "6f407d6a-149c-4b79-9e20-1fca53305b87",
+        "id": "cb05b793-d054-4ebc-b901-ac09eb79086a",
+        "legacy_id": "cfc33fa2f48891fc541e25e80b39970114da72325cd303d6ef25974ff49cadc6",
         "name": "Small Low Stone Wall",
         "thumbnail": "https://assets.decentraland.org/QmYoYn9Vt9qn3dkNMfoDFVXLXvLCwo2trMVCYVT9m3WQZk",
         "url": "FenceStoneSmall_02/FenceStoneSmall_02.glb",
@@ -1927,7 +2005,8 @@
         }
       },
       {
-        "id": "8e453abc-9999-469e-981f-334f6597a6ef",
+        "id": "d8586e63-20ac-426d-8602-3c28603e8294",
+        "legacy_id": "517b76c0c45bf6a8fcf457aeab4b43cb6bcf56e6118d0f7aa762a0d0f5bfcbc6",
         "name": "Large Stone Wall",
         "thumbnail": "https://assets.decentraland.org/QmNuAPhBD1gSMoRvYvE7cT81woQK8rPAGdhH36Hk7SbxVE",
         "url": "FenceStoneTallLarge_01/FenceStoneTallLarge_01.glb",
@@ -1952,7 +2031,8 @@
         }
       },
       {
-        "id": "f2758286-a2dc-4b68-9964-573ce336c032",
+        "id": "a17561de-a7f8-4cb0-a716-d4f149a431db",
+        "legacy_id": "318c63029df9443a604cabc9ba13e9ac5b22bc06fdad0c1ec156386d241d4a91",
         "name": "Medium Stone wall",
         "thumbnail": "https://assets.decentraland.org/QmdCByf9pvU9dYASWBVCynULxY2Vz4YecahzTnpdqx2cQu",
         "url": "FenceStoneTallMedium_01/FenceStoneTallMedium_01.glb",
@@ -1977,7 +2057,8 @@
         }
       },
       {
-        "id": "a3d70eae-f03d-4d08-bcf6-e117d0d9f853",
+        "id": "43888045-631f-4907-9bf5-e0529d9cc10d",
+        "legacy_id": "e430df7bd9a7806390e94d3973f8a2dc7f48074553ab45c037060126f3b761d6",
         "name": "Small Stone Wall",
         "thumbnail": "https://assets.decentraland.org/QmRk62gLNh7WMGXY1fKz2EcpkDBSJZD4dX2Tk6bfpH9sQM",
         "url": "FenceStoneTallSmall_01/FenceStoneTallSmall_01.glb",
@@ -2002,7 +2083,8 @@
         }
       },
       {
-        "id": "f2d4e5f6-67c9-4d19-be5d-5d5d28a3daa1",
+        "id": "4ffd9747-77f2-4a8e-8064-e7c14f128704",
+        "legacy_id": "9823a6970cbb87762022b48abc6ddb8e1c9d9395aee1aa66299cf60d122058df",
         "name": "Rustic Fence Door",
         "thumbnail": "https://assets.decentraland.org/QmVDxmLrpGvoKzQoB5LgfdbRYXbsN45U9Koxq2EmjdnCwD",
         "url": "FenceWoodDoor_01/FenceWoodDoor_01.glb",
@@ -2032,7 +2114,8 @@
         }
       },
       {
-        "id": "4a312bd2-9165-4ad9-911e-dae1c37f033b",
+        "id": "6d56fcf8-d9e5-4fbb-a13f-8444a36ef7a3",
+        "legacy_id": "c23b65db0777b70c23d9b0cdf5df77e390aa6b518f594900b60fb19a9bfb2921",
         "name": "Rustic Fence End Module",
         "thumbnail": "https://assets.decentraland.org/QmNh6EcmXS5oB545FJJgmUMn7cNdBVqqTqaqqU1Ft6HhA7",
         "url": "FenceWoodEnd_01/FenceWoodEnd_01.glb",
@@ -2060,7 +2143,8 @@
         }
       },
       {
-        "id": "b3e8741c-bfc8-406a-90b0-d5031a8ab96a",
+        "id": "9f8a4963-52e3-4e8d-94a1-8d405a593472",
+        "legacy_id": "3a3dbb7f4b4be24ef40113e9ffdf9102f5dc5141c2eea4e086882a5113ef39bd",
         "name": "Large Rustic Fence",
         "thumbnail": "https://assets.decentraland.org/QmVbxB1Ko9tnufrx3bHvHuPb9ScnxJpkJi8tEr5pNRDgv4",
         "url": "FenceWoodLarge_01/FenceWoodLarge_01.glb",
@@ -2088,7 +2172,8 @@
         }
       },
       {
-        "id": "231f7367-d189-4fb5-ad06-8c32bfb4b7aa",
+        "id": "1e48fa9b-9723-4879-9c27-78cb079c879f",
+        "legacy_id": "27307dadfb94b79e5fabb3ca11317d0367a4711925c2db710137d5df3d320ac5",
         "name": "Medium Rustic Fence",
         "thumbnail": "https://assets.decentraland.org/QmYEWWyFbfCuu4cydUbTrFf9PaaQsUTN9FRWcbDggYrMgW",
         "url": "FenceWoodMedium_01/FenceWoodMedium_01.glb",
@@ -2116,7 +2201,8 @@
         }
       },
       {
-        "id": "716ac3ae-f2a1-4b94-9113-2bbbe1233006",
+        "id": "f84b7b33-7fd9-446b-ae49-759e87706557",
+        "legacy_id": "6dbe7c8dadd9bbaa7cda6a099775b507534f7d82e436dfa84002ef8e618656ce",
         "name": "Small Rustic Fence",
         "thumbnail": "https://assets.decentraland.org/QmVXY38LDLS3xrqM3EDXRCeiNw8MYdSBDqkD58KFbeGwjC",
         "url": "FenceWoodSmall_01/FenceWoodSmall_01.glb",
@@ -2144,7 +2230,8 @@
         }
       },
       {
-        "id": "2297da35-041b-4d70-a73d-eeae045ddc8e",
+        "id": "339d17f7-6ba1-4ece-92ca-6bf57e1e2778",
+        "legacy_id": "640b2a8e8518ccbd56f5e723a7c3880331bcf08ee1d0eeeab8dba1d827d8b21a",
         "name": "Fire Hydrant",
         "thumbnail": "https://assets.decentraland.org/QmPmkb1KSB8aWEPzkWWWPijCXdVMKA9NyZLDVxp3eqttCi",
         "url": "FireHydrant_01/FireHydrant_01.glb",
@@ -2168,7 +2255,8 @@
         }
       },
       {
-        "id": "e99cb99d-ac8d-4916-b37c-ad578790b458",
+        "id": "432cb123-d351-4468-a5eb-ace14f65e6f4",
+        "legacy_id": "7401c1ee957ad6fe7a6430fff3c5330f07564e85b5c0d10aaa37a2e0c097bfcd",
         "name": "Campfire",
         "thumbnail": "https://assets.decentraland.org/QmZhRMDGTL4SaFMkAVs2GEKjAaboeHfQupfyzLPo9LUxAB",
         "url": "Fireplace_01/Fireplace_01.glb",
@@ -2191,7 +2279,8 @@
         }
       },
       {
-        "id": "ee3e8923-25f1-49b9-9e97-dfe7fa44733b",
+        "id": "3bd7d322-f897-444e-99f1-e4e82fb2c035",
+        "legacy_id": "e547c30b71dc689765010797a627ed2a95c9016cd4722fd272d335e0213faab9",
         "name": "Concrete",
         "thumbnail": "https://assets.decentraland.org/QmVNyZyS1BgzGuctkM1SDRdjQKfRud5kRhFgYuFFeGanLb",
         "url": "FloorBaseConcrete_01/FloorBaseConcrete_01.glb",
@@ -2205,7 +2294,8 @@
         }
       },
       {
-        "id": "ae359f38-aa5d-47c3-a941-632ab4dd71c9",
+        "id": "d93e1fad-b131-4fe2-9843-14eae6f2b08e",
+        "legacy_id": "0ee7741ef950081da1afb3e4d43a25e63a53764bcdcef14e1d0b775fb35bad64",
         "name": "Mud",
         "thumbnail": "https://assets.decentraland.org/QmenANpWmCWwSJjecSsx61k4bDqV1UmZH97dWDt5QAyBrC",
         "url": "FloorBaseDirt_01/FloorBaseDirt_01.glb",
@@ -2219,7 +2309,8 @@
         }
       },
       {
-        "id": "c10e088c-a356-4e59-a244-43dd942ad785",
+        "id": "f5b8141f-67d3-4392-a8c7-20caaef2a3d7",
+        "legacy_id": "0434cf4d167a82e22d0a681d8d4392d56fefaf8324cb3476075ef93873127f22",
         "name": "Dirt",
         "thumbnail": "https://assets.decentraland.org/QmUsm3kdabz3wbAq7r8cuvuLXWEb1JmvXU1UchGUXXDcyK",
         "url": "FloorBaseDirt_02/FloorBaseDirt_02.glb",
@@ -2233,7 +2324,8 @@
         }
       },
       {
-        "id": "f871ea35-a215-43ce-b15f-6e8023f73a40",
+        "id": "c9b17021-765c-4d9a-9966-ce93a9c323d1",
+        "legacy_id": "da1fed3c954172146414a66adfa134f7a5e1cb49c902713481bf2fe94180c2cf",
         "name": "Bermuda Grass",
         "thumbnail": "https://assets.decentraland.org/QmexuPHcbEtQCR11dPXxKZmRjGuY4iTooPJYfST7hW71DE",
         "url": "FloorBaseGrass_01/FloorBaseGrass_01.glb",
@@ -2247,7 +2339,8 @@
         }
       },
       {
-        "id": "794f6faa-0abe-41d1-8cc2-f5d087fb5107",
+        "id": "ea013d0a-8f70-44ca-be3d-706d46cb7ed2",
+        "legacy_id": "36ef4f2b838d159bb3ab158d4d10dab7619424c2663474da3a74e56efb21a85b",
         "name": "Centipede Grass",
         "thumbnail": "https://assets.decentraland.org/QmW4EXShvUNUwHN4VPocu8QwpRtbG6m4SrpoLTuzQX6fHE",
         "url": "FloorBaseGrass_02/FloorBaseGrass_02.glb",
@@ -2261,7 +2354,8 @@
         }
       },
       {
-        "id": "417556c6-858e-4ded-9e0f-f05cd2035ce9",
+        "id": "62b9b3e0-f0d9-4693-b8ee-fee3c20ca29c",
+        "legacy_id": "8ce913c6cfc0a8de1697c865f9733a7c43ae376a11d9d69177a7b057500ea1c6",
         "name": "Dark Cobblestone",
         "thumbnail": "https://assets.decentraland.org/QmUCDv34krVLGENkoRBuqATPwgrd6xF2k5NXLgeoNG6qW6",
         "url": "FloorBasePebbles_01/FloorBasePebbles_01.glb",
@@ -2275,7 +2369,8 @@
         }
       },
       {
-        "id": "2f407e04-5bee-4a50-a115-04ee9249a778",
+        "id": "d727a55b-158d-4506-b102-e1c963953f9c",
+        "legacy_id": "eb05a4210af1d91dfa0cb5e8b2ee43339deecd35f112c0753f47c1d6739ac50c",
         "name": "Sand",
         "thumbnail": "https://assets.decentraland.org/QmWndPmTCggiZZp6L37WzTNj3mfMDXRwKCzRyAwzEmRuWX",
         "url": "FloorBaseSand_01/FloorBaseSand_01.glb",
@@ -2289,7 +2384,8 @@
         }
       },
       {
-        "id": "aeafb908-0f2a-49e5-81ab-fa13f040cb6e",
+        "id": "2c66317c-4923-4094-ad90-8ad72db010b1",
+        "legacy_id": "2364c89b46f31334e44c1d0f8242ac61f745842528a9ef597e7a9da68e402b0b",
         "name": "Cobblestone",
         "thumbnail": "https://assets.decentraland.org/Qmb43H29Eeo2rZedDMsXC9psCiRUNrLjoNjx3RCdpaLwgM",
         "url": "FloorBaseTiles_01/FloorBaseTiles_01.glb",
@@ -2303,7 +2399,8 @@
         }
       },
       {
-        "id": "7d42cf3f-9642-4117-8a93-158d57286b1d",
+        "id": "78300a73-f19a-4e91-bb8a-08a641e29706",
+        "legacy_id": "bace788f18f7f3242c2908098472d9fbe10ce9dc06f0bbe8045302ba9c15c821",
         "name": "Wood",
         "thumbnail": "https://assets.decentraland.org/QmfTMjJY66SLj2aJuRFBjrR7fVm5kodEhAJbN34P9fYJpr",
         "url": "FloorBaseWood_01/FloorBaseWood_01.glb",
@@ -2317,7 +2414,8 @@
         }
       },
       {
-        "id": "df305987-e849-4884-a04e-0b12531a5989",
+        "id": "9e52d29e-d70c-4dc2-9cff-80cfc2771b58",
+        "legacy_id": "06d3a002cf099d737e9fdca6dfce9c374f295e19bfc95fbad57918b8961db9e3",
         "name": "Sidewalk Tile",
         "thumbnail": "https://assets.decentraland.org/QmSRXomCJ3QThAiC5QFqw2bRh9jf1MLBhV83NDxcmGmyTJ",
         "url": "FloorBlock_01/FloorBlock_01.glb",
@@ -2341,7 +2439,8 @@
         }
       },
       {
-        "id": "c47865f9-d0fb-4880-8656-a572e5cd171b",
+        "id": "1874152b-dd3d-4890-960a-4e7719346326",
+        "legacy_id": "8547894519f428e6be6f8ca03371a90260f9a9ef431ece38aa0e3f306a192e39",
         "name": "Sand Tile",
         "thumbnail": "https://assets.decentraland.org/QmfEySZfp5bVjAc7p3rNihomsuwt8eL8gsPRESpT3Rk3Ya",
         "url": "FloorBlock_02/FloorBlock_02.glb",
@@ -2365,7 +2464,8 @@
         }
       },
       {
-        "id": "49525a3e-00be-4dfc-b0f1-57cc920691d9",
+        "id": "df6bc5c0-5989-4251-8d1f-38edcf9c9beb",
+        "legacy_id": "d56a897dc18adc099f41ae0f12fda666dbff59b1e8602fe144c4cf19cc6abda1",
         "name": "Wood Tile",
         "thumbnail": "https://assets.decentraland.org/QmebeSZq8QxGZBgBgRQnm3JV94mRtt7zqUy28hzTc3ZuDH",
         "url": "FloorBlock_03/FloorBlock_03.glb",
@@ -2392,7 +2492,8 @@
         }
       },
       {
-        "id": "7b3a1c47-e3a4-4293-a5b3-9cf45fa36d89",
+        "id": "5df296c5-f070-44dc-9ba2-8cafe7852037",
+        "legacy_id": "7c229c58cbfd9c4d4858a30d3f2a92350582ec4023cfec158a2edd8b8527854b",
         "name": "Rock Tile",
         "thumbnail": "https://assets.decentraland.org/QmQBQ1cGQ6Gw2FnCijGWjs3LNt7e1s7yKRk77aecqYxsF9",
         "url": "FloorBlock_04/FloorBlock_04.glb",
@@ -2420,7 +2521,8 @@
         }
       },
       {
-        "id": "099b7f6c-0b51-41b6-8f8b-94452d943570",
+        "id": "7f2dbcb5-40f5-4e2f-9409-1886d26ce068",
+        "legacy_id": "910d9396515a568de641958a08aa0e7f40ee22652f657a1f21e9cff0da3a4e12",
         "name": "Grass Tile",
         "thumbnail": "https://assets.decentraland.org/QmYLYLJ9yp5XeAgiy4V5gdxbrP41ahCBctEUG7boij68oU",
         "url": "FloorBlock_05/FloorBlock_05.glb",
@@ -2447,7 +2549,8 @@
         }
       },
       {
-        "id": "4d379627-a073-4498-a097-38b1cdf8ab39",
+        "id": "29198994-d436-4b4b-8314-cfa2c4306dd9",
+        "legacy_id": "e730eb38744c54281531a4631e116aa54f50428c8138e8145e287609c33c4d02",
         "name": "Sunflower Head",
         "thumbnail": "https://assets.decentraland.org/Qmc8d3BaRX4YvH8NiGNxfQ81swYJQMaV5b3v4iYPW8CK63",
         "url": "Flower_01/Flower_01.glb",
@@ -2471,7 +2574,8 @@
         }
       },
       {
-        "id": "f39ed3d2-3235-4c92-ada8-5e14ee4ed7a3",
+        "id": "7085a964-162b-4365-8e2e-017579cec292",
+        "legacy_id": "bca562e7abf35fc66ddafaa0b7d7d7e197902fc4c451ea455d5b518ae7e34344",
         "name": "Rose Head",
         "thumbnail": "https://assets.decentraland.org/QmX148p4aqZtpRLGdTUMNdjrJCVy6fNq2YK2QE8g6QBCg5",
         "url": "Flower_02/Flower_02.glb",
@@ -2497,7 +2601,8 @@
         }
       },
       {
-        "id": "7702e616-5cab-41b5-a7b9-ca91842f0a57",
+        "id": "18bbb621-1c3e-4ee1-ba0a-a7c77dd01cbb",
+        "legacy_id": "d6ec6a8ec77a56891123745ae71e92179edc3e5c9ac0a0a484eff56a571cb32f",
         "name": "Rose",
         "thumbnail": "https://assets.decentraland.org/QmcuZsRLvd7M9dXURUuCc6i4uWnhH3iBoiKkaiXmdzrJZt",
         "url": "Flower_03/Flower_03.glb",
@@ -2523,7 +2628,8 @@
         }
       },
       {
-        "id": "7e8f50c7-a458-4043-9950-999852b916f4",
+        "id": "c5124c22-c518-45a6-8b9a-2f749e8de161",
+        "legacy_id": "07f253f699d36a0c901c1951895a0b62903c148c712db19ab7c7a6dc6d74a895",
         "name": "Sunflower",
         "thumbnail": "https://assets.decentraland.org/QmV72bAEy6FdrnGi8g1TM2yUn4KRi3cVBrkHrjq5bCQTqM",
         "url": "Flower_04/Flower_04.glb",
@@ -2547,7 +2653,8 @@
         }
       },
       {
-        "id": "df1bc5d1-6048-454a-82cf-2354a0882b9a",
+        "id": "efe88bc5-618c-4294-a5b5-4c64e95fafa3",
+        "legacy_id": "1cefbfee2cdcf456b934c3dee2b35d11a5f7653fc865ebe98aecd392db43c59f",
         "name": "Apple",
         "thumbnail": "https://assets.decentraland.org/QmcLGh8w2tovN6BwVcGwFDAioiHGEkv9nUQgs9JuLeAH3p",
         "url": "FoodApple_01/FoodApple_01.glb",
@@ -2570,7 +2677,8 @@
         }
       },
       {
-        "id": "bf50e996-ff7c-4d53-b358-a8a46daf148f",
+        "id": "38f22e83-4718-4788-9777-26ba847cff1a",
+        "legacy_id": "5e736dee7c8172be2610344ace0e8278f8c0118caae43daeb658ba6dc0c117a5",
         "name": "Lemon",
         "thumbnail": "https://assets.decentraland.org/QmRw29AQ5q2cVs1nY6jY4n5KUfwvZFrs42r6C6vrWbdDHJ",
         "url": "FoodLemon_01/FoodLemon_01.glb",
@@ -2593,7 +2701,8 @@
         }
       },
       {
-        "id": "9ec763fd-17de-432f-bc64-ef5e92ec167a",
+        "id": "5f23a6a6-a87c-4813-b52b-d35a07d41612",
+        "legacy_id": "f461d3e79105eca5d5d036865c6d86ef474c667368028eb7e94344a143d4a20d",
         "name": "Pineapple",
         "thumbnail": "https://assets.decentraland.org/QmetN8DZqtt7afhzEPgetPU9g65ijk85F8GAjEhMZ8yuwB",
         "url": "FoodPineapple_01/FoodPineapple_01.glb",
@@ -2616,7 +2725,8 @@
         }
       },
       {
-        "id": "57713e6c-dcef-4bd7-b72c-8156d2035cc8",
+        "id": "001f544b-38c6-4a3b-a364-8e74b9662850",
+        "legacy_id": "16cbdb2798dd2312b58b3a950008c901f12aa00d63e857374933eccec70ad845",
         "name": "Tomato",
         "thumbnail": "https://assets.decentraland.org/QmR6MmrbShdxcdfA4Lprgw47xFsdDMi2LXk2RXUJTvwSvd",
         "url": "FoodTomato_01/FoodTomato_01.glb",
@@ -2641,7 +2751,8 @@
         }
       },
       {
-        "id": "42fcf29e-66d2-4e7a-8e29-d06854630648",
+        "id": "f01cf0d6-e860-4eb8-8c82-6fbc2a98a110",
+        "legacy_id": "d276dd49ee7dab8b8bb8eba740ca7145a5e421f7467ad1b584036f07b723acba",
         "name": "Watermelon",
         "thumbnail": "https://assets.decentraland.org/QmSMWYTtSTcyoE1g4a2Bp7AS9VLi1ktFSuFaTu3BexQqTe",
         "url": "FoodWatermelon_01/FoodWatermelon_01.glb",
@@ -2664,7 +2775,8 @@
         }
       },
       {
-        "id": "4c84a7cb-868c-4fd0-ba55-c2963cc14c48",
+        "id": "f81db7b6-f330-4bc6-bc22-f7c0ba9b6b25",
+        "legacy_id": "0b091044e9fd4afb4de32cb16c9e1e1d56605c636eb2f1bf84697572ea93975f",
         "name": "For Sale Sign",
         "thumbnail": "https://assets.decentraland.org/QmUxhgKHmp27JQFmVvQUXfiua4VnjzPBToqWc4EVLQrVmw",
         "url": "ForSaleSign_01/ForSaleSign_01.glb",
@@ -2690,7 +2802,8 @@
         }
       },
       {
-        "id": "6b59875b-cbfe-434d-95c4-1ce7aa69020e",
+        "id": "1c7304c3-ab41-4831-8970-7f24061aaa14",
+        "legacy_id": "45299383e220b5f5675f55e46d6e9d1cdc57c35782d90a5a713bfed95e15207f",
         "name": "Tiered Fountain",
         "thumbnail": "https://assets.decentraland.org/QmWcSbhraoMKZnAe4vERR8uTY8ZnEnS2gQNDyngiPcLnwM",
         "url": "Fountain_01/Fountain_01.glb",
@@ -2714,7 +2827,8 @@
         }
       },
       {
-        "id": "9961b33b-1e5f-4e4d-89ac-ad5d167710cd",
+        "id": "afeef180-da7d-4cc9-9703-6c24f229ac6c",
+        "legacy_id": "21c695c7d53365492960f1b05a1ffe4d02f2897fbb159ac0be9a45c794fdfad8",
         "name": "Ornamental Fountain",
         "thumbnail": "https://assets.decentraland.org/QmUhWj6QRPmycKd4XKumx8mrRgBZZgd2BqrYDAnGVVbSPn",
         "url": "Fountain_02/Fountain_02.glb",
@@ -2737,7 +2851,8 @@
         }
       },
       {
-        "id": "936b7bae-194c-441a-a926-3d719b242123",
+        "id": "19ff62b6-e28c-491f-b2eb-8118f2e429a7",
+        "legacy_id": "5dfdd9e85c482fd93925a4e497559531c2253966e9dd127f6b2bb953afbccaa7",
         "name": "Coin Gecko Pot",
         "thumbnail": "https://assets.decentraland.org/QmdMpmYM6g5MJ9R3kEJwoQaFSYW2xyARU1TivXX7PPGEb4",
         "url": "GeckoBush_01/GeckoBush_01.glb",
@@ -2761,7 +2876,8 @@
         }
       },
       {
-        "id": "5d6ff905-de92-4123-bf8f-4d9b2008671c",
+        "id": "a7c13819-d5eb-4134-acf5-4ec2958fa7f7",
+        "legacy_id": "13aaf8b0b9f94118041145e1e6cb28da0f2d4921bcd5db2f86ce6a11e00ef73d",
         "name": "Coin Gecko Statue",
         "thumbnail": "https://assets.decentraland.org/QmP4kgpVqyhRciQc2ijW6txpswbK8WaQYRgZDzvnpc9ZYm",
         "url": "GeckoStone_01/GeckoStone_01.glb",
@@ -2787,7 +2903,8 @@
         }
       },
       {
-        "id": "46bd6168-e8e8-4b5a-a86b-1c7c89a01c18",
+        "id": "8e71706b-3a3d-4255-b888-d86eb6318278",
+        "legacy_id": "832c0bde2941c8165102f48202fc75c8c99045738a492f3ce4715e7b81dcc2a8",
         "name": "Large Round Brick Grass Bed",
         "thumbnail": "https://assets.decentraland.org/QmP9CEzayHBKAizG5tpKe4FpB4173adkkMLXVoS9UxA1By",
         "url": "GrassPatchLarge_01/GrassPatchLarge_01.glb",
@@ -2810,7 +2927,8 @@
         }
       },
       {
-        "id": "136d0e71-4b47-4320-8a41-ef75be32454d",
+        "id": "c44a714c-762f-44a2-87cc-26d9462d9f17",
+        "legacy_id": "9e11abfe0454596f5843bca0054939504a8a04b22a6d2d7c509abe5f097aece9",
         "name": "Small Round Brick Grass Bed",
         "thumbnail": "https://assets.decentraland.org/QmVjEsEzfXZH2QWrTFzwnQA3iVUAYX52uKmy4bQFfBqiS4",
         "url": "GrassPatchSmall_01/GrassPatchSmall_01.glb",
@@ -2833,7 +2951,8 @@
         }
       },
       {
-        "id": "9ff0c7cb-1226-4eca-b6e0-336a8ea875e0",
+        "id": "734c6696-dc46-4f79-a817-41319bcc7395",
+        "legacy_id": "cb69229313068dbd0a7899323457fb8a16d36a29ef0572c5f6ba077338a4f478",
         "name": "Java Fern",
         "thumbnail": "https://assets.decentraland.org/QmXH67d2yocXvHG2JEDNJ7vL4819bKXF2jz5NKhSZSffVs",
         "url": "Grass_01/Grass_01.glb",
@@ -2859,7 +2978,8 @@
         }
       },
       {
-        "id": "ecfc76bc-e53b-4445-ae53-0a5256d67595",
+        "id": "af9213a3-3310-4564-9633-dd56815c85fa",
+        "legacy_id": "7b2a43ec57e784773e0431af41c131301363bab998a49fb836ad77e292fd647d",
         "name": "Ostrich Ferns",
         "thumbnail": "https://assets.decentraland.org/QmXSsizZPq9qZwXcpBXwcULrMV3pNJW849fwgGz8Ri5i7r",
         "url": "Grass_02/Grass_02.glb",
@@ -2885,7 +3005,8 @@
         }
       },
       {
-        "id": "64fdf2e8-ada7-4b08-a29d-3d1abbd34b1d",
+        "id": "43ab9bc6-bc2a-4ee1-815a-e12f60a709ae",
+        "legacy_id": "1154adaf9462d8fc7a07c5bb1b75e59df3f9a7fee41999f7462e6b5cb9c30e22",
         "name": "Grass Sprout",
         "thumbnail": "https://assets.decentraland.org/QmVCSXapmCMtqjpdMRM23UFhPAz7qcWdUpZYctvvyYpLEw",
         "url": "Grass_03/Grass_03.glb",
@@ -2911,7 +3032,8 @@
         }
       },
       {
-        "id": "ea423dee-6e22-44c9-8148-4c545e1a29bb",
+        "id": "009be9a4-294f-4ff4-88b6-04d13a51af0d",
+        "legacy_id": "b0953fec2d375c857d775ba815cab26b73d2013ec0ac79c09bfa84cfebad4302",
         "name": "Dandelion",
         "thumbnail": "https://assets.decentraland.org/QmauNWSzGCH4uRK6ZkPLuvxGveZHLZg2B46D8n1Z2V3awc",
         "url": "Grass_04/Grass_04.glb",
@@ -2939,7 +3061,8 @@
         }
       },
       {
-        "id": "dc440e26-98ee-4a63-8b1c-c46b5f20093a",
+        "id": "17d09db8-4379-4d48-a253-21aaf70b8c3c",
+        "legacy_id": "d89cf595f4c86904c6334a8677eab025fb1a57da90c84326252d486b9fe98b9c",
         "name": "Hammock",
         "thumbnail": "https://assets.decentraland.org/QmW9cT5oEDvR5hJvVPTSZemcMwCpJxDKAbiijiYNiQWcEa",
         "url": "Hammock_01/Hammock_01.glb",
@@ -2953,7 +3076,8 @@
         }
       },
       {
-        "id": "7df2e18d-887a-49bb-a1b1-de7ee2373202",
+        "id": "3a0dddfe-be84-4100-b36e-0fb1c6c15cb2",
+        "legacy_id": "aa80bdc093aba8ef49a85d2f9d7ce4402a908823622b9be77bd56f55b69c3570",
         "name": "Ice Cream Kiosk",
         "thumbnail": "https://assets.decentraland.org/QmXCHLEhXxQRs25jx3uKzHKE7BDgKV6dkdbbm19wVmYQxg",
         "url": "IceCreamTruck_01/IceCreamTruck_01.glb",
@@ -2979,7 +3103,8 @@
         }
       },
       {
-        "id": "e3a91af7-9869-4890-9132-39056de6d822",
+        "id": "fcca70b2-0e30-4196-91f3-185ecaf151f3",
+        "legacy_id": "11a2192dd12de7fbd5c08875ec030908fd062833cd40a21828720e2b941a4f96",
         "name": "Victorian Lamp post",
         "thumbnail": "https://assets.decentraland.org/QmbzE3gmjmK32CAmKQcouc4Dq1gHrh49HfG32nCAYNTqr8",
         "url": "LampPost_01/LampPost_01.glb",
@@ -3005,7 +3130,8 @@
         }
       },
       {
-        "id": "777f0ea7-0d26-4c00-885d-b4749f90c1e0",
+        "id": "625568d5-cec4-4d89-af23-8cb24018b198",
+        "legacy_id": "fca79ac2b5195476d24925b7700672d97cb7423325d4593cf1f791c87eac5a42",
         "name": "Traditional Lamp Post",
         "thumbnail": "https://assets.decentraland.org/QmSPNc7P6EAsJCrQGgdeuuwtMMWtszF4VAnGAp1yGA17W1",
         "url": "LampPost_02/LampPost_02.glb",
@@ -3031,7 +3157,8 @@
         }
       },
       {
-        "id": "634421bd-2f07-404a-9568-af8affec54cd",
+        "id": "5fabab5a-62b8-4c39-8938-00d22395d057",
+        "legacy_id": "20723c213c84f06c479534b47c5a4a93fe29bc2b7384dcb982478cf17a0db896",
         "name": "Classic Lamp post",
         "thumbnail": "https://assets.decentraland.org/QmVsEonM1KX2PbPsQeCEe4fECCniS4MBhHWaTjkJSjDM87",
         "url": "LampPost_03/LampPost_03.glb",
@@ -3057,7 +3184,8 @@
         }
       },
       {
-        "id": "eaba26d9-212f-46d3-834d-3ca839b7edf0",
+        "id": "6560eb7a-bd9e-45cd-9124-5d2fe0187575",
+        "legacy_id": "1ce946e9aa2ce1720cd6714ad85bf5d1fcba38f969be9da618d5bb1a8cd5b399",
         "name": "Rustic Lamp Post",
         "thumbnail": "https://assets.decentraland.org/QmTMqHTAjH52GDnVyCicFxi1Moe5Y4S6TLed63s7DFr1xy",
         "url": "LampPost_04/LampPost_04.glb",
@@ -3083,7 +3211,8 @@
         }
       },
       {
-        "id": "96ca916c-906c-4932-b418-d03a39cc79fd",
+        "id": "26d204c5-52df-475c-a6b2-999ce1b716bd",
+        "legacy_id": "63f285fe08ec9ef6976e79eadb9ed8a69c0be2e2c5da28839f771f0d0a91f4c1",
         "name": "Smooth Log",
         "thumbnail": "https://assets.decentraland.org/QmdcKpcjr4Xs2vSpYi8PCUYHfvcQt3FMY1QVRsNaibwCKo",
         "url": "Log_01/Log_01.glb",
@@ -3097,7 +3226,8 @@
         }
       },
       {
-        "id": "00f5bb63-a626-4a9c-aa1a-bcc6c5f5c54b",
+        "id": "00f75e38-8746-492a-8e1a-f2433c3c99ba",
+        "legacy_id": "c902ac3a67d1b411f4014028a42f997ef45f06cb0216b2212eeb9ae0e31e2c04",
         "name": "Medium Forest Log",
         "thumbnail": "https://assets.decentraland.org/Qmf9vgmrr1bkfkioU2Cz7Jbu9BwNmzorXAFCnwyP4Wa9rv",
         "url": "Log_02/Log_02.glb",
@@ -3111,7 +3241,8 @@
         }
       },
       {
-        "id": "d4305073-42d5-4311-93b0-db5931f5d25c",
+        "id": "ec3a27f6-7974-493f-b783-9fc2e4d29e5b",
+        "legacy_id": "0bba7267c600a651f40189584b0fda6a5ea43f2718ffc1524d9066a7299bbc9f",
         "name": "Large Forest Log",
         "thumbnail": "https://assets.decentraland.org/QmaokcE9VRChfZ3rhApnCxzVgNXX8eu3k1WrpmGAUN8PoY",
         "url": "Log_03/Log_03.glb",
@@ -3125,7 +3256,8 @@
         }
       },
       {
-        "id": "ca1bd98a-19d8-4c9f-aa59-c71dd50c0d4f",
+        "id": "451e0090-76a4-41e9-924b-cf30c148f3fc",
+        "legacy_id": "61335e175817800addc23d7b5f60b72316d39f4f2bfdb2913ee5a07dd71dc486",
         "name": "Log Round",
         "thumbnail": "https://assets.decentraland.org/QmcGfbVcDZhzmnzoG69axXqn95GhHASnhyLTvzYcFbp91G",
         "url": "Log_04/Log_04.glb",
@@ -3139,7 +3271,8 @@
         }
       },
       {
-        "id": "c5a22770-7b6c-41c1-924f-33da630bdeb1",
+        "id": "38832f4a-2a1b-4139-8d73-3146f1261e95",
+        "legacy_id": "a517aa0701b7cf0a94192e21a598baebaa60adc63be61bc0ae4230f6a0399e2f",
         "name": "Street Mailbox",
         "thumbnail": "https://assets.decentraland.org/QmeeDvWQoMiHrRbRgFuxVqCWKgUXNJbog1B67KJEtcEfPx",
         "url": "MailPost_01/MailPost_01.glb",
@@ -3163,7 +3296,8 @@
         }
       },
       {
-        "id": "7218b661-8799-4566-b51a-518ca307f4fc",
+        "id": "41cc0b2c-e74b-4830-9fc1-7ce3c6b9eb07",
+        "legacy_id": "ccd3ca662650c89097c26cdf55683313f23c193d8be1e3cebd38634652c23be4",
         "name": "Residential Mailbox",
         "thumbnail": "https://assets.decentraland.org/QmPTWfr6ndXD55ecB87fTMLB7fnHnAPmaGDFLRixupuZcf",
         "url": "MailPost_02/MailPost_02.glb",
@@ -3188,7 +3322,8 @@
         }
       },
       {
-        "id": "30eb173c-b26c-441f-9244-44d04f475813",
+        "id": "b6f18059-00be-4460-bcd4-06473ad61420",
+        "legacy_id": "87a967e900c8d4cb87528771ca3e247201932dcd94ce1606fba51a324d6a685c",
         "name": "Magenta Mushroom",
         "thumbnail": "https://assets.decentraland.org/QmZMEWACeXY7rmRE43tii1xgjBuotuGGKCep8D4nFtYdCw",
         "url": "Mushroom_01/Mushroom_01.glb",
@@ -3213,7 +3348,8 @@
         }
       },
       {
-        "id": "c9e38e76-06e6-467d-b4ad-1d78218f9a07",
+        "id": "cf22fe9b-69b1-40d8-92d7-7a8caa71ade8",
+        "legacy_id": "4c4cb61328b067b741221d2657338d0043ab3189d8259d8ff23448f7a0e70949",
         "name": "Gypsy mushroom",
         "thumbnail": "https://assets.decentraland.org/QmcdRpVb5eAVeQYjkgxkXiHsMPqbHAgmxwbP9bdBD1tayr",
         "url": "Mushroom_02/Mushroom_02.glb",
@@ -3237,7 +3373,8 @@
         }
       },
       {
-        "id": "008e8efa-1fd3-47df-9b6c-5b3eb1a737fa",
+        "id": "f58a0130-52c1-49c5-b7f4-014ecb2ce220",
+        "legacy_id": "16f580994f793d09b2b0afccac509007e03eec45d19bc370cc7320794cf2b67a",
         "name": "Paint Bucket",
         "thumbnail": "https://assets.decentraland.org/QmNT3VzcKTuWLqRew1Hb21Aa4si2YeZ6jH4BGfaZzdt8Lu",
         "url": "PaintBucket_01/PaintBucket_01.glb",
@@ -3259,7 +3396,8 @@
         }
       },
       {
-        "id": "b8950547-2191-41f8-a634-d31a3117cbb4",
+        "id": "647f405c-cb12-436e-8116-321404a898b0",
+        "legacy_id": "57a85831da8a50ed8a132bc9fb875240b70604fbd4cfebf216c0c029a3e1a2dd",
         "name": "Palm Tree",
         "thumbnail": "https://assets.decentraland.org/QmeL9zwoXK6LPh9fGufTahrBvWpaRX33WtQWrXky37xCPe",
         "url": "PalmTree_01/PalmTree_01.glb",
@@ -3281,7 +3419,8 @@
         }
       },
       {
-        "id": "e82f4166-3419-4104-9398-0eefbd2f7cd7",
+        "id": "1293e8b4-4b43-42ac-aa63-7a43fcc8789c",
+        "legacy_id": "08da3a29d6234eb384bc2687d46c8e3a4f1892ee1f55dad7180b38b0ba056cd4",
         "name": "Pebble",
         "thumbnail": "https://assets.decentraland.org/QmYJMWB2WkgXi1LKewurTdEQRt8pLdr4ttq7c38NHhtX2V",
         "url": "Pebble_01/Pebble_01.glb",
@@ -3304,7 +3443,8 @@
         }
       },
       {
-        "id": "6b817197-131f-4215-82f1-9302551cdd85",
+        "id": "851dddb9-9cd9-4dbb-849b-adfe1c3f5890",
+        "legacy_id": "9c31ea9a5ec0106c5540ebfd10d3e2bd7fd434a25d8aabb896051974ca4b128d",
         "name": "Round Pebble",
         "thumbnail": "https://assets.decentraland.org/QmW9MXxPFyPf37DqxMJPAHgqNFVc7a1JKoJWxVdPiVvSYe",
         "url": "Pebble_02/Pebble_02.glb",
@@ -3327,7 +3467,8 @@
         }
       },
       {
-        "id": "76e5cab2-8858-4c10-9ab6-d3f0fe1a23f0",
+        "id": "84d95b24-0f10-42e8-8210-9bb9665b72de",
+        "legacy_id": "0d9ff9e1fc5283012b7e854bbd60eae11323ecc81ddbf599047b8b300a463793",
         "name": "Flat Pebble",
         "thumbnail": "https://assets.decentraland.org/QmYay5u2GbgYiLJfAwSoaWSQbZ5i8cRJR36mg2K2vWyWd5",
         "url": "Pebble_03/Pebble_03.glb",
@@ -3350,7 +3491,8 @@
         }
       },
       {
-        "id": "10da6746-80fb-49f0-9cfa-3d93389ce535",
+        "id": "0fcee508-fd37-41c0-bbd1-9eca41c917b3",
+        "legacy_id": "304057ba4df7e08f490c1dbdb297a1882df775d225750fed62de43f5830db6a4",
         "name": "Rounded Pergola",
         "thumbnail": "https://assets.decentraland.org/QmdtLFVfggTDezBBjzdu7Aot35KiTHQTcmu1DUzYef5CMw",
         "url": "Pergola_01/Pergola_01.glb",
@@ -3364,7 +3506,8 @@
         }
       },
       {
-        "id": "0cf4ffa9-cdd2-4896-96ef-eceae802bab7",
+        "id": "d66e204f-9afc-415f-bebd-22c40312459f",
+        "legacy_id": "f4ba8d0afd995245a9eff4e04788f7f4702b5cd772006fa3b7ccdfd9d64d20dd",
         "name": "Pet House",
         "thumbnail": "https://assets.decentraland.org/QmX4RPE5xyDTw3bk4Sw46L1pukW2Rs5zh2rHpotRB4j87y",
         "url": "PetHouse_01/PetHouse_01.glb",
@@ -3390,7 +3533,8 @@
         }
       },
       {
-        "id": "e139cd24-0187-43ba-bc82-0cdc5ff8d64b",
+        "id": "aca2a574-4495-4752-a414-4550ce7becc5",
+        "legacy_id": "fd939e7c429d71efa4b1519a3cf84668f50757c68175b3ee6c81946a773c5aa4",
         "name": "Cat Statue",
         "thumbnail": "https://assets.decentraland.org/QmaQ3b8QVJoHErni8HbEmrVdSDggNY9xVr8hA8pVPNGWLV",
         "url": "PillarCat_01/PillarCat_01.glb",
@@ -3412,7 +3556,8 @@
         }
       },
       {
-        "id": "15b2705f-360f-43cc-bb4b-4ae0cefe0520",
+        "id": "27946cd5-d0e7-4d3d-8542-ab33fc53ca30",
+        "legacy_id": "ba81c8a23d852990967c3e6e665b0ab186e6a73c85e868c2155a5789f658a5e0",
         "name": "Dog Statue",
         "thumbnail": "https://assets.decentraland.org/Qmejt87qE2ScXRknste2hNLnEaG3u8YZKWAoDtWaVA86Dn",
         "url": "PillarDog_01/PillarDog_01.glb",
@@ -3435,7 +3580,8 @@
         }
       },
       {
-        "id": "c2b82543-aa26-424f-8410-e8dc99a7bcc1",
+        "id": "12056ac2-0e36-48ab-ac4d-7e8f7cb0dff2",
+        "legacy_id": "32fb566316d734160f2fbc90f58411d7cf980ebbbb4d1f55a89db43bca58199e",
         "name": "Ornamented Plant Pot",
         "thumbnail": "https://assets.decentraland.org/QmQHmFNq22vdd1tGj7pv894MfEttDQa7PEyTkD8g6ed6k2",
         "url": "PlantPot_01/PlantPot_01.glb",
@@ -3458,7 +3604,8 @@
         }
       },
       {
-        "id": "619c5576-4e17-4533-92b1-90880fd7f592",
+        "id": "6aeafe19-cc0d-42ec-b7da-51104af39778",
+        "legacy_id": "16ff4239807b4184d10e5f8183926f6173174269045405b61229e39db3d806a3",
         "name": "Bird’s Nest Fern Container",
         "thumbnail": "https://assets.decentraland.org/QmcaEtsXgSqLThcBwwTkaH9bn5DJDG3aaBtVTdnSCFSnrk",
         "url": "PlantPot_02/PlantPot_02.glb",
@@ -3485,7 +3632,8 @@
         }
       },
       {
-        "id": "68a0d4b3-326d-4c93-b294-65f6d83ba3ba",
+        "id": "e9d4e87b-8d5f-4f03-a2e5-044effa9147f",
+        "legacy_id": "1a712356c45f253c703c2b0deb9367b17090a4bedcbb7f578da26542b443fbc2",
         "name": "Planted Fern",
         "thumbnail": "https://assets.decentraland.org/QmZDtHY7bsdJ7L2gC5ARrFPKkLRiADyLyKWyU26ypRz7QQ",
         "url": "PlantPot_03/PlantPot_03.glb",
@@ -3512,7 +3660,8 @@
         }
       },
       {
-        "id": "1597dc8b-ff6d-46ff-a8eb-174396cdd649",
+        "id": "1091923b-56aa-415b-96a2-ca82ecee7782",
+        "legacy_id": "d22ecdcbc39b6e90e2847236dd1d2068355ab406bddeb29ebcde158ba0e97a18",
         "name": "Planted Balsam",
         "thumbnail": "https://assets.decentraland.org/Qme4Nb5TJscz5EKgWS9wauLbLvFPRf88T4ET47UHRDRa8k",
         "url": "PlantPot_04/PlantPot_04.glb",
@@ -3539,7 +3688,8 @@
         }
       },
       {
-        "id": "8ea94d51-74d7-461b-92c1-78704bdaafed",
+        "id": "f17f4ed8-f0a2-48f0-a461-95d426b58d54",
+        "legacy_id": "75790f8bfabedd07914be94d156524bc68cfbce3395edbef990004bbcdd9e5fb",
         "name": "Bird’s Nest Fern",
         "thumbnail": "https://assets.decentraland.org/QmTQmiduVwRxdzb827LPx2c5U1EfFWc9z6JQVmMNhpPbje",
         "url": "Plant_01/Plant_01.glb",
@@ -3565,7 +3715,8 @@
         }
       },
       {
-        "id": "90061dea-141b-4f90-bce2-7491547e3e09",
+        "id": "71806ca6-1a2b-4d8b-b919-ae96241f8c08",
+        "legacy_id": "ecb12efba2e47934441ffc0a6a995f5607d41d92efc6d17c46c6a960a9fd9335",
         "name": "Balsam Flower",
         "thumbnail": "https://assets.decentraland.org/QmaS4p5D8adeArxf9T6HDih42QN58f9LBqDyN8Sh3BCKft",
         "url": "Plant_02/Plant_02.glb",
@@ -3591,7 +3742,8 @@
         }
       },
       {
-        "id": "c2980447-685e-4bd0-ac2b-18ee2bb3ad70",
+        "id": "bf0962d5-8904-4f4a-b2b6-9f4607ba1e0d",
+        "legacy_id": "8063ff2fab53f23e3053710e76fdab29a8063ae3e9ca513adb701010299d1512",
         "name": "Flower Sprouts",
         "thumbnail": "https://assets.decentraland.org/QmYWvG6Jqh56coUhqymm5ECYzvKFrkhYjS8qNykBLarKDX",
         "url": "Plant_03/Plant_03.glb",
@@ -3617,7 +3769,8 @@
         }
       },
       {
-        "id": "4433eb97-1ec2-470e-875b-557516e3b336",
+        "id": "8b69ff81-da01-4334-bfc1-281a42c810e3",
+        "legacy_id": "c84a296fb32851f1e0ef655013772403a3c77e074cd0d7a63f332c3962b330ac",
         "name": "Sweet Pea",
         "thumbnail": "https://assets.decentraland.org/QmeRHqUDhMn4YNREXNniMdKFHuNpJyv7NS6G2yQ8gukYnL",
         "url": "Plant_04/Plant_04.glb",
@@ -3643,7 +3796,8 @@
         }
       },
       {
-        "id": "e7a5def2-7df2-4af4-9f72-91e6c0218105",
+        "id": "39494fdb-7107-4dac-9412-a113586ffcda",
+        "legacy_id": "3a5cbac9305f8615f43c7463004f1b8124b16b906513cfbc87919649b786b816",
         "name": "Kangaroo Paws",
         "thumbnail": "https://assets.decentraland.org/QmP5UZvsetaeGSj5UGFNwEMzsjMbkuFcHz713cJBzyQhDw",
         "url": "Plant_05/Plant_05.glb",
@@ -3670,7 +3824,8 @@
         }
       },
       {
-        "id": "332ece9b-ad5f-44f5-88da-9b29ccdc58ce",
+        "id": "d62f9915-4940-4fb0-83f5-7b92dbd93fa7",
+        "legacy_id": "07927191c260305b72b25d1d53f1322bf98aa889a6cf80f193c58d08d297cefd",
         "name": "Moss Rose",
         "thumbnail": "https://assets.decentraland.org/QmVzCumAAzcyvGmuikCNzgQT6obzNf9vgGvtyCj21W1eJi",
         "url": "Plant_06/Plant_06.glb",
@@ -3697,7 +3852,8 @@
         }
       },
       {
-        "id": "63ff74bc-00ea-4a61-893b-30f24e52cc2c",
+        "id": "d4d4f87a-1ee5-46ad-b998-13ce007e6ecf",
+        "legacy_id": "89010f73b790c195bd57b0b44d6276033be2a6aba64b397fde0db1608d02a9dc",
         "name": "Maidenhair Fern",
         "thumbnail": "https://assets.decentraland.org/QmUcK7TdrQYhBL87HEW85RDvYPN7anxcQWurRz8wUJtNWz",
         "url": "Plant_07/Plant_07.glb",
@@ -3723,7 +3879,8 @@
         }
       },
       {
-        "id": "494df3b3-0f06-4c5e-9107-ed2699b8b646",
+        "id": "44e7b413-1f33-43bc-bada-96659b75bd86",
+        "legacy_id": "30d542f08c3571e5d7ac01e51f6ff773a2f0bac1be3f9de15642c2d6f9841d07",
         "name": "Soccer Ball",
         "thumbnail": "https://assets.decentraland.org/QmdqyRZ6rSz1oec8D3cEpod8FCsNhdv6MkMJ895woqkSQA",
         "url": "PlaygroundBall_01/PlaygroundBall_01.glb",
@@ -3748,7 +3905,8 @@
         }
       },
       {
-        "id": "37f9d194-2349-440c-a6ce-c7ae180a102e",
+        "id": "e3ac0729-bd49-496c-a4b7-af8ff667789f",
+        "legacy_id": "fa76a75a70ba01a5d141650f03c883d9e0989e0b5a48fa3f629d57b2e75244b2",
         "name": "Swing",
         "thumbnail": "https://assets.decentraland.org/QmXtS6gWY9n26rBsJSRsQbrrMCaGFw2x4r5Poxpk5KZZUH",
         "url": "PlaygroundHammock_01/PlaygroundHammock_01.glb",
@@ -3773,7 +3931,8 @@
         }
       },
       {
-        "id": "cbee1320-f766-48f3-930e-b9e44d5aa1d5",
+        "id": "34e36e9f-1cc5-49a1-8143-fcf04999e0b7",
+        "legacy_id": "f6b9cbcc79f78ad16f45092ed6008bfd127d535c46556430e42792638cf12341",
         "name": "Slide",
         "thumbnail": "https://assets.decentraland.org/QmYDvxJyhVB1wjcqSKMmhxhHizhgca94XhqtCvuWw3WFyw",
         "url": "PlaygroundSlide_01/PlaygroundSlide_01.glb",
@@ -3797,7 +3956,8 @@
         }
       },
       {
-        "id": "f2b7bc5b-0bce-4ae2-adab-2871a9f9b858",
+        "id": "54262c65-01c6-4509-8c35-a5e713e3a0c4",
+        "legacy_id": "69e715b432520f8aeec0652218dcef951bbbb00c48bfbf00f07371dd5d7df9ad",
         "name": "Geodesic Dome",
         "thumbnail": "https://assets.decentraland.org/QmTJ6WpKh3ZrmUNQ6ofDJHo2vJJziZYz9gLEKuCMB79jRh",
         "url": "PlaygroundStructure_01/PlaygroundStructure_01.glb",
@@ -3822,7 +3982,8 @@
         }
       },
       {
-        "id": "c2e642b3-80f7-468d-aa34-ee6ed354a1d5",
+        "id": "2950ca19-cb51-422b-b80e-fc0765d6cf4b",
+        "legacy_id": "532351261bd6d3f1d63eca38743e34e8ce774d01e978a8108455443b6ec3ca7e",
         "name": "Pond",
         "thumbnail": "https://assets.decentraland.org/QmSxQnhTB9Yva9mMKryFJQwcW1GYpf4HBHeq8ntBxes4xi",
         "url": "Pond_01/Pond_01.glb",
@@ -3847,7 +4008,8 @@
         }
       },
       {
-        "id": "9de95b9c-91fb-4d91-bce5-4fb28940dfd3",
+        "id": "622c9a64-8acc-4c24-bcf3-d9cd740a9c20",
+        "legacy_id": "48c4a58f6738f109d81e84e3823e5080ffb2f30752c35d59275c639818f33e66",
         "name": "Large Pond",
         "thumbnail": "https://assets.decentraland.org/QmVmmutpxdrKkyAEq1VMtXqGRQm2t7Sako8VqZMS56iPjr",
         "url": "Pond_02/Pond_02.glb",
@@ -3872,7 +4034,8 @@
         }
       },
       {
-        "id": "4f6029c2-e4e4-4196-9b60-6c84d65b681b",
+        "id": "39577482-9056-4a72-9f7c-a3c544df41fe",
+        "legacy_id": "bb67751a7f426a022231c4777374796b649568c5838d3a3d416d84c26c3eedae",
         "name": "Clay Pot",
         "thumbnail": "https://assets.decentraland.org/QmQa8z8dwLH9JMwUMP1va9xbEKBkLXSodg1aMYZbDPwETJ",
         "url": "Pot_01/Pot_01.glb",
@@ -3895,7 +4058,8 @@
         }
       },
       {
-        "id": "646e764d-6842-4ebf-a99a-7ccb0691a616",
+        "id": "98b6a39a-b03c-44e4-be7f-09825ad88aed",
+        "legacy_id": "40629b113363d96f489a1935891331c9488adf56b45ac0dfa4bd0614c6985195",
         "name": "Concrete Square Planter",
         "thumbnail": "https://assets.decentraland.org/Qme6vgxZi3EXydHeVNSqqSDDnmHa1r8zkZEoP5mDmMFrtd",
         "url": "Pot_02/Pot_02.glb",
@@ -3919,7 +4083,8 @@
         }
       },
       {
-        "id": "345841e1-9862-4fe4-bf69-b155812d546b",
+        "id": "7db063b0-ba2b-4211-8fd5-8f44b38d9a19",
+        "legacy_id": "e65c386ce4f52b84a8bfb1b150925c852e31cd7b277e68a4c7fbd4ac167e16c6",
         "name": "Big Mossy Rock",
         "thumbnail": "https://assets.decentraland.org/QmSaH4P6C9zsjPJaGY2piQEAsixMZTycEAaTkiv3Qpuprw",
         "url": "RockLargeMoss_01/RockLargeMoss_01.glb",
@@ -3945,7 +4110,8 @@
         }
       },
       {
-        "id": "7e893f26-59c7-4cd1-9f7a-d349bc3836bf",
+        "id": "c91329da-ee59-4595-88fd-10b2b75a4f5b",
+        "legacy_id": "4de3bdfc14b004315bd7976f7072cbe7f36fd0a82eb404a4b75f346b4609c620",
         "name": "Big Rock",
         "thumbnail": "https://assets.decentraland.org/QmUALt9q9H5HhXDCch67GEEXV6N8kv66o2mR7XUDg8qXdD",
         "url": "RockLarge_01/RockLarge_01.glb",
@@ -3969,7 +4135,8 @@
         }
       },
       {
-        "id": "16ce2010-8880-4303-9471-197fabe12bd6",
+        "id": "55b53f11-5bff-4176-8ac8-bbf078ff99f9",
+        "legacy_id": "5b27a64cc1ecf23c1c036ba8a0334eb714afcfed265c4caf90003c2b36bd0ad5",
         "name": "Big Flat Rock",
         "thumbnail": "https://assets.decentraland.org/QmXjduMDZcQM91vQcQRE72o2257h12ESpSXCZEu9S3FBzc",
         "url": "RockLarge_02/RockLarge_02.glb",
@@ -3993,7 +4160,8 @@
         }
       },
       {
-        "id": "27bfdc9e-6bcb-4d0a-b1e3-209e991842ac",
+        "id": "ce45a1a0-7021-4428-b56f-cd60bdcb7dac",
+        "legacy_id": "1e5ae0adb437bc2bd7d724e7c5bdbbc873a528b29d019442c35965096d474c4d",
         "name": "Big Stone",
         "thumbnail": "https://assets.decentraland.org/QmcTHCVRtCFgwerguGLyw76xAjexRZm23e9s7Rv1iV1UPE",
         "url": "RockLarge_03/RockLarge_03.glb",
@@ -4017,7 +4185,8 @@
         }
       },
       {
-        "id": "88586ce2-de30-438a-98e6-d1bf21bf1991",
+        "id": "21cee882-17e9-40c6-b919-ce3b497ada04",
+        "legacy_id": "b29e8e36db24c0bdf7587b90ef85d5ee851ef63392adb9d311c6c6107b3c79d4",
         "name": "Medium Mossy Rock",
         "thumbnail": "https://assets.decentraland.org/QmTdksiM68rxJBErUk1J5RSUx3SXx5fNjCVEXzq9tFr6LK",
         "url": "RockMediumMoss_01/RockMediumMoss_01.glb",
@@ -4043,7 +4212,8 @@
         }
       },
       {
-        "id": "50906e94-820c-40dd-82d7-5ec2aa8bab7e",
+        "id": "aff25a79-1607-4fce-abeb-7d432b5fda38",
+        "legacy_id": "468b28743cc63d809267540f76bc29067a2b876cc957c9369f1144e1dd5a06b8",
         "name": "Pointy Medium Rock",
         "thumbnail": "https://assets.decentraland.org/QmS8twRLHkdJkYATXfni3xvjbBFU4jwZPcPxhgA7ZnctTD",
         "url": "RockMedium_01/RockMedium_01.glb",
@@ -4067,7 +4237,8 @@
         }
       },
       {
-        "id": "493bfb21-dbab-4ded-a4eb-b376c7dbba5e",
+        "id": "6aa3eba3-016c-437e-826f-c2be08052551",
+        "legacy_id": "fc8be46aebba4a5ab5a95b6b1b339d6282896e384ba3785eed62b843467006e5",
         "name": "Rounded Medium Rock",
         "thumbnail": "https://assets.decentraland.org/QmUHSQ1YrzcNzzTxRcrfhkhzmVvN8aYu7vWXSmkJ5u9dfo",
         "url": "RockMedium_02/RockMedium_02.glb",
@@ -4091,7 +4262,8 @@
         }
       },
       {
-        "id": "13ce534d-c1e5-42e8-9a4f-b16a9b1aa272",
+        "id": "a274429d-c05a-4964-9cee-9a0bb241e89e",
+        "legacy_id": "84f1f0ed485fcf9c9e1932dab982892b3621ddf1edd13ba3f6ffb99fb0d7d9cf",
         "name": "Flat Medium Stone",
         "thumbnail": "https://assets.decentraland.org/QmamKrr1TqzHVZznaAiazjobRJ1Hx8XeA4bSLTbPQzYWFx",
         "url": "RockMedium_03/RockMedium_03.glb",
@@ -4115,7 +4287,8 @@
         }
       },
       {
-        "id": "baba0098-ef20-46fd-a012-6ec65f763b44",
+        "id": "2d1138f8-be37-4634-8ca0-0d63d11313bb",
+        "legacy_id": "4080c76e788abcc6919e8911c1fc499385eba6c95f38893b82b1b222711fe62d",
         "name": "Small Mossy Rock",
         "thumbnail": "https://assets.decentraland.org/Qme8hddt92Locr9Wq43MzJ8ZafkpKmCXck4kKD6AsX7ZzE",
         "url": "RockSmallMoss_01/RockSmallMoss_01.glb",
@@ -4141,7 +4314,8 @@
         }
       },
       {
-        "id": "25211668-be1d-459a-955f-1e692c0dffc8",
+        "id": "1f8058de-0a22-47c9-8732-a1f2d9721838",
+        "legacy_id": "a8f5b341aad82fc2bc918acea9dad45fd95df368519094c364de800ff338de10",
         "name": "Small Flat Rock",
         "thumbnail": "https://assets.decentraland.org/QmWempH1iyFV4NRJk2T62Y2Ef6rTBLmKZQF6VDus4iRbWE",
         "url": "RockSmall_01/RockSmall_01.glb",
@@ -4165,7 +4339,8 @@
         }
       },
       {
-        "id": "0ca53da4-a49b-49b5-8f99-18d7212b83e2",
+        "id": "95b32f76-c292-49d2-89a5-093eed4f09b1",
+        "legacy_id": "4246c3ccc704ca10df14ba46ee0ce6d5ffc9b663a7d79b54623ff90c69b1ac80",
         "name": "Small Rock",
         "thumbnail": "https://assets.decentraland.org/QmTr8jS5cnJmUxhg89xtGvvT5WwoakfFFHCwNHTMpoJfCk",
         "url": "RockSmall_02/RockSmall_02.glb",
@@ -4189,7 +4364,8 @@
         }
       },
       {
-        "id": "7f4a899a-80ad-4239-b430-ec0955865283",
+        "id": "1621acc1-f146-424b-b5ee-b266c5bda37b",
+        "legacy_id": "d9baf88623815282665cf5342737386a3f4ab201a5ecb89294b7694f48dcf901",
         "name": "Tiny Stone",
         "thumbnail": "https://assets.decentraland.org/QmfQd9nnQ9VNXtSxQyWk95ooySnKiSnnMNTnp3yAVBW8wU",
         "url": "RockSmall_03/RockSmall_03.glb",
@@ -4213,7 +4389,8 @@
         }
       },
       {
-        "id": "09499a65-0939-4a00-bd14-c834e60e4752",
+        "id": "bab1e4a8-3911-4e42-a981-33d99a1228cf",
+        "legacy_id": "1c38eb3bae45332b72d7a86c85845156b5b645415e6bc682c915b75430ea7285",
         "name": "Rubber Tire",
         "thumbnail": "https://assets.decentraland.org/QmVCttLvq8jHciHgwceLBP4xBVd1UGAf2578PqZJeuYLdg",
         "url": "RubberTire_01/RubberTire_01.glb",
@@ -4235,7 +4412,8 @@
         }
       },
       {
-        "id": "5ec2834e-65c4-40e9-95c4-f53efb1e896d",
+        "id": "c2c85648-af16-4792-808e-403ebbce0524",
+        "legacy_id": "e9678b5ca0c77adb3f16193defb4c4d26168df500ab41070cf9efbe801b036e5",
         "name": "Rustic Post Sign",
         "thumbnail": "https://assets.decentraland.org/QmNUix33oUFzxSNSdPHCeXrbaF5pd8dGC5zZKWTpYLy4cs",
         "url": "Sign_01/Sign_01.glb",
@@ -4260,7 +4438,8 @@
         }
       },
       {
-        "id": "c70c18a1-1bda-4955-82a2-4d4dde123495",
+        "id": "46afa743-3c66-4caa-ad28-3d970a0e553c",
+        "legacy_id": "f5bf0a02c6c6915dfddfd224a997eee65dfc2e1258a9f9873126e7b228a8c016",
         "name": "Cafe Street Sign",
         "thumbnail": "https://assets.decentraland.org/QmXyJL9NZLuDHMB3BD1Q6G68YaiW9tjm8oGhsxsUJw4c9p",
         "url": "Sign_02/Sign_02.glb",
@@ -4283,7 +4462,8 @@
         }
       },
       {
-        "id": "2deacca8-0edf-4560-b73a-23d56b6b4a65",
+        "id": "cbc5c08a-bb94-4a8a-99a7-eaa3f85554ed",
+        "legacy_id": "f2fc902ccd8e4d517074b628b25485ebb16b5f21a9d5dcf4a24fb05f05c42769",
         "name": "Yard Sign",
         "thumbnail": "https://assets.decentraland.org/Qmd6qNJq2rfrEGMof2aN87NFM9ibhyGffJNzi8cobDBvvg",
         "url": "Sign_03/Sign_03.glb",
@@ -4297,7 +4477,8 @@
         }
       },
       {
-        "id": "9f9cefda-2162-4ac0-bc76-c1de0749d644",
+        "id": "827e3d2b-4fc5-42f1-9116-1f2ecb92418b",
+        "legacy_id": "af77b5705ab1e272a68349f7cdef1b6f8c82fbe3b691f6d4af2020f4acb82a3a",
         "name": "Camping Board",
         "thumbnail": "https://assets.decentraland.org/Qmdoo4A1MM9S9Dyc7oHr5dpvhzGzSnsyanJg7mqeJSxhuH",
         "url": "Sign_04/Sign_04.glb",
@@ -4320,7 +4501,8 @@
         }
       },
       {
-        "id": "bf1c2461-e885-4752-8856-b034e904c7c8",
+        "id": "73a85586-d161-47e1-bc40-725e00a73813",
+        "legacy_id": "de0eb04d487bd35eea3610cb1bef778a2954677fe107f0da3515eb39f0ee0ae2",
         "name": "Green Magic Stone ",
         "thumbnail": "https://assets.decentraland.org/QmNQQFpuG372ehTpVPFmRZc6QbWf2Bt4PWdNRiRNgUNKF7",
         "url": "SpiralStone_01/SpiralStone_01.glb",
@@ -4345,7 +4527,8 @@
         }
       },
       {
-        "id": "82dd6834-c5e0-4850-bd7e-d38b2ce58677",
+        "id": "6ddf4e5b-48c6-49e1-ae98-34dc5fd0b5a7",
+        "legacy_id": "5ead1fd817c1c48cdca75b307c7a17d3ba4944c9d01d5880fed28068fcb3b248",
         "name": "Blue Magic Stone ",
         "thumbnail": "https://assets.decentraland.org/QmSwLQ6KXsD37UaeCPhf1qPr9BHkJiYfuUdAvE5C2j38Rp",
         "url": "SpiralStone_02/SpiralStone_02.glb",
@@ -4370,7 +4553,8 @@
         }
       },
       {
-        "id": "886e40ae-d9d7-44ec-acf5-947320cdd9a8",
+        "id": "0a30f3a6-93b8-44cd-b4f3-d33792c57e3d",
+        "legacy_id": "708104f756f85f8680173adf749fc278118bbcfd4608d2b6cd2504b6f0e202ad",
         "name": "Red Magic Stone ",
         "thumbnail": "https://assets.decentraland.org/QmQGCB6vR8ahNHoXWa3fhTPDUkxLfsVUougiJHRRnGaapU",
         "url": "SpiralStone_03/SpiralStone_03.glb",
@@ -4395,7 +4579,8 @@
         }
       },
       {
-        "id": "6f3f2574-5d37-4857-ba7b-88cdf7d81d95",
+        "id": "b72478c3-f485-42b9-8dd4-94a4f34588f4",
+        "legacy_id": "df1a3079536b3f14b55e99e295e0e696e7c02b4797b9e7d45611e80bce0607d2",
         "name": "Fair Kiosk",
         "thumbnail": "https://assets.decentraland.org/QmV34j5KW6bveiGeFwx98XLCHUKRNSGNZZ9QCxLdz2dn4v",
         "url": "Store_01/Store_01.glb",
@@ -4417,7 +4602,8 @@
         }
       },
       {
-        "id": "5c66b671-fab7-4040-8448-d3bd92b693a9",
+        "id": "3bb3f823-e27a-4f4b-9a0f-fe046cb8a57d",
+        "legacy_id": "a57af0e85c9c2b94e78a340228ceb2db387b043618d0b409a66be6228b8c76ad",
         "name": "Fruit Kiosk",
         "thumbnail": "https://assets.decentraland.org/QmfPJgnXWgXaF8vGR9of36YwbN6G4Bgc75AHzctEtCopDc",
         "url": "Store_02/Store_02.glb",
@@ -4442,7 +4628,8 @@
         }
       },
       {
-        "id": "ae2102e0-2454-4357-913a-d2d94783a6f3",
+        "id": "5bac22be-63d7-43b9-a400-ca10623119b2",
+        "legacy_id": "b984c6f5bb07529e609ac4da332579c8933382c84d968410b03c5dd8d197e0e1",
         "name": "Rustic Kiosk",
         "thumbnail": "https://assets.decentraland.org/QmaxXootKccWfwdSZMyVj7Hf3CDXsnzAaJBvjGMYerZxcc",
         "url": "Store_03/Store_03.glb",
@@ -4465,7 +4652,8 @@
         }
       },
       {
-        "id": "1afc840b-9064-4287-a807-6f2cb4f766c8",
+        "id": "3e718ab8-14e9-4352-a972-620da3ae778c",
+        "legacy_id": "5257a30d79d1e53e6c474e52048136f0a137b3fabc87a2fc62637560081eeebf",
         "name": "Street Clock",
         "thumbnail": "https://assets.decentraland.org/QmP5dgNAk4E3gS4QxnuMv4DmmYcpdESLVf7snTkSHcCcP3",
         "url": "StreetClock_01/StreetClock_01.glb",
@@ -4491,7 +4679,8 @@
         }
       },
       {
-        "id": "0b00cb82-4e45-405f-ab7f-d64823b69464",
+        "id": "d6ba84b2-3474-43dc-879d-2d3d70fb4f82",
+        "legacy_id": "37d87d018a9367f06d5ff88af600565d3d1abd36c971641cc81b1c3251489fe7",
         "name": "Medium Street Curbs ",
         "thumbnail": "https://assets.decentraland.org/QmUkvwn3xyYFY8yvVZhmoFWyQ95onEUy59iJGfWF9bLBaV",
         "url": "StreetCordMedium_01/StreetCordMedium_01.glb",
@@ -4515,7 +4704,8 @@
         }
       },
       {
-        "id": "de3426f0-7e98-42db-9caf-fd69e9daa7d0",
+        "id": "9afc5b1f-9960-4b8e-a78a-067b6d32d54b",
+        "legacy_id": "6a15e88c982d94866129bfa0a386746b7bf91a3730c6bc4f205d4a71c283999a",
         "name": "Small Street Curbs",
         "thumbnail": "https://assets.decentraland.org/QmRJ73JqJa2mjKAagQ5VzQuTNhoxskB2e8aPrz1yPVnz57",
         "url": "StreetCordSmall_01/StreetCordSmall_01.glb",
@@ -4539,7 +4729,8 @@
         }
       },
       {
-        "id": "69cc0e42-1285-47e6-9792-33052ff1ae74",
+        "id": "4c979a38-2f76-4efc-ade7-d22d0dfaf6f0",
+        "legacy_id": "c059187ba39d75091f16852b4c4d0e9db27d99be69a985fb4af82746a20c24e0",
         "name": "Suitcase",
         "thumbnail": "https://assets.decentraland.org/QmXKeX18qgNxJrjj9Vk3wi3KX8ouuZAZVets9eaDViezBG",
         "url": "Suitcase_01/Suitcase_01.glb",
@@ -4562,7 +4753,8 @@
         }
       },
       {
-        "id": "72751351-45e0-4de3-801a-17420b2997eb",
+        "id": "87449055-9033-4ac4-8125-c78831f751d4",
+        "legacy_id": "7e38433e771c9ad3e16a2bba259c9c55319aa17c1669a59036730aacb48a45a1",
         "name": "Surfboard",
         "thumbnail": "https://assets.decentraland.org/QmX1hxnVJskVsSmnS2R25GV1TSpdqUf7iodqvTQbBbkmsJ",
         "url": "SurfBoard_01/SurfBoard_01.glb",
@@ -4586,7 +4778,8 @@
         }
       },
       {
-        "id": "a38dead0-5cc6-4d57-99b1-c1bef129aa85",
+        "id": "8bbdfe3a-8a61-4e93-9809-1d5e8d92f17a",
+        "legacy_id": "129ae8013dcf7e825cb966526e41b71d768b30433a733efe884acfb707af366a",
         "name": "Umbrella Table",
         "thumbnail": "https://assets.decentraland.org/QmUNTKkpXnPcxYvCPesMC7LJ49NGd4ZRj9srMNv8JgJMhr",
         "url": "TableBar_01/TableBar_01.glb",
@@ -4608,7 +4801,8 @@
         }
       },
       {
-        "id": "927cf9ba-3e9a-40a4-8390-f72926e18f33",
+        "id": "ea9146e1-5666-40da-80c9-8a3ce23fb979",
+        "legacy_id": "b181bf7c4c94f90fbd3d3306f1677add7dfeaf6ce3ab1ad2869dfe335e88aa99",
         "name": "Outdoor Table",
         "thumbnail": "https://assets.decentraland.org/QmP7DDboWhWnUcimfyDFy8tgdN3ys5K4WmWeLjjomCDvHC",
         "url": "Table_01/Table_01.glb",
@@ -4630,7 +4824,8 @@
         }
       },
       {
-        "id": "d0942a4b-a00d-46c2-81dd-47df52b22c2d",
+        "id": "af8136bb-c528-4c8c-a986-c352b48241bf",
+        "legacy_id": "8bcd11fdde874c5ac9a62d5982b87f8f8aa94ff1a90bf6f6227806545507db72",
         "name": "Blue Table",
         "thumbnail": "https://assets.decentraland.org/QmV7Ugei6nayTweycKGbQv5LKx7LcoV6MutHTA8ntRmtPE",
         "url": "Table_02/Table_02.glb",
@@ -4644,7 +4839,8 @@
         }
       },
       {
-        "id": "81cac714-a5df-4f25-826b-9ef56bfd177e",
+        "id": "36a9ea1e-61b9-4221-a580-74011955a191",
+        "legacy_id": "33aa9a63b89c7fe7aa08a23b37de8ba26fd5e287fe66681c6885f50485cc6947",
         "name": "Square Wood Table",
         "thumbnail": "https://assets.decentraland.org/QmfHzn9buQ8TCT4XpGBRC46g4hgVCgDy3XN4PVH7qBHKuX",
         "url": "Table_03/Table_03.glb",
@@ -4666,7 +4862,8 @@
         }
       },
       {
-        "id": "1681b692-a682-4816-b472-2f40a0a3b107",
+        "id": "9d9c165d-3aaa-44ae-89f6-20d977122fce",
+        "legacy_id": "0d62a237fd4d92d3645beca95a965e5fa421b62fae3ca33a6ecd0623c80d2a01",
         "name": "Concrete Rounded Table",
         "thumbnail": "https://assets.decentraland.org/QmfZDzjzR7EcwgWDhn5ptnxDWZWEoW68fnU7nxGxgdq9wa",
         "url": "Table_04/Table_04.glb",
@@ -4688,7 +4885,8 @@
         }
       },
       {
-        "id": "3350299f-7b7b-42e1-a11b-0d7ff844bdad",
+        "id": "3826959a-85b8-41aa-9c95-a68a4830dbbc",
+        "legacy_id": "51afe8bd3e53f0feab04a4437d31b11a99fcd4f23e047d1d9ed95b3d8fb888f0",
         "name": "Camping table",
         "thumbnail": "https://assets.decentraland.org/QmdXP7x1yVct8ZgLAsK1ihN3V55AuuMNvMAaUsvoAhvF3P",
         "url": "Table_05/Table_05.glb",
@@ -4710,7 +4908,8 @@
         }
       },
       {
-        "id": "cebb42e3-dcfe-4e52-94be-d542b6978f1d",
+        "id": "b01154d9-db05-4713-ace7-692b67220bb0",
+        "legacy_id": "0c00933b3aca53439cf7914760a35b7f16072105354e9557344e9fe6fcb0c0df",
         "name": "Coffee Table",
         "thumbnail": "https://assets.decentraland.org/QmRe1LFqWVQ4f7ZxbWWa2Q23d5ACD6aT9edCfMcSfgVTNx",
         "url": "Table_06/Table_06.glb",
@@ -4732,7 +4931,8 @@
         }
       },
       {
-        "id": "c6f1e429-edb0-4adb-acf8-729c194ba85a",
+        "id": "34e02e86-d859-439e-a3d2-81ec9e2f8ace",
+        "legacy_id": "9b41235913637a5580275569e2b080f78120dcac6fdb898c8093dd5a1297e8e8",
         "name": "Tent",
         "thumbnail": "https://assets.decentraland.org/QmPiamBbT3TS9LngWeVf4GEUJ2WZk99XB9nXa6ar5BSHp7",
         "url": "Tent_01/Tent_01.glb",
@@ -4754,7 +4954,8 @@
         }
       },
       {
-        "id": "981170bd-2785-4d75-85a6-f173cedc4a8e",
+        "id": "5e4a922e-50f1-40aa-a1a3-bee660371499",
+        "legacy_id": "92a96bb0e682057aa942a4c9e4a56969af4dbc9de7ba74eeb60accec17b1dfc8",
         "name": "Information Terminal",
         "thumbnail": "https://assets.decentraland.org/QmVj5XcWVSxJvZcQ15p9SymAKE28FmkyEfArHKkMHiBQDG",
         "url": "Terminal_01/Terminal_01.glb",
@@ -4778,7 +4979,8 @@
         }
       },
       {
-        "id": "f5b5959f-ebc6-4494-bcae-737d0d1e21e5",
+        "id": "29f358ec-1a23-4cfa-b90e-1907a0fd9406",
+        "legacy_id": "96a8852decec43d7fc0b808af5aba69bfc5a5aeaf83b810eb7b6c94636a59fc9",
         "name": "Small Street Theater",
         "thumbnail": "https://assets.decentraland.org/QmQXYSNuNaSVR1J7EEHQeXDkBvW1VwozRj2DnthEDi2ZWD",
         "url": "Theatre_01/Theatre_01.glb",
@@ -4804,7 +5006,8 @@
         }
       },
       {
-        "id": "1232653a-6d6d-4a11-abd8-5db2c2fd7edd",
+        "id": "c5daf807-1dde-41e8-a1db-c30f58917457",
+        "legacy_id": "99ea245f11ab9a2cd043fcabb1e5a1660f0e32e4f5d8e75ca4d1e4d153c79299",
         "name": "Urban Trash Can",
         "thumbnail": "https://assets.decentraland.org/QmetJ4613gfkP3SSAThaF3fAbB7tcNH8NCKRgT7g8yk2Xb",
         "url": "TrashCan_01/TrashCan_01.glb",
@@ -4828,7 +5031,8 @@
         }
       },
       {
-        "id": "6576aac3-5ce2-47f4-a32c-5b69a4b387ce",
+        "id": "bf27e07a-726f-4752-bce5-4792a0022583",
+        "legacy_id": "e8d9a5d2f6da7047c4a27f11794ebd47f75aa5d17c0ca84210fbc080ecf0f234",
         "name": "Light Green Poplars",
         "thumbnail": "https://assets.decentraland.org/QmeX5rahH1ZCD8pDh6JcmhNnVuLjazUrQcbFkLyjqi9QyM",
         "url": "TreeFir_01/TreeFir_01.glb",
@@ -4855,7 +5059,8 @@
         }
       },
       {
-        "id": "ff512e8e-77c7-4f36-b847-6d9c7b342449",
+        "id": "e59947e7-8356-4ca7-9e80-9c8e4fe3c507",
+        "legacy_id": "e972ca5760bc96d8add383c36aa89855f6658181f8a2b3a5dda0c207c2d1c2a3",
         "name": "Green Poplars",
         "thumbnail": "https://assets.decentraland.org/QmdfcPuMzmwwSK8yWaSCx4QRxCzLy5ezyokq2sGbsJrcaW",
         "url": "TreeFir_02/TreeFir_02.glb",
@@ -4882,7 +5087,8 @@
         }
       },
       {
-        "id": "14dcee12-708f-41f5-a59b-bdc14f263d3e",
+        "id": "b16a7368-e46d-4fa6-8d05-6fa9a508dabf",
+        "legacy_id": "c4519a500794855aff42c45869c46092ebcf7c86d27f589ad0ec549483b91f64",
         "name": "Light Yellow Poplars",
         "thumbnail": "https://assets.decentraland.org/Qmcg39JuQ6251VBWtaXgoWRz9uS61HmT5SZE6MNyMtPYT6",
         "url": "TreeFir_03/TreeFir_03.glb",
@@ -4909,7 +5115,8 @@
         }
       },
       {
-        "id": "7fe7ba61-2762-4fc5-8774-ddd0703ffca5",
+        "id": "a8c4a868-27d4-487a-ae5d-a9dc184f12ba",
+        "legacy_id": "838b84a4934e041fac9498ca70418fe51ea405877d950965ddf0dc683d60a3e0",
         "name": "Treehouse",
         "thumbnail": "https://assets.decentraland.org/QmRcLdCiv1H7NCHTNXC2X2KNk5mAj8JsqD8hFzXRd8z3gy",
         "url": "TreeHouse_01/TreeHouse_01.glb",
@@ -4935,7 +5142,8 @@
         }
       },
       {
-        "id": "99bf4d85-ba32-47b5-9a2c-cbe3d7ace42f",
+        "id": "2465d748-93bf-41ac-b161-24c0d8aed625",
+        "legacy_id": "6f671d5d2123c71124356e9d95cbc8e66beac70238d1ff7d6955b9653f993611",
         "name": "Green Rounded Pine Tree",
         "thumbnail": "https://assets.decentraland.org/QmYFWdh5yJnrg4VuXPniDd8HHbVrfV2FPn35RPdVYVMLjg",
         "url": "TreePine_01/TreePine_01.glb",
@@ -4962,7 +5170,8 @@
         }
       },
       {
-        "id": "15048013-effc-4ba3-9353-e95f00041aa6",
+        "id": "02606ec8-602e-4a5f-9485-06a1594be6e9",
+        "legacy_id": "27e851eb9e7650298396f4a9425c7ee461a566a932c22948cdda08c59e72bd23",
         "name": "Light Yellow Pine Tree",
         "thumbnail": "https://assets.decentraland.org/QmPev6PcnqvpgffzYbqLmEAZpoa1xH2TD2ZjCtcocjKHmQ",
         "url": "TreePine_02/TreePine_02.glb",
@@ -4989,7 +5198,8 @@
         }
       },
       {
-        "id": "90570326-3784-4477-8d25-2701b281f30b",
+        "id": "2e169288-f6a0-4d7b-bc48-6319d95878b1",
+        "legacy_id": "a4709fc91c5e9c744a05bbd1ab3617452ae46aae070228d2d48f1ca975bcc8e0",
         "name": "Light Yellow Rounded Pine Tree",
         "thumbnail": "https://assets.decentraland.org/QmTFquLsMdC1fwq1KBdUJMhMxeS1AdKP16ZTLxmf7Ggxgn",
         "url": "TreePine_03/TreePine_03.glb",
@@ -5016,7 +5226,8 @@
         }
       },
       {
-        "id": "b4c48bd4-6417-47f2-834e-d0371e557c21",
+        "id": "c70f7e47-88b6-46d9-8668-0194dcfad2f0",
+        "legacy_id": "398e927b4eeb5b66096c595c66cf34b29a7b0f4cdb36ec40a26dfe48f26c1d4c",
         "name": "Light Yellow Rounded Pine Tree",
         "thumbnail": "https://assets.decentraland.org/QmcHoW7Yi2VBtZMaa3gpPYokCQwhmX2GyqgvMo1h22e9af",
         "url": "TreeRoundPine_01/TreeRoundPine_01.glb",
@@ -5043,7 +5254,8 @@
         }
       },
       {
-        "id": "e0926f58-8bc9-46f0-a1a4-61f7a15345e3",
+        "id": "338c2b2a-65b4-4012-8a19-06eab5c861d6",
+        "legacy_id": "3d7e3360c956b712f168dbdb1e7bd30ae5f9da7b87c9f420df6c57f7bcf67a2e",
         "name": "Green Rounded Pine Tree",
         "thumbnail": "https://assets.decentraland.org/QmXKGYuT1M9HVJrHpSB2ywkaZDyjo2tNF3g7znDekTBAdf",
         "url": "TreeRoundPine_02/TreeRoundPine_02.glb",
@@ -5070,7 +5282,8 @@
         }
       },
       {
-        "id": "8287c338-e47b-4e82-bdfa-2f6f72437f9e",
+        "id": "cae55030-f588-44df-85df-6cd5e4d9dab0",
+        "legacy_id": "bc716fd5f9e7489282c73677020a1c7ff010fd0c3bd95c428080bb4df1d5d109",
         "name": "Light Green Pine Tree",
         "thumbnail": "https://assets.decentraland.org/QmXgvvBnbqbewdU7KB1rFeBBHBskAumiBvBYPWrvevppzE",
         "url": "TreeRoundPine_03/TreeRoundPine_03.glb",
@@ -5097,7 +5310,8 @@
         }
       },
       {
-        "id": "0b70ec1a-0c02-4954-a8ca-be66f902ecda",
+        "id": "d3cf58bc-16df-4c4c-9c3a-74f659164363",
+        "legacy_id": "994788c517f02e63400ecb4206596256a8abf3adbda4191fbf5f50d371261032",
         "name": "Tree Stump",
         "thumbnail": "https://assets.decentraland.org/QmUECYBYcV79Zk8NRtnwdtCLrnkrGXyHm9236gW6FBLTjV",
         "url": "TreeStump_01/TreeStump_01.glb",
@@ -5124,7 +5338,8 @@
         }
       },
       {
-        "id": "7d07ed6f-feb2-419d-908a-688e76401162",
+        "id": "eb584cdc-2d37-45a1-a464-45007058b3d5",
+        "legacy_id": "ea72ed2bdaae70b55c9bce40eba5ca6c2e54615ce9b96ad8ec86d84963442d27",
         "name": "Light Green Sycamore Tree",
         "thumbnail": "https://assets.decentraland.org/QmUNpfotocvdqC2cdrbBZQymkkr1QKLNhNy74fhh64BA3p",
         "url": "TreeSycamore_01/TreeSycamore_01.glb",
@@ -5151,7 +5366,8 @@
         }
       },
       {
-        "id": "e9b098dc-b36d-4440-a656-3c61d55f85ab",
+        "id": "6dd971fe-6284-4c74-8327-c87f0d692b32",
+        "legacy_id": "9a791296b65768ba9d397b81973dda0c6a175b2bf1546a5cd3cb71ea2bd262a9",
         "name": "Light Yellow Sycamore Tree",
         "thumbnail": "https://assets.decentraland.org/QmcdvCG2Fc7ikM7wrReeM5LgYg3EjixQYsQ7hM8ybUvMJ8",
         "url": "TreeSycamore_02/TreeSycamore_02.glb",
@@ -5178,7 +5394,8 @@
         }
       },
       {
-        "id": "3d0a99f1-f410-411a-ad39-8a6ab9c6eb6d",
+        "id": "fd4168d3-1040-458d-b90e-fe5f441d593b",
+        "legacy_id": "0973708ae7e5e3d4974e4ce0d3484354e128b7448317f23c8f054c68f5a16986",
         "name": "Green Sycamore Tree",
         "thumbnail": "https://assets.decentraland.org/QmR3WmQcZF6FUF38Kp5XNgCjF9qFqTTPC3haitykjxz7Co",
         "url": "TreeSycamore_03/TreeSycamore_03.glb",
@@ -5205,7 +5422,8 @@
         }
       },
       {
-        "id": "9deffb27-8236-44f9-b392-014da66e3ce4",
+        "id": "34581808-7505-4805-a12a-0d0571d0b1dd",
+        "legacy_id": "b7b0130f0a195fddb7fd0ef94a0df938120768711557d60f8f52e6af2029de40",
         "name": "Light Green Squared Tree",
         "thumbnail": "https://assets.decentraland.org/QmfHNQp1piiu6Js6GiKDPHQA4ZhdURpHczS26NvRgYmzbr",
         "url": "TreeTall_01/TreeTall_01.glb",
@@ -5232,7 +5450,8 @@
         }
       },
       {
-        "id": "d81bf9e4-f4a1-41f1-9a9c-e7079621e4d1",
+        "id": "98f35970-9633-410d-883b-493350654bc9",
+        "legacy_id": "316cad54d2de0fd0039c4df3d2d3aade4194c80aa88fecaed47e14b07e138499",
         "name": "Green Tall Squared Tree",
         "thumbnail": "https://assets.decentraland.org/QmZs9yD5Psnz7ua84xVdxavCqgvuiEHDxzYP7jZiPFfjGV",
         "url": "TreeTall_02/TreeTall_02.glb",
@@ -5259,7 +5478,8 @@
         }
       },
       {
-        "id": "126521dc-d7ed-4730-91d2-625c429b8821",
+        "id": "e34b243a-dfc9-4f6a-8fb1-8dc01bd30895",
+        "legacy_id": "ddce65ec5e467d3bde28348635a6cb8b915c022343b3f4a81418b174005b3d49",
         "name": "Light Yellow Squared Tree",
         "thumbnail": "https://assets.decentraland.org/QmTyiL6FrnnU4cpqG3YjvV3SMUyGvjQLMpECPD1Uajbrwi",
         "url": "TreeTall_03/TreeTall_03.glb",
@@ -5286,7 +5506,8 @@
         }
       },
       {
-        "id": "916cd525-3f68-4a04-a829-bd2dff582f5b",
+        "id": "d59c8515-ab0e-42b6-87b4-a17aa1923a4d",
+        "legacy_id": "4fa918493b166877126742787fe2806cf742127d12fc2b63642dca4c26df247d",
         "name": "Chest",
         "thumbnail": "https://assets.decentraland.org/QmdD4mNxcUhjprpsQ6cLT4g792kHHLwAVLpQWzaCoRaCfj",
         "url": "Trunk_01/Trunk_01.glb",
@@ -5309,7 +5530,8 @@
         }
       },
       {
-        "id": "1120fecf-4892-48ff-8e02-8c0603f42316",
+        "id": "0be9abea-83ae-4a9c-b24d-8a5ce1b9580f",
+        "legacy_id": "cce63817b1ec56748b8b151c174e19c288c18f6f0a8ac025e3e4064d211462d1",
         "name": "Beach Umbrella",
         "thumbnail": "https://assets.decentraland.org/QmUYnPLixwvWxupp34fQBWgsJ5scf1iQWvsxm4Q3DqsGjF",
         "url": "Umbrella_01/Umbrella_01.glb",
@@ -5331,7 +5553,8 @@
         }
       },
       {
-        "id": "9290fa31-60cc-4d7b-a8eb-2bdc6d8ffafe",
+        "id": "79167aad-c2f9-4aed-ad97-4263de11ef4d",
+        "legacy_id": "140ceadefbd6f4d4ff2698274e74b93b2a3da12227c61abbda72dc0cda8afe3c",
         "name": "Post Umbrella",
         "thumbnail": "https://assets.decentraland.org/QmQrhjychVWfANw8khNfaDvFqK9scTKEv45FSTx2fF6Grd",
         "url": "Umbrella_02/Umbrella_02.glb",
@@ -5354,7 +5577,8 @@
         }
       },
       {
-        "id": "1c46e8d9-4fd6-4cd6-be50-e649c149a718",
+        "id": "afba36c6-9d83-4197-b600-1272eb016f2b",
+        "legacy_id": "fbb51cc44aa8b2664435ab0c51630314f6fc511368d19394cbbf5cbe6dd32182",
         "name": "Wooden Crate",
         "thumbnail": "https://assets.decentraland.org/QmQzNfgjsdTJ7fdsgmBiWYknzSSKcmqjtYdQVJj4A3Km7d",
         "url": "VegetablesBox_01/VegetablesBox_01.glb",
@@ -5376,7 +5600,8 @@
         }
       },
       {
-        "id": "18352231-fab0-4ae7-ac00-836fd115af74",
+        "id": "5cb2dd69-4d9e-4794-982c-14703bd0a206",
+        "legacy_id": "ac8bc5b9646698028d1741bf35abe35e75b45e78c6d2a92587af994b8fefd851",
         "name": "Rustic Well",
         "thumbnail": "https://assets.decentraland.org/Qmc5jFf59AY6gNH8yX1syMxJY8PVSoj6QJYfkd8fkSkV1N",
         "url": "Well_01/Well_01.glb",
@@ -5401,7 +5626,8 @@
         }
       },
       {
-        "id": "ac38fc00-cd58-4e9c-a653-b794107152af",
+        "id": "56723983-b854-4a16-822a-70c528054372",
+        "legacy_id": "7f21a08a5862f585fcd2ddce866eea166bcb7ef6a9826c356ac67976a5cd4750",
         "name": "Sand Wheelbarrow",
         "thumbnail": "https://assets.decentraland.org/QmekFhm23vxPNiBB9NVPTHJ3H2tjVERcTisqHyEYUdMrhZ",
         "url": "Wheelbarrow_01/Wheelbarrow_01.glb",
@@ -5424,7 +5650,8 @@
         }
       },
       {
-        "id": "17f0a7a5-c37c-4fc5-b9fd-d8165f3dc1ab",
+        "id": "2a7c8f46-ac3c-4bc2-bda0-fd0d4641a55e",
+        "legacy_id": "c30ab4e375f994895ffa1a826ad50405fd6c1e318febad5af76f99e6636a83eb",
         "name": "Empty Wheelbarrow",
         "thumbnail": "https://assets.decentraland.org/QmepUP61kAhQykXDGsXux8qUj3gD6NBuywuDC1c9QNSKV6",
         "url": "Wheelbarrow_02/Wheelbarrow_02.glb",
@@ -5447,7 +5674,8 @@
         }
       },
       {
-        "id": "921ee1ec-e952-4e7c-9893-2ee74106197d",
+        "id": "5fb9fec8-a14f-4377-aaae-7fcef3ccda43",
+        "legacy_id": "e3d64ce3809961a3f968113edf6745a4a46c9d34eb300963d78491a14dcfce3e",
         "name": "Wine Bottle",
         "thumbnail": "https://assets.decentraland.org/QmYWyF6Zx3h42aEGpFRdy6QDGL659neJazrcsXHm4Sr6wN",
         "url": "WineBottle_01/WineBottle_01.glb",
@@ -5470,7 +5698,8 @@
         }
       },
       {
-        "id": "e577dbbd-07e6-4f20-a09c-441a810da387",
+        "id": "16ef8221-b27d-46f2-867f-54e68aa5ae94",
+        "legacy_id": "9eb1e51ff67100068b0256d33cf92a2499d3caf298b65c41b785081ef8c673a2",
         "name": "Wine Glass",
         "thumbnail": "https://assets.decentraland.org/QmTy4vWETx49dUppKGy52k87qbXWwETbpHkWUEoeCZEPuk",
         "url": "WineGlass_01/WineGlass_01.glb",

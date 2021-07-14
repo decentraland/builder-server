@@ -12,14 +12,15 @@ import {
 } from '../../src/AssetPack'
 import { Asset, AssetAttributes } from '../../src/Asset'
 
-type DefaultAssetPack = {
+export type DefaultAssetPack = {
   id: string
   title: string
   url: string
   thumbnail: string
 }
-type DefaultAsset = {
+export type DefaultAsset = {
   id: string
+  legacy_id: string
   name: string
   thumbnail: string
   url: string
@@ -29,13 +30,13 @@ type DefaultAsset = {
   contents: Record<string, string>
 }
 
-type DefaultAssetPackResponse = {
+export type DefaultAssetPackResponse = {
   ok: boolean
   data: {
     packs: DefaultAssetPack[]
   }
 }
-type DefaultAssetResponse = {
+export type DefaultAssetResponse = {
   ok: boolean
   data: {
     id: string
@@ -94,7 +95,7 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
       const thumbnail = path.basename(defaultAttributes.thumbnail)
 
       const attributes = {
-        ...utils.omit(defaultAttributes, ['variations', 'url']),
+        ...utils.omit(defaultAttributes, ['variations', 'url', 'legacy_id']),
         thumbnail,
         model: defaultAttributes.url,
         asset_pack_id: id,

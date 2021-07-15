@@ -1,7 +1,6 @@
 import https from 'https'
-import fs, { BaseEncodingOptions } from 'fs'
 import path from 'path'
-import { env, utils } from 'decentraland-commons'
+import { utils } from 'decentraland-commons'
 
 import { db } from '../../src/database'
 import { S3AssetPack, S3Content, ACL } from '../../src/S3'
@@ -11,43 +10,17 @@ import {
   getDefaultEthAddress,
 } from '../../src/AssetPack'
 import { Asset, AssetAttributes } from '../../src/Asset'
-
-export type DefaultAssetPack = {
-  id: string
-  title: string
-  url: string
-  thumbnail: string
-}
-export type DefaultAsset = {
-  id: string
-  legacy_id: string
-  name: string
-  thumbnail: string
-  url: string
-  category: string
-  tags: string[]
-  variations: string[]
-  contents: Record<string, string>
-}
-
-export type DefaultAssetPackResponse = {
-  ok: boolean
-  data: {
-    packs: DefaultAssetPack[]
-  }
-}
-export type DefaultAssetResponse = {
-  ok: boolean
-  data: {
-    id: string
-    version: number
-    title: string
-    assets: DefaultAsset[]
-  }
-}
+import { getAssetPath, readJSON, readFile, getAssetsUrl } from './utils'
+import {
+  DefaultAssetPack,
+  DefaultAssetPackResponse,
+  DefaultAssetResponse,
+} from './types'
 
 export async function seed() {
-  const packsResponse: DefaultAssetPackResponse = readJSON('packs.json')
+  const packsResponse = await readJSON<DefaultAssetPackResponse>(
+    getAssetPath('packs.json')
+  )
   const assetPacks = packsResponse.data.packs
 
   console.log('==== Asset packs ====')
@@ -88,7 +61,9 @@ async function upsertAssetPacks(assetPacks: DefaultAssetPack[]) {
 async function upsertAssets(assetPacks: DefaultAssetPack[]) {
   for (const { id } of assetPacks) {
     const assetPromises: Promise<any>[] = []
-    const assetsResponse: DefaultAssetResponse = readJSON(`${id}.json`)
+    const assetsResponse = await readJSON<DefaultAssetResponse>(
+      getAssetPath(`${id}.json`)
+    )
     const assets = assetsResponse.data.assets
 
     for (const defaultAttributes of assets) {
@@ -141,7 +116,7 @@ async function uploadThumbnail(attributes: DefaultAssetPack) {
   if (await s3AssetPack.checkFile(filename)) {
     console.log(`Thumbnail already exists in S3`)
   } else {
-    const currentThumbnail = readFileSync(filename)
+    const currentThumbnail = await readFile(filename)
 
     console.log(`Uploading thumbnail to S3`)
     await s3AssetPack.saveFile(filename, currentThumbnail, ACL.publicRead)
@@ -168,38 +143,6 @@ async function downloadAsset(cid: string): Promise<Buffer> {
       response.on('error', (error) => reject(error))
     })
   })
-}
-
-function readJSON(filename: string) {
-  return JSON.parse(readFileSync(filename, 'utf8') as string)
-}
-
-function readFileSync(
-  filename: string,
-  encoding?: BaseEncodingOptions['encoding']
-) {
-  const dataPath = getDataPath()
-  const path = `${dataPath}/${filename}`
-  console.log(`Reading file ${path}`)
-  return fs.readFileSync(path, { encoding })
-}
-
-function getAssetsUrl() {
-  const domain = env.isProduction() ? 'org' : 'zone'
-  return `https://assets.decentraland.${domain}`
-}
-
-function getDataPath() {
-  const dataDirectories = getDirectories(__dirname).sort()
-  const lastData = dataDirectories.pop()
-  return `${__dirname}/${lastData}`
-}
-
-function getDirectories(source: string) {
-  return fs
-    .readdirSync(source, { withFileTypes: true })
-    .filter((directory) => directory.isDirectory())
-    .map((directory) => directory.name)
 }
 
 if (require.main === module) {

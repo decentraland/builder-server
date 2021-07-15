@@ -11,12 +11,13 @@ export const up = async (pgm: MigrationBuilder) => {
   // pgm won't infer this name correctly, so we need to nudge it a little
   pgm.dropIndex(tableName, columns, {
     name: 'assets_id_asset_pack_id_unique_index',
+    ifExists: true,
   })
   pgm.addIndex(tableName, 'id', { unique: true })
 
   pgm.alterColumn(tableName, 'id', {
     type: 'uuid',
-    using: 'id::uuid',
+    using: 'uuid_generate_v4()',
   })
 }
 
@@ -28,6 +29,7 @@ export const down = async (pgm: MigrationBuilder) => {
 
   pgm.dropIndex(tableName, 'id', {
     name: 'assets_id_unique_index',
+    ifExists: true,
   })
   pgm.addIndex(tableName, columns, { unique: true })
 

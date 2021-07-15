@@ -20,7 +20,7 @@ export const up = async (pgm: MigrationBuilder) => {
   pgm.sql(`UPDATE ${assetTableName}
     SET id = uuid_generate_v4()
     WHERE LENGTH(id) > 36 -- Fixed UUID length
-      OR asset_pack_id NOT IN (SELECT id from ${assetPackTableName} ap WHERE LOWER(ap.eth_address) = '${getDefaultEthAddress().toLowerCase()}')`)
+      OR asset_pack_id NOT IN (SELECT id from ${assetPackTableName} ap WHERE LOWER(ap.eth_address) = '${getDefaultEthAddress().toLowerCase()}' AND ap.is_deleted != TRUE)`)
 }
 
 export const down = async (pgm: MigrationBuilder) => {

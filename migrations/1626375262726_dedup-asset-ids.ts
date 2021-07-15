@@ -18,7 +18,7 @@ export const up = async (pgm: MigrationBuilder) => {
   }
 
   pgm.sql(`UPDATE ${assetTableName}
-    SET a.id = uuid_generate_v4()
+    SET id = uuid_generate_v4()
     FROM ${assetTableName} a
     JOIN ${assetPackTableName} b ON a.asset_pack_id = b.id
     WHERE LENGTH(a.id) > 36  -- Fixed UUID length

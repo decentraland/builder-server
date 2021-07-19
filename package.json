@@ -13,8 +13,7 @@
     "migrate": "ts-node ./migrations/migrate.ts",
     "migrate:docker": "./migrations/node-pg-migrate --database-url-var CONNECTION_STRING --migration-file-language ts --migrations-dir /app/migrations --ignore-pattern '\\..*|.*migrate(.ts)?'",
     "seed": "cp -r ./scripts/seed/*_data ./dist/scripts/seed && node ./dist/scripts/seed/index.js",
-    "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js",
-    "dedup-asset-ids": "ts-node ./scripts/manageAssetIds.ts"
+    "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js"
   },
   "keywords": [
     "decentraland"

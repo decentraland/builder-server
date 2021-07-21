@@ -8,7 +8,9 @@ export const up = (pgm: MigrationBuilder) => {
     legacy_id: { type: 'TEXT' },
   })
 
-  pgm.sql(`UPDATE ${tableName} SET legacy_id = ${tableName}.id`)
+  pgm.sql(
+    `UPDATE ${tableName} SET legacy_id = ${tableName}.id WHERE script IS NULL`
+  )
 }
 
 export const down = (pgm: MigrationBuilder) => {

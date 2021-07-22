@@ -13,7 +13,7 @@ export const up = async (pgm: MigrationBuilder) => {
     for (const asset of assetPack.assets) {
       pgm.sql(`UPDATE ${assetTableName}
         SET id = '${asset.id}'
-        WHERE id = '${asset.legacy_id}' AND asset_pack_id = '${assetPack.id}'`)
+        WHERE id = '${asset.legacy_id}' AND asset_pack_id = '${assetPack.id}' AND script is NULL`)
     }
   }
 
@@ -27,7 +27,19 @@ export const up = async (pgm: MigrationBuilder) => {
       AND script IS NOT NULL
       AND (LENGTH(a.id) != 36 OR is_deleted = TRUE)`)
 
-  pgm.sql(`UPDATE assets
+  pgm.sql(`DELETE
+    FROM ${assetTableName} a
+    USING ${assetPackTableName} ap
+    WHERE a.id IN (
+      SELECT id
+        FROM ${assetTableName}
+        GROUP BY id
+      HAVING count(id) > 1
+    )
+    AND a.asset_pack_id = ap.id
+    AND (ap.eth_address != '${defaultAddress}' OR ap.eth_address IS NULL)`)
+
+  pgm.sql(`UPDATE ${assetTableName}
     SET id = uuid_generate_v4()
     WHERE script is NULL
       AND (

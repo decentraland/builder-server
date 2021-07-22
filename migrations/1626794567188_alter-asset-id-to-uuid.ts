@@ -14,11 +14,6 @@ export const up = async (pgm: MigrationBuilder) => {
     ifExists: true,
   })
   pgm.addIndex(tableName, 'id', { unique: true })
-
-  pgm.alterColumn(tableName, 'id', {
-    type: 'uuid',
-    using: 'uuid_generate_v4()',
-  })
 }
 
 export const down = async (pgm: MigrationBuilder) => {
@@ -32,6 +27,4 @@ export const down = async (pgm: MigrationBuilder) => {
     ifExists: true,
   })
   pgm.addIndex(tableName, columns, { unique: true })
-
-  pgm.alterColumn(tableName, 'id', { type: 'TEXT' })
 }

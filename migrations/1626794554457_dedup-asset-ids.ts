@@ -19,20 +19,19 @@ export const up = async (pgm: MigrationBuilder) => {
 
   const defaultAddress = getDefaultEthAddress().toLowerCase()
 
+  // 36 is the fixed uuid length
   pgm.sql(`DELETE
     FROM ${assetTableName} a
     USING ${assetPackTableName} ap
     WHERE a.asset_pack_id = ap.id
       AND script IS NOT NULL
-      AND (
-        LENGTH(a.id) != 36 OR (LENGTH(a.id) = 36 AND (LOWER(eth_address) != '${defaultAddress}' OR eth_address IS NULL)) OR is_deleted = TRUE
-      )`)
+      AND (LENGTH(a.id) != 36 OR is_deleted = TRUE)`)
 
   pgm.sql(`UPDATE assets
     SET id = uuid_generate_v4()
     WHERE script is NULL
       AND (
-        LENGTH(id) != 36 -- Fixed UUID length
+        LENGTH(id) != 36
         OR asset_pack_id NOT IN (
           SELECT id from ${assetPackTableName} ap WHERE LOWER(ap.eth_address) = '${defaultAddress}' AND ap.is_deleted != TRUE
         )

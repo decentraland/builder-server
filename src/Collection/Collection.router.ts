@@ -163,75 +163,71 @@ export class CollectionRouter extends Router {
   }
 
   upsertCollection = async (req: AuthRequest) => {
-    try {
-      const id = server.extractFromReq(req, 'id')
-      const collectionJSON: any = server.extractFromReq(req, 'collection')
-      const data: string = server.extractFromReq(req, 'data')
-      const eth_address = req.auth.ethAddress
+    const id = server.extractFromReq(req, 'id')
+    const collectionJSON: any = server.extractFromReq(req, 'collection')
+    const data: string = server.extractFromReq(req, 'data')
+    const eth_address = req.auth.ethAddress
 
-      const validate = validator.compile(collectionSchema)
-      validate(collectionJSON)
+    const validate = validator.compile(collectionSchema)
+    validate(collectionJSON)
 
-      if (validate.errors) {
-        throw new HTTPError('Invalid schema', validate.errors)
-      }
-
-      if (collectionJSON.is_published || collectionJSON.is_approved) {
-        throw new HTTPError(
-          'Can not change is_published or is_approved property',
-          { id, eth_address },
-          STATUS_CODES.unauthorized
-        )
-      }
-
-      const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
-      if (!canUpsert) {
-        throw new HTTPError(
-          'Unauthorized',
-          { id, eth_address },
-          STATUS_CODES.unauthorized
-        )
-      }
-
-      const attributes = {
-        ...collectionJSON,
-        eth_address,
-      } as CollectionAttributes
-
-      if (!(await Collection.isValidName(id, attributes.name.trim()))) {
-        throw new HTTPError(
-          'Name already in use',
-          { id, name: attributes.name },
-          STATUS_CODES.unauthorized
-        )
-      }
-
-      if (await this.isCollectionPublished(id)) {
-        throw new HTTPError(
-          "The collection is published. It can't be updated",
-          { id },
-          STATUS_CODES.unauthorized
-        )
-      }
-
-      if (id !== attributes.id) {
-        throw new HTTPError('The body and URL collection ids do not match', {
-          urlId: id,
-          bodyId: attributes.id,
-        })
-      }
-
-      const factoryCollection = new FactoryCollection()
-      attributes.salt = factoryCollection.getSalt(id)
-      attributes.contract_address = factoryCollection.getContractAddress(
-        attributes.salt,
-        data
-      )
-
-      return new Collection(attributes).upsert()
-    } catch (error) {
-      throw error
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
     }
+
+    if (collectionJSON.is_published || collectionJSON.is_approved) {
+      throw new HTTPError(
+        'Can not change is_published or is_approved property',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
+    if (!canUpsert) {
+      throw new HTTPError(
+        'Unauthorized',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    const attributes = {
+      ...collectionJSON,
+      eth_address,
+    } as CollectionAttributes
+
+    if (!(await Collection.isValidName(id, attributes.name.trim()))) {
+      throw new HTTPError(
+        'Name already in use',
+        { id, name: attributes.name },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    if (await this.isCollectionPublished(id)) {
+      throw new HTTPError(
+        "The collection is published. It can't be updated",
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    if (id !== attributes.id) {
+      throw new HTTPError('The body and URL collection ids do not match', {
+        urlId: id,
+        bodyId: attributes.id,
+      })
+    }
+
+    const factoryCollection = new FactoryCollection()
+    attributes.salt = factoryCollection.getSalt(id)
+    attributes.contract_address = factoryCollection.getContractAddress(
+      attributes.salt,
+      data
+    )
+
+    return new Collection(attributes).upsert()
   }
 
   deleteCollection = async (req: AuthRequest) => {

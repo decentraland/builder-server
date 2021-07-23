@@ -78,18 +78,18 @@ export class PeerAPI {
       urns.length > 0
         ? await this.lambdasClient.fetchWearables({ wearableIds: urns })
         : []
-    return wearables.map(this.toWearable)
+    return wearables.map((wearable) => this.toWearable(wearable))
   }
 
   private toWearable(peerWearable: PeerWearable): Wearable {
     const contents: Record<string, string> = {}
     for (let representation of peerWearable.data.representations) {
       for (let content of representation.contents) {
-        contents[content.key] = content.url.split('/').pop()!
+        contents[content.key] = this.getLastURLPart(content.url)
       }
     }
 
-    contents[THUMBNAIL_PATH] = peerWearable.thumbnail.split('/').pop()!
+    contents[THUMBNAIL_PATH] = this.getLastURLPart(peerWearable.thumbnail)
 
     return {
       ...peerWearable,
@@ -104,6 +104,10 @@ export class PeerAPI {
       },
       contents,
     }
+  }
+
+  private getLastURLPart(url = ''): string {
+    return url.split('/').pop() || ''
   }
 }
 

@@ -13,7 +13,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { FactoryCollection } from '../ethereum'
 import { Ownable } from '../Ownable'
-import { Item } from '../Item'
+import { Item, ItemAttributes } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import { collectionSchema } from './Collection.types'
@@ -56,6 +56,16 @@ export class CollectionRouter extends Router {
       withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
+    )
+
+    /**
+     * Handle the publication of a collection to the blockchain
+     */
+    this.router.post(
+      '/collections/:id/publish',
+      withAuthentication,
+      withCollectionExists,
+      server.handleRequest(this.publishCollection)
     )
 
     /**
@@ -160,6 +170,51 @@ export class CollectionRouter extends Router {
     }
 
     return fullCollection
+  }
+
+  publishCollection = async (req: AuthRequest) => {
+    const id = server.extractFromReq(req, 'id')
+
+    if (!(await this.isCollectionPublished(id))) {
+      throw new HTTPError(
+        'The collection is not published yet',
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    const [dbCollection, dbItems] = await Promise.all([
+      Collection.findOne<CollectionAttributes>(id),
+      Item.findOrderedItemsByCollectionId(id),
+    ])
+
+    const isMissingBlockchainItemIds = dbItems.some(
+      (item) => item.blockchain_item_id == null
+    )
+    const items: ItemAttributes[] = [...dbItems]
+
+    if (isMissingBlockchainItemIds) {
+      const remoteItems = await collectionAPI.fetchItemsByContractAddress(
+        dbCollection!.contract_address
+      )
+      const updates = []
+
+      for (const [index, remoteItem] of remoteItems.entries()) {
+        updates.push(
+          Item.update(
+            { blockchain_item_id: remoteItem.blockchainId },
+            { id: dbItems[index].id }
+          )
+        )
+        items[index].blockchain_item_id = remoteItem.blockchainId
+      }
+      await Promise.all(updates)
+    }
+
+    return {
+      collection: dbCollection,
+      items,
+    }
   }
 
   upsertCollection = async (req: AuthRequest) => {

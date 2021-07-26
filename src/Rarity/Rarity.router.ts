@@ -7,7 +7,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 export class RarityRouter extends Router {
   mount() {
     /**
-     * Returns the rarities available
+     * Returns the available rarities
      */
     this.router.get('/rarities', server.handleRequest(this.getRarities))
   }

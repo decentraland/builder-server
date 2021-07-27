@@ -341,7 +341,7 @@ export class CollectionRouter extends Router {
       const isCollectionPublished = await isPublished(
         dbCollection.contract_address
       )
-      return !isCollectionPublished
+      return isCollectionPublished
     }
 
     return true

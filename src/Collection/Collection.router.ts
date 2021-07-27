@@ -11,6 +11,7 @@ import {
 } from '../middleware'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
+import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FactoryCollection } from '../ethereum'
 import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
@@ -20,6 +21,7 @@ import { collectionSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
 import { hasAccess } from './access'
 import { isPublished } from '../utils/eth'
+import { ItemFragment } from '../ethereum/api/fragments'
 
 const validator = getValidator()
 
@@ -175,7 +177,17 @@ export class CollectionRouter extends Router {
   publishCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
 
-    if (!(await this.isCollectionPublished(id))) {
+    // We are using the withCollectionExists middleware so we can safely assert the collection exists
+    const [dbCollection, dbItems] = await Promise.all([
+      Collection.findOne<CollectionAttributes>(id),
+      Item.findOrderedItemsByCollectionId(id),
+    ])
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection!.contract_address
+    )
+
+    if (!remoteCollection) {
+      // This might be a problem with the graph lagging but we delegate the retry logic on the client
       throw new HTTPError(
         'The collection is not published yet',
         { id },
@@ -183,21 +195,25 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [dbCollection, dbItems] = await Promise.all([
-      Collection.findOne<CollectionAttributes>(id),
-      Item.findOrderedItemsByCollectionId(id),
-    ])
+    const items: ItemAttributes[] = [...dbItems]
+    let remoteItems: ItemFragment[] = []
+    let catalystItems: Wearable[] = []
 
     const isMissingBlockchainItemIds = dbItems.some(
       (item) => item.blockchain_item_id == null
     )
-    const items: ItemAttributes[] = [...dbItems]
 
     if (isMissingBlockchainItemIds) {
-      const remoteItems = await collectionAPI.fetchItemsByContractAddress(
-        dbCollection!.contract_address
-      )
+      const fetches = await Promise.all([
+        collectionAPI.fetchItemsByContractAddress(
+          dbCollection!.contract_address
+        ),
+        peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
+      ])
       const updates = []
+
+      remoteItems = fetches[0]
+      catalystItems = fetches[1]
 
       for (const [index, remoteItem] of remoteItems.entries()) {
         updates.push(
@@ -208,12 +224,16 @@ export class CollectionRouter extends Router {
         )
         items[index].blockchain_item_id = remoteItem.blockchainId
       }
+
       await Promise.all(updates)
     }
 
     return {
-      collection: dbCollection,
-      items,
+      collection: await Bridge.consolidateCollections(
+        [dbCollection!],
+        [remoteCollection]
+      ),
+      items: await Bridge.consolidateItems(dbItems, remoteItems, catalystItems),
     }
   }
 
@@ -318,10 +338,10 @@ export class CollectionRouter extends Router {
 
     // Fallback: check against the blockchain, in case the subgraph is lagging
     if (!remoteCollection) {
-      const result = await isPublished(dbCollection.contract_address)
-      if (!result) {
-        return false
-      }
+      const isCollectionPublished = await isPublished(
+        dbCollection.contract_address
+      )
+      return !isCollectionPublished
     }
 
     return true

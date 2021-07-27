@@ -68,8 +68,8 @@ const getCollectionsByAuthorizedUserQuery = () => gql`
   ${collectionFragment()}
 `
 
-const getCollectionWithItemsByContractAddressQuery = () => gql`
-  query getCollectionWithItemsByContractAddressQuery($id: String) {
+const getCollectionWithItemsByCollectionIdQuery = () => gql`
+  query getCollectionWithItemsByCollectionIdQuery($id: String) {
     collections(first: ${MAX_RESULTS}, where: { id: $id }) {
       ...collectionFragment
       items {
@@ -93,6 +93,15 @@ const getItemByIdQuery = () => gql`
 const getItemsQuery = () => gql`
   query getItems(${PAGINATION_VARIABLES}) {
     items(${PAGINATION_ARGUMENTS}) {
+      ...itemFragment
+    }
+  }
+  ${itemFragment()}
+`
+
+const getItemsByCollectionIdQuery = () => gql`
+  query getItems($collectionId: String) {
+    items(where: { collection: $collectionId }) {
       ...itemFragment
     }
   }
@@ -193,6 +202,19 @@ export class CollectionAPI {
     return items.length > 0 ? items[0] : null
   }
 
+  fetchItemsByContractAddress = async (
+    contractAddress: string
+  ): Promise<ItemFragment[]> => {
+    const {
+      data: { items = [] },
+    } = await this.query<{ items: ItemFragment[] }>({
+      query: getItemsByCollectionIdQuery(),
+      variables: { collectionId: contractAddress.toLowerCase() },
+    })
+
+    return items
+  }
+
   fetchItemsByAuthorizedUser = async (
     userAddress: string
   ): Promise<ItemFragment[]> => {
@@ -224,7 +246,7 @@ export class CollectionAPI {
     } = await this.query<{
       collections: (CollectionFragment & { items: ItemFragment[] })[]
     }>({
-      query: getCollectionWithItemsByContractAddressQuery(),
+      query: getCollectionWithItemsByCollectionIdQuery(),
       variables: { id: contractAddress.toLowerCase() },
     })
 

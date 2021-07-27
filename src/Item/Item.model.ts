@@ -6,6 +6,17 @@ import { ItemAttributes } from './Item.types'
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
+  static findOrderedItemsByCollectionId(
+    collectionId: string,
+    order: 'ASC' | 'DESC' = 'ASC'
+  ) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ${collectionId}
+        ORDER BY created_at ${raw(order)}`)
+  }
+
   static findByBlockchainIdsAndContractAddresses(
     data: { blockchainId: string; collectionAddress: string }[]
   ) {

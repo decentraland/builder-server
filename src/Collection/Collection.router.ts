@@ -233,7 +233,7 @@ export class CollectionRouter extends Router {
         [dbCollection!],
         [remoteCollection]
       ),
-      items: await Bridge.consolidateItems(dbItems, remoteItems, catalystItems),
+      items: await Bridge.consolidateItems(items, remoteItems, catalystItems),
     }
   }
 

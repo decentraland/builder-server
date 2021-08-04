@@ -8,17 +8,18 @@ import { ExpressApp } from '../common/ExpressApp'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Collection, CollectionAttributes } from '../Collection'
+import { MetricDeclarations } from '../MetricsDeclarations'
 import { createPost } from './client'
 import { ForumPost, forumPostSchema } from './Forum.types'
 
 const validator = getValidator()
 
 export class ForumRouter extends Router {
-  readonly metrics: IMetricsComponent<'dcl_published_collection_forum_post_failed'>
+  readonly metrics: IMetricsComponent<MetricDeclarations>
 
   constructor(
     router: ExpressApp | express.Router,
-    metrics: IMetricsComponent<'dcl_published_collection_forum_post_failed'>
+    metrics: IMetricsComponent<MetricDeclarations>
   ) {
     super(router)
     this.metrics = metrics
@@ -35,7 +36,7 @@ export class ForumRouter extends Router {
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,
-      server.handleRequest(this.post)
+      server.handleRequest(this.post.bind(this))
     )
   }
 

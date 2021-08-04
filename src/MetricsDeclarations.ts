@@ -15,5 +15,7 @@ export const metricDeclarations = {
   },
 }
 
+export type MetricDeclarations = keyof typeof metricDeclarations
+
 // type assertions
 validateMetricsDeclaration(metricDeclarations)

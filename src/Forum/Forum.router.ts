@@ -1,29 +1,17 @@
 import { server } from 'decentraland-server'
-import express from 'express'
-import { IMetricsComponent } from '@well-known-components/interfaces'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
-import { ExpressApp } from '../common/ExpressApp'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
-import { Collection, CollectionAttributes } from '../Collection'
 import { MetricDeclarations } from '../MetricsDeclarations'
+import { Collection, CollectionAttributes } from '../Collection'
 import { createPost } from './client'
 import { ForumPost, forumPostSchema } from './Forum.types'
 
 const validator = getValidator()
 
-export class ForumRouter extends Router {
-  readonly metrics: IMetricsComponent<MetricDeclarations>
-
-  constructor(
-    router: ExpressApp | express.Router,
-    metrics: IMetricsComponent<MetricDeclarations>
-  ) {
-    super(router)
-    this.metrics = metrics
-  }
+export class ForumRouter extends Router<MetricDeclarations> {
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(Collection)
@@ -54,7 +42,7 @@ export class ForumRouter extends Router {
 
     const collection = await Collection.findOne(id)
     if (collection.forum_link) {
-      this.metrics.increment(
+      this.metrics!.increment(
         'dcl_published_collection_forum_post_already_exists'
       )
       throw new HTTPError(
@@ -70,7 +58,7 @@ export class ForumRouter extends Router {
 
       return forum_link
     } catch (error) {
-      this.metrics.increment('dcl_published_collection_forum_post_failed')
+      this.metrics!.increment('dcl_published_collection_forum_post_failed')
       throw new HTTPError(
         'Error creating forum post',
         { errors: error.message },

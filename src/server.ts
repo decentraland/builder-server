@@ -1,5 +1,6 @@
 import { env } from 'decentraland-commons'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
+import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
 import { metricDeclarations } from './MetricsDeclarations'
 
 import { AppRouter } from './App'
@@ -30,15 +31,15 @@ const CORS_ORIGIN = env.get('CORS_ORIGIN', '*')
 const CORS_METHOD = env.get('CORS_METHOD', '*')
 
 const app = new ExpressApp()
+const metrics = { ...getDefaultHttpMetrics(), ...metricDeclarations }
+const metricsComponent = createTestMetricsComponent(metrics)
 
 app
   .use(withLogger())
   .useJSON()
   .useVersion(API_VERSION)
   .useCORS(CORS_ORIGIN, CORS_METHOD)
-  .useMetrics()
-
-const metrics = createTestMetricsComponent(metricDeclarations)
+  .useMetrics(metricsComponent)
 
 // Mount routers
 new AppRouter(app).mount()
@@ -53,7 +54,7 @@ new ItemRouter(app).mount()
 new CollectionRouter(app).mount()
 new CommitteeRouter(app).mount()
 new RarityRouter(app).mount()
-new ForumRouter(app, metrics).mount()
+new ForumRouter(app, metricsComponent).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
 new S3Router(app).mount()

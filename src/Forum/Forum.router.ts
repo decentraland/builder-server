@@ -1,17 +1,18 @@
 import { server } from 'decentraland-server'
-
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
+import { MetricKeys } from '../MetricsDeclarations'
+import { MetricDeclarations } from '../MetricsDeclarations'
 import { Collection, CollectionAttributes } from '../Collection'
 import { createPost } from './client'
 import { ForumPost, forumPostSchema } from './Forum.types'
 
 const validator = getValidator()
 
-export class ForumRouter extends Router {
+export class ForumRouter extends Router<MetricDeclarations> {
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(Collection)
@@ -28,7 +29,7 @@ export class ForumRouter extends Router {
     )
   }
 
-  async post(req: AuthRequest) {
+  post = async (req: AuthRequest) => {
     const id: string = server.extractFromReq(req, 'id')
     const forumPostJSON: any = server.extractFromReq(req, 'forumPost')
 
@@ -42,7 +43,12 @@ export class ForumRouter extends Router {
 
     const collection = await Collection.findOne(id)
     if (collection.forum_link) {
-      throw new HTTPError('Forum post already exists', { id })
+      this.metrics!.increment(MetricKeys.FORUM_POST_ALREADY_EXISTS)
+      throw new HTTPError(
+        'Forum post already exists',
+        { id, forum_link: collection.forum_link },
+        STATUS_CODES.conflict
+      )
     }
 
     try {
@@ -51,6 +57,7 @@ export class ForumRouter extends Router {
 
       return forum_link
     } catch (error) {
+      this.metrics!.increment(MetricKeys.FORUM_POST_FAILED)
       throw new HTTPError(
         'Error creating forum post',
         { errors: error.message },

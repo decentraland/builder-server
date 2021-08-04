@@ -1,4 +1,6 @@
 import { env } from 'decentraland-commons'
+import { createTestMetricsComponent } from '@well-known-components/metrics'
+import { metricDeclarations } from './MetricsDeclarations'
 
 import { AppRouter } from './App'
 import { AssetPackRouter } from './AssetPack'
@@ -36,6 +38,8 @@ app
   .useCORS(CORS_ORIGIN, CORS_METHOD)
   .useMetrics()
 
+const metrics = createTestMetricsComponent(metricDeclarations)
+
 // Mount routers
 new AppRouter(app).mount()
 new AssetPackRouter(app).mount()
@@ -49,7 +53,7 @@ new ItemRouter(app).mount()
 new CollectionRouter(app).mount()
 new CommitteeRouter(app).mount()
 new RarityRouter(app).mount()
-new ForumRouter(app).mount()
+new ForumRouter(app, metrics).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
 new S3Router(app).mount()
@@ -65,7 +69,6 @@ if (require.main === module) {
 }
 
 async function startServer() {
-  console.log('Connecting database')
   await db.connect()
   return app.listen(SERVER_PORT)
 }

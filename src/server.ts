@@ -70,6 +70,7 @@ if (require.main === module) {
 }
 
 async function startServer() {
+  console.log('Connecting database')
   await db.connect()
   return app.listen(SERVER_PORT)
 }

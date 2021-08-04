@@ -25,11 +25,11 @@ export class ForumRouter extends Router<MetricDeclarations> {
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,
-      server.handleRequest(this.post.bind(this))
+      server.handleRequest(this.post)
     )
   }
 
-  async post(req: AuthRequest) {
+  post = async (req: AuthRequest) => {
     const id: string = server.extractFromReq(req, 'id')
     const forumPostJSON: any = server.extractFromReq(req, 'forumPost')
 

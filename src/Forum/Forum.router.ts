@@ -53,6 +53,9 @@ export class ForumRouter extends Router {
 
     const collection = await Collection.findOne(id)
     if (collection.forum_link) {
+      this.metrics.increment(
+        'dcl_published_collection_forum_post_already_exists'
+      )
       throw new HTTPError(
         'Forum post already exists',
         { id, forum_link: collection.forum_link },

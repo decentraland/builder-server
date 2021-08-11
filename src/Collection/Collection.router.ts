@@ -1,3 +1,4 @@
+import fetch from 'isomorphic-fetch'
 import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -22,6 +23,7 @@ import { RequestParameters } from '../RequestParameters'
 import { hasAccess } from './access'
 import { isPublished } from '../utils/eth'
 import { ItemFragment } from '../ethereum/api/fragments'
+import { sendDataToWarehouse } from '../warehouse/warehouse'
 
 const validator = getValidator()
 
@@ -71,6 +73,15 @@ export class CollectionRouter extends Router {
     )
 
     /**
+     * Handle the publication of a collection to the blockchain
+     */
+    this.router.post(
+      '/collections/:id/tos',
+      withAuthentication,
+      server.handleRequest(this.saveTOS)
+    )
+
+    /**
      * Upserts the collection
      * Important! Collection authorization is done inside the handler
      */
@@ -90,6 +101,19 @@ export class CollectionRouter extends Router {
       withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
+  }
+
+  saveTOS = async (req: AuthRequest) => {
+    const eth_address = req.auth.ethAddress
+    try {
+      await sendDataToWarehouse('builder', 'publish_collection_tos', {
+        email: req.body.email,
+        eth_address: eth_address,
+        collection_address: req.body.collection_address,
+      })
+    } catch (e) {
+      throw new HTTPError('Error saving TOS', null, STATUS_CODES.error)
+    }
   }
 
   async getCollections(req: AuthRequest) {

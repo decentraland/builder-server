@@ -1,6 +1,7 @@
 import express from 'express'
 import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
+import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
 
 export class ExpressApp {
   protected app: express.Application
@@ -49,7 +50,8 @@ export class ExpressApp {
     return this
   }
 
-  useMetrics(base: ReturnType<typeof createTestMetricsComponent>) {
+  useMetrics() {
+    const base = createTestMetricsComponent(getDefaultHttpMetrics())
     const register = base.register
 
     const bearerToken = process.env.WKC_METRICS_BEARER_TOKEN

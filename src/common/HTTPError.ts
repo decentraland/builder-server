@@ -2,6 +2,7 @@ export const STATUS_CODES = {
   ok: 200,
   unauthorized: 401,
   notFound: 404,
+  conflict: 409,
   error: 500,
 }
 export type StatusCode = typeof STATUS_CODES[keyof typeof STATUS_CODES]

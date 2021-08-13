@@ -17,14 +17,19 @@ export class Asset extends Model<AssetAttributes> {
     )
   }
 
-  static existsAnyWithADifferentEthAddress(ids: string[], ethAddress: string) {
-    return this.query<AssetAttributes>(SQL`
-    SELECT COUNT(a.*)
+  static async existsAnyWithADifferentEthAddress(
+    ids: string[],
+    ethAddress: string
+  ): Promise<boolean> {
+    const counts = await this.query(SQL`
+    SELECT COUNT(a.*) as count
       FROM ${SQL.raw(this.tableName)} a
       INNER JOIN ${SQL.raw(AssetPack.tableName)} ap ON a.asset_pack_id = ap.id
       WHERE a.id = ANY(${ids})
         AND ap.eth_address != ${ethAddress}
         AND ap.is_deleted = FALSE`)
+
+    return counts[0].count > 0
   }
 
   static findByIds(ids: string[]) {

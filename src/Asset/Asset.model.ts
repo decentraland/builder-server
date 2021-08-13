@@ -1,5 +1,6 @@
 import { Model, SQL, OnConflict, QueryPart } from 'decentraland-server'
 
+import { AssetPack } from '../AssetPack'
 import { AssetAttributes } from './Asset.types'
 import { Parameters } from './Parameters'
 import { Actions } from './Actions'
@@ -14,6 +15,21 @@ export class Asset extends Model<AssetAttributes> {
         WHERE asset_pack_id = ${assetPackId}
           AND id = ANY(${ids})`
     )
+  }
+
+  static async existsAnyWithADifferentEthAddress(
+    ids: string[],
+    ethAddress: string
+  ): Promise<boolean> {
+    const counts = await this.query(SQL`
+    SELECT COUNT(a.*) as count
+      FROM ${SQL.raw(this.tableName)} a
+      INNER JOIN ${SQL.raw(AssetPack.tableName)} ap ON a.asset_pack_id = ap.id
+      WHERE a.id = ANY(${ids})
+        AND ap.eth_address != ${ethAddress}
+        AND ap.is_deleted = FALSE`)
+
+    return counts[0].count > 0
   }
 
   static findByIds(ids: string[]) {

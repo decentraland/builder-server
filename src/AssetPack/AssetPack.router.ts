@@ -184,6 +184,14 @@ export class AssetPackRouter extends Router {
       await Asset.deleteForAssetPackByIds(id, assetIdsToDelete)
     }
 
+    const assetIds = assets.map((asset) => asset.id)
+    if (await Asset.existsAnyWithADifferentEthAddress(assetIds, eth_address)) {
+      throw new HTTPError(
+        "One of the assets you're trying to upload belongs to a different address. Check the ids",
+        { eth_address, assetIds }
+      )
+    }
+
     const upsertResult = await new AssetPack(attributes).upsert()
     await Promise.all(assets.map((asset) => new Asset(asset).upsert()))
 

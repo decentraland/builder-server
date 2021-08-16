@@ -1,4 +1,3 @@
-import fetch from 'isomorphic-fetch'
 import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -73,11 +72,12 @@ export class CollectionRouter extends Router {
     )
 
     /**
-     * Handle the publication of a collection to the blockchain
+     * Handle the storage of the TOS of a collection publication
      */
     this.router.post(
       '/collections/:id/tos',
       withAuthentication,
+      withCollectionExists,
       server.handleRequest(this.saveTOS)
     )
 
@@ -103,7 +103,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  saveTOS = async (req: AuthRequest) => {
+  async saveTOS(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
     try {
       await sendDataToWarehouse('builder', 'publish_collection_tos', {
@@ -112,7 +112,11 @@ export class CollectionRouter extends Router {
         collection_address: req.body.collection_address,
       })
     } catch (e) {
-      throw new HTTPError('Error saving TOS', null, STATUS_CODES.error)
+      throw new HTTPError(
+        "The TOS couldn't be recorded",
+        null,
+        STATUS_CODES.error
+      )
     }
   }
 

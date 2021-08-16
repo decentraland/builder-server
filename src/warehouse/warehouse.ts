@@ -1,7 +1,15 @@
 import { env } from 'decentraland-commons'
 
 const WAREHOUSE_URL: string = env.get('WAREHOUSE_URL')
+const WAREHOUSE_TOKEN: string = env.get('WAREHOUSE_TOKEN')
 
+/**
+ * Sends data to the warehouse to be stored.
+ *
+ * @param context - The name of the application storing data.
+ * @param event - The name of the event that we are registering.
+ * @param body - The contet of the event that we are registering.
+ */
 export async function sendDataToWarehouse(
   context: string,
   event: string,
@@ -13,12 +21,12 @@ export async function sendDataToWarehouse(
     body,
   }
 
-  // Save the TOS in the warehouse
   await fetch(WAREHOUSE_URL, {
-    method: 'POST', // *GET, POST, PUT, DELETE, etc.
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      'x-token': WAREHOUSE_TOKEN,
     },
-    body: JSON.stringify(data), // body data type must match "Content-Type" header
+    body: JSON.stringify(data),
   })
 }

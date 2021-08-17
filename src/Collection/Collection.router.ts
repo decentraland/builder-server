@@ -22,7 +22,7 @@ import { RequestParameters } from '../RequestParameters'
 import { hasAccess } from './access'
 import { isPublished } from '../utils/eth'
 import { ItemFragment } from '../ethereum/api/fragments'
-import { sendDataToWarehouse } from '../warehouse/warehouse'
+import { sendDataToWarehouse } from '../warehouse'
 
 const validator = getValidator()
 

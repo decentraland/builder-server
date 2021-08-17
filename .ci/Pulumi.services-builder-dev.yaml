@@ -9,6 +9,8 @@ config:
     secure: v1:y/iM1Wm+dYBLHDYj:M0aTQQ/VY1MFxHisx+WOX4IppE1CTMrd2VS7PFf16HdlQEgNPYdJvBaZX/O2mrMDxhe5MBJFJZBCL5hYCZSx88IhmoRky59nYiQeCJAueH000Vtch0SOtv+/UrdY
   service-builder:WAREHOUSE_TOKEN:
     secure: v1:MZrlUTJWr+JJ/6w3:etSELpGKF5rq35SM7JKiYWd9nKs6Xab7HpZ6mf0kdFx6S7ZkN8pf3R+9OooiGkIrW7KqNyNyicENxRSxM2Qcjm1PNvORQXtprg1AQq73hKE=
+  service-builder:WAREHOUSE_URL:
+    secure: v1:REfZKPVh4eES/hKk:m6abN7WdTGGRrqvmKnLyq5692m9H3Dxc39xE+KbZ/edSXkGKK0dswnhicuAx8CmaRPVjaZfJZ5UjyLybAw==
   service-builder:db-password:
     secure: v1:tGQDAgILOTpxsaYk:wxIXvnzKXdBet7D1mksngaJ3Auq9iYtQceOOw+wENYr/R3F6EukcMQ==
   service-builder:db-user: builder

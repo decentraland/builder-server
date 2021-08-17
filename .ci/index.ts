@@ -111,6 +111,7 @@ export = async function main() {
         value: config.requireSecret('MATIC_RPC_URL'),
       },
       { name: 'WAREHOUSE_URL', value: config.requireSecret('WAREHOUSE_URL') },
+      { name: 'WAREHOUSE_CONTEXT_PREFIX', value: env },
       {
         name: 'WAREHOUSE_TOKEN',
         value: config.requireSecret('WAREHOUSE_TOKEN'),

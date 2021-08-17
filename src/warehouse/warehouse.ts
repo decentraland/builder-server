@@ -2,6 +2,7 @@ import { env } from 'decentraland-commons'
 
 const WAREHOUSE_URL: string = env.get('WAREHOUSE_URL')
 const WAREHOUSE_TOKEN: string = env.get('WAREHOUSE_TOKEN')
+const WAREHOUSE_CONTEXT_PREFIX: string = env.get('WAREHOUSE_CONTEXT_PREFIX')
 
 /**
  * Sends data to the warehouse to be stored.
@@ -16,7 +17,9 @@ export async function sendDataToWarehouse(
   body: any
 ): Promise<void> {
   const data = {
-    context,
+    context: WAREHOUSE_CONTEXT_PREFIX
+      ? `${WAREHOUSE_CONTEXT_PREFIX}-${context}`
+      : context,
     event,
     body,
   }

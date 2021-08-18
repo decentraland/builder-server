@@ -49,3 +49,17 @@ export const collectionSchema = Object.freeze({
     'updated_at',
   ],
 })
+
+export const saveTOSSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    email: {
+      type: 'string',
+      // prettier-ignore
+      pattern: "^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
+    },
+    collection_address: { type: 'string', pattern: '^0x[a-fA-F0-9]{40}$' },
+  },
+  additionalProperties: false,
+  required: ['email', 'collection_address'],
+})

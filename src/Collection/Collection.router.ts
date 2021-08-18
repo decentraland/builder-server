@@ -17,7 +17,7 @@ import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { isCommitteeMember } from '../Committee'
-import { collectionSchema } from './Collection.types'
+import { collectionSchema, saveTOSSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
 import { hasAccess } from './access'
 import { isPublished } from '../utils/eth'
@@ -76,8 +76,8 @@ export class CollectionRouter extends Router {
      */
     this.router.post(
       '/collections/:id/tos',
-      withAuthentication,
-      withCollectionExists,
+      // withAuthentication,
+      // withCollectionExists,
       server.handleRequest(this.saveTOS)
     )
 
@@ -103,7 +103,17 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async saveTOS(req: AuthRequest) {
+  saveTOS = async (req: AuthRequest) => {
+    const tosValidator = validator.compile(saveTOSSchema)
+    tosValidator(req.body)
+    if (tosValidator.errors) {
+      throw new HTTPError(
+        'Invalid request',
+        tosValidator.errors,
+        STATUS_CODES.badRequest
+      )
+    }
+
     const eth_address = req.auth.ethAddress
     try {
       await sendDataToWarehouse('builder', 'publish_collection_tos', {

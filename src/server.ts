@@ -23,7 +23,7 @@ import { AnalyticsRouter } from './Analytics'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
-import { ProjectByCoordRouter } from './Project/Project_by_coord.router'
+import { ProjectByCoordRouter } from './Project'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')

@@ -50,65 +50,72 @@ export = async function main() {
       {
         name: 'BUILDER_URL',
         value:
-          'https://builder.decentraland.' + (env === 'prd' ? publicTLD : envTLD)
+          'https://builder.decentraland.' +
+          (env === 'prd' ? publicTLD : envTLD),
       },
       { name: 'IMAGE', value: image },
       { name: 'AWS_BUCKET_NAME', value: userAndBucket.bucket },
       { name: 'AWS_ACCESS_SECRET', value: userAndBucket.secretAccessKey },
       {
         name: 'DEFAULT_ETH_ADDRESS',
-        value: '0xDc13378daFca7Fe2306368A16BCFac38c80BfCAD'
+        value: '0xDc13378daFca7Fe2306368A16BCFac38c80BfCAD',
       },
       {
         name: 'BUILDER_SERVER_URL',
-        value: `https://${hostname}`
+        value: `https://${hostname}`,
       },
       {
         name: 'BUILDER_SHARE_URL',
-        value: 'https://share.decentraland.' + publicTLD
+        value: 'https://share.decentraland.' + publicTLD,
       },
       {
         name: 'PEER_URL',
         value:
           env === 'prd' || env === 'stg'
             ? 'https://peer-lb.decentraland.org'
-            : 'https://peer.decentraland.zone'
+            : 'https://peer.decentraland.zone',
       },
       {
         name: 'ETHEREUM_NETWORK',
-        value: env === 'prd' || env === 'stg' ? 'mainnet' : 'ropsten'
+        value: env === 'prd' || env === 'stg' ? 'mainnet' : 'ropsten',
       },
       {
         name: 'COLLECTIONS_GRAPH_URL',
         value:
           env === 'prd' || env === 'stg'
             ? 'https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mainnet'
-            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mumbai'
+            : 'https://api.thegraph.com/subgraphs/name/decentraland/collections-matic-mumbai',
       },
       {
         name: 'ANALYTICS_CONNECTION_STRING',
-        value: config.requireSecret('ANALYTICS_CONNECTION_STRING')
+        value: config.requireSecret('ANALYTICS_CONNECTION_STRING'),
       },
       {
         name: 'FORUM_API_KEY',
-        value: config.requireSecret('FORUM_API_KEY')
+        value: config.requireSecret('FORUM_API_KEY'),
       },
       {
         name: 'FORUM_URL',
-        value: 'https://forum.decentraland.org'
+        value: 'https://forum.decentraland.org',
       },
       {
         name: 'FORUM_CATEGORY',
-        value: env === 'prd' ? '12' : '14'
+        value: env === 'prd' ? '12' : '14',
       },
       {
         name: 'WKC_METRICS_BEARER_TOKEN',
-        value: prometheusStack.getOutput('serviceMetricsBearerToken')
+        value: prometheusStack.getOutput('serviceMetricsBearerToken'),
       },
       {
         name: 'MATIC_RPC_URL',
-        value: config.requireSecret('MATIC_RPC_URL')
-      }
+        value: config.requireSecret('MATIC_RPC_URL'),
+      },
+      { name: 'WAREHOUSE_URL', value: config.requireSecret('WAREHOUSE_URL') },
+      { name: 'WAREHOUSE_CONTEXT_PREFIX', value: env },
+      {
+        name: 'WAREHOUSE_TOKEN',
+        value: config.requireSecret('WAREHOUSE_TOKEN'),
+      },
     ],
     hostname,
     {
@@ -118,15 +125,15 @@ export = async function main() {
         interval: 60,
         timeout: 10,
         unhealthyThreshold: 10,
-        healthyThreshold: 3
+        healthyThreshold: 3,
       },
       metrics: {
-        path: '/metrics'
+        path: '/metrics',
       },
       version: '1',
       memoryReservation: 1024,
       cpuReservation: env === 'prd' ? 1024 : 256,
-      securityGroups: [(await acceptDbSecurityGroup()).id]
+      securityGroups: [(await acceptDbSecurityGroup()).id],
     }
   )
 
@@ -135,6 +142,6 @@ export = async function main() {
   return {
     publicUrl,
     connectionString,
-    userAndBucket
+    userAndBucket,
   }
 }

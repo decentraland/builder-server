@@ -17,11 +17,12 @@ import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { isCommitteeMember } from '../Committee'
-import { collectionSchema } from './Collection.types'
+import { collectionSchema, saveTOSSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
 import { hasAccess } from './access'
 import { isPublished } from '../utils/eth'
 import { ItemFragment } from '../ethereum/api/fragments'
+import { sendDataToWarehouse } from '../warehouse'
 
 const validator = getValidator()
 
@@ -71,6 +72,16 @@ export class CollectionRouter extends Router {
     )
 
     /**
+     * Handle the storage of the TOS of a collection publication
+     */
+    this.router.post(
+      '/collections/:id/tos',
+      withAuthentication,
+      withCollectionExists,
+      server.handleRequest(this.saveTOS)
+    )
+
+    /**
      * Upserts the collection
      * Important! Collection authorization is done inside the handler
      */
@@ -90,6 +101,33 @@ export class CollectionRouter extends Router {
       withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
+  }
+
+  saveTOS = async (req: AuthRequest) => {
+    const tosValidator = validator.compile(saveTOSSchema)
+    tosValidator(req.body)
+    if (tosValidator.errors) {
+      throw new HTTPError(
+        'Invalid request',
+        tosValidator.errors,
+        STATUS_CODES.badRequest
+      )
+    }
+
+    const eth_address = req.auth.ethAddress
+    try {
+      await sendDataToWarehouse('builder', 'publish_collection_tos', {
+        email: req.body.email,
+        eth_address: eth_address,
+        collection_address: req.body.collection_address,
+      })
+    } catch (e) {
+      throw new HTTPError(
+        "The TOS couldn't be recorded",
+        null,
+        STATUS_CODES.error
+      )
+    }
   }
 
   async getCollections(req: AuthRequest) {

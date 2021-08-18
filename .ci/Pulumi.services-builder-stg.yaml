@@ -7,6 +7,10 @@ config:
     secure: v1:PvMMipJwHIQbQpF7:7gcbq5CpKc6Aq88WHzgOGfT/44RjAsf5zdQLWFlQR6L5guyYTHL6LSIpLv0BfuRyHQdq0uKeD6kwEgKCG4xbq8qbvdSKDmmbT4Q+XO1Rzp4=
   service-builder:MATIC_RPC_URL:
     secure: v1:o/HvBkGrqSPuupAY:TNg7tIV3+Ty11lJLbTpFqxMWDUGYBZQ58gOEVJQ3pLfJs9Mz//BHMNT2HnQ1D9/WAo/kUfL1FalrAV5lIYdBNE4oReeEyoCcYJKMGzHOS++y1TuEXCTdYa/h34Mv6A==
+  service-builder:WAREHOUSE_TOKEN:
+    secure: v1:LV8gh6FinM8kkWOh:LzCyrIJMr19cAJZ9Q+WtWcRkZHQT+FTedeqqUAQtYUM+up78hLUN/W61sz9bvcMje5BvlP/PPneHSzP/ZhTd/7USstQ/ENYsdkCGIGSj3ds=
+  service-builder:WAREHOUSE_URL:
+    secure: v1:U+iEdS6dwHe8E6+u:Ky54cIVvonc4cNOPn3b/I/cneVjzcgHzqiYAOE9bcr4M47LFV83YJv6TjGS3U69Kkcq34NR9cgZ/PS8fWQ==
   service-builder:db-password:
     secure: v1:O2975S6HrBPdgHKA:S2vZRRPGNQBb0Vr45e7gxzIC0f50afSx7Em6RSleBUoxlANT
   supra:stack-id: blue

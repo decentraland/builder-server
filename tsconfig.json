@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es2017",
-    "lib": ["es2017", "dom"],
+    "target": "ES2019",
+    "lib": ["ES2019", "dom"],
     "plugins": [{ "name": "tslint-language-service" }],
     "moduleResolution": "node",
     "outDir": "dist",

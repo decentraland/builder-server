@@ -76,8 +76,8 @@ export class CollectionRouter extends Router {
      */
     this.router.post(
       '/collections/:id/tos',
-      // withAuthentication,
-      // withCollectionExists,
+      withAuthentication,
+      withCollectionExists,
       server.handleRequest(this.saveTOS)
     )
 

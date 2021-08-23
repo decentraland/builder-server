@@ -1,18 +1,12 @@
 import express = require('express')
-import { IMetricsComponent } from '@well-known-components/interfaces'
 
 import { ExpressApp } from './ExpressApp'
 
-export class Router<M extends string = string> {
-  protected readonly router: express.Router
-  protected readonly metrics: IMetricsComponent<M> | undefined
+export class Router {
+  protected router: express.Router
 
-  constructor(
-    router: ExpressApp | express.Router,
-    metrics?: IMetricsComponent<M>
-  ) {
+  constructor(router: ExpressApp | express.Router) {
     this.router = router instanceof ExpressApp ? router.getRouter() : router
-    this.metrics = metrics
   }
 
   mount(): void {

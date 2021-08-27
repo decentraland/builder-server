@@ -63,16 +63,16 @@ export class ExpressApp {
         if (bearerToken) {
           const header = req.header('authorization')
           if (!header) {
-            res.end(401)
+            res.status(401).end()
             return
           }
           if (Array.isArray(header)) {
-            res.end(401)
+            res.status(401).end()
             return
           }
           const [, value] = header.split(' ')
           if (value !== bearerToken) {
-            res.end(401)
+            res.status(401).end()
             return
           }
         }

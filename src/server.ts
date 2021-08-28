@@ -59,11 +59,11 @@ new AnalyticsRouter(app).mount()
 /* Start the server only if run directly */
 if (require.main === module) {
   startServer()
+    .then(() => console.log('Server started'))
     .catch((error) => {
       console.error(error)
       process.exit(1)
     })
-    .then(() => console.log('Server started'))
 }
 
 async function startServer() {

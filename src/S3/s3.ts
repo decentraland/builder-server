@@ -171,7 +171,3 @@ export function getFileUploader(
     }),
   })
 }
-
-export const getBucketURL = (): string => {
-  return `https://${BUCKET_NAME}.s3.amazonaws.com`
-}

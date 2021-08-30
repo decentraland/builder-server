@@ -1,4 +1,5 @@
 import { server } from 'decentraland-server'
+import { Request, Response } from 'express'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -12,7 +13,13 @@ import {
 import { Ownable } from '../Ownable'
 import { Project } from '../Project'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
-import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
+import {
+  S3Project,
+  MANIFEST_FILENAME,
+  POOL_FILENAME,
+  ACL,
+  getBucketURL,
+} from '../S3'
 import { collectStatistics } from './utils'
 import { SearchableProject } from '../Project/SearchableProject'
 
@@ -34,7 +41,7 @@ export class ManifestRouter extends Router {
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
-      server.handleRequest(this.getProjectManifest)
+      this.getProjectManifest
     )
 
     /**
@@ -61,7 +68,7 @@ export class ManifestRouter extends Router {
     this.router.get(
       '/pools/:id/manifest',
       withPublishedProjectExists,
-      server.handleRequest(this.getPoolManifest)
+      this.getPoolManifest
     )
 
     /**
@@ -85,13 +92,12 @@ export class ManifestRouter extends Router {
     )
   }
 
-  async getProjectManifest(req: AuthRequest) {
+  getProjectManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
-
-    const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
-    if (body) {
-      return JSON.parse(body.toString())
-    }
+    const project = new S3Project(id)
+    return res.redirect(
+      `${getBucketURL()}/${project.getFileKey(MANIFEST_FILENAME)}`
+    )
   }
 
   async getManifests(req: AuthRequest) {
@@ -116,20 +122,12 @@ export class ManifestRouter extends Router {
     return manifests
   }
 
-  async getPublicProjectManifest(req: AuthRequest) {
+  getPoolManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
-    const body = await new S3Project(id).readFileBody(MANIFEST_FILENAME)
-    if (body) {
-      return JSON.parse(body.toString())
-    }
-  }
-
-  async getPoolManifest(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const body = await new S3Project(id).readFileBody(POOL_FILENAME)
-    if (body) {
-      return JSON.parse(body.toString())
-    }
+    const project = new S3Project(id)
+    return res.redirect(
+      `${getBucketURL()}/${project.getFileKey(POOL_FILENAME)}`
+    )
   }
 
   async upsertManifest(req: AuthRequest) {

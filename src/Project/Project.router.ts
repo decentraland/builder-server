@@ -7,7 +7,7 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
-import { S3Project, getFileUploader, ACL } from '../S3'
+import { S3Project, getFileUploader, ACL, getBucketURL } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { Project } from './Project.model'
@@ -181,6 +181,7 @@ export class ProjectRouter extends Router {
   async getMedia(req: Request, res: Response) {
     const id = server.extractFromReq(req, 'id')
     const filename = server.extractFromReq(req, 'filename')
+    const project = new S3Project(id)
 
     const basename = filename.replace(path.extname(filename), '')
 
@@ -190,20 +191,7 @@ export class ProjectRouter extends Router {
         .json(server.sendError({ filename }, 'Invalid filename'))
     }
 
-    const file = await new S3Project(id).readFileBody(filename)
-    if (!file) {
-      return res
-        .status(404)
-        .json(
-          server.sendError(
-            { id, filename },
-            'File does not exist in that project'
-          )
-        )
-    }
-
-    res.setHeader('Content-Type', mimeTypes.lookup(basename) || '')
-    return res.end(file)
+    return res.redirect(`${getBucketURL()}/${project.getFileKey(filename)}`)
   }
 
   async uploadFiles(req: AuthRequest) {

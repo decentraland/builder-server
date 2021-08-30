@@ -59,7 +59,7 @@ new AnalyticsRouter(app).mount()
 /* Start the server only if run directly */
 if (require.main === module) {
   startServer()
-    .then(() => console.log('Server started'))
+    .then(() => console.log(`Server started in port ${SERVER_PORT}`))
     .catch((error) => {
       console.error(error)
       process.exit(1)

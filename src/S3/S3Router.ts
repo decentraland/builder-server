@@ -24,13 +24,13 @@ export class S3Router extends Router {
     return `${getBucketURL()}/${model.getFileKey(filename)}`
   }
 
-  private handleAssetPacks(req: Request, res: Response) {
+  private handleAssetPacks = (req: Request, res: Response) => {
     const model = new S3AssetPack('')
     const filename = server.extractFromReq(req, 'filename')
     return res.redirect(this.buildRedirectUrl(model, filename))
   }
 
-  private handleContents(req: Request, res: Response) {
+  private handleContents = (req: Request, res: Response) => {
     const model = new S3Content()
     const filename = server.extractFromReq(req, 'filename')
     res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')

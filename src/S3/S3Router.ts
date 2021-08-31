@@ -13,7 +13,7 @@ export class S3Router extends Router {
      */
     this.router.get(
       '/storage/assetPacks/:filename',
-      this.getHandlerForAssetType(S3AssetPack)
+      this.getHandlerForAssetType(S3AssetPack, false)
     )
 
     /**
@@ -21,15 +21,23 @@ export class S3Router extends Router {
      */
     this.router.get(
       '/storage/contents/:filename',
-      this.getHandlerForAssetType(S3Content)
+      this.getHandlerForAssetType(S3Content, true)
     )
   }
 
-  private getHandlerForAssetType(Model: typeof S3AssetPack | typeof S3Content) {
+  private getHandlerForAssetType(
+    Model: typeof S3AssetPack | typeof S3Content,
+    cache: boolean
+  ) {
     const model = new Model('')
     return async (req: Request, res: Response) => {
       const filename = server.extractFromReq(req, 'filename')
-      return res.redirect(`${getBucketURL()}/${model.getFileKey(filename)}`)
+      const redirectUrl = `${getBucketURL()}/${model.getFileKey(filename)}`
+      if (cache) {
+        res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')
+        return res.redirect(redirectUrl, 301)
+      }
+      return res.redirect(redirectUrl)
     }
   }
 }

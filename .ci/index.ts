@@ -20,7 +20,19 @@ export = async function main() {
   const revision = process.env['CI_COMMIT_SHA']
   const image = `decentraland/builder-server:${revision}`
 
-  const userAndBucket = createBucketWithUser(`builder-assetpacks-${env}`)
+  const userAndBucket = createBucketWithUser(`builder-assetpacks-${env}`, {
+    corsRules: [
+      {
+        allowedHeaders: ['*'],
+        allowedMethods: ['GET'],
+        allowedOrigins: ['*'],
+        exposeHeaders: [
+          'ETag, Cache-Control, Content-Language, Content-Type, Expires, Last-Modified, Pragma',
+        ],
+        maxAgeSeconds: 3000,
+      },
+    ],
+  })
 
   const AUTH0_DOMAIN =
     env === 'prd' || env === 'stg'
@@ -134,6 +146,7 @@ export = async function main() {
       memoryReservation: 1024,
       cpuReservation: env === 'prd' ? 1024 : 256,
       securityGroups: [(await acceptDbSecurityGroup()).id],
+      team: 'dapps',
     }
   )
 

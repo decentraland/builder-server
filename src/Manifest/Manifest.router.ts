@@ -96,7 +96,6 @@ export class ManifestRouter extends Router {
   getProjectManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     const project = new S3Project(id)
-
     addInmutableCacheControlHeader(res)
     return res.redirect(
       `${getBucketURL()}/${project.getFileKey(MANIFEST_FILENAME)}`,

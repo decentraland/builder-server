@@ -4,6 +4,7 @@ import mimeTypes from 'mime-types'
 import path from 'path'
 
 import { Router } from '../common/Router'
+import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
@@ -191,7 +192,7 @@ export class ProjectRouter extends Router {
         .json(server.sendError({ filename }, 'Invalid filename'))
     }
 
-    res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')
+    addInmutableCacheControlHeader(res)
     return res.redirect(
       `${getBucketURL()}/${project.getFileKey(filename)}`,
       301

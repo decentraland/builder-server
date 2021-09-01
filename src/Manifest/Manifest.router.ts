@@ -2,6 +2,7 @@ import { server } from 'decentraland-server'
 import { Request, Response } from 'express'
 
 import { Router } from '../common/Router'
+import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import {
@@ -95,8 +96,10 @@ export class ManifestRouter extends Router {
   getProjectManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     const project = new S3Project(id)
+    addInmutableCacheControlHeader(res)
     return res.redirect(
-      `${getBucketURL()}/${project.getFileKey(MANIFEST_FILENAME)}`
+      `${getBucketURL()}/${project.getFileKey(MANIFEST_FILENAME)}`,
+      301
     )
   }
 
@@ -125,8 +128,10 @@ export class ManifestRouter extends Router {
   getPoolManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     const project = new S3Project(id)
+    addInmutableCacheControlHeader(res)
     return res.redirect(
-      `${getBucketURL()}/${project.getFileKey(POOL_FILENAME)}`
+      `${getBucketURL()}/${project.getFileKey(POOL_FILENAME)}`,
+      301
     )
   }
 

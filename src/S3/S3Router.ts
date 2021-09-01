@@ -2,6 +2,7 @@ import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
+import { addInmutableCacheControlHeader } from '../common/headers'
 import { getBucketURL } from './s3'
 import { S3AssetPack } from './S3AssetPack'
 import { S3Content } from './S3Content'
@@ -24,16 +25,19 @@ export class S3Router extends Router {
     return `${getBucketURL()}/${model.getFileKey(filename)}`
   }
 
+  private permanentlyRedirectFile(req: Request, res: Response, model: S3Model) {
+    const filename = server.extractFromReq(req, 'filename')
+    addInmutableCacheControlHeader(res)
+    return res.redirect(this.buildRedirectUrl(model, filename), 301)
+  }
+
   private handleAssetPacks = (req: Request, res: Response) => {
     const model = new S3AssetPack('')
-    const filename = server.extractFromReq(req, 'filename')
-    return res.redirect(this.buildRedirectUrl(model, filename))
+    this.permanentlyRedirectFile(req, res, model)
   }
 
   private handleContents = (req: Request, res: Response) => {
     const model = new S3Content()
-    const filename = server.extractFromReq(req, 'filename')
-    res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')
-    return res.redirect(this.buildRedirectUrl(model, filename), 301)
+    this.permanentlyRedirectFile(req, res, model)
   }
 }

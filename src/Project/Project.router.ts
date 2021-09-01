@@ -191,7 +191,11 @@ export class ProjectRouter extends Router {
         .json(server.sendError({ filename }, 'Invalid filename'))
     }
 
-    return res.redirect(`${getBucketURL()}/${project.getFileKey(filename)}`)
+    res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')
+    return res.redirect(
+      `${getBucketURL()}/${project.getFileKey(filename)}`,
+      301
+    )
   }
 
   async uploadFiles(req: AuthRequest) {

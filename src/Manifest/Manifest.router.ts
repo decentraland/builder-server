@@ -95,8 +95,11 @@ export class ManifestRouter extends Router {
   getProjectManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     const project = new S3Project(id)
+
+    res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')
     return res.redirect(
-      `${getBucketURL()}/${project.getFileKey(MANIFEST_FILENAME)}`
+      `${getBucketURL()}/${project.getFileKey(MANIFEST_FILENAME)}`,
+      301
     )
   }
 
@@ -125,8 +128,10 @@ export class ManifestRouter extends Router {
   getPoolManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     const project = new S3Project(id)
+    res.setHeader('Cache-Control', 'public,max-age=31536000,immutable')
     return res.redirect(
-      `${getBucketURL()}/${project.getFileKey(POOL_FILENAME)}`
+      `${getBucketURL()}/${project.getFileKey(POOL_FILENAME)}`,
+      301
     )
   }
 

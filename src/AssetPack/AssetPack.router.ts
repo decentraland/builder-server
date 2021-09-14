@@ -1,5 +1,8 @@
 import { server } from 'decentraland-server'
 import { env, utils } from 'decentraland-commons'
+import { v4 as uuidv4 } from 'uuid'
+import express from 'express'
+import { ILoggerComponent } from '@well-known-components/interfaces'
 
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -20,6 +23,7 @@ import {
   assetPackSchema,
 } from './AssetPack.types'
 import { getDefaultEthAddress } from './utils'
+import { ExpressApp } from '../common/ExpressApp'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -32,6 +36,12 @@ const validator = getValidator()
 export class AssetPackRouter extends Router {
   defaultAssetPacks: FullAssetPackAttributes[] = []
   lastDefaultAssetPacksFetch = Date.now()
+  private logger: ILoggerComponent.ILogger
+
+  constructor(router: ExpressApp | express.Router, logger: ILoggerComponent) {
+    super(router)
+    this.logger = logger.getLogger('AssetPackRouter')
+  }
 
   mount() {
     const withAssetPackExists = withModelExists(AssetPack)
@@ -91,34 +101,62 @@ export class AssetPackRouter extends Router {
   getAssetPacks = async (req: AuthRequest) => {
     const ethAddress = req.auth ? req.auth.ethAddress : ''
     let assetPacks: FullAssetPackAttributes[] = []
+    const tracer = uuidv4()
+    this.logger.info(`Stating request with tracer ${tracer}`)
+
+    this.logger.info(
+      `[${tracer}] Getting assets pack with the address "${ethAddress}"`
+    )
 
     // Get default asset packs
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
-      const defaultAssetPacks = await this.getDefaultAssetPacks()
-      assetPacks = [...assetPacks, ...defaultAssetPacks]
+      this.logger.info(`[${tracer}] Getting default asset packs`)
+      const defaultAssetPacks = await this.logExecutionTime(
+        this.getDefaultAssetPacks,
+        'Get default asset packs',
+        tracer
+      )
+      assetPacks = [...defaultAssetPacks]
+      this.logger.info(`[${tracer}] Assets pack lenght: ${assetPacks.length}`)
     }
 
     // Get user asset packs
     if (ethAddress) {
-      const userAssetPacks = await AssetPack.findByEthAddressWithAssets(
-        ethAddress
+      this.logger.info(`[${tracer}] Adding users assets packs`)
+      const userAssetPacks = await this.logExecutionTime(
+        () => AssetPack.findByEthAddressWithAssets(ethAddress),
+        'Get the default asset packs',
+        tracer
       )
       assetPacks = [...assetPacks, ...userAssetPacks]
     }
 
+    this.logger.info(
+      `[${tracer}] Final assets pack lenght: ${assetPacks.length}`
+    )
     return assetPacks
   }
 
   getAssetPack = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth ? req.auth.ethAddress : ''
+    const tracer = uuidv4()
+    this.logger.info(`Stating request with tracer ${tracer}`)
 
-    const isVisible = await AssetPack.isVisible(id, [
-      eth_address,
-      DEFAULT_ETH_ADDRESS,
-    ])
+    this.logger.info(
+      `[${tracer}] Getting assets pack with id ${id} and the address ${eth_address}`
+    )
+
+    const isVisible = await this.logExecutionTime(
+      () => AssetPack.isVisible(id, [eth_address, DEFAULT_ETH_ADDRESS]),
+      'Get if asset pack is visible',
+      tracer
+    )
 
     if (!isVisible) {
+      this.logger.info(
+        `[${tracer}] Assets pack with id ${id} is NOT visible to ${eth_address}`
+      )
       throw new HTTPError(
         'Unauthorized user',
         { eth_address },
@@ -126,15 +164,26 @@ export class AssetPackRouter extends Router {
       )
     }
 
-    const assetPack = await AssetPack.findOneWithAssets(id)
+    this.logger.info(
+      `[${tracer}] Assets pack with id ${id} is visible to ${eth_address}`
+    )
+
+    const assetPack = await this.logExecutionTime(
+      () => AssetPack.findOneWithAssets(id),
+      'Find one with assets',
+      tracer
+    )
 
     if (!assetPack) {
+      this.logger.info(`[${tracer}] Assets pack with id ${id} was not found`)
       throw new HTTPError(
         'Asset pack not found',
         { id, eth_address },
         STATUS_CODES.notFound
       )
     }
+
+    this.logger.info(`[${tracer}] Assets pack with id ${id} was found`)
 
     return this.sanitize([assetPack])[0]
   }
@@ -231,7 +280,7 @@ export class AssetPackRouter extends Router {
     return uploader.single(THUMBNAIL_FILE_NAME)
   }
 
-  private async getDefaultAssetPacks() {
+  private getDefaultAssetPacks = async () => {
     const aDayPassed =
       Date.now() - this.lastDefaultAssetPacksFetch >
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
@@ -245,6 +294,20 @@ export class AssetPackRouter extends Router {
     }
 
     return this.defaultAssetPacks
+  }
+
+  private logExecutionTime = async <T>(
+    functionToMeasure: () => T,
+    name: string,
+    tracer: string
+  ): Promise<T> => {
+    const start = process.hrtime.bigint()
+    const result = await functionToMeasure()
+    const end = process.hrtime.bigint()
+    this.logger.info(
+      `[${tracer}] ${name} took ${(end - start) / BigInt(1000000)} ms to run`
+    )
+    return result
   }
 
   private sanitize(assetPacks: FullAssetPackAttributes[]) {

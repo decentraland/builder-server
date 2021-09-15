@@ -274,6 +274,14 @@ export class ItemRouter extends Router {
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: any = server.extractFromReq(req, 'item')
+
+    if (id !== itemJSON.id) {
+      throw new HTTPError('The body and URL item ids do not match', {
+        urlId: id,
+        bodyId: itemJSON.id,
+      })
+    }
+
     const eth_address = req.auth.ethAddress.toLowerCase()
 
     const validate = validator.compile(itemSchema)
@@ -300,72 +308,81 @@ export class ItemRouter extends Router {
       )
     }
 
-    if (itemJSON.collection_id) {
-      const dbCollectionToAddItem = await Collection.findOne<CollectionAttributes>(
-        itemJSON.collection_id
-      )
-      // So far, only the owner can add item if the collection was not published
-      if (
-        !dbCollectionToAddItem ||
-        dbCollectionToAddItem.eth_address.toLowerCase() !== eth_address
-      ) {
-        throw new HTTPError(
-          'Unauthorized user',
-          { id, eth_address, collection_id: itemJSON.collection_id },
-          STATUS_CODES.unauthorized
-        )
-      }
-    }
-
     const dbItem = await Item.findOne<ItemAttributes>(id)
 
-    if (dbItem && dbItem.collection_id) {
-      if (
-        itemJSON.collection_id !== null &&
-        dbItem.collection_id !== itemJSON.collection_id
-      ) {
+    const isItemCollectionBeingChanged =
+      itemJSON.collection_id && itemJSON.collection_id !== dbItem?.collection_id
+
+    if (isItemCollectionBeingChanged) {
+      throw new HTTPError(
+        "Item can't change between collections",
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    const dbCollection = itemJSON.collection_id
+      ? await Collection.findOne<CollectionAttributes>(itemJSON.collection_id)
+      : undefined
+
+    const isCollectionOwnerDifferent =
+      dbCollection?.eth_address.toLowerCase() !== eth_address
+
+    if (isCollectionOwnerDifferent) {
+      throw new HTTPError(
+        'Unauthorized user',
+        { id, eth_address, collection_id: itemJSON.collection_id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    const { collection: remoteCollection, items: remoteItems } = dbCollection
+      ? await collectionAPI.fetchCollectionWithItemsByContractAddress(
+          dbCollection.contract_address
+        )
+      : { collection: undefined, items: [] }
+
+    const catalystItems =
+      remoteItems.length > 0
+        ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
+        : []
+
+    const areCollectionItemsPublished =
+      remoteCollection && catalystItems.length >= 1
+
+    if (areCollectionItemsPublished) {
+      if (!dbItem) {
         throw new HTTPError(
-          "Item can't change between collections",
+          "Items can't be added to a published collection",
           { id },
-          STATUS_CODES.unauthorized
+          STATUS_CODES.badRequest
         )
       }
 
-      const dbCollection = await Collection.findOne<CollectionAttributes>(
-        dbItem.collection_id
-      )
+      const isItemBeingRemovedFromCollection =
+        !itemJSON.collection_id && dbItem.collection_id
 
-      const [
-        { collection: remoteCollection, items: remoteItems },
-      ] = await Promise.all([
-        collectionAPI.fetchCollectionWithItemsByContractAddress(
-          dbCollection!.contract_address
-        ),
-      ])
-      const catalystItems = await peerAPI.fetchWearables(
-        remoteItems.map((item) => item.urn)
-      )
+      const isRarityBeingChanged =
+        itemJSON.rarity && itemJSON.rarity !== dbItem.rarity
 
-      if (remoteCollection && catalystItems.length >= 1) {
+      if (isItemBeingRemovedFromCollection) {
         throw new HTTPError(
-          "Published collection items can't be updated",
+          "Items can't be removed from a pubished collection",
           { id },
-          STATUS_CODES.error
+          STATUS_CODES.badRequest
+        )
+      }
+
+      if (isRarityBeingChanged) {
+        throw new HTTPError(
+          "An item rarity from a published collection can't be changed",
+          { id, current: dbItem.rarity, other: itemJSON.rarity },
+          STATUS_CODES.badRequest
         )
       }
     }
 
-    const attributes = {
-      ...itemJSON,
-      eth_address,
-    } as ItemAttributes
-
-    if (id !== attributes.id) {
-      throw new HTTPError('The body and URL item ids do not match', {
-        urlId: id,
-        bodyId: attributes.id,
-      })
-    }
+    const attributes = { ...itemJSON, eth_address } as ItemAttributes
 
     return new Item(attributes).upsert()
   }

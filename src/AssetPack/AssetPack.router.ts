@@ -102,7 +102,7 @@ export class AssetPackRouter extends Router {
     const ethAddress = req.auth ? req.auth.ethAddress : ''
     let assetPacks: FullAssetPackAttributes[] = []
     const tracer = uuidv4()
-    this.logger.info(`Stating request with tracer ${tracer}`)
+    this.logger.info(`Starting request with tracer ${tracer}`)
 
     this.logger.info(
       `[${tracer}] Getting assets pack with the address "${ethAddress}"`
@@ -141,7 +141,7 @@ export class AssetPackRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth ? req.auth.ethAddress : ''
     const tracer = uuidv4()
-    this.logger.info(`Stating request with tracer ${tracer}`)
+    this.logger.info(`Starting request with tracer ${tracer}`)
 
     this.logger.info(
       `[${tracer}] Getting assets pack with id ${id} and the address ${eth_address}`

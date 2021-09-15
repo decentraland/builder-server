@@ -21,6 +21,7 @@ import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
 import { ProjectByCoordRouter } from './Project'
+import { createConsoleLogComponent } from '@well-known-components/logger'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
@@ -28,6 +29,7 @@ const CORS_ORIGIN = env.get('CORS_ORIGIN', '*')
 const CORS_METHOD = env.get('CORS_METHOD', '*')
 
 const app = new ExpressApp()
+const logs = createConsoleLogComponent()
 
 app
   .use(withLogger())
@@ -38,7 +40,7 @@ app
 
 // Mount routers
 new AppRouter(app).mount()
-new AssetPackRouter(app).mount()
+new AssetPackRouter(app, logs).mount()
 new AssetRouter(app).mount()
 new ProjectRouter(app).mount()
 new ProjectByCoordRouter(app).mount()

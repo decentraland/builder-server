@@ -102,27 +102,25 @@ export class AssetPackRouter extends Router {
     const ethAddress = req.auth ? req.auth.ethAddress : ''
     let assetPacks: FullAssetPackAttributes[] = []
     const tracer = uuidv4()
-    this.logger.info(`Starting request with tracer ${tracer}`)
-
     this.logger.info(
-      `[${tracer}] Getting assets pack with the address "${ethAddress}"`
+      `Starting request to get the assets packs with tracer ${tracer} and the address "${ethAddress}"`
     )
 
     // Get default asset packs
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
-      this.logger.info(`[${tracer}] Getting default asset packs`)
       const defaultAssetPacks = await this.logExecutionTime(
         this.getDefaultAssetPacks,
         'Get default asset packs',
         tracer
       )
       assetPacks = [...defaultAssetPacks]
-      this.logger.info(`[${tracer}] Assets pack lenght: ${assetPacks.length}`)
+      this.logger.info(
+        `[${tracer}] Assets pack lenght after adding the default asset packs: ${assetPacks.length}`
+      )
     }
 
     // Get user asset packs
     if (ethAddress) {
-      this.logger.info(`[${tracer}] Adding users assets packs`)
       const userAssetPacks = await this.logExecutionTime(
         () => AssetPack.findByEthAddressWithAssets(ethAddress),
         'Get the default asset packs',
@@ -141,10 +139,8 @@ export class AssetPackRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth ? req.auth.ethAddress : ''
     const tracer = uuidv4()
-    this.logger.info(`Starting request with tracer ${tracer}`)
-
     this.logger.info(
-      `[${tracer}] Getting assets pack with id ${id} and the address ${eth_address}`
+      `Starting request to get the asset pack with id ${id} and the address ${eth_address} with tracer ${tracer}`
     )
 
     const isVisible = await this.logExecutionTime(
@@ -154,9 +150,6 @@ export class AssetPackRouter extends Router {
     )
 
     if (!isVisible) {
-      this.logger.info(
-        `[${tracer}] Assets pack with id ${id} is NOT visible to ${eth_address}`
-      )
       throw new HTTPError(
         'Unauthorized user',
         { eth_address },
@@ -175,15 +168,12 @@ export class AssetPackRouter extends Router {
     )
 
     if (!assetPack) {
-      this.logger.info(`[${tracer}] Assets pack with id ${id} was not found`)
       throw new HTTPError(
         'Asset pack not found',
         { id, eth_address },
         STATUS_CODES.notFound
       )
     }
-
-    this.logger.info(`[${tracer}] Assets pack with id ${id} was found`)
 
     return this.sanitize([assetPack])[0]
   }

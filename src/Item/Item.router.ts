@@ -310,11 +310,9 @@ export class ItemRouter extends Router {
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
 
-    const areBothCollectionIdsDefined =
-      itemJSON.collection_id && dbItem?.collection_id
-
     const isItemCollectionBeingChanged =
-      areBothCollectionIdsDefined &&
+      itemJSON.collection_id &&
+      dbItem?.collection_id &&
       itemJSON.collection_id !== dbItem.collection_id
 
     if (isItemCollectionBeingChanged) {

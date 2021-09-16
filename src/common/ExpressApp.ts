@@ -41,6 +41,7 @@ export class ExpressApp {
       next()
     }
     this.app.use(cors)
+    this.router.all('*', cors)
     return this
   }
 

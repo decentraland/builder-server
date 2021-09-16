@@ -1,4 +1,5 @@
 import express from 'express'
+import cors from 'cors'
 import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
 import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
@@ -21,26 +22,22 @@ export class ExpressApp {
   }
 
   useCORS(origin: string, method: string) {
-    const cors = function (
-      _req: express.Request,
-      res: express.Response,
-      next: Function
-    ) {
-      res.setHeader('Access-Control-Allow-Origin', origin)
-      res.setHeader('Access-Control-Request-Method', method)
-      res.setHeader(
-        'Access-Control-Allow-Methods',
-        'OPTIONS, GET, POST, PUT, DELETE'
-      )
-      res.setHeader('Access-Control-Allow-Headers', '*')
-      res.setHeader(
-        'Access-Control-Expose-Headers',
-        'ETag, Cache-Control, Content-Language, Content-Type, Expires, Last-Modified, Pragma'
-      )
-
-      next()
+    const corsOptions = {
+      origin: origin,
+      methods: method,
+      allowedHeaders: '*',
+      exposedHeaders: [
+        'ETag',
+        'Cache-Control',
+        'Content-Language',
+        'Content-Type',
+        'Expires',
+        'Last-Modified',
+        'Pragma',
+      ],
     }
-    this.app.use(cors)
+    this.app.use(cors(corsOptions))
+    this.app.options('*', cors(corsOptions) as any)
     return this
   }
 

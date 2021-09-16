@@ -60,7 +60,7 @@ export class ManifestRouter extends Router {
     this.router.get(
       '/publics/:id/manifest',
       withProjectExists,
-      server.handleRequest(this.getProjectManifest)
+      this.getProjectManifest
     )
 
     /**

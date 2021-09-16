@@ -284,22 +284,6 @@ export class ItemRouter extends Router {
 
     const eth_address = req.auth.ethAddress.toLowerCase()
 
-    const validate = validator.compile(itemSchema)
-    validate(itemJSON)
-
-    if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
-    }
-
-    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
-    if (!canUpsert) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
     if (itemJSON.is_published || itemJSON.is_approved) {
       throw new HTTPError(
         'Can not change is_published or is_approved property',
@@ -308,79 +292,105 @@ export class ItemRouter extends Router {
       )
     }
 
-    const dbItem = await Item.findOne<ItemAttributes>(id)
+    const validate = validator.compile(itemSchema)
 
-    const isItemCollectionBeingChanged =
-      itemJSON.collection_id &&
-      dbItem?.collection_id &&
-      itemJSON.collection_id !== dbItem.collection_id
+    validate(itemJSON)
 
-    if (isItemCollectionBeingChanged) {
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
+    }
+
+    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
+
+    if (!canUpsert) {
       throw new HTTPError(
-        "Item can't change between collections",
-        { id },
+        'Unauthorized user',
+        { id, eth_address },
         STATUS_CODES.unauthorized
       )
+    }
+
+    const dbItem = await Item.findOne<ItemAttributes>(id)
+
+    if (dbItem) {
+      const areBothCollectionIdsDefined =
+        itemJSON.collection_id && dbItem.collection_id
+
+      const isItemCollectionBeingChanged =
+        areBothCollectionIdsDefined &&
+        itemJSON.collection_id !== dbItem.collection_id
+
+      if (isItemCollectionBeingChanged) {
+        throw new HTTPError(
+          "Item can't change between collections",
+          { id },
+          STATUS_CODES.unauthorized
+        )
+      }
     }
 
     const dbCollection = itemJSON.collection_id
       ? await Collection.findOne<CollectionAttributes>(itemJSON.collection_id)
       : undefined
 
-    const isCollectionOwnerDifferent =
-      dbCollection && dbCollection.eth_address.toLowerCase() !== eth_address
+    if (dbCollection) {
+      const isCollectionOwnerDifferent =
+        dbCollection.eth_address.toLowerCase() !== eth_address
 
-    if (isCollectionOwnerDifferent) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address, collection_id: itemJSON.collection_id },
-        STATUS_CODES.unauthorized
+      if (isCollectionOwnerDifferent) {
+        throw new HTTPError(
+          'Unauthorized user',
+          { id, eth_address, collection_id: itemJSON.collection_id },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      const {
+        collection: remoteCollection,
+        items: remoteItems,
+      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
+        dbCollection.contract_address
       )
-    }
 
-    const { collection: remoteCollection, items: remoteItems } = dbCollection
-      ? await collectionAPI.fetchCollectionWithItemsByContractAddress(
-          dbCollection.contract_address
-        )
-      : { collection: undefined, items: [] }
+      const catalystItems = await peerAPI.fetchWearables(
+        remoteItems.map((item) => item.urn)
+      )
 
-    const catalystItems =
-      remoteItems.length > 0
-        ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
-        : []
+      const areCollectionItemsPublished =
+        remoteCollection && catalystItems.length >= 1
 
-    const areCollectionItemsPublished =
-      remoteCollection && catalystItems.length >= 1
+      if (areCollectionItemsPublished) {
+        if (!dbItem) {
+          throw new HTTPError(
+            "Items can't be added to a published collection",
+            { id },
+            STATUS_CODES.badRequest
+          )
+        }
 
-    if (areCollectionItemsPublished) {
-      if (!dbItem) {
-        throw new HTTPError(
-          "Items can't be added to a published collection",
-          { id },
-          STATUS_CODES.badRequest
-        )
-      }
+        const isItemBeingRemovedFromCollection =
+          !itemJSON.collection_id && dbItem.collection_id
 
-      const isItemBeingRemovedFromCollection =
-        !itemJSON.collection_id && dbItem.collection_id
+        if (isItemBeingRemovedFromCollection) {
+          throw new HTTPError(
+            "Items can't be removed from a pubished collection",
+            { id },
+            STATUS_CODES.badRequest
+          )
+        }
 
-      const isRarityBeingChanged =
-        itemJSON.rarity && itemJSON.rarity !== dbItem.rarity
+        const areBothRaritiesDefined = itemJSON.rarity && dbItem.rarity
 
-      if (isItemBeingRemovedFromCollection) {
-        throw new HTTPError(
-          "Items can't be removed from a pubished collection",
-          { id },
-          STATUS_CODES.badRequest
-        )
-      }
+        const isRarityBeingChanged =
+          areBothRaritiesDefined && itemJSON.rarity !== dbItem.rarity
 
-      if (isRarityBeingChanged) {
-        throw new HTTPError(
-          "An item rarity from a published collection can't be changed",
-          { id, current: dbItem.rarity, other: itemJSON.rarity },
-          STATUS_CODES.badRequest
-        )
+        if (isRarityBeingChanged) {
+          throw new HTTPError(
+            "An item rarity from a published collection can't be changed",
+            { id, current: dbItem.rarity, other: itemJSON.rarity },
+            STATUS_CODES.badRequest
+          )
+        }
       }
     }
 

@@ -326,7 +326,7 @@ export class ItemRouter extends Router {
       : undefined
 
     const isCollectionOwnerDifferent =
-      dbCollection?.eth_address.toLowerCase() !== eth_address
+      dbCollection && dbCollection.eth_address.toLowerCase() !== eth_address
 
     if (isCollectionOwnerDifferent) {
       throw new HTTPError(

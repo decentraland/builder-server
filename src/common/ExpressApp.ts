@@ -37,7 +37,6 @@ export class ExpressApp {
       ],
     }
     this.app.use(cors(corsOptions))
-    this.app.options('*', cors(corsOptions) as any)
     return this
   }
 

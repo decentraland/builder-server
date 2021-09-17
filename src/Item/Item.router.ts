@@ -329,9 +329,32 @@ export class ItemRouter extends Router {
       }
     }
 
-    const dbCollection = itemJSON.collection_id
-      ? await Collection.findOne<CollectionAttributes>(itemJSON.collection_id)
-      : undefined
+    const findCollection = async (id?: string | null) =>
+      id ? await Collection.findOne<CollectionAttributes>(id) : undefined
+
+    const getIsCollectionPublished = async (
+      collection?: CollectionAttributes
+    ) => {
+      if (!collection) {
+        return false
+      }
+
+      const {
+        collection: remoteCollection,
+        items: remoteItems,
+      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
+        collection.contract_address
+      )
+
+      const catalystItems = await peerAPI.fetchWearables(
+        remoteItems.map((item) => item.urn)
+      )
+
+      return remoteCollection && catalystItems.length >= 1
+    }
+
+    const dbCollection = await findCollection(itemJSON.collection_id)
+    const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
 
     if (dbCollection) {
       const isCollectionOwnerDifferent =
@@ -344,53 +367,46 @@ export class ItemRouter extends Router {
           STATUS_CODES.unauthorized
         )
       }
+    }
 
-      const {
-        collection: remoteCollection,
-        items: remoteItems,
-      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
-        dbCollection.contract_address
-      )
+    if (isDbCollectionPublished) {
+      if (!dbItem) {
+        throw new HTTPError(
+          "Items can't be added to a published collection",
+          { id },
+          STATUS_CODES.badRequest
+        )
+      }
 
-      const catalystItems = await peerAPI.fetchWearables(
-        remoteItems.map((item) => item.urn)
-      )
+      const areBothRaritiesDefined = itemJSON.rarity && dbItem.rarity
 
-      const areCollectionItemsPublished =
-        remoteCollection && catalystItems.length >= 1
+      const isRarityBeingChanged =
+        areBothRaritiesDefined && itemJSON.rarity !== dbItem.rarity
 
-      if (areCollectionItemsPublished) {
-        if (!dbItem) {
-          throw new HTTPError(
-            "Items can't be added to a published collection",
-            { id },
-            STATUS_CODES.badRequest
-          )
-        }
+      if (isRarityBeingChanged) {
+        throw new HTTPError(
+          "An item rarity from a published collection can't be changed",
+          { id, current: dbItem.rarity, other: itemJSON.rarity },
+          STATUS_CODES.badRequest
+        )
+      }
+    }
 
-        const isItemBeingRemovedFromCollection =
-          !itemJSON.collection_id && dbItem.collection_id
+    const dbItemCollection = await findCollection(dbItem?.collection_id)
+    const isDbItemCollectionPublished = await getIsCollectionPublished(
+      dbItemCollection
+    )
 
-        if (isItemBeingRemovedFromCollection) {
-          throw new HTTPError(
-            "Items can't be removed from a pubished collection",
-            { id },
-            STATUS_CODES.badRequest
-          )
-        }
+    if (isDbItemCollectionPublished && dbItem) {
+      const isItemBeingRemovedFromCollection =
+        !itemJSON.collection_id && dbItem.collection_id
 
-        const areBothRaritiesDefined = itemJSON.rarity && dbItem.rarity
-
-        const isRarityBeingChanged =
-          areBothRaritiesDefined && itemJSON.rarity !== dbItem.rarity
-
-        if (isRarityBeingChanged) {
-          throw new HTTPError(
-            "An item rarity from a published collection can't be changed",
-            { id, current: dbItem.rarity, other: itemJSON.rarity },
-            STATUS_CODES.badRequest
-          )
-        }
+      if (isItemBeingRemovedFromCollection) {
+        throw new HTTPError(
+          "Items can't be removed from a pubished collection",
+          { id },
+          STATUS_CODES.badRequest
+        )
       }
     }
 

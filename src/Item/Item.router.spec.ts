@@ -221,5 +221,51 @@ describe('when upsertItem is called', () => {
         )
       })
     })
+
+    describe('when the item is being removed from the collection', () => {
+      it('should fail with can not remove item from published collection message', async () => {
+        itemFindOneSpy.mockImplementationOnce(() =>
+          Promise.resolve({
+            ...validItem,
+            collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+          })
+        )
+
+        collectionFindOneSpy.mockImplementationOnce(() =>
+          Promise.resolve({
+            collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+            eth_address: validItem.eth_address,
+          })
+        )
+
+        jest
+          .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
+          .mockImplementation(() =>
+            Promise.resolve({
+              collection: {} as CollectionFragment,
+              items: [{}] as ItemFragment[],
+            })
+          )
+
+        jest
+          .spyOn(peerAPI, 'fetchWearables')
+          .mockImplementation(() => Promise.resolve([{}] as Wearable[]))
+
+        const app = new ExpressApp()
+        const router = new ItemRouter(app)
+
+        const req: any = {
+          query: { id: validItem.id },
+          body: {
+            item: validItem,
+          },
+          auth: { ethAddress: validItem.eth_address },
+        }
+
+        await expect(router.upsertItem(req)).rejects.toThrowError(
+          "Items can't be removed from a pubished collection"
+        )
+      })
+    })
   })
 })

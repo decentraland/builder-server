@@ -2,6 +2,7 @@ import { Item } from './Item.model'
 import { ExpressApp } from '../common/ExpressApp'
 import { Ownable } from '../Ownable'
 import { ItemRouter } from './Item.router'
+import { Collection } from '../Collection'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
@@ -44,12 +45,14 @@ const validItem = {
 
 describe('when upsertItem is called', () => {
   let itemFindOneSpy = jest.spyOn(Item, 'findOne')
+  let collectionFindOneSpy = jest.spyOn(Collection, 'findOne')
 
   beforeEach(() => {
     mockOwnable.mockImplementation(() => ({
       canUpsert: () => Promise.resolve(true),
     }))
     itemFindOneSpy.mockImplementation(() => Promise.resolve(undefined))
+    collectionFindOneSpy.mockImplementation(() => Promise.resolve(undefined))
   })
 
   afterEach(() => {
@@ -169,6 +172,35 @@ describe('when upsertItem is called', () => {
 
       await expect(router.upsertItem(req)).rejects.toThrowError(
         "Item can't change between collections"
+      )
+    })
+  })
+
+  describe('when the collection belongs to another address', () => {
+    it('should fail with unauthorized message', async () => {
+      collectionFindOneSpy.mockImplementationOnce(() =>
+        Promise.resolve({
+          collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+          eth_address: 'other address',
+        })
+      )
+
+      const app = new ExpressApp()
+      const router = new ItemRouter(app)
+
+      const req: any = {
+        query: { id: validItem.id },
+        body: {
+          item: {
+            ...validItem,
+            collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+          },
+        },
+        auth: { ethAddress: 'some address' },
+      }
+
+      await expect(router.upsertItem(req)).rejects.toThrowError(
+        'Unauthorized user'
       )
     })
   })

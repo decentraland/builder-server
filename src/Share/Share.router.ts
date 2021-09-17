@@ -38,7 +38,7 @@ export class ShareRouter extends Router {
     const element = await this.findElementByType(id, type)
 
     if (!element) {
-      return res.send(404)
+      return res.status(404).end()
     }
 
     const publicTarget = url.resolve(BUILDER_SHARE_URL, `/b/${type}/${id}`)

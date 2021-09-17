@@ -6,12 +6,15 @@ import { Collection } from '../Collection'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { CollectionFragment, ItemFragment } from '../ethereum/api/fragments'
+import { ItemAttributes } from '.'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
-jest.mock('../Ownable')
+// jest.mock('../Ownable')
 
-const mockOwnable = Ownable as jest.Mock
+// console.log(Item)
+
+// const mockOwnable = Ownable as jest.Mock
 
 const validItem = {
   id: 'a8aca0ee-b3f6-4a8e-a78c-d8efeb099cd9',
@@ -49,13 +52,15 @@ const validItem = {
 describe('when upsertItem is called', () => {
   let itemFindOneSpy = jest.spyOn(Item, 'findOne')
   let collectionFindOneSpy = jest.spyOn(Collection, 'findOne')
+  let ownableCanUpsertSpy = jest.spyOn(Ownable.prototype, 'canUpsert')
 
   beforeEach(() => {
-    mockOwnable.mockImplementation(() => ({
-      canUpsert: () => Promise.resolve(true),
-    }))
-    itemFindOneSpy.mockImplementation(() => Promise.resolve(undefined))
-    collectionFindOneSpy.mockImplementation(() => Promise.resolve(undefined))
+    // mockOwnable.mockImplementation(() => ({
+    //   canUpsert: () => Promise.resolve(true),
+    // }))
+    ownableCanUpsertSpy.mockResolvedValue(true)
+    itemFindOneSpy.mockResolvedValue(undefined)
+    collectionFindOneSpy.mockResolvedValue(undefined)
   })
 
   afterEach(() => {
@@ -131,9 +136,7 @@ describe('when upsertItem is called', () => {
 
   describe('when the user is unauthorized to upsert the item', () => {
     it('should fail with unauthorized user message', async () => {
-      mockOwnable.mockImplementationOnce(() => ({
-        canUpsert: () => Promise.resolve(false),
-      }))
+      ownableCanUpsertSpy.mockResolvedValueOnce(false)
 
       const app = new ExpressApp()
       const router = new ItemRouter(app)
@@ -182,12 +185,10 @@ describe('when upsertItem is called', () => {
   describe('when the collection is published', () => {
     describe('when the item is being upserted for the first time', () => {
       it('should fail with can not add item to published collection message', async () => {
-        collectionFindOneSpy.mockImplementationOnce(() =>
-          Promise.resolve({
-            collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
-            eth_address: validItem.eth_address,
-          })
-        )
+        collectionFindOneSpy.mockResolvedValueOnce({
+          collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+          eth_address: validItem.eth_address,
+        })
 
         jest
           .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
@@ -317,6 +318,57 @@ describe('when upsertItem is called', () => {
           "An item rarity from a published collection can't be changed"
         )
       })
+    })
+  })
+
+  describe('when everything is correct', () => {
+    it('should resolve correctly', async () => {
+      itemFindOneSpy.mockImplementationOnce(() =>
+        Promise.resolve({
+          ...validItem,
+          collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+        })
+      )
+
+      collectionFindOneSpy.mockImplementationOnce(() =>
+        Promise.resolve({
+          collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+          eth_address: validItem.eth_address,
+        })
+      )
+
+      jest
+        .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
+        .mockImplementation(() =>
+          Promise.resolve({
+            collection: {} as CollectionFragment,
+            items: [{}] as ItemFragment[],
+          })
+        )
+
+      jest
+        .spyOn(peerAPI, 'fetchWearables')
+        .mockImplementation(() => Promise.resolve([{}] as Wearable[]))
+
+      jest
+        .spyOn(Item.prototype, 'upsert')
+        .mockImplementation(() => Promise.resolve({} as ItemAttributes))
+
+      const app = new ExpressApp()
+      const router = new ItemRouter(app)
+
+      const req: any = {
+        query: { id: validItem.id },
+        body: {
+          item: {
+            ...validItem,
+            collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+          },
+        },
+        auth: { ethAddress: validItem.eth_address },
+      }
+
+      await expect(router.upsertItem(req)).resolves.toStrictEqual({})
     })
   })
 })

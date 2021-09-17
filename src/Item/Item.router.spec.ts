@@ -3,6 +3,9 @@ import { ExpressApp } from '../common/ExpressApp'
 import { Ownable } from '../Ownable'
 import { ItemRouter } from './Item.router'
 import { Collection } from '../Collection'
+import { collectionAPI } from '../ethereum/api/collection'
+import { peerAPI, Wearable } from '../ethereum/api/peer'
+import { CollectionFragment, ItemFragment } from '../ethereum/api/fragments'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
@@ -167,7 +170,7 @@ describe('when upsertItem is called', () => {
             collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
           },
         },
-        auth: { ethAddress: 'ethAddress' },
+        auth: { ethAddress: validItem.eth_address },
       }
 
       await expect(router.upsertItem(req)).rejects.toThrowError(
@@ -176,32 +179,47 @@ describe('when upsertItem is called', () => {
     })
   })
 
-  describe('when the collection belongs to another address', () => {
-    it('should fail with unauthorized message', async () => {
-      collectionFindOneSpy.mockImplementationOnce(() =>
-        Promise.resolve({
-          collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
-          eth_address: 'other address',
-        })
-      )
-
-      const app = new ExpressApp()
-      const router = new ItemRouter(app)
-
-      const req: any = {
-        query: { id: validItem.id },
-        body: {
-          item: {
-            ...validItem,
+  describe('when the collection is published', () => {
+    describe('when the item is being upserted for the first time', () => {
+      it('should fail with can not add item to published collection message', async () => {
+        collectionFindOneSpy.mockImplementationOnce(() =>
+          Promise.resolve({
             collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
-          },
-        },
-        auth: { ethAddress: 'some address' },
-      }
+            eth_address: validItem.eth_address,
+          })
+        )
 
-      await expect(router.upsertItem(req)).rejects.toThrowError(
-        'Unauthorized user'
-      )
+        jest
+          .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
+          .mockImplementation(() =>
+            Promise.resolve({
+              collection: {} as CollectionFragment,
+              items: [{}] as ItemFragment[],
+            })
+          )
+
+        jest
+          .spyOn(peerAPI, 'fetchWearables')
+          .mockImplementation(() => Promise.resolve([{}] as Wearable[]))
+
+        const app = new ExpressApp()
+        const router = new ItemRouter(app)
+
+        const req: any = {
+          query: { id: validItem.id },
+          body: {
+            item: {
+              ...validItem,
+              collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+            },
+          },
+          auth: { ethAddress: validItem.eth_address },
+        }
+
+        await expect(router.upsertItem(req)).rejects.toThrowError(
+          "Items can't be added to a published collection"
+        )
+      })
     })
   })
 })

@@ -32,10 +32,10 @@ const app = new ExpressApp()
 const logs = createConsoleLogComponent()
 
 app
+  .useCORS(CORS_ORIGIN, CORS_METHOD)
   .use(withLogger())
   .useJSON()
   .useVersion(API_VERSION)
-  .useCORS(CORS_ORIGIN, CORS_METHOD)
   .useMetrics()
 
 // Mount routers

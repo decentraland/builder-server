@@ -7,6 +7,8 @@ jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Ownable')
 
+const mockOwnable = Ownable as jest.Mock
+
 const validItem = {
   id: 'a8aca0ee-b3f6-4a8e-a78c-d8efeb099cd9',
   name: 'name',
@@ -41,7 +43,6 @@ const validItem = {
 }
 
 describe('when upsertItem is called', () => {
-  const mockOwnable = Ownable as jest.Mock
   let itemFindOneSpy = jest.spyOn(Item, 'findOne')
 
   beforeEach(() => {
@@ -49,6 +50,10 @@ describe('when upsertItem is called', () => {
       canUpsert: () => Promise.resolve(true),
     }))
     itemFindOneSpy.mockImplementation(() => Promise.resolve(undefined))
+  })
+
+  afterEach(() => {
+    jest.resetAllMocks()
   })
 
   describe('when param id is different from payload id', () => {

@@ -1,3 +1,4 @@
+import { Item } from './Item.model'
 import { ExpressApp } from '../common/ExpressApp'
 import { Ownable } from '../Ownable'
 import { ItemRouter } from './Item.router'
@@ -5,8 +6,6 @@ import { ItemRouter } from './Item.router'
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Ownable')
-
-const mockOwnable = Ownable as jest.Mock
 
 const validItem = {
   id: 'a8aca0ee-b3f6-4a8e-a78c-d8efeb099cd9',
@@ -42,6 +41,16 @@ const validItem = {
 }
 
 describe('when upsertItem is called', () => {
+  const mockOwnable = Ownable as jest.Mock
+  let itemFindOneSpy = jest.spyOn(Item, 'findOne')
+
+  beforeEach(() => {
+    mockOwnable.mockImplementation(() => ({
+      canUpsert: () => Promise.resolve(true),
+    }))
+    itemFindOneSpy.mockImplementation(() => Promise.resolve(undefined))
+  })
+
   describe('when param id is different from payload id', () => {
     it('should fail with body and url ids do not match message', async () => {
       const app = new ExpressApp()
@@ -75,29 +84,86 @@ describe('when upsertItem is called', () => {
     })
   })
 
-  describe('when the user can not upsert the item', () => {
+  describe('when is_approved is sent in the payload', () => {
+    it('should fail with cant set is_approved message', async () => {
+      const app = new ExpressApp()
+      const router = new ItemRouter(app)
+
+      const req: any = {
+        query: { id: validItem.id },
+        body: { item: { ...validItem, is_approved: true } },
+        auth: { ethAddress: 'ethAddress' },
+      }
+
+      await expect(router.upsertItem(req)).rejects.toThrowError(
+        'Can not change is_published or is_approved property'
+      )
+    })
+  })
+
+  describe('when is_published is sent in the payload', () => {
+    it('should fail with cant set is_approved message', async () => {
+      const app = new ExpressApp()
+      const router = new ItemRouter(app)
+
+      const req: any = {
+        query: { id: validItem.id },
+        body: { item: { ...validItem, is_published: true } },
+        auth: { ethAddress: 'ethAddress' },
+      }
+
+      await expect(router.upsertItem(req)).rejects.toThrowError(
+        'Can not change is_published or is_approved property'
+      )
+    })
+  })
+
+  describe('when the user is unauthorized to upsert the item', () => {
     it('should fail with unauthorized user message', async () => {
-      mockOwnable.mockImplementationOnce(() => {
-        return {
-          canUpsert: jest.fn().mockResolvedValue(false),
-        }
-      })
+      mockOwnable.mockImplementationOnce(() => ({
+        canUpsert: () => Promise.resolve(false),
+      }))
 
       const app = new ExpressApp()
       const router = new ItemRouter(app)
 
       const req: any = {
-        query: {
-          id: 'a8aca0ee-b3f6-4a8e-a78c-d8efeb099cd9',
-        },
-        body: {
-          item: validItem,
-        },
+        query: { id: validItem.id },
+        body: { item: validItem },
         auth: { ethAddress: 'ethAddress' },
       }
 
       await expect(router.upsertItem(req)).rejects.toThrowError(
         'Unauthorized user'
+      )
+    })
+  })
+
+  describe('when the item collection is being changed', () => {
+    it('should fail with cant change item collection message', async () => {
+      itemFindOneSpy.mockImplementationOnce(() =>
+        Promise.resolve({
+          ...validItem,
+          collection_id: 'ffb11be4-94f0-47a6-bf1c-6d77fbbea1d3',
+        })
+      )
+
+      const app = new ExpressApp()
+      const router = new ItemRouter(app)
+
+      const req: any = {
+        query: { id: validItem.id },
+        body: {
+          item: {
+            ...validItem,
+            collection_id: '6d3fd719-57c1-4436-bec3-7dd954c3fbfe',
+          },
+        },
+        auth: { ethAddress: 'ethAddress' },
+      }
+
+      await expect(router.upsertItem(req)).rejects.toThrowError(
+        "Item can't change between collections"
       )
     })
   })

@@ -354,7 +354,16 @@ export class ItemRouter extends Router {
     }
 
     const dbCollection = await findCollection(itemJSON.collection_id)
-    const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
+
+    if (itemJSON.collection_id && !dbCollection) {
+      throw new HTTPError(
+        'Collection not found',
+        {
+          collectionId: itemJSON.collection_id,
+        },
+        STATUS_CODES.notFound
+      )
+    }
 
     if (dbCollection) {
       const isCollectionOwnerDifferent =
@@ -368,6 +377,8 @@ export class ItemRouter extends Router {
         )
       }
     }
+
+    const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
 
     if (isDbCollectionPublished) {
       if (!dbItem) {

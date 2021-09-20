@@ -83,16 +83,17 @@ describe('when upsertItem is called', () => {
     })
   }
 
-  const mockCollectionFindOne = () => {
+  const mockCollectionFindOne = (merge: any = {}) => {
     collectionFindOneSpy.mockResolvedValueOnce({
       collection_id: testCollectionId,
       eth_address: testItem.eth_address,
+      ...merge,
     })
   }
 
   const mockIsCollectionPublished = () => {
     mockCollectionFindOne()
-    
+
     jest
       .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
       .mockResolvedValueOnce({
@@ -136,7 +137,7 @@ describe('when upsertItem is called', () => {
             },
           },
           auth: {
-            ethAddress: 'ethAddress',
+            ethAddress: testItem.eth_address,
           },
         },
         'Invalid schema'
@@ -158,7 +159,7 @@ describe('when upsertItem is called', () => {
             },
           },
           auth: {
-            ethAddress: 'ethAddress',
+            ethAddress: testItem.eth_address,
           },
         },
         'Can not change is_published or is_approved property'
@@ -180,7 +181,7 @@ describe('when upsertItem is called', () => {
             },
           },
           auth: {
-            ethAddress: 'ethAddress',
+            ethAddress: testItem.eth_address,
           },
         },
         'Can not change is_published or is_approved property'
@@ -201,7 +202,47 @@ describe('when upsertItem is called', () => {
             item: testItem,
           },
           auth: {
-            ethAddress: 'ethAddress',
+            ethAddress: testItem.eth_address,
+          },
+        },
+        'Unauthorized user'
+      )
+    })
+  })
+
+  describe('when the collection provided in the payload does not exists in the db', () => {
+    it('should fail with collection not found message', async () => {
+      await testError(
+        {
+          query: {
+            id: testItem.id,
+          },
+          body: {
+            item: { ...testItem, collection_id: testCollectionId },
+          },
+          auth: {
+            ethAddress: testItem.eth_address,
+          },
+        },
+        'Collection not found'
+      )
+    })
+  })
+
+  describe('when the collection provided in the payload does not belong to the address making the request', () => {
+    it('should fail with unauthorized user message', async () => {
+      mockCollectionFindOne({ eth_address: 'another address' })
+
+      await testError(
+        {
+          query: {
+            id: testItem.id,
+          },
+          body: {
+            item: { ...testItem, collection_id: testCollectionId },
+          },
+          auth: {
+            ethAddress: testItem.eth_address,
           },
         },
         'Unauthorized user'

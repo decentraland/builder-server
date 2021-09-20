@@ -75,11 +75,23 @@ describe('when upsertItem is called', () => {
     return expect(router.upsertItem(req)).resolves.toStrictEqual({})
   }
 
-  const mockIsCollectionPublished = () => {
+  const mockItemFindOne = (merge: any = {}) => {
+    itemFindOneSpy.mockResolvedValueOnce({
+      ...testItem,
+      collection_id: testCollectionId,
+      ...merge,
+    })
+  }
+
+  const mockCollectionFindOne = () => {
     collectionFindOneSpy.mockResolvedValueOnce({
       collection_id: testCollectionId,
       eth_address: testItem.eth_address,
     })
+  }
+
+  const mockIsCollectionPublished = () => {
+    mockCollectionFindOne()
     
     jest
       .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
@@ -91,14 +103,6 @@ describe('when upsertItem is called', () => {
     jest
       .spyOn(peerAPI, 'fetchWearables')
       .mockResolvedValueOnce([{}] as Wearable[])
-  }
-
-  const mockItemFindOne = (merge: any = {}) => {
-    itemFindOneSpy.mockResolvedValueOnce({
-      ...testItem,
-      collection_id: testCollectionId,
-      ...merge,
-    })
   }
 
   describe('when param id is different from payload id', () => {

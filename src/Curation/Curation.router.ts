@@ -6,9 +6,22 @@ import { withAuthentication, AuthRequest } from '../middleware'
 import { Curation } from '.'
 import { hasAccess } from './access'
 import { getMergedCollection } from '../Collection/util'
+import { isCommitteeMember } from '../Committee'
 
 export class CollectionRouter extends Router {
   mount() {
+    this.router.get(
+      '/curations',
+      withAuthentication,
+      server.handleRequest(this.getCurations)
+    )
+
+    this.router.get(
+      '/curations/:collectionId',
+      withAuthentication,
+      server.handleRequest(this.getCuration)
+    )
+
     this.router.post(
       '/curations/:collectionId',
       withAuthentication,
@@ -16,14 +29,37 @@ export class CollectionRouter extends Router {
     )
   }
 
-  insertCuration = async (req: AuthRequest) => {
+  getCuration = async (req: AuthRequest) => {
     const collectionId = server.extractFromReq(req, 'collectionId')
-    const eth_address = req.auth.ethAddress
+    const ethAddress = req.auth.ethAddress
 
-    if (!(await hasAccess(eth_address, collectionId))) {
+    if (!(await hasAccess(ethAddress, collectionId))) {
       throw new HTTPError(
         'Unauthorized',
-        { collectionId, eth_address },
+        { collectionId, ethAddress },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    return Curation.getLatestForCollection(collectionId)
+  }
+
+  getCurations = async (req: AuthRequest) => {
+    const ethAddress = req.auth.ethAddress
+
+    return (await isCommitteeMember(ethAddress))
+      ? Curation.getAll()
+      : Curation.getAllForAddress(ethAddress)
+  }
+
+  insertCuration = async (req: AuthRequest) => {
+    const collectionId = server.extractFromReq(req, 'collectionId')
+    const ethAddress = req.auth.ethAddress
+
+    if (!(await hasAccess(ethAddress, collectionId))) {
+      throw new HTTPError(
+        'Unauthorized',
+        { collectionId, ethAddress },
         STATUS_CODES.unauthorized
       )
     }
@@ -38,7 +74,7 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const curation = await Curation.findLatestForCollection(collection.id)
+    const curation = await Curation.getLatestForCollection(collection.id)
 
     if (curation && collection.reviewed_at < curation.timestamp) {
       throw new HTTPError(

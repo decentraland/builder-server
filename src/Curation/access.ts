@@ -4,13 +4,13 @@ import { Collection, CollectionAttributes } from '../Collection'
 import { getMergedCollection } from '../Collection/util'
 
 export async function hasAccess(
-  eth_address: string,
+  ethAddress: string,
   collectionId: string
 ): Promise<boolean> {
   return (
-    (await isCommitteeMember(eth_address)) ||
-    (await getIsCollectionOwner(collectionId, eth_address)) ||
-    isManager(eth_address, (await getMergedCollection(collectionId)).collection)
+    (await isCommitteeMember(ethAddress)) ||
+    (await getIsCollectionOwner(collectionId, ethAddress)) ||
+    isManager(ethAddress, (await getMergedCollection(collectionId)).collection)
   )
 }
 

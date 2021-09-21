@@ -1,24 +1,38 @@
-import { Model, SQL } from 'decentraland-server'
+import { Model, raw, SQL } from 'decentraland-server'
 import { CurationAttributes } from './Curation.types'
 
 export class Curation extends Model<CurationAttributes> {
   static tableName = 'curations'
 
-  static async findLatestForCollection(collectionId: string) {
-    const result = await this.query<CurationAttributes>(SQL`
-    SELECT * 
-      FROM ${this.tableName}
-      WHERE collection_id = ${collectionId}
-      AND timestamp = (
-        SELECT MAX(timestamp) 
-        FROM ${this.tableName}
-      )
-    `)
+  static getAll = () =>
+    this.query<CurationAttributes>(SQL`
+    SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)} AS c1
+    WHERE timestamp = (
+	    SELECT MAX(timestamp) FROM ${raw(this.tableName)} AS c2
+	    WHERE c1.collection_id = c2.collection_id
+    )`)
 
-    if (result.length === 0) {
-      return undefined
-    }
+  static getAllForAddress = (address: string) =>
+    this.query<CurationAttributes>(SQL`
+    SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)} AS cu1
+    WHERE collection_id IN (
+      SLEECT collection_id FROM ${raw(this.tableName)} AS co
+      WHERE co.eth_address = ${address}
+    )
+    AND timestamp = (
+      SELECT max(timestamp) FROM ${raw(this.tableName)} AS cu2
+      WHERE cu1.collection_id = cu2.collection_id
+    )`)
 
-    return result[0]
+  static getLatestForCollection = async (collectionId: string) => {
+    const query = SQL`
+    SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)}
+    WHERE collection_id = ${collectionId}
+    AND timestamp = (
+      SELECT MAX(timestamp)
+      FROM ${raw(this.tableName)}
+    )`
+
+    return (await this.query<CurationAttributes>(query))[0]
   }
 }

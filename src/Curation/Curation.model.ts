@@ -1,31 +1,24 @@
-import { Model, raw, SQL } from 'decentraland-server'
-
+import { Model, SQL } from 'decentraland-server'
 import { CurationAttributes } from './Curation.types'
 
 export class Curation extends Model<CurationAttributes> {
   static tableName = 'curations'
 
-  static findByContractAddresses(contractAddresses: string[]) {
-    return this.query<CurationAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)}
-      WHERE contract_address = ANY(${contractAddresses})`)
-  }
+  static async findLatestForCollection(collectionId: string) {
+    const result = await this.query<CurationAttributes>(SQL`
+    SELECT * 
+      FROM ${this.tableName}
+      WHERE collection_id = ${collectionId}
+      AND timestamp = (
+        SELECT MAX(timestamp) 
+        FROM ${this.tableName}
+      )
+    `)
 
-  static findByIds(ids: string[]) {
-    return this.query<CurationAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)}
-      WHERE id = ANY(${ids})`)
-  }
+    if (result.length === 0) {
+      return undefined
+    }
 
-  static async isValidName(id: string, name: string) {
-    const counts = await this.query(SQL`
-    SELECT count(*) as count
-      FROM ${raw(this.tableName)}
-      WHERE id != ${id}
-        AND LOWER(name) = ${name.toLowerCase()}`)
-
-    return counts.length > 0 && counts[0].count <= 0
+    return result[0]
   }
 }

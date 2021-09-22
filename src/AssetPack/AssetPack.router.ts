@@ -48,29 +48,12 @@ export class AssetPackRouter extends Router {
     const withAssetPackAuthorization = withModelAuthorization(AssetPack)
 
     /**
-     * Get default asset packs
-     */
-    this.router.get(
-      '/assetPacks/default',
-      server.handleRequest(this.getDefaultAssetPacks)
-    )
-
-    /**
      * Get all asset packs
      */
     this.router.get(
       '/assetPacks',
       withPermissiveAuthentication,
       server.handleRequest(this.getAssetPacks)
-    )
-
-    /**
-     * Get asset packs of an address
-     */
-    this.router.get(
-      '/ownAssetPacks',
-      withAuthentication,
-      server.handleRequest(this.getOwnAssetPacks)
     )
 
     /**
@@ -115,39 +98,34 @@ export class AssetPackRouter extends Router {
     )
   }
 
-  getDefaultAssetPacks = (): Promise<FullAssetPackAttributes[]> => {
-    const tracer = uuidv4()
-    this.logger.info(
-      `Starting request to get the default assets packs with tracer ${tracer}"`
-    )
-
-    return this.logExecutionTime(
-      this.retrieveDefaultAssetPacks,
-      'Get default asset packs',
-      tracer
-    )
-  }
-
-  getOwnAssetPacks = async (req: AuthRequest) => {
-    const tracer = uuidv4()
-    this.logger.info(
-      `Starting request to get the assets packs with tracer ${tracer} and the address "${req.auth.ethAddress}"`
-    )
-
-    return this.logExecutionTime(
-      () => AssetPack.findByEthAddressWithAssets(req.auth.ethAddress),
-      'Get the default asset packs',
-      tracer
-    )
-  }
-
   getAssetPacks = async (req: AuthRequest) => {
     const ethAddress = req.auth ? req.auth.ethAddress : ''
-    let assetPacks: FullAssetPackAttributes[] = []
+    const owner = req.query.owner
     const tracer = uuidv4()
     this.logger.info(
       `Starting request to get the assets packs with tracer ${tracer} and the address "${ethAddress}"`
     )
+
+    // Process the owner query parameter first
+    if (owner && owner === 'default') {
+      return this.logExecutionTime(
+        this.retrieveDefaultAssetPacks,
+        'Get default asset packs',
+        tracer
+      )
+    } else if (owner && owner === ethAddress) {
+      return this.logExecutionTime(
+        () => AssetPack.findByEthAddressWithAssets(ethAddress),
+        'Get the default asset packs',
+        tracer
+      )
+    } else if (owner) {
+      throw new HTTPError(
+        'Unauthorized access to asset packs',
+        STATUS_CODES.unauthorized
+      )
+    }
+    let assetPacks: FullAssetPackAttributes[] = []
 
     // Get default asset packs
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
@@ -158,7 +136,7 @@ export class AssetPackRouter extends Router {
       )
       assetPacks = [...defaultAssetPacks]
       this.logger.info(
-        `[${tracer}] Assets pack lenght after adding the default asset packs: ${assetPacks.length}`
+        `[${tracer}] Assets pack length after adding the default asset packs: ${assetPacks.length}`
       )
     }
 
@@ -173,7 +151,7 @@ export class AssetPackRouter extends Router {
     }
 
     this.logger.info(
-      `[${tracer}] Final assets pack lenght: ${assetPacks.length}`
+      `[${tracer}] Final assets pack length: ${assetPacks.length}`
     )
     return assetPacks
   }

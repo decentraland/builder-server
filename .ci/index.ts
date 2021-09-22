@@ -139,7 +139,7 @@ export = async function main() {
     {
       // @ts-ignore
       healthCheck: {
-        path: '/v1/assetPacks',
+        path: '/v1/info',
         interval: 60,
         timeout: 10,
         unhealthyThreshold: 10,

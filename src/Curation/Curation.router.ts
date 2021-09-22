@@ -8,7 +8,7 @@ import { hasAccess } from './access'
 import { getMergedCollection } from '../Collection/util'
 import { isCommitteeMember } from '../Committee'
 
-export class CollectionRouter extends Router {
+export class CurationRouter extends Router {
   mount() {
     this.router.get(
       '/curations',

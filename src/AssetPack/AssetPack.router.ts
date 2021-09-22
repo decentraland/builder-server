@@ -67,7 +67,11 @@ export class AssetPackRouter extends Router {
     /**
      * Get asset packs of an address
      */
-    this.router.get('/ownAssetPacks', withAuthentication, this.getOwnAssetPacks)
+    this.router.get(
+      '/ownAssetPacks',
+      withAuthentication,
+      server.handleRequest(this.getOwnAssetPacks)
+    )
 
     /**
      * Get asset pack

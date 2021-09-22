@@ -48,6 +48,14 @@ export class AssetPackRouter extends Router {
     const withAssetPackAuthorization = withModelAuthorization(AssetPack)
 
     /**
+     * Get default asset packs
+     */
+    this.router.get(
+      '/assetPacks/default',
+      server.handleRequest(this.getDefaultAssetPacks)
+    )
+
+    /**
      * Get all asset packs
      */
     this.router.get(
@@ -55,6 +63,11 @@ export class AssetPackRouter extends Router {
       withPermissiveAuthentication,
       server.handleRequest(this.getAssetPacks)
     )
+
+    /**
+     * Get asset packs of an address
+     */
+    this.router.get('/ownAssetPacks', withAuthentication, this.getOwnAssetPacks)
 
     /**
      * Get asset pack
@@ -98,6 +111,32 @@ export class AssetPackRouter extends Router {
     )
   }
 
+  getDefaultAssetPacks = (): Promise<FullAssetPackAttributes[]> => {
+    const tracer = uuidv4()
+    this.logger.info(
+      `Starting request to get the default assets packs with tracer ${tracer}"`
+    )
+
+    return this.logExecutionTime(
+      this.retrieveDefaultAssetPacks,
+      'Get default asset packs',
+      tracer
+    )
+  }
+
+  getOwnAssetPacks = async (req: AuthRequest) => {
+    const tracer = uuidv4()
+    this.logger.info(
+      `Starting request to get the assets packs with tracer ${tracer} and the address "${req.auth.ethAddress}"`
+    )
+
+    return this.logExecutionTime(
+      () => AssetPack.findByEthAddressWithAssets(req.auth.ethAddress),
+      'Get the default asset packs',
+      tracer
+    )
+  }
+
   getAssetPacks = async (req: AuthRequest) => {
     const ethAddress = req.auth ? req.auth.ethAddress : ''
     let assetPacks: FullAssetPackAttributes[] = []
@@ -109,7 +148,7 @@ export class AssetPackRouter extends Router {
     // Get default asset packs
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
       const defaultAssetPacks = await this.logExecutionTime(
-        this.getDefaultAssetPacks,
+        this.retrieveDefaultAssetPacks,
         'Get default asset packs',
         tracer
       )
@@ -270,7 +309,9 @@ export class AssetPackRouter extends Router {
     return uploader.single(THUMBNAIL_FILE_NAME)
   }
 
-  private getDefaultAssetPacks = async () => {
+  private retrieveDefaultAssetPacks = async (): Promise<
+    FullAssetPackAttributes[]
+  > => {
     const aDayPassed =
       Date.now() - this.lastDefaultAssetPacksFetch >
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
@@ -287,7 +328,7 @@ export class AssetPackRouter extends Router {
   }
 
   private logExecutionTime = async <T>(
-    functionToMeasure: () => T,
+    functionToMeasure: () => T | Promise<T>,
     name: string,
     tracer: string
   ): Promise<T> => {

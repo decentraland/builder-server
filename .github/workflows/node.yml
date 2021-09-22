@@ -21,6 +21,7 @@ jobs:
           AWS_ACCESS_KEY: 'stub-aws-access-key'
           AWS_ACCESS_SECRET: 'stub-aws-access-secret'
           AWS_BUCKET_NAME: 'stub-aws-bucket-name'
+          MATIC_RPC_URL: 'stub_matic_rpc_url'
       - name: report coverage
         uses: coverallsapp/github-action@master
         with:

@@ -16,6 +16,9 @@ jobs:
       - name: Test
         run: npm run test:coverage
         if: ${{ always() }}
+        env:
+          AWS_ACCESS_KEY: 'stub-access-key'
+          AWS_ACCESS_SECRET: 'stub-access-secret'
       - name: report coverage
         uses: coverallsapp/github-action@master
         with:

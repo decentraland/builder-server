@@ -3,6 +3,7 @@ import { ExpressApp } from '../common/ExpressApp'
 import { isCommitteeMember } from '../Committee'
 import { hasAccess } from './access'
 import { getMergedCollection } from '../Collection/util'
+import { collectionAPI } from '../ethereum/api/collection'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
@@ -30,8 +31,8 @@ describe('when handling a request', () => {
       it('should resolve with the collections provided by Curation.getAll', async () => {
         mockIsComiteeMember.mockResolvedValueOnce(true)
 
-        const getAllSpy = jest
-          .spyOn(Curation, 'getAll')
+        const getAllLatestByCollectionSpy = jest
+          .spyOn(Curation, 'getAllLatestByCollection')
           .mockResolvedValueOnce([])
 
         const req = {
@@ -40,7 +41,7 @@ describe('when handling a request', () => {
 
         await router.getCurations(req)
 
-        expect(getAllSpy).toHaveBeenCalled()
+        expect(getAllLatestByCollectionSpy).toHaveBeenCalled()
       })
     })
 
@@ -48,8 +49,15 @@ describe('when handling a request', () => {
       it('should resolve with the collections provided by Curation.getAllForAddress', async () => {
         mockIsComiteeMember.mockResolvedValueOnce(false)
 
-        const getAllForAddressSpy = jest
-          .spyOn(Curation, 'getAllForAddress')
+        jest
+          .spyOn(collectionAPI, 'fetchCollectionsByAuthorizedUser')
+          .mockResolvedValueOnce([
+            { id: 'collectionId1' },
+            { id: 'collectionId2' },
+          ] as any)
+
+        const getAllLatestForCollectionsSpy = jest
+          .spyOn(Curation, 'getAllLatestForCollections')
           .mockResolvedValueOnce([])
 
         const req = {
@@ -58,7 +66,10 @@ describe('when handling a request', () => {
 
         await router.getCurations(req)
 
-        expect(getAllForAddressSpy).toHaveBeenCalled()
+        expect(getAllLatestForCollectionsSpy).toHaveBeenCalledWith([
+          'collectionId1',
+          'collectionId2',
+        ])
       })
     })
   })

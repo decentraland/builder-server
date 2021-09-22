@@ -4,7 +4,7 @@ import { CurationAttributes } from './Curation.types'
 export class Curation extends Model<CurationAttributes> {
   static tableName = 'curations'
 
-  static getAll() {
+  static getAllLatestByCollection() {
     return this.query<CurationAttributes>(SQL`
     SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)} AS c1
     WHERE timestamp = (
@@ -13,13 +13,10 @@ export class Curation extends Model<CurationAttributes> {
     )`)
   }
 
-  static getAllForAddress(address: string) {
+  static getAllLatestForCollections(collectionIds: string[]) {
     return this.query<CurationAttributes>(SQL`
     SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)} AS cu1
-    WHERE collection_id IN (
-      SLEECT collection_id FROM ${raw(this.tableName)} AS co
-      WHERE co.eth_address = ${address}
-    )
+    WHERE collection_id IN (${collectionIds})
     AND timestamp = (
       SELECT max(timestamp) FROM ${raw(this.tableName)} AS cu2
       WHERE cu1.collection_id = cu2.collection_id

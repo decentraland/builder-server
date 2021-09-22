@@ -7,6 +7,7 @@ import { Curation } from '.'
 import { hasAccess } from './access'
 import { getMergedCollection } from '../Collection/util'
 import { isCommitteeMember } from '../Committee'
+import { collectionAPI } from '../ethereum/api/collection'
 
 export class CurationRouter extends Router {
   mount() {
@@ -47,9 +48,17 @@ export class CurationRouter extends Router {
   getCurations = async (req: AuthRequest) => {
     const ethAddress = req.auth.ethAddress
 
-    return (await isCommitteeMember(ethAddress))
-      ? Curation.getAll()
-      : Curation.getAllForAddress(ethAddress)
+    if (await isCommitteeMember(ethAddress)) {
+      return Curation.getAllLatestByCollection()
+    }
+
+    const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
+      ethAddress
+    )
+
+    const collectionIds = remoteCollections.map((x) => x.id)
+
+    return Curation.getAllLatestForCollections(collectionIds)
   }
 
   insertCuration = async (req: AuthRequest) => {

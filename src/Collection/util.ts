@@ -59,6 +59,9 @@ export const getDBCollection = (id: string) =>
 export const getRemoteCollection = async (contractAddress: string) =>
   (await collectionAPI.fetchCollection(contractAddress)) || undefined
 
+export const getRemoteCollections = async () =>
+  await collectionAPI.fetchCollections()
+
 export const mergeCollections = (
   db: CollectionAttributes,
   remote: CollectionFragment

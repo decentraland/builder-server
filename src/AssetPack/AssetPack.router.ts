@@ -7,7 +7,11 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
-import { withModelExists, withModelAuthorization } from '../middleware'
+import {
+  withModelExists,
+  withModelAuthorization,
+  withLowercaseQueryParams,
+} from '../middleware'
 import {
   withPermissiveAuthentication,
   withAuthentication,
@@ -53,6 +57,7 @@ export class AssetPackRouter extends Router {
     this.router.get(
       '/assetPacks',
       withPermissiveAuthentication,
+      withLowercaseQueryParams(['owner']),
       server.handleRequest(this.getAssetPacks)
     )
 
@@ -99,7 +104,7 @@ export class AssetPackRouter extends Router {
   }
 
   getAssetPacks = async (req: AuthRequest) => {
-    const ethAddress = req.auth ? req.auth.ethAddress : ''
+    const ethAddress = req.auth?.ethAddress ?? ''
     const owner = req.query.owner
     const tracer = uuidv4()
     this.logger.info(
@@ -107,16 +112,16 @@ export class AssetPackRouter extends Router {
     )
 
     // Process the owner query parameter first
-    if (owner && owner === 'default') {
+    if (owner === 'default') {
       return this.logExecutionTime(
         this.retrieveDefaultAssetPacks,
-        'Get default asset packs',
+        'Get default asset packs for default owner',
         tracer
       )
-    } else if (owner && owner === ethAddress) {
+    } else if (ethAddress && owner === ethAddress) {
       return this.logExecutionTime(
         () => AssetPack.findByEthAddressWithAssets(ethAddress),
-        'Get the default asset packs',
+        `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
     } else if (owner) {
@@ -125,6 +130,7 @@ export class AssetPackRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
+
     let assetPacks: FullAssetPackAttributes[] = []
 
     // Get default asset packs

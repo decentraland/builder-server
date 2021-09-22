@@ -137,7 +137,7 @@ export class AssetPackRouter extends Router {
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
       const defaultAssetPacks = await this.logExecutionTime(
         this.retrieveDefaultAssetPacks,
-        'Get default asset packs',
+        `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
       assetPacks = [...defaultAssetPacks]

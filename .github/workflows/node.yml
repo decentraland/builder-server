@@ -17,11 +17,15 @@ jobs:
         run: npm run test:coverage
         if: ${{ always() }}
         env:
-          # Variables required to run tests
-          AWS_ACCESS_KEY: 'stub-aws-access-key'
-          AWS_ACCESS_SECRET: 'stub-aws-access-secret'
-          AWS_BUCKET_NAME: 'stub-aws-bucket-name'
-          MATIC_RPC_URL: 'stub_matic_rpc_url'
+          # Variables required to run tests as they all break
+          # execution if they are not defined
+          AWS_ACCESS_KEY: AWS_ACCESS_KEY
+          AWS_ACCESS_SECRET: AWS_ACCESS_SECRET
+          AWS_BUCKET_NAME: AWS_BUCKET_NAME
+          MATIC_RPC_URL: MATIC_RPC_URL
+          WAREHOUSE_URL: WAREHOUSE_URL
+          WAREHOUSE_TOKEN: WAREHOUSE_TOKEN
+          AUTH0_DOMAIN: AUTH0_DOMAIN
       - name: report coverage
         uses: coverallsapp/github-action@master
         with:

@@ -1,11 +1,9 @@
 import { CollectionAttributes, Collection } from '../../Collection'
-import { ItemAttributes, Item, ItemRarity } from '../../Item'
-import { MetricsAttributes } from '../../Metrics'
+import { ItemAttributes, Item } from '../../Item'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { Wearable } from './peer'
 import { fromUnixTimestamp } from '../../utils/parse'
-import { WearableCategory, WearableData } from '../../Item/wearable/types'
 
 export class Bridge {
   static async consolidateCollections(
@@ -139,43 +137,14 @@ export class Bridge {
   ): ItemAttributes {
     const { wearable } = remoteItem.metadata
 
-    let name: string
-    let description: string
-    let category: WearableCategory | undefined
-    let rarity: ItemRarity | null
-    let data: WearableData
-    let contents: Record<string, string>
-    let metrics: MetricsAttributes
-    let in_catalyst: boolean
-
-    if (catalystItem) {
-      data = catalystItem.data
-      contents = catalystItem.contents
-      metrics = catalystItem.metrics
-      in_catalyst = true
-    } else {
-      data = dbItem.data
-      contents = dbItem.contents
-      metrics = dbItem.metrics
-      in_catalyst = false
-    }
-
-    if (wearable) {
-      name = wearable.name
-      description = wearable.description
-      rarity = wearable.rarity
-      category = wearable.category
-    } else if (catalystItem) {
-      name = catalystItem.name
-      description = catalystItem.description
-      rarity = catalystItem.rarity
-      category = data.category
-    } else {
-      name = dbItem.name
-      description = dbItem.description
-      rarity = dbItem.rarity
-      category = data.category
-    }
+    const name = dbItem.name
+    const description = dbItem.description
+    const data = dbItem.data
+    const category = data.category
+    const rarity = wearable?.rarity || dbItem.rarity
+    const contents = dbItem.contents
+    const metrics = dbItem.metrics
+    const in_catalyst = !!catalystItem
 
     // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder

@@ -3,7 +3,9 @@
 
 node_modules
 dist
+coverage
 
 *.js
+!jest.config.js
 
 .DS_Store

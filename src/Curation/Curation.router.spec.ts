@@ -1,7 +1,7 @@
 import { Curation, CurationRouter } from '.'
 import { ExpressApp } from '../common/ExpressApp'
 import { isCommitteeMember } from '../Committee'
-import { hasAccess } from './access'
+import { hasAccessToCollection } from './access'
 import { getMergedCollection } from '../Collection/util'
 import { collectionAPI } from '../ethereum/api/collection'
 
@@ -12,7 +12,7 @@ jest.mock('../Collection/util')
 jest.mock('./access')
 
 const mockIsComiteeMember = isCommitteeMember as jest.Mock
-const mockHasAccess = hasAccess as jest.Mock
+const mockHasAccessToCollection = hasAccessToCollection as jest.Mock
 const mockGetMergedCollection = getMergedCollection as jest.Mock
 
 describe('when handling a request', () => {
@@ -77,7 +77,7 @@ describe('when handling a request', () => {
   describe('when trying to obtain the latest curation for a collection', () => {
     describe('when the caller has no access', () => {
       it('should reject with an unauthorized message', async () => {
-        mockHasAccess.mockResolvedValueOnce(false)
+        mockHasAccessToCollection.mockResolvedValueOnce(false)
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
@@ -92,7 +92,7 @@ describe('when handling a request', () => {
 
     describe('when everything is correct', () => {
       it('should resolve with the expected curation', async () => {
-        mockHasAccess.mockResolvedValueOnce(true)
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
         jest
           .spyOn(Curation, 'getLatestForCollection')
           .mockResolvedValueOnce({} as any)
@@ -110,7 +110,7 @@ describe('when handling a request', () => {
   describe('when trying to insert a new curation', () => {
     describe('when the caller has no access', () => {
       it('should reject with an unauthorized message', async () => {
-        mockHasAccess.mockResolvedValueOnce(false)
+        mockHasAccessToCollection.mockResolvedValueOnce(false)
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
@@ -125,7 +125,7 @@ describe('when handling a request', () => {
 
     describe('when the collection does not exist', () => {
       it('should reject with collection not found message', async () => {
-        mockHasAccess.mockResolvedValueOnce(true)
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
         mockGetMergedCollection.mockResolvedValueOnce({ collection: undefined })
 
         const req = {
@@ -141,7 +141,7 @@ describe('when handling a request', () => {
 
     describe('when the collection has a pending review', () => {
       it('should reject with an ongoing review message', async () => {
-        mockHasAccess.mockResolvedValueOnce(true)
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
 
         mockGetMergedCollection.mockResolvedValueOnce({
           collection: { reviewed_at: new Date(2000, 0) },
@@ -164,7 +164,7 @@ describe('when handling a request', () => {
 
     describe('when everything is fine', () => {
       it('should resolve with an upserted curation', async () => {
-        mockHasAccess.mockResolvedValueOnce(true)
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
 
         mockGetMergedCollection.mockResolvedValueOnce({
           collection: { reviewed_at: new Date(2000, 1) },

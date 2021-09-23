@@ -4,7 +4,7 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, AuthRequest } from '../middleware'
 import { Curation } from '.'
-import { hasAccess } from './access'
+import { hasAccessToCollection } from './access'
 import { getMergedCollection } from '../Collection/util'
 import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -34,7 +34,7 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'collectionId')
     const ethAddress = req.auth.ethAddress
 
-    if (!(await hasAccess(ethAddress, collectionId))) {
+    if (!(await hasAccessToCollection(ethAddress, collectionId))) {
       throw new HTTPError(
         'Unauthorized',
         { collectionId, ethAddress },
@@ -65,7 +65,7 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'collectionId')
     const ethAddress = req.auth.ethAddress
 
-    if (!(await hasAccess(ethAddress, collectionId))) {
+    if (!(await hasAccessToCollection(ethAddress, collectionId))) {
       throw new HTTPError(
         'Unauthorized',
         { collectionId, ethAddress },

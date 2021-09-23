@@ -3,7 +3,7 @@ import { Ownable } from '../Ownable'
 import { Collection, CollectionAttributes } from '../Collection'
 import { getMergedCollection } from '../Collection/util'
 
-export async function hasAccess(
+export async function hasAccessToCollection(
   ethAddress: string,
   collectionId: string
 ): Promise<boolean> {

@@ -127,6 +127,7 @@ export class AssetPackRouter extends Router {
     } else if (owner) {
       throw new HTTPError(
         'Unauthorized access to asset packs',
+        { ethAddress },
         STATUS_CODES.unauthorized
       )
     }

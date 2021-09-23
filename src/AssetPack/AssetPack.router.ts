@@ -7,7 +7,11 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
-import { withModelExists, withModelAuthorization } from '../middleware'
+import {
+  withModelExists,
+  withModelAuthorization,
+  withLowercaseQueryParams,
+} from '../middleware'
 import {
   withPermissiveAuthentication,
   withAuthentication,
@@ -53,6 +57,7 @@ export class AssetPackRouter extends Router {
     this.router.get(
       '/assetPacks',
       withPermissiveAuthentication,
+      withLowercaseQueryParams(['owner']),
       server.handleRequest(this.getAssetPacks)
     )
 
@@ -99,23 +104,45 @@ export class AssetPackRouter extends Router {
   }
 
   getAssetPacks = async (req: AuthRequest) => {
-    const ethAddress = req.auth ? req.auth.ethAddress : ''
-    let assetPacks: FullAssetPackAttributes[] = []
+    const ethAddress = req.auth?.ethAddress ?? ''
+    const owner = req.query.owner
     const tracer = uuidv4()
     this.logger.info(
       `Starting request to get the assets packs with tracer ${tracer} and the address "${ethAddress}"`
     )
 
+    // Process the owner query parameter first
+    if (owner === 'default') {
+      return this.logExecutionTime(
+        this.retrieveDefaultAssetPacks,
+        'Get default asset packs for default owner',
+        tracer
+      )
+    } else if (ethAddress && owner === ethAddress) {
+      return this.logExecutionTime(
+        () => AssetPack.findByEthAddressWithAssets(ethAddress),
+        `Get the user\'s (${ethAddress}) asset packs`,
+        tracer
+      )
+    } else if (owner) {
+      throw new HTTPError(
+        'Unauthorized access to asset packs',
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    let assetPacks: FullAssetPackAttributes[] = []
+
     // Get default asset packs
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
       const defaultAssetPacks = await this.logExecutionTime(
-        this.getDefaultAssetPacks,
-        'Get default asset packs',
+        this.retrieveDefaultAssetPacks,
+        `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
       assetPacks = [...defaultAssetPacks]
       this.logger.info(
-        `[${tracer}] Assets pack lenght after adding the default asset packs: ${assetPacks.length}`
+        `[${tracer}] Assets pack length after adding the default asset packs: ${assetPacks.length}`
       )
     }
 
@@ -130,7 +157,7 @@ export class AssetPackRouter extends Router {
     }
 
     this.logger.info(
-      `[${tracer}] Final assets pack lenght: ${assetPacks.length}`
+      `[${tracer}] Final assets pack length: ${assetPacks.length}`
     )
     return assetPacks
   }
@@ -270,7 +297,9 @@ export class AssetPackRouter extends Router {
     return uploader.single(THUMBNAIL_FILE_NAME)
   }
 
-  private getDefaultAssetPacks = async () => {
+  private retrieveDefaultAssetPacks = async (): Promise<
+    FullAssetPackAttributes[]
+  > => {
     const aDayPassed =
       Date.now() - this.lastDefaultAssetPacksFetch >
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
@@ -287,7 +316,7 @@ export class AssetPackRouter extends Router {
   }
 
   private logExecutionTime = async <T>(
-    functionToMeasure: () => T,
+    functionToMeasure: () => T | Promise<T>,
     name: string,
     tracer: string
   ): Promise<T> => {

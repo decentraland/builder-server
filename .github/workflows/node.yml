@@ -26,9 +26,7 @@ jobs:
           WAREHOUSE_URL: WAREHOUSE_URL
           WAREHOUSE_TOKEN: WAREHOUSE_TOKEN
           AUTH0_DOMAIN: AUTH0_DOMAIN
-      # # Not working right now because of the lack of tests
-      # # Uncomment when more are added
-      # - name: report coverage
-      #   uses: coverallsapp/github-action@master
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: report coverage
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

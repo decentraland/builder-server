@@ -39,7 +39,8 @@ const validator = getValidator()
 
 export class AssetPackRouter extends Router {
   defaultAssetPacks: FullAssetPackAttributes[] = []
-  lastDefaultAssetPacksFetch = Date.now()
+  defaultAssetPacksCachedResponse: string | null = null
+  lastDefaultAssetPacksFetch: number = 0
   private logger: ILoggerComponent.ILogger
 
   constructor(router: ExpressApp | express.Router, logger: ILoggerComponent) {
@@ -58,7 +59,7 @@ export class AssetPackRouter extends Router {
       '/assetPacks',
       withPermissiveAuthentication,
       withLowercaseQueryParams(['owner']),
-      server.handleRequest(this.getAssetPacks)
+      this.getAssetPacks
     )
 
     /**
@@ -91,7 +92,7 @@ export class AssetPackRouter extends Router {
     )
 
     /**
-     * Uplaod asset pack thumbnail
+     * Upload asset pack thumbnail
      */
     this.router.post(
       '/assetPacks/:id/thumbnail',
@@ -103,8 +104,11 @@ export class AssetPackRouter extends Router {
     )
   }
 
-  getAssetPacks = async (req: AuthRequest) => {
-    const ethAddress = req.auth?.ethAddress ?? ''
+  getAssetPacks = async (
+    req: express.Request,
+    res: express.Response
+  ): Promise<unknown> => {
+    const ethAddress = (req as AuthRequest).auth?.ethAddress ?? ''
     const owner = req.query.owner
     const tracer = uuidv4()
     this.logger.info(
@@ -113,17 +117,14 @@ export class AssetPackRouter extends Router {
 
     // Process the owner query parameter first
     if (owner === 'default') {
-      return this.logExecutionTime(
-        this.retrieveDefaultAssetPacks,
-        'Get default asset packs for default owner',
-        tracer
-      )
+      return this.sendDefaultAssetPacksRaw(res, tracer)
     } else if (ethAddress && owner === ethAddress) {
-      return this.logExecutionTime(
+      const usersAssetPacks = await this.logExecutionTime(
         () => AssetPack.findByEthAddressWithAssets(ethAddress),
         `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
+      return res.json({ ok: true, data: usersAssetPacks })
     } else if (owner) {
       throw new HTTPError(
         'Unauthorized access to asset packs',
@@ -134,11 +135,29 @@ export class AssetPackRouter extends Router {
 
     let assetPacks: FullAssetPackAttributes[] = []
 
+    // Get user asset packs
+    if (ethAddress) {
+      const userAssetPacks = await this.logExecutionTime(
+        () => AssetPack.findByEthAddressWithAssets(ethAddress),
+        `Get the user\'s (${ethAddress}) asset packs`,
+        tracer
+      )
+
+      // If the user doesn't have any asset packs, return the default asset packs
+      if (userAssetPacks.length === 0) {
+        return this.sendDefaultAssetPacksRaw(res, tracer)
+      }
+
+      assetPacks = [...assetPacks, ...userAssetPacks]
+    } else {
+      return this.sendDefaultAssetPacksRaw(res, tracer)
+    }
+
     // Get default asset packs
     if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
       const defaultAssetPacks = await this.logExecutionTime(
         this.retrieveDefaultAssetPacks,
-        `Get the user\'s (${ethAddress}) asset packs`,
+        'Get the default asset packs',
         tracer
       )
       assetPacks = [...defaultAssetPacks]
@@ -147,20 +166,11 @@ export class AssetPackRouter extends Router {
       )
     }
 
-    // Get user asset packs
-    if (ethAddress) {
-      const userAssetPacks = await this.logExecutionTime(
-        () => AssetPack.findByEthAddressWithAssets(ethAddress),
-        'Get the default asset packs',
-        tracer
-      )
-      assetPacks = [...assetPacks, ...userAssetPacks]
-    }
-
     this.logger.info(
       `[${tracer}] Final assets pack length: ${assetPacks.length}`
     )
-    return assetPacks
+
+    return res.json({ ok: true, data: assetPacks })
   }
 
   getAssetPack = async (req: AuthRequest) => {
@@ -298,9 +308,7 @@ export class AssetPackRouter extends Router {
     return uploader.single(THUMBNAIL_FILE_NAME)
   }
 
-  private retrieveDefaultAssetPacks = async (): Promise<
-    FullAssetPackAttributes[]
-  > => {
+  private checkAndUpdateDefaultAssetPacksCache = async () => {
     const aDayPassed =
       Date.now() - this.lastDefaultAssetPacksFetch >
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
@@ -310,9 +318,43 @@ export class AssetPackRouter extends Router {
         DEFAULT_ETH_ADDRESS
       )
       this.defaultAssetPacks = this.sanitize(defaultAssetPacks)
+      this.defaultAssetPacksCachedResponse = JSON.stringify({
+        ok: true,
+        data: this.defaultAssetPacks,
+      })
       this.lastDefaultAssetPacksFetch = Date.now()
     }
+  }
 
+  private sendDefaultAssetPacksRaw = async (
+    res: express.Response,
+    tracer: string
+  ) => {
+    const defaultAssetPacksRaw = await this.logExecutionTime(
+      this.getDefaultAssetPacksRaw,
+      'Get default asset packs for default owner',
+      tracer
+    )
+    res.setHeader('Content-Type', 'application/json')
+    res.status(200).send(defaultAssetPacksRaw)
+  }
+
+  private getDefaultAssetPacksRaw = async (): Promise<string> => {
+    await this.checkAndUpdateDefaultAssetPacksCache()
+    if (!this.defaultAssetPacksCachedResponse) {
+      throw new HTTPError(
+        'Default asset packs buffer is not cached yet',
+        null,
+        STATUS_CODES.error
+      )
+    }
+    return this.defaultAssetPacksCachedResponse!
+  }
+
+  private retrieveDefaultAssetPacks = async (): Promise<
+    FullAssetPackAttributes[]
+  > => {
+    await this.checkAndUpdateDefaultAssetPacksCache()
     return this.defaultAssetPacks
   }
 

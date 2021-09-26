@@ -1,5 +1,6 @@
 export type CollectionAttributes = {
   id: string // uuid
+  urn: string | null
   name: string
   eth_address: string
   salt: string
@@ -18,6 +19,7 @@ export const collectionSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
+    urn: { type: ['string'] },
     name: { type: 'string', maxLength: 32 },
     eth_address: { type: 'string' },
     salt: { type: ['string', 'null'] },

@@ -17,6 +17,7 @@ export enum ItemRarity {
 
 export type ItemAttributes = {
   id: string // uuid
+  urn: string | null
   name: string
   description: string
   thumbnail: string
@@ -42,6 +43,7 @@ export const itemSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
+    urn: { type: 'string' },
     name: { type: 'string', maxLength: 32 },
     description: { type: ['string', 'null'], maxLength: 64 },
     thumbnail: { type: 'string' },

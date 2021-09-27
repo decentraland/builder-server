@@ -11,6 +11,8 @@ export const up = (pgm: MigrationBuilder) => {
       id: { type: 'UUID', primaryKey: true, unique: true, notNull: true },
       collection_id: { type: 'UUID', notNull: true },
       timestamp: { type: 'TIMESTAMP', notNull: true },
+      created_at: { type: 'TIMESTAMP', notNull: true },
+      updated_at: { type: 'TIMESTAMP', notNull: true },
     },
     {
       ifNotExists: true,

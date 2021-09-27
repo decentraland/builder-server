@@ -102,10 +102,14 @@ export class CurationRouter extends Router {
       )
     }
 
-    return new Curation({
+    const date = new Date()
+
+    return Curation.create({
       id: uuid(),
       collection_id: collectionId,
-      timestamp: new Date(),
-    }).upsert()
+      timestamp: date,
+      created_at: date,
+      updated_at: date,
+    })
   }
 }

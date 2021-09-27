@@ -74,7 +74,9 @@ describe('when handling a request', () => {
 
         await router.getCurations(req)
 
-        expect(fetchCollectionsByAuthorizedUserSpy).toHaveBeenCalledWith("ethAddress")
+        expect(fetchCollectionsByAuthorizedUserSpy).toHaveBeenCalledWith(
+          'ethAddress'
+        )
 
         expect(findByContractAddressesSpy).toHaveBeenCalledWith([
           'contractAddress1',
@@ -189,7 +191,9 @@ describe('when handling a request', () => {
           .spyOn(Curation, 'getLatestForCollection')
           .mockResolvedValueOnce({ timestamp: new Date(2000, 0) } as any)
 
-        jest.spyOn(Curation, 'upsert').mockResolvedValueOnce({} as any)
+        const createSpy = jest
+          .spyOn(Curation, 'create')
+          .mockResolvedValueOnce({} as any)
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
@@ -197,6 +201,14 @@ describe('when handling a request', () => {
         } as any
 
         await expect(router.insertCuration(req)).resolves.toStrictEqual({})
+
+        expect(createSpy).toHaveBeenCalledWith({
+          collection_id: 'collectionId',
+          created_at: expect.any(Date),
+          id: expect.any(String),
+          timestamp: expect.any(Date),
+          updated_at: expect.any(Date),
+        })
       })
     })
   })

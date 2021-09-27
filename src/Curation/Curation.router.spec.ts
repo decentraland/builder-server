@@ -4,6 +4,7 @@ import { isCommitteeMember } from '../Committee'
 import { hasAccessToCollection } from './access'
 import { getMergedCollection } from '../Collection/util'
 import { collectionAPI } from '../ethereum/api/collection'
+import { Collection } from '../Collection'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
@@ -28,7 +29,7 @@ describe('when handling a request', () => {
 
   describe('when trying to obtain a list of curations', () => {
     describe('when the caller belongs to the commitee', () => {
-      it('should resolve with the collections provided by Curation.getAll', async () => {
+      it('should resolve with the collections provided by Curation.getAllLatestByCollection', async () => {
         mockIsComiteeMember.mockResolvedValueOnce(true)
 
         const getAllLatestByCollectionSpy = jest
@@ -46,11 +47,18 @@ describe('when handling a request', () => {
     })
 
     describe('when the caller does not belong to the commitee', () => {
-      it('should resolve with the collections provided by Curation.getAllForAddress', async () => {
+      it('should resolve with the collections provided by Curation.getAllLatestForCollections', async () => {
         mockIsComiteeMember.mockResolvedValueOnce(false)
 
-        jest
+        const fetchCollectionsByAuthorizedUserSpy = jest
           .spyOn(collectionAPI, 'fetchCollectionsByAuthorizedUser')
+          .mockResolvedValueOnce([
+            { id: 'contractAddress1' },
+            { id: 'contractAddress2' },
+          ] as any)
+
+        const findByContractAddressesSpy = jest
+          .spyOn(Collection, 'findByContractAddresses')
           .mockResolvedValueOnce([
             { id: 'collectionId1' },
             { id: 'collectionId2' },
@@ -65,6 +73,13 @@ describe('when handling a request', () => {
         } as any
 
         await router.getCurations(req)
+
+        expect(fetchCollectionsByAuthorizedUserSpy).toHaveBeenCalledWith("ethAddress")
+
+        expect(findByContractAddressesSpy).toHaveBeenCalledWith([
+          'contractAddress1',
+          'contractAddress2',
+        ])
 
         expect(getAllLatestForCollectionsSpy).toHaveBeenCalledWith([
           'collectionId1',

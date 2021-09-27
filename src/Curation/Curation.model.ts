@@ -16,7 +16,7 @@ export class Curation extends Model<CurationAttributes> {
   static getAllLatestForCollections(collectionIds: string[]) {
     return this.query<CurationAttributes>(SQL`
     SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)} AS cu1
-    WHERE collection_id IN (${collectionIds})
+    WHERE collection_id = ANY(${collectionIds})
     AND timestamp = (
       SELECT max(timestamp) FROM ${raw(this.tableName)} AS cu2
       WHERE cu1.collection_id = cu2.collection_id

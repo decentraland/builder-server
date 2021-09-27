@@ -155,8 +155,8 @@ export class AssetPackRouter extends Router {
 
     // Get default asset packs
     if (ethAddress !== DEFAULT_ETH_ADDRESS) {
-      const defaultAssetPacks = await this.logExecutionTime(
-        this.retrieveDefaultAssetPacks,
+      const [defaultAssetPacks] = await this.logExecutionTime(
+        this.getDefaultAssetPacks,
         'Get the default asset packs',
         tracer
       )
@@ -308,7 +308,22 @@ export class AssetPackRouter extends Router {
     return uploader.single(THUMBNAIL_FILE_NAME)
   }
 
-  private checkAndUpdateDefaultAssetPacksCache = async () => {
+  private sendDefaultAssetPacksRaw = async (
+    res: express.Response,
+    tracer: string
+  ) => {
+    const [, defaultAssetPacksRaw] = await this.logExecutionTime(
+      this.getDefaultAssetPacks,
+      'Get default asset packs for default owner',
+      tracer
+    )
+    res.setHeader('Content-Type', 'application/json')
+    res.status(200).send(defaultAssetPacksRaw)
+  }
+
+  private getDefaultAssetPacks = async (): Promise<
+    [FullAssetPackAttributes[], string]
+  > => {
     const currentTimestamp = Date.now()
     const aDayPassed =
       currentTimestamp - this.lastDefaultAssetPacksFetch >
@@ -325,23 +340,7 @@ export class AssetPackRouter extends Router {
       })
       this.lastDefaultAssetPacksFetch = currentTimestamp
     }
-  }
 
-  private sendDefaultAssetPacksRaw = async (
-    res: express.Response,
-    tracer: string
-  ) => {
-    const defaultAssetPacksRaw = await this.logExecutionTime(
-      this.getDefaultAssetPacksRaw,
-      'Get default asset packs for default owner',
-      tracer
-    )
-    res.setHeader('Content-Type', 'application/json')
-    res.status(200).send(defaultAssetPacksRaw)
-  }
-
-  private getDefaultAssetPacksRaw = async (): Promise<string> => {
-    await this.checkAndUpdateDefaultAssetPacksCache()
     if (!this.defaultAssetPacksCachedResponse) {
       throw new HTTPError(
         'Default asset packs buffer is not cached yet',
@@ -349,14 +348,7 @@ export class AssetPackRouter extends Router {
         STATUS_CODES.error
       )
     }
-    return this.defaultAssetPacksCachedResponse!
-  }
-
-  private retrieveDefaultAssetPacks = async (): Promise<
-    FullAssetPackAttributes[]
-  > => {
-    await this.checkAndUpdateDefaultAssetPacksCache()
-    return this.defaultAssetPacks
+    return [this.defaultAssetPacks, this.defaultAssetPacksCachedResponse!]
   }
 
   private logExecutionTime = async <T>(

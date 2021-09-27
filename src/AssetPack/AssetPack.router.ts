@@ -38,9 +38,9 @@ const DEFAULT_ASSET_PACK_CACHE = env.get('DEFAULT_ASSET_PACK_CACHE', 1440000)
 const validator = getValidator()
 
 export class AssetPackRouter extends Router {
-  defaultAssetPacks: FullAssetPackAttributes[] = []
-  defaultAssetPacksCachedResponse: string | null = null
-  lastDefaultAssetPacksFetch: number = 0
+  private defaultAssetPacks: FullAssetPackAttributes[] = []
+  private defaultAssetPacksCachedResponse: string | null = null
+  private lastDefaultAssetPacksFetch: number = 0
   private logger: ILoggerComponent.ILogger
 
   constructor(router: ExpressApp | express.Router, logger: ILoggerComponent) {
@@ -154,13 +154,13 @@ export class AssetPackRouter extends Router {
     }
 
     // Get default asset packs
-    if (!ethAddress || ethAddress !== DEFAULT_ETH_ADDRESS) {
+    if (ethAddress !== DEFAULT_ETH_ADDRESS) {
       const defaultAssetPacks = await this.logExecutionTime(
         this.retrieveDefaultAssetPacks,
         'Get the default asset packs',
         tracer
       )
-      assetPacks = [...defaultAssetPacks]
+      assetPacks = [...assetPacks, ...defaultAssetPacks]
       this.logger.info(
         `[${tracer}] Assets pack length after adding the default asset packs: ${assetPacks.length}`
       )
@@ -309,8 +309,9 @@ export class AssetPackRouter extends Router {
   }
 
   private checkAndUpdateDefaultAssetPacksCache = async () => {
+    const currentTimestamp = Date.now()
     const aDayPassed =
-      Date.now() - this.lastDefaultAssetPacksFetch >
+      currentTimestamp - this.lastDefaultAssetPacksFetch >
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
 
     if (this.defaultAssetPacks.length === 0 || aDayPassed) {
@@ -322,7 +323,7 @@ export class AssetPackRouter extends Router {
         ok: true,
         data: this.defaultAssetPacks,
       })
-      this.lastDefaultAssetPacksFetch = Date.now()
+      this.lastDefaultAssetPacksFetch = currentTimestamp
     }
   }
 

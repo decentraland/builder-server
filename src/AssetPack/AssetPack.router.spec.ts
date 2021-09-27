@@ -2,8 +2,43 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { AssetPackRouter } from './AssetPack.router'
 import { ExpressApp } from '../common/ExpressApp'
 import { AssetPack } from './AssetPack.model'
+import { getDefaultEthAddress } from './utils'
 
 jest.mock('./AssetPack.model')
+
+const anAssetPack = {
+  id: 'anId',
+  title: 'aTitle',
+  thumbnail: 'aThumbnail',
+  eth_address: 'anAddress',
+  is_deleted: false,
+  assets: [],
+  created_at: new Date(),
+  updated_at: new Date(),
+}
+
+const anotherAssetPack = {
+  id: 'anotherId',
+  title: 'anotherTitle',
+  thumbnail: 'anotherThumbnail',
+  eth_address: 'anotherAddress',
+  is_deleted: false,
+  assets: [],
+  created_at: new Date(),
+  updated_at: new Date(),
+}
+
+const aSanitizedAssetPack = {
+  ...anAssetPack,
+} as any
+
+delete aSanitizedAssetPack.is_deleted
+
+const anotherSanitizedAssetPack = {
+  ...anotherAssetPack,
+} as any
+
+delete anotherSanitizedAssetPack.is_deleted
 
 describe('something', () => {
   const logger = {
@@ -37,8 +72,9 @@ describe('something', () => {
     }
     res.status.mockReturnValue(res)
   })
+
   afterEach(() => {
-    jest.restoreAllMocks()
+    jest.resetAllMocks()
   })
 
   describe('when getting the asset packs', () => {
@@ -47,24 +83,26 @@ describe('something', () => {
         beforeEach(async () => {
           req.query = { owner: 'default' }
           ;(AssetPack.findByEthAddressWithAssets as jest.Mock).mockResolvedValueOnce(
-            []
+            [anAssetPack]
           )
           await router.getAssetPacks(req as any, res as any)
         })
 
-        it('should send the default raw assets packs', async () => {
-          expect(res.send).toHaveBeenLastCalledWith('{"ok":true,"data":[]}')
+        it('should send the default raw assets packs', () => {
+          expect(res.send).toHaveBeenCalledWith(
+            `{"ok":true,"data":[${JSON.stringify(aSanitizedAssetPack)}]}`
+          )
         })
 
-        it('should have set the response headers to application/json', async () => {
-          expect(res.setHeader).toHaveBeenLastCalledWith(
+        it('should have set the response headers to application/json', () => {
+          expect(res.setHeader).toHaveBeenCalledWith(
             'Content-Type',
             'application/json'
           )
         })
 
         it('should have set the response status to 200', () => {
-          expect(res.status).toHaveBeenLastCalledWith(200)
+          expect(res.status).toHaveBeenCalledWith(200)
         })
       })
 
@@ -73,13 +111,16 @@ describe('something', () => {
           req.query = { owner: 'anOwner' }
           req.auth.ethAddress = 'anOwner'
           ;(AssetPack.findByEthAddressWithAssets as jest.Mock).mockResolvedValueOnce(
-            []
+            [anAssetPack]
           )
         })
 
         it('should send the assets of the user', async () => {
           await router.getAssetPacks(req as any, res as any)
-          expect(res.json).toHaveBeenCalledWith({ ok: true, data: [] })
+          expect(res.json).toHaveBeenCalledWith({
+            ok: true,
+            data: [anAssetPack],
+          })
         })
       })
 
@@ -109,26 +150,155 @@ describe('something', () => {
 
         describe("when the user doesn't have any asset packs", () => {
           beforeEach(async () => {
-            ;(AssetPack.findByEthAddressWithAssets as jest.Mock).mockResolvedValue(
+            // First mock to get the user's asset packs
+            ;(AssetPack.findByEthAddressWithAssets as jest.Mock).mockResolvedValueOnce(
               []
+            )
+            // Second mock to get the default asset packs
+            ;(AssetPack.findByEthAddressWithAssets as jest.Mock).mockResolvedValueOnce(
+              [aSanitizedAssetPack]
             )
             await router.getAssetPacks(req as any, res as any)
           })
 
-          it('should send the default raw assets packs', async () => {
-            expect(res.send).toHaveBeenLastCalledWith('{"ok":true,"data":[]}')
+          it('should send the default raw assets packs', () => {
+            expect(res.send).toHaveBeenCalledWith(
+              `{"ok":true,"data":[${JSON.stringify(aSanitizedAssetPack)}]}`
+            )
           })
 
-          it('should have set the response headers to application/json', async () => {
-            expect(res.setHeader).toHaveBeenLastCalledWith(
+          it('should have set the response headers to application/json', () => {
+            expect(res.setHeader).toHaveBeenCalledWith(
               'Content-Type',
               'application/json'
             )
           })
 
           it('should have set the response status to 200', () => {
-            expect(res.status).toHaveBeenLastCalledWith(200)
+            expect(res.status).toHaveBeenCalledWith(200)
           })
+        })
+
+        describe('when the user has asset packs', () => {
+          beforeEach(async () => {
+            // The first mock gets the user's asset packs and the second one the default ones
+            ;(AssetPack.findByEthAddressWithAssets as jest.Mock)
+              .mockResolvedValueOnce([aSanitizedAssetPack])
+              .mockResolvedValueOnce([anotherSanitizedAssetPack])
+          })
+
+          describe("when the user's address is not the default address", () => {
+            it("should send the user's assets alongside with the default assets", async () => {
+              await router.getAssetPacks(req as any, res as any)
+              expect(res.json).toHaveBeenCalledWith({
+                data: [aSanitizedAssetPack, anotherSanitizedAssetPack],
+                ok: true,
+              })
+            })
+          })
+
+          describe("when the user's address is the default address", () => {
+            beforeEach(() => {
+              req.auth.ethAddress = getDefaultEthAddress()
+            })
+
+            it("should send the user's assets", async () => {
+              await router.getAssetPacks(req as any, res as any)
+              expect(res.json).toHaveBeenCalledWith({
+                data: [aSanitizedAssetPack],
+                ok: true,
+              })
+            })
+          })
+        })
+      })
+
+      describe("when the authentication module doesn't have the user's address", () => {
+        beforeEach(async () => {
+          req.auth.ethAddress = undefined
+          ;(AssetPack.findByEthAddressWithAssets as jest.Mock).mockResolvedValueOnce(
+            [aSanitizedAssetPack]
+          )
+
+          await router.getAssetPacks(req as any, res as any)
+        })
+
+        it('should send the default raw assets packs', () => {
+          expect(res.send).toHaveBeenCalledWith(
+            `{"ok":true,"data":[${JSON.stringify(aSanitizedAssetPack)}]}`
+          )
+        })
+
+        it('should have set the response headers to application/json', () => {
+          expect(res.setHeader).toHaveBeenCalledWith(
+            'Content-Type',
+            'application/json'
+          )
+        })
+
+        it('should have set the response status to 200', () => {
+          expect(res.status).toHaveBeenCalledWith(200)
+        })
+      })
+    })
+
+    describe('when retrieving the users and the default assets in the same day', () => {
+      beforeEach(async () => {
+        req.query = {}
+        req.auth.ethAddress = 'anAddress'
+        ;(AssetPack.findByEthAddressWithAssets as jest.Mock)
+          .mockResolvedValueOnce([aSanitizedAssetPack])
+          .mockResolvedValueOnce([anotherSanitizedAssetPack])
+        await router.getAssetPacks(req as any, res as any)
+        ;(AssetPack.findByEthAddressWithAssets as jest.Mock)
+          .mockReset()
+          .mockResolvedValueOnce([aSanitizedAssetPack])
+        await router.getAssetPacks(req as any, res as any)
+      })
+
+      it('should only call the method to retrieve the data from the DB once for the user assets', async () => {
+        expect(
+          AssetPack.findByEthAddressWithAssets as jest.Mock
+        ).toHaveBeenCalledTimes(1)
+      })
+
+      it('should send the user assets with the default assets from the cache', () => {
+        expect(res.json).toHaveBeenCalledWith({
+          data: [aSanitizedAssetPack, anotherSanitizedAssetPack],
+          ok: true,
+        })
+      })
+    })
+
+    describe('when retrieving the users and the default assets when a day has passed', () => {
+      beforeEach(async () => {
+        req.query = {}
+        req.auth.ethAddress = 'anAddress'
+        // Get the assets from the DB and cache them
+        jest.spyOn(Date, 'now').mockReturnValueOnce(172800000)
+        ;(AssetPack.findByEthAddressWithAssets as jest.Mock)
+          .mockResolvedValueOnce([aSanitizedAssetPack])
+          .mockResolvedValueOnce([anotherSanitizedAssetPack])
+        await router.getAssetPacks(req as any, res as any)
+        // Get the assets from the DB again, after more than one day passed and cache them
+        jest.spyOn(Date, 'now').mockReturnValueOnce(432000000)
+        ;(AssetPack.findByEthAddressWithAssets as jest.Mock)
+          .mockReset()
+          .mockResolvedValueOnce([aSanitizedAssetPack])
+          .mockResolvedValueOnce([anotherSanitizedAssetPack])
+        await router.getAssetPacks(req as any, res as any)
+      })
+
+      it('should call the method to retrieve the assets from the DB twice, once for the users assets and another one for the default assets', async () => {
+        expect(
+          AssetPack.findByEthAddressWithAssets as jest.Mock
+        ).toHaveBeenCalledTimes(2)
+      })
+
+      it('should send the user assets with the default assets from the cache', () => {
+        expect(res.json).toHaveBeenCalledWith({
+          data: [aSanitizedAssetPack, anotherSanitizedAssetPack],
+          ok: true,
         })
       })
     })

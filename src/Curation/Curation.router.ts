@@ -66,10 +66,8 @@ export class CurationRouter extends Router {
     )
 
     const dbCollectionIds = dbCollections.map((collection) => collection.id)
-    
-    const curations = await Curation.getAllLatestForCollections(dbCollectionIds)
 
-    return curations
+    return Curation.getAllLatestForCollections(dbCollectionIds)
   }
 
   insertCuration = async (req: AuthRequest) => {

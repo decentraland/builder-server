@@ -23,7 +23,9 @@ export class Curation extends Model<CurationAttributes> {
     )`)
   }
 
-  static async getLatestForCollection(collectionId: string) {
+  static async getLatestForCollection(
+    collectionId: string
+  ): Promise<CurationAttributes | undefined> {
     const query = SQL`
     SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)}
     WHERE collection_id = ${collectionId}

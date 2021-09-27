@@ -204,10 +204,10 @@ describe('when handling a request', () => {
 
         expect(createSpy).toHaveBeenCalledWith({
           collection_id: 'collectionId',
-          created_at: expect.any(Date),
+          created_at: expect.any(String),
           id: expect.any(String),
-          timestamp: expect.any(Date),
-          updated_at: expect.any(Date),
+          timestamp: expect.any(String),
+          updated_at: expect.any(String),
         })
       })
     })

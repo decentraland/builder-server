@@ -94,7 +94,7 @@ export class CurationRouter extends Router {
 
     const curation = await Curation.getLatestForCollection(collection.id)
 
-    if (curation && collection.reviewed_at < curation.timestamp) {
+    if (curation && collection.reviewed_at < new Date(curation.timestamp)) {
       throw new HTTPError(
         'There is already an ongoing review request for this collection',
         { collectionId },
@@ -102,7 +102,7 @@ export class CurationRouter extends Router {
       )
     }
 
-    const date = new Date()
+    const date = new Date().toISOString()
 
     return Curation.create({
       id: uuid(),

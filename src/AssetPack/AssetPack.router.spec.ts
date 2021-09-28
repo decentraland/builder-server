@@ -40,7 +40,7 @@ const anotherSanitizedAssetPack = {
 
 delete anotherSanitizedAssetPack.is_deleted
 
-describe('something', () => {
+describe('AssetPack router', () => {
   const logger = {
     getLogger: () => ({
       info: jest.fn(),

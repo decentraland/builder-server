@@ -28,7 +28,6 @@ import {
 } from './AssetPack.types'
 import { getDefaultEthAddress } from './utils'
 import { ExpressApp } from '../common/ExpressApp'
-import { sendOk } from 'decentraland-server/dist/server'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -125,7 +124,7 @@ export class AssetPackRouter extends Router {
         `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
-      return res.json(sendOk(usersAssetPacks))
+      return res.json(server.sendOk(usersAssetPacks))
     } else if (owner) {
       throw new HTTPError(
         'Unauthorized access to asset packs',
@@ -166,7 +165,7 @@ export class AssetPackRouter extends Router {
       `[${tracer}] Final assets pack length: ${assetPacks.length}`
     )
 
-    return res.json(sendOk(assetPacks))
+    return res.json(server.sendOk(assetPacks))
   }
 
   getAssetPack = async (req: AuthRequest) => {

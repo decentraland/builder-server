@@ -67,7 +67,7 @@ if (require.main === module) {
 }
 
 async function startServer() {
-  console.log('Connecting to the Database')
+  console.log('Connecting to the database')
   await db.connect()
   return app.listen(SERVER_PORT)
 }

@@ -24,6 +24,7 @@ import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
 import { itemSchema } from './Item.types'
 import { hasAccess } from './access'
+import { getDecentralandItemURN } from './utils'
 
 const validator = getValidator()
 
@@ -268,7 +269,12 @@ export class ItemRouter extends Router {
       )
     }
 
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    return (
+      await Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    ).map(
+      (item) =>
+        (item.urn = item.urn ?? getDecentralandItemURN(item, fullCollection))
+    )
   }
 
   async upsertItem(req: AuthRequest) {

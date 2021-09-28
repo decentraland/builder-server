@@ -24,6 +24,12 @@ export class CurationRouter extends Router {
       server.handleRequest(this.getCuration)
     )
 
+    this.router.patch(
+      '/curations/:collectionId',
+      withAuthentication,
+      server.handleRequest(this.updateCuration)
+    )
+
     this.router.post(
       '/curations/:collectionId',
       withAuthentication,
@@ -35,13 +41,7 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'collectionId')
     const ethAddress = req.auth.ethAddress
 
-    if (!(await hasAccessToCollection(ethAddress, collectionId))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { collectionId, ethAddress },
-        STATUS_CODES.unauthorized
-      )
-    }
+    await this.validateAccessToCuration(ethAddress, collectionId)
 
     return Curation.getLatestForCollection(collectionId)
   }
@@ -70,17 +70,35 @@ export class CurationRouter extends Router {
     return Curation.getAllLatestForCollections(dbCollectionIds)
   }
 
+  updateCuration = async (req: AuthRequest) => {
+    const collectionId = server.extractFromReq(req, 'collectionId')
+    const ethAddress = req.auth.ethAddress
+    const curationJSON: any = server.extractFromReq(req, 'collection')
+
+    await this.validateAccessToCuration(ethAddress, collectionId)
+
+    const curation = await Curation.getLatestForCollection(collectionId)
+
+    if (!curation) {
+      throw new HTTPError(
+        'Curation does not exist',
+        { collectionId },
+        STATUS_CODES.notFound
+      )
+    }
+
+    return Curation.create({
+      ...curation,
+      status: curationJSON.status,
+      updated_at: this.getISODate(),
+    })
+  }
+
   insertCuration = async (req: AuthRequest) => {
     const collectionId = server.extractFromReq(req, 'collectionId')
     const ethAddress = req.auth.ethAddress
 
-    if (!(await hasAccessToCollection(ethAddress, collectionId))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { collectionId, ethAddress },
-        STATUS_CODES.unauthorized
-      )
-    }
+    await this.validateAccessToCuration(ethAddress, collectionId)
 
     const mergedCollection = await getMergedCollection(collectionId)
 
@@ -115,7 +133,7 @@ export class CurationRouter extends Router {
       )
     }
 
-    const date = new Date().toISOString()
+    const date = this.getISODate()
 
     return Curation.create({
       id: uuid(),
@@ -124,5 +142,20 @@ export class CurationRouter extends Router {
       created_at: date,
       updated_at: date,
     })
+  }
+
+  private getISODate = () => new Date().toISOString()
+
+  private validateAccessToCuration = async (
+    ethAddress: string,
+    collectionId: string
+  ) => {
+    if (!(await hasAccessToCollection(ethAddress, collectionId))) {
+      throw new HTTPError(
+        'Unauthorized',
+        { collectionId, ethAddress },
+        STATUS_CODES.unauthorized
+      )
+    }
   }
 }

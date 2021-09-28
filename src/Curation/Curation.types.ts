@@ -5,3 +5,12 @@ export type CurationAttributes = {
   created_at: Date
   updated_at: Date
 }
+
+export const patchCurationSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    status: { type: 'string', enum: ['approved', 'rejected'] },
+  },
+  additionalProperties: false,
+  required: ['status'],
+})

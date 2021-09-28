@@ -28,6 +28,7 @@ import {
 } from './AssetPack.types'
 import { getDefaultEthAddress } from './utils'
 import { ExpressApp } from '../common/ExpressApp'
+import { sendOk } from 'decentraland-server/dist/server'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -124,7 +125,7 @@ export class AssetPackRouter extends Router {
         `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
-      return res.json({ ok: true, data: usersAssetPacks })
+      return res.json(sendOk(usersAssetPacks))
     } else if (owner) {
       throw new HTTPError(
         'Unauthorized access to asset packs',
@@ -137,19 +138,14 @@ export class AssetPackRouter extends Router {
 
     // Get user asset packs
     if (ethAddress) {
-      const userAssetPacks = await this.logExecutionTime(
+      assetPacks = await this.logExecutionTime(
         () => AssetPack.findByEthAddressWithAssets(ethAddress),
         `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
+    }
 
-      // If the user doesn't have any asset packs, return the default asset packs
-      if (userAssetPacks.length === 0) {
-        return this.sendDefaultAssetPacksRaw(res, tracer)
-      }
-
-      assetPacks = [...assetPacks, ...userAssetPacks]
-    } else {
+    if (!ethAddress || assetPacks.length === 0) {
       return this.sendDefaultAssetPacksRaw(res, tracer)
     }
 
@@ -170,7 +166,7 @@ export class AssetPackRouter extends Router {
       `[${tracer}] Final assets pack length: ${assetPacks.length}`
     )
 
-    return res.json({ ok: true, data: assetPacks })
+    return res.json(sendOk(assetPacks))
   }
 
   getAssetPack = async (req: AuthRequest) => {
@@ -318,7 +314,7 @@ export class AssetPackRouter extends Router {
       tracer
     )
     res.setHeader('Content-Type', 'application/json')
-    res.status(200).send(defaultAssetPacksRaw)
+    res.send(defaultAssetPacksRaw)
   }
 
   private getDefaultAssetPacks = async (): Promise<
@@ -348,7 +344,7 @@ export class AssetPackRouter extends Router {
         STATUS_CODES.error
       )
     }
-    return [this.defaultAssetPacks, this.defaultAssetPacksCachedResponse!]
+    return [this.defaultAssetPacks, this.defaultAssetPacksCachedResponse]
   }
 
   private logExecutionTime = async <T>(

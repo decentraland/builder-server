@@ -100,10 +100,6 @@ describe('something', () => {
             'application/json'
           )
         })
-
-        it('should have set the response status to 200', () => {
-          expect(res.status).toHaveBeenCalledWith(200)
-        })
       })
 
       describe('when the owner query parameter is an address equal to the one in the authorization', () => {
@@ -173,10 +169,6 @@ describe('something', () => {
               'application/json'
             )
           })
-
-          it('should have set the response status to 200', () => {
-            expect(res.status).toHaveBeenCalledWith(200)
-          })
         })
 
         describe('when the user has asset packs', () => {
@@ -234,10 +226,6 @@ describe('something', () => {
             'Content-Type',
             'application/json'
           )
-        })
-
-        it('should have set the response status to 200', () => {
-          expect(res.status).toHaveBeenCalledWith(200)
         })
       })
     })

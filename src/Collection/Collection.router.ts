@@ -19,10 +19,11 @@ import { Collection, CollectionAttributes } from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import { collectionSchema, saveTOSSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
-import { hasAccess } from './access'
 import { isPublished } from '../utils/eth'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { sendDataToWarehouse } from '../warehouse'
+import { hasAccess } from './access'
+import { getDecentralandCollectionURN } from './utils'
 
 const validator = getValidator()
 
@@ -158,7 +159,15 @@ export class CollectionRouter extends Router {
       collectionAPI.fetchCollections(),
     ])
 
-    return Bridge.consolidateCollections(dbCollections, remoteCollections)
+    const consolidatedCollections = await Bridge.consolidateCollections(
+      dbCollections,
+      remoteCollections
+    )
+    // Build the URN for the collections
+    return consolidatedCollections.map((collection) => ({
+      ...collection,
+      urn: collection.urn ?? getDecentralandCollectionURN(collection),
+    }))
   }
 
   async getAddressCollections(req: AuthRequest) {
@@ -208,6 +217,9 @@ export class CollectionRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
+
+    fullCollection.urn =
+      fullCollection.urn ?? getDecentralandCollectionURN(fullCollection)
 
     return fullCollection
   }
@@ -340,6 +352,8 @@ export class CollectionRouter extends Router {
       data
     )
 
+    // Compute the URN for the Decentraland Collection and set it
+    attributes.urn = getDecentralandCollectionURN(attributes)
     return new Collection(attributes).upsert()
   }
 

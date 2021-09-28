@@ -144,7 +144,7 @@ export class AssetPackRouter extends Router {
       )
     }
 
-    if (!ethAddress || assetPacks.length === 0) {
+    if (assetPacks.length === 0) {
       return this.sendDefaultAssetPacksRaw(res, tracer)
     }
 

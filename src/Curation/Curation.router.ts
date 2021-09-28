@@ -82,9 +82,9 @@ export class CurationRouter extends Router {
       )
     }
 
-    const { collection } = await getMergedCollection(collectionId)
+    const mergedCollection = await getMergedCollection(collectionId)
 
-    if (!collection) {
+    if (mergedCollection.status === 'not_found') {
       throw new HTTPError(
         'Collection does not exist',
         { collectionId },
@@ -92,9 +92,22 @@ export class CurationRouter extends Router {
       )
     }
 
-    const curation = await Curation.getLatestForCollection(collection.id)
+    if (mergedCollection.status === 'incomplete') {
+      throw new HTTPError(
+        'Collection is not published',
+        { collectionId },
+        STATUS_CODES.unauthorized
+      )
+    }
 
-    if (curation && collection.reviewed_at < new Date(curation.timestamp)) {
+    const curation = await Curation.getLatestForCollection(
+      mergedCollection.collection.id
+    )
+
+    if (
+      curation &&
+      mergedCollection.collection.reviewed_at < new Date(curation.created_at)
+    ) {
       throw new HTTPError(
         'There is already an ongoing review request for this collection',
         { collectionId },
@@ -107,7 +120,7 @@ export class CurationRouter extends Router {
     return Curation.create({
       id: uuid(),
       collection_id: collectionId,
-      timestamp: date,
+      status: 'pending',
       created_at: date,
       updated_at: date,
     })

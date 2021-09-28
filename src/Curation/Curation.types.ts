@@ -1,7 +1,7 @@
 export type CurationAttributes = {
   id: string
   collection_id: string
-  timestamp: Date
+  status: 'pending' | 'approved' | 'rejected'
   created_at: Date
   updated_at: Date
 }

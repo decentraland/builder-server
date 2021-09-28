@@ -3,14 +3,17 @@ import { Collection } from '../src/Collection'
 import { Curation } from '../src/Curation'
 
 const tableName = Curation.tableName
+const curationStatus = 'curation_status'
 
 export const up = (pgm: MigrationBuilder) => {
+  pgm.createType(curationStatus, ['pending', 'approved', 'rejected'])
+
   pgm.createTable(
     tableName,
     {
       id: { type: 'UUID', primaryKey: true, unique: true, notNull: true },
       collection_id: { type: 'UUID', notNull: true },
-      timestamp: { type: 'TIMESTAMP', notNull: true },
+      status: { type: 'CURATION_STATUS', notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
       updated_at: { type: 'TIMESTAMP', notNull: true },
     },
@@ -31,4 +34,5 @@ export const up = (pgm: MigrationBuilder) => {
 
 export const down = (pgm: MigrationBuilder) => {
   pgm.dropTable(tableName, {})
+  pgm.dropType(curationStatus)
 }

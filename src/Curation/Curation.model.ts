@@ -7,8 +7,8 @@ export class Curation extends Model<CurationAttributes> {
   static getAllLatestByCollection() {
     return this.query<CurationAttributes>(SQL`
     SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)} AS c1
-    WHERE timestamp = (
-	    SELECT MAX(timestamp) FROM ${raw(this.tableName)} AS c2
+    WHERE created_at = (
+	    SELECT MAX(created_at) FROM ${raw(this.tableName)} AS c2
 	    WHERE c1.collection_id = c2.collection_id
     )`)
   }
@@ -17,8 +17,8 @@ export class Curation extends Model<CurationAttributes> {
     return this.query<CurationAttributes>(SQL`
     SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)} AS cu1
     WHERE collection_id = ANY(${collectionIds})
-    AND timestamp = (
-      SELECT max(timestamp) FROM ${raw(this.tableName)} AS cu2
+    AND created_at = (
+      SELECT max(created_at) FROM ${raw(this.tableName)} AS cu2
       WHERE cu1.collection_id = cu2.collection_id
     )`)
   }
@@ -29,8 +29,8 @@ export class Curation extends Model<CurationAttributes> {
     const query = SQL`
     SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)}
     WHERE collection_id = ${collectionId}
-    AND timestamp = (
-      SELECT MAX(timestamp)
+    AND created_at = (
+      SELECT MAX(created_at)
       FROM ${raw(this.tableName)}
     )`
 

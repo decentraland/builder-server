@@ -143,7 +143,9 @@ describe('when handling a request', () => {
     describe('when the collection does not exist', () => {
       it('should reject with collection not found message', async () => {
         mockHasAccessToCollection.mockResolvedValueOnce(true)
-        mockGetMergedCollection.mockResolvedValueOnce({ collection: undefined })
+        mockGetMergedCollection.mockResolvedValueOnce({
+          status: 'not_found',
+        })
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
@@ -152,6 +154,24 @@ describe('when handling a request', () => {
 
         await expect(router.insertCuration(req)).rejects.toThrowError(
           'Collection does not exist'
+        )
+      })
+    })
+
+    describe('when the collection is not published', () => {
+      it('should reject with collection not published message', async () => {
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
+        mockGetMergedCollection.mockResolvedValueOnce({
+          status: 'incomplete',
+        })
+
+        const req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { collectionId: 'collectionId' },
+        } as any
+
+        await expect(router.insertCuration(req)).rejects.toThrowError(
+          'Collection is not published'
         )
       })
     })
@@ -166,7 +186,7 @@ describe('when handling a request', () => {
 
         jest
           .spyOn(Curation, 'getLatestForCollection')
-          .mockResolvedValueOnce({ timestamp: new Date(2000, 1) } as any)
+          .mockResolvedValueOnce({ created_at: new Date(2000, 1) } as any)
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
@@ -206,7 +226,7 @@ describe('when handling a request', () => {
           collection_id: 'collectionId',
           created_at: expect.any(String),
           id: expect.any(String),
-          timestamp: expect.any(String),
+          status: 'pending',
           updated_at: expect.any(String),
         })
       })

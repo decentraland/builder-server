@@ -17,6 +17,11 @@ export enum ItemRarity {
 
 export type ItemAttributes = {
   id: string // uuid
+  /**
+   * The urn field holds the item part of the URN in third party items.
+   * All Decentraland items will contain this column as null but it will be generated and returned
+   * whenever a Decentraland item that is published is requested.
+   */
   urn: string | null
   name: string
   description: string

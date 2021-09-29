@@ -8,6 +8,13 @@ const itemTableName = Item.tableName
 
 export const shorthands = undefined
 
+/**
+ * Migrates the DB by adding the URN column to the items and collections tables.
+ * The URN column will be null for Decentraland Collections and for Third Party Collections
+ * it will contain the collection part of the URN.
+ * The URN column will be null for Decentraland Items and for Third Party Collections it will
+ * contain the item part of the URN.
+ */
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.addColumn(itemTableName, {
     urn: { type: 'TEXT' },

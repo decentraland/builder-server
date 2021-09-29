@@ -166,7 +166,9 @@ export class CollectionRouter extends Router {
     // Build the URN for the collections
     return consolidatedCollections.map((collection) => ({
       ...collection,
-      urn: collection.urn ?? getDecentralandCollectionURN(collection),
+      urn:
+        collection.urn ??
+        getDecentralandCollectionURN(collection.contract_address),
     }))
   }
 
@@ -219,7 +221,8 @@ export class CollectionRouter extends Router {
     }
 
     fullCollection.urn =
-      fullCollection.urn ?? getDecentralandCollectionURN(fullCollection)
+      fullCollection.urn ??
+      getDecentralandCollectionURN(fullCollection.contract_address)
 
     return fullCollection
   }
@@ -352,9 +355,15 @@ export class CollectionRouter extends Router {
       data
     )
 
-    // Compute the URN for the Decentraland Collection and set it
-    attributes.urn = getDecentralandCollectionURN(attributes)
-    return new Collection(attributes).upsert()
+    // Sets the DCL collection URN to null before writing it to the DB
+    attributes.urn = null
+    const upsertedCollection = await new Collection(attributes).upsert()
+
+    // Return the collection that was updated or inserted with the DCL URN
+    return {
+      ...upsertedCollection,
+      urn: getDecentralandCollectionURN(upsertedCollection.contract_address),
+    }
   }
 
   deleteCollection = async (req: AuthRequest) => {

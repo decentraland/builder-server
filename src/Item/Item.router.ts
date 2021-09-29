@@ -17,12 +17,13 @@ import {
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
-import { Item, ItemAttributes } from '../Item'
 import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
+import { Item } from './Item.model'
+import { ItemAttributes } from './Item.types'
+import { itemSchema } from './Item.schema'
 import { isCommitteeMember } from '../Committee'
-import { itemSchema } from './Item.types'
 import { hasAccess } from './access'
 import { getDecentralandItemURN } from './utils'
 
@@ -197,6 +198,12 @@ export class ItemRouter extends Router {
         )
       }
 
+      // Set the item's URN
+      fullItem.urn = getDecentralandItemURN(
+        fullItem,
+        dbCollection.contract_address
+      )
+
       const [remoteItem, remoteCollection] = await Promise.all([
         collectionAPI.fetchItem(
           dbCollection.contract_address,
@@ -269,12 +276,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    return (
-      await Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
-    ).map(
-      (item) =>
-        (item.urn = item.urn ?? getDecentralandItemURN(item, fullCollection))
-    )
+    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
   async upsertItem(req: AuthRequest) {
@@ -360,6 +362,9 @@ export class ItemRouter extends Router {
         )
       }
     }
+
+    // DCL items can't have a non null URN
+    itemJSON.urn = null
 
     const attributes = {
       ...itemJSON,

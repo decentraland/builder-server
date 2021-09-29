@@ -1,5 +1,10 @@
 export type CollectionAttributes = {
   id: string // uuid
+  /**
+   * The urn field holds the collection part of the URN in third party collections.
+   * All Decentraland collections will contain this column as null but it will be generated and returned
+   * whenever a Decentraland collection is requested.
+   */
   urn: string | null
   name: string
   eth_address: string

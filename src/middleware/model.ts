@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express'
 import { server } from 'decentraland-server'
 
+import { STATUS_CODES } from '../common/HTTPError'
 import { Project } from '../Project'
 import { Pool } from '../Pool'
 import { Deployment } from '../Deployment'
@@ -28,11 +29,14 @@ export function withModelExists(
 
     const count = await Model.count({ id, ...enforce })
     if (count <= 0) {
-      res.setHeader('Content-Type', 'application/json')
-      res.status(404).json({
-        ok: false,
-        error: `Couldn't find "${id}" on ${Model.tableName}`,
-      })
+      res
+        .status(STATUS_CODES.notFound)
+        .json(
+          server.sendError(
+            { id, tableName: Model.tableName },
+            `Couldn't find "${id}" on ${Model.tableName}`
+          )
+        )
       return
     }
 

@@ -15,12 +15,15 @@ import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FactoryCollection } from '../ethereum'
 import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
-import { Collection, CollectionAttributes } from '../Collection'
+import {
+  Collection,
+  CollectionService,
+  CollectionAttributes,
+} from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import { collectionSchema, saveTOSSchema } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
 import { hasAccess } from './access'
-import { isPublished } from '../utils/eth'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { sendDataToWarehouse } from '../warehouse'
 
@@ -56,7 +59,6 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id',
-      withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
     )
@@ -299,7 +301,7 @@ export class CollectionRouter extends Router {
     } catch (error) {
       throw new HTTPError(
         "The collection couldn't be updated",
-        { id, eth_address, error },
+        { id, eth_address, error: (error as Error).message },
         STATUS_CODES.error
       )
     }
@@ -348,9 +350,11 @@ export class CollectionRouter extends Router {
       )
     }
 
-    if (await this.isCollectionPublished(id)) {
+    const service = new CollectionService()
+
+    if (await service.isLocked(id)) {
       throw new HTTPError(
-        "The collection is published. It can't be updated",
+        `Cannot access the Collection ${id} because it's either locked or published`,
         { id },
         STATUS_CODES.unauthorized
       )
@@ -375,10 +379,11 @@ export class CollectionRouter extends Router {
 
   deleteCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
+    const service = new CollectionService()
 
-    if (await this.isCollectionPublished(id)) {
+    if (await service.isLocked(id)) {
       throw new HTTPError(
-        "The collection is published. It can't be deleted",
+        `Cannot access the Collection ${id} because it's either locked or published`,
         { id },
         STATUS_CODES.unauthorized
       )
@@ -388,30 +393,6 @@ export class CollectionRouter extends Router {
       Collection.delete({ id }),
       Item.delete({ collection_id: id }),
     ])
-    return true
-  }
-
-  async isCollectionPublished(collectionId: string) {
-    const dbCollection = await Collection.findOne<CollectionAttributes>(
-      collectionId
-    )
-
-    if (!dbCollection) {
-      return false
-    }
-
-    const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection.contract_address
-    )
-
-    // Fallback: check against the blockchain, in case the subgraph is lagging
-    if (!remoteCollection) {
-      const isCollectionPublished = await isPublished(
-        dbCollection.contract_address
-      )
-      return isCollectionPublished
-    }
-
     return true
   }
 }

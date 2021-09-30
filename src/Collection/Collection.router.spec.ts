@@ -33,6 +33,7 @@ describe('Collection router', () => {
 
   describe('when locking a Collection', () => {
     const now = 1633022119407
+    const url = `/collections/${collectionAttributes.id}/lock`
 
     beforeEach(() => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
@@ -50,8 +51,6 @@ describe('Collection router', () => {
     })
 
     it('should update the lock with .now() on the supplied collection id for the owner', async () => {
-      const url = `/collections/${collectionAttributes.id}/lock`
-
       return server
         .post(buildURL(url))
         .set(createAuthHeaders('post', url))
@@ -63,7 +62,30 @@ describe('Collection router', () => {
             { id: collectionAttributes.id, eth_address: wallet.address }
           )
         })
-        .finally(() => jest.useRealTimers())
+    })
+
+    it('it should fail with an error if the update explodes', async () => {
+      const errorMessage = 'Error message'
+
+      ;(Collection.update as jest.Mock).mockImplementationOnce(() => {
+        throw new Error(errorMessage)
+      })
+
+      return server
+        .post(buildURL(url))
+        .set(createAuthHeaders('post', url))
+        .expect(500)
+        .then(async (response: any) => {
+          expect(response.body).toEqual({
+            ok: false,
+            data: {
+              id: collectionAttributes.id,
+              eth_address: wallet.address,
+              error: errorMessage,
+            },
+            error: "The collection couldn't be updated",
+          })
+        })
     })
   })
 })

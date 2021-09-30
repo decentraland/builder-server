@@ -51,7 +51,7 @@
     "dcl-crypto": "^2.1.0",
     "dcl-ops-lib": "^1.0.6",
     "decentraland-commons": "^5.1.0",
-    "decentraland-server": "^2.14.0",
+    "decentraland-server": "^3.0.0",
     "decentraland-transactions": "^1.22.2",
     "escape-html": "^1.0.3",
     "ethers": "^5.0.13",

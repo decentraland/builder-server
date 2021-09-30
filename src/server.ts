@@ -1,4 +1,5 @@
 import { env } from 'decentraland-commons'
+import { createConsoleLogComponent } from '@well-known-components/logger'
 
 import { AppRouter } from './App'
 import { AssetPackRouter } from './AssetPack'
@@ -21,14 +22,13 @@ import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
 import { ProjectByCoordRouter } from './Project'
-import { createConsoleLogComponent } from '@well-known-components/logger'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
 const CORS_ORIGIN = env.get('CORS_ORIGIN', '*')
 const CORS_METHOD = env.get('CORS_METHOD', '*')
 
-const app = new ExpressApp()
+export const app = new ExpressApp()
 const logs = createConsoleLogComponent()
 
 app
@@ -67,7 +67,7 @@ if (require.main === module) {
 }
 
 async function startServer() {
-  console.log('Connecting to the database')
+  console.log('Connecting to the DB')
   await db.connect()
   return app.listen(SERVER_PORT)
 }

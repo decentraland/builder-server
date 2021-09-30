@@ -5,7 +5,7 @@ import { STATUS_CODES } from '../common/HTTPError'
 import { AuthRequestLegacy } from './authentication-legacy'
 import { peerAPI } from '../ethereum/api/peer'
 
-const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
+export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 
 export type AuthRequest = Request & {
   authLegacy?: AuthRequestLegacy['auth']

@@ -32,8 +32,10 @@ describe('Collection router', () => {
   }
 
   describe('when locking a Collection', () => {
-    it('should update the lock with .now() on the supplied collection id for the owner', async () => {
-      jest.useFakeTimers()
+    const now = 1633022119407
+
+    beforeEach(() => {
+      jest.spyOn(Date, 'now').mockReturnValueOnce(now)
 
       mockExistsMiddleware(Collection, collectionAttributes.id)
       mockAuthorizationMiddleware(
@@ -41,8 +43,13 @@ describe('Collection router', () => {
         collectionAttributes.id,
         wallet.address
       )
+    })
 
-      const now = new Date()
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    it('should update the lock with .now() on the supplied collection id for the owner', async () => {
       const url = `/collections/${collectionAttributes.id}/lock`
 
       return server
@@ -52,7 +59,7 @@ describe('Collection router', () => {
         .then(async (response: any) => {
           expect(response.body).toEqual({ data: true, ok: true })
           expect(Collection.update).toHaveBeenCalledWith(
-            { lock: now },
+            { lock: new Date(now) },
             { id: collectionAttributes.id, eth_address: wallet.address }
           )
         })

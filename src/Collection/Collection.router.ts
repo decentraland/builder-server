@@ -291,7 +291,10 @@ export class CollectionRouter extends Router {
     const eth_address = req.auth.ethAddress
 
     try {
-      await Collection.update({ lock: new Date() }, { id, eth_address })
+      await Collection.update(
+        { lock: new Date(Date.now()) },
+        { id, eth_address }
+      )
       return true
     } catch (error) {
       throw new HTTPError(

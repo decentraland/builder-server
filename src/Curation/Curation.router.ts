@@ -3,12 +3,15 @@ import { v4 as uuid } from 'uuid'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, AuthRequest } from '../middleware'
-import { Curation } from '.'
+import { Curation, patchCurationSchema } from '.'
 import { hasAccessToCollection } from './access'
 import { getMergedCollection } from '../Collection/util'
 import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Collection } from '../Collection'
+import { getValidator } from '../utils/validator'
+
+const validator = getValidator()
 
 export class CurationRouter extends Router {
   mount() {
@@ -77,6 +80,18 @@ export class CurationRouter extends Router {
 
     await this.validateAccessToCuration(ethAddress, collectionId)
 
+    const validate = validator.compile(patchCurationSchema)
+
+    validate(curationJSON)
+
+    if (validate.errors) {
+      throw new HTTPError(
+        'Invalid schema',
+        validate.errors,
+        STATUS_CODES.badRequest
+      )
+    }
+
     const curation = await Curation.getLatestForCollection(collectionId)
 
     if (!curation) {
@@ -87,11 +102,14 @@ export class CurationRouter extends Router {
       )
     }
 
-    return Curation.create({
-      ...curation,
-      status: curationJSON.status,
-      updated_at: this.getISODate(),
-    })
+    return Curation.update(
+      {
+        ...curation,
+        status: curationJSON.status,
+        updated_at: this.getISODate(),
+      },
+      { id: curation.id }
+    )
   }
 
   insertCuration = async (req: AuthRequest) => {

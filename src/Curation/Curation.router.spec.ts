@@ -124,6 +124,99 @@ describe('when handling a request', () => {
     })
   })
 
+  describe('when trying to update a curation', () => {
+    describe('when the caller has no access', () => {
+      it('should reject with an unauthorized message', async () => {
+        mockHasAccessToCollection.mockResolvedValueOnce(false)
+
+        const req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { collectionId: 'collectionId' },
+          body: { curation: {} },
+        } as any
+
+        await expect(router.updateCuration(req)).rejects.toThrowError(
+          'Unauthorized'
+        )
+      })
+    })
+
+    describe('when the payload is invalid', () => {
+      it('should reject with invalid schema message', async () => {
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
+
+        const req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { collectionId: 'collectionId' },
+          body: { curation: {} },
+        } as any
+
+        await expect(router.updateCuration(req)).rejects.toThrow(
+          'Invalid schema'
+        )
+      })
+    })
+
+    describe('when the curation does not exist', () => {
+      it('should reject with curation not found message', async () => {
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
+
+        jest
+          .spyOn(Curation, 'getLatestForCollection')
+          .mockResolvedValueOnce(undefined)
+
+        const req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { collectionId: 'collectionId' },
+          body: {
+            curation: {
+              status: 'rejected',
+            },
+          },
+        } as any
+
+        await expect(router.updateCuration(req)).rejects.toThrow(
+          'Curation does not exist'
+        )
+      })
+    })
+
+    describe('when everything is fine', () => {
+      it('should resolve with the updated curation', async () => {
+        mockHasAccessToCollection.mockResolvedValueOnce(true)
+
+        jest
+          .spyOn(Curation, 'getLatestForCollection')
+          .mockResolvedValueOnce({ id: 'curationId' } as any)
+
+        const updateSpy = jest
+          .spyOn(Curation, 'update')
+          .mockResolvedValueOnce({} as any)
+
+        const req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { collectionId: 'collectionId' },
+          body: {
+            curation: {
+              status: 'rejected',
+            },
+          },
+        } as any
+
+        await expect(router.updateCuration(req)).resolves.toStrictEqual({})
+
+        expect(updateSpy).toHaveBeenCalledWith(
+          {
+            id: 'curationId',
+            status: 'rejected',
+            updated_at: expect.any(String),
+          },
+          { id: 'curationId' }
+        )
+      })
+    })
+  })
+
   describe('when trying to insert a new curation', () => {
     describe('when the caller has no access', () => {
       it('should reject with an unauthorized message', async () => {
@@ -200,7 +293,7 @@ describe('when handling a request', () => {
     })
 
     describe('when everything is fine', () => {
-      it('should resolve with an upserted curation', async () => {
+      it('should resolve with the inserted curation', async () => {
         mockHasAccessToCollection.mockResolvedValueOnce(true)
 
         mockGetMergedCollection.mockResolvedValueOnce({

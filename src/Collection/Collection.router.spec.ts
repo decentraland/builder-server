@@ -46,10 +46,6 @@ describe('Collection router', () => {
       )
     })
 
-    afterEach(() => {
-      jest.restoreAllMocks()
-    })
-
     it('should update the lock with .now() on the supplied collection id for the owner', async () => {
       return server
         .post(buildURL(url))

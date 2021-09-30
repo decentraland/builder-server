@@ -1,6 +1,7 @@
 import { Authenticator, AuthIdentity, AuthLinkType } from 'dcl-crypto'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
+import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
 
 export type Wallet = {
   address: string
@@ -46,7 +47,6 @@ export function createAuthHeaders(
   path: string = '',
   identity: AuthIdentity = wallet.identity
 ) {
-  const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
   const headers: Record<string, string> = {}
   const endpoint = (method + ':' + path).toLowerCase()
   const authChain = Authenticator.signPayload(identity, endpoint)

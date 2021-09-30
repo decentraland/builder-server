@@ -27,6 +27,8 @@ jobs:
           WAREHOUSE_TOKEN: WAREHOUSE_TOKEN
           AUTH0_DOMAIN: AUTH0_DOMAIN
           DEFAULT_ETH_ADDRESS: DEFAULT_ETH_ADDRESS
+          ANALYTICS_CONNECTION_STRING: ANALYTICS_CONNECTION_STRING
+          PEER_URL: https://peer.decentraland.zone
       # # Not working right now because of the lack of tests
       # # Uncomment when more are added
       # - name: report coverage

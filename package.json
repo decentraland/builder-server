@@ -11,7 +11,7 @@
     "start": "npm run build && node ./dist/src/server.js",
     "watch:start": "nodemon src/server.ts",
     "migrate": "ts-node ./migrations/migrate.ts",
-    "migrate:docker": "./migrations/node-pg-migrate --database-url-var CONNECTION_STRING --migration-file-language ts --migrations-dir /app/migrations --ignore-pattern '\\..*|.*migrate(.ts)?'",
+    "migrate:docker": "./dist/migrations/migrate --database-url-var CONNECTION_STRING --migration-file-language ts --migrations-dir /app/dist/migrations --ignore-pattern '\\..*|.*migrate(.js)?'",
     "seed": "cp -r ./scripts/seed/*_data ./dist/scripts/seed && node ./dist/scripts/seed/index.js",
     "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js",
     "test": "jest",
@@ -66,7 +66,7 @@
     "morgan": "^1.9.1",
     "multer": "^1.4.1",
     "multer-s3": "^2.9.0",
-    "node-pg-migrate": "^3.21.1",
+    "node-pg-migrate": "^6.0.0",
     "prom-client": "^13.1.0",
     "tslint": "^6.1.3",
     "typescript": "^4.1.5",
@@ -82,7 +82,7 @@
     "nodemon": "^2.0.7",
     "prettier": "^2.2.1",
     "ts-jest": "^27.0.5",
-    "ts-node": "^9.1.1",
+    "ts-node": "^10.2.1",
     "tslint-plugin-prettier": "^2.0.1"
   }
 }

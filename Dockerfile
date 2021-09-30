@@ -41,7 +41,7 @@ COPY --from=builderenv /tini /tini
 #            and: https://www.ctl.io/developers/blog/post/gracefully-stopping-docker-containers/
 ENTRYPOINT ["/tini", "--"]
 # Run the program under Tini
-CMD [ "/usr/local/bin/node", "--trace-warnings", "--abort-on-uncaught-exception", "--unhandled-rejections=strict", "dist/src/server.js" ]
+CMD [ "/bin/sh", "entrypoint.sh" ]
 
 
 # ARG RUN

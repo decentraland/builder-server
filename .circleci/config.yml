@@ -2,7 +2,7 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: circleci/node:14
+      - image: cimg/node:14.18.0
         environment: &ENVIRONMENT
           DOCKER_IMAGE_NAME: decentraland/builder-contest-server
     working_directory: /tmp/app

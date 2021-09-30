@@ -172,7 +172,17 @@ export class CollectionRouter extends Router {
       Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
     ])
-    return Bridge.consolidateCollections(dbCollections, remoteCollections)
+
+    const consolidatedCollections = await Bridge.consolidateCollections(
+      dbCollections,
+      remoteCollections
+    )
+    consolidatedCollections.map((collection) => ({
+      ...collection,
+      urn:
+        collection.urn ??
+        getDecentralandCollectionURN(collection.contract_address),
+    }))
   }
 
   async getCollection(req: AuthRequest) {

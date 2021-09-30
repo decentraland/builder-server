@@ -73,7 +73,7 @@ export class CurationRouter extends Router {
   updateCuration = async (req: AuthRequest) => {
     const collectionId = server.extractFromReq(req, 'collectionId')
     const ethAddress = req.auth.ethAddress
-    const curationJSON: any = server.extractFromReq(req, 'collection')
+    const curationJSON: any = server.extractFromReq(req, 'curation')
 
     await this.validateAccessToCuration(ethAddress, collectionId)
 

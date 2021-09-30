@@ -273,13 +273,11 @@ describe('when handling a request', () => {
       it('should reject with an ongoing review message', async () => {
         mockHasAccessToCollection.mockResolvedValueOnce(true)
 
-        mockGetMergedCollection.mockResolvedValueOnce({
-          collection: { reviewed_at: new Date(2000, 0) },
-        })
+        mockGetMergedCollection.mockResolvedValueOnce({ collection: {} })
 
         jest
           .spyOn(Curation, 'getLatestForCollection')
-          .mockResolvedValueOnce({ created_at: new Date(2000, 1) } as any)
+          .mockResolvedValueOnce({ status: 'pending' } as any)
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
@@ -295,14 +293,11 @@ describe('when handling a request', () => {
     describe('when everything is fine', () => {
       it('should resolve with the inserted curation', async () => {
         mockHasAccessToCollection.mockResolvedValueOnce(true)
-
-        mockGetMergedCollection.mockResolvedValueOnce({
-          collection: { reviewed_at: new Date(2000, 1) },
-        })
+        mockGetMergedCollection.mockResolvedValueOnce({ collection: {} })
 
         jest
           .spyOn(Curation, 'getLatestForCollection')
-          .mockResolvedValueOnce({ timestamp: new Date(2000, 0) } as any)
+          .mockResolvedValueOnce(undefined)
 
         const createSpy = jest
           .spyOn(Curation, 'create')

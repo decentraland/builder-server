@@ -140,10 +140,7 @@ export class CurationRouter extends Router {
       mergedCollection.collection.id
     )
 
-    if (
-      curation &&
-      mergedCollection.collection.reviewed_at < new Date(curation.created_at)
-    ) {
+    if (curation && curation.status === 'pending') {
       throw new HTTPError(
         'There is already an ongoing review request for this collection',
         { collectionId },

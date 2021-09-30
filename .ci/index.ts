@@ -137,6 +137,9 @@ export = async function main() {
     ],
     hostname,
     {
+      extraPortMappings: [
+        { containerPort: 9229, hostPort: 9229, protocol: 'tcp' },
+      ],
       // @ts-ignore
       healthCheck: {
         path: '/v1/info',

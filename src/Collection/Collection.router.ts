@@ -147,6 +147,7 @@ export class CollectionRouter extends Router {
       dbCollections,
       remoteCollections
     )
+
     // Build the URN for the collections
     return consolidatedCollections.map((collection) => ({
       ...collection,
@@ -177,7 +178,9 @@ export class CollectionRouter extends Router {
       dbCollections,
       remoteCollections
     )
-    consolidatedCollections.map((collection) => ({
+
+    // Build the URN for the collections
+    return consolidatedCollections.map((collection) => ({
       ...collection,
       urn:
         collection.urn ??

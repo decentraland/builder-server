@@ -118,7 +118,7 @@ export class ExpressApp {
     return this
   }
 
-  use(...handers: express.RequestHandler[]) {
+  use(...handers: express.RequestHandler[] | express.ErrorRequestHandler[]) {
     this.app.use(...handers)
     return this
   }

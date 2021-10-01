@@ -13,7 +13,6 @@ import {
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { Project } from '../Project'
-import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import {
   S3Project,
   MANIFEST_FILENAME,
@@ -21,8 +20,10 @@ import {
   ACL,
   getBucketURL,
 } from '../S3'
-import { collectStatistics } from './utils'
 import { SearchableProject } from '../Project/SearchableProject'
+import { asyncHandler } from '../common/asyncHandler'
+import { ManifestAttributes, manifestSchema } from './Manifest.types'
+import { collectStatistics } from './utils'
 
 const validator = getValidator()
 
@@ -42,7 +43,7 @@ export class ManifestRouter extends Router {
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
-      this.getProjectManifest
+      asyncHandler(this.getProjectManifest)
     )
 
     /**

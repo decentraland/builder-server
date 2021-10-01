@@ -22,6 +22,7 @@ import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
 import { ProjectByCoordRouter } from './Project'
+import { errorHandler } from './common/errorHandler'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
@@ -37,6 +38,7 @@ app
   .useJSON()
   .useVersion(API_VERSION)
   .useMetrics()
+  .use(errorHandler)
 
 // Mount routers
 new AppRouter(app).mount()

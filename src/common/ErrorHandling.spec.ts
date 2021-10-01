@@ -79,12 +79,12 @@ describe('when handling async errors', () => {
 describe('when handling sync http errors', () => {
   it('should respond with the a 500 an the error message', () => {
     return server
-      .get(buildURL('/syncError'))
-      .expect(500)
+      .get(buildURL('/syncHttpError'))
+      .expect(errorStatusCode)
       .then((response: any) => {
         expect(response.body).toEqual({
           error: errorMessage,
-          data: {},
+          data: errorData,
           ok: false,
         })
       })

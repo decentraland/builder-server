@@ -1,4 +1,3 @@
-import { acceptBastionSecurityGroupId } from 'dcl-ops-lib/acceptBastion'
 import * as pulumi from '@pulumi/pulumi'
 import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
@@ -154,10 +153,7 @@ export = async function main() {
       version: '1',
       memoryReservation: 1024,
       cpuReservation: env === 'prd' ? 1024 : 256,
-      securityGroups: [
-        (await acceptDbSecurityGroup()).id,
-        await acceptBastionSecurityGroupId(),
-      ],
+      securityGroups: [(await acceptDbSecurityGroup()).id],
       team: 'dapps',
     }
   )

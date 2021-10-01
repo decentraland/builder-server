@@ -121,7 +121,7 @@ export = async function main() {
       },
       {
         name: 'WKC_METRICS_BEARER_TOKEN',
-        value: prometheusStack.getOutput('serviceMetricsBearerToken'),
+        value: (await prometheusStack()).getOutput('serviceMetricsBearerToken'),
       },
       {
         name: 'MATIC_RPC_URL',

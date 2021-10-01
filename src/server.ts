@@ -38,7 +38,6 @@ app
   .useJSON()
   .useVersion(API_VERSION)
   .useMetrics()
-  .use(errorHandler)
 
 // Mount routers
 new AppRouter(app).mount()
@@ -59,6 +58,8 @@ new DeploymentRouter(app).mount()
 new S3Router(app).mount()
 new ShareRouter(app).mount()
 new AnalyticsRouter(app).mount()
+
+app.use(errorHandler)
 
 /* Start the server only if run directly */
 if (require.main === module) {

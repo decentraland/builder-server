@@ -5,23 +5,24 @@ import { Item } from '../src/Item'
 
 const collectionTableName = Collection.tableName
 const itemTableName = Item.tableName
+const column = 'urn_suffix'
 
 export const shorthands = undefined
 
 /**
  * Migrates the DB by adding the URN column to the items and collections tables.
- * The URN column will be null for Decentraland Collections and for Third Party Collections
+ * The urn_suffix column will be null for Decentraland Collections and for Third Party Collections
  * it will contain the collection part of the URN.
- * The URN column will be null for Decentraland Items and for Third Party Collections it will
+ * The urn_suffix column will be null for Decentraland Items and for Third Party Collections it will
  * contain the item part of the URN.
  */
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.addColumn(itemTableName, {
-    urn: { type: 'TEXT' },
+    [column]: { type: 'TEXT', default: null, notNull: false },
   })
 
   pgm.addColumn(collectionTableName, {
-    urn: { type: 'TEXT' },
+    [column]: { type: 'TEXT', default: null, notNull: false },
   })
 }
 

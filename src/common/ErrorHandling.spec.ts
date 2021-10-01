@@ -13,14 +13,14 @@ const handlerWithHttpError = () => {
   throw new HTTPError(errorMessage, errorData, errorStatusCode)
 }
 const handlerWithCommonError = () => {
-  throw new HTTPError(errorMessage, errorData, errorStatusCode)
+  throw new Error(errorMessage)
 }
 const handlerWithSentHeadersAndCommonError = (
   _: express.Request,
   res: express.Response
 ) => {
   res.sendStatus(401)
-  throw new HTTPError(errorMessage, errorData, errorStatusCode)
+  throw new Error(errorMessage)
 }
 
 const asyncHandlerWithHttpError = async () => handlerWithHttpError()
@@ -65,11 +65,11 @@ describe('when handling async errors', () => {
   it('should respond with the a 500 an the error message', () => {
     return server
       .get(buildURL('/asyncError'))
-      .expect(errorStatusCode)
+      .expect(500)
       .then((response: any) => {
         expect(response.body).toEqual({
           error: errorMessage,
-          data: errorData,
+          data: {},
           ok: false,
         })
       })
@@ -77,14 +77,14 @@ describe('when handling async errors', () => {
 })
 
 describe('when handling sync http errors', () => {
-  it('should respond with the thrown error status code, the message and the data', () => {
+  it('should respond with the a 500 an the error message', () => {
     return server
       .get(buildURL('/syncError'))
-      .expect(errorStatusCode)
+      .expect(500)
       .then((response: any) => {
         expect(response.body).toEqual({
           error: errorMessage,
-          data: errorData,
+          data: {},
           ok: false,
         })
       })
@@ -95,11 +95,11 @@ describe('when handling sync errors', () => {
   it('should respond with the a 500 an the error message', () => {
     return server
       .get(buildURL('/syncError'))
-      .expect(errorStatusCode)
+      .expect(500)
       .then((response: any) => {
         expect(response.body).toEqual({
           error: errorMessage,
-          data: errorData,
+          data: {},
           ok: false,
         })
       })

@@ -21,7 +21,6 @@ import {
   getBucketURL,
 } from '../S3'
 import { SearchableProject } from '../Project/SearchableProject'
-import { asyncHandler } from '../common/asyncHandler'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { collectStatistics } from './utils'
 
@@ -43,7 +42,7 @@ export class ManifestRouter extends Router {
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
-      asyncHandler(this.getProjectManifest)
+      this.getProjectManifest
     )
 
     /**

@@ -1,12 +1,11 @@
 import { acceptBastionSecurityGroupId } from 'dcl-ops-lib/acceptBastion'
+import { prometheusStack } from 'dcl-ops-lib/prometheus'
 import * as pulumi from '@pulumi/pulumi'
 import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { env, envTLD, publicTLD } from 'dcl-ops-lib/domain'
 import { acceptDbSecurityGroup } from 'dcl-ops-lib/acceptDb'
 import { getDbHostAndPort } from 'dcl-ops-lib/supra'
-
-const prometheusStack = new pulumi.StackReference(`prometheus-${env}`)
 
 export = async function main() {
   const config = new pulumi.Config()

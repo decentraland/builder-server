@@ -46,42 +46,52 @@ describe('Collection router', () => {
       )
     })
 
-    it('should update the lock with .now() on the supplied collection id for the owner', async () => {
-      return server
-        .post(buildURL(url))
-        .set(createAuthHeaders('post', url))
-        .expect(200)
-        .then(async (response: any) => {
-          expect(response.body).toEqual({ data: true, ok: true })
-          expect(Collection.update).toHaveBeenCalledWith(
-            { lock: new Date(now) },
-            { id: collectionAttributes.id, eth_address: wallet.address }
-          )
-        })
+    describe('when the lock update succeeds', () => {
+      it('should update the lock with .now() on the supplied collection id for the owner', () => {
+        const lock = new Date(now)
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: lock.toISOString(),
+              ok: true,
+            })
+            expect(Collection.update).toHaveBeenCalledWith(
+              { lock },
+              { id: collectionAttributes.id, eth_address: wallet.address }
+            )
+          })
+      })
     })
 
-    it('it should fail with an error if the update explodes', async () => {
+    describe('when the lock update fails', () => {
       const errorMessage = 'Error message'
 
-      ;(Collection.update as jest.Mock).mockImplementationOnce(() => {
-        throw new Error(errorMessage)
+      beforeEach(() => {
+        ;(Collection.update as jest.Mock).mockImplementationOnce(() => {
+          throw new Error(errorMessage)
+        })
       })
 
-      return server
-        .post(buildURL(url))
-        .set(createAuthHeaders('post', url))
-        .expect(500)
-        .then(async (response: any) => {
-          expect(response.body).toEqual({
-            ok: false,
-            data: {
-              id: collectionAttributes.id,
-              eth_address: wallet.address,
-              error: errorMessage,
-            },
-            error: "The collection couldn't be updated",
+      it('should fail with an error if the update throws', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(500)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: {
+                id: collectionAttributes.id,
+                eth_address: wallet.address,
+                error: errorMessage,
+              },
+              error: "The collection couldn't be updated",
+            })
           })
-        })
+      })
     })
   })
 })

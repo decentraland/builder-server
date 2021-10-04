@@ -5,7 +5,7 @@ import { wallet } from '../../spec/utils'
 
 jest.mock('./Collection.model')
 
-describe.only('Collection service', () => {
+describe('Collection service', () => {
   describe('#isLocked', () => {
     const collectionAttributes = {
       id: uuidv4(),
@@ -30,63 +30,74 @@ describe.only('Collection service', () => {
 
     const twoDaysInMilliseconds = 2 * 24 * 60 * 60 * 1000
 
-    it('should return false if the collection does not exist', async () => {
-      findOneMock.mockImplementationOnce((collectionId: string) => {
-        if (collectionAttributes.id === collectionId) {
-          return undefined
-        }
-        throw new Error('Invalid id')
+    beforeEach(() => {
+      findOneMock.mockRestore()
+    })
+
+    describe("when the collection doesn't exists", () => {
+      beforeEach(() => {
+        findOneMock.mockImplementationOnce((collectionId: string) => {
+          if (collectionAttributes.id === collectionId) {
+            return undefined
+          }
+          throw new Error('Invalid id')
+        })
       })
-      expect(await service.isLocked(collectionAttributes.id)).toBe(false)
+      it('should return false', async () => {
+        expect(await service.isLocked(collectionAttributes.id)).toBe(false)
+      })
     })
 
-    it('should return false if the collection does not have a lock set', async () => {
-      findOneMock.mockImplementationOnce((collectionId: string) =>
-        collectionAttributes.id === collectionId
-          ? collectionAttributes
-          : undefined
-      )
-      expect(await service.isLocked(collectionAttributes.id)).toBe(false)
+    describe('when the collection does not have a lock set', () => {
+      beforeEach(() => {
+        findOneMock.mockImplementationOnce((collectionId: string) =>
+          collectionAttributes.id === collectionId
+            ? collectionAttributes
+            : undefined
+        )
+      })
+      it('should return false', async () => {
+        expect(await service.isLocked(collectionAttributes.id)).toBe(false)
+      })
     })
 
-    it('should return false if the lock date + 1 day is newer than now', async () => {
-      const lock = new Date()
-      jest
-        .spyOn(Date, 'now')
-        .mockReturnValueOnce(Date.now() + twoDaysInMilliseconds)
+    describe('when the collection is correctly locked', () => {
+      let lock: Date
 
-      findOneMock.mockImplementationOnce((collectionId: string) =>
-        collectionAttributes.id === collectionId
-          ? { ...collectionAttributes, lock }
-          : undefined
-      )
-      expect(await service.isLocked(collectionAttributes.id)).toBe(false)
-    })
+      beforeEach(() => {
+        lock = new Date()
+        findOneMock.mockImplementationOnce((collectionId: string) =>
+          collectionAttributes.id === collectionId
+            ? { ...collectionAttributes, lock }
+            : undefined
+        )
+      })
+      it('should return false if the lock date + 1 day is newer than now', async () => {
+        jest
+          .spyOn(Date, 'now')
+          .mockReturnValueOnce(Date.now() + twoDaysInMilliseconds)
 
-    it('should return false if the lock date + 1 day is older than now but the collection is published', async () => {
-      const lock = new Date()
+        expect(await service.isLocked(collectionAttributes.id)).toBe(false)
+      })
 
-      isPublishedMock.mockReturnValueOnce(Promise.resolve(true))
+      describe('and is published', () => {
+        beforeEach(() => {
+          isPublishedMock.mockReturnValueOnce(Promise.resolve(true))
+        })
+        it('should return false if the lock date + 1 day is older than now', async () => {
+          expect(await service.isLocked(collectionAttributes.id)).toBe(false)
+        })
+      })
 
-      findOneMock.mockImplementationOnce((collectionId: string) =>
-        collectionAttributes.id === collectionId
-          ? { ...collectionAttributes, lock }
-          : undefined
-      )
-      expect(await service.isLocked(collectionAttributes.id)).toBe(false)
-    })
+      describe('and is not published', () => {
+        beforeEach(() => {
+          isPublishedMock.mockReturnValueOnce(Promise.resolve(false))
+        })
 
-    it('should return true if the lock date + 1 day is older than now and the collection is not published', async () => {
-      const lock = new Date()
-
-      isPublishedMock.mockReturnValueOnce(Promise.resolve(false))
-
-      findOneMock.mockImplementationOnce((collectionId: string) =>
-        collectionAttributes.id === collectionId
-          ? { ...collectionAttributes, lock }
-          : undefined
-      )
-      expect(await service.isLocked(collectionAttributes.id)).toBe(true)
+        it('should return true if the lock date + 1 day is older than now', async () => {
+          expect(await service.isLocked(collectionAttributes.id)).toBe(true)
+        })
+      })
     })
   })
 })

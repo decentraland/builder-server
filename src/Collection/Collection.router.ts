@@ -30,6 +30,8 @@ import { sendDataToWarehouse } from '../warehouse'
 const validator = getValidator()
 
 export class CollectionRouter extends Router {
+  public service = new CollectionService()
+
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(Collection)
@@ -293,11 +295,9 @@ export class CollectionRouter extends Router {
     const eth_address = req.auth.ethAddress
 
     try {
-      await Collection.update(
-        { lock: new Date(Date.now()) },
-        { id, eth_address }
-      )
-      return true
+      const lock = new Date(Date.now())
+      await Collection.update({ lock }, { id, eth_address })
+      return lock
     } catch (error) {
       throw new HTTPError(
         "The collection couldn't be updated",
@@ -350,9 +350,7 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const service = new CollectionService()
-
-    if (await service.isLocked(id)) {
+    if (await this.service.isLocked(id)) {
       throw new HTTPError(
         `Cannot access the Collection ${id} because it's either locked or published`,
         { id },
@@ -379,9 +377,8 @@ export class CollectionRouter extends Router {
 
   deleteCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
-    const service = new CollectionService()
 
-    if (await service.isLocked(id)) {
+    if (await this.service.isLocked(id)) {
       throw new HTTPError(
         `Cannot access the Collection ${id} because it's either locked or published`,
         { id },

@@ -11,7 +11,7 @@
     "start": "npm run build && node ./dist/src/server.js",
     "watch:start": "nodemon src/server.ts",
     "migrate": "ts-node ./migrations/migrate.ts",
-    "migrate:docker": "./migrations/node-pg-migrate --database-url-var CONNECTION_STRING --migration-file-language ts --migrations-dir /app/migrations --ignore-pattern '\\..*|.*migrate(.ts)?'",
+    "migrate:docker": "./migrations/node-pg-migrate --no-check-order --database-url-var CONNECTION_STRING --migration-file-language ts --migrations-dir /app/migrations --ignore-pattern '\\..*|.*migrate(.ts)?'",
     "seed": "cp -r ./scripts/seed/*_data ./dist/scripts/seed && node ./dist/scripts/seed/index.js",
     "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js",
     "test": "jest",

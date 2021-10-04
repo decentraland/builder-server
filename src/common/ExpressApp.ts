@@ -118,13 +118,18 @@ export class ExpressApp {
     return this
   }
 
-  use(...handers: express.RequestHandler[] | express.ErrorRequestHandler[]) {
-    this.app.use(...handers)
+  use(...handlers: express.RequestHandler[] | express.ErrorRequestHandler[]) {
+    this.app.use(...handlers)
     return this
   }
 
   listen(port: string | number) {
-    this.app.listen(port, () => console.log('Server running on port', port))
+    return new Promise((resolve) =>
+      this.app.listen(port, () => {
+        console.log('Server running on port', port)
+        resolve(undefined)
+      })
+    )
   }
 
   getApp() {

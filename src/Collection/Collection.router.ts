@@ -350,12 +350,24 @@ export class CollectionRouter extends Router {
       )
     }
 
-    if (await this.service.isLocked(id)) {
-      throw new HTTPError(
-        `Cannot access the Collection ${id} because it's either locked or published`,
-        { id },
-        STATUS_CODES.unauthorized
-      )
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+
+    if (collection) {
+      if (await this.service.isPublished(collection.contract_address)) {
+        throw new HTTPError(
+          "The collection is published. It can't be saved",
+          { id },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      if (this.service.isLockExpired(collection.lock)) {
+        throw new HTTPError(
+          "The collection is locked. It can't be saved",
+          { id },
+          STATUS_CODES.unauthorized
+        )
+      }
     }
 
     if (id !== attributes.id) {
@@ -378,9 +390,19 @@ export class CollectionRouter extends Router {
   deleteCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
 
-    if (await this.service.isLocked(id)) {
+    const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware
+
+    if (await this.service.isPublished(collection.contract_address)) {
       throw new HTTPError(
-        `Cannot access the Collection ${id} because it's either locked or published`,
+        "The collection is published. It can't be deleted",
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    if (this.service.isLockExpired(collection.lock)) {
+      throw new HTTPError(
+        "The collection is locked. It can't be deleted",
         { id },
         STATUS_CODES.unauthorized
       )

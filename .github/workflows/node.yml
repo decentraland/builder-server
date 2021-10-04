@@ -7,10 +7,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@master
-      - name: Use Node.js 12.x
+      - name: Use Node.js 14.x
         uses: actions/setup-node@v1
         with:
-          node-version: 12.x
+          node-version: 14.x
       - name: Install
         run: npm ci
       - name: Test
@@ -26,7 +26,10 @@ jobs:
           WAREHOUSE_URL: WAREHOUSE_URL
           WAREHOUSE_TOKEN: WAREHOUSE_TOKEN
           AUTH0_DOMAIN: AUTH0_DOMAIN
-      - name: report coverage
+          DEFAULT_ETH_ADDRESS: DEFAULT_ETH_ADDRESS
+          ANALYTICS_CONNECTION_STRING: ANALYTICS_CONNECTION_STRING
+          PEER_URL: https://peer.decentraland.zone
+      - name: Report Coverage
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

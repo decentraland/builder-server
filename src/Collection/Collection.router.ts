@@ -82,6 +82,17 @@ export class CollectionRouter extends Router {
     )
 
     /**
+     * Lock a collection until is published
+     */
+    this.router.post(
+      '/collections/:id/lock',
+      withAuthentication,
+      withCollectionExists,
+      withCollectionAuthorization,
+      server.handleRequest(this.lockCollection)
+    )
+
+    /**
      * Upserts the collection
      * Important! Collection authorization is done inside the handler
      */
@@ -101,33 +112,6 @@ export class CollectionRouter extends Router {
       withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
-  }
-
-  saveTOS = async (req: AuthRequest) => {
-    const tosValidator = validator.compile(saveTOSSchema)
-    tosValidator(req.body)
-    if (tosValidator.errors) {
-      throw new HTTPError(
-        'Invalid request',
-        tosValidator.errors,
-        STATUS_CODES.badRequest
-      )
-    }
-
-    const eth_address = req.auth.ethAddress
-    try {
-      await sendDataToWarehouse('builder', 'publish_collection_tos', {
-        email: req.body.email,
-        eth_address: eth_address,
-        collection_address: req.body.collection_address,
-      })
-    } catch (e) {
-      throw new HTTPError(
-        "The TOS couldn't be recorded",
-        null,
-        STATUS_CODES.error
-      )
-    }
   }
 
   async getCollections(req: AuthRequest) {
@@ -272,6 +256,52 @@ export class CollectionRouter extends Router {
         [remoteCollection]
       ),
       items: await Bridge.consolidateItems(items, remoteItems, catalystItems),
+    }
+  }
+
+  saveTOS = async (req: AuthRequest) => {
+    const tosValidator = validator.compile(saveTOSSchema)
+    tosValidator(req.body)
+    if (tosValidator.errors) {
+      throw new HTTPError(
+        'Invalid request',
+        tosValidator.errors,
+        STATUS_CODES.badRequest
+      )
+    }
+
+    const eth_address = req.auth.ethAddress
+    try {
+      await sendDataToWarehouse('builder', 'publish_collection_tos', {
+        email: req.body.email,
+        eth_address: eth_address,
+        collection_address: req.body.collection_address,
+      })
+    } catch (e) {
+      throw new HTTPError(
+        "The TOS couldn't be recorded",
+        null,
+        STATUS_CODES.error
+      )
+    }
+  }
+
+  lockCollection = async (req: AuthRequest) => {
+    const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
+
+    try {
+      await Collection.update(
+        { lock: new Date(Date.now()) },
+        { id, eth_address }
+      )
+      return true
+    } catch (error) {
+      throw new HTTPError(
+        "The collection couldn't be updated",
+        { id, eth_address, error },
+        STATUS_CODES.error
+      )
     }
   }
 

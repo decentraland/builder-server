@@ -9,6 +9,7 @@ import { withSocialUserAgentDetector, SocialRequest } from '../middleware/share'
 import { Params, ElementType } from './Share.types'
 import { Pool, PoolAttributes } from '../Pool'
 import { ProjectAttributes } from '../Project'
+import { asyncHandler } from '../common/asyncHandler'
 import template from './template'
 
 const BUILDER_URL = env.get('BUILDER_URL', '')
@@ -23,7 +24,7 @@ export class ShareRouter extends Router {
     this.router.get(
       '/share/:type(scene|pool)/:id',
       withSocialUserAgentDetector,
-      this.redirectToBuilder
+      asyncHandler(this.redirectToBuilder)
     )
   }
 

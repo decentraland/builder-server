@@ -18,6 +18,8 @@ import {
   AuthRequest,
 } from '../middleware/authentication'
 import { S3AssetPack, getFileUploader, ACL } from '../S3'
+import { ExpressApp } from '../common/ExpressApp'
+import { asyncHandler } from '../common/asyncHandler'
 import { Ownable } from '../Ownable'
 import { Asset } from '../Asset'
 import { AssetPack } from './AssetPack.model'
@@ -27,7 +29,6 @@ import {
   assetPackSchema,
 } from './AssetPack.types'
 import { getDefaultEthAddress } from './utils'
-import { ExpressApp } from '../common/ExpressApp'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -59,7 +60,7 @@ export class AssetPackRouter extends Router {
       '/assetPacks',
       withPermissiveAuthentication,
       withLowercaseQueryParams(['owner']),
-      this.getAssetPacks
+      asyncHandler(this.getAssetPacks)
     )
 
     /**

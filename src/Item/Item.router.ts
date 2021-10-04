@@ -19,7 +19,11 @@ import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
 import { RequestParameters } from '../RequestParameters'
-import { Collection, CollectionAttributes } from '../Collection'
+import {
+  Collection,
+  CollectionAttributes,
+  CollectionService,
+} from '../Collection'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
 import { itemSchema } from './Item.types'
@@ -304,6 +308,7 @@ export class ItemRouter extends Router {
       const dbCollectionToAddItem = await Collection.findOne<CollectionAttributes>(
         itemJSON.collection_id
       )
+
       // So far, only the owner can add item if the collection was not published
       if (
         !dbCollectionToAddItem ||
@@ -334,14 +339,14 @@ export class ItemRouter extends Router {
       const dbCollection = await Collection.findOne<CollectionAttributes>(
         dbItem.collection_id
       )
+      const service = new CollectionService()
 
-      const [
-        { collection: remoteCollection, items: remoteItems },
-      ] = await Promise.all([
-        collectionAPI.fetchCollectionWithItemsByContractAddress(
-          dbCollection!.contract_address
-        ),
-      ])
+      const {
+        collection: remoteCollection,
+        items: remoteItems,
+      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
+        dbCollection!.contract_address
+      )
       const catalystItems = await peerAPI.fetchWearables(
         remoteItems.map((item) => item.urn)
       )
@@ -351,6 +356,14 @@ export class ItemRouter extends Router {
           "Published collection items can't be updated",
           { id },
           STATUS_CODES.error
+        )
+      }
+
+      if (service.isLockActive(dbCollection!.lock)) {
+        throw new HTTPError(
+          "Locked collection items can't be updated",
+          { id },
+          STATUS_CODES.locked
         )
       }
     }
@@ -384,11 +397,9 @@ export class ItemRouter extends Router {
       )
 
       if (dbCollection) {
-        const remoteCollection = await collectionAPI.fetchCollection(
-          dbCollection.contract_address
-        )
+        const service = new CollectionService()
 
-        if (remoteCollection) {
+        if (await service.isPublished(dbCollection.id)) {
           throw new HTTPError(
             "The item was published. It can't be deleted",
             {
@@ -397,6 +408,18 @@ export class ItemRouter extends Router {
               contract_address: dbCollection.contract_address,
             },
             STATUS_CODES.unauthorized
+          )
+        }
+
+        if (await service.isLockActive(dbCollection.lock)) {
+          throw new HTTPError(
+            "The item collection is locked. It can't be deleted",
+            {
+              id,
+              blockchain_item_id: dbItem.blockchain_item_id,
+              contract_address: dbCollection.contract_address,
+            },
+            STATUS_CODES.locked
           )
         }
       }

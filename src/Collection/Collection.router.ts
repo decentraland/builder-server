@@ -361,7 +361,7 @@ export class CollectionRouter extends Router {
         )
       }
 
-      if (this.service.isLockExpired(collection.lock)) {
+      if (this.service.isLockActive(collection.lock)) {
         throw new HTTPError(
           "The collection is locked. It can't be saved",
           { id },
@@ -400,7 +400,7 @@ export class CollectionRouter extends Router {
       )
     }
 
-    if (this.service.isLockExpired(collection.lock)) {
+    if (this.service.isLockActive(collection.lock)) {
       throw new HTTPError(
         "The collection is locked. It can't be deleted",
         { id },

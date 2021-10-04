@@ -365,7 +365,7 @@ export class CollectionRouter extends Router {
         throw new HTTPError(
           "The collection is locked. It can't be saved",
           { id },
-          STATUS_CODES.unauthorized
+          STATUS_CODES.locked
         )
       }
     }
@@ -404,7 +404,7 @@ export class CollectionRouter extends Router {
       throw new HTTPError(
         "The collection is locked. It can't be deleted",
         { id },
-        STATUS_CODES.unauthorized
+        STATUS_CODES.locked
       )
     }
 

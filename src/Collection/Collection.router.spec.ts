@@ -70,9 +70,9 @@ describe('Collection router', () => {
       const errorMessage = 'Error message'
 
       beforeEach(() => {
-        ;(Collection.update as jest.Mock).mockImplementationOnce(() => {
-          throw new Error(errorMessage)
-        })
+        ;(Collection.update as jest.Mock).mockRejectedValueOnce(
+          new Error(errorMessage)
+        )
       })
 
       it('should fail with an error if the update throws', () => {

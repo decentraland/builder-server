@@ -139,9 +139,11 @@ export class ItemRouter extends Router {
         : Item.find<ItemAttributes>({ is_published }),
       collectionAPI.fetchItems(),
     ])
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
+
+    const catalystItems =
+      remoteItems && remoteItems.length > 0
+        ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
+        : []
 
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
@@ -162,9 +164,11 @@ export class ItemRouter extends Router {
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
+
+    const catalystItems =
+      remoteItems && remoteItems.length > 0
+        ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
+        : []
 
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
@@ -198,12 +202,6 @@ export class ItemRouter extends Router {
         )
       }
 
-      // Set the item's URN
-      fullItem.urn = getDecentralandItemURN(
-        fullItem,
-        dbCollection.contract_address
-      )
-
       const [remoteItem, remoteCollection] = await Promise.all([
         collectionAPI.fetchItem(
           dbCollection.contract_address,
@@ -225,6 +223,11 @@ export class ItemRouter extends Router {
           )
         }
       }
+
+      // Set the item's URN
+      fullItem.urn =
+        fullItem.urn ??
+        getDecentralandItemURN(fullItem, dbCollection.contract_address)
     }
 
     if (!(await hasAccess(eth_address, fullItem, fullCollection))) {
@@ -260,6 +263,7 @@ export class ItemRouter extends Router {
         dbCollection.contract_address
       ),
     ])
+
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )

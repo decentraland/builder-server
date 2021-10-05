@@ -88,6 +88,7 @@ export class Bridge {
             dbCollection.contract_address,
             dbItem.blockchain_item_id!
           )
+
           const remoteItem = dbItem.blockchain_item_id
             ? remoteItems.find((remoteItem) => remoteItem.id === remoteItemId)
             : null
@@ -109,6 +110,7 @@ export class Bridge {
       items.push(item)
     }
 
+    // console.log('Items', items)
     return items
   }
 
@@ -160,7 +162,6 @@ export class Bridge {
       metrics = dbItem.metrics
       in_catalyst = false
     }
-
     if (catalystItem) {
       urn = catalystItem.id
     } else if (remoteItem && remoteItem.urn) {

@@ -15,7 +15,7 @@ export type CollectionAttributes = {
   minters: string[]
   managers: string[]
   forum_link?: string
-  lock: Date
+  lock: Date | null
   reviewed_at: Date
   created_at: Date
   updated_at: Date

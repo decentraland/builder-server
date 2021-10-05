@@ -1,11 +1,11 @@
 import supertest from 'supertest'
-import { v4 as uuidv4 } from 'uuid'
 import {
   wallet,
   createAuthHeaders,
   buildURL,
   mockExistsMiddleware,
   mockAuthorizationMiddleware,
+  collectionAttributesMock,
 } from '../../spec/utils'
 import { collectionAPI } from '../ethereum/api/collection'
 import { isCommitteeMember } from '../Committee'
@@ -20,23 +20,7 @@ jest.mock('../Committee')
 jest.mock('./access')
 
 describe('Collection router', () => {
-  const collectionAttributes = {
-    id: uuidv4(),
-    name: 'Test',
-    urn: null,
-    eth_address: wallet.address,
-    salt: '',
-    contract_address: '0x02b6bD2420cCADC38726BD34BB7f5c52B3F4F3ff',
-    is_published: false,
-    is_approved: false,
-    minters: [],
-    managers: [],
-    forum_link: null,
-    lock: null,
-    reviewed_at: new Date(),
-    created_at: new Date(),
-    updated_at: new Date(),
-  }
+  const collectionAttributes = { ...collectionAttributesMock }
 
   const resultingCollectionAttributes = {
     ...collectionAttributes,

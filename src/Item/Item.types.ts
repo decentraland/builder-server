@@ -18,11 +18,10 @@ export enum ItemRarity {
 export type ItemAttributes = {
   id: string // uuid
   /**
-   * The urn field holds the item part of the URN in third party items.
-   * All Decentraland items will contain this column as null but it will be generated and returned
-   * whenever a Decentraland item that is published is requested.
+   * The urn_suffix field holds the item part of the URN in third party items.
+   * All Decentraland items will contain this column as null.
    */
-  urn: string | null
+  urn_suffix: string | null
   name: string
   description: string
   thumbnail: string
@@ -32,14 +31,21 @@ export type ItemAttributes = {
   price: string | null
   beneficiary?: string | null
   rarity: ItemRarity | null
-  total_supply: number
-  is_published: boolean
-  is_approved: boolean
-  in_catalyst: boolean
   type: ItemType
   data: WearableData
   metrics: MetricsAttributes
   contents: Record<string, string>
   created_at: Date
   updated_at: Date
+}
+
+export type FullItem = ItemAttributes & {
+  /**
+   * The urn field will contain a fully generated URN for all published items.
+   */
+  urn: string | null
+  is_published: boolean
+  is_approved: boolean
+  in_catalyst: boolean
+  total_supply: number
 }

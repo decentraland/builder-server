@@ -3,11 +3,11 @@ import { isManager as isCollectionManager } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
 import { Item } from './Item.model'
-import { ItemAttributes } from './Item.types'
+import { FullItem } from './Item.types'
 
 export async function hasAccess(
   eth_address: string,
-  item: ItemAttributes,
+  item: FullItem,
   collection?: CollectionAttributes
 ): Promise<boolean> {
   if (item.is_published) {

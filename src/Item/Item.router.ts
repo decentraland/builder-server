@@ -24,6 +24,10 @@ import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
 import { itemSchema } from './Item.schema'
 import { isCommitteeMember } from '../Committee'
+<<<<<<< HEAD
+=======
+import { FullItem, itemSchema } from './Item.types'
+>>>>>>> 4177857e9b6b3d848d22c80191103ce0fd891128
 import { hasAccess } from './access'
 import { getDecentralandItemURN } from './utils'
 
@@ -134,9 +138,7 @@ export class ItemRouter extends Router {
     }
 
     const [dbItems, remoteItems] = await Promise.all([
-      typeof is_published === 'undefined'
-        ? Item.find<ItemAttributes>()
-        : Item.find<ItemAttributes>({ is_published }),
+      Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
     ])
 
@@ -145,7 +147,17 @@ export class ItemRouter extends Router {
         ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
         : []
 
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    const items = await Bridge.consolidateItems(
+      dbItems,
+      remoteItems,
+      catalystItems
+    )
+
+    return items.filter(
+      (item) =>
+        typeof is_published === 'undefined' ||
+        item.is_published === is_published
+    )
   }
 
   async getAddressItems(req: AuthRequest) {
@@ -186,7 +198,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    let fullItem: ItemAttributes = dbItem
+    let fullItem: FullItem = Bridge.toFullItem(dbItem)
     let fullCollection: CollectionAttributes | undefined = undefined
 
     if (dbItem.collection_id && dbItem.blockchain_item_id) {

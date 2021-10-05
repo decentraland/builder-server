@@ -27,6 +27,6 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {
-  pgm.dropColumn(itemTableName, 'urn')
-  pgm.dropColumn(collectionTableName, 'urn')
+  pgm.dropColumn(itemTableName, column)
+  pgm.dropColumn(collectionTableName, column)
 }

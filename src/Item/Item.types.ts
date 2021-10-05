@@ -26,16 +26,19 @@ export type ItemAttributes = {
   price: string | null
   beneficiary?: string | null
   rarity: ItemRarity | null
-  total_supply: number
-  is_published: boolean
-  is_approved: boolean
-  in_catalyst: boolean
   type: ItemType
   data: WearableData
   metrics: MetricsAttributes
   contents: Record<string, string>
   created_at: Date
   updated_at: Date
+}
+
+export type FullItem = ItemAttributes & {
+  is_published: boolean
+  is_approved: boolean
+  in_catalyst: boolean
+  total_supply: number
 }
 
 export const itemSchema = Object.freeze({

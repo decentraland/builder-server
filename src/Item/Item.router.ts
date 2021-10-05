@@ -227,7 +227,7 @@ export class ItemRouter extends Router {
       }
     }
 
-    if (!fullItem && !(await hasAccess(eth_address, dbItem, fullCollection))) {
+    if (!(await hasAccess(eth_address, fullItem, fullCollection))) {
       throw new HTTPError(
         'Unauthorized',
         { id, eth_address },

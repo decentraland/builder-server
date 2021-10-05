@@ -22,7 +22,7 @@ import { RequestParameters } from '../RequestParameters'
 import { Collection, CollectionAttributes } from '../Collection'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
-import { itemSchema } from './Item.types'
+import { FullItem, itemSchema } from './Item.types'
 import { hasAccess } from './access'
 
 const validator = getValidator()
@@ -132,16 +132,24 @@ export class ItemRouter extends Router {
     }
 
     const [dbItems, remoteItems] = await Promise.all([
-      typeof is_published === 'undefined'
-        ? Item.find<ItemAttributes>()
-        : Item.find<ItemAttributes>({ is_published }),
+      Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
     ])
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )
 
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    const items = await Bridge.consolidateItems(
+      dbItems,
+      remoteItems,
+      catalystItems
+    )
+
+    return items.filter(
+      (item) =>
+        typeof is_published === 'undefined' ||
+        item.is_published === is_published
+    )
   }
 
   async getAddressItems(req: AuthRequest) {
@@ -180,7 +188,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    let fullItem: ItemAttributes = dbItem
+    let fullItem: FullItem = Bridge.toFullItem(dbItem)
     let fullCollection: CollectionAttributes | undefined = undefined
 
     if (dbItem.collection_id && dbItem.blockchain_item_id) {

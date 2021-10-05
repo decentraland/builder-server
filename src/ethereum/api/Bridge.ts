@@ -1,5 +1,5 @@
 import { CollectionAttributes, Collection } from '../../Collection'
-import { ItemAttributes, Item, ItemRarity } from '../../Item'
+import { ItemAttributes, Item, ItemRarity, FullItem } from '../../Item'
 import { MetricsAttributes } from '../../Metrics'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
@@ -40,12 +40,22 @@ export class Bridge {
     return collections
   }
 
+  static toFullItem(dbItem: ItemAttributes): FullItem {
+    return {
+      ...dbItem,
+      in_catalyst: false,
+      is_approved: false,
+      is_published: false,
+      total_supply: 0,
+    }
+  }
+
   static async consolidateItems(
     dbItems: ItemAttributes[],
     remoteItems: ItemFragment[],
     catalystItems: Wearable[]
   ) {
-    const items: ItemAttributes[] = []
+    const items: FullItem[] = []
 
     // To avoid multiple queries to the db, we will fetch all the items that match the blockchain_id and their collections
     // to filter them later
@@ -77,8 +87,6 @@ export class Bridge {
     const catalystItemsIndex = this.indexById(catalystItems)
 
     for (let dbItem of allDbItems) {
-      let item = dbItem
-
       // Check if DB item has a collection
       if (dbItem.collection_id) {
         const dbCollection = dbCollectionsIndex[dbItem.collection_id]
@@ -96,17 +104,19 @@ export class Bridge {
           if (remoteItem && remoteItem.collection) {
             const urn = remoteItem.urn.toLowerCase()
             const catalystItem = catalystItemsIndex[urn]
-            item = Bridge.mergeItem(
-              dbItem,
-              remoteItem,
-              remoteItem.collection,
-              catalystItem
+            items.push(
+              Bridge.mergeItem(
+                dbItem,
+                remoteItem,
+                remoteItem.collection,
+                catalystItem
+              )
             )
           }
         }
+      } else {
+        items.push(Bridge.toFullItem(dbItem))
       }
-
-      items.push(item)
     }
 
     return items
@@ -136,7 +146,7 @@ export class Bridge {
     remoteItem: ItemFragment,
     remoteCollection: CollectionFragment,
     catalystItem?: Wearable
-  ): ItemAttributes {
+  ): FullItem {
     const { wearable } = remoteItem.metadata
 
     let name: string

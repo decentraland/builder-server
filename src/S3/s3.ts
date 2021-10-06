@@ -22,7 +22,7 @@ if (!BUCKET_NAME) {
 
 const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
 
-const MINIO_URL = env.get('MINIO_URL', undefined)
+const STORAGE_URL = env.get('AWS_STORAGE_URL', undefined)
 
 export const ACL = {
   private: 'private' as 'private',
@@ -42,10 +42,10 @@ let config: AWS.S3.ClientConfiguration = {
   secretAccessKey: ACCESS_SECRET,
 }
 
-if (MINIO_URL) {
+if (STORAGE_URL) {
   config = {
     ...config,
-    endpoint: MINIO_URL,
+    endpoint: STORAGE_URL,
     s3ForcePathStyle: true,
     signatureVersion: 'v4',
   }
@@ -186,6 +186,6 @@ export function getFileUploader(
 }
 
 export const getBucketURL = (): string =>
-  MINIO_URL
-    ? `${MINIO_URL}/${BUCKET_NAME}`
+  STORAGE_URL
+    ? `${STORAGE_URL}/${BUCKET_NAME}`
     : `https://${BUCKET_NAME}.s3.amazonaws.com`

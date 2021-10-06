@@ -14,22 +14,40 @@ import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Item } from './Item.model'
 import { hasAccess } from './access'
-import { ItemAttributes, ItemType } from './Item.types'
+import { FullItem, ItemAttributes, ItemType } from './Item.types'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { ItemRarity } from '.'
 
-function toResultItem(
-  itemAttributes: ItemAttributes
-): Omit<ItemAttributes, 'created_at' | 'updated_at'> & {
+type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
   created_at: string
   updated_at: string
-} {
-  return {
+}
+
+function toResultItem(
+  itemAttributes: ItemAttributes,
+  itemFragment?: ItemFragment,
+  catalystItem?: Wearable
+): ResultItem {
+  const resultItem = {
     ...itemAttributes,
     created_at: itemAttributes.created_at.toISOString(),
     updated_at: itemAttributes.updated_at.toISOString(),
+    in_catalyst: Boolean(catalystItem),
+    is_approved: false,
+    is_published:
+      Boolean(itemAttributes.collection_id) &&
+      Boolean(itemAttributes.blockchain_item_id),
+    urn: null,
+    total_supply: itemFragment?.totalSupply
+      ? Number(itemFragment?.totalSupply)
+      : 0,
   }
+  delete (resultItem as Omit<typeof resultItem, 'urn_suffix'> & {
+    urn_suffix: unknown
+  }).urn_suffix
+
+  return resultItem
 }
 
 function mockItemConsolidation(
@@ -59,26 +77,17 @@ jest.mock('./access')
 describe('Item router', () => {
   let itemAttributes: ItemAttributes
   let itemAttributesOfNonPublishedItem: ItemAttributes
-  let resultingItemAttributesOfNonPublishedItem: Omit<
-    ItemAttributes,
-    'created_at' | 'updated_at'
-  > & {
-    created_at: string
-    updated_at: string
-  }
+  let resultingItemAttributesOfNonPublishedItem: ResultItem
   let wearable: Wearable
   let itemFragment: ItemFragment
   let urn: string
-  let resultingItemAttributes: Omit<
-    ItemAttributes,
-    'created_at' | 'updated_at'
-  > & { created_at: string; updated_at: string }
+  let resultingItemAttributes: ResultItem
   let url: string
 
   beforeEach(() => {
     itemAttributes = {
       id: uuidv4(),
-      urn: null,
+      urn_suffix: null,
       name: 'Test',
       description: '',
       thumbnail: '',
@@ -88,10 +97,7 @@ describe('Item router', () => {
       price: '',
       beneficiary: '',
       rarity: ItemRarity.COMMON,
-      total_supply: 1,
-      is_published: true,
-      is_approved: collectionAttributesMock.is_approved,
-      in_catalyst: true,
+      // is_approved: collectionAttributesMock.is_approved,
       type: ItemType.WEARABLE,
       data: {
         representations: [],
@@ -119,7 +125,7 @@ describe('Item router', () => {
         itemAttributes.blockchain_item_id,
       blockchainId: '0',
       urn,
-      totalSupply: itemAttributes.total_supply.toString(),
+      totalSupply: '1',
       price: itemAttributes.price!.toString(),
       beneficiary: 'aBeneficiary',
       minters: [],
@@ -157,7 +163,11 @@ describe('Item router', () => {
       createdAt: itemAttributes.created_at.getTime(),
       updatedAt: itemAttributes.updated_at.getTime(),
     }
-    resultingItemAttributes = toResultItem(itemAttributes)
+    resultingItemAttributes = toResultItem(
+      itemAttributes,
+      itemFragment,
+      wearable
+    )
     itemAttributes.collection_id = collectionAttributesMock.id
     itemAttributes.blockchain_item_id = '0'
     itemAttributesOfNonPublishedItem = {
@@ -198,6 +208,11 @@ describe('Item router', () => {
           itemFragment.collection
         )
         ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
+        resultingItemAttributes = toResultItem(
+          itemAttributes,
+          itemFragment,
+          wearable
+        )
       })
 
       it('should return the requested item with its URN', () => {
@@ -224,6 +239,7 @@ describe('Item router', () => {
     describe("when the item doesn't belong to a collection", () => {
       beforeEach(() => {
         itemAttributes.collection_id = null
+        resultingItemAttributes = toResultItem(itemAttributes)
       })
 
       it('should return the requested item with a nulled URN', () => {
@@ -245,6 +261,7 @@ describe('Item router', () => {
       beforeEach(() => {
         itemAttributes.collection_id = 'aCollectionId'
         itemAttributes.blockchain_item_id = null
+        resultingItemAttributes = toResultItem(itemAttributes)
       })
 
       it('should return the requested item with a nulled URN', () => {

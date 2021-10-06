@@ -39,7 +39,7 @@ export type ItemAttributes = {
   updated_at: Date
 }
 
-export type FullItem = ItemAttributes & {
+export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   /**
    * The urn field will contain a fully generated URN for all published items.
    */

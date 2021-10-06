@@ -17,13 +17,17 @@ import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
 import { Collection, CollectionAttributes } from '../Collection'
 import { isCommitteeMember } from '../Committee'
-import { collectionSchema, saveTOSSchema } from './Collection.types'
+import {
+  collectionSchema,
+  FullCollection,
+  saveTOSSchema,
+} from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
 import { isPublished } from '../utils/eth'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { sendDataToWarehouse } from '../warehouse'
 import { hasAccess } from './access'
-import { getDecentralandCollectionURN } from './utils'
+import { toFullCollection, toDBCollection } from './utils'
 
 const validator = getValidator()
 
@@ -148,13 +152,10 @@ export class CollectionRouter extends Router {
       remoteCollections
     )
 
-    // Build the URN for the collections
-    return consolidatedCollections.map((collection) => ({
-      ...collection,
-      urn:
-        collection.urn ??
-        getDecentralandCollectionURN(collection.contract_address),
-    }))
+    // Build the full collection
+    return consolidatedCollections.map((collection) =>
+      toFullCollection(collection)
+    )
   }
 
   async getAddressCollections(req: AuthRequest) {
@@ -179,13 +180,10 @@ export class CollectionRouter extends Router {
       remoteCollections
     )
 
-    // Build the URN for the collections
-    return consolidatedCollections.map((collection) => ({
-      ...collection,
-      urn:
-        collection.urn ??
-        getDecentralandCollectionURN(collection.contract_address),
-    }))
+    // Build the full collection
+    return consolidatedCollections.map((collection) =>
+      toFullCollection(collection)
+    )
   }
 
   async getCollection(req: AuthRequest) {
@@ -217,11 +215,7 @@ export class CollectionRouter extends Router {
       )
     }
 
-    fullCollection.urn =
-      fullCollection.urn ??
-      getDecentralandCollectionURN(fullCollection.contract_address)
-
-    return fullCollection
+    return toFullCollection(fullCollection)
   }
 
   publishCollection = async (req: AuthRequest) => {
@@ -279,10 +273,9 @@ export class CollectionRouter extends Router {
     }
 
     return {
-      collection: await Bridge.consolidateCollections(
-        [dbCollection!],
-        [remoteCollection]
-      ),
+      collection: (
+        await Bridge.consolidateCollections([dbCollection!], [remoteCollection])
+      ).map((collection) => toFullCollection(collection)),
       items: await Bridge.consolidateItems(items, remoteItems, catalystItems),
     }
   }
@@ -335,7 +328,10 @@ export class CollectionRouter extends Router {
 
   upsertCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
-    const collectionJSON: any = server.extractFromReq(req, 'collection')
+    const collectionJSON: FullCollection = server.extractFromReq(
+      req,
+      'collection'
+    )
     const data: string = server.extractFromReq(req, 'data')
     const eth_address = req.auth.ethAddress
 
@@ -363,10 +359,10 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const attributes = {
+    const attributes = toDBCollection({
       ...collectionJSON,
       eth_address,
-    } as CollectionAttributes
+    })
 
     if (!(await Collection.isValidName(id, attributes.name.trim()))) {
       throw new HTTPError(
@@ -398,15 +394,10 @@ export class CollectionRouter extends Router {
       data
     )
 
-    // Sets the DCL collection URN to null before writing it to the DB
-    attributes.urn = null
     const upsertedCollection = await new Collection(attributes).upsert()
 
     // Return the collection that was updated or inserted with the DCL URN
-    return {
-      ...upsertedCollection,
-      urn: getDecentralandCollectionURN(upsertedCollection.contract_address),
-    }
+    return toFullCollection(upsertedCollection)
   }
 
   deleteCollection = async (req: AuthRequest) => {

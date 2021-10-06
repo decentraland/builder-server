@@ -42,7 +42,7 @@ export const wallet: Wallet = {
 export const collectionAttributesMock: CollectionAttributes = {
   id: uuidv4(),
   name: 'Test',
-  urn: null,
+  urn_suffix: null,
   eth_address: wallet.address,
   salt: '',
   contract_address: '0x02b6bD2420cCADC38726BD34BB7f5c52B3F4F3ff',

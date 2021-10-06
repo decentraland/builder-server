@@ -7,8 +7,6 @@ const collectionTableName = Collection.tableName
 const itemTableName = Item.tableName
 const column = 'urn_suffix'
 
-export const shorthands = undefined
-
 /**
  * Migrates the DB by adding the URN column to the items and collections tables.
  * The urn_suffix column will be null for Decentraland Collections and for Third Party Collections

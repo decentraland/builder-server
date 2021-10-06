@@ -12,6 +12,7 @@ import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { Collection } from './Collection.model'
 import { hasAccess } from './access'
+import { FullCollection } from '.'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
@@ -22,12 +23,23 @@ jest.mock('./access')
 describe('Collection router', () => {
   const collectionAttributes = { ...collectionAttributesMock }
 
-  const resultingCollectionAttributes = {
+  const resultingCollectionAttributes: Omit<
+    FullCollection,
+    'reviewed_at' | 'created_at' | 'updated_at' | 'urn_suffix'
+  > & {
+    reviewed_at: string
+    created_at: string
+    updated_at: string
+    urn_suffix: unknown
+  } = {
     ...collectionAttributes,
     reviewed_at: collectionAttributes.reviewed_at.toISOString(),
     created_at: collectionAttributes.created_at.toISOString(),
     updated_at: collectionAttributes.updated_at.toISOString(),
+    urn: '',
   }
+
+  delete resultingCollectionAttributes.urn_suffix
 
   describe('when retrieving all the collections', () => {
     beforeEach(() => {

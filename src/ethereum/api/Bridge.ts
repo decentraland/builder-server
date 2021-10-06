@@ -41,13 +41,19 @@ export class Bridge {
   }
 
   static toFullItem(dbItem: ItemAttributes): FullItem {
-    return {
+    const fullItem = {
       ...dbItem,
+      urn: null,
       in_catalyst: false,
       is_approved: false,
       is_published: false,
       total_supply: 0,
     }
+
+    delete (fullItem as FullItem & { urn_suffix: string | undefined })
+      .urn_suffix
+
+    return fullItem
   }
 
   static async consolidateItems(
@@ -161,6 +167,10 @@ export class Bridge {
     let in_catalyst: boolean
     let urn: string | null = null
 
+    delete (dbItem as Omit<ItemAttributes, 'urn_suffix'> & {
+      urn_suffix: unknown
+    }).urn_suffix
+
     if (catalystItem) {
       data = catalystItem.data
       contents = catalystItem.contents
@@ -195,7 +205,7 @@ export class Bridge {
       category = data.category
     }
 
-    // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
+    // Caveat!: we're not considering Fragment bodyshapes here, because it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
     return {
       ...dbItem,

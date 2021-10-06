@@ -5,7 +5,7 @@ export type CollectionAttributes = {
    * All Decentraland collections will contain this column as null but it will be generated and returned
    * whenever a Decentraland collection is requested.
    */
-  urn: string | null
+  urn_suffix: string | null
   name: string
   eth_address: string
   salt: string
@@ -19,6 +19,10 @@ export type CollectionAttributes = {
   reviewed_at: Date
   created_at: Date
   updated_at: Date
+}
+
+export type FullCollection = Omit<CollectionAttributes, 'urn_suffix'> & {
+  urn: string
 }
 
 export const collectionSchema = Object.freeze({

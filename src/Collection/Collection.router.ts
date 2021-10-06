@@ -15,7 +15,11 @@ import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FactoryCollection } from '../ethereum'
 import { Ownable } from '../Ownable'
 import { Item, ItemAttributes } from '../Item'
-import { Collection, CollectionAttributes } from '../Collection'
+import {
+  Collection,
+  CollectionService,
+  CollectionAttributes,
+} from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import {
   collectionSchema,
@@ -23,7 +27,6 @@ import {
   saveTOSSchema,
 } from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
-import { isPublished } from '../utils/eth'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { sendDataToWarehouse } from '../warehouse'
 import { hasAccess } from './access'
@@ -32,6 +35,8 @@ import { toFullCollection, toDBCollection } from './utils'
 const validator = getValidator()
 
 export class CollectionRouter extends Router {
+  public service = new CollectionService()
+
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(Collection)
@@ -61,7 +66,6 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id',
-      withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
     )
@@ -312,15 +316,13 @@ export class CollectionRouter extends Router {
     const eth_address = req.auth.ethAddress
 
     try {
-      await Collection.update(
-        { lock: new Date(Date.now()) },
-        { id, eth_address }
-      )
-      return true
+      const lock = new Date(Date.now())
+      await Collection.update({ lock }, { id, eth_address })
+      return lock
     } catch (error) {
       throw new HTTPError(
         "The collection couldn't be updated",
-        { id, eth_address, error },
+        { id, eth_address, error: (error as Error).message },
         STATUS_CODES.error
       )
     }
@@ -372,12 +374,24 @@ export class CollectionRouter extends Router {
       )
     }
 
-    if (await this.isCollectionPublished(id)) {
-      throw new HTTPError(
-        "The collection is published. It can't be updated",
-        { id },
-        STATUS_CODES.unauthorized
-      )
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+
+    if (collection) {
+      if (await this.service.isPublished(collection.contract_address)) {
+        throw new HTTPError(
+          "The collection is published. It can't be saved",
+          { id },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      if (this.service.isLockActive(collection.lock)) {
+        throw new HTTPError(
+          "The collection is locked. It can't be saved",
+          { id },
+          STATUS_CODES.locked
+        )
+      }
     }
 
     if (id !== attributes.id) {
@@ -403,7 +417,9 @@ export class CollectionRouter extends Router {
   deleteCollection = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
 
-    if (await this.isCollectionPublished(id)) {
+    const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware
+
+    if (await this.service.isPublished(collection.contract_address)) {
       throw new HTTPError(
         "The collection is published. It can't be deleted",
         { id },
@@ -411,34 +427,18 @@ export class CollectionRouter extends Router {
       )
     }
 
+    if (this.service.isLockActive(collection.lock)) {
+      throw new HTTPError(
+        "The collection is locked. It can't be deleted",
+        { id },
+        STATUS_CODES.locked
+      )
+    }
+
     await Promise.all([
       Collection.delete({ id }),
       Item.delete({ collection_id: id }),
     ])
-    return true
-  }
-
-  async isCollectionPublished(collectionId: string) {
-    const dbCollection = await Collection.findOne<CollectionAttributes>(
-      collectionId
-    )
-
-    if (!dbCollection) {
-      return false
-    }
-
-    const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection.contract_address
-    )
-
-    // Fallback: check against the blockchain, in case the subgraph is lagging
-    if (!remoteCollection) {
-      const isCollectionPublished = await isPublished(
-        dbCollection.contract_address
-      )
-      return isCollectionPublished
-    }
-
     return true
   }
 }

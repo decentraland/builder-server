@@ -2,6 +2,7 @@ import { metricsSchema } from '../Metrics/Metrics.schema'
 import { ItemRarity, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
 
+// The schema is placed into this file to avoid a circular dependency.
 export const itemSchema = Object.freeze({
   type: 'object',
   properties: {

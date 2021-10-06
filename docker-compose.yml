@@ -3,7 +3,7 @@
 # you will have a postgres and an s3 compatible local object storage
 # ready to be used.
 
-version: "3.4"
+version: '3.4'
 
 services:
   postgres:
@@ -17,19 +17,14 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
-  # Database viewer to easily check what is going on inside the database.
-  # Allows query execution for reading and writing as well as the display
-  # of many other metrics.
-  pgadmin:
-    image: dpage/pgadmin4
+  # Simple UI that allows read and write operations on the database.
+  # Accesible via http://localhost:8080.
+  adminer:
+    image: adminer
     environment:
-      - PGADMIN_DEFAULT_EMAIL=admin@pgadmin.com
-      - PGADMIN_DEFAULT_PASSWORD=password
-      - PGADMIN_LISTEN_PORT=80
-    volumes:
-      - pgadmin_data:/var/lib/pgadmin
+      - ADMINER_DEFAULT_SERVER=postgres
     ports:
-      - 15432:80
+      - 8080:8080
 
   # Object storage compatible with aws-sdk.
   # Comes with a UI that can be accessed via http://localhost:9001.
@@ -45,7 +40,7 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
 
-  # Short lived process in charge of initializing the bucket (if needed) 
+  # Short lived process in charge of initializing the bucket (if needed)
   # on start.
   minio-initialize-bucket:
     image: minio/mc
@@ -57,5 +52,4 @@ services:
 
 volumes:
   postgres_data:
-  pgadmin_data:
   minio_data:

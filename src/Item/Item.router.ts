@@ -19,11 +19,17 @@ import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { Item, ItemAttributes } from '../Item'
 import { RequestParameters } from '../RequestParameters'
-import { Collection, CollectionAttributes } from '../Collection'
+import {
+  Collection,
+  CollectionAttributes,
+  CollectionService,
+} from '../Collection'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
-import { itemSchema } from './Item.types'
+import { FullItem } from './Item.types'
 import { hasAccess } from './access'
+import { toDBItem } from './utils'
+import { itemSchema } from './Item.schema'
 
 const validator = getValidator()
 
@@ -132,16 +138,24 @@ export class ItemRouter extends Router {
     }
 
     const [dbItems, remoteItems] = await Promise.all([
-      typeof is_published === 'undefined'
-        ? Item.find<ItemAttributes>()
-        : Item.find<ItemAttributes>({ is_published }),
+      Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
     ])
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )
 
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    const items = await Bridge.consolidateItems(
+      dbItems,
+      remoteItems,
+      catalystItems
+    )
+
+    return items.filter(
+      (item) =>
+        typeof is_published === 'undefined' ||
+        item.is_published === is_published
+    )
   }
 
   async getAddressItems(req: AuthRequest) {
@@ -180,7 +194,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    let fullItem: ItemAttributes = dbItem
+    let fullItem: FullItem = Bridge.toFullItem(dbItem)
     let fullCollection: CollectionAttributes | undefined = undefined
 
     if (dbItem.collection_id && dbItem.blockchain_item_id) {
@@ -273,7 +287,7 @@ export class ItemRouter extends Router {
 
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const itemJSON: any = server.extractFromReq(req, 'item')
+    const itemJSON: FullItem = server.extractFromReq(req, 'item')
 
     if (id !== itemJSON.id) {
       throw new HTTPError('The body and URL item ids do not match', {
@@ -376,6 +390,16 @@ export class ItemRouter extends Router {
           STATUS_CODES.unauthorized
         )
       }
+
+      const service = new CollectionService()
+
+      if (service.isLockActive(dbCollection.lock)) {
+        throw new HTTPError(
+          "Locked collection items can't be updated",
+          { id },
+          STATUS_CODES.locked
+        )
+      }
     }
 
     const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
@@ -404,6 +428,7 @@ export class ItemRouter extends Router {
     }
 
     const dbItemCollection = await findCollection(dbItem?.collection_id)
+
     const isDbItemCollectionPublished = await getIsCollectionPublished(
       dbItemCollection
     )
@@ -421,7 +446,10 @@ export class ItemRouter extends Router {
       }
     }
 
-    const attributes = { ...itemJSON, eth_address } as ItemAttributes
+    const attributes = toDBItem({
+      ...itemJSON,
+      eth_address,
+    })
 
     return new Item(attributes).upsert()
   }
@@ -440,11 +468,9 @@ export class ItemRouter extends Router {
       )
 
       if (dbCollection) {
-        const remoteCollection = await collectionAPI.fetchCollection(
-          dbCollection.contract_address
-        )
+        const service = new CollectionService()
 
-        if (remoteCollection) {
+        if (await service.isPublished(dbCollection.id)) {
           throw new HTTPError(
             "The item was published. It can't be deleted",
             {
@@ -453,6 +479,18 @@ export class ItemRouter extends Router {
               contract_address: dbCollection.contract_address,
             },
             STATUS_CODES.unauthorized
+          )
+        }
+
+        if (await service.isLockActive(dbCollection.lock)) {
+          throw new HTTPError(
+            "The item collection is locked. It can't be deleted",
+            {
+              id,
+              blockchain_item_id: dbItem.blockchain_item_id,
+              contract_address: dbCollection.contract_address,
+            },
+            STATUS_CODES.locked
           )
         }
       }

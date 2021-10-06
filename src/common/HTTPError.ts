@@ -3,6 +3,7 @@ export const STATUS_CODES = {
   badRequest: 400,
   unauthorized: 401,
   notFound: 404,
+  locked: 423,
   error: 500,
 }
 export type StatusCode = typeof STATUS_CODES[keyof typeof STATUS_CODES]

@@ -9,8 +9,8 @@ export type CollectionAttributes = {
   minters: string[]
   managers: string[]
   forum_link?: string
-  lock: Date
-  reviewed_at: Date
+  lock?: Date
+  reviewed_at?: Date
   created_at: Date
   updated_at: Date
 }

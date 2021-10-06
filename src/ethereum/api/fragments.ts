@@ -12,6 +12,7 @@ export const itemFragment = () => gql`
     beneficiary
     managers
     minters
+    contentHash
     collection {
       id
       creator
@@ -74,6 +75,7 @@ export type ItemFragment = {
   beneficiary: string
   minters: string[]
   managers: string[]
+  contentHash: string
   collection: CollectionFragment
   metadata: MetadataFragment
 }

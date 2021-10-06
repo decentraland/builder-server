@@ -47,6 +47,7 @@ export class Bridge {
       is_approved: false,
       is_published: false,
       total_supply: 0,
+      content_hash: null,
     }
   }
 
@@ -200,6 +201,7 @@ export class Bridge {
       in_catalyst,
       metrics,
       contents,
+      content_hash: remoteItem.contentHash || null,
       data: {
         ...data,
         category,

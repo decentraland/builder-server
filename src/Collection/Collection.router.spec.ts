@@ -1,4 +1,5 @@
 import supertest from 'supertest'
+import { omit } from 'decentraland-commons/dist/utils'
 import {
   wallet,
   createAuthHeaders,
@@ -12,7 +13,7 @@ import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { Collection } from './Collection.model'
 import { hasAccess } from './access'
-import { FullCollection } from '.'
+import { CollectionAttributes, FullCollection } from './Collection.types'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
@@ -20,51 +21,54 @@ jest.mock('./Collection.model')
 jest.mock('../Committee')
 jest.mock('./access')
 
+type ResultCollection = Omit<
+  FullCollection,
+  'reviewed_at' | 'created_at' | 'updated_at' | 'urn_suffix'
+> & {
+  reviewed_at: string
+  created_at: string
+  updated_at: string
+  urn_suffix: unknown
+}
+
 describe('Collection router', () => {
-  const collectionAttributes = { ...collectionAttributesMock }
+  let dbCollection: CollectionAttributes
+  let resultingCollectionAttributes: ResultCollection
+  let url: string
 
-  const resultingCollectionAttributes: Omit<
-    FullCollection,
-    'reviewed_at' | 'created_at' | 'updated_at' | 'urn_suffix'
-  > & {
-    reviewed_at: string
-    created_at: string
-    updated_at: string
-    urn_suffix: unknown
-  } = {
-    ...collectionAttributes,
-    reviewed_at: collectionAttributes.reviewed_at.toISOString(),
-    created_at: collectionAttributes.created_at.toISOString(),
-    updated_at: collectionAttributes.updated_at.toISOString(),
-    urn: '',
-  }
+  beforeEach(() => {
+    dbCollection = { ...collectionAttributesMock }
+    resultingCollectionAttributes = omit(
+      {
+        ...dbCollection,
+        reviewed_at: dbCollection.reviewed_at.toISOString(),
+        created_at: dbCollection.created_at.toISOString(),
+        updated_at: dbCollection.updated_at.toISOString(),
+        urn: '',
+      },
+      ['urn_suffix']
+    )
+  })
 
-  delete resultingCollectionAttributes.urn_suffix
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
 
   describe('when retrieving all the collections', () => {
     beforeEach(() => {
-      mockAuthorizationMiddleware(
-        Collection,
-        collectionAttributes.id,
-        wallet.address
-      )
+      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Collection.find as jest.Mock)
-        .mockResolvedValueOnce([collectionAttributes])
+        .mockResolvedValueOnce([dbCollection])
         .mockResolvedValueOnce([])
       ;(Collection.findByContractAddresses as jest.Mock).mockResolvedValueOnce(
         []
       )
       ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
-    })
-
-    afterEach(() => {
-      jest.resetAllMocks()
+      url = `/collections`
     })
 
     it('should return all the collections with the URN', () => {
-      const url = `/collections`
-
       return server
         .get(buildURL(url))
         .set(createAuthHeaders('get', url))
@@ -74,7 +78,7 @@ describe('Collection router', () => {
             data: [
               {
                 ...resultingCollectionAttributes,
-                urn: `urn:decentraland:ropsten:collections-v2:${collectionAttributes.contract_address}`,
+                urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
               },
             ],
             ok: true,
@@ -85,27 +89,16 @@ describe('Collection router', () => {
 
   describe('when retrieving the collections of an address', () => {
     beforeEach(() => {
-      mockAuthorizationMiddleware(
-        Collection,
-        collectionAttributes.id,
-        wallet.address
-      )
-      ;(Collection.find as jest.Mock).mockReturnValueOnce([
-        collectionAttributes,
-      ])
+      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+      ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock).mockReturnValueOnce(
         []
       )
-    })
-
-    afterEach(() => {
-      jest.resetAllMocks()
+      url = `/${wallet.address}/collections`
     })
 
     it('should return the requested collections with the URN', () => {
-      const url = `/${wallet.address}/collections`
-
       return server
         .get(buildURL(url))
         .set(createAuthHeaders('get', url))
@@ -115,7 +108,7 @@ describe('Collection router', () => {
             data: [
               {
                 ...resultingCollectionAttributes,
-                urn: `urn:decentraland:ropsten:collections-v2:${collectionAttributes.contract_address}`,
+                urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
               },
             ],
             ok: true,
@@ -126,26 +119,15 @@ describe('Collection router', () => {
 
   describe('when retrieving a single collection', () => {
     beforeEach(() => {
-      mockExistsMiddleware(Collection, collectionAttributes.id)
-      mockAuthorizationMiddleware(
-        Collection,
-        collectionAttributes.id,
-        wallet.address
-      )
+      mockExistsMiddleware(Collection, dbCollection.id)
+      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
-      ;(Collection.findOne as jest.Mock).mockReturnValueOnce(
-        collectionAttributes
-      )
+      ;(Collection.findOne as jest.Mock).mockReturnValueOnce(dbCollection)
       ;(collectionAPI.fetchCollection as jest.Mock).mockReturnValueOnce(null)
-    })
-
-    afterEach(() => {
-      jest.resetAllMocks()
+      url = `/collections/${dbCollection.id}`
     })
 
     it('should return the requested collection with the URN', () => {
-      const url = `/collections/${collectionAttributes.id}`
-
       return server
         .get(buildURL(url))
         .set(createAuthHeaders('get', url))
@@ -154,34 +136,22 @@ describe('Collection router', () => {
           expect(response.body).toEqual({
             data: {
               ...resultingCollectionAttributes,
-              urn: `urn:decentraland:ropsten:collections-v2:${collectionAttributes.contract_address}`,
+              urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
             },
             ok: true,
           })
-          expect(Collection.findOne).toHaveBeenCalledWith(
-            collectionAttributes.id
-          )
+          expect(Collection.findOne).toHaveBeenCalledWith(dbCollection.id)
         })
     })
   })
 
   describe('when locking a Collection', () => {
     const now = 1633022119407
-    const url = `/collections/${collectionAttributes.id}/lock`
-
     beforeEach(() => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
-
-      mockExistsMiddleware(Collection, collectionAttributes.id)
-      mockAuthorizationMiddleware(
-        Collection,
-        collectionAttributes.id,
-        wallet.address
-      )
-    })
-
-    afterEach(() => {
-      jest.resetAllMocks()
+      mockExistsMiddleware(Collection, dbCollection.id)
+      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+      url = `/collections/${dbCollection.id}/lock`
     })
 
     describe('when the lock update succeeds', () => {
@@ -198,7 +168,7 @@ describe('Collection router', () => {
             })
             expect(Collection.update).toHaveBeenCalledWith(
               { lock },
-              { id: collectionAttributes.id, eth_address: wallet.address }
+              { id: dbCollection.id, eth_address: wallet.address }
             )
           })
       })
@@ -222,7 +192,7 @@ describe('Collection router', () => {
             expect(response.body).toEqual({
               ok: false,
               data: {
-                id: collectionAttributes.id,
+                id: dbCollection.id,
                 eth_address: wallet.address,
                 error: errorMessage,
               },

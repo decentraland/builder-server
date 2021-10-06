@@ -41,6 +41,7 @@ export class CollectionRouter extends Router {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(Collection)
     const withLowercasedAddress = withLowercasedParams(['address'])
+    console.log('Auth middleware created', withAuthentication)
 
     /**
      * Returns all collections
@@ -66,6 +67,7 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id',
+      withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
     )

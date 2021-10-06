@@ -26,8 +26,10 @@ import {
 } from '../Collection'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
-import { FullItem, itemSchema } from './Item.types'
+import { FullItem } from './Item.types'
 import { hasAccess } from './access'
+import { toDBItem } from './utils'
+import { itemSchema } from './Item.schema'
 
 const validator = getValidator()
 
@@ -285,7 +287,7 @@ export class ItemRouter extends Router {
 
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    const itemJSON: any = server.extractFromReq(req, 'item')
+    const itemJSON: FullItem = server.extractFromReq(req, 'item')
     const eth_address = req.auth.ethAddress.toLowerCase()
 
     const validate = validator.compile(itemSchema)
@@ -376,10 +378,10 @@ export class ItemRouter extends Router {
       }
     }
 
-    const attributes = {
+    const attributes = toDBItem({
       ...itemJSON,
       eth_address,
-    } as ItemAttributes
+    })
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL item ids do not match', {

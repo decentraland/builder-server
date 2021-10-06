@@ -368,7 +368,7 @@ export class ItemRouter extends Router {
     const attributes = toDBItem({
       ...itemJSON,
       eth_address,
-    }) as ItemAttributes
+    })
 
     if (id !== attributes.id) {
       throw new HTTPError('The body and URL item ids do not match', {

@@ -93,37 +93,33 @@ export class Bridge {
     const catalystItemsIndex = this.indexById(catalystItems)
 
     for (let dbItem of allDbItems) {
-      // Check if DB item has a collection
-      if (dbItem.collection_id) {
-        const dbCollection = dbCollectionsIndex[dbItem.collection_id]
-        if (dbCollection) {
-          // Find remote item
-          const remoteItemId = collectionAPI.buildItemId(
-            dbCollection.contract_address,
-            dbItem.blockchain_item_id!
+      let itemToAdd = Bridge.toFullItem(dbItem)
+      const dbCollection = dbItem.collection_id
+        ? dbCollectionsIndex[dbItem.collection_id]
+        : null
+      if (dbCollection) {
+        // Find remote item
+        const remoteItemId = collectionAPI.buildItemId(
+          dbCollection.contract_address,
+          dbItem.blockchain_item_id!
+        )
+        const remoteItem = dbItem.blockchain_item_id
+          ? remoteItems.find((remoteItem) => remoteItem.id === remoteItemId)
+          : null
+
+        // Merge item from DB with remote data
+        if (remoteItem && remoteItem.collection) {
+          const urn = remoteItem.urn.toLowerCase()
+          const catalystItem = catalystItemsIndex[urn]
+          itemToAdd = Bridge.mergeItem(
+            dbItem,
+            remoteItem,
+            remoteItem.collection,
+            catalystItem
           )
-
-          const remoteItem = dbItem.blockchain_item_id
-            ? remoteItems.find((remoteItem) => remoteItem.id === remoteItemId)
-            : null
-
-          // Merge item from DB with remote data
-          if (remoteItem && remoteItem.collection) {
-            const urn = remoteItem.urn.toLowerCase()
-            const catalystItem = catalystItemsIndex[urn]
-            items.push(
-              Bridge.mergeItem(
-                dbItem,
-                remoteItem,
-                remoteItem.collection,
-                catalystItem
-              )
-            )
-          }
         }
-      } else {
-        items.push(Bridge.toFullItem(dbItem))
       }
+      items.push(itemToAdd)
     }
 
     // console.log('Items', items)

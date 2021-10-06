@@ -18,11 +18,14 @@ export function withModelAuthorization(Model: OwnableModel, param = 'id') {
 
     const isOwnedByUser = await new Ownable(Model).isOwnedBy(id, ethAddress)
     if (!isOwnedByUser) {
-      res.setHeader('Content-Type', 'application/json')
-      res.status(STATUS_CODES.unauthorized).json({
-        ok: false,
-        error: `Unauthorized user ${ethAddress} for ${Model.tableName} ${id}`,
-      })
+      res
+        .status(STATUS_CODES.unauthorized)
+        .json(
+          server.sendError(
+            { ethAddress, tableName: Model.tableName },
+            `Unauthorized user ${ethAddress} for ${Model.tableName} ${id}`
+          )
+        )
       return
     }
 

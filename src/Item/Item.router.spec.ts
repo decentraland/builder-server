@@ -75,17 +75,17 @@ jest.mock('../Committee')
 jest.mock('./access')
 
 describe('Item router', () => {
-  let itemAttributes: ItemAttributes
-  let itemAttributesOfNonPublishedItem: ItemAttributes
-  let resultingItemAttributesOfNonPublishedItem: ResultItem
+  let dbItem: ItemAttributes
+  let dbItemNotPublished: ItemAttributes
+  let resultItemNotPublished: ResultItem
+  let resultingItem: ResultItem
   let wearable: Wearable
   let itemFragment: ItemFragment
   let urn: string
-  let resultingItemAttributes: ResultItem
   let url: string
 
   beforeEach(() => {
-    itemAttributes = {
+    dbItem = {
       id: uuidv4(),
       urn_suffix: null,
       name: 'Test',
@@ -97,7 +97,6 @@ describe('Item router', () => {
       price: '',
       beneficiary: '',
       rarity: ItemRarity.COMMON,
-      // is_approved: collectionAttributesMock.is_approved,
       type: ItemType.WEARABLE,
       data: {
         representations: [],
@@ -117,16 +116,16 @@ describe('Item router', () => {
       created_at: new Date(),
       updated_at: new Date(),
     }
-    urn = `urn:decentraland:ropsten:collections-v2:${collectionAttributesMock.contract_address}:${itemAttributes.blockchain_item_id}`
+    urn = `urn:decentraland:ropsten:collections-v2:${collectionAttributesMock.contract_address}:${dbItem.blockchain_item_id}`
     itemFragment = {
       id:
         collectionAttributesMock.contract_address +
         '-' +
-        itemAttributes.blockchain_item_id,
+        dbItem.blockchain_item_id,
       blockchainId: '0',
       urn,
       totalSupply: '1',
-      price: itemAttributes.price!.toString(),
+      price: dbItem.price!.toString(),
       beneficiary: 'aBeneficiary',
       minters: [],
       managers: [],
@@ -146,13 +145,13 @@ describe('Item router', () => {
     }
     wearable = {
       id: urn,
-      name: itemAttributes.name,
-      description: itemAttributes.description,
+      name: dbItem.name,
+      description: dbItem.description,
       collectionAddress: collectionAttributesMock.contract_address,
       rarity: ItemRarity.COMMON,
       image: '',
       thumbnail: '',
-      metrics: itemAttributes.metrics,
+      metrics: dbItem.metrics,
       contents: {},
       data: {
         representations: [],
@@ -160,25 +159,17 @@ describe('Item router', () => {
         hides: [],
         tags: [],
       },
-      createdAt: itemAttributes.created_at.getTime(),
-      updatedAt: itemAttributes.updated_at.getTime(),
+      createdAt: dbItem.created_at.getTime(),
+      updatedAt: dbItem.updated_at.getTime(),
     }
-    resultingItemAttributes = toResultItem(
-      itemAttributes,
-      itemFragment,
-      wearable
-    )
-    itemAttributes.collection_id = collectionAttributesMock.id
-    itemAttributes.blockchain_item_id = '0'
-    itemAttributesOfNonPublishedItem = {
-      ...itemAttributes,
+    dbItemNotPublished = {
+      ...dbItem,
       id: uuidv4(),
-      collection_id: 'aCollectionId',
+      collection_id: collectionAttributesMock.id,
       blockchain_item_id: null,
     }
-    resultingItemAttributesOfNonPublishedItem = toResultItem(
-      itemAttributesOfNonPublishedItem
-    )
+    resultingItem = toResultItem(dbItem, itemFragment, wearable)
+    resultItemNotPublished = toResultItem(dbItemNotPublished)
   })
 
   afterEach(() => {
@@ -187,17 +178,17 @@ describe('Item router', () => {
 
   describe('when getting an item', () => {
     beforeEach(() => {
-      mockExistsMiddleware(Item, itemAttributes.id)
-      mockAuthorizationMiddleware(Item, itemAttributes.id, wallet.address)
+      mockExistsMiddleware(Item, dbItem.id)
+      mockAuthorizationMiddleware(Item, dbItem.id, wallet.address)
       ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
-      ;(Item.findOne as jest.Mock).mockResolvedValueOnce(itemAttributes)
-      url = `/items/${itemAttributes.id}`
+      ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
+      url = `/items/${dbItem.id}`
     })
 
     describe('when the item belongs to a published collection', () => {
       beforeEach(() => {
-        itemAttributes.collection_id = collectionAttributesMock.id
-        itemAttributes.blockchain_item_id = '0'
+        dbItem.collection_id = collectionAttributesMock.id
+        dbItem.blockchain_item_id = '0'
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
           collectionAttributesMock
         )
@@ -208,11 +199,7 @@ describe('Item router', () => {
           itemFragment.collection
         )
         ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
-        resultingItemAttributes = toResultItem(
-          itemAttributes,
-          itemFragment,
-          wearable
-        )
+        resultingItem = toResultItem(dbItem, itemFragment, wearable)
       })
 
       it('should return the requested item with its URN', () => {
@@ -223,23 +210,23 @@ describe('Item router', () => {
           .then((response: any) => {
             expect(response.body).toEqual({
               data: {
-                ...resultingItemAttributes,
+                ...resultingItem,
                 beneficiary: itemFragment.beneficiary,
-                collection_id: itemAttributes.collection_id,
-                blockchain_item_id: itemAttributes.blockchain_item_id,
+                collection_id: dbItem.collection_id,
+                blockchain_item_id: dbItem.blockchain_item_id,
                 urn,
               },
               ok: true,
             })
-            expect(Item.findOne).toHaveBeenCalledWith(itemAttributes.id)
+            expect(Item.findOne).toHaveBeenCalledWith(dbItem.id)
           })
       })
     })
 
     describe("when the item doesn't belong to a collection", () => {
       beforeEach(() => {
-        itemAttributes.collection_id = null
-        resultingItemAttributes = toResultItem(itemAttributes)
+        dbItem.collection_id = null
+        resultingItem = toResultItem(dbItem)
       })
 
       it('should return the requested item with a nulled URN', () => {
@@ -249,19 +236,19 @@ describe('Item router', () => {
           .expect(200)
           .then((response: any) => {
             expect(response.body).toEqual({
-              data: { ...resultingItemAttributes, collection_id: null },
+              data: { ...resultingItem, collection_id: null },
               ok: true,
             })
-            expect(Item.findOne).toHaveBeenCalledWith(itemAttributes.id)
+            expect(Item.findOne).toHaveBeenCalledWith(dbItem.id)
           })
       })
     })
 
     describe("when the item doesn't belong to a published collection", () => {
       beforeEach(() => {
-        itemAttributes.collection_id = 'aCollectionId'
-        itemAttributes.blockchain_item_id = null
-        resultingItemAttributes = toResultItem(itemAttributes)
+        dbItem.collection_id = 'aCollectionId'
+        dbItem.blockchain_item_id = null
+        resultingItem = toResultItem(dbItem)
       })
 
       it('should return the requested item with a nulled URN', () => {
@@ -272,13 +259,13 @@ describe('Item router', () => {
           .then((response: any) => {
             expect(response.body).toEqual({
               data: {
-                ...resultingItemAttributes,
-                collection_id: itemAttributes.collection_id,
+                ...resultingItem,
+                collection_id: dbItem.collection_id,
                 blockchain_item_id: null,
               },
               ok: true,
             })
-            expect(Item.findOne).toHaveBeenCalledWith(itemAttributes.id)
+            expect(Item.findOne).toHaveBeenCalledWith(dbItem.id)
           })
       })
     })
@@ -288,13 +275,13 @@ describe('Item router', () => {
     beforeEach(() => {
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Item.find as jest.Mock).mockResolvedValueOnce([
-        itemAttributes,
-        itemAttributesOfNonPublishedItem,
+        dbItem,
+        dbItemNotPublished,
       ])
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
         itemFragment,
       ])
-      mockItemConsolidation([itemAttributes], [wearable])
+      mockItemConsolidation([dbItem], [wearable])
       url = '/items'
     })
 
@@ -307,13 +294,13 @@ describe('Item router', () => {
           expect(response.body).toEqual({
             data: [
               {
-                ...resultingItemAttributes,
+                ...resultingItem,
                 beneficiary: itemFragment.beneficiary,
-                collection_id: itemAttributes.collection_id,
-                blockchain_item_id: itemAttributes.blockchain_item_id,
+                collection_id: dbItem.collection_id,
+                blockchain_item_id: dbItem.blockchain_item_id,
                 urn,
               },
-              resultingItemAttributesOfNonPublishedItem,
+              resultItemNotPublished,
             ],
             ok: true,
           })
@@ -324,13 +311,13 @@ describe('Item router', () => {
   describe('when getting all the items of an address', () => {
     beforeEach(() => {
       ;(Item.find as jest.Mock).mockResolvedValueOnce([
-        itemAttributes,
-        itemAttributesOfNonPublishedItem,
+        dbItem,
+        dbItemNotPublished,
       ])
       ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(
         [itemFragment]
       )
-      mockItemConsolidation([itemAttributes], [wearable])
+      mockItemConsolidation([dbItem], [wearable])
       url = `/${wallet.address}/items`
     })
 
@@ -343,13 +330,13 @@ describe('Item router', () => {
           expect(response.body).toEqual({
             data: [
               {
-                ...resultingItemAttributes,
+                ...resultingItem,
                 beneficiary: itemFragment.beneficiary,
-                collection_id: itemAttributes.collection_id,
-                blockchain_item_id: itemAttributes.blockchain_item_id,
+                collection_id: dbItem.collection_id,
+                blockchain_item_id: dbItem.blockchain_item_id,
                 urn,
               },
-              resultingItemAttributesOfNonPublishedItem,
+              resultItemNotPublished,
             ],
             ok: true,
           })
@@ -360,8 +347,8 @@ describe('Item router', () => {
   describe('when getting all the items of a collection', () => {
     beforeEach(() => {
       ;(Item.find as jest.Mock).mockResolvedValueOnce([
-        itemAttributes,
-        itemAttributesOfNonPublishedItem,
+        dbItem,
+        dbItemNotPublished,
       ])
       ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
       ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
@@ -370,7 +357,7 @@ describe('Item router', () => {
       ;(Collection.findOne as jest.Mock).mockResolvedValueOnce([
         collectionAttributesMock,
       ])
-      mockItemConsolidation([itemAttributes], [wearable])
+      mockItemConsolidation([dbItem], [wearable])
       url = `/collections/${collectionAttributesMock.id}/items`
     })
     it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
@@ -382,13 +369,13 @@ describe('Item router', () => {
           expect(response.body).toEqual({
             data: [
               {
-                ...resultingItemAttributes,
+                ...resultingItem,
                 beneficiary: itemFragment.beneficiary,
-                collection_id: itemAttributes.collection_id,
-                blockchain_item_id: itemAttributes.blockchain_item_id,
+                collection_id: dbItem.collection_id,
+                blockchain_item_id: dbItem.blockchain_item_id,
                 urn,
               },
-              resultingItemAttributesOfNonPublishedItem,
+              resultItemNotPublished,
             ],
             ok: true,
           })

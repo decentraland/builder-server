@@ -7,5 +7,6 @@ export function toDBItem(item: FullItem): ItemAttributes {
     'is_approved',
     'in_catalyst',
     'total_supply',
+    'content_hash',
   ])
 }

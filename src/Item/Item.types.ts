@@ -39,4 +39,5 @@ export type FullItem = ItemAttributes & {
   is_approved: boolean
   in_catalyst: boolean
   total_supply: number
+  content_hash: string | null
 }

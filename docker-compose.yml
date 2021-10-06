@@ -19,6 +19,7 @@ services:
 
   # Simple UI that allows read and write operations on the database.
   # Accesible via http://localhost:8080.
+  # https://www.adminer.org/
   adminer:
     image: adminer
     environment:
@@ -28,6 +29,7 @@ services:
 
   # Object storage compatible with aws-sdk.
   # Comes with a UI that can be accessed via http://localhost:9001.
+  # https://min.io/
   minio:
     image: minio/minio
     environment:

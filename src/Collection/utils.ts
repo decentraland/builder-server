@@ -1,3 +1,4 @@
+import { utils } from 'decentraland-commons'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 
@@ -10,23 +11,17 @@ export function getDecentralandCollectionURN(
 export function toFullCollection(
   dbCollection: CollectionAttributes
 ): FullCollection {
-  const fullCollection: FullCollection = {
-    ...dbCollection,
+  return {
+    ...utils.omit(dbCollection, ['urn_suffix']),
     urn: getDecentralandCollectionURN(dbCollection.contract_address),
   }
-  delete (fullCollection as FullCollection & { urn_suffix: unknown }).urn_suffix
-
-  return fullCollection
 }
 
 export function toDBCollection(
   collection: FullCollection
 ): CollectionAttributes {
-  const attributes = {
-    ...collection,
+  return {
+    ...utils.omit(collection, ['urn']),
     urn_suffix: null,
   }
-  // Removes the DCL collection URN and sets the urn_suffix to null
-  delete (attributes as CollectionAttributes & { urn: unknown }).urn
-  return attributes
 }

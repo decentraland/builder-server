@@ -6,8 +6,8 @@ import {
   buildURL,
   mockExistsMiddleware,
   mockAuthorizationMiddleware,
-  collectionAttributesMock,
 } from '../../spec/utils'
+import { collectionAttributesMock } from '../../spec/mocks/collections'
 import { collectionAPI } from '../ethereum/api/collection'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
@@ -41,7 +41,7 @@ describe('Collection router', () => {
     resultingCollectionAttributes = omit(
       {
         ...dbCollection,
-        reviewed_at: dbCollection.reviewed_at.toISOString(),
+        reviewed_at: dbCollection.reviewed_at!.toISOString(),
         created_at: dbCollection.created_at.toISOString(),
         updated_at: dbCollection.updated_at.toISOString(),
         urn: '',

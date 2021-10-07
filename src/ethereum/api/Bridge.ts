@@ -1,3 +1,4 @@
+import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, ItemRarity, FullItem } from '../../Item'
 import { MetricsAttributes } from '../../Metrics'
@@ -41,19 +42,17 @@ export class Bridge {
   }
 
   static toFullItem(dbItem: ItemAttributes): FullItem {
-    const fullItem = {
-      ...dbItem,
-      urn: null,
-      in_catalyst: false,
-      is_approved: false,
-      is_published: false,
-      total_supply: 0,
-    }
-
-    delete (fullItem as FullItem & { urn_suffix: string | undefined })
-      .urn_suffix
-
-    return fullItem
+    return utils.omit(
+      {
+        ...dbItem,
+        urn: null,
+        in_catalyst: false,
+        is_approved: false,
+        is_published: false,
+        total_supply: 0,
+      },
+      ['urn_suffix']
+    )
   }
 
   static async consolidateItems(
@@ -122,7 +121,6 @@ export class Bridge {
       items.push(itemToAdd)
     }
 
-    // console.log('Items', items)
     return items
   }
 
@@ -163,10 +161,6 @@ export class Bridge {
     let in_catalyst: boolean
     let urn: string | null = null
 
-    delete (dbItem as Omit<ItemAttributes, 'urn_suffix'> & {
-      urn_suffix: unknown
-    }).urn_suffix
-
     if (catalystItem) {
       data = catalystItem.data
       contents = catalystItem.contents
@@ -204,7 +198,7 @@ export class Bridge {
     // Caveat!: we're not considering Fragment bodyshapes here, because it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
     return {
-      ...dbItem,
+      ...Bridge.toFullItem(dbItem),
       name,
       urn,
       description,

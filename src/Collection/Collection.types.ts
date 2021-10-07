@@ -14,9 +14,9 @@ export type CollectionAttributes = {
   is_approved: boolean
   minters: string[]
   managers: string[]
-  forum_link?: string
+  forum_link: string | null
   lock: Date | null
-  reviewed_at: Date
+  reviewed_at: Date | null
   created_at: Date
   updated_at: Date
 }

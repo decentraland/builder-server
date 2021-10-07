@@ -14,7 +14,7 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FactoryCollection } from '../ethereum'
 import { Ownable } from '../Ownable'
-import { Item, ItemAttributes } from '../Item'
+import { FullItem, Item, ItemAttributes } from '../Item'
 import {
   Collection,
   CollectionService,
@@ -41,7 +41,6 @@ export class CollectionRouter extends Router {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(Collection)
     const withLowercasedAddress = withLowercasedParams(['address'])
-    console.log('Auth middleware created', withAuthentication)
 
     /**
      * Returns all collections
@@ -125,7 +124,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections(req: AuthRequest) {
+  async getCollections(req: AuthRequest): Promise<FullCollection[]> {
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -192,7 +191,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollection(req: AuthRequest) {
+  async getCollection(req: AuthRequest): Promise<FullCollection> {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
@@ -224,7 +223,9 @@ export class CollectionRouter extends Router {
     return toFullCollection(fullCollection)
   }
 
-  publishCollection = async (req: AuthRequest) => {
+  publishCollection = async (
+    req: AuthRequest
+  ): Promise<{ collection: FullCollection[]; items: FullItem[] }> => {
     const id = server.extractFromReq(req, 'id')
 
     // We are using the withCollectionExists middleware so we can safely assert the collection exists
@@ -286,7 +287,7 @@ export class CollectionRouter extends Router {
     }
   }
 
-  saveTOS = async (req: AuthRequest) => {
+  saveTOS = async (req: AuthRequest): Promise<void> => {
     const tosValidator = validator.compile(saveTOSSchema)
     tosValidator(req.body)
     if (tosValidator.errors) {
@@ -313,7 +314,7 @@ export class CollectionRouter extends Router {
     }
   }
 
-  lockCollection = async (req: AuthRequest) => {
+  lockCollection = async (req: AuthRequest): Promise<Date> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
@@ -330,7 +331,7 @@ export class CollectionRouter extends Router {
     }
   }
 
-  upsertCollection = async (req: AuthRequest) => {
+  upsertCollection = async (req: AuthRequest): Promise<FullCollection> => {
     const id = server.extractFromReq(req, 'id')
     const collectionJSON: FullCollection = server.extractFromReq(
       req,
@@ -416,7 +417,7 @@ export class CollectionRouter extends Router {
     return toFullCollection(upsertedCollection)
   }
 
-  deleteCollection = async (req: AuthRequest) => {
+  deleteCollection = async (req: AuthRequest): Promise<boolean> => {
     const id = server.extractFromReq(req, 'id')
 
     const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware

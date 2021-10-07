@@ -144,7 +144,7 @@ export class ItemRouter extends Router {
     ])
 
     const catalystItems =
-      remoteItems && remoteItems.length > 0
+      remoteItems.length > 0
         ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
         : []
 
@@ -179,7 +179,7 @@ export class ItemRouter extends Router {
     ])
 
     const catalystItems =
-      remoteItems && remoteItems.length > 0
+      remoteItems.length > 0
         ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
         : []
 

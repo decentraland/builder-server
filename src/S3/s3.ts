@@ -22,6 +22,8 @@ if (!BUCKET_NAME) {
 
 const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
 
+const STORAGE_URL = env.get('AWS_STORAGE_URL', undefined)
+
 export const ACL = {
   private: 'private' as 'private',
   publicRead: 'public-read' as 'public-read',
@@ -35,10 +37,21 @@ export type ACLValues = typeof ACL[keyof typeof ACL]
 
 const log = new Log('s3')
 
-export const s3 = new AWS.S3({
+let config: AWS.S3.ClientConfiguration = {
   accessKeyId: ACCESS_KEY,
   secretAccessKey: ACCESS_SECRET,
-})
+}
+
+if (STORAGE_URL) {
+  config = {
+    ...config,
+    endpoint: STORAGE_URL,
+    s3ForcePathStyle: true,
+    signatureVersion: 'v4',
+  }
+}
+
+export const s3 = new AWS.S3(config)
 
 export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
   const params = {
@@ -172,6 +185,7 @@ export function getFileUploader(
   })
 }
 
-export const getBucketURL = (): string => {
-  return `https://${BUCKET_NAME}.s3.amazonaws.com`
-}
+export const getBucketURL = (): string =>
+  STORAGE_URL
+    ? `${STORAGE_URL}/${BUCKET_NAME}`
+    : `https://${BUCKET_NAME}.s3.amazonaws.com`

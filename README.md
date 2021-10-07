@@ -80,8 +80,7 @@ First, run all services simultaneously with:
 `-d or --detach` will run the processes on the background instead of running on the terminal which executed the command. 
 You can ignore this flag if you don't care about it.
 
-Before running the `builder-server`, make sure that the following `.env` variables are set correctly so the services run by docker-compose
-are consumed correctly.
+Before running the `builder-server`, make sure that the following `.env` variables are set correctly so the services run by docker-compose work as expected.
 
 ```
 CONNECTION_STRING='postgres://admin:password@localhost:5432/builder-server'

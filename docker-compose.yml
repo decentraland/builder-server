@@ -3,7 +3,7 @@
 # you will have a postgres and an s3 compatible local object storage
 # ready to be used.
 
-version: '3.4'
+version: "3.4"
 
 services:
   postgres:
@@ -42,14 +42,15 @@ services:
       - minio_data:/data
     command: server /data --console-address ":9001"
 
-  # Short lived process in charge of initializing the bucket (if needed)
-  # on start.
-  minio-initialize-bucket:
+  # Companion for the minio service in charge of initialization and
+  # provides an mc client for operating directly with the storage
+  # https://docs.min.io/minio/baremetal/reference/minio-cli/minio-mc.html
+  minio-mc:
     image: minio/mc
     depends_on:
       - minio
     volumes:
-      - ./minio-initialize-bucket-entrypoint.sh:/scripts/entrypoint.sh
+      - ./minio-mc-entrypoint.sh:/scripts/entrypoint.sh
     entrypoint: /scripts/entrypoint.sh
 
 volumes:

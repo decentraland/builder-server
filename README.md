@@ -2,7 +2,7 @@
 
 Exposes endpoints for the Builder.
 
-## <a name="run"></a>RUN
+## RUN
 
 Check `.env.example` and create your own `.env` file. Some properties have defaults.
 

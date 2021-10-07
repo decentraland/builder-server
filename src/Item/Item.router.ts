@@ -143,10 +143,9 @@ export class ItemRouter extends Router {
       collectionAPI.fetchItems(),
     ])
 
-    const catalystItems =
-      remoteItems.length > 0
-        ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
-        : []
+    const catalystItems = await peerAPI.fetchWearables(
+      remoteItems.map((item) => item.urn)
+    )
 
     const items = await Bridge.consolidateItems(
       dbItems,
@@ -178,10 +177,9 @@ export class ItemRouter extends Router {
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
 
-    const catalystItems =
-      remoteItems.length > 0
-        ? await peerAPI.fetchWearables(remoteItems.map((item) => item.urn))
-        : []
+    const catalystItems = await peerAPI.fetchWearables(
+      remoteItems.map((item) => item.urn)
+    )
 
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }

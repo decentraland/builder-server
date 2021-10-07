@@ -17,8 +17,6 @@ jobs:
         run: npm run test:coverage
         if: ${{ always() }}
         env:
-          # Variables required to run tests as they all break
-          # execution if they are not defined
           AWS_ACCESS_KEY: AWS_ACCESS_KEY
           AWS_ACCESS_SECRET: AWS_ACCESS_SECRET
           AWS_BUCKET_NAME: AWS_BUCKET_NAME
@@ -29,9 +27,7 @@ jobs:
           DEFAULT_ETH_ADDRESS: DEFAULT_ETH_ADDRESS
           ANALYTICS_CONNECTION_STRING: ANALYTICS_CONNECTION_STRING
           PEER_URL: https://peer.decentraland.zone
-      # # Not working right now because of the lack of tests
-      # # Uncomment when more are added
-      # - name: report coverage
-      #   uses: coverallsapp/github-action@master
-      #   with:
-      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Report Coverage
+        uses: coverallsapp/github-action@master
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}

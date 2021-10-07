@@ -1,4 +1,4 @@
-import { metricsSchema } from '../Metrics'
+import { metricsSchema } from '../Metrics/Metrics.schema'
 import { parametersSchema, AssetParameter } from './Parameters'
 import { actionsSchema } from './Actions'
 

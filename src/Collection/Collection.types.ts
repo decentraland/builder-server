@@ -1,5 +1,11 @@
 export type CollectionAttributes = {
   id: string // uuid
+  /**
+   * The urn field holds the collection part of the URN in third party collections.
+   * All Decentraland collections will contain this column as null but it will be generated and returned
+   * whenever a Decentraland collection is requested.
+   */
+  urn_suffix: string | null
   name: string
   eth_address: string
   salt: string
@@ -8,17 +14,22 @@ export type CollectionAttributes = {
   is_approved: boolean
   minters: string[]
   managers: string[]
-  forum_link?: string
-  lock?: Date
-  reviewed_at?: Date
+  forum_link: string | null
+  lock: Date | null
+  reviewed_at: Date | null
   created_at: Date
   updated_at: Date
+}
+
+export type FullCollection = Omit<CollectionAttributes, 'urn_suffix'> & {
+  urn: string
 }
 
 export const collectionSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
+    urn: { type: ['string'] },
     name: { type: 'string', maxLength: 32 },
     eth_address: { type: 'string' },
     salt: { type: ['string', 'null'] },

@@ -17,6 +17,11 @@ export enum ItemRarity {
 
 export type ItemAttributes = {
   id: string // uuid
+  /**
+   * The urn_suffix field holds the item part of the URN in third party items.
+   * All Decentraland items will contain this column as null.
+   */
+  urn_suffix: string | null
   name: string
   description: string
   thumbnail: string
@@ -34,7 +39,11 @@ export type ItemAttributes = {
   updated_at: Date
 }
 
-export type FullItem = ItemAttributes & {
+export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
+  /**
+   * The urn field will contain a fully generated URN for all published items.
+   */
+  urn: string | null
   is_published: boolean
   is_approved: boolean
   in_catalyst: boolean

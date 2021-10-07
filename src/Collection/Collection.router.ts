@@ -14,18 +14,23 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FactoryCollection } from '../ethereum'
 import { Ownable } from '../Ownable'
-import { Item, ItemAttributes } from '../Item'
+import { FullItem, Item, ItemAttributes } from '../Item'
 import {
   Collection,
   CollectionService,
   CollectionAttributes,
 } from '../Collection'
 import { isCommitteeMember } from '../Committee'
-import { collectionSchema, saveTOSSchema } from './Collection.types'
+import {
+  collectionSchema,
+  FullCollection,
+  saveTOSSchema,
+} from './Collection.types'
 import { RequestParameters } from '../RequestParameters'
-import { hasAccess } from './access'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { sendDataToWarehouse } from '../warehouse'
+import { hasAccess } from './access'
+import { toFullCollection, toDBCollection } from './utils'
 
 const validator = getValidator()
 
@@ -61,6 +66,7 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id',
+      withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
     )
@@ -118,7 +124,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections(req: AuthRequest) {
+  async getCollections(req: AuthRequest): Promise<FullCollection[]> {
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -146,7 +152,15 @@ export class CollectionRouter extends Router {
       collectionAPI.fetchCollections(),
     ])
 
-    return Bridge.consolidateCollections(dbCollections, remoteCollections)
+    const consolidatedCollections = await Bridge.consolidateCollections(
+      dbCollections,
+      remoteCollections
+    )
+
+    // Build the full collection
+    return consolidatedCollections.map((collection) =>
+      toFullCollection(collection)
+    )
   }
 
   async getAddressCollections(req: AuthRequest) {
@@ -165,10 +179,19 @@ export class CollectionRouter extends Router {
       Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
     ])
-    return Bridge.consolidateCollections(dbCollections, remoteCollections)
+
+    const consolidatedCollections = await Bridge.consolidateCollections(
+      dbCollections,
+      remoteCollections
+    )
+
+    // Build the full collection
+    return consolidatedCollections.map((collection) =>
+      toFullCollection(collection)
+    )
   }
 
-  async getCollection(req: AuthRequest) {
+  async getCollection(req: AuthRequest): Promise<FullCollection> {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
@@ -197,10 +220,12 @@ export class CollectionRouter extends Router {
       )
     }
 
-    return fullCollection
+    return toFullCollection(fullCollection)
   }
 
-  publishCollection = async (req: AuthRequest) => {
+  publishCollection = async (
+    req: AuthRequest
+  ): Promise<{ collection: FullCollection[]; items: FullItem[] }> => {
     const id = server.extractFromReq(req, 'id')
 
     // We are using the withCollectionExists middleware so we can safely assert the collection exists
@@ -255,15 +280,14 @@ export class CollectionRouter extends Router {
     }
 
     return {
-      collection: await Bridge.consolidateCollections(
-        [dbCollection!],
-        [remoteCollection]
-      ),
+      collection: (
+        await Bridge.consolidateCollections([dbCollection!], [remoteCollection])
+      ).map((collection) => toFullCollection(collection)),
       items: await Bridge.consolidateItems(items, remoteItems, catalystItems),
     }
   }
 
-  saveTOS = async (req: AuthRequest) => {
+  saveTOS = async (req: AuthRequest): Promise<void> => {
     const tosValidator = validator.compile(saveTOSSchema)
     tosValidator(req.body)
     if (tosValidator.errors) {
@@ -290,7 +314,7 @@ export class CollectionRouter extends Router {
     }
   }
 
-  lockCollection = async (req: AuthRequest) => {
+  lockCollection = async (req: AuthRequest): Promise<Date> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
@@ -307,9 +331,12 @@ export class CollectionRouter extends Router {
     }
   }
 
-  upsertCollection = async (req: AuthRequest) => {
+  upsertCollection = async (req: AuthRequest): Promise<FullCollection> => {
     const id = server.extractFromReq(req, 'id')
-    const collectionJSON: any = server.extractFromReq(req, 'collection')
+    const collectionJSON: FullCollection = server.extractFromReq(
+      req,
+      'collection'
+    )
     const data: string = server.extractFromReq(req, 'data')
     const eth_address = req.auth.ethAddress
 
@@ -337,10 +364,10 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const attributes = {
+    const attributes = toDBCollection({
       ...collectionJSON,
       eth_address,
-    } as CollectionAttributes
+    })
 
     if (!(await Collection.isValidName(id, attributes.name.trim()))) {
       throw new HTTPError(
@@ -384,10 +411,13 @@ export class CollectionRouter extends Router {
       data
     )
 
-    return new Collection(attributes).upsert()
+    const upsertedCollection = await new Collection(attributes).upsert()
+
+    // Return the collection that was updated or inserted with the DCL URN
+    return toFullCollection(upsertedCollection)
   }
 
-  deleteCollection = async (req: AuthRequest) => {
+  deleteCollection = async (req: AuthRequest): Promise<boolean> => {
     const id = server.extractFromReq(req, 'id')
 
     const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware

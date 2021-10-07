@@ -17,7 +17,6 @@ import {
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
-import { Item, ItemAttributes } from '../Item'
 import { RequestParameters } from '../RequestParameters'
 import {
   Collection,
@@ -26,10 +25,12 @@ import {
 } from '../Collection'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
+import { Item } from './Item.model'
+import { ItemAttributes } from './Item.types'
+import { itemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasAccess } from './access'
-import { toDBItem } from './utils'
-import { itemSchema } from './Item.schema'
+import { getDecentralandItemURN, toDBItem } from './utils'
 
 const validator = getValidator()
 
@@ -118,7 +119,7 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems(req: AuthRequest) {
+  async getItems(req: AuthRequest): Promise<FullItem[]> {
     const eth_address = req.auth.ethAddress
     const canRequestItems = await isCommitteeMember(eth_address)
 
@@ -141,6 +142,7 @@ export class ItemRouter extends Router {
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
     ])
+
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )
@@ -158,7 +160,7 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getAddressItems(req: AuthRequest) {
+  async getAddressItems(req: AuthRequest): Promise<FullItem[]> {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -174,6 +176,7 @@ export class ItemRouter extends Router {
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
     ])
+
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )
@@ -231,6 +234,11 @@ export class ItemRouter extends Router {
           )
         }
       }
+
+      // Set the item's URN
+      fullItem.urn =
+        fullItem.urn ??
+        getDecentralandItemURN(dbItem, dbCollection.contract_address)
     }
 
     if (!(await hasAccess(eth_address, fullItem, fullCollection))) {
@@ -244,7 +252,7 @@ export class ItemRouter extends Router {
     return fullItem
   }
 
-  async getCollectionItems(req: AuthRequest) {
+  async getCollectionItems(req: AuthRequest): Promise<FullItem[]> {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
@@ -266,6 +274,7 @@ export class ItemRouter extends Router {
         dbCollection.contract_address
       ),
     ])
+
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
     )
@@ -390,7 +399,8 @@ export class ItemRouter extends Router {
       })
     }
 
-    return new Item(attributes).upsert()
+    const item: ItemAttributes = await new Item(attributes).upsert()
+    return Bridge.toFullItem(item)
   }
 
   async deleteItem(req: AuthRequest) {
@@ -443,7 +453,7 @@ export class ItemRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     try {
       await this.itemFilesRequestHandler!(req, res)
-    } catch (error) {
+    } catch (error: any) {
       try {
         await Promise.all([Item.delete({ id }), new S3Item(id).delete()])
       } catch (error) {

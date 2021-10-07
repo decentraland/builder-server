@@ -1,11 +1,12 @@
+import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, ItemRarity, FullItem } from '../../Item'
 import { MetricsAttributes } from '../../Metrics'
+import { fromUnixTimestamp } from '../../utils/parse'
+import { WearableCategory, WearableData } from '../../Item/wearable/types'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { Wearable } from './peer'
-import { fromUnixTimestamp } from '../../utils/parse'
-import { WearableCategory, WearableData } from '../../Item/wearable/types'
 
 export class Bridge {
   static async consolidateCollections(
@@ -41,13 +42,17 @@ export class Bridge {
   }
 
   static toFullItem(dbItem: ItemAttributes): FullItem {
-    return {
-      ...dbItem,
-      in_catalyst: false,
-      is_approved: false,
-      is_published: false,
-      total_supply: 0,
-    }
+    return utils.omit(
+      {
+        ...dbItem,
+        urn: null,
+        in_catalyst: false,
+        is_approved: false,
+        is_published: false,
+        total_supply: 0,
+      },
+      ['urn_suffix']
+    )
   }
 
   static async consolidateItems(
@@ -154,6 +159,7 @@ export class Bridge {
     let contents: Record<string, string>
     let metrics: MetricsAttributes
     let in_catalyst: boolean
+    let urn: string | null = null
 
     if (catalystItem) {
       data = catalystItem.data
@@ -165,6 +171,11 @@ export class Bridge {
       contents = dbItem.contents
       metrics = dbItem.metrics
       in_catalyst = false
+    }
+    if (catalystItem) {
+      urn = catalystItem.id
+    } else if (remoteItem && remoteItem.urn) {
+      urn = remoteItem.urn
     }
 
     if (wearable) {
@@ -184,11 +195,12 @@ export class Bridge {
       category = data.category
     }
 
-    // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
+    // Caveat!: we're not considering Fragment bodyshapes here, because it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
     return {
-      ...dbItem,
+      ...Bridge.toFullItem(dbItem),
       name,
+      urn,
       description,
       rarity,
       price: remoteItem.price,

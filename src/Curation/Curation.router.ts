@@ -22,19 +22,19 @@ export class CurationRouter extends Router {
     )
 
     this.router.get(
-      '/curations/:collectionId',
+      '/collections/:collectionId/curation',
       withAuthentication,
       server.handleRequest(this.getCuration)
     )
 
     this.router.patch(
-      '/curations/:collectionId',
+      '/collections/:collectionId/curation',
       withAuthentication,
       server.handleRequest(this.updateCuration)
     )
 
     this.router.post(
-      '/curations/:collectionId',
+      '/collections/:collectionId/curation',
       withAuthentication,
       server.handleRequest(this.insertCuration)
     )

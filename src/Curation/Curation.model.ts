@@ -27,12 +27,10 @@ export class Curation extends Model<CurationAttributes> {
     collectionId: string
   ): Promise<CurationAttributes | undefined> {
     const query = SQL`
-    SELECT DISTINCT ON (collection_id) * FROM ${raw(this.tableName)}
+    SELECT * FROM ${raw(this.tableName)}
     WHERE collection_id = ${collectionId}
-    AND created_at = (
-      SELECT MAX(created_at)
-      FROM ${raw(this.tableName)}
-    )`
+    ORDER BY created_at DESC
+    LIMIT 1`
 
     return (await this.query<CurationAttributes>(query))[0]
   }

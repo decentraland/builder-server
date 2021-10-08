@@ -1,3 +1,4 @@
+import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
 import { ItemFragment, CollectionFragment } from './fragments'
@@ -39,14 +40,18 @@ export class Bridge {
   }
 
   static toFullItem(dbItem: ItemAttributes): FullItem {
-    return {
-      ...dbItem,
-      in_catalyst: false,
-      is_approved: false,
-      is_published: false,
-      total_supply: 0,
-      content_hash: null,
-    }
+    return utils.omit(
+      {
+        ...dbItem,
+        urn: null,
+        in_catalyst: false,
+        is_approved: false,
+        is_published: false,
+        total_supply: 0,
+        content_hash: null,
+      },
+      ['urn_suffix']
+    )
   }
 
   static async consolidateItems(
@@ -154,11 +159,20 @@ export class Bridge {
     const metrics = dbItem.metrics
     const in_catalyst = !!catalystItem
 
-    // Caveat!: we're not considering Fragment bodyshapes here, becase it's an edge case and it's really hard to consolidate,
+    let urn: string | null = null
+
+    if (catalystItem) {
+      urn = catalystItem.id
+    } else if (remoteItem && remoteItem.urn) {
+      urn = remoteItem.urn
+    }
+
+    // Caveat!: we're not considering Fragment bodyshapes here, because it's an edge case and it's really hard to consolidate,
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
     return {
-      ...dbItem,
+      ...Bridge.toFullItem(dbItem),
       name,
+      urn,
       description,
       rarity,
       price: remoteItem.price,

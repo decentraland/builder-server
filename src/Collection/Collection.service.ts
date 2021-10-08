@@ -2,7 +2,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { isPublished } from '../utils/eth'
 
 export class CollectionService {
-  isLockActive(lock?: Date) {
+  isLockActive(lock: Date | null) {
     if (!lock) {
       return false
     }

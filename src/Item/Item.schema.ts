@@ -1,4 +1,4 @@
-import { metricsSchema } from '../Metrics/Metrics.types'
+import { metricsSchema } from '../Metrics/Metrics.schema'
 import { ItemRarity, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
 
@@ -7,6 +7,7 @@ export const itemSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
+    urn: { type: ['string', 'null'] },
     name: { type: 'string', maxLength: 32 },
     description: { type: ['string', 'null'], maxLength: 64 },
     thumbnail: { type: 'string' },

@@ -29,6 +29,7 @@ jobs:
           DEFAULT_ETH_ADDRESS: DEFAULT_ETH_ADDRESS
           ANALYTICS_CONNECTION_STRING: ANALYTICS_CONNECTION_STRING
           PEER_URL: https://peer.decentraland.zone
+          ETHEREUM_NETWORK: ropsten
       - name: Report Coverage
         uses: coverallsapp/github-action@master
         with:

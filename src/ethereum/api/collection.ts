@@ -17,7 +17,6 @@ import {
   RarityFragment,
 } from './fragments'
 import { createClient } from './graphClient'
-import { Bridge } from './Bridge'
 
 const MAX_RESULTS = 1000
 
@@ -151,12 +150,6 @@ export const COLLECTIONS_URL = env.get('COLLECTIONS_GRAPH_URL', '')
 const graphClient = createClient(COLLECTIONS_URL)
 
 export class CollectionAPI {
-  bridge: Bridge
-
-  constructor() {
-    this.bridge = new Bridge()
-  }
-
   fetchCollection = async (contractAddress: string) => {
     const {
       data: { collections = [] },

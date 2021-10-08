@@ -11,7 +11,7 @@ describe('Collection service', () => {
 
     describe('when the collection does not have a lock set', () => {
       it('should return false', async () => {
-        expect(await service.isLockActive(undefined)).toBe(false)
+        expect(await service.isLockActive(null)).toBe(false)
       })
     })
 

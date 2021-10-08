@@ -48,4 +48,5 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   is_approved: boolean
   in_catalyst: boolean
   total_supply: number
+  content_hash: string | null
 }

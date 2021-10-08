@@ -32,6 +32,7 @@ export function toResultItem(
     total_supply: itemFragment?.totalSupply
       ? Number(itemFragment?.totalSupply)
       : 0,
+    content_hash: itemFragment?.contentHash || null,
   }
   delete (resultItem as Omit<typeof resultItem, 'urn_suffix'> & {
     urn_suffix: unknown
@@ -99,4 +100,5 @@ export const itemFragmentMock = {
     createdAt: collectionAttributesMock.created_at.toISOString(),
   },
   metadata: {},
+  contentHash: '',
 }

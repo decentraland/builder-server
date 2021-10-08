@@ -30,6 +30,7 @@ export const itemSchema = Object.freeze({
       type: 'object',
       additionalProperties: true,
     },
+    content_hash: { type: ['string', 'null'] },
     created_at: { type: 'string' },
     updated_at: { type: 'string' },
   },

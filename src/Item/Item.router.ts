@@ -297,23 +297,15 @@ export class ItemRouter extends Router {
   async upsertItem(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: FullItem = server.extractFromReq(req, 'item')
+
+    if (id !== itemJSON.id) {
+      throw new HTTPError('The body and URL item ids do not match', {
+        urlId: id,
+        bodyId: itemJSON.id,
+      })
+    }
+
     const eth_address = req.auth.ethAddress.toLowerCase()
-
-    const validate = validator.compile(itemSchema)
-    validate(itemJSON)
-
-    if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
-    }
-
-    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
-    if (!canUpsert) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
 
     if (itemJSON.is_published || itemJSON.is_approved) {
       throw new HTTPError(
@@ -323,62 +315,94 @@ export class ItemRouter extends Router {
       )
     }
 
-    if (itemJSON.collection_id) {
-      const dbCollectionToAddItem = await Collection.findOne<CollectionAttributes>(
-        itemJSON.collection_id
-      )
+    const validate = validator.compile(itemSchema)
 
-      // So far, only the owner can add item if the collection was not published
-      if (
-        !dbCollectionToAddItem ||
-        dbCollectionToAddItem.eth_address.toLowerCase() !== eth_address
-      ) {
-        throw new HTTPError(
-          'Unauthorized user',
-          { id, eth_address, collection_id: itemJSON.collection_id },
-          STATUS_CODES.unauthorized
-        )
-      }
+    validate(itemJSON)
+
+    if (validate.errors) {
+      throw new HTTPError('Invalid schema', validate.errors)
+    }
+
+    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
+
+    if (!canUpsert) {
+      throw new HTTPError(
+        'Unauthorized user',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
     }
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
 
-    if (dbItem && dbItem.collection_id) {
-      if (
-        itemJSON.collection_id !== null &&
-        dbItem.collection_id !== itemJSON.collection_id
-      ) {
+    if (dbItem) {
+      const areBothCollectionIdsDefined =
+        itemJSON.collection_id && dbItem.collection_id
+
+      const isItemCollectionBeingChanged =
+        areBothCollectionIdsDefined &&
+        itemJSON.collection_id !== dbItem.collection_id
+
+      if (isItemCollectionBeingChanged) {
         throw new HTTPError(
           "Item can't change between collections",
           { id },
           STATUS_CODES.unauthorized
         )
       }
+    }
 
-      const dbCollection = await Collection.findOne<CollectionAttributes>(
-        dbItem.collection_id
-      )
-      const service = new CollectionService()
+    const findCollection = async (id?: string | null) =>
+      id ? await Collection.findOne<CollectionAttributes>(id) : undefined
+
+    const getIsCollectionPublished = async (
+      collection?: CollectionAttributes
+    ) => {
+      if (!collection) {
+        return false
+      }
 
       const {
         collection: remoteCollection,
         items: remoteItems,
       } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
-        dbCollection!.contract_address
+        collection.contract_address
       )
+
       const catalystItems = await peerAPI.fetchWearables(
         remoteItems.map((item) => item.urn)
       )
 
-      if (remoteCollection && catalystItems.length >= 1) {
+      return remoteCollection && catalystItems.length >= 1
+    }
+
+    const dbCollection = await findCollection(itemJSON.collection_id)
+
+    if (itemJSON.collection_id && !dbCollection) {
+      throw new HTTPError(
+        'Collection not found',
+        {
+          collectionId: itemJSON.collection_id,
+        },
+        STATUS_CODES.notFound
+      )
+    }
+
+    if (dbCollection) {
+      const isCollectionOwnerDifferent =
+        dbCollection.eth_address.toLowerCase() !== eth_address
+
+      if (isCollectionOwnerDifferent) {
         throw new HTTPError(
-          "Published collection items can't be updated",
-          { id },
-          STATUS_CODES.error
+          'Unauthorized user',
+          { id, eth_address, collection_id: itemJSON.collection_id },
+          STATUS_CODES.unauthorized
         )
       }
 
-      if (service.isLockActive(dbCollection!.lock)) {
+      const service = new CollectionService()
+
+      if (service.isLockActive(dbCollection.lock)) {
         throw new HTTPError(
           "Locked collection items can't be updated",
           { id },
@@ -387,17 +411,54 @@ export class ItemRouter extends Router {
       }
     }
 
+    const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
+
+    if (isDbCollectionPublished) {
+      if (!dbItem) {
+        throw new HTTPError(
+          "Items can't be added to a published collection",
+          { id },
+          STATUS_CODES.badRequest
+        )
+      }
+
+      const areBothRaritiesDefined = itemJSON.rarity && dbItem.rarity
+
+      const isRarityBeingChanged =
+        areBothRaritiesDefined && itemJSON.rarity !== dbItem.rarity
+
+      if (isRarityBeingChanged) {
+        throw new HTTPError(
+          "An item rarity from a published collection can't be changed",
+          { id, current: dbItem.rarity, other: itemJSON.rarity },
+          STATUS_CODES.badRequest
+        )
+      }
+    }
+
+    const dbItemCollection = await findCollection(dbItem?.collection_id)
+
+    const isDbItemCollectionPublished = await getIsCollectionPublished(
+      dbItemCollection
+    )
+
+    if (isDbItemCollectionPublished && dbItem) {
+      const isItemBeingRemovedFromCollection =
+        !itemJSON.collection_id && dbItem.collection_id
+
+      if (isItemBeingRemovedFromCollection) {
+        throw new HTTPError(
+          "Items can't be removed from a pubished collection",
+          { id },
+          STATUS_CODES.badRequest
+        )
+      }
+    }
+
     const attributes = toDBItem({
       ...itemJSON,
       eth_address,
     })
-
-    if (id !== attributes.id) {
-      throw new HTTPError('The body and URL item ids do not match', {
-        urlId: id,
-        bodyId: attributes.id,
-      })
-    }
 
     const item: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(item)

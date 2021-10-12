@@ -1,5 +1,4 @@
 import supertest from 'supertest'
-import { omit } from 'decentraland-commons/dist/utils'
 import {
   wallet,
   createAuthHeaders,
@@ -7,29 +6,28 @@ import {
   mockExistsMiddleware,
   mockAuthorizationMiddleware,
 } from '../../spec/utils'
-import { collectionAttributesMock } from '../../spec/mocks/collections'
+import {
+  collectionAttributesMock,
+  collectionDataMock,
+  convertCollectionDatesToISO,
+  ResultCollection,
+  toResultCollection,
+} from '../../spec/mocks/collections'
 import { collectionAPI } from '../ethereum/api/collection'
+import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { Collection } from './Collection.model'
 import { hasAccess } from './access'
 import { CollectionAttributes, FullCollection } from './Collection.types'
+import { toDBCollection, toFullCollection } from './utils'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
 jest.mock('./Collection.model')
 jest.mock('../Committee')
+jest.mock('../Ownable')
 jest.mock('./access')
-
-type ResultCollection = Omit<
-  FullCollection,
-  'reviewed_at' | 'created_at' | 'updated_at' | 'urn_suffix'
-> & {
-  reviewed_at: string
-  created_at: string
-  updated_at: string
-  urn_suffix: unknown
-}
 
 describe('Collection router', () => {
   let dbCollection: CollectionAttributes
@@ -38,20 +36,429 @@ describe('Collection router', () => {
 
   beforeEach(() => {
     dbCollection = { ...collectionAttributesMock }
-    resultingCollectionAttributes = omit(
-      {
-        ...dbCollection,
-        reviewed_at: dbCollection.reviewed_at!.toISOString(),
-        created_at: dbCollection.created_at.toISOString(),
-        updated_at: dbCollection.updated_at.toISOString(),
-        urn: '',
-      },
-      ['urn_suffix']
-    )
+    resultingCollectionAttributes = toResultCollection(dbCollection)
   })
 
   afterEach(() => {
     jest.resetAllMocks()
+  })
+
+  describe('when upserting a collection', () => {
+    const network = 'ropsten'
+    const urn_suffix = 'a-urn-suffix'
+    let urn: string
+    let collectionToUpsert: FullCollection
+    beforeEach(() => {
+      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+      url = `/collections/${dbCollection.id}`
+    })
+
+    describe('when the collection id is different than the one provided as the collection data', () => {
+      let otherId: string
+      beforeEach(() => {
+        otherId = 'bec9eb58-2ac0-11ec-8d3d-0242ac130003'
+        collectionToUpsert = {
+          ...toFullCollection(collectionAttributesMock),
+          id: otherId,
+        }
+      })
+
+      it('should respond with a bad request error', () => {
+        return server
+          .put(buildURL(url))
+          .set(createAuthHeaders('put', url))
+          .send({ collection: collectionToUpsert })
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: {
+                urlId: dbCollection.id,
+                bodyId: otherId,
+              },
+              error: 'The body and URL collection ids do not match',
+            })
+          })
+      })
+    })
+
+    describe('when the collection is a third party collection', () => {
+      let dbTPCollection: CollectionAttributes
+      beforeEach(() => {
+        urn = `urn:decentraland:${network}:ext-thirdparty:${urn_suffix}`
+        dbTPCollection = {
+          ...dbCollection,
+          eth_address: '',
+          urn_suffix,
+          contract_address: '',
+        }
+        collectionToUpsert = {
+          ...toFullCollection(dbTPCollection),
+          urn,
+        }
+      })
+
+      describe('and the collection name already exists for another third party collection', () => {
+        beforeEach(() => {
+          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(false)
+        })
+
+        it('should respond with a bad request error', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbCollection.id,
+                  name: dbCollection.name,
+                },
+                error: 'Name already in use',
+              })
+
+              expect(Collection.isValidName as jest.Mock).toHaveBeenCalledWith(
+                collectionToUpsert.id,
+                collectionToUpsert.name.trim(),
+                urn_suffix
+              )
+            })
+        })
+      })
+
+      describe('and the collection exists and is locked', () => {
+        beforeEach(() => {
+          ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
+            () => ({
+              upsert: jest
+                .fn()
+                .mockResolvedValueOnce({ ...dbTPCollection, lock: 0 }),
+            })
+          )
+          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
+          jest.spyOn(Date, 'now').mockReturnValueOnce(1)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+            ...dbTPCollection,
+            lock: new Date(0),
+          })
+        })
+
+        it('should respond with a 423 and a message saying that the collection is locked', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert })
+            .expect(423)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbTPCollection.id,
+                },
+                error: "The collection is locked. It can't be saved",
+              })
+            })
+        })
+      })
+
+      describe('and the collection exists and is not locked', () => {
+        // let upsertedCollectionResult: ResultCollection
+        let upsertMock: jest.Mock
+        let newCollectionAttributes: CollectionAttributes
+        beforeEach(() => {
+          upsertMock = jest.fn()
+          ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
+            (attributes) => {
+              newCollectionAttributes = attributes
+              upsertMock.mockResolvedValueOnce(attributes)
+              return {
+                upsert: upsertMock,
+              }
+            }
+          )
+          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
+        })
+
+        it('should upsert the collection and respond with the upserted collection', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert })
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: true,
+                data: toFullCollection(newCollectionAttributes),
+              })
+
+              expect(newCollectionAttributes).toEqual(
+                convertCollectionDatesToISO(toDBCollection(collectionToUpsert))
+              )
+            })
+        })
+      })
+    })
+
+    describe('when the collection is a decentraland collection', () => {
+      beforeEach(() => {
+        urn = `urn:decentraland:${network}:collections-v2:${dbCollection.contract_address}`
+      })
+
+      describe('and the collection to upsert has the is_published property', () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            is_published: true,
+            is_approved: false,
+            urn,
+          }
+        })
+
+        it("should respond with a 409 and an error saying that the property can't be changed", () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: 'someString' })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbCollection.id,
+                  eth_address: wallet.address,
+                },
+                error:
+                  'Can not change the is_published or is_approved property',
+              })
+            })
+        })
+      })
+
+      describe('and the collection to upsert has the is_approved property set', () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            is_published: false,
+            is_approved: true,
+            urn,
+          }
+        })
+
+        it("should respond with a 409 and an error saying that the property can't be changed", () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: 'someString' })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbCollection.id,
+                  eth_address: wallet.address,
+                },
+                error:
+                  'Can not change the is_published or is_approved property',
+              })
+            })
+        })
+      })
+
+      describe("and the user doesn't own the collection", () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            urn,
+          }
+          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
+            canUpsert: jest.fn().mockResolvedValueOnce(false),
+          }))
+        })
+
+        it('should respond with a 401 and an error saying that the user is not authorized', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: 'someString' })
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbCollection.id,
+                  eth_address: wallet.address,
+                },
+                error: 'Unauthorized',
+              })
+            })
+        })
+      })
+
+      describe('and the collection name is not valid', () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            urn,
+          }
+          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
+            canUpsert: jest.fn().mockResolvedValueOnce(true),
+          }))
+          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(false)
+        })
+
+        it('should respond with a 409 and an error saying that the name is already in use', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: 'someString' })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbCollection.id,
+                  name: collectionToUpsert.name,
+                },
+                error: 'Name already in use',
+              })
+            })
+        })
+      })
+
+      describe('and the collection already exists and is published', () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            urn,
+          }
+          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
+            canUpsert: jest.fn().mockResolvedValueOnce(true),
+          }))
+          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+            {}
+          )
+        })
+
+        it('should respond with a 409 and an error saying that the collection is already published', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: 'someString' })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbCollection.id,
+                },
+                error: "The collection is published. It can't be saved",
+              })
+            })
+        })
+      })
+
+      describe('and the collection already already exists and is locked', () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            urn,
+          }
+          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
+            canUpsert: jest.fn().mockResolvedValueOnce(true),
+          }))
+          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+            ...dbCollection,
+            lock: new Date(0),
+          })
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+            undefined
+          )
+          jest.spyOn(Date, 'now').mockReturnValueOnce(1)
+        })
+
+        it('should respond with a 409 and an error saying that the name is already in use', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: 'someString' })
+            .expect(423)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbCollection.id,
+                },
+                error: "The collection is locked. It can't be saved",
+              })
+            })
+        })
+      })
+
+      describe('and the collection is upserted', () => {
+        let newCollectionAttributes: CollectionAttributes
+        let upsertMock: jest.Mock
+        beforeEach(() => {
+          upsertMock = jest.fn()
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            urn,
+          }
+          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
+            canUpsert: jest.fn().mockResolvedValueOnce(true),
+          }))
+          ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
+            (attributes) => {
+              newCollectionAttributes = attributes
+              upsertMock.mockResolvedValueOnce(attributes)
+              return {
+                upsert: upsertMock,
+              }
+            }
+          )
+          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+            ...dbCollection,
+            lock: null,
+          })
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+            undefined
+          )
+        })
+
+        it('should upsert the collection and respond with a 200 and the upserted collection', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({
+              collection: collectionToUpsert,
+              data: collectionDataMock,
+            })
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: true,
+                data: toFullCollection(newCollectionAttributes),
+              })
+
+              expect(newCollectionAttributes).toEqual({
+                ...convertCollectionDatesToISO(
+                  toDBCollection(collectionToUpsert)
+                ),
+                contract_address: expect.any(String),
+                salt: expect.any(String),
+              })
+            })
+        })
+      })
+    })
   })
 
   describe('when retrieving all the collections', () => {
@@ -68,12 +475,12 @@ describe('Collection router', () => {
       url = `/collections`
     })
 
-    it('should return all the collections with the URN', () => {
+    it('should respond with all the collections with the URN', () => {
       return server
         .get(buildURL(url))
         .set(createAuthHeaders('get', url))
         .expect(200)
-        .then(async (response: any) => {
+        .then((response: any) => {
           expect(response.body).toEqual({
             data: [
               {
@@ -103,7 +510,7 @@ describe('Collection router', () => {
         .get(buildURL(url))
         .set(createAuthHeaders('get', url))
         .expect(200)
-        .then(async (response: any) => {
+        .then((response: any) => {
           expect(response.body).toEqual({
             data: [
               {
@@ -151,6 +558,10 @@ describe('Collection router', () => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
       mockExistsMiddleware(Collection, dbCollection.id)
       mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+      ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
+        canUpsert: jest.fn().mockResolvedValueOnce(true),
+        isOwnedBy: jest.fn().mockResolvedValueOnce(true),
+      }))
       url = `/collections/${dbCollection.id}/lock`
     })
 
@@ -181,6 +592,10 @@ describe('Collection router', () => {
         ;(Collection.update as jest.Mock).mockRejectedValueOnce(
           new Error(errorMessage)
         )
+        ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
+          canUpsert: jest.fn().mockResolvedValueOnce(true),
+          isOwnedBy: jest.fn().mockResolvedValueOnce(true),
+        }))
       })
 
       it('should fail with an error if the update throws', () => {

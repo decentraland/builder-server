@@ -29,7 +29,11 @@ export const collectionSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
-    urn: { type: ['string'] },
+    urn: {
+      type: ['string'],
+      pattern:
+        '^urn:decentraland:[^:]+:(?:ext-thirdparty:[^:|\\s]+|collections-v2:0x[a-fA-F0-9]{40})$',
+    },
     name: { type: 'string', maxLength: 32 },
     eth_address: { type: 'string' },
     salt: { type: ['string', 'null'] },

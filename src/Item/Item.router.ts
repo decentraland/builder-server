@@ -90,7 +90,7 @@ export class ItemRouter extends Router {
      */
     this.router.put(
       '/items/:id',
-      // withAuthentication,
+      withAuthentication,
       withSchemaValidation(upsertItemSchema),
       server.handleRequest(this.upsertItem)
     )

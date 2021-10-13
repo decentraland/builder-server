@@ -1,9 +1,3 @@
-import {
-  ApolloQueryResult,
-  NetworkStatus,
-  OperationVariables,
-  QueryOptions,
-} from '@apollo/client/core'
 import gql from 'graphql-tag'
 import { env } from 'decentraland-commons'
 import {
@@ -16,23 +10,12 @@ import {
   AccountFragment,
   RarityFragment,
 } from './fragments'
-import { createClient } from './graphClient'
-
-const MAX_RESULTS = 1000
-
-const PAGINATION_VARIABLES = `
-  $first: Int = ${MAX_RESULTS}
-  $skip: Int = 0
-  $orderBy: String
-  $orderDirection: String
-`
-
-const PAGINATION_ARGUMENTS = `
-  first: $first
-  skip: $skip
-  orderBy: $orderBy
-  orderDirection: $orderDirection
-`
+import {
+  BaseGraphAPI,
+  MAX_RESULTS,
+  PAGINATION_VARIABLES,
+  PAGINATION_ARGUMENTS,
+} from './BaseGraphAPI'
 
 const getCollectionByIdQuery = () => gql`
   query getCollectionById($id: String) {
@@ -137,7 +120,7 @@ const getCommitteeQuery = () => gql`
   ${accountFragment()}
 `
 
-const getrRaritiesQuery = () => gql`
+const getRaritiesQuery = () => gql`
   query getRaritiesQuery {
     rarities {
       ...rarityFragment
@@ -147,9 +130,8 @@ const getrRaritiesQuery = () => gql`
 `
 
 export const COLLECTIONS_URL = env.get('COLLECTIONS_GRAPH_URL', '')
-const graphClient = createClient(COLLECTIONS_URL)
 
-export class CollectionAPI {
+export class CollectionAPI extends BaseGraphAPI {
   fetchCollection = async (contractAddress: string) => {
     const {
       data: { collections = [] },
@@ -260,7 +242,7 @@ export class CollectionAPI {
       data: { rarities = [] },
     } = await this.query<{
       rarities?: RarityFragment[]
-    }>({ query: getrRaritiesQuery() })
+    }>({ query: getRaritiesQuery() })
 
     return rarities
   }
@@ -268,44 +250,6 @@ export class CollectionAPI {
   buildItemId = (contractAddress: string, tokenId: string) => {
     return contractAddress + '-' + tokenId
   }
-
-  private async query<T = any, TVariables = OperationVariables>(
-    options: QueryOptions<TVariables, T>
-  ): Promise<ApolloQueryResult<T>> {
-    try {
-      const result = await graphClient.query<T, TVariables>(options)
-      return result
-    } catch (error) {
-      const data = {} as T
-      return { data, loading: false, networkStatus: NetworkStatus.error }
-    }
-  }
-
-  private async paginate<T, K extends string, TVariables = OperationVariables>(
-    keys: K[],
-    options: QueryOptions<TVariables, T>
-  ): Promise<T[]> {
-    const queryOptions = {
-      ...options,
-      variables: { ...options.variables, skip: 0 },
-    }
-    let pagination: T[] = []
-    let partialResult: T[] | undefined
-
-    while (!partialResult || partialResult.length === MAX_RESULTS) {
-      const queryResult = await this.query<Record<K, T[]>, TVariables>(
-        queryOptions as any // forcing typescript to accept the skip variable
-      )
-      partialResult = []
-      for (const key of keys) {
-        partialResult = partialResult.concat(queryResult.data[key])
-      }
-      pagination = pagination.concat(partialResult)
-      queryOptions.variables.skip += MAX_RESULTS
-    }
-
-    return pagination
-  }
 }
 
-export const collectionAPI = new CollectionAPI()
+export const collectionAPI = new CollectionAPI(COLLECTIONS_URL)

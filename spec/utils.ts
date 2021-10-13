@@ -37,18 +37,33 @@ export const wallet: Wallet = {
   },
 }
 
-export function buildURL(uri: string) {
+export function buildURL(uri: string, queryString?: Record<string, string>) {
   const API_VERSION = env.get('API_VERSION', 'v1')
-  return `/${API_VERSION}${uri}`
+  const search = queryString ? buildSearch(queryString) : ''
+  return `/${API_VERSION}${uri}${search}`
+}
+
+export function buildSearch(queryString: Record<string, string>) {
+  if (Object.keys(queryString).length === 0) {
+    return ''
+  }
+  const params = new URLSearchParams(queryString)
+  return `?${params.toString()}`
 }
 
 export function createAuthHeaders(
   method: string = 'get',
   path: string = '',
+  queryString: Record<string, string> = {},
   identity: AuthIdentity = wallet.identity
 ) {
   const headers: Record<string, string> = {}
-  const endpoint = (method + ':' + path).toLowerCase()
+  const endpoint = (
+    method +
+    ':' +
+    path +
+    buildSearch(queryString)
+  ).toLowerCase()
   const authChain = Authenticator.signPayload(identity, endpoint)
   for (let i = 0; i < authChain.length; i++) {
     headers[AUTH_CHAIN_HEADER_PREFIX + i] = JSON.stringify(authChain[i])

@@ -1,7 +1,7 @@
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { withAuthentication } from '../middleware/authentication'
+import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ThirdPartyFragment } from '../ethereum/api/fragments'
 
@@ -17,7 +17,12 @@ export class ThirdPartyRouter extends Router {
     )
   }
 
-  async getThirdParties(): Promise<ThirdPartyFragment[]> {
-    return thirdPartyAPI.fetchThirdParties()
+  async getThirdParties(req: AuthRequest): Promise<ThirdPartyFragment[]> {
+    let manager = ''
+    try {
+      manager = server.extractFromReq(req, 'manager')
+    } catch (e) {}
+
+    return thirdPartyAPI.fetchThirdParties(manager)
   }
 }

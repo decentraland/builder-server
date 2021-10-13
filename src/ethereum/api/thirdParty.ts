@@ -7,9 +7,9 @@ import {
   PAGINATION_ARGUMENTS,
 } from './BaseGraphAPI'
 
-const getThirdPartiesQuery = () => gql`
-  query getThirdParties(${PAGINATION_VARIABLES}) {
-    thirdParties(${PAGINATION_ARGUMENTS}) {
+const getThirdPartiesQuery = (manager: string = '') => gql`
+  query getThirdParties(${PAGINATION_VARIABLES}, ) {
+    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: [${manager}] }) {
       ...thirdPartyFragment
     }
   }
@@ -19,9 +19,11 @@ const getThirdPartiesQuery = () => gql`
 export const THIRD_PARTY_URL = env.get('THIRD_PARTY_GRAPH_URL', '')
 
 export class ThirdPartyAPI extends BaseGraphAPI {
-  fetchThirdParties = async (): Promise<ThirdPartyFragment[]> => {
+  fetchThirdParties = async (
+    manager: string = ''
+  ): Promise<ThirdPartyFragment[]> => {
     return this.paginate(['thirdParties'], {
-      query: getThirdPartiesQuery(),
+      query: getThirdPartiesQuery(manager),
     })
   }
 }

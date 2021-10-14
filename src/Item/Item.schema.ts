@@ -48,3 +48,12 @@ export const itemSchema = Object.freeze({
     'updated_at',
   ],
 })
+
+export const upsertItemSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    item: itemSchema,
+  },
+  additionalProperties: false,
+  required: ['item'],
+})

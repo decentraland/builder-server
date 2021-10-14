@@ -12,6 +12,7 @@ import { ItemRouter } from './Item'
 import { CollectionRouter } from './Collection'
 import { CurationRouter } from './Curation'
 import { CommitteeRouter } from './Committee'
+import { ThirdPartyRouter } from './ThirdParty'
 import { RarityRouter } from './Rarity'
 import { ForumRouter } from './Forum/Forum.router'
 import { ManifestRouter } from './Manifest'
@@ -53,6 +54,7 @@ new ItemRouter(app).mount()
 new CollectionRouter(app).mount()
 new CurationRouter(app).mount()
 new CommitteeRouter(app).mount()
+new ThirdPartyRouter(app).mount()
 new RarityRouter(app).mount()
 new ForumRouter(app).mount()
 new ManifestRouter(app).mount()

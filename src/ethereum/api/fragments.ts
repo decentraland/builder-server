@@ -49,6 +49,16 @@ export const collectionFragment = () => gql`
   }
 `
 
+export const thirdPartyFragment = () => gql`
+  fragment thirdPartyFragment on ThirdParty {
+    id
+    managers
+    isApproved
+    maxItems
+    totalItems
+  }
+`
+
 export const accountFragment = () => gql`
   fragment accountFragment on Account {
     id
@@ -91,6 +101,14 @@ export type CollectionFragment = {
   reviewedAt: string
   updatedAt: string
   createdAt: string
+}
+
+export type ThirdPartyFragment = {
+  id: string
+  managers: string[]
+  isApproved: boolean
+  maxItems: number
+  totalItems: number
 }
 
 export type AccountFragment = {

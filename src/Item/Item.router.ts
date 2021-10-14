@@ -298,10 +298,14 @@ export class ItemRouter extends Router {
     const itemJSON: FullItem = server.extractFromReq(req, 'item')
 
     if (id !== itemJSON.id) {
-      throw new HTTPError('The body and URL item ids do not match', {
-        urlId: id,
-        bodyId: itemJSON.id,
-      })
+      throw new HTTPError(
+        'The body and URL item ids do not match',
+        {
+          urlId: id,
+          bodyId: itemJSON.id,
+        },
+        STATUS_CODES.badRequest
+      )
     }
 
     const eth_address = req.auth.ethAddress.toLowerCase()

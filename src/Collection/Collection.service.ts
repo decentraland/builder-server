@@ -5,10 +5,9 @@ import { isManager as isTPWManger } from '../ethereum/api/tpw'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import { toDBCollection, decodeTPCollectionURN } from './utils'
+import { toDBCollection } from './utils'
 import { Collection } from './Collection.model'
 
-const DAY = 1000 * 60 * 60 * 24
 export class CollectionService {
   isLockActive(lock: Date | null) {
     if (!lock) {
@@ -16,15 +15,13 @@ export class CollectionService {
     }
 
     const deadline = new Date(lock)
-    return deadline.getTime() + DAY > Date.now()
+    deadline.setDate(deadline.getDate() + 1)
+
+    return deadline.getTime() > Date.now()
   }
 
-  private async checkIfNameIsValid(
-    id: string,
-    name: string,
-    urn_suffix?: string
-  ): Promise<void> {
-    if (!(await Collection.isValidName(id, name.trim(), urn_suffix))) {
+  private async checkIfNameIsValid(id: string, name: string): Promise<void> {
+    if (!(await Collection.isValidName(id, name.trim()))) {
       throw new HTTPError(
         'Name already in use',
         { id, name },
@@ -98,7 +95,6 @@ export class CollectionService {
     eth_address: string,
     collectionJSON: FullCollection
   ) {
-    const [, urn_suffix] = decodeTPCollectionURN(collectionJSON.urn)
     if (!(await isTPWManger(collectionJSON.urn, eth_address))) {
       throw new HTTPError(
         'Unauthorized',
@@ -106,9 +102,6 @@ export class CollectionService {
         STATUS_CODES.unauthorized
       )
     }
-
-    // should names be shared with the other collections?
-    await this.checkIfNameIsValid(id, collectionJSON.name, urn_suffix)
 
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection) {

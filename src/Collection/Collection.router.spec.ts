@@ -98,36 +98,6 @@ describe('Collection router', () => {
         }
       })
 
-      describe('and the collection name already exists for another third party collection', () => {
-        beforeEach(() => {
-          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(false)
-        })
-
-        it('should respond with a bad request error', () => {
-          return server
-            .put(buildURL(url))
-            .set(createAuthHeaders('put', url))
-            .send({ collection: collectionToUpsert })
-            .expect(409)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                ok: false,
-                data: {
-                  id: dbCollection.id,
-                  name: dbCollection.name,
-                },
-                error: 'Name already in use',
-              })
-
-              expect(Collection.isValidName as jest.Mock).toHaveBeenCalledWith(
-                collectionToUpsert.id,
-                collectionToUpsert.name.trim(),
-                urn_suffix
-              )
-            })
-        })
-      })
-
       describe('and the collection exists and is locked', () => {
         beforeEach(() => {
           ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
@@ -164,7 +134,6 @@ describe('Collection router', () => {
       })
 
       describe('and the collection exists and is not locked', () => {
-        // let upsertedCollectionResult: ResultCollection
         let upsertMock: jest.Mock
         let newCollectionAttributes: CollectionAttributes
         beforeEach(() => {

@@ -348,7 +348,6 @@ export class CollectionRouter extends Router {
       )
     }
 
-    // Is it ok if we have it here before the other checks?
     if (id !== collectionJSON.id) {
       throw new HTTPError(
         'The body and URL collection ids do not match',

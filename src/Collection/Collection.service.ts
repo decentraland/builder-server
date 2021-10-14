@@ -76,7 +76,7 @@ export class CollectionService {
 
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
-    if (collection) {
+    if (collection && collection.contract_address) {
       if (await this.isPublished(collection.contract_address)) {
         throw new CollectionAlreadyPublishedException(id)
       }

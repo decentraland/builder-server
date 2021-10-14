@@ -13,20 +13,8 @@ describe('ThirdParty router', () => {
 
   beforeEach(() => {
     thirdParties = [
-      {
-        id: '1',
-        managers: ['0x1'],
-        isApproved: true,
-        maxItems: 2,
-        totalItems: 1,
-      },
-      {
-        id: '2',
-        managers: ['0x2', '0x3'],
-        isApproved: true,
-        maxItems: 10,
-        totalItems: 3,
-      },
+      { id: '1', managers: ['0x1'] },
+      { id: '2', managers: ['0x2', '0x3'] },
     ]
   })
 

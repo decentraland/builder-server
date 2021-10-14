@@ -53,9 +53,6 @@ export const thirdPartyFragment = () => gql`
   fragment thirdPartyFragment on ThirdParty {
     id
     managers
-    isApproved
-    maxItems
-    totalItems
   }
 `
 
@@ -106,9 +103,6 @@ export type CollectionFragment = {
 export type ThirdPartyFragment = {
   id: string
   managers: string[]
-  isApproved: boolean
-  maxItems: number
-  totalItems: number
 }
 
 export type AccountFragment = {

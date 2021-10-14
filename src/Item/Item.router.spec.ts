@@ -567,25 +567,25 @@ describe('Item router', () => {
     })
 
     describe('when the collection given for the item is already published', () => {
-      //   beforeEach(() => {
-      //     mockIsCollectionPublished()
-      //   })
+      beforeEach(() => {
+        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+        mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
+
+        mockCollectionFindOne.mockResolvedValueOnce({
+          collection_id: dbItem.collection_id,
+          eth_address: wallet.address,
+        })
+        
+        mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
+          {
+            collection: {} as CollectionFragment,
+            items: [{}] as ItemFragment[],
+          }
+        )
+      })
 
       describe('and the item is being upserted for the first time', () => {
         it('should fail with can not add item to published collection message', async () => {
-          mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
-          mockCollectionFindOne.mockResolvedValueOnce({
-            collection_id: dbItem.collection_id,
-            eth_address: wallet.address,
-          })
-          mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
-          mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
-            {
-              collection: {} as CollectionFragment,
-              items: [{}] as ItemFragment[],
-            }
-          )
-
           const response = await server
             .put(buildURL(url))
             .send({ item: dbItem })
@@ -602,19 +602,7 @@ describe('Item router', () => {
 
       describe('and the item is being removed from the collection', () => {
         it('should fail with can not remove item from published collection message', async () => {
-          mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
           mockItemFindOne.mockResolvedValueOnce(dbItem)
-          mockCollectionFindOne.mockResolvedValueOnce({
-            collection_id: dbItem.collection_id,
-            eth_address: wallet.address,
-          })
-          mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
-          mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
-            {
-              collection: {} as CollectionFragment,
-              items: [{}] as ItemFragment[],
-            }
-          )
 
           const response = await server
             .put(buildURL(url))
@@ -632,19 +620,7 @@ describe('Item router', () => {
 
       describe("and the item's rarity is being changed", () => {
         it('should fail with can not update items rarity message', async () => {
-          mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
           mockItemFindOne.mockResolvedValueOnce(dbItem)
-          mockCollectionFindOne.mockResolvedValueOnce({
-            collection_id: dbItem.collection_id,
-            eth_address: wallet.address,
-          })
-          mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
-          mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
-            {
-              collection: {} as CollectionFragment,
-              items: [{}] as ItemFragment[],
-            }
-          )
 
           const response = await server
             .put(buildURL(url))

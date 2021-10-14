@@ -311,18 +311,9 @@ describe('Item router', () => {
   describe('when upserting an item', () => {
     const mockOwnable = Ownable as jest.MockedClass<typeof Ownable>
     const mockItem = Item as jest.Mocked<typeof Item>
-
-    const mockCollectionFindOne = Collection.findOne as jest.MockedFunction<
-      typeof Collection.findOne
-    >
-
-    const mockPeerFetchWearables = peerAPI.fetchWearables as jest.MockedFunction<
-      typeof peerAPI.fetchWearables
-    >
-
-    const mockCollectionApiFetchCollectionWithItemsByContractAddress = collectionAPI.fetchCollectionWithItemsByContractAddress as jest.MockedFunction<
-      typeof collectionAPI.fetchCollectionWithItemsByContractAddress
-    >
+    const mockCollection = Collection as jest.Mocked<typeof Collection>
+    const mockPeer = peerAPI as jest.Mocked<typeof peerAPI>
+    const mockCollectionApi = collectionAPI as jest.Mocked<typeof collectionAPI>
 
     const mockItemUpsert = Item as jest.MockedClass<typeof Item>
 
@@ -415,7 +406,7 @@ describe('Item router', () => {
     describe('and the collection provided in the payload does not belong to the address making the request', () => {
       it('should fail with unauthorized user message', async () => {
         mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
-        mockCollectionFindOne.mockResolvedValueOnce({
+        mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8',
         })
@@ -444,7 +435,7 @@ describe('Item router', () => {
       it('should fail with cant change item collection message', async () => {
         mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
         mockItem.findOne.mockResolvedValueOnce(dbItem)
-        mockCollectionFindOne.mockResolvedValueOnce({
+        mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
         })
@@ -466,14 +457,14 @@ describe('Item router', () => {
     describe('when the collection given for the item is already published', () => {
       beforeEach(() => {
         mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
-        mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
+        mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])
 
-        mockCollectionFindOne.mockResolvedValueOnce({
+        mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
         })
 
-        mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
+        mockCollectionApi.fetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
           {
             collection: {} as CollectionFragment,
             items: [{}] as ItemFragment[],
@@ -542,12 +533,12 @@ describe('Item router', () => {
     describe('and all the conditions for success are given', () => {
       it('should respond with the upserted item', async () => {
         mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
-        mockCollectionFindOne.mockResolvedValueOnce({
+        mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
         })
-        mockPeerFetchWearables.mockResolvedValueOnce([] as Wearable[])
-        mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
+        mockPeer.fetchWearables.mockResolvedValueOnce([] as Wearable[])
+        mockCollectionApi.fetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
           {
             collection: {} as CollectionFragment,
             items: [] as ItemFragment[],

@@ -7,13 +7,13 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
-import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
   AuthRequest,
   withLowercasedParams,
+  withSchemaValidation,
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
@@ -27,12 +27,10 @@ import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
-import { itemSchema } from './Item.schema'
+import { upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasAccess } from './access'
 import { getDecentralandItemURN, toDBItem } from './utils'
-
-const validator = getValidator()
 
 export class ItemRouter extends Router {
   itemFilesRequestHandler:
@@ -93,6 +91,7 @@ export class ItemRouter extends Router {
     this.router.put(
       '/items/:id',
       withAuthentication,
+      withSchemaValidation(upsertItemSchema),
       server.handleRequest(this.upsertItem)
     )
 
@@ -313,14 +312,6 @@ export class ItemRouter extends Router {
         { id, eth_address },
         STATUS_CODES.unauthorized
       )
-    }
-
-    const validate = validator.compile(itemSchema)
-
-    validate(itemJSON)
-
-    if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
     }
 
     const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)

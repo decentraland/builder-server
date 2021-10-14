@@ -429,27 +429,6 @@ describe('Item router (old)', () => {
       })
     })
 
-    describe('when payload schema is invalid', () => {
-      it('should fail with invalid schema', async () => {
-        await testError(
-          {
-            query: {
-              id: 'id',
-            },
-            body: {
-              item: {
-                id: 'id',
-              },
-            },
-            auth: {
-              ethAddress: testItem.eth_address,
-            },
-          },
-          'Invalid schema'
-        )
-      })
-    })
-
     describe('when is_approved is sent in the payload', () => {
       it('should fail with cant set is_approved message', async () => {
         await testError(

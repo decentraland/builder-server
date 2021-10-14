@@ -25,7 +25,7 @@ export class WrongCollectionException extends Error {
   }
 }
 
-export class UnauthorizedToUpsertCollectionException extends Error {
+export class UnauthorizedCollectionEditException extends Error {
   constructor(public id: string, public eth_address: string) {
     super('Unauthorized to upsert collection')
   }
@@ -64,7 +64,7 @@ export class CollectionService {
 
     const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
     if (!canUpsert) {
-      throw new UnauthorizedToUpsertCollectionException(id, eth_address)
+      throw new UnauthorizedCollectionEditException(id, eth_address)
     }
 
     const attributes = toDBCollection({
@@ -102,7 +102,7 @@ export class CollectionService {
     collectionJSON: FullCollection
   ) {
     if (!(await isTPWManger(collectionJSON.urn, eth_address))) {
-      throw new UnauthorizedToUpsertCollectionException(id, eth_address)
+      throw new UnauthorizedCollectionEditException(id, eth_address)
     }
 
     const collection = await Collection.findOne<CollectionAttributes>(id)

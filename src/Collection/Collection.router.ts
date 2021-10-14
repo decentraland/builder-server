@@ -20,7 +20,7 @@ import {
   CollectionLockedException,
   CollectionAlreadyPublishedException,
   WrongCollectionException,
-  UnauthorizedToUpsertCollectionException,
+  UnauthorizedCollectionEditException,
   CollectionNameAlreadyExistsException,
 } from '../Collection'
 import { isCommitteeMember } from '../Committee'
@@ -396,7 +396,7 @@ export class CollectionRouter extends Router {
         )
       } else if (error instanceof WrongCollectionException) {
         throw new HTTPError(error.message, error.data, STATUS_CODES.conflict)
-      } else if (error instanceof UnauthorizedToUpsertCollectionException) {
+      } else if (error instanceof UnauthorizedCollectionEditException) {
         throw new HTTPError(
           error.message,
           { id: error.id, eth_address: error.eth_address },

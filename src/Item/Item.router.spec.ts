@@ -26,6 +26,7 @@ import { ItemAttributes, ItemRarity } from './Item.types'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { CollectionFragment, ItemFragment } from '../ethereum/api/fragments'
 import { STATUS_CODES } from '../common/HTTPError'
+import { Bridge } from '../ethereum/api/Bridge'
 
 jest.mock('./Item.model')
 jest.mock('../ethereum/api/collection')
@@ -326,9 +327,7 @@ describe('Item router', () => {
       typeof collectionAPI.fetchCollectionWithItemsByContractAddress
     >
 
-    const mockItemUpsert = Item as jest.MockedClass<
-      typeof Item
-    >
+    const mockItemUpsert = Item as jest.MockedClass<typeof Item>
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
@@ -690,7 +689,7 @@ describe('Item router', () => {
           .expect(STATUS_CODES.ok)
 
         expect(response.body).toEqual({
-          data: expect.anything(),
+          data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
           ok: true,
         })
       })

@@ -16,9 +16,7 @@ import {
   toResultItem,
 } from '../../spec/mocks/items'
 import { isCommitteeMember } from '../Committee'
-import { ExpressApp } from '../common/ExpressApp'
 import { Ownable } from '../Ownable'
-import { ItemRouter } from './Item.router'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -27,6 +25,7 @@ import { hasAccess } from './access'
 import { ItemAttributes, ItemRarity } from './Item.types'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { CollectionFragment, ItemFragment } from '../ethereum/api/fragments'
+import { STATUS_CODES } from '../common/HTTPError'
 
 jest.mock('./Item.model')
 jest.mock('../ethereum/api/collection')
@@ -34,6 +33,7 @@ jest.mock('../ethereum/api/peer')
 jest.mock('../Collection/Collection.model')
 jest.mock('../Committee')
 jest.mock('./access')
+jest.mock('../Ownable')
 
 function mockItemConsolidation(
   itemsAttributes: ItemAttributes[],
@@ -65,7 +65,8 @@ describe('Item router', () => {
 
   beforeEach(() => {
     dbItem = { ...dbItemMock }
-    ;(urn = itemURNMock), (itemFragment = { ...itemFragmentMock })
+    urn = itemURNMock
+    itemFragment = { ...itemFragmentMock }
     wearable = {
       id: urn,
       name: dbItem.name,
@@ -305,356 +306,392 @@ describe('Item router', () => {
         })
     })
   })
-})
 
-// TODO: Refactor old testing into new kind of testing like 'Item router' above
-describe('Item router (old)', () => {
   describe('when upserting an item', () => {
-    const testCollectionId = 'ffb11be4-94f0-47a6-bf1c-6d77fbbea1d3'
+    const mockOwnable = Ownable as jest.MockedClass<typeof Ownable>
 
-    const testItem = {
-      id: 'a8aca0ee-b3f6-4a8e-a78c-d8efeb099cd9',
-      name: 'name',
-      description: 'description',
-      eth_address: 'eth_address',
-      type: 'wearable',
-      contents: {},
-      created_at: 'created_at',
-      updated_at: 'updated_at',
-      metrics: {
-        meshes: 1,
-        bodies: 1,
-        materials: 1,
-        textures: 1,
-        triangles: 1,
-        entities: 1,
-      },
-      data: {
-        replaces: ['eyebrows'],
-        hides: ['eyebrows'],
-        tags: ['tags'],
-        representations: [
-          {
-            mainFile: 'mainFile',
-            contents: ['contents'],
-            overrideReplaces: ['eyebrows'],
-            overrideHides: ['eyebrows'],
-            bodyShapes: ['urn:decentraland:off-chain:base-avatars:BaseMale'],
-          },
-        ],
-      },
-    }
+    const mockItemFindOne = Item.findOne as jest.MockedFunction<
+      typeof Item.findOne
+    >
 
-    const itemFindOneSpy = jest.spyOn(Item, 'findOne')
-    const collectionFindOneSpy = jest.spyOn(Collection, 'findOne')
-    const ownableCanUpsertSpy = jest.spyOn(Ownable.prototype, 'canUpsert')
+    const mockCollectionFindOne = Collection.findOne as jest.MockedFunction<
+      typeof Collection.findOne
+    >
 
-    beforeAll(() => {
-      ownableCanUpsertSpy.mockResolvedValue(true)
-      itemFindOneSpy.mockResolvedValue(undefined)
-      collectionFindOneSpy.mockResolvedValue(undefined)
+    const mockPeerFetchWearables = peerAPI.fetchWearables as jest.MockedFunction<
+      typeof peerAPI.fetchWearables
+    >
+
+    const mockCollectionApiFetchCollectionWithItemsByContractAddress = collectionAPI.fetchCollectionWithItemsByContractAddress as jest.MockedFunction<
+      typeof collectionAPI.fetchCollectionWithItemsByContractAddress
+    >
+
+    const mockItemUpsert = Item as jest.MockedClass<
+      typeof Item
+    >
+
+    beforeEach(() => {
+      url = `/items/${dbItem.id}`
     })
+    // const testCollectionId = 'ffb11be4-94f0-47a6-bf1c-6d77fbbea1d3'
 
-    const testError = (req: any, message: string) => {
-      const app = new ExpressApp()
-      const router = new ItemRouter(app)
+    // const testItem = {
+    //   id: 'a8aca0ee-b3f6-4a8e-a78c-d8efeb099cd9',
+    //   name: 'name',
+    //   description: 'description',
+    //   eth_address: 'eth_address',
+    //   type: 'wearable',
+    //   contents: {},
+    //   created_at: 'created_at',
+    //   updated_at: 'updated_at',
+    //   metrics: {
+    //     meshes: 1,
+    //     bodies: 1,
+    //     materials: 1,
+    //     textures: 1,
+    //     triangles: 1,
+    //     entities: 1,
+    //   },
+    //   data: {
+    //     replaces: ['eyebrows'],
+    //     hides: ['eyebrows'],
+    //     tags: ['tags'],
+    //     representations: [
+    //       {
+    //         mainFile: 'mainFile',
+    //         contents: ['contents'],
+    //         overrideReplaces: ['eyebrows'],
+    //         overrideHides: ['eyebrows'],
+    //         bodyShapes: ['urn:decentraland:off-chain:base-avatars:BaseMale'],
+    //       },
+    //     ],
+    //   },
+    // }
 
-      return expect(router.upsertItem(req)).rejects.toThrowError(message)
-    }
+    // const itemFindOneSpy = jest.spyOn(Item, 'findOne')
+    // const collectionFindOneSpy = jest.spyOn(Collection, 'findOne')
+    // const ownableCanUpsertSpy = jest.spyOn(Ownable.prototype, 'canUpsert')
 
-    const testSuccess = (req: any) => {
-      jest
-        .spyOn(Item.prototype, 'upsert')
-        .mockResolvedValueOnce({} as ItemAttributes)
+    // beforeAll(() => {
+    //   ownableCanUpsertSpy.mockResolvedValue(true)
+    //   itemFindOneSpy.mockResolvedValue(undefined)
+    //   collectionFindOneSpy.mockResolvedValue(undefined)
+    // })
 
-      const app = new ExpressApp()
-      const router = new ItemRouter(app)
+    // const testError = (req: any, message: string) => {
+    //   const app = new ExpressApp()
+    //   const router = new ItemRouter(app)
 
-      return expect(router.upsertItem(req)).resolves.toStrictEqual({
-        content_hash: null,
-        in_catalyst: false,
-        is_approved: false,
-        is_published: false,
-        total_supply: 0,
-        urn: null,
-      })
-    }
+    //   return expect(router.upsertItem(req)).rejects.toThrowError(message)
+    // }
 
-    const mockItemFindOne = (merge: any = {}) => {
-      itemFindOneSpy.mockResolvedValueOnce({
-        ...testItem,
-        collection_id: testCollectionId,
-        ...merge,
-      })
-    }
+    // const testSuccess = (req: any) => {
+    //   jest
+    //     .spyOn(Item.prototype, 'upsert')
+    //     .mockResolvedValueOnce({} as ItemAttributes)
 
-    const mockCollectionFindOne = (merge: any = {}) => {
-      collectionFindOneSpy.mockResolvedValueOnce({
-        collection_id: testCollectionId,
-        eth_address: testItem.eth_address,
-        ...merge,
-      })
-    }
+    //   const app = new ExpressApp()
+    //   const router = new ItemRouter(app)
 
-    const mockIsCollectionPublished = () => {
-      mockCollectionFindOne()
+    //   return expect(router.upsertItem(req)).resolves.toStrictEqual({
+    //     content_hash: null,
+    //     in_catalyst: false,
+    //     is_approved: false,
+    //     is_published: false,
+    //     total_supply: 0,
+    //     urn: null,
+    //   })
+    // }
 
-      jest
-        .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
-        .mockResolvedValueOnce({
-          collection: {} as CollectionFragment,
-          items: [{}] as ItemFragment[],
-        })
+    // const mockItemFindOne = (merge: any = {}) => {
+    //   itemFindOneSpy.mockResolvedValueOnce({
+    //     ...testItem,
+    //     collection_id: testCollectionId,
+    //     ...merge,
+    //   })
+    // }
 
-      jest
-        .spyOn(peerAPI, 'fetchWearables')
-        .mockResolvedValueOnce([{}] as Wearable[])
-    }
+    // const mockCollectionFindOne = (merge: any = {}) => {
+    //   collectionFindOneSpy.mockResolvedValueOnce({
+    //     collection_id: testCollectionId,
+    //     eth_address: testItem.eth_address,
+    //     ...merge,
+    //   })
+    // }
 
-    describe('when param id is different from payload id', () => {
+    // const mockIsCollectionPublished = () => {
+    //   mockCollectionFindOne()
+
+    //   jest
+    //     .spyOn(collectionAPI, 'fetchCollectionWithItemsByContractAddress')
+    //     .mockResolvedValueOnce({
+    //       collection: {} as CollectionFragment,
+    //       items: [{}] as ItemFragment[],
+    //     })
+
+    //   jest
+    //     .spyOn(peerAPI, 'fetchWearables')
+    //     .mockResolvedValueOnce([{}] as Wearable[])
+    // }
+
+    describe('and the param id is different from payload id', () => {
+      const differentId = '75e7da02-a727-48de-a4da-d0778395067b'
+
       it('should fail with body and url ids do not match message', async () => {
-        await testError(
-          {
-            query: {
-              id: 'id',
-            },
-            body: {
-              item: {
-                id: 'different id',
-              },
-            },
-          },
-          'The body and URL item ids do not match'
-        )
+        const response = await server
+          .put(buildURL(url))
+          .send({ item: { ...dbItem, id: differentId } })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.badRequest)
+
+        expect(response.body).toEqual({
+          data: { bodyId: differentId, urlId: dbItem.id },
+          error: 'The body and URL item ids do not match',
+          ok: false,
+        })
       })
     })
 
-    describe('when is_approved is sent in the payload', () => {
-      it('should fail with cant set is_approved message', async () => {
-        await testError(
-          {
-            query: {
-              id: testItem.id,
-            },
-            body: {
-              item: {
-                ...testItem,
-                is_approved: true,
-              },
-            },
-            auth: {
-              ethAddress: testItem.eth_address,
-            },
-          },
-          'Can not change is_published or is_approved property'
-        )
+    describe('and is_approved or is_published exist in the payload item', () => {
+      const testProperty = async (prop: 'is_published' | 'is_approved') => {
+        const response = await server
+          .put(buildURL(url))
+          .send({ item: { ...dbItem, [prop]: true } })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.unauthorized)
+
+        expect(response.body).toEqual({
+          data: { id: dbItem.id, eth_address: wallet.address },
+          error: 'Can not change is_published or is_approved property',
+          ok: false,
+        })
+      }
+
+      describe('having is_approved present', () => {
+        it('should fail with with cant set is approved or is published message', async () => {
+          testProperty('is_approved')
+        })
+      })
+
+      describe('having is_published present', () => {
+        it('should fail with with cant set is approved or is published message', async () => {
+          testProperty('is_published')
+        })
       })
     })
 
-    describe('when is_published is sent in the payload', () => {
-      it('should fail with cant set is_approved message', async () => {
-        await testError(
-          {
-            query: {
-              id: testItem.id,
-            },
-            body: {
-              item: {
-                ...testItem,
-                is_published: true,
-              },
-            },
-            auth: {
-              ethAddress: testItem.eth_address,
-            },
-          },
-          'Can not change is_published or is_approved property'
-        )
-      })
-    })
-
-    describe('when the user is unauthorized to upsert the item', () => {
+    describe('and the user upserting is not authorized to do so', () => {
       it('should fail with unauthorized user message', async () => {
-        ownableCanUpsertSpy.mockResolvedValueOnce(false)
+        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(false)
 
-        await testError(
-          {
-            query: {
-              id: testItem.id,
-            },
-            body: {
-              item: testItem,
-            },
-            auth: {
-              ethAddress: testItem.eth_address,
-            },
-          },
-          'Unauthorized user'
-        )
+        const response = await server
+          .put(buildURL(url))
+          .send({ item: dbItem })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.unauthorized)
+
+        expect(response.body).toEqual({
+          data: { id: dbItem.id, eth_address: wallet.address },
+          error: 'Unauthorized user',
+          ok: false,
+        })
       })
     })
 
-    describe('when the collection provided in the payload does not exists in the db', () => {
+    describe('and the collection provided in the payload does not exists in the db', () => {
       it('should fail with collection not found message', async () => {
-        await testError(
-          {
-            query: {
-              id: testItem.id,
-            },
-            body: {
-              item: { ...testItem, collection_id: testCollectionId },
-            },
-            auth: {
-              ethAddress: testItem.eth_address,
-            },
-          },
-          'Collection not found'
-        )
+        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+
+        const response = await server
+          .put(buildURL(url))
+          .send({ item: dbItem })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.notFound)
+
+        expect(response.body).toEqual({
+          data: { collectionId: dbItem.collection_id },
+          error: 'Collection not found',
+          ok: false,
+        })
       })
     })
 
-    describe('when the collection provided in the payload does not belong to the address making the request', () => {
+    describe('and the collection provided in the payload does not belong to the address making the request', () => {
       it('should fail with unauthorized user message', async () => {
-        mockCollectionFindOne({ eth_address: 'another address' })
+        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+        mockCollectionFindOne.mockResolvedValueOnce({
+          collection_id: dbItem.collection_id,
+          eth_address: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8',
+        })
 
-        await testError(
-          {
-            query: {
-              id: testItem.id,
-            },
-            body: {
-              item: { ...testItem, collection_id: testCollectionId },
-            },
-            auth: {
-              ethAddress: testItem.eth_address,
-            },
+        const response = await server
+          .put(buildURL(url))
+          .send({ item: dbItem })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.unauthorized)
+
+        expect(response.body).toEqual({
+          data: {
+            id: dbItem.id,
+            eth_address: wallet.address,
+            collection_id: dbItem.collection_id,
           },
-          'Unauthorized user'
-        )
+          error: 'Unauthorized user',
+          ok: false,
+        })
       })
     })
 
-    describe('when the item collection is being changed', () => {
+    describe('and the collection of the item is being changed', () => {
+      const differentCollectionId = '75e7da02-a727-48de-a4da-d0778395067b'
+
       it('should fail with cant change item collection message', async () => {
-        const differentCollectionId = '6d3fd719-57c1-4436-bec3-7dd954c3fbfe'
+        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+        mockItemFindOne.mockResolvedValueOnce(dbItem)
+        mockCollectionFindOne.mockResolvedValueOnce({
+          collection_id: dbItem.collection_id,
+          eth_address: wallet.address,
+        })
 
-        mockItemFindOne()
+        const response = await server
+          .put(buildURL(url))
+          .send({ item: { ...dbItem, collection_id: differentCollectionId } })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.unauthorized)
 
-        await testError(
-          {
-            query: {
-              id: testItem.id,
-            },
-            body: {
-              item: {
-                ...testItem,
-                collection_id: differentCollectionId,
-              },
-            },
-            auth: {
-              ethAddress: testItem.eth_address,
-            },
-          },
-          "Item can't change between collections"
-        )
+        expect(response.body).toEqual({
+          data: { id: dbItem.id },
+          error: "Item can't change between collections",
+          ok: false,
+        })
       })
     })
 
-    describe('when the collection is published', () => {
-      beforeEach(() => {
-        mockIsCollectionPublished()
-      })
+    describe('when the collection given for the item is already published', () => {
+      //   beforeEach(() => {
+      //     mockIsCollectionPublished()
+      //   })
 
-      describe('when the item is being upserted for the first time', () => {
+      describe('and the item is being upserted for the first time', () => {
         it('should fail with can not add item to published collection message', async () => {
-          await testError(
+          mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+          mockCollectionFindOne.mockResolvedValueOnce({
+            collection_id: dbItem.collection_id,
+            eth_address: wallet.address,
+          })
+          mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
+          mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
             {
-              query: {
-                id: testItem.id,
-              },
-              body: {
-                item: {
-                  ...testItem,
-                  collection_id: testCollectionId,
-                },
-              },
-              auth: {
-                ethAddress: testItem.eth_address,
-              },
-            },
-            "Items can't be added to a published collection"
+              collection: {} as CollectionFragment,
+              items: [{}] as ItemFragment[],
+            }
           )
+
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: dbItem })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+
+          expect(response.body).toEqual({
+            data: { id: dbItem.id },
+            error: "Items can't be added to a published collection",
+            ok: false,
+          })
         })
       })
 
-      describe('when the item is being removed from the collection', () => {
+      describe('and the item is being removed from the collection', () => {
         it('should fail with can not remove item from published collection message', async () => {
-          mockItemFindOne()
-
-          await testError(
+          mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+          mockItemFindOne.mockResolvedValueOnce(dbItem)
+          mockCollectionFindOne.mockResolvedValueOnce({
+            collection_id: dbItem.collection_id,
+            eth_address: wallet.address,
+          })
+          mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
+          mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
             {
-              query: {
-                id: testItem.id,
-              },
-              body: {
-                item: testItem,
-              },
-              auth: {
-                ethAddress: testItem.eth_address,
-              },
-            },
-            "Items can't be removed from a pubished collection"
+              collection: {} as CollectionFragment,
+              items: [{}] as ItemFragment[],
+            }
           )
+
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: { ...dbItem, collection_id: null } })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+
+          expect(response.body).toEqual({
+            data: { id: dbItem.id },
+            error: "Items can't be removed from a pubished collection",
+            ok: false,
+          })
         })
       })
 
-      describe("when the item's rarity is being changed", () => {
+      describe("and the item's rarity is being changed", () => {
         it('should fail with can not update items rarity message', async () => {
-          const rarity1 = 'mythic'
-          const rarity2 = 'unique'
-
-          mockItemFindOne({ rarity: rarity1 })
-
-          await testError(
+          mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+          mockItemFindOne.mockResolvedValueOnce(dbItem)
+          mockCollectionFindOne.mockResolvedValueOnce({
+            collection_id: dbItem.collection_id,
+            eth_address: wallet.address,
+          })
+          mockPeerFetchWearables.mockResolvedValueOnce([{}] as Wearable[])
+          mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
             {
-              query: {
-                id: testItem.id,
-              },
-              body: {
-                item: {
-                  ...testItem,
-                  rarity: rarity2,
-                  collection_id: testCollectionId,
-                },
-              },
-              auth: {
-                ethAddress: testItem.eth_address,
-              },
-            },
-            "An item rarity from a published collection can't be changed"
+              collection: {} as CollectionFragment,
+              items: [{}] as ItemFragment[],
+            }
           )
+
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: { ...dbItem, rarity: ItemRarity.EPIC } })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+
+          expect(response.body).toEqual({
+            data: {
+              id: dbItem.id,
+              current: dbItem.rarity,
+              other: ItemRarity.EPIC,
+            },
+            error:
+              "An item rarity from a published collection can't be changed",
+            ok: false,
+          })
         })
       })
     })
 
-    describe('when everything is correct', () => {
-      it('should resolve correctly', async () => {
-        mockItemFindOne()
-        mockIsCollectionPublished()
+    describe('and all the conditions for success are given', () => {
+      it('should respond with the upserted item', async () => {
+        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+        mockCollectionFindOne.mockResolvedValueOnce({
+          collection_id: dbItem.collection_id,
+          eth_address: wallet.address,
+        })
+        mockPeerFetchWearables.mockResolvedValueOnce([] as Wearable[])
+        mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
+          {
+            collection: {} as CollectionFragment,
+            items: [] as ItemFragment[],
+          }
+        )
+        mockItemUpsert.prototype.upsert.mockResolvedValueOnce(dbItem)
 
-        await testSuccess({
-          query: {
-            id: testItem.id,
-          },
-          body: {
-            item: {
-              ...testItem,
-              collection_id: testCollectionId,
-            },
-          },
-          auth: {
-            ethAddress: testItem.eth_address,
-          },
+        const response = await server
+          .put(buildURL(url))
+          .send({ item: dbItem })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.ok)
+
+        expect(response.body).toEqual({
+          data: expect.anything(),
+          ok: true,
         })
       })
     })

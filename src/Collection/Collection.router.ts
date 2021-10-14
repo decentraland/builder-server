@@ -17,6 +17,11 @@ import {
   Collection,
   CollectionService,
   CollectionAttributes,
+  CollectionLockedException,
+  CollectionAlreadyPublishedException,
+  WrongCollectionException,
+  UnauthorizedToUpsertCollectionException,
+  CollectionNameAlreadyExistsException,
 } from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import {
@@ -361,19 +366,45 @@ export class CollectionRouter extends Router {
 
     let upsertedCollection: CollectionAttributes
 
-    if (isTPCollection(collectionJSON.urn)) {
-      upsertedCollection = await this.service.upsertTPWCollection(
-        id,
-        eth_address,
-        collectionJSON
-      )
-    } else {
-      upsertedCollection = await this.service.upsertDCLCollection(
-        id,
-        eth_address,
-        collectionJSON,
-        server.extractFromReq(req, 'data')
-      )
+    try {
+      if (isTPCollection(collectionJSON.urn)) {
+        upsertedCollection = await this.service.upsertTPWCollection(
+          id,
+          eth_address,
+          collectionJSON
+        )
+      } else {
+        upsertedCollection = await this.service.upsertDCLCollection(
+          id,
+          eth_address,
+          collectionJSON,
+          server.extractFromReq(req, 'data')
+        )
+      }
+    } catch (error) {
+      if (error instanceof CollectionLockedException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.locked
+        )
+      } else if (error instanceof CollectionAlreadyPublishedException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof WrongCollectionException) {
+        throw new HTTPError(error.message, error.data, STATUS_CODES.conflict)
+      } else if (error instanceof UnauthorizedToUpsertCollectionException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id, eth_address: error.eth_address },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      throw error
     }
 
     return toFullCollection(upsertedCollection)

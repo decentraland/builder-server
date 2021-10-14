@@ -1,4 +1,3 @@
-import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
 import { isPublished } from '../utils/eth'
 import { isManager as isTPWManger } from '../ethereum/api/tpw'
@@ -7,6 +6,30 @@ import { Ownable } from '../Ownable'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { toDBCollection } from './utils'
 import { Collection } from './Collection.model'
+
+export class CollectionLockedException extends Error {
+  constructor(public id: string) {
+    super("The collection is locked. It can't be saved.")
+  }
+}
+
+export class CollectionAlreadyPublishedException extends Error {
+  constructor(public id: string) {
+    super("The collection is published. It can't be saved.")
+  }
+}
+
+export class WrongCollectionException extends Error {
+  constructor(m: string, public data: Record<string, any>) {
+    super(m)
+  }
+}
+
+export class UnauthorizedToUpsertCollectionException extends Error {
+  constructor(public id: string, public eth_address: string) {
+    super('Unauthorized to upsert collection')
+  }
+}
 
 export class CollectionService {
   isLockActive(lock: Date | null) {
@@ -22,11 +45,7 @@ export class CollectionService {
 
   private async checkIfNameIsValid(id: string, name: string): Promise<void> {
     if (!(await Collection.isValidName(id, name.trim()))) {
-      throw new HTTPError(
-        'Name already in use',
-        { id, name },
-        STATUS_CODES.conflict
-      )
+      throw new WrongCollectionException('Name already in use', { id, name })
     }
   }
 
@@ -37,20 +56,15 @@ export class CollectionService {
     data: string
   ): Promise<CollectionAttributes> {
     if (collectionJSON.is_published || collectionJSON.is_approved) {
-      throw new HTTPError(
+      throw new WrongCollectionException(
         'Can not change the is_published or is_approved property',
-        { id, eth_address },
-        STATUS_CODES.conflict
+        { id, eth_address }
       )
     }
 
     const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
     if (!canUpsert) {
-      throw new HTTPError(
-        'Unauthorized',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
+      throw new UnauthorizedToUpsertCollectionException(id, eth_address)
     }
 
     const attributes = toDBCollection({
@@ -64,19 +78,11 @@ export class CollectionService {
 
     if (collection) {
       if (await this.isPublished(collection.contract_address)) {
-        throw new HTTPError(
-          "The collection is published. It can't be saved",
-          { id },
-          STATUS_CODES.conflict
-        )
+        throw new CollectionAlreadyPublishedException(id)
       }
 
       if (this.isLockActive(collection.lock)) {
-        throw new HTTPError(
-          "The collection is locked. It can't be saved",
-          { id },
-          STATUS_CODES.locked
-        )
+        throw new CollectionLockedException(id)
       }
     }
 
@@ -96,21 +102,13 @@ export class CollectionService {
     collectionJSON: FullCollection
   ) {
     if (!(await isTPWManger(collectionJSON.urn, eth_address))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { id, urn: collectionJSON.urn, eth_address },
-        STATUS_CODES.unauthorized
-      )
+      throw new UnauthorizedToUpsertCollectionException(id, eth_address)
     }
 
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection) {
       if (this.isLockActive(collection.lock)) {
-        throw new HTTPError(
-          "The collection is locked. It can't be saved",
-          { id },
-          STATUS_CODES.locked
-        )
+        throw new CollectionLockedException(id)
       }
     }
 

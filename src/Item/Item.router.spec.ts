@@ -310,12 +310,11 @@ describe('Item router', () => {
 
   describe('when upserting an item', () => {
     const mockOwnable = Ownable as jest.MockedClass<typeof Ownable>
-    const mockItem = Item as jest.Mocked<typeof Item>
     const mockCollection = Collection as jest.Mocked<typeof Collection>
     const mockPeer = peerAPI as jest.Mocked<typeof peerAPI>
     const mockCollectionApi = collectionAPI as jest.Mocked<typeof collectionAPI>
-
-    const mockItemUpsert = Item as jest.MockedClass<typeof Item>
+    const mockItem = Item as jest.MockedClass<typeof Item> &
+      jest.Mocked<typeof Item>
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
@@ -533,18 +532,21 @@ describe('Item router', () => {
     describe('and all the conditions for success are given', () => {
       it('should respond with the upserted item', async () => {
         mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
+        mockPeer.fetchWearables.mockResolvedValueOnce([] as Wearable[])
+
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
         })
-        mockPeer.fetchWearables.mockResolvedValueOnce([] as Wearable[])
+
         mockCollectionApi.fetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
           {
             collection: {} as CollectionFragment,
             items: [] as ItemFragment[],
           }
         )
-        mockItemUpsert.prototype.upsert.mockResolvedValueOnce(dbItem)
+
+        mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
 
         const response = await server
           .put(buildURL(url))

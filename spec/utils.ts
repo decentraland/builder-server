@@ -37,10 +37,12 @@ export const wallet: Wallet = {
   },
 }
 
-export function buildURL(uri: string, queryString?: Record<string, string>) {
+export function buildURL(
+  uri: string,
+  queryString: Record<string, string> = {}
+) {
   const API_VERSION = env.get('API_VERSION', 'v1')
-  const search = queryString ? buildSearch(queryString) : ''
-  return `/${API_VERSION}${uri}${search}`
+  return `/${API_VERSION}${uri}${buildSearch(queryString)}`
 }
 
 export function buildSearch(queryString: Record<string, string>) {

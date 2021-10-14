@@ -310,10 +310,7 @@ describe('Item router', () => {
 
   describe('when upserting an item', () => {
     const mockOwnable = Ownable as jest.MockedClass<typeof Ownable>
-
-    const mockItemFindOne = Item.findOne as jest.MockedFunction<
-      typeof Item.findOne
-    >
+    const mockItem = Item as jest.Mocked<typeof Item>
 
     const mockCollectionFindOne = Collection.findOne as jest.MockedFunction<
       typeof Collection.findOne
@@ -446,7 +443,7 @@ describe('Item router', () => {
 
       it('should fail with cant change item collection message', async () => {
         mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
-        mockItemFindOne.mockResolvedValueOnce(dbItem)
+        mockItem.findOne.mockResolvedValueOnce(dbItem)
         mockCollectionFindOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
@@ -475,7 +472,7 @@ describe('Item router', () => {
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
         })
-        
+
         mockCollectionApiFetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
           {
             collection: {} as CollectionFragment,
@@ -502,7 +499,7 @@ describe('Item router', () => {
 
       describe('and the item is being removed from the collection', () => {
         it('should fail with can not remove item from published collection message', async () => {
-          mockItemFindOne.mockResolvedValueOnce(dbItem)
+          mockItem.findOne.mockResolvedValueOnce(dbItem)
 
           const response = await server
             .put(buildURL(url))
@@ -520,7 +517,7 @@ describe('Item router', () => {
 
       describe("and the item's rarity is being changed", () => {
         it('should fail with can not update items rarity message', async () => {
-          mockItemFindOne.mockResolvedValueOnce(dbItem)
+          mockItem.findOne.mockResolvedValueOnce(dbItem)
 
           const response = await server
             .put(buildURL(url))

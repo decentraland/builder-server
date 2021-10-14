@@ -316,22 +316,23 @@ describe('Item router', () => {
     const mockItem = Item as jest.MockedClass<typeof Item> &
       jest.Mocked<typeof Item>
 
+    const mockUUID = '75e7da02-a727-48de-a4da-d0778395067b'
+
     beforeEach(() => {
       url = `/items/${dbItem.id}`
+      mockOwnable.prototype.canUpsert.mockResolvedValue(true)
     })
 
     describe('and the param id is different from payload id', () => {
-      const differentId = '75e7da02-a727-48de-a4da-d0778395067b'
-
       it('should fail with body and url ids do not match message', async () => {
         const response = await server
           .put(buildURL(url))
-          .send({ item: { ...dbItem, id: differentId } })
+          .send({ item: { ...dbItem, id: mockUUID } })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.badRequest)
 
         expect(response.body).toEqual({
-          data: { bodyId: differentId, urlId: dbItem.id },
+          data: { bodyId: mockUUID, urlId: dbItem.id },
           error: 'The body and URL item ids do not match',
           ok: false,
         })
@@ -386,8 +387,6 @@ describe('Item router', () => {
 
     describe('and the collection provided in the payload does not exists in the db', () => {
       it('should fail with collection not found message', async () => {
-        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
-
         const response = await server
           .put(buildURL(url))
           .send({ item: dbItem })
@@ -403,11 +402,12 @@ describe('Item router', () => {
     })
 
     describe('and the collection provided in the payload does not belong to the address making the request', () => {
+      const differentEthAddress = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8'
+
       it('should fail with unauthorized user message', async () => {
-        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
-          eth_address: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8',
+          eth_address: differentEthAddress,
         })
 
         const response = await server
@@ -429,10 +429,7 @@ describe('Item router', () => {
     })
 
     describe('and the collection of the item is being changed', () => {
-      const differentCollectionId = '75e7da02-a727-48de-a4da-d0778395067b'
-
       it('should fail with cant change item collection message', async () => {
-        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
         mockItem.findOne.mockResolvedValueOnce(dbItem)
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
@@ -441,7 +438,7 @@ describe('Item router', () => {
 
         const response = await server
           .put(buildURL(url))
-          .send({ item: { ...dbItem, collection_id: differentCollectionId } })
+          .send({ item: { ...dbItem, collection_id: mockUUID } })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.unauthorized)
 
@@ -455,9 +452,7 @@ describe('Item router', () => {
 
     describe('when the collection given for the item is already published', () => {
       beforeEach(() => {
-        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
         mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])
-
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
@@ -531,9 +526,7 @@ describe('Item router', () => {
 
     describe('and all the conditions for success are given', () => {
       it('should respond with the upserted item', async () => {
-        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(true)
         mockPeer.fetchWearables.mockResolvedValueOnce([] as Wearable[])
-
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,

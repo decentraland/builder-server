@@ -12,13 +12,15 @@ import {
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
-import { FactoryCollection } from '../ethereum'
-import { Ownable } from '../Ownable'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import {
   Collection,
   CollectionService,
   CollectionAttributes,
+  CollectionLockedException,
+  CollectionAlreadyPublishedException,
+  WrongCollectionException,
+  UnauthorizedCollectionEditException,
 } from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import {
@@ -30,7 +32,7 @@ import { RequestParameters } from '../RequestParameters'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { sendDataToWarehouse } from '../warehouse'
 import { hasAccess } from './access'
-import { toFullCollection, toDBCollection } from './utils'
+import { toFullCollection, isTPCollection } from './utils'
 
 const validator = getValidator()
 
@@ -205,7 +207,7 @@ export class CollectionRouter extends Router {
     }
 
     const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection.contract_address
+      dbCollection.contract_address!
     )
 
     const fullCollection = remoteCollection
@@ -234,7 +236,7 @@ export class CollectionRouter extends Router {
       Item.findOrderedItemsByCollectionId(id),
     ])
     const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection!.contract_address
+      dbCollection!.contract_address!
     )
 
     if (!remoteCollection) {
@@ -257,7 +259,7 @@ export class CollectionRouter extends Router {
     if (isMissingBlockchainItemIds) {
       const fetches = await Promise.all([
         collectionAPI.fetchItemsByContractAddress(
-          dbCollection!.contract_address
+          dbCollection!.contract_address!
         ),
         peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
       ])
@@ -337,83 +339,74 @@ export class CollectionRouter extends Router {
       req,
       'collection'
     )
-    const data: string = server.extractFromReq(req, 'data')
+
     const eth_address = req.auth.ethAddress
 
     const validate = validator.compile(collectionSchema)
     validate(collectionJSON)
 
     if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
-    }
-
-    if (collectionJSON.is_published || collectionJSON.is_approved) {
       throw new HTTPError(
-        'Can not change is_published or is_approved property',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
+        'Invalid schema',
+        validate.errors,
+        STATUS_CODES.badRequest
       )
     }
 
-    const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
-    if (!canUpsert) {
+    if (id !== collectionJSON.id) {
       throw new HTTPError(
-        'Unauthorized',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
+        'The body and URL collection ids do not match',
+        {
+          urlId: id,
+          bodyId: collectionJSON.id,
+        },
+        STATUS_CODES.badRequest
       )
     }
 
-    const attributes = toDBCollection({
-      ...collectionJSON,
-      eth_address,
-    })
+    let upsertedCollection: CollectionAttributes
 
-    if (!(await Collection.isValidName(id, attributes.name.trim()))) {
-      throw new HTTPError(
-        'Name already in use',
-        { id, name: attributes.name },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    const collection = await Collection.findOne<CollectionAttributes>(id)
-
-    if (collection) {
-      if (await this.service.isPublished(collection.contract_address)) {
+    try {
+      if (isTPCollection(collectionJSON.urn)) {
+        upsertedCollection = await this.service.upsertTPWCollection(
+          id,
+          eth_address,
+          collectionJSON
+        )
+      } else {
+        upsertedCollection = await this.service.upsertDCLCollection(
+          id,
+          eth_address,
+          collectionJSON,
+          server.extractFromReq(req, 'data')
+        )
+      }
+    } catch (error) {
+      if (error instanceof CollectionLockedException) {
         throw new HTTPError(
-          "The collection is published. It can't be saved",
-          { id },
+          error.message,
+          { id: error.id },
+          STATUS_CODES.locked
+        )
+      } else if (error instanceof CollectionAlreadyPublishedException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof WrongCollectionException) {
+        throw new HTTPError(error.message, error.data, STATUS_CODES.conflict)
+      } else if (error instanceof UnauthorizedCollectionEditException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id, eth_address: error.eth_address },
           STATUS_CODES.unauthorized
         )
       }
 
-      if (this.service.isLockActive(collection.lock)) {
-        throw new HTTPError(
-          "The collection is locked. It can't be saved",
-          { id },
-          STATUS_CODES.locked
-        )
-      }
+      throw error
     }
 
-    if (id !== attributes.id) {
-      throw new HTTPError('The body and URL collection ids do not match', {
-        urlId: id,
-        bodyId: attributes.id,
-      })
-    }
-
-    const factoryCollection = new FactoryCollection()
-    attributes.salt = factoryCollection.getSalt(id)
-    attributes.contract_address = factoryCollection.getContractAddress(
-      attributes.salt,
-      data
-    )
-
-    const upsertedCollection = await new Collection(attributes).upsert()
-
-    // Return the collection that was updated or inserted with the DCL URN
     return toFullCollection(upsertedCollection)
   }
 
@@ -421,8 +414,7 @@ export class CollectionRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware
-
-    if (await this.service.isPublished(collection.contract_address)) {
+    if (await this.service.isPublished(collection.contract_address!)) {
       throw new HTTPError(
         "The collection is published. It can't be deleted",
         { id },

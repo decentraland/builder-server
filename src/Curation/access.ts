@@ -1,7 +1,7 @@
 import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
 import { Collection, CollectionAttributes } from '../Collection'
-import { getMergedCollection } from '../Collection/util'
+import { getMergedCollection } from '../Collection/utils'
 
 export async function hasAccessToCollection(
   ethAddress: string,

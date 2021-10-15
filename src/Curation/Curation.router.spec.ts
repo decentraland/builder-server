@@ -2,14 +2,14 @@ import { Curation, CurationRouter } from '.'
 import { ExpressApp } from '../common/ExpressApp'
 import { isCommitteeMember } from '../Committee'
 import { hasAccessToCollection } from './access'
-import { getMergedCollection } from '../Collection/util'
+import { getMergedCollection } from '../Collection/utils'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Collection } from '../Collection'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
-jest.mock('../Collection/util')
+jest.mock('../Collection/utils')
 jest.mock('./access')
 
 const mockIsComiteeMember = isCommitteeMember as jest.Mock

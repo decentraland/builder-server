@@ -335,14 +335,10 @@ export class CollectionRouter extends Router {
 
   upsertCollection = async (req: AuthRequest): Promise<FullCollection> => {
     const id = server.extractFromReq(req, 'id')
-    let collectionJSON: FullCollection
-    try {
-      collectionJSON = server.extractFromReq(req, 'collection')
-    } catch (error) {
-      throw new HTTPError((error as Error).message).setStatusCode(
-        STATUS_CODES.badRequest
-      )
-    }
+    const collectionJSON: FullCollection = server.extractFromReq(
+      req,
+      'collection'
+    )
 
     const eth_address = req.auth.ethAddress
 

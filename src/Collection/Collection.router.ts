@@ -110,7 +110,7 @@ export class CollectionRouter extends Router {
      */
     this.router.put(
       '/collections/:id',
-      // withAuthentication,
+      withAuthentication,
       server.handleRequest(this.upsertCollection)
     )
 
@@ -339,9 +339,7 @@ export class CollectionRouter extends Router {
     try {
       collectionJSON = server.extractFromReq(req, 'collection')
     } catch (error) {
-      throw new HTTPError(
-        (error as Error).message,
-        null,
+      throw new HTTPError((error as Error).message).setStatusCode(
         STATUS_CODES.badRequest
       )
     }

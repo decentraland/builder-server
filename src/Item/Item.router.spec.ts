@@ -450,6 +450,40 @@ describe('Item router', () => {
       })
     })
 
+    describe('when the collection given for the item is locked', () => {
+      beforeEach(() => {
+        mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])
+        mockCollection.findOne.mockResolvedValueOnce({
+          collection_id: dbItem.collection_id,
+          eth_address: wallet.address,
+          lock: new Date(),
+        })
+        mockCollectionApi.fetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
+          { collection: undefined, items: [] }
+        )
+      })
+
+      describe('and the item is being changed', () => {
+        it('should fail with can not update items rarity message', async () => {
+          mockItem.findOne.mockResolvedValueOnce(dbItem)
+
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: { ...dbItem, name: 'new name' } })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.locked)
+
+          expect(response.body).toEqual({
+            data: {
+              id: dbItem.id,
+            },
+            error: "Locked collection items can't be updated",
+            ok: false,
+          })
+        })
+      })
+    })
+
     describe('when the collection given for the item is already published', () => {
       beforeEach(() => {
         mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])

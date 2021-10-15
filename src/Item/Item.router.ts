@@ -347,29 +347,10 @@ export class ItemRouter extends Router {
       }
     }
 
+    const service = new CollectionService()
+
     const findCollection = async (id?: string | null) =>
       id ? await Collection.findOne<CollectionAttributes>(id) : undefined
-
-    const getIsCollectionPublished = async (
-      collection?: CollectionAttributes
-    ) => {
-      if (!collection) {
-        return false
-      }
-
-      const {
-        collection: remoteCollection,
-        items: remoteItems,
-      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
-        collection.contract_address!
-      )
-
-      const catalystItems = await peerAPI.fetchWearables(
-        remoteItems.map((item) => item.urn)
-      )
-
-      return remoteCollection && catalystItems.length >= 1
-    }
 
     const dbCollection = await findCollection(itemJSON.collection_id)
 
@@ -396,7 +377,8 @@ export class ItemRouter extends Router {
       }
     }
 
-    const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
+    const isDbCollectionPublished =
+      dbCollection && (await service.isPublished(dbCollection.contract_address))
 
     if (isDbCollectionPublished) {
       if (!dbItem) {
@@ -421,7 +403,6 @@ export class ItemRouter extends Router {
       }
     }
 
-    const service = new CollectionService()
     if (
       dbCollection &&
       !isDbCollectionPublished &&
@@ -436,9 +417,9 @@ export class ItemRouter extends Router {
 
     const dbItemCollection = await findCollection(dbItem?.collection_id)
 
-    const isDbItemCollectionPublished = await getIsCollectionPublished(
-      dbItemCollection
-    )
+    const isDbItemCollectionPublished =
+      dbItemCollection &&
+      (await service.isPublished(dbItemCollection.contract_address))
 
     if (isDbItemCollectionPublished && dbItem) {
       const isItemBeingRemovedFromCollection =

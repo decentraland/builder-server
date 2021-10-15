@@ -1,10 +1,10 @@
-import { getMergedCollection } from '../Collection/util'
+import { getMergedCollection } from '../Collection/utils'
 import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
 import { hasAccessToCollection } from './access'
 
 jest.mock('../Committee')
-jest.mock('../Collection/util')
+jest.mock('../Collection/utils')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const isOwnedBySpy = jest.spyOn(Ownable.prototype, 'isOwnedBy')

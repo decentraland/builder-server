@@ -1,7 +1,7 @@
 import { Collection } from '.'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { getMergedCollection } from './util'
+import { getMergedCollection } from './utils'
 
 describe('getMergedCollection', () => {
   let sampleCollection: { id: string }

@@ -35,7 +35,7 @@ export const getMergedCollection = async (
   }
 
   const remoteCollection = await getRemoteCollection(
-    dbCollection.contract_address
+    dbCollection.contract_address!
   )
 
   if (!remoteCollection) {

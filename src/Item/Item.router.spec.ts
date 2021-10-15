@@ -70,7 +70,7 @@ describe('Item router', () => {
       id: urn,
       name: dbItem.name,
       description: dbItem.description,
-      collectionAddress: collectionAttributesMock.contract_address,
+      collectionAddress: collectionAttributesMock.contract_address!,
       rarity: ItemRarity.COMMON,
       image: '',
       thumbnail: '',

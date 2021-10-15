@@ -27,7 +27,7 @@ export class Bridge {
       const remoteCollection = remoteCollections.find(
         (remoteCollection) =>
           remoteCollection.id.toLowerCase() ===
-          dbCollection.contract_address.toLowerCase()
+          dbCollection.contract_address!.toLowerCase()
       )
       const collection = remoteCollection
         ? Bridge.mergeCollection(dbCollection, remoteCollection)
@@ -98,7 +98,7 @@ export class Bridge {
       if (dbCollection) {
         // Find remote item
         const remoteItemId = collectionAPI.buildItemId(
-          dbCollection.contract_address,
+          dbCollection.contract_address!,
           dbItem.blockchain_item_id!
         )
         const remoteItem = dbItem.blockchain_item_id

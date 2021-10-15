@@ -43,7 +43,7 @@ export function toDBCollection(
   let urn_suffix = isTPW
     ? decodeTPCollectionURN(collection.urn).urn_suffix
     : null
-  let eth_address = isTPW ? null : collection.eth_address
+  let eth_address = isTPW ? '' : collection.eth_address
   let contract_address = isTPW ? null : collection.contract_address
   let salt = isTPW ? '' : collection.salt
 

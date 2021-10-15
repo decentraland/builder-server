@@ -21,7 +21,6 @@ import {
   CollectionAlreadyPublishedException,
   WrongCollectionException,
   UnauthorizedCollectionEditException,
-  CollectionNameAlreadyExistsException,
 } from '../Collection'
 import { isCommitteeMember } from '../Committee'
 import {
@@ -208,7 +207,7 @@ export class CollectionRouter extends Router {
     }
 
     const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection.contract_address
+      dbCollection.contract_address!
     )
 
     const fullCollection = remoteCollection
@@ -237,7 +236,7 @@ export class CollectionRouter extends Router {
       Item.findOrderedItemsByCollectionId(id),
     ])
     const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection!.contract_address
+      dbCollection!.contract_address!
     )
 
     if (!remoteCollection) {
@@ -260,7 +259,7 @@ export class CollectionRouter extends Router {
     if (isMissingBlockchainItemIds) {
       const fetches = await Promise.all([
         collectionAPI.fetchItemsByContractAddress(
-          dbCollection!.contract_address
+          dbCollection!.contract_address!
         ),
         peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
       ])
@@ -414,8 +413,7 @@ export class CollectionRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware
-
-    if (await this.service.isPublished(collection.contract_address)) {
+    if (await this.service.isPublished(collection.contract_address!)) {
       throw new HTTPError(
         "The collection is published. It can't be deleted",
         { id },

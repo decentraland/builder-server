@@ -214,10 +214,10 @@ export class ItemRouter extends Router {
 
       const [remoteItem, remoteCollection] = await Promise.all([
         collectionAPI.fetchItem(
-          dbCollection.contract_address,
+          dbCollection.contract_address!,
           dbItem.blockchain_item_id
         ),
-        collectionAPI.fetchCollection(dbCollection.contract_address),
+        collectionAPI.fetchCollection(dbCollection.contract_address!),
       ])
 
       if (remoteCollection) {
@@ -237,7 +237,7 @@ export class ItemRouter extends Router {
       // Set the item's URN
       fullItem.urn =
         fullItem.urn ??
-        getDecentralandItemURN(dbItem, dbCollection.contract_address)
+        getDecentralandItemURN(dbItem, dbCollection.contract_address!)
     }
 
     if (!(await hasAccess(eth_address, fullItem, fullCollection))) {
@@ -270,7 +270,7 @@ export class ItemRouter extends Router {
     ] = await Promise.all([
       Item.find<ItemAttributes>({ collection_id: id }),
       collectionAPI.fetchCollectionWithItemsByContractAddress(
-        dbCollection.contract_address
+        dbCollection.contract_address!
       ),
     ])
 
@@ -357,7 +357,7 @@ export class ItemRouter extends Router {
         collection: remoteCollection,
         items: remoteItems,
       } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
-        collection.contract_address
+        collection.contract_address!
       )
 
       const catalystItems = await peerAPI.fetchWearables(

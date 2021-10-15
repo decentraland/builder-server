@@ -464,7 +464,7 @@ describe('Item router', () => {
       })
 
       describe('and the item is being changed', () => {
-        it('should fail with can not update items rarity message', async () => {
+        it('should fail with can not update locked collection items message', async () => {
           mockItem.findOne.mockResolvedValueOnce(dbItem)
 
           const response = await server

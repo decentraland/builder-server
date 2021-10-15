@@ -110,7 +110,7 @@ export class CollectionRouter extends Router {
      */
     this.router.put(
       '/collections/:id',
-      withAuthentication,
+      // withAuthentication,
       server.handleRequest(this.upsertCollection)
     )
 
@@ -335,10 +335,17 @@ export class CollectionRouter extends Router {
 
   upsertCollection = async (req: AuthRequest): Promise<FullCollection> => {
     const id = server.extractFromReq(req, 'id')
-    const collectionJSON: FullCollection = server.extractFromReq(
-      req,
-      'collection'
-    )
+    let collectionJSON: FullCollection
+    try {
+      collectionJSON = server.extractFromReq(req, 'collection')
+    } catch (error) {
+      throw new HTTPError(
+        (error as Error).message,
+        null,
+        STATUS_CODES.badRequest
+      )
+    }
+
     const eth_address = req.auth.ethAddress
 
     const validate = validator.compile(collectionSchema)

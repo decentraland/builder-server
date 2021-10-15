@@ -127,7 +127,7 @@ describe('Collection router', () => {
                 data: {
                   id: dbTPCollection.id,
                 },
-                error: "The collection is locked. It can't be saved",
+                error: "The collection is locked. It can't be saved.",
               })
             })
         })
@@ -262,7 +262,7 @@ describe('Collection router', () => {
                   id: dbCollection.id,
                   eth_address: wallet.address,
                 },
-                error: 'Unauthorized',
+                error: 'Unauthorized to upsert collection',
               })
             })
         })
@@ -327,7 +327,7 @@ describe('Collection router', () => {
                 data: {
                   id: dbCollection.id,
                 },
-                error: "The collection is published. It can't be saved",
+                error: "The collection is published. It can't be saved.",
               })
             })
         })
@@ -365,7 +365,7 @@ describe('Collection router', () => {
                 data: {
                   id: dbCollection.id,
                 },
-                error: "The collection is locked. It can't be saved",
+                error: "The collection is locked. It can't be saved.",
               })
             })
         })

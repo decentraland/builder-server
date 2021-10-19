@@ -23,8 +23,14 @@ describe('ThirdParty router', () => {
       thirdParty: { name: 'a name', description: 'a description' },
     }
     fragments = [
-      { id: '1', managers: ['0x1'], metadata },
-      { id: '2', managers: ['0x2', '0x3'], metadata },
+      { id: '1', managers: ['0x1'], maxItems: 1, totalItems: 1, metadata },
+      {
+        id: '2',
+        managers: ['0x2', '0x3'],
+        maxItems: 1,
+        totalItems: 1,
+        metadata,
+      },
     ]
     thirdParties = fragments.map(toThirdParty)
   })

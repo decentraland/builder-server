@@ -53,6 +53,8 @@ export const thirdPartyFragment = () => gql`
   fragment thirdPartyFragment on ThirdParty {
     id
     managers
+    maxItems
+    totalItems
     metadata {
       type
       thirdParty {
@@ -110,6 +112,8 @@ export type CollectionFragment = {
 export type ThirdPartyFragment = {
   id: string
   managers: string[]
+  maxItems: number
+  totalItems: number
   metadata: ThirdPartyMetadata
 }
 

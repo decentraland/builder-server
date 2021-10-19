@@ -378,7 +378,8 @@ export class ItemRouter extends Router {
     }
 
     const isDbCollectionPublished =
-      dbCollection && (await service.isPublished(dbCollection.contract_address))
+      dbCollection &&
+      (await service.isPublished(dbCollection.contract_address!))
 
     if (isDbCollectionPublished) {
       if (!dbItem) {
@@ -419,7 +420,7 @@ export class ItemRouter extends Router {
 
     const isDbItemCollectionPublished =
       dbItemCollection &&
-      (await service.isPublished(dbItemCollection.contract_address))
+      (await service.isPublished(dbItemCollection.contract_address!))
 
     if (isDbItemCollectionPublished && dbItem) {
       const isItemBeingRemovedFromCollection =
@@ -459,7 +460,7 @@ export class ItemRouter extends Router {
       if (dbCollection) {
         const service = new CollectionService()
 
-        if (await service.isPublished(dbCollection.id)) {
+        if (await service.isPublished(dbCollection.contract_address!)) {
           throw new HTTPError(
             "The item was published. It can't be deleted",
             {

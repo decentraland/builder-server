@@ -53,6 +53,13 @@ export const thirdPartyFragment = () => gql`
   fragment thirdPartyFragment on ThirdParty {
     id
     managers
+    metadata {
+      type
+      thirdParty {
+        name
+        description
+      }
+    }
   }
 `
 
@@ -84,7 +91,7 @@ export type ItemFragment = {
   managers: string[]
   contentHash: string
   collection: CollectionFragment
-  metadata: MetadataFragment
+  metadata: CollectionMetadataFragment
 }
 
 export type CollectionFragment = {
@@ -103,6 +110,19 @@ export type CollectionFragment = {
 export type ThirdPartyFragment = {
   id: string
   managers: string[]
+  metadata: ThirdPartyMetadata
+}
+
+export type ThirdPartyMetadata = {
+  type: ThirdPartyMetadataType
+  thirdParty: {
+    name: string
+    description: string
+  }
+}
+
+export enum ThirdPartyMetadataType {
+  THIRD_PARTY_V1 = 'third_party_v1',
 }
 
 export type AccountFragment = {
@@ -118,7 +138,7 @@ export type RarityFragment = {
   maxSupply: string
 }
 
-export type MetadataFragment = {
+export type CollectionMetadataFragment = {
   wearable?: WearableFragment
 }
 

@@ -394,16 +394,6 @@ export class ItemRouter extends Router {
           STATUS_CODES.unauthorized
         )
       }
-
-      const service = new CollectionService()
-
-      if (service.isLockActive(dbCollection.lock)) {
-        throw new HTTPError(
-          "Locked collection items can't be updated",
-          { id },
-          STATUS_CODES.locked
-        )
-      }
     }
 
     const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
@@ -429,6 +419,19 @@ export class ItemRouter extends Router {
           STATUS_CODES.badRequest
         )
       }
+    }
+
+    const service = new CollectionService()
+    if (
+      dbCollection &&
+      !isDbCollectionPublished &&
+      service.isLockActive(dbCollection.lock)
+    ) {
+      throw new HTTPError(
+        "Locked collection items can't be updated",
+        { id },
+        STATUS_CODES.locked
+      )
     }
 
     const dbItemCollection = await findCollection(dbItem?.collection_id)

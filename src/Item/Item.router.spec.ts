@@ -1,5 +1,6 @@
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
+import { Wallet } from 'ethers'
 import {
   wallet,
   createAuthHeaders,
@@ -456,11 +457,10 @@ describe('Item router', () => {
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
+          contract_address: Wallet.createRandom().address,
           lock: new Date(),
         })
-        mockCollectionApi.fetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
-          { collection: undefined, items: [] }
-        )
+        mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
       })
 
       describe('and the item is being changed', () => {
@@ -490,13 +490,11 @@ describe('Item router', () => {
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
+          contract_address: Wallet.createRandom().address,
         })
 
-        mockCollectionApi.fetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
-          {
-            collection: {} as CollectionFragment,
-            items: [{}] as ItemFragment[],
-          }
+        mockCollectionApi.fetchCollection.mockResolvedValueOnce(
+          {} as CollectionFragment
         )
       })
 
@@ -564,14 +562,10 @@ describe('Item router', () => {
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
+          contract_address: Wallet.createRandom().address,
         })
 
-        mockCollectionApi.fetchCollectionWithItemsByContractAddress.mockResolvedValueOnce(
-          {
-            collection: {} as CollectionFragment,
-            items: [] as ItemFragment[],
-          }
-        )
+        mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
 
         mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
 

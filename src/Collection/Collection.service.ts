@@ -1,15 +1,16 @@
 import { collectionAPI } from '../ethereum/api/collection'
 import { isPublished } from '../utils/eth'
-import { isManager as isTPWManger } from '../ethereum/api/tpw'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
+import { Item } from '../Item/Item.model'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import { toDBCollection } from './utils'
+import { getThirdPartyCollectionURN, toDBCollection } from './utils'
 import { Collection } from './Collection.model'
 
 export class CollectionLockedException extends Error {
-  constructor(public id: string) {
-    super("The collection is locked. It can't be saved.")
+  constructor(public id: string, action: string) {
+    super(`The collection is locked. It can't be ${action}.`)
   }
 }
 
@@ -28,6 +29,18 @@ export class WrongCollectionException extends Error {
 export class UnauthorizedCollectionEditException extends Error {
   constructor(public id: string, public eth_address: string) {
     super('Unauthorized to upsert collection')
+  }
+}
+
+export class ThirdPartyCollectionAlreadyPublishedException extends Error {
+  constructor(m: string, public id: string) {
+    super(`The third party collection already has published items. ${m}`)
+  }
+}
+
+export class NonExistentCollectionException extends Error {
+  constructor(public id: string) {
+    super("The collection doesn't exist.")
   }
 }
 
@@ -82,7 +95,7 @@ export class CollectionService {
       }
 
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id)
+        throw new CollectionLockedException(id, 'saved')
       }
     }
 
@@ -101,14 +114,14 @@ export class CollectionService {
     eth_address: string,
     collectionJSON: FullCollection
   ) {
-    if (!(await isTPWManger(collectionJSON.urn, eth_address))) {
+    if (!(await thirdPartyAPI.isManager(collectionJSON.urn, eth_address))) {
       throw new UnauthorizedCollectionEditException(id, eth_address)
     }
 
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection) {
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id)
+        throw new CollectionLockedException(id, 'saved')
       }
     }
 
@@ -129,5 +142,61 @@ export class CollectionService {
     }
 
     return true
+  }
+
+  public async deleteTPWCollection(collectionId: string): Promise<void> {
+    const collection = await this.getDBCollection(collectionId)
+
+    const collectionURN = getThirdPartyCollectionURN(collection.urn_suffix!)
+    const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
+      getThirdPartyCollectionURN(collectionURN)
+    )
+    if (collectionItems.length > 0) {
+      throw new ThirdPartyCollectionAlreadyPublishedException(
+        "The collection can't be deleted.",
+        collectionURN
+      )
+    }
+
+    await this.deleteCollection(collection)
+  }
+
+  public async deleteDCLCollection(collectionId: string): Promise<void> {
+    const collection = await this.getDBCollection(collectionId)
+
+    if (await this.service.isPublished(collection.contract_address!)) {
+      throw new HTTPError(
+        "The collection is published. It can't be deleted",
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    await this.deleteCollection(collection)
+  }
+
+  private async getDBCollection(
+    collectionId: string
+  ): Promise<CollectionAttributes> {
+    const collection = await Collection.findOne(collectionId)
+    if (!collection) {
+      throw new NonExistentCollectionException(collectionId)
+    }
+
+    return collection
+  }
+
+  private async deleteCollection(
+    collection: CollectionAttributes
+  ): Promise<void> {
+    if (this.isLockActive(collection.lock)) {
+      throw new CollectionLockedException(collection.id, 'deleted')
+    }
+
+    await Promise.all([
+      Collection.delete({ id: collection.id }),
+      // This should eventually be in the item's service
+      Item.delete({ collection_id: collection.id }),
+    ])
   }
 }

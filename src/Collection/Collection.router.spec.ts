@@ -13,6 +13,7 @@ import {
   ResultCollection,
   toResultCollection,
 } from '../../spec/mocks/collections'
+import { isManager } from '../ethereum/api/tpw'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
@@ -24,6 +25,7 @@ import { toDBCollection, toFullCollection } from './utils'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
+jest.mock('../ethereum/api/tpw')
 jest.mock('./Collection.model')
 jest.mock('../Committee')
 jest.mock('../Ownable')
@@ -109,6 +111,7 @@ describe('Collection router', () => {
           )
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           jest.spyOn(Date, 'now').mockReturnValueOnce(1)
+          ;(isManager as jest.Mock).mockReturnValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
             lock: new Date(0),
@@ -147,6 +150,7 @@ describe('Collection router', () => {
               }
             }
           )
+          ;(isManager as jest.Mock).mockReturnValueOnce(true)
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection

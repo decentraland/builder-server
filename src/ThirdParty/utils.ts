@@ -3,10 +3,11 @@ import { ThirdPartyFragment } from '../ethereum/api/fragments'
 import { ThirdParty } from './ThirdParty.types'
 
 export function toThirdParty(fragment: ThirdPartyFragment): ThirdParty {
-  const { name, description } = fragment.metadata.thirdParty
+  const { thirdParty } = fragment.metadata
+
   return {
     ...utils.omit(fragment, ['metadata']),
-    name,
-    description,
+    name: thirdParty?.name || '',
+    description: thirdParty?.description || '',
   }
 }

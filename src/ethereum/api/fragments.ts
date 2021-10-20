@@ -119,10 +119,7 @@ export type ThirdPartyFragment = {
 
 export type ThirdPartyMetadata = {
   type: ThirdPartyMetadataType
-  thirdParty: {
-    name: string
-    description: string
-  }
+  thirdParty: { name: string; description: string } | null
 }
 
 export enum ThirdPartyMetadataType {

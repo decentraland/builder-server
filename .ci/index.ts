@@ -158,6 +158,7 @@ export = async function main() {
       },
       version: '1',
       memoryReservation: 1024,
+      desiredCount: env === 'prd' ? 3 : 1,
       cpuReservation: env === 'prd' ? 1024 : 256,
       securityGroups: [
         (await acceptDbSecurityGroup()).id,

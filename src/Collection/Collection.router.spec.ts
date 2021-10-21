@@ -9,6 +9,7 @@ import {
 import {
   collectionAttributesMock,
   collectionDataMock,
+  collectionFragment,
   convertCollectionDatesToISO,
   ResultCollection,
   toResultCollection,
@@ -17,16 +18,28 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
+import { Item } from '../Item/Item.model'
 import { Collection } from './Collection.model'
 import { hasAccess } from './access'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { toDBCollection, toFullCollection } from './utils'
+import {
+  convertItemDatesToISO,
+  dbItemMock,
+  itemFragmentMock,
+} from '../../spec/mocks/items'
+import { ItemAttributes } from '../Item'
+import { ItemFragment } from '../ethereum/api/fragments'
+import { Bridge } from '../ethereum/api/Bridge'
+import { peerAPI } from '../ethereum/api/peer'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
+jest.mock('../ethereum/api/peer')
 jest.mock('./Collection.model')
 jest.mock('../Committee')
 jest.mock('../Ownable')
+jest.mock('../Item/Item.model')
 jest.mock('./access')
 
 describe('Collection router', () => {
@@ -521,7 +534,7 @@ describe('Collection router', () => {
     })
   })
 
-  describe('when locking a Collection', () => {
+  describe('when locking a collection', () => {
     const now = 1633022119407
     beforeEach(() => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
@@ -583,6 +596,153 @@ describe('Collection router', () => {
               error: "The collection couldn't be updated",
             })
           })
+      })
+    })
+  })
+
+  describe('when publishing a collection', () => {
+    beforeEach(() => {
+      url = `/collections/${dbCollection.id}/publish`
+      mockExistsMiddleware(Collection, dbCollection.id)
+      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
+    })
+
+    describe("and the remote collection doesn't exist yet", () => {
+      beforeEach(() => {
+        ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+        ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+          undefined
+        )
+      })
+
+      it('should respond with a 401 and a message signaling that the collection was not published yet', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(401)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              error: 'The collection is not published yet',
+              data: { id: dbCollection.id },
+              ok: false,
+            })
+          })
+      })
+    })
+
+    describe("and the collection exists and there are items that don't have their blockchain id", () => {
+      let anotherDBItem: ItemAttributes
+
+      beforeEach(() => {
+        anotherDBItem = {
+          ...dbItemMock,
+          blockchain_item_id: null,
+          created_at: new Date(),
+          id: '2f161c60-aee6-4bae-97fa-4642b3680a5c',
+        }
+        dbItemMock.blockchain_item_id = null
+        ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
+          [dbItemMock, anotherDBItem]
+        )
+        ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+          collectionFragment
+        )
+      })
+
+      describe('and some items are missing in the blockchain', () => {
+        beforeEach(() => {
+          ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
+            typeof collectionAPI.fetchItemsByContractAddress
+          >).mockResolvedValueOnce([])
+        })
+
+        it("should respond with a 409 and a message signaling that a remote items that matched the stored items couldn't be found", () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error:
+                  "An item couldn't be matched with the one in the blockchain",
+                data: { itemId: dbItemMock.id, collectionId: dbCollection.id },
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and all the items are in the blockchain', () => {
+        beforeEach(() => {
+          const anotherItemFragment: ItemFragment = {
+            ...itemFragmentMock,
+            blockchainId: '1',
+          }
+
+          ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
+            [dbItemMock, anotherDBItem]
+          )
+          // Items are reverted in order in the response that comes from the graph
+          ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
+            typeof collectionAPI.fetchItemsByContractAddress
+          >).mockResolvedValueOnce([anotherItemFragment, itemFragmentMock])
+          ;(Collection.findByContractAddresses as jest.MockedFunction<
+            typeof Collection.findByContractAddresses
+          >).mockResolvedValueOnce([dbCollection])
+          ;(Item.findByBlockchainIdsAndContractAddresses as jest.MockedFunction<
+            typeof Item.findByBlockchainIdsAndContractAddresses
+          >).mockResolvedValueOnce([dbItemMock, anotherDBItem])
+          ;(Collection.findByIds as jest.MockedFunction<
+            typeof Collection.findByIds
+          >).mockResolvedValueOnce([dbCollection])
+          ;(peerAPI.fetchWearables as jest.MockedFunction<
+            typeof peerAPI.fetchWearables
+          >).mockResolvedValueOnce([])
+        })
+
+        it('should update the items in the DB with the blockchain item id and respond with the updated items', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  collection: [
+                    convertCollectionDatesToISO(toFullCollection(dbCollection)),
+                  ],
+                  items: [
+                    convertItemDatesToISO(
+                      Bridge.toFullItem({
+                        ...dbItemMock,
+                        blockchain_item_id: '0',
+                      })
+                    ),
+                    convertItemDatesToISO(
+                      Bridge.toFullItem({
+                        ...anotherDBItem,
+                        blockchain_item_id: '1',
+                      })
+                    ),
+                  ],
+                },
+                ok: true,
+              })
+
+              expect(Item.update).toHaveBeenCalledWith(
+                { blockchain_item_id: '0' },
+                { id: dbItemMock.id }
+              )
+
+              expect(Item.update).toHaveBeenCalledWith(
+                { blockchain_item_id: '1' },
+                { id: anotherDBItem.id }
+              )
+            })
+        })
       })
     })
   })

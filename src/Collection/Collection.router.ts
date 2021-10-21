@@ -257,15 +257,9 @@ export class CollectionRouter extends Router {
     )
 
     if (isMissingBlockchainItemIds) {
-      const fetches = await Promise.all([
-        collectionAPI.fetchItemsByContractAddress(
-          dbCollection!.contract_address!
-        ),
-        peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
-      ])
-
-      remoteItems = fetches[0]
-      catalystItems = fetches[1]
+      remoteItems = await collectionAPI.fetchItemsByContractAddress(
+        dbCollection!.contract_address!
+      )
 
       await Promise.all(
         items.map((item, index) => {
@@ -288,6 +282,10 @@ export class CollectionRouter extends Router {
         })
       )
     }
+
+    catalystItems = await peerAPI.fetchWearables(
+      remoteItems.map((item) => item.urn)
+    )
 
     return {
       collection: (

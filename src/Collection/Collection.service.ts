@@ -146,7 +146,9 @@ export class CollectionService {
 
     // Fallback: check against the blockchain, in case the subgraph is lagging
     if (!remoteCollection) {
-      console.log('Remote collection was not sent, check by is published')
+      console.log(
+        'Remote collection was not sent, check if it is published or not'
+      )
       const isCollectionPublished = await isPublished(contractAddress)
       console.log('isCollectionPublished', isCollectionPublished)
       return isCollectionPublished

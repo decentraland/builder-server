@@ -104,14 +104,14 @@ export const itemFragmentMock = {
 }
 
 export function convertItemDatesToISO<T extends ItemAttributes | FullItem>(
-  collection: T
+  item: T
 ): Omit<T, 'reviewed_at' | 'created_at' | 'updated_at'> & {
   created_at: string
   updated_at: string
 } {
   return {
-    ...collection,
-    created_at: collection.created_at.toISOString(),
-    updated_at: collection.updated_at.toISOString(),
+    ...item,
+    created_at: item.created_at.toISOString(),
+    updated_at: item.updated_at.toISOString(),
   }
 }

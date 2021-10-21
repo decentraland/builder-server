@@ -261,26 +261,30 @@ export class CollectionRouter extends Router {
         dbCollection!.contract_address!
       )
 
-      await Promise.all(
-        items.map((item, index) => {
-          const remoteItem = remoteItems.find(
-            (remoteItem) => Number(remoteItem.blockchainId) === index
-          )
-          if (!remoteItem) {
-            throw new HTTPError(
-              "An item couldn't be matched with the one in the blockchain",
-              { itemId: item.id, collectionId: id },
-              STATUS_CODES.conflict
-            )
-          }
+      const updates = []
 
-          items[index].blockchain_item_id = remoteItem.blockchainId
-          return Item.update(
+      for (const [index, item] of items.entries()) {
+        const remoteItem = remoteItems.find(
+          (remoteItem) => Number(remoteItem.blockchainId) === index
+        )
+        if (!remoteItem) {
+          throw new HTTPError(
+            "An item couldn't be matched with the one in the blockchain",
+            { itemId: item.id, collectionId: id },
+            STATUS_CODES.conflict
+          )
+        }
+
+        items[index].blockchain_item_id = remoteItem.blockchainId
+        updates.push(
+          Item.update(
             { blockchain_item_id: remoteItem.blockchainId },
             { id: item.id }
           )
-        })
-      )
+        )
+      }
+
+      await Promise.all(updates)
     }
 
     catalystItems = await peerAPI.fetchWearables(

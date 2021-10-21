@@ -66,11 +66,14 @@ export class CollectionService {
         { id, eth_address }
       )
     }
+    console.log('Collection JSON is well formatted')
 
     const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
     if (!canUpsert) {
       throw new UnauthorizedCollectionEditException(id, eth_address)
     }
+
+    console.log('The user can upsert')
 
     const attributes = toDBCollection({
       ...collectionJSON,
@@ -78,9 +81,15 @@ export class CollectionService {
     })
 
     await this.checkIfNameIsValid(id, attributes.name)
+    console.log('The name is valid')
 
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
+    console.log(
+      'About to check if a collection exists and has a contract address',
+      collection,
+      collection?.contract_address
+    )
     if (collection && collection.contract_address) {
       if (await this.isPublished(collection.contract_address)) {
         throw new CollectionAlreadyPublishedException(id)
@@ -91,6 +100,8 @@ export class CollectionService {
         throw new CollectionLockedException(id)
       }
     }
+
+    console.log('About to get the salt and the contract address')
 
     const factoryCollection = new FactoryCollection()
     attributes.salt = factoryCollection.getSalt(id)

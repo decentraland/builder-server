@@ -33,14 +33,19 @@ export class UnauthorizedCollectionEditException extends Error {
 
 export class CollectionService {
   isLockActive(lock: Date | null) {
+    console.log('Lock is', lock)
     if (!lock) {
       return false
     }
 
     const deadline = new Date(lock)
     deadline.setDate(deadline.getDate() + 1)
+    console.log('Deadline', deadline, deadline.getTime())
+    const now = Date.now()
+    console.log('Now is', now)
+    console.log('Is locked', deadline.getTime() > now)
 
-    return deadline.getTime() > Date.now()
+    return deadline.getTime() > now
   }
 
   private async checkIfNameIsValid(id: string, name: string): Promise<void> {
@@ -80,6 +85,7 @@ export class CollectionService {
       if (await this.isPublished(collection.contract_address)) {
         throw new CollectionAlreadyPublishedException(id)
       }
+      console.log('Collection is not published')
 
       if (this.isLockActive(collection.lock)) {
         throw new CollectionLockedException(id)

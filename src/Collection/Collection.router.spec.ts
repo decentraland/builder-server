@@ -345,15 +345,15 @@ describe('Collection router', () => {
 
       describe.only('and the collection already already exists and is locked', () => {
         beforeEach(() => {
-          console.log('Date now mocked is', Date.now())
+          console.log('Date now at the start of the test', Date.now())
           const currentDate = Date.now()
           collectionToUpsert = {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          ;(Ownable.prototype.canUpsert as jest.MockedFunction<
+            typeof Ownable.prototype.canUpsert
+          >).mockResolvedValueOnce(true)
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbCollection,

@@ -9,7 +9,7 @@ import {
 
 const getThirdPartiesQuery = (manager: string = '') => gql`
   query getThirdParties(${PAGINATION_VARIABLES}, ) {
-    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: [${manager}] }) {
+    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: ["${manager}"], isApproved: true }) {
       ...thirdPartyFragment
     }
   }

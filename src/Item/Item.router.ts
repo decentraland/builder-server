@@ -33,6 +33,8 @@ import { hasAccess } from './access'
 import { getDecentralandItemURN, toDBItem } from './utils'
 
 export class ItemRouter extends Router {
+  public service = new CollectionService()
+
   itemFilesRequestHandler:
     | ((req: Request, res: Response) => Promise<boolean>) // Promisified RequestHandler
     | undefined
@@ -293,7 +295,7 @@ export class ItemRouter extends Router {
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
-  async upsertItem(req: AuthRequest) {
+  upsertItem = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: FullItem = server.extractFromReq(req, 'item')
 
@@ -350,35 +352,12 @@ export class ItemRouter extends Router {
     const findCollection = async (id?: string | null) =>
       id ? await Collection.findOne<CollectionAttributes>(id) : undefined
 
-    const getIsCollectionPublished = async (
-      collection?: CollectionAttributes
-    ) => {
-      if (!collection) {
-        return false
-      }
-
-      const {
-        collection: remoteCollection,
-        items: remoteItems,
-      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
-        collection.contract_address!
-      )
-
-      const catalystItems = await peerAPI.fetchWearables(
-        remoteItems.map((item) => item.urn)
-      )
-
-      return remoteCollection && catalystItems.length >= 1
-    }
-
     const dbCollection = await findCollection(itemJSON.collection_id)
 
     if (itemJSON.collection_id && !dbCollection) {
       throw new HTTPError(
         'Collection not found',
-        {
-          collectionId: itemJSON.collection_id,
-        },
+        { collectionId: itemJSON.collection_id },
         STATUS_CODES.notFound
       )
     }
@@ -396,7 +375,9 @@ export class ItemRouter extends Router {
       }
     }
 
-    const isDbCollectionPublished = await getIsCollectionPublished(dbCollection)
+    const isDbCollectionPublished =
+      dbCollection &&
+      (await this.service.isPublished(dbCollection.contract_address!))
 
     if (isDbCollectionPublished) {
       if (!dbItem) {
@@ -421,11 +402,10 @@ export class ItemRouter extends Router {
       }
     }
 
-    const service = new CollectionService()
     if (
       dbCollection &&
       !isDbCollectionPublished &&
-      service.isLockActive(dbCollection.lock)
+      this.service.isLockActive(dbCollection.lock)
     ) {
       throw new HTTPError(
         "Locked collection items can't be updated",
@@ -436,9 +416,9 @@ export class ItemRouter extends Router {
 
     const dbItemCollection = await findCollection(dbItem?.collection_id)
 
-    const isDbItemCollectionPublished = await getIsCollectionPublished(
-      dbItemCollection
-    )
+    const isDbItemCollectionPublished =
+      dbItemCollection &&
+      (await this.service.isPublished(dbItemCollection.contract_address!))
 
     if (isDbItemCollectionPublished && dbItem) {
       const isItemBeingRemovedFromCollection =
@@ -462,7 +442,7 @@ export class ItemRouter extends Router {
     return Bridge.toFullItem(item)
   }
 
-  async deleteItem(req: AuthRequest) {
+  deleteItem = async (req: AuthRequest) => {
     const id = server.extractFromReq(req, 'id')
 
     const dbItem = await Item.findOne<ItemAttributes>(id)
@@ -476,9 +456,7 @@ export class ItemRouter extends Router {
       )
 
       if (dbCollection) {
-        const service = new CollectionService()
-
-        if (await service.isPublished(dbCollection.id)) {
+        if (await this.service.isPublished(dbCollection.contract_address!)) {
           throw new HTTPError(
             "The item was published. It can't be deleted",
             {
@@ -490,7 +468,7 @@ export class ItemRouter extends Router {
           )
         }
 
-        if (await service.isLockActive(dbCollection.lock)) {
+        if (await this.service.isLockActive(dbCollection.lock)) {
           throw new HTTPError(
             "The item collection is locked. It can't be deleted",
             {

@@ -138,16 +138,21 @@ export class CollectionService {
   }
 
   async isPublished(contractAddress: string) {
+    console.log('About to fetch for collections')
     const remoteCollection = await collectionAPI.fetchCollection(
       contractAddress
     )
+    console.log('Remote collection', remoteCollection)
 
     // Fallback: check against the blockchain, in case the subgraph is lagging
     if (!remoteCollection) {
+      console.log('Remote collection was not sent, check by is published')
       const isCollectionPublished = await isPublished(contractAddress)
+      console.log('isCollectionPublished', isCollectionPublished)
       return isCollectionPublished
     }
 
+    console.log('Returning if the collection is published')
     return true
   }
 }

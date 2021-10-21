@@ -16,7 +16,7 @@ jobs:
       - name: Install
         run: npm ci
       - name: Test
-        run: npm run test:coverage
+        run: npm run test:coverage src/Collection/Collection.service.spec.ts
         if: ${{ always() }}
         env:
           AWS_ACCESS_KEY: AWS_ACCESS_KEY

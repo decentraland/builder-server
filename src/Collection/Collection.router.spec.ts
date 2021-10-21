@@ -18,6 +18,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
+import { isPublished } from '../utils/eth'
 import { Collection } from './Collection.model'
 import { hasAccess } from './access'
 import { CollectionAttributes, FullCollection } from './Collection.types'
@@ -29,6 +30,7 @@ jest.mock('../ethereum/api/tpw')
 jest.mock('./Collection.model')
 jest.mock('../Committee')
 jest.mock('../Ownable')
+jest.mock('../utils/eth')
 jest.mock('./access')
 
 describe('Collection router', () => {
@@ -362,6 +364,7 @@ describe('Collection router', () => {
           ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
             undefined
           )
+          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
         })
 

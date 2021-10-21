@@ -343,7 +343,7 @@ describe('Collection router', () => {
         })
       })
 
-      describe('and the collection already already exists and is locked', () => {
+      describe.only('and the collection already already exists and is locked', () => {
         beforeEach(() => {
           console.log('Date now mocked is', Date.now())
           const currentDate = Date.now()

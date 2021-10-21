@@ -339,6 +339,7 @@ describe('Collection router', () => {
 
       describe('and the collection already already exists and is locked', () => {
         beforeEach(() => {
+          const currentDate = Date.now()
           collectionToUpsert = {
             ...toFullCollection(dbCollection),
             urn,
@@ -349,15 +350,15 @@ describe('Collection router', () => {
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbCollection,
-            lock: new Date(0),
+            lock: currentDate,
           })
           ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
             undefined
           )
-          jest.spyOn(Date, 'now').mockReturnValueOnce(1)
+          jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
         })
 
-        it('should respond with a 409 and an error saying that the name is already in use', () => {
+        it('should respond with a 423 and an error saying that the collection is locked', () => {
           return server
             .put(buildURL(url))
             .set(createAuthHeaders('put', url))

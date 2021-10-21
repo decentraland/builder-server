@@ -88,9 +88,11 @@ export class CollectionService {
     console.log(
       'About to check if a collection exists and has a contract address',
       collection,
-      collection?.contract_address
+      collection?.contract_address,
+      collection && collection.contract_address
     )
     if (collection && collection.contract_address) {
+      console.log("About to check if it's published")
       if (await this.isPublished(collection.contract_address)) {
         throw new CollectionAlreadyPublishedException(id)
       }
@@ -99,6 +101,7 @@ export class CollectionService {
       if (this.isLockActive(collection.lock)) {
         throw new CollectionLockedException(id)
       }
+      console.log('The collection is not locked')
     }
 
     console.log('About to get the salt and the contract address')

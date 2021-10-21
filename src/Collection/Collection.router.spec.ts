@@ -345,7 +345,7 @@ describe('Collection router', () => {
         })
       })
 
-      describe.only('and the collection already already exists and is locked', () => {
+      describe('and the collection already already exists and is locked', () => {
         beforeEach(() => {
           console.log('Date now at the start of the test', Date.now())
           const currentDate = Date.now()
@@ -365,9 +365,6 @@ describe('Collection router', () => {
             undefined
           )
           ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
-          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-            {}
-          )
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
         })
 
@@ -419,6 +416,7 @@ describe('Collection router', () => {
             ...dbCollection,
             lock: null,
           })
+          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
           ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
             undefined
           )

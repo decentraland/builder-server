@@ -365,6 +365,9 @@ describe('Collection router', () => {
             undefined
           )
           ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+            {}
+          )
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
         })
 

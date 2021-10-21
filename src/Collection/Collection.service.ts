@@ -149,6 +149,7 @@ export class CollectionService {
       console.log(
         'Remote collection was not sent, check if it is published or not'
       )
+      console.log('isPublished mock', isPublished)
       const isCollectionPublished = await isPublished(contractAddress)
       console.log('isCollectionPublished', isCollectionPublished)
       return isCollectionPublished

@@ -263,22 +263,30 @@ export class CollectionRouter extends Router {
         ),
         peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
       ])
-      const updates = []
 
       remoteItems = fetches[0]
       catalystItems = fetches[1]
 
-      for (const [index, remoteItem] of remoteItems.entries()) {
-        updates.push(
-          Item.update(
-            { blockchain_item_id: remoteItem.blockchainId },
-            { id: dbItems[index].id }
+      await Promise.all(
+        items.map((item, index) => {
+          const remoteItem = remoteItems.find(
+            (remoteItem) => Number(remoteItem.blockchainId) === index
           )
-        )
-        items[index].blockchain_item_id = remoteItem.blockchainId
-      }
+          if (!remoteItem) {
+            throw new HTTPError(
+              "An item couldn't be matched with the one in the blockchain",
+              { itemId: item.id, collectionId: id },
+              STATUS_CODES.conflict
+            )
+          }
 
-      await Promise.all(updates)
+          items[index].blockchain_item_id = remoteItem.blockchainId
+          return Item.update(
+            { blockchain_item_id: remoteItem.blockchainId },
+            { id: item.id }
+          )
+        })
+      )
     }
 
     return {

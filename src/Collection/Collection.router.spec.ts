@@ -347,7 +347,6 @@ describe('Collection router', () => {
 
       describe('and the collection already already exists and is locked', () => {
         beforeEach(() => {
-          console.log('Date now at the start of the test', Date.now())
           const currentDate = Date.now()
           collectionToUpsert = {
             ...toFullCollection(dbCollection),

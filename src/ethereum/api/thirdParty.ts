@@ -15,8 +15,17 @@ import {
 export const THIRD_PARTY_URL = env.get('THIRD_PARTY_GRAPH_URL', '')
 
 const getThirdPartiesQuery = (manager: string = '') => gql`
-  query getThirdParties(${PAGINATION_VARIABLES}, ) {
+  query getThirdParties(${PAGINATION_VARIABLES}) {
     thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: ["${manager}"], isApproved: true }) {
+      ...thirdPartyFragment
+    }
+  }
+  ${thirdPartyFragment()}
+`
+
+const getThirdPartyQuery = (urn: string, manager: string) => gql`
+  query getThirdPartyQuery {
+    thirdParties(first: 1, where: { id: "${urn}", managers_contains: ["${manager}"], isApproved: true }) {
       ...thirdPartyFragment
     }
   }
@@ -49,6 +58,18 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       query: getThirdPartyCollectionItemsQuery(),
       variables: { thirdPartyId, collectionId },
     })
+  }
+
+  isManager = async (urn: string, manager: string): Promise<boolean> => {
+    const {
+      data: { thirdParties = [] },
+    } = await this.query<{
+      thirdParties: ThirdPartyFragment[]
+    }>({
+      query: getThirdPartyQuery(urn, manager),
+      variables: { urn, manager: manager.toLowerCase() },
+    })
+    return thirdParties.length > 0
   }
 }
 

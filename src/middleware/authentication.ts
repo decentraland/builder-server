@@ -74,7 +74,7 @@ async function decodeAuthChain(req: Request): Promise<string> {
       errorMessage = 'Missing ETH address in auth chain'
     } else {
       try {
-        const endpoint = (req.method + ':' + req.url).toLowerCase()
+        const endpoint = (req.method + ':' + req.path).toLowerCase()
         // We don't use the response, just want to make sure it does not blow up
         await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
       } catch (error) {

@@ -56,16 +56,10 @@ export function buildSearch(queryString: Record<string, string>) {
 export function createAuthHeaders(
   method: string = 'get',
   path: string = '',
-  queryString: Record<string, string> = {},
   identity: AuthIdentity = wallet.identity
 ) {
   const headers: Record<string, string> = {}
-  const endpoint = (
-    method +
-    ':' +
-    path +
-    buildSearch(queryString)
-  ).toLowerCase()
+  const endpoint = (method + ':' + path).toLowerCase()
   const authChain = Authenticator.signPayload(identity, endpoint)
   for (let i = 0; i < authChain.length; i++) {
     headers[AUTH_CHAIN_HEADER_PREFIX + i] = JSON.stringify(authChain[i])

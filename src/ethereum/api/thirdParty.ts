@@ -13,10 +13,6 @@ import {
 } from './BaseGraphAPI'
 
 export const THIRD_PARTY_URL = env.get('THIRD_PARTY_GRAPH_URL', '')
-const MANAGERS = env
-  .get('TPW_MANAGER_ADDRESSES', '')
-  .split(/[ ,]+/)
-  .map((address) => address.toLowerCase())
 
 const getThirdPartiesQuery = (manager: string = '') => gql`
   query getThirdParties(${PAGINATION_VARIABLES}, ) {
@@ -28,8 +24,8 @@ const getThirdPartiesQuery = (manager: string = '') => gql`
 `
 
 const getThirdPartyCollectionItemsQuery = () => gql`
-  query getThirdPartyCollectionItems(${PAGINATION_VARIABLES}, $collectionId: String ) {
-    thirdPartyItemsFragment(${PAGINATION_ARGUMENTS}, where: { "searchCollectionId" : $collectionId }) {
+  query getThirdPartyCollectionItems(${PAGINATION_VARIABLES}, $collectionId: String, $thirdPartyId: String ) {
+    thirdPartyItemsFragment(${PAGINATION_ARGUMENTS}, where: { "searchCollectionId" : $collectionId, "searchThirdPartyId": $thirdPartyId }) {
       ...thirdPartyItemsFragment
     }
   }
@@ -46,25 +42,13 @@ export class ThirdPartyAPI extends BaseGraphAPI {
   }
 
   fetchThirdPartyCollectionItems = async (
+    thirdPartyId: string,
     collectionId: string
   ): Promise<ThirdPartyItemsFragment[]> => {
     return this.paginate(['thirdPartyItemsFragment'], {
       query: getThirdPartyCollectionItemsQuery(),
-      variables: { collectionId },
+      variables: { thirdPartyId, collectionId },
     })
-  }
-
-  /**
-   * Checks if an address manages a third party wearable collection.
-   *
-   * @param urn - The URN of the TWP collection where to get the information about the collection.
-   * @param address - The address to check if it manages the collection.
-   */
-  isManager(_: string, address: string): Promise<boolean> {
-    if (MANAGERS.includes(address.toLowerCase())) {
-      return Promise.resolve(true)
-    }
-    return Promise.resolve(false)
   }
 }
 

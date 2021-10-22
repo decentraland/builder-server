@@ -4,19 +4,28 @@ import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item/Item.model'
+import { isManager } from '../ethereum/api/tpw'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import { getThirdPartyCollectionURN, toDBCollection } from './utils'
+import { toDBCollection } from './utils'
 import { Collection } from './Collection.model'
 
+enum CollectionType {
+  THIRD_PARTY,
+  DCL,
+}
 export class CollectionLockedException extends Error {
   constructor(public id: string, action: string) {
     super(`The collection is locked. It can't be ${action}.`)
   }
 }
-
+// `The third party collection already has published items. ${m}`
 export class CollectionAlreadyPublishedException extends Error {
-  constructor(public id: string) {
-    super("The collection is published. It can't be saved.")
+  constructor(public id: string, type: CollectionType, action: string) {
+    super(
+      type === CollectionType.DCL
+        ? `The collection is published. It can't be ${action}.`
+        : `The third party collection already has published items. It can't be ${action}.`
+    )
   }
 }
 
@@ -29,12 +38,6 @@ export class WrongCollectionException extends Error {
 export class UnauthorizedCollectionEditException extends Error {
   constructor(public id: string, public eth_address: string) {
     super('Unauthorized to upsert collection')
-  }
-}
-
-export class ThirdPartyCollectionAlreadyPublishedException extends Error {
-  constructor(m: string, public id: string) {
-    super(`The third party collection already has published items. ${m}`)
   }
 }
 
@@ -91,7 +94,11 @@ export class CollectionService {
 
     if (collection && collection.contract_address) {
       if (await this.isPublished(collection.contract_address)) {
-        throw new CollectionAlreadyPublishedException(id)
+        throw new CollectionAlreadyPublishedException(
+          id,
+          CollectionType.DCL,
+          'saved'
+        )
       }
 
       if (this.isLockActive(collection.lock)) {
@@ -114,7 +121,7 @@ export class CollectionService {
     eth_address: string,
     collectionJSON: FullCollection
   ) {
-    if (!(await thirdPartyAPI.isManager(collectionJSON.urn, eth_address))) {
+    if (!(await isManager(collectionJSON.urn, eth_address))) {
       throw new UnauthorizedCollectionEditException(id, eth_address)
     }
 
@@ -144,35 +151,41 @@ export class CollectionService {
     return true
   }
 
-  public async deleteTPWCollection(collectionId: string): Promise<void> {
+  public async deleteCollection(collectionId: string): Promise<void> {
     const collection = await this.getDBCollection(collectionId)
-
-    const collectionURN = getThirdPartyCollectionURN(collection.urn_suffix!)
-    const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
-      getThirdPartyCollectionURN(collectionURN)
-    )
-    if (collectionItems.length > 0) {
-      throw new ThirdPartyCollectionAlreadyPublishedException(
-        "The collection can't be deleted.",
-        collectionURN
+    if (collection.urn_suffix !== null) {
+      // If it's a TPC we must check if there's an item already published under that collection urn suffix
+      const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
+        'thirdPartyId',
+        collection.urn_suffix!
       )
+      if (collectionItems.length > 0) {
+        throw new CollectionAlreadyPublishedException(
+          collection.id,
+          CollectionType.THIRD_PARTY,
+          'deleted'
+        )
+      }
+    } else {
+      // If it's a DCL collection, we must check if it was already published
+      if (await this.isPublished(collection.contract_address!)) {
+        throw new CollectionAlreadyPublishedException(
+          collectionId,
+          CollectionType.DCL,
+          'deleted'
+        )
+      }
     }
 
-    await this.deleteCollection(collection)
-  }
-
-  public async deleteDCLCollection(collectionId: string): Promise<void> {
-    const collection = await this.getDBCollection(collectionId)
-
-    if (await this.service.isPublished(collection.contract_address!)) {
-      throw new HTTPError(
-        "The collection is published. It can't be deleted",
-        { id },
-        STATUS_CODES.unauthorized
-      )
+    if (this.isLockActive(collection.lock)) {
+      throw new CollectionLockedException(collection.id, 'deleted')
     }
 
-    await this.deleteCollection(collection)
+    await Promise.all([
+      Collection.delete({ id: collection.id }),
+      // This should eventually be in the item's service
+      Item.delete({ collection_id: collection.id }),
+    ])
   }
 
   private async getDBCollection(
@@ -184,19 +197,5 @@ export class CollectionService {
     }
 
     return collection
-  }
-
-  private async deleteCollection(
-    collection: CollectionAttributes
-  ): Promise<void> {
-    if (this.isLockActive(collection.lock)) {
-      throw new CollectionLockedException(collection.id, 'deleted')
-    }
-
-    await Promise.all([
-      Collection.delete({ id: collection.id }),
-      // This should eventually be in the item's service
-      Item.delete({ collection_id: collection.id }),
-    ])
   }
 }

@@ -20,6 +20,12 @@ import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { isPublished } from '../utils/eth'
 import { Collection } from './Collection.model'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import {
+  CollectionFragment,
+  ThirdPartyItemsFragment,
+} from '../ethereum/api/fragments'
+import { Item } from '../Item/Item.model'
 import { hasAccess } from './access'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { toDBCollection, toFullCollection } from './utils'
@@ -31,6 +37,8 @@ jest.mock('./Collection.model')
 jest.mock('../Committee')
 jest.mock('../Ownable')
 jest.mock('../utils/eth')
+jest.mock('../ethereum/api/thirdParty')
+jest.mock('../Item/Item.model')
 jest.mock('./access')
 
 describe('Collection router', () => {
@@ -608,6 +616,220 @@ describe('Collection router', () => {
               error: "The collection couldn't be updated",
             })
           })
+      })
+    })
+  })
+
+  describe('when deleting a collection', () => {
+    beforeEach(() => {
+      url = `/collections/${dbCollection.id}`
+    })
+    describe('and the collection is a TP collection', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Collection, dbCollection.id)
+        mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+        dbCollection.urn_suffix = 'collection-urn-suffix'
+        ;(Collection.findOne as jest.MockedFunction<
+          typeof Collection.findOne
+        >).mockResolvedValueOnce(dbCollection)
+      })
+
+      describe('and it has third party items already published', () => {
+        beforeEach(() => {
+          ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+            typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+          >).mockResolvedValueOnce([{} as ThirdPartyItemsFragment])
+        })
+
+        it('should respond with a 409 and a message signaling that the collection has already published items', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error:
+                  "The third party collection already has published items. It can't be deleted.",
+                data: {
+                  id: dbCollection.id,
+                },
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and it is locked', () => {
+        beforeEach(() => {
+          const lockDate = new Date()
+          dbCollection.lock = lockDate
+          ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+            typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+          >).mockResolvedValueOnce([])
+          jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
+        })
+
+        beforeEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
+        })
+
+        it('should respond with a 423 and a message signaling that the collection is locked', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(423)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error: "The collection is locked. It can't be deleted.",
+                data: {
+                  id: dbCollection.id,
+                },
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and its neither locked nor some of its items published', () => {
+        beforeEach(() => {
+          const lockDate = new Date()
+          dbCollection.lock = lockDate
+          ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+            typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+          >).mockResolvedValueOnce([])
+          jest
+            .spyOn(Date, 'now')
+            .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)
+        })
+
+        afterEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
+        })
+
+        it('should respond with a 200 and deleted the collection and the items of the collection', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: true,
+                ok: true,
+              })
+
+              expect(Collection.delete).toHaveBeenCalledWith({
+                id: dbCollection.id,
+              })
+              expect(Item.delete).toHaveBeenCalledWith({
+                collection_id: dbCollection.id,
+              })
+            })
+        })
+      })
+    })
+
+    describe('and the collection is a DCL collection', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Collection, dbCollection.id)
+        mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+        dbCollection.urn_suffix = null
+        ;(Collection.findOne as jest.MockedFunction<
+          typeof Collection.findOne
+        >).mockResolvedValueOnce(dbCollection)
+      })
+
+      describe('and it is already published', () => {
+        beforeEach(() => {
+          ;(collectionAPI.fetchCollection as jest.MockedFunction<
+            typeof collectionAPI.fetchCollection
+          >).mockResolvedValueOnce({} as CollectionFragment)
+        })
+
+        it('should respond with a 409 and a message signaling that the collection is already published', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error: "The collection is published. It can't be deleted.",
+                data: {
+                  id: dbCollection.id,
+                },
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and it is not published but locked', () => {
+        beforeEach(() => {
+          const lockDate = new Date()
+          dbCollection.lock = lockDate
+          ;(collectionAPI.fetchCollection as jest.MockedFunction<
+            typeof collectionAPI.fetchCollection
+          >).mockResolvedValueOnce(null)
+          ;(isPublished as jest.Mock).mockReturnValueOnce(false)
+          jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
+        })
+
+        afterEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
+        })
+
+        it('should respond with a 423 and a message signaling that the collection is locked', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(423)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error: "The collection is locked. It can't be deleted.",
+                data: {
+                  id: dbCollection.id,
+                },
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and its neither locked nor published', () => {
+        beforeEach(() => {
+          const lockDate = new Date()
+          dbCollection.lock = lockDate
+          ;(collectionAPI.fetchCollection as jest.MockedFunction<
+            typeof collectionAPI.fetchCollection
+          >).mockResolvedValueOnce(null)
+          ;(isPublished as jest.Mock).mockReturnValueOnce(false)
+          jest
+            .spyOn(Date, 'now')
+            .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)
+        })
+
+        afterEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
+        })
+
+        it('should respond with a 200 and deleted the collection and the items of the collection', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: true,
+                ok: true,
+              })
+
+              expect(Collection.delete).toHaveBeenCalledWith({
+                id: dbCollection.id,
+              })
+              expect(Item.delete).toHaveBeenCalledWith({
+                collection_id: dbCollection.id,
+              })
+            })
+        })
       })
     })
   })

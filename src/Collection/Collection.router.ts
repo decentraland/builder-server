@@ -121,7 +121,7 @@ export class CollectionRouter extends Router {
       '/collections/:id',
       withAuthentication,
       withCollectionExists,
-      withCollectionAuthorization,
+      // withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
   }
@@ -414,27 +414,26 @@ export class CollectionRouter extends Router {
   deleteCollection = async (req: AuthRequest): Promise<boolean> => {
     const id = server.extractFromReq(req, 'id')
 
-    const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware
-    if (await this.service.isPublished(collection.contract_address!)) {
-      throw new HTTPError(
-        "The collection is published. It can't be deleted",
-        { id },
-        STATUS_CODES.unauthorized
-      )
+    try {
+      await this.service.deleteCollection(id)
+    } catch (error) {
+      if (error instanceof CollectionAlreadyPublishedException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof CollectionLockedException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.locked
+        )
+      }
+
+      throw error
     }
 
-    if (this.service.isLockActive(collection.lock)) {
-      throw new HTTPError(
-        "The collection is locked. It can't be deleted",
-        { id },
-        STATUS_CODES.locked
-      )
-    }
-
-    await Promise.all([
-      Collection.delete({ id }),
-      Item.delete({ collection_id: id }),
-    ])
     return true
   }
 }

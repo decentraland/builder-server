@@ -11,26 +11,26 @@ import {
 } from '../middleware'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
+import { ItemFragment } from '../ethereum/api/fragments'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FullItem, Item, ItemAttributes } from '../Item'
+import { isCommitteeMember } from '../Committee'
+import { RequestParameters } from '../RequestParameters'
+import { sendDataToWarehouse } from '../warehouse'
+import { Collection } from './Collection.model'
 import {
-  Collection,
   CollectionService,
-  CollectionAttributes,
   CollectionLockedException,
   CollectionAlreadyPublishedException,
   WrongCollectionException,
   UnauthorizedCollectionEditException,
-} from '../Collection'
-import { isCommitteeMember } from '../Committee'
+} from './Collection.service'
 import {
+  CollectionAttributes,
   collectionSchema,
   FullCollection,
   saveTOSSchema,
 } from './Collection.types'
-import { RequestParameters } from '../RequestParameters'
-import { ItemFragment } from '../ethereum/api/fragments'
-import { sendDataToWarehouse } from '../warehouse'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollection } from './utils'
 

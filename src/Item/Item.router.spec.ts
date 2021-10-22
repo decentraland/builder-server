@@ -20,6 +20,7 @@ import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
+import { isPublished } from '../utils/eth'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Item } from './Item.model'
 import { hasAccess } from './access'
@@ -32,6 +33,7 @@ import { Bridge } from '../ethereum/api/Bridge'
 jest.mock('./Item.model')
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
+jest.mock('../utils/eth')
 jest.mock('../Collection/Collection.model')
 jest.mock('../Committee')
 jest.mock('./access')
@@ -461,12 +463,15 @@ describe('Item router', () => {
           lock: new Date(),
         })
         mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
+        ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
       })
 
       describe('and the item is being changed', () => {
-        it('should fail with can not update locked collection items message', async () => {
+        beforeEach(() => {
           mockItem.findOne.mockResolvedValueOnce(dbItem)
+        })
 
+        it('should fail with can not update locked collection items message', async () => {
           const response = await server
             .put(buildURL(url))
             .send({ item: { ...dbItem, name: 'new name' } })
@@ -557,7 +562,7 @@ describe('Item router', () => {
     })
 
     describe('and all the conditions for success are given', () => {
-      it('should respond with the upserted item', async () => {
+      beforeEach(() => {
         mockPeer.fetchWearables.mockResolvedValueOnce([] as Wearable[])
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
@@ -566,9 +571,11 @@ describe('Item router', () => {
         })
 
         mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
-
+        ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
         mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+      })
 
+      it('should respond with the upserted item', async () => {
         const response = await server
           .put(buildURL(url))
           .send({ item: dbItem })

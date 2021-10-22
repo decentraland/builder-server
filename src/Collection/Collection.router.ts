@@ -374,6 +374,7 @@ export class CollectionRouter extends Router {
           collectionJSON
         )
       } else {
+        console.log('About to upsert a DCL collection')
         upsertedCollection = await this.service.upsertDCLCollection(
           id,
           eth_address,

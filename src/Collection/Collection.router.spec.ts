@@ -18,6 +18,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
+import { isPublished } from '../utils/eth'
 import { Collection } from './Collection.model'
 import { hasAccess } from './access'
 import { CollectionAttributes, FullCollection } from './Collection.types'
@@ -29,6 +30,7 @@ jest.mock('../ethereum/api/tpw')
 jest.mock('./Collection.model')
 jest.mock('../Committee')
 jest.mock('../Ownable')
+jest.mock('../utils/eth')
 jest.mock('./access')
 
 describe('Collection router', () => {
@@ -102,20 +104,26 @@ describe('Collection router', () => {
 
       describe('and the collection exists and is locked', () => {
         beforeEach(() => {
+          const currentDate = Date.now()
           ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
             () => ({
-              upsert: jest
-                .fn()
-                .mockResolvedValueOnce({ ...dbTPCollection, lock: 0 }),
+              upsert: jest.fn().mockResolvedValueOnce({
+                ...dbTPCollection,
+                lock: currentDate,
+              }),
             })
           )
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
-          jest.spyOn(Date, 'now').mockReturnValueOnce(1)
+          jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(isManager as jest.Mock).mockReturnValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
-            lock: new Date(0),
+            lock: new Date(currentDate),
           })
+        })
+
+        afterEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
         })
 
         it('should respond with a 423 and a message saying that the collection is locked', () => {
@@ -339,25 +347,31 @@ describe('Collection router', () => {
 
       describe('and the collection already already exists and is locked', () => {
         beforeEach(() => {
+          const currentDate = Date.now()
           collectionToUpsert = {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          ;(Ownable.prototype.canUpsert as jest.MockedFunction<
+            typeof Ownable.prototype.canUpsert
+          >).mockResolvedValueOnce(true)
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbCollection,
-            lock: new Date(0),
+            lock: currentDate,
           })
           ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
             undefined
           )
-          jest.spyOn(Date, 'now').mockReturnValueOnce(1)
+          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+          jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
         })
 
-        it('should respond with a 409 and an error saying that the name is already in use', () => {
+        afterEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
+        })
+
+        it('should respond with a 423 and an error saying that the collection is locked', () => {
           return server
             .put(buildURL(url))
             .set(createAuthHeaders('put', url))
@@ -401,6 +415,7 @@ describe('Collection router', () => {
             ...dbCollection,
             lock: null,
           })
+          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
           ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
             undefined
           )
@@ -531,11 +546,17 @@ describe('Collection router', () => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
       mockExistsMiddleware(Collection, dbCollection.id)
       mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
-      ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-        canUpsert: jest.fn().mockResolvedValueOnce(true),
-        isOwnedBy: jest.fn().mockResolvedValueOnce(true),
-      }))
+      ;(Ownable.prototype.canUpsert as jest.MockedFunction<
+        typeof Ownable.prototype.canUpsert
+      >).mockResolvedValueOnce(true)
+      ;(Ownable.prototype.isOwnedBy as jest.MockedFunction<
+        typeof Ownable.prototype.isOwnedBy
+      >).mockResolvedValueOnce(true)
       url = `/collections/${dbCollection.id}/lock`
+    })
+
+    afterEach(() => {
+      ;(Date.now as jest.Mock).mockRestore()
     })
 
     describe('when the lock update succeeds', () => {

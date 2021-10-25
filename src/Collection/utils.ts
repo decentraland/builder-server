@@ -1,11 +1,11 @@
 import { utils } from 'decentraland-commons'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
-import { Collection, CollectionAttributes, FullCollection } from '.'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { CollectionFragment } from '../ethereum/api/fragments'
-
-const tpwCollectionURNRegex = /^urn:decentraland:([^:]+):ext-thirdparty:([^:]+)$/
+import { Collection } from './Collection.model'
+import { CollectionAttributes, FullCollection } from './Collection.types'
+import { tpwCollectionURNRegex } from './Collection.schema'
 
 export function getDecentralandCollectionURN(
   collectionAddress: string
@@ -13,8 +13,11 @@ export function getDecentralandCollectionURN(
   return `urn:decentraland:${getCurrentNetworkURNProtocol()}:collections-v2:${collectionAddress}`
 }
 
-export function getThirdPartyCollectionURN(urn_suffix: string) {
-  return `urn:decentraland:${getCurrentNetworkURNProtocol()}:ext-thirdparty:${urn_suffix}`
+export function getThirdPartyCollectionURN(
+  third_party_id: string,
+  urn_suffix: string
+) {
+  return `urn:decentraland:${getCurrentNetworkURNProtocol()}:collections-thirdparty:${third_party_id}:${urn_suffix}`
 }
 
 /**
@@ -25,11 +28,13 @@ export function getThirdPartyCollectionURN(urn_suffix: string) {
 export function toFullCollection(
   dbCollection: CollectionAttributes
 ): FullCollection {
+  const { third_party_id, urn_suffix, contract_address } = dbCollection
   return {
     ...utils.omit(dbCollection, ['urn_suffix']),
-    urn: dbCollection.urn_suffix
-      ? getThirdPartyCollectionURN(dbCollection.urn_suffix)
-      : getDecentralandCollectionURN(dbCollection.contract_address!),
+    urn:
+      third_party_id && urn_suffix
+        ? getThirdPartyCollectionURN(third_party_id, urn_suffix)
+        : getDecentralandCollectionURN(contract_address!),
   }
 }
 

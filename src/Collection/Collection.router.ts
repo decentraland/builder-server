@@ -25,12 +25,8 @@ import {
   WrongCollectionException,
   UnauthorizedCollectionEditException,
 } from './Collection.service'
-import {
-  CollectionAttributes,
-  collectionSchema,
-  FullCollection,
-  saveTOSSchema,
-} from './Collection.types'
+import { CollectionAttributes, FullCollection } from './Collection.types'
+import { collectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollection } from './utils'
 

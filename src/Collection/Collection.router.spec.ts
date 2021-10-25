@@ -102,7 +102,7 @@ describe('Collection router', () => {
     describe('when the collection is a third party collection', () => {
       let dbTPCollection: CollectionAttributes
       beforeEach(() => {
-        urn = `urn:decentraland:${network}:ext-thirdparty:${urn_suffix}`
+        urn = `urn:decentraland:${network}:collections-thirdparty:${dbCollection.name.toLowerCase()}:${urn_suffix}`
         dbTPCollection = {
           ...dbCollection,
           eth_address: '',

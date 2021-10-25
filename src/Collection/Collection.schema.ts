@@ -1,27 +1,18 @@
-// DCL: urn:decentraland:{network}:collections-v2:{contract-address}
-// TPW: urn:decentraland:{network}:collections-thirdparty:{third-party-name}:{collection-id}(:{item-id})?
-
-const networkMatcher = '(mainnet|ropsten|polygon|mumbai)'
-const addressMatcher = '0x[a-fA-F0-9]{40}'
-const emailMatcher =
-  "^[a-zA-Z0-9.!#$%&'*+/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$"
-
-const dclNameMatcher = `collections-v2:${addressMatcher}`
-const tpwNameMatcher = 'collections-thirdparty:[^:|\\s]+:([^:|\\s]+)'
+import { matchers } from './urn'
 
 export const tpwCollectionURNRegex = new RegExp(
-  `^urn:decentraland:${networkMatcher}:${tpwNameMatcher}$`
+  `^${matchers.baseURN}:${matchers.tpwSuffix}$`
 )
 
 export const collectionSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
-    urn: {
-      type: ['string'],
-      pattern: `^urn:decentraland:${networkMatcher}:(?:${tpwNameMatcher}|${dclNameMatcher})$`,
+    urn: { type: ['string'], pattern: matchers.urn },
+    third_party_id: {
+      type: ['string', 'null'],
+      pattern: `^${matchers.baseURN}:${matchers.tpwIdentifier}$`,
     },
-    third_party_id: { type: ['string', 'null'] },
     name: { type: 'string', maxLength: 32 },
     eth_address: { type: 'string' },
     salt: { type: ['string', 'null'] },
@@ -59,9 +50,9 @@ export const saveTOSSchema = Object.freeze({
   properties: {
     email: {
       type: 'string',
-      pattern: emailMatcher,
+      pattern: `^${matchers.email}$`,
     },
-    collection_address: { type: 'string', pattern: `^${addressMatcher}$` },
+    collection_address: { type: 'string', pattern: `^${matchers.address}$` },
   },
   additionalProperties: false,
   required: ['email', 'collection_address'],

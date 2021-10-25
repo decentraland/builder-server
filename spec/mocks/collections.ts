@@ -20,6 +20,7 @@ export const collectionAttributesMock: CollectionAttributes = {
   managers: [],
   forum_link: null,
   lock: null,
+  third_party_id: null,
   reviewed_at: new Date(),
   created_at: new Date(),
   updated_at: new Date(),

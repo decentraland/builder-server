@@ -5,7 +5,7 @@ const network = '(mainnet|ropsten|matic|mumbai)'
 const address = '0x[a-fA-F0-9]{40}'
 const baseURN = `urn:decentraland:${network}`
 
-const dclIdentifier = `collections-v2:${address}`
+const dclIdentifier = `collections-v2`
 const tpwIdentifier = 'collections-thirdparty:[^:|\\s]+'
 
 const dclSuffix = `${dclIdentifier}:${address}`

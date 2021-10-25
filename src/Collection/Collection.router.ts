@@ -257,29 +257,39 @@ export class CollectionRouter extends Router {
     )
 
     if (isMissingBlockchainItemIds) {
-      const fetches = await Promise.all([
-        collectionAPI.fetchItemsByContractAddress(
-          dbCollection!.contract_address!
-        ),
-        peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
-      ])
+      remoteItems = await collectionAPI.fetchItemsByContractAddress(
+        dbCollection!.contract_address!
+      )
+
       const updates = []
 
-      remoteItems = fetches[0]
-      catalystItems = fetches[1]
+      for (const [index, item] of items.entries()) {
+        const remoteItem = remoteItems.find(
+          (remoteItem) => Number(remoteItem.blockchainId) === index
+        )
+        if (!remoteItem) {
+          throw new HTTPError(
+            "An item couldn't be matched with the one in the blockchain",
+            { itemId: item.id, collectionId: id },
+            STATUS_CODES.conflict
+          )
+        }
 
-      for (const [index, remoteItem] of remoteItems.entries()) {
+        items[index].blockchain_item_id = remoteItem.blockchainId
         updates.push(
           Item.update(
             { blockchain_item_id: remoteItem.blockchainId },
-            { id: dbItems[index].id }
+            { id: item.id }
           )
         )
-        items[index].blockchain_item_id = remoteItem.blockchainId
       }
 
       await Promise.all(updates)
     }
+
+    catalystItems = await peerAPI.fetchWearables(
+      remoteItems.map((item) => item.urn)
+    )
 
     return {
       collection: (
@@ -374,7 +384,6 @@ export class CollectionRouter extends Router {
           collectionJSON
         )
       } else {
-        console.log('About to upsert a DCL collection')
         upsertedCollection = await this.service.upsertDCLCollection(
           id,
           eth_address,

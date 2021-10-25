@@ -7,5 +7,6 @@ coverage
 
 *.js
 !jest.config.js
+!jest.config*.js
 
 .DS_Store

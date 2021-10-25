@@ -21,7 +21,7 @@ export const collectionSchema = Object.freeze({
       type: ['string'],
       pattern: `^urn:decentraland:${networkMatcher}:(?:${tpwNameMatcher}|${dclNameMatcher})$`,
     },
-    third_party_id: { type: ['string'] },
+    third_party_id: { type: ['string', 'null'] },
     name: { type: 'string', maxLength: 32 },
     eth_address: { type: 'string' },
     salt: { type: ['string', 'null'] },

@@ -8,7 +8,7 @@ import { Collection } from './Collection.model'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 
 export const tpwCollectionURNRegex = new RegExp(
-  `^${matchers.baseURN}:${matchers.tpwSuffix}$`
+  `^(${matchers.baseURN}:${matchers.tpwIdentifier}):${matchers.urnSlot}`
 )
 
 export function getDecentralandCollectionURN(
@@ -52,9 +52,12 @@ export function toDBCollection(
   collection: FullCollection
 ): CollectionAttributes {
   const isTPW = isTPCollection(collection.urn)
-  let urn_suffix = isTPW
-    ? decodeTPCollectionURN(collection.urn).urn_suffix
-    : null
+  const decodedURN = isTPW
+    ? decodeTPCollectionURN(collection.urn)
+    : { urn_suffix: null, third_party_id: null }
+
+  let urn_suffix = decodedURN.urn_suffix
+  let third_party_id = decodedURN.third_party_id
   let eth_address = isTPW ? '' : collection.eth_address
   let contract_address = isTPW ? null : collection.contract_address
   let salt = isTPW ? '' : collection.salt
@@ -64,6 +67,7 @@ export function toDBCollection(
     urn_suffix,
     eth_address,
     contract_address,
+    third_party_id,
     salt,
   }
 }
@@ -86,13 +90,17 @@ export function isTPCollection(urn: string) {
  */
 export function decodeTPCollectionURN(
   urn: string
-): { network: string; urn_suffix: string } {
+): { third_party_id: string; network: string; urn_suffix: string } {
   const matches = tpwCollectionURNRegex.exec(urn)
   if (matches === null) {
     throw new Error('The given collection URN is not TWP compliant')
   }
 
-  return { network: matches[1], urn_suffix: matches[2] }
+  return {
+    third_party_id: matches[1],
+    network: matches[2],
+    urn_suffix: matches[3],
+  }
 }
 
 type GetMergedCollectionResult =

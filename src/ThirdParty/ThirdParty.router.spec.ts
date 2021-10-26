@@ -35,7 +35,7 @@ describe('ThirdParty router', () => {
     thirdParties = fragments.map(toThirdParty)
   })
 
-  describe('when retreiving all third party records', () => {
+  describe('when retrieving all third party records', () => {
     let url: string
 
     beforeEach(() => {
@@ -73,13 +73,12 @@ describe('ThirdParty router', () => {
         managerFragments
       )
       managerThirdParties = managerFragments.map(toThirdParty)
-      url = '/thirdParties'
+      url = `/thirdParties?manager=${manager}`
     })
 
     it('should return the third parties for a particular manager', () => {
-      const queryString = { manager }
       return server
-        .get(buildURL(url, queryString))
+        .get(buildURL(url))
         .set(createAuthHeaders('get', url))
         .expect(200)
         .then((response: any) => {

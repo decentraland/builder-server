@@ -45,6 +45,16 @@ export const collectionSchema = Object.freeze({
   ],
 })
 
+export const upsertCollectionSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    collection: collectionSchema,
+    data: { type: 'string' },
+  },
+  additionalProperties: false,
+  required: ['collection'],
+})
+
 export const saveTOSSchema = Object.freeze({
   type: 'object',
   properties: {

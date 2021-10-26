@@ -115,6 +115,33 @@ describe('Collection router', () => {
         }
       })
 
+      describe('and the request is missing the collection property', () => {
+        it('should return an http error for the invalid request body', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ notCollection: collectionToUpsert })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: [
+                  {
+                    dataPath: '',
+                    keyword: 'required',
+                    message: "should have required property 'collection'",
+                    params: {
+                      missingProperty: 'collection',
+                    },
+                    schemaPath: '#/required',
+                  },
+                ],
+                error: 'Invalid request body',
+              })
+            })
+        })
+      })
+
       describe('and the collection exists and is locked', () => {
         beforeEach(() => {
           const currentDate = Date.now()

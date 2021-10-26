@@ -1,8 +1,4 @@
-import { matchers } from './urn'
-
-export const tpwCollectionURNRegex = new RegExp(
-  `^${matchers.baseURN}:${matchers.tpwSuffix}$`
-)
+import { matchers } from '../common/matchers'
 
 export const collectionSchema = Object.freeze({
   type: 'object',

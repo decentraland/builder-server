@@ -3,9 +3,13 @@ import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { CollectionFragment } from '../ethereum/api/fragments'
+import { matchers } from '../common/matchers'
 import { Collection } from './Collection.model'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import { tpwCollectionURNRegex } from './Collection.schema'
+
+export const tpwCollectionURNRegex = new RegExp(
+  `^${matchers.baseURN}:${matchers.tpwSuffix}$`
+)
 
 export function getDecentralandCollectionURN(
   collectionAddress: string

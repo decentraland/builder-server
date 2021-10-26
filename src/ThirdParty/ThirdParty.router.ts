@@ -3,8 +3,7 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { ThirdParty } from './ThirdParty.types'
-import { toThirdParty } from './utils'
+import { ThirdPartyFragment } from '../ethereum/api/fragments'
 
 export class ThirdPartyRouter extends Router {
   mount() {
@@ -18,15 +17,12 @@ export class ThirdPartyRouter extends Router {
     )
   }
 
-  async getThirdParties(req: AuthRequest): Promise<ThirdParty[]> {
+  async getThirdParties(req: AuthRequest): Promise<ThirdPartyFragment[]> {
     let manager = ''
     try {
       manager = server.extractFromReq(req, 'manager')
-    } catch (e) {
-      // We support empty manager filters on the query string
-    }
+    } catch (e) {}
 
-    const fragments = await thirdPartyAPI.fetchThirdParties(manager)
-    return fragments.map(toThirdParty)
+    return thirdPartyAPI.fetchThirdParties(manager)
   }
 }

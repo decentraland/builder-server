@@ -14,7 +14,6 @@ import {
   ResultCollection,
   toResultCollection,
 } from '../../spec/mocks/collections'
-import { isManager } from '../ethereum/api/tpw'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
@@ -34,6 +33,7 @@ import { ItemAttributes } from '../Item'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
+import { isManager } from '../ethereum/api/tpw'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')

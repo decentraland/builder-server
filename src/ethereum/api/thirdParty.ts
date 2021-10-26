@@ -8,8 +8,8 @@ import {
 } from './BaseGraphAPI'
 
 const getThirdPartiesQuery = (manager: string = '') => gql`
-  query getThirdParties(${PAGINATION_VARIABLES}) {
-    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: ["${manager}"], isApproved: true }) {
+  query getThirdParties(${PAGINATION_VARIABLES}, ) {
+    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: [${manager}] }) {
       ...thirdPartyFragment
     }
   }

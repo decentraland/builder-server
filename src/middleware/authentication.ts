@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { env } from 'decentraland-commons'
 import { AuthLink } from 'dcl-crypto'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
@@ -6,6 +7,7 @@ import { AuthRequestLegacy } from './authentication-legacy'
 import { peerAPI } from '../ethereum/api/peer'
 
 export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
+const API_VERSION = env.get('API_VERSION', 'v1')
 
 export type AuthRequest = Request & {
   authLegacy?: AuthRequestLegacy['auth']
@@ -74,7 +76,12 @@ async function decodeAuthChain(req: Request): Promise<string> {
       errorMessage = 'Missing ETH address in auth chain'
     } else {
       try {
-        const endpoint = (req.method + ':' + req.path).toLowerCase()
+        const endpoint = (
+          req.method +
+          ':' +
+          req.originalUrl.replace(`/${API_VERSION}`, '')
+        ).toLowerCase()
+
         // We don't use the response, just want to make sure it does not blow up
         await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
       } catch (error) {

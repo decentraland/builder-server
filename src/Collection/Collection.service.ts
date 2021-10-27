@@ -18,7 +18,7 @@ export class CollectionLockedException extends Error {
     super(`The collection is locked. It can't be ${action}.`)
   }
 }
-// `The third party collection already has published items. ${m}`
+
 export class CollectionAlreadyPublishedException extends Error {
   constructor(public id: string, type: CollectionType, action: string) {
     super(

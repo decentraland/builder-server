@@ -154,7 +154,7 @@ async function resetItem(item: FullItem, catalystItem: Wearable) {
   console.log('Item: Resetting...', item.id)
 
   const { name, description, contents, data } = catalystItem
-  const buffersByHash = await fetchBuffersByHash(contents)
+  const buffersByHash = await getBuffersByHash(contents)
   const replaceItem = { ...item, name, description, contents, data }
 
   console.log('Item: Updating...')
@@ -182,7 +182,7 @@ async function resetItem(item: FullItem, catalystItem: Wearable) {
   console.log('Item: Reset', item.id)
 }
 
-async function fetchBuffersByHash(contents: Record<string, string>) {
+async function getBuffersByHash(contents: Record<string, string>) {
   const hashes = Array.from(new Set(Object.values(contents)).values())
 
   console.log('Content: Fetching...')

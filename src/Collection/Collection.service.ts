@@ -177,11 +177,9 @@ export class CollectionService {
         )
       }
     }
-
     if (this.isLockActive(collection.lock)) {
       throw new CollectionLockedException(collection.id, 'deleted')
     }
-
     await Promise.all([
       Collection.delete({ id: collection.id }),
       // This should eventually be in the item's service
@@ -205,6 +203,7 @@ export class CollectionService {
     } else if (collection) {
       return collection.eth_address === ethAddress
     }
+
     return false
   }
 

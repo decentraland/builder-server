@@ -103,7 +103,8 @@ export function mockCollectionAuthorizationMiddleware(
 ) {
   const collectionToReturn = {
     ...collectionAttributesMock,
-    urn_suffix: isThirdParty ? 'third-party' : null,
+    urn_suffix: isThirdParty ? 'third-party-collection-id' : null,
+    third_party_id: isThirdParty ? 'third-party-id' : null,
     eth_address: ethAddress,
   }
   if (!(Collection.findOne as jest.Mock).mock) {
@@ -112,7 +113,9 @@ export function mockCollectionAuthorizationMiddleware(
 
   ;(Collection.findOne as jest.Mock).mockImplementationOnce((givenId) =>
     Promise.resolve(
-      givenId === id && isAuthorized ? collectionToReturn : undefined
+      givenId === id && (isAuthorized || isThirdParty)
+        ? collectionToReturn
+        : undefined
     )
   )
   if (isThirdParty) {

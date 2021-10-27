@@ -20,14 +20,14 @@ async function run() {
     const dbItems = await getDbItems()
     const remoteItems = await getRemoteItems()
     const catalystItems = await getCatalystItems(remoteItems)
-    const consolidated = await consolidate(dbItems, remoteItems, catalystItems)
+    const consolidatedItems = await consolidate(dbItems, remoteItems, catalystItems)
 
     const catalystItemsByUrn = catalystItems.reduce((acc, item) => {
       acc[item.id] = item
       return acc
     }, {} as Record<string, Wearable>)
 
-    const different = consolidated.filter(
+    const different = consolidatedItems.filter(
       (item) =>
         item.urn &&
         catalystItemsByUrn[item.urn] &&

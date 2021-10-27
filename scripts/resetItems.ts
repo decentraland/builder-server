@@ -11,7 +11,9 @@ import { ACL, S3Content } from '../src/S3'
 
 async function run() {
   console.log('DB: Connecting...')
+
   const connection = await db.connect()
+
   console.log('DB: Connected!')
 
   try {
@@ -33,7 +35,7 @@ async function run() {
     )
 
     if (different.length === 0) {
-      console.log('No items in the db unsynced with the catalyst')
+      console.log('No items in the db are unsynced with the catalyst')
       return
     }
 

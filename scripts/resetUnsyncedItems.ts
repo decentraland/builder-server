@@ -43,9 +43,9 @@ async function run() {
 
     console.log('Different Items:', differentIds)
 
-    const userWantsToContinue = await askForConfirmation()
+    const shouldProceed = await askForConfirmation()
 
-    if (!userWantsToContinue) {
+    if (!shouldProceed) {
       return
     }
 

@@ -171,7 +171,7 @@ export function mockItemAuthorizationMiddleware(
  * Mocking the Ownable.canUpsert method will make this mock throw.
  *
  * @param Model - The model to be authorized.
- * @param id - The id of the model to be authorized
+ * @param id - The id of the model to be authorized.
  * @param ethAddress - The ethAddress of the user that will be requesting authorization to the model.
  * @param expectedUpsert - If the user should be able to upsert the model or not.
  */
@@ -203,10 +203,25 @@ export function mockOwnableCanUpsert(
     )
 }
 
+/**
+ * Mocks the "isPublished" method of the CollectionService by mocking the all the function calls.
+ * This mock requires the collectionAPI.fetchCollection module and the isPublished methods to be mocked first.
+ *
+ * @param id - The id of the collection to be checked if published.
+ * @param isCollectionPublished - If the collection is published or not.
+ */
 export function mockIsCollectionPublished(
   id: string,
   isCollectionPublished: boolean
 ) {
+  if (!(collectionAPI.fetchCollection as jest.Mock).mock) {
+    throw new Error('collectionAPI.fetchCollection is not mocked')
+  }
+
+  if (!(isPublished as jest.Mock).mock) {
+    throw new Error('isPublished is not mocked')
+  }
+
   ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
     (givenId) =>
       Promise.resolve(id === givenId && isCollectionPublished ? {} : undefined)

@@ -33,9 +33,9 @@ const getThirdPartyQuery = (urn: string, manager: string) => gql`
 `
 
 const getThirdPartyCollectionItemsQuery = () => gql`
-  query getThirdPartyCollectionItems(${PAGINATION_VARIABLES}, $collectionId: String, $thirdPartyId: String ) {
-    thirdPartyItemsFragment(${PAGINATION_ARGUMENTS}, where: { "searchCollectionId" : $collectionId, "searchThirdPartyId": $thirdPartyId }) {
-      ...thirdPartyItemsFragment
+  query getThirdPartyCollectionItems(${PAGINATION_VARIABLES}, $collectionId: String, $thirdPartyId: String) {
+    items(${PAGINATION_ARGUMENTS}, where: { searchCollectionId : $collectionId, searchThirdPartyId: $thirdPartyId }) {
+      ...thirdPartyItemFragment
     }
   }
   ${thirdPartyItemFragment()}
@@ -54,7 +54,7 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     thirdPartyId: string,
     collectionId: string
   ): Promise<ThirdPartyItemsFragment[]> => {
-    return this.paginate(['thirdPartyItemsFragment'], {
+    return this.paginate(['items'], {
       query: getThirdPartyCollectionItemsQuery(),
       variables: { thirdPartyId, collectionId },
     })

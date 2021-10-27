@@ -182,7 +182,7 @@ export class CollectionService {
     }
     await Promise.all([
       Collection.delete({ id: collection.id }),
-      // This should eventually be in the item's service
+      // TODO: This should eventually be in the item's service
       Item.delete({ collection_id: collection.id }),
     ])
   }

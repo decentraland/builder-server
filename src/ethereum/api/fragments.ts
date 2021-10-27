@@ -66,7 +66,7 @@ export const thirdPartyFragment = () => gql`
 `
 
 export const thirdPartyItemFragment = () => gql`
-  fragment thirdPartyItemFragment on ThirdPartyItem {
+  fragment thirdPartyItemFragment on Item {
     urn
     blockchainItemId
     metadata {

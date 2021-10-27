@@ -5,11 +5,12 @@ export type CollectionAttributes = {
    * All Decentraland collections will contain this column as null but it will be generated and returned
    * whenever a Decentraland collection is requested.
    */
-  urn_suffix: string | null
   name: string
   eth_address: string
   salt: string | null
   contract_address: string | null
+  urn_suffix: string | null
+  third_party_id: string | null
   is_published: boolean
   is_approved: boolean
   minters: string[]
@@ -24,58 +25,3 @@ export type CollectionAttributes = {
 export type FullCollection = Omit<CollectionAttributes, 'urn_suffix'> & {
   urn: string
 }
-
-export const collectionSchema = Object.freeze({
-  type: 'object',
-  properties: {
-    id: { type: 'string', format: 'uuid' },
-    urn: {
-      type: ['string'],
-      pattern:
-        '^urn:decentraland:[^:]+:(?:ext-thirdparty:[^:|\\s]+|collections-v2:0x[a-fA-F0-9]{40})$',
-    },
-    name: { type: 'string', maxLength: 32 },
-    eth_address: { type: 'string' },
-    salt: { type: ['string', 'null'] },
-    contract_address: { type: ['string', 'null'] },
-    is_published: { type: 'boolean' },
-    is_approved: { type: 'boolean' },
-    minters: {
-      type: 'array',
-      items: { type: 'string' },
-    },
-    managers: {
-      type: 'array',
-      items: { type: 'string' },
-    },
-    forum_link: { type: ['string', 'null'] },
-    reviewed_at: { type: 'string' },
-    created_at: { type: 'string' },
-    updated_at: { type: 'string' },
-  },
-  additionalProperties: false,
-  required: [
-    'id',
-    'name',
-    'eth_address',
-    'salt',
-    'contract_address',
-    'reviewed_at',
-    'created_at',
-    'updated_at',
-  ],
-})
-
-export const saveTOSSchema = Object.freeze({
-  type: 'object',
-  properties: {
-    email: {
-      type: 'string',
-      // prettier-ignore
-      pattern: "^[a-zA-Z0-9.!#$%&'*+\/=?^_`{|}~-]+@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(?:\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$",
-    },
-    collection_address: { type: 'string', pattern: '^0x[a-fA-F0-9]{40}$' },
-  },
-  additionalProperties: false,
-  required: ['email', 'collection_address'],
-})

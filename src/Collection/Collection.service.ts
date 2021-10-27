@@ -5,8 +5,8 @@ import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item/Item.model'
 import { isManager } from '../ethereum/api/tpw'
-import { CollectionAttributes, FullCollection } from './Collection.types'
 import { getThirdPartyCollectionURN, toDBCollection } from './utils'
+import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 
 enum CollectionType {
@@ -133,6 +133,7 @@ export class CollectionService {
     }
 
     const attributes = toDBCollection(collectionJSON)
+
     // Should we do something with the salt and the contract address? There's no need to have them
     return new Collection(attributes).upsert()
   }
@@ -206,9 +207,12 @@ export class CollectionService {
     collection: CollectionAttributes | undefined,
     ethAddress: string
   ): Promise<boolean> {
-    if (collection && collection.urn_suffix) {
+    if (collection && collection.third_party_id && collection.urn_suffix) {
       return isManager(
-        getThirdPartyCollectionURN(collection.urn_suffix),
+        getThirdPartyCollectionURN(
+          collection.third_party_id,
+          collection.urn_suffix
+        ),
         ethAddress
       )
     } else if (collection) {

@@ -16,7 +16,7 @@
     "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
-    "test:coverage": "npm run test -- --coverage"
+    "test:coverage": "npm run test -- --coverage --config jest.config.ci.js"
   },
   "keywords": [
     "decentraland"
@@ -74,6 +74,8 @@
     "web3x": "^4.0.6"
   },
   "devDependencies": {
+    "@swc/core": "^1.2.102",
+    "@swc/jest": "^0.2.5",
     "@types/isomorphic-fetch": "0.0.35",
     "@types/jest": "^27.0.1",
     "@types/node": "^14.14.28",

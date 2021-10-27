@@ -1,3 +1,4 @@
+// TODO: Use either ChainName or ChainId from @dcl/schemas
 export enum Network {
   MAINNET = 'mainnet',
   ROPSTEN = 'ropsten',

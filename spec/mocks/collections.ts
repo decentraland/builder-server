@@ -5,6 +5,7 @@ import {
   FullCollection,
 } from '../../src/Collection/Collection.types'
 import { wallet } from './wallet'
+import { CollectionFragment } from '../../src/ethereum/api/fragments'
 
 export const collectionAttributesMock: CollectionAttributes = {
   id: uuidv4(),
@@ -19,9 +20,28 @@ export const collectionAttributesMock: CollectionAttributes = {
   managers: [],
   forum_link: null,
   lock: null,
+  third_party_id: null,
   reviewed_at: new Date(),
   created_at: new Date(),
   updated_at: new Date(),
+}
+
+export const collectionFragment: Omit<
+  CollectionFragment,
+  'reviewedAt' | 'updatedAt' | 'createdAt'
+> & { reviewedAt: string | null; updatedAt: string; createdAt: string } = {
+  id: 'string',
+  creator: collectionAttributesMock.eth_address,
+  owner: collectionAttributesMock.eth_address,
+  name: collectionAttributesMock.name,
+  isApproved: collectionAttributesMock.is_approved,
+  minters: collectionAttributesMock.minters,
+  managers: collectionAttributesMock.managers,
+  reviewedAt: collectionAttributesMock.reviewed_at
+    ? collectionAttributesMock.reviewed_at.toISOString()
+    : null,
+  updatedAt: collectionAttributesMock.updated_at.toISOString(),
+  createdAt: collectionAttributesMock.created_at.toISOString(),
 }
 
 export type ResultCollection = Omit<
@@ -34,10 +54,20 @@ export type ResultCollection = Omit<
   urn_suffix: unknown
 }
 
-export function convertCollectionDatesToISO(collection: CollectionAttributes) {
+export function convertCollectionDatesToISO<
+  T extends CollectionAttributes | FullCollection
+>(
+  collection: T
+): Omit<T, 'reviewed_at' | 'created_at' | 'updated_at'> & {
+  reviewed_at: string | null
+  created_at: string
+  updated_at: string
+} {
   return {
     ...collection,
-    reviewed_at: collection.reviewed_at!.toISOString(),
+    reviewed_at: collection.reviewed_at
+      ? collection.reviewed_at.toISOString()
+      : null,
     created_at: collection.created_at.toISOString(),
     updated_at: collection.updated_at.toISOString(),
   }

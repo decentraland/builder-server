@@ -27,19 +27,19 @@ async function run() {
       return acc
     }, {} as Record<string, Wearable>)
 
-    const different = consolidatedItems.filter(
+    const differentItems = consolidatedItems.filter(
       (item) =>
         item.urn &&
         catalystItemsByUrn[item.urn] &&
         isDifferent(item, catalystItemsByUrn[item.urn])
     )
 
-    if (different.length === 0) {
+    if (differentItems.length === 0) {
       console.log('No items in the db are unsynced with the catalyst')
       return
     }
 
-    const differentIds = different.map((item) => item.id)
+    const differentIds = differentItems.map((item) => item.id)
 
     console.log('Different Items:', differentIds)
 
@@ -49,7 +49,7 @@ async function run() {
       return
     }
 
-    for (const item of different) {
+    for (const item of differentItems) {
       await resetItem(item, catalystItemsByUrn[item.urn!])
     }
 

@@ -6,6 +6,7 @@ import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
 import { Collection } from '../src/Collection/Collection.model'
 import { collectionAttributesMock } from './mocks/collections'
 import { wallet } from './mocks/wallet'
+import { Ownable } from '../src/Ownable/Ownable'
 
 export function buildURL(
   uri: string,
@@ -65,6 +66,10 @@ export function mockAuthorizationMiddleware(
     throw new Error('Table.count is not mocked')
   }
 
+  if ((Ownable.prototype.isOwnedBy as jest.Mock).mock) {
+    throw new Error('Ownable.isOwnedBy is mocked')
+  }
+
   ;(Table.count as jest.Mock).mockImplementationOnce(
     (conditions: QueryPart) => {
       return conditions['id'] === id &&
@@ -76,17 +81,26 @@ export function mockAuthorizationMiddleware(
   )
 }
 
-// TODO add JSDOC
+/**
+ * Mocks the "withModelAuthorization" middleware used in the collection's middleware
+ * by mocking all the function calls to the Collection model and the TPW requests.
+ * This mock requires the Collection model and the TPW "isManager" method to be mocked first.
+ *
+ * @param id - The id of the collection to be authorized.
+ * @param ethAddress - The ethAddress of the user that will be requesting authorization to the collection.
+ * @param isThirdParty - If the mock is for a third party collection.
+ * @param isAuthorized - If the user should be authorized or not. This is useful to test the response of the middleware.
+ */
 export function mockCollectionAuthorizationMiddleware(
   id: string,
-  eth_address: string,
+  ethAddress: string,
   isThirdParty = false,
   isAuthorized = true
 ) {
   const collectionToReturn = {
     ...collectionAttributesMock,
     urn_suffix: isThirdParty ? 'third-party' : null,
-    eth_address,
+    eth_address: ethAddress,
   }
   if (!(Collection.findOne as jest.Mock).mock) {
     throw new Error('Collection.findOne is not mocked')
@@ -106,7 +120,16 @@ export function mockCollectionAuthorizationMiddleware(
   }
 }
 
-// TODO add JSDOC
+/**
+ * Mocks the "withModelAuthorization" middleware used in the items's middleware
+ * by mocking all the function calls to the Collection model and the TPW requests.
+ * This mock requires the Collection model and the TPW "isManager" method to be mocked first.
+ *
+ * @param id - The id of the item to be authorized.
+ * @param ethAddress - The ethAddress of the user that will be requesting authorization to the item.
+ * @param isThirdParty - If the mock is for a third party item.
+ * @param isAuthorized - If the user should be authorized or not. This is useful to test the response of the middleware.
+ */
 export function mockItemAuthorizationMiddleware(
   id: string,
   eth_address: string,
@@ -139,7 +162,16 @@ export function mockItemAuthorizationMiddleware(
   }
 }
 
-// TODO add JSDOC
+/**
+ * Mocks the "Ownable.canUpsert" method by mocking the all the function calls to the Collection model.
+ * This mock requires the Collection model to be mocked first.
+ * Mocking the Ownable.canUpsert method will make this mock throw.
+ *
+ * @param Model - The model to be authorized.
+ * @param id - The id of the model to be authorized
+ * @param ethAddress - The ethAddress of the user that will be requesting authorization to the model.
+ * @param expectedUpsert - If the user should be able to upsert the model or not.
+ */
 export function mockOwnableCanUpsert(
   Model: typeof GenericModel,
   id: string,
@@ -150,6 +182,10 @@ export function mockOwnableCanUpsert(
     expectedUpsert &&
     conditions.id === id &&
     conditions.eth_address === ethAddress
+
+  if ((Ownable.prototype.canUpsert as jest.Mock).mock) {
+    throw new Error('Ownable.canUpsert is mocked')
+  }
 
   if (!(Model.count as jest.Mock).mock) {
     throw new Error('Model.count is not mocked')

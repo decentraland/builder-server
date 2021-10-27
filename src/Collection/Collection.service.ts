@@ -154,11 +154,11 @@ export class CollectionService {
 
   public async deleteCollection(collectionId: string): Promise<void> {
     const collection = await this.getDBCollection(collectionId)
-    if (collection.urn_suffix !== null) {
+    if (collection.urn_suffix !== null && collection.third_party_id !== null) {
       // If it's a TPC we must check if there's an item already published under that collection urn suffix
       const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
-        'thirdPartyId',
-        collection.urn_suffix!
+        collection.third_party_id,
+        collection.urn_suffix
       )
       if (collectionItems.length > 0) {
         throw new CollectionAlreadyPublishedException(

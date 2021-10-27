@@ -688,6 +688,7 @@ describe('Collection router', () => {
         )
         mockOwnableCanUpsert(Collection, dbCollection.id, wallet.address, true)
         dbCollection.urn_suffix = 'collection-urn-suffix'
+        dbCollection.third_party_id = 'third-party-id'
         ;(Collection.findOne as jest.MockedFunction<typeof Collection.findOne>)
           .mockResolvedValueOnce(dbCollection)
           .mockResolvedValueOnce(dbCollection)

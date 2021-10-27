@@ -55,7 +55,7 @@ async function run() {
 
     console.log('Different items were reset successfuly!')
   } catch (e) {
-    console.log(e)
+    console.error(e)
   } finally {
     connection.end()
   }
@@ -205,4 +205,4 @@ async function getBuffersByHash(contents: Record<string, string>) {
   }, {} as Record<string, any>)
 }
 
-run()
+run().catch(console.error)

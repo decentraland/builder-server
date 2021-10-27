@@ -138,47 +138,42 @@ export class CollectionRouter extends Router {
   }
 
   async getCollections(req: AuthRequest): Promise<FullCollection[]> {
-    try {
-      const eth_address = req.auth.ethAddress
-      const canRequestCollections = await isCommitteeMember(eth_address)
+    const eth_address = req.auth.ethAddress
+    const canRequestCollections = await isCommitteeMember(eth_address)
 
-      if (!canRequestCollections) {
-        throw new HTTPError(
-          'Unauthorized',
-          { eth_address },
-          STATUS_CODES.unauthorized
-        )
-      }
-
-      let is_published: boolean | undefined
-      try {
-        is_published = new RequestParameters(req).getBoolean('isPublished')
-      } catch (error) {
-        // No is_published param
-      }
-
-      // The current implementation only supports fetching published/unpublished collections and items
-      // If, in the future we need to add multiple query params, a more flexible implementation is required
-      const [dbCollections, remoteCollections] = await Promise.all([
-        typeof is_published === 'undefined'
-          ? Collection.find<CollectionAttributes>()
-          : Collection.find<CollectionAttributes>({ is_published }),
-        collectionAPI.fetchCollections(),
-      ])
-
-      const consolidatedCollections = await Bridge.consolidateCollections(
-        dbCollections,
-        remoteCollections
+    if (!canRequestCollections) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
       )
-
-      // Build the full collection
-      return consolidatedCollections.map((collection) =>
-        toFullCollection(collection)
-      )
-    } catch (error) {
-      console.log(error)
-      throw error
     }
+
+    let is_published: boolean | undefined
+    try {
+      is_published = new RequestParameters(req).getBoolean('isPublished')
+    } catch (error) {
+      // No is_published param
+    }
+
+    // The current implementation only supports fetching published/unpublished collections and items
+    // If, in the future we need to add multiple query params, a more flexible implementation is required
+    const [dbCollections, remoteCollections] = await Promise.all([
+      typeof is_published === 'undefined'
+        ? Collection.find<CollectionAttributes>()
+        : Collection.find<CollectionAttributes>({ is_published }),
+      collectionAPI.fetchCollections(),
+    ])
+
+    const consolidatedCollections = await Bridge.consolidateCollections(
+      dbCollections,
+      remoteCollections
+    )
+
+    // Build the full collection
+    return consolidatedCollections.map((collection) =>
+      toFullCollection(collection)
+    )
   }
 
   async getAddressCollections(req: AuthRequest) {

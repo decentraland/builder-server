@@ -33,15 +33,28 @@ import {
 } from './Collection.types'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollection } from './utils'
+import { OwnableModel } from '../Ownable/Ownable.types'
 
 const validator = getValidator()
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
 
+  private modelAuthorizationCheck = (
+    _: OwnableModel,
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> => {
+    return this.service.isOwnedOrManagedBy(id, ethAddress)
+  }
+
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
-    const withCollectionAuthorization = withModelAuthorization(Collection)
+    const withCollectionAuthorization = withModelAuthorization(
+      Collection,
+      'id',
+      this.modelAuthorizationCheck
+    )
     const withLowercasedAddress = withLowercasedParams(['address'])
 
     /**
@@ -121,7 +134,7 @@ export class CollectionRouter extends Router {
       '/collections/:id',
       withAuthentication,
       withCollectionExists,
-      // withCollectionAuthorization,
+      withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
   }
@@ -374,7 +387,6 @@ export class CollectionRouter extends Router {
           collectionJSON
         )
       } else {
-        console.log('About to upsert a DCL collection')
         upsertedCollection = await this.service.upsertDCLCollection(
           id,
           eth_address,

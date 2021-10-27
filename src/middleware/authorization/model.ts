@@ -5,7 +5,19 @@ import { AuthRequest } from '../authentication'
 import { Ownable, OwnableModel } from '../../Ownable'
 import { STATUS_CODES } from '../../common/HTTPError'
 
-export function withModelAuthorization(Model: OwnableModel, param = 'id') {
+function defaultOwnershipCheck(
+  Model: OwnableModel,
+  id: string,
+  ethAddress: string
+): Promise<boolean> {
+  return new Ownable(Model).isOwnedBy(id, ethAddress)
+}
+
+export function withModelAuthorization(
+  Model: OwnableModel,
+  param = 'id',
+  checkOwnership = defaultOwnershipCheck
+) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const id = server.extractFromReq(req, param)
     const ethAddress = (req as AuthRequest).auth.ethAddress
@@ -16,7 +28,7 @@ export function withModelAuthorization(Model: OwnableModel, param = 'id') {
       )
     }
 
-    const isOwnedByUser = await new Ownable(Model).isOwnedBy(id, ethAddress)
+    const isOwnedByUser = await checkOwnership(Model, id, ethAddress)
     if (!isOwnedByUser) {
       res
         .status(STATUS_CODES.unauthorized)

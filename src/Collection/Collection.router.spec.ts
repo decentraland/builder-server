@@ -1,10 +1,10 @@
 import supertest from 'supertest'
 import {
-  wallet,
   createAuthHeaders,
   buildURL,
   mockExistsMiddleware,
-  mockAuthorizationMiddleware,
+  mockOwnableCanUpsert,
+  mockCollectionAuthorizationMiddleware,
 } from '../../spec/utils'
 import {
   collectionAttributesMock,
@@ -13,9 +13,9 @@ import {
   ResultCollection,
   toResultCollection,
 } from '../../spec/mocks/collections'
+import { wallet } from '../../spec/mocks/wallet'
 import { isManager } from '../ethereum/api/tpw'
 import { collectionAPI } from '../ethereum/api/collection'
-import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { isPublished } from '../utils/eth'
@@ -35,7 +35,6 @@ jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/tpw')
 jest.mock('./Collection.model')
 jest.mock('../Committee')
-jest.mock('../Ownable')
 jest.mock('../utils/eth')
 jest.mock('../ethereum/api/thirdParty')
 jest.mock('../Item/Item.model')
@@ -61,7 +60,6 @@ describe('Collection router', () => {
     let urn: string
     let collectionToUpsert: FullCollection
     beforeEach(() => {
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       url = `/collections/${dbCollection.id}`
     })
 
@@ -264,9 +262,12 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(false),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            false
+          )
         })
 
         it('should respond with a 401 and an error saying that the user is not authorized', () => {
@@ -294,9 +295,12 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(false)
         })
 
@@ -325,9 +329,15 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
+          ;(Collection.findOne as jest.MockedFunction<
+            typeof Collection.findOne
+          >).mockResolvedValueOnce(dbCollection)
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
           ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
@@ -360,9 +370,12 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;(Ownable.prototype.canUpsert as jest.MockedFunction<
-            typeof Ownable.prototype.canUpsert
-          >).mockResolvedValueOnce(true)
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbCollection,
@@ -406,9 +419,15 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
+          ;(Collection.findOne as jest.MockedFunction<
+            typeof Collection.findOne
+          >).mockResolvedValueOnce(dbCollection)
           ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
             (attributes) => {
               newCollectionAttributes = attributes
@@ -459,7 +478,6 @@ describe('Collection router', () => {
 
   describe('when retrieving all the collections', () => {
     beforeEach(() => {
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Collection.find as jest.Mock)
         .mockResolvedValueOnce([dbCollection])
@@ -492,7 +510,6 @@ describe('Collection router', () => {
 
   describe('when retrieving the collections of an address', () => {
     beforeEach(() => {
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock).mockReturnValueOnce(
@@ -523,7 +540,6 @@ describe('Collection router', () => {
   describe('when retrieving a single collection', () => {
     beforeEach(() => {
       mockExistsMiddleware(Collection, dbCollection.id)
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
       ;(Collection.findOne as jest.Mock).mockReturnValueOnce(dbCollection)
       ;(collectionAPI.fetchCollection as jest.Mock).mockReturnValueOnce(null)
@@ -553,13 +569,10 @@ describe('Collection router', () => {
     beforeEach(() => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
       mockExistsMiddleware(Collection, dbCollection.id)
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
-      ;(Ownable.prototype.canUpsert as jest.MockedFunction<
-        typeof Ownable.prototype.canUpsert
-      >).mockResolvedValueOnce(true)
-      ;(Ownable.prototype.isOwnedBy as jest.MockedFunction<
-        typeof Ownable.prototype.isOwnedBy
-      >).mockResolvedValueOnce(true)
+      mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
+      ;(Collection.findOne as jest.MockedFunction<
+        typeof Collection.findOne
+      >).mockResolvedValueOnce(dbCollection)
       url = `/collections/${dbCollection.id}/lock`
     })
 
@@ -594,10 +607,12 @@ describe('Collection router', () => {
         ;(Collection.update as jest.Mock).mockRejectedValueOnce(
           new Error(errorMessage)
         )
-        ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-          canUpsert: jest.fn().mockResolvedValueOnce(true),
-          isOwnedBy: jest.fn().mockResolvedValueOnce(true),
-        }))
+        ;(Collection.count as jest.MockedFunction<
+          typeof Collection.count
+        >).mockResolvedValueOnce(1)
+        ;(Collection.findOne as jest.MockedFunction<
+          typeof Collection.findOne
+        >).mockResolvedValueOnce(dbCollection)
       })
 
       it('should fail with an error if the update throws', () => {
@@ -627,11 +642,17 @@ describe('Collection router', () => {
     describe('and the collection is a TP collection', () => {
       beforeEach(() => {
         mockExistsMiddleware(Collection, dbCollection.id)
-        mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
+        mockCollectionAuthorizationMiddleware(
+          dbCollection.id,
+          wallet.address,
+          true
+        )
+        mockOwnableCanUpsert(Collection, dbCollection.id, wallet.address, true)
         dbCollection.urn_suffix = 'collection-urn-suffix'
-        ;(Collection.findOne as jest.MockedFunction<
-          typeof Collection.findOne
-        >).mockResolvedValueOnce(dbCollection)
+        ;(Collection.findOne as jest.MockedFunction<typeof Collection.findOne>)
+          .mockResolvedValueOnce(dbCollection)
+          .mockResolvedValueOnce(dbCollection)
+        ;(isManager as jest.Mock).mockResolvedValueOnce(true)
       })
 
       describe('and it has third party items already published', () => {
@@ -730,9 +751,9 @@ describe('Collection router', () => {
 
     describe('and the collection is a DCL collection', () => {
       beforeEach(() => {
-        mockExistsMiddleware(Collection, dbCollection.id)
-        mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
         dbCollection.urn_suffix = null
+        mockExistsMiddleware(Collection, dbCollection.id)
+        mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
         ;(Collection.findOne as jest.MockedFunction<
           typeof Collection.findOne
         >).mockResolvedValueOnce(dbCollection)

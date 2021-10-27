@@ -15,7 +15,7 @@ import {
   withLowercasedParams,
   withSchemaValidation,
 } from '../middleware'
-import { Ownable } from '../Ownable'
+import { Ownable, OwnableModel } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import {
@@ -31,18 +31,33 @@ import { upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasAccess } from './access'
 import { getDecentralandItemURN, toDBItem } from './utils'
+import { ItemService } from './Item.service'
 
 export class ItemRouter extends Router {
-  public service = new CollectionService()
+  // To be removed once we move everything to the item service
+  public collectionService = new CollectionService()
+  private itemService = new ItemService()
 
   itemFilesRequestHandler:
     | ((req: Request, res: Response) => Promise<boolean>) // Promisified RequestHandler
     | undefined
 
+  private modelAuthorizationCheck = (
+    _: OwnableModel,
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> => {
+    return this.itemService.isOwnedOrManagedBy(id, ethAddress)
+  }
+
   mount() {
     const withItemExists = withModelExists(Item, 'id')
     const withCollectionExist = withModelExists(Collection, 'id')
-    const withItemAuthorization = withModelAuthorization(Item)
+    const withItemAuthorization = withModelAuthorization(
+      Item,
+      'id',
+      this.modelAuthorizationCheck
+    )
     const withLowercasedAddress = withLowercasedParams(['address'])
 
     this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
@@ -377,7 +392,7 @@ export class ItemRouter extends Router {
 
     const isDbCollectionPublished =
       dbCollection &&
-      (await this.service.isPublished(dbCollection.contract_address!))
+      (await this.collectionService.isPublished(dbCollection.contract_address!))
 
     if (isDbCollectionPublished) {
       if (!dbItem) {
@@ -405,7 +420,7 @@ export class ItemRouter extends Router {
     if (
       dbCollection &&
       !isDbCollectionPublished &&
-      this.service.isLockActive(dbCollection.lock)
+      this.collectionService.isLockActive(dbCollection.lock)
     ) {
       throw new HTTPError(
         "Locked collection items can't be updated",
@@ -418,7 +433,9 @@ export class ItemRouter extends Router {
 
     const isDbItemCollectionPublished =
       dbItemCollection &&
-      (await this.service.isPublished(dbItemCollection.contract_address!))
+      (await this.collectionService.isPublished(
+        dbItemCollection.contract_address!
+      ))
 
     if (isDbItemCollectionPublished && dbItem) {
       const isItemBeingRemovedFromCollection =
@@ -456,7 +473,11 @@ export class ItemRouter extends Router {
       )
 
       if (dbCollection) {
-        if (await this.service.isPublished(dbCollection.contract_address!)) {
+        if (
+          await this.collectionService.isPublished(
+            dbCollection.contract_address!
+          )
+        ) {
           throw new HTTPError(
             "The item was published. It can't be deleted",
             {
@@ -468,7 +489,7 @@ export class ItemRouter extends Router {
           )
         }
 
-        if (await this.service.isLockActive(dbCollection.lock)) {
+        if (await this.collectionService.isLockActive(dbCollection.lock)) {
           throw new HTTPError(
             "The item collection is locked. It can't be deleted",
             {

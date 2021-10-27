@@ -2,11 +2,11 @@ import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
 import {
-  wallet,
   createAuthHeaders,
   buildURL,
   mockExistsMiddleware,
   mockAuthorizationMiddleware,
+  mockOwnableCanUpsert,
 } from '../../spec/utils'
 import { collectionAttributesMock } from '../../spec/mocks/collections'
 import {
@@ -16,8 +16,8 @@ import {
   ResultItem,
   toResultItem,
 } from '../../spec/mocks/items'
+import { wallet } from '../../spec/mocks/wallet'
 import { isCommitteeMember } from '../Committee'
-import { Ownable } from '../Ownable'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
 import { isPublished } from '../utils/eth'
@@ -37,7 +37,6 @@ jest.mock('../utils/eth')
 jest.mock('../Collection/Collection.model')
 jest.mock('../Committee')
 jest.mock('./access')
-jest.mock('../Ownable')
 
 function mockItemConsolidation(
   itemsAttributes: ItemAttributes[],
@@ -312,7 +311,6 @@ describe('Item router', () => {
   })
 
   describe('when upserting an item', () => {
-    const mockOwnable = Ownable as jest.MockedClass<typeof Ownable>
     const mockCollection = Collection as jest.Mocked<typeof Collection>
     const mockPeer = peerAPI as jest.Mocked<typeof peerAPI>
     const mockCollectionApi = collectionAPI as jest.Mocked<typeof collectionAPI>
@@ -323,7 +321,7 @@ describe('Item router', () => {
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
-      mockOwnable.prototype.canUpsert.mockResolvedValue(true)
+      mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
     })
 
     describe('and the param id is different from payload id', () => {
@@ -371,8 +369,11 @@ describe('Item router', () => {
     })
 
     describe('and the user upserting is not authorized to do so', () => {
+      beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+      })
       it('should fail with unauthorized user message', async () => {
-        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(false)
+        // mockOwnable.prototype.canUpsert.mockResolvedValueOnce(false)
 
         const response = await server
           .put(buildURL(url))

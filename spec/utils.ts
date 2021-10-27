@@ -1,41 +1,11 @@
-import { Authenticator, AuthIdentity, AuthLinkType } from 'dcl-crypto'
+import { Authenticator, AuthIdentity } from 'dcl-crypto'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
+import { isManager } from '../src/ethereum/api/tpw'
 import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
-
-export type Wallet = {
-  address: string
-  identity: AuthIdentity
-}
-
-// Mock wallet with a valid identity that lasts until 2026. Useful for making authorized requests to the server
-export const wallet: Wallet = {
-  address: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
-  identity: {
-    ephemeralIdentity: {
-      address: '0x00d1244305653Be915D066d39d4c6b54808e59a9',
-      publicKey:
-        '0x043e17ed6a1e1ea903660fb0be36f841c808aff2a595f9b3e3a3caaf970dbb197bd91e414a945ebd27beb478ab85c361127d2e807d014626035881348ccaf69281',
-      privateKey:
-        '0x91ee230307805931ac133b16a3eae41eeb404c8e16436ade9ea07d736217f8fb',
-    },
-    expiration: new Date('2026-11-01T19:27:26.452Z'),
-    authChain: [
-      {
-        type: AuthLinkType.SIGNER,
-        payload: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
-        signature: '',
-      },
-      {
-        type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
-        payload:
-          'Decentraland Login\nEphemeral address: 0x00d1244305653Be915D066d39d4c6b54808e59a9\nExpiration: 2026-11-01T19:27:26.452Z',
-        signature:
-          '0x22fa60a6f0c5b979524b6ceea6318ca4491ddd831efa7d60369546f2b66f38383014d262c5ce4e4b859298fe1bc992d990909389d7f6cb5c765d17f9ae2118101b',
-      },
-    ],
-  },
-}
+import { Collection } from '../src/Collection/Collection.model'
+import { collectionAttributesMock } from './mocks/collections'
+import { wallet } from './mocks/wallet'
 
 export function buildURL(
   uri: string,
@@ -72,6 +42,9 @@ export class GenericModel extends Model<any> {}
 // Takes in a mocked (jest.mock()) Model class
 // These methods are sadly order bound, meaning that you'll have to check the router and mock the middlewares in the same order they appear there
 export function mockExistsMiddleware(Table: typeof GenericModel, id: string) {
+  if (!(Table.count as jest.Mock).mock) {
+    throw new Error('Table.count is not mocked')
+  }
   ;(Table.count as jest.Mock).mockImplementationOnce(
     (conditions: QueryPart) => {
       return conditions['id'] === id && Object.keys(conditions).length === 1
@@ -88,6 +61,10 @@ export function mockAuthorizationMiddleware(
   id: string,
   eth_address: string
 ) {
+  if (!(Table.count as jest.Mock).mock) {
+    throw new Error('Table.count is not mocked')
+  }
+
   ;(Table.count as jest.Mock).mockImplementationOnce(
     (conditions: QueryPart) => {
       return conditions['id'] === id &&
@@ -97,4 +74,58 @@ export function mockAuthorizationMiddleware(
         : 0
     }
   )
+}
+
+export function mockCollectionAuthorizationMiddleware(
+  id: string,
+  eth_address: string,
+  isThirdParty = false,
+  isAuthorized = true
+) {
+  const collectionToReturn = {
+    ...collectionAttributesMock,
+    urn_suffix: isThirdParty ? 'third-party' : null,
+    eth_address,
+  }
+  if (!(Collection.findOne as jest.Mock).mock) {
+    throw new Error('Collection.findOne is not mocked')
+  }
+
+  if (!(isManager as jest.Mock).mock) {
+    throw new Error('isManager is not mocked')
+  }
+
+  ;(Collection.findOne as jest.Mock).mockImplementationOnce((givenId) =>
+    givenId === id && isAuthorized ? collectionToReturn : undefined
+  )
+  if (isThirdParty) {
+    ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
+      isAuthorized
+    )
+  }
+}
+
+// TODO add JSDOC
+export function mockOwnableCanUpsert(
+  Model: typeof GenericModel,
+  id: string,
+  ethAddress: string,
+  expectedUpsert: boolean
+) {
+  const canUpsert = (conditions: Record<string, unknown>): boolean =>
+    expectedUpsert &&
+    conditions.id === id &&
+    conditions.eth_address === ethAddress
+
+  if (!(Model.count as jest.Mock).mock) {
+    throw new Error('Model.count is not mocked')
+  }
+
+  ;(Model.count as jest.Mock)
+    .mockImplementationOnce((conditions: QueryPart) =>
+      Promise.resolve(canUpsert(conditions) ? 0 : 1)
+    )
+    .mockImplementationOnce((conditions: QueryPart) =>
+      Promise.resolve(canUpsert(conditions) ? 1 : 0)
+    )
 }

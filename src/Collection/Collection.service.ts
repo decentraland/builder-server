@@ -6,7 +6,7 @@ import { Ownable } from '../Ownable'
 import { Item } from '../Item/Item.model'
 import { isManager } from '../ethereum/api/tpw'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import { toDBCollection } from './utils'
+import { getThirdPartyCollectionURN, toDBCollection } from './utils'
 import { Collection } from './Collection.model'
 
 enum CollectionType {
@@ -186,6 +186,29 @@ export class CollectionService {
       // This should eventually be in the item's service
       Item.delete({ collection_id: collection.id }),
     ])
+  }
+
+  public findCollectionThatOwnsItem(
+    itemId: string
+  ): Promise<CollectionAttributes> {
+    return Collection.findByOwnerOfItem(itemId)
+  }
+
+  public async isOwnedOrManagedBy(
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> {
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+
+    if (collection && collection.urn_suffix) {
+      return isManager(
+        getThirdPartyCollectionURN(collection.urn_suffix),
+        ethAddress
+      )
+    } else if (collection) {
+      return collection.eth_address === ethAddress
+    }
+    return false
   }
 
   private async getDBCollection(

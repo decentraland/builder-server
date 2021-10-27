@@ -4,7 +4,7 @@ import {
   CollectionAttributes,
   FullCollection,
 } from '../../src/Collection/Collection.types'
-import { wallet } from '../utils'
+import { wallet } from './wallet'
 
 export const collectionAttributesMock: CollectionAttributes = {
   id: uuidv4(),

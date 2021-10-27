@@ -45,7 +45,7 @@ export class CollectionRouter extends Router {
     id: string,
     ethAddress: string
   ): Promise<boolean> => {
-    return this.service.isOwnedOrManagedBy(id, ethAddress)
+    return this.service.isCollectionByIdOwnedOrManagedBy(id, ethAddress)
   }
 
   mount() {

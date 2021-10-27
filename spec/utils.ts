@@ -76,6 +76,7 @@ export function mockAuthorizationMiddleware(
   )
 }
 
+// TODO add JSDOC
 export function mockCollectionAuthorizationMiddleware(
   id: string,
   eth_address: string,
@@ -91,13 +92,46 @@ export function mockCollectionAuthorizationMiddleware(
     throw new Error('Collection.findOne is not mocked')
   }
 
-  if (!(isManager as jest.Mock).mock) {
+  if (isThirdParty && !(isManager as jest.Mock).mock) {
     throw new Error('isManager is not mocked')
   }
 
   ;(Collection.findOne as jest.Mock).mockImplementationOnce((givenId) =>
     givenId === id && isAuthorized ? collectionToReturn : undefined
   )
+  if (isThirdParty) {
+    ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
+      isAuthorized
+    )
+  }
+}
+
+// TODO add JSDOC
+export function mockItemAuthorizationMiddleware(
+  id: string,
+  eth_address: string,
+  isThirdParty = false,
+  isAuthorized = true
+) {
+  const collectionToReturn = {
+    ...collectionAttributesMock,
+    urn_suffix: isThirdParty ? 'third-party' : null,
+    eth_address,
+  }
+
+  if (!(Collection.findByOwnerOfItem as jest.Mock).mock) {
+    throw new Error('Collection.findByOwnerOfItem is not mocked')
+  }
+
+  if (isThirdParty && !(isManager as jest.Mock).mock) {
+    throw new Error('isManager is not mocked')
+  }
+
+  ;(Collection.findByOwnerOfItem as jest.Mock).mockImplementationOnce(
+    (givenId) =>
+      givenId === id && isAuthorized ? collectionToReturn : undefined
+  )
+
   if (isThirdParty) {
     ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
       isAuthorized

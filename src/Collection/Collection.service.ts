@@ -194,12 +194,18 @@ export class CollectionService {
     return Collection.findByOwnerOfItem(itemId)
   }
 
-  public async isOwnedOrManagedBy(
+  public async isCollectionByIdOwnedOrManagedBy(
     id: string,
     ethAddress: string
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
+    return this.isCollectionOwnedOrManagedBy(collection, ethAddress)
+  }
 
+  public async isCollectionOwnedOrManagedBy(
+    collection: CollectionAttributes | undefined,
+    ethAddress: string
+  ): Promise<boolean> {
     if (collection && collection.urn_suffix) {
       return isManager(
         getThirdPartyCollectionURN(collection.urn_suffix),

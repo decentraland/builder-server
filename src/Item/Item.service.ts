@@ -10,6 +10,9 @@ export class ItemService {
     const collection = await this.collectionService.findCollectionThatOwnsItem(
       id
     )
-    return this.collectionService.isOwnedOrManagedBy(collection.id, ethAddress)
+    return this.collectionService.isCollectionOwnedOrManagedBy(
+      collection,
+      ethAddress
+    )
   }
 }

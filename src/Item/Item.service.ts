@@ -1,4 +1,6 @@
 import { CollectionService } from '../Collection/Collection.service'
+import { Item } from './Item.model'
+import { ItemAttributes } from './Item.types'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -7,12 +9,16 @@ export class ItemService {
     id: string,
     ethAddress: string
   ): Promise<boolean> {
-    const collection = await this.collectionService.findCollectionThatOwnsItem(
-      id
-    )
-    return this.collectionService.isCollectionOwnedOrManagedBy(
-      collection,
-      ethAddress
-    )
+    const dbItem = await Item.findOne<ItemAttributes>(id)
+    if (dbItem?.urn_suffix && dbItem?.collection_id) {
+      return this.collectionService.isOwnedOrManagedBy(
+        dbItem?.collection_id,
+        ethAddress
+      )
+    } else if (dbItem) {
+      return dbItem.eth_address === dbItem.eth_address
+    }
+
+    return false
   }
 }

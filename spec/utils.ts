@@ -2,11 +2,15 @@ import { Authenticator, AuthIdentity } from 'dcl-crypto'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 import { isManager } from '../src/ethereum/api/tpw'
+import { collectionAPI } from '../src/ethereum/api/collection'
+import { isPublished } from '../src/utils/eth'
 import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
 import { Collection } from '../src/Collection/Collection.model'
 import { collectionAttributesMock } from './mocks/collections'
 import { wallet } from './mocks/wallet'
 import { Ownable } from '../src/Ownable/Ownable'
+import { Item } from '../src/Item/Item.model'
+import { dbItemMock } from './mocks/items'
 
 export function buildURL(
   uri: string,
@@ -106,14 +110,16 @@ export function mockCollectionAuthorizationMiddleware(
     throw new Error('Collection.findOne is not mocked')
   }
 
-  if (isThirdParty && !(isManager as jest.Mock).mock) {
-    throw new Error('isManager is not mocked')
-  }
-
   ;(Collection.findOne as jest.Mock).mockImplementationOnce((givenId) =>
-    givenId === id && isAuthorized ? collectionToReturn : undefined
+    Promise.resolve(
+      givenId === id && isAuthorized ? collectionToReturn : undefined
+    )
   )
   if (isThirdParty) {
+    if (!(isManager as jest.Mock).mock) {
+      throw new Error('isManager is not mocked')
+    }
+
     ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
       isAuthorized
     )
@@ -136,27 +142,21 @@ export function mockItemAuthorizationMiddleware(
   isThirdParty = false,
   isAuthorized = true
 ) {
-  const collectionToReturn = {
-    ...collectionAttributesMock,
+  const itemToReturn = {
+    ...dbItemMock,
     urn_suffix: isThirdParty ? 'third-party' : null,
     eth_address,
   }
 
-  if (!(Collection.findByOwnerOfItem as jest.Mock).mock) {
-    throw new Error('Collection.findByOwnerOfItem is not mocked')
-  }
-
-  if (isThirdParty && !(isManager as jest.Mock).mock) {
-    throw new Error('isManager is not mocked')
-  }
-
-  ;(Collection.findByOwnerOfItem as jest.Mock).mockImplementationOnce(
-    (givenId) =>
-      givenId === id && isAuthorized ? collectionToReturn : undefined
+  ;(Item.findOne as jest.Mock).mockImplementationOnce((givenId) =>
+    Promise.resolve(givenId === id && isAuthorized ? itemToReturn : undefined)
   )
 
   if (isThirdParty) {
-    ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
+    mockCollectionAuthorizationMiddleware(
+      dbItemMock.collection_id!,
+      eth_address,
+      isThirdParty,
       isAuthorized
     )
   }
@@ -198,4 +198,17 @@ export function mockOwnableCanUpsert(
     .mockImplementationOnce((conditions: QueryPart) =>
       Promise.resolve(canUpsert(conditions) ? 1 : 0)
     )
+}
+
+export function mockIsCollectionPublished(
+  id: string,
+  isCollectionPublished: boolean
+) {
+  ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+    (givenId) =>
+      Promise.resolve(id === givenId && isCollectionPublished ? {} : undefined)
+  )
+  if (isCollectionPublished) {
+    ;(isPublished as jest.Mock).mockResolvedValueOnce(isCollectionPublished)
+  }
 }

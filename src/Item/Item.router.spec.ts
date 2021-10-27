@@ -6,6 +6,8 @@ import {
   buildURL,
   mockExistsMiddleware,
   mockOwnableCanUpsert,
+  mockItemAuthorizationMiddleware,
+  mockIsCollectionPublished,
 } from '../../spec/utils'
 import { collectionAttributesMock } from '../../spec/mocks/collections'
 import {
@@ -19,7 +21,6 @@ import { wallet } from '../../spec/mocks/wallet'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
-import { isPublished } from '../utils/eth'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Item } from './Item.model'
 import { hasAccess } from './access'
@@ -469,8 +470,7 @@ describe('Item router', () => {
           contract_address: Wallet.createRandom().address,
           lock: new Date(),
         })
-        mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
-        ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+        mockIsCollectionPublished(collectionAttributesMock.id, false)
       })
 
       describe('and the item is being changed', () => {
@@ -583,8 +583,7 @@ describe('Item router', () => {
           contract_address: Wallet.createRandom().address,
         })
 
-        mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
-        ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+        mockIsCollectionPublished(collectionAttributesMock.id, false)
         mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
       })
 
@@ -598,6 +597,95 @@ describe('Item router', () => {
         expect(response.body).toEqual({
           data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
           ok: true,
+        })
+      })
+    })
+  })
+
+  describe('when deleting an item', () => {
+    beforeEach(() => {
+      url = `/items/${dbItem.id}`
+    })
+
+    describe('and the user is not authorized', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Item, dbItem.id)
+        mockItemAuthorizationMiddleware(dbItem.id, wallet.address, false, false)
+      })
+
+      it('should respond with a 401 and a message signaling that the user is not authorized', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(401)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              error: `Unauthorized user ${wallet.address} for items ${dbItem.id}`,
+              data: { ethAddress: wallet.address, tableName: Item.tableName },
+              ok: false,
+            })
+          })
+      })
+    })
+
+    describe("and the item doesn't have a collection", () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Item, dbItem.id)
+        mockItemAuthorizationMiddleware(dbItem.id, wallet.address, false, true)
+        ;(Item.findOne as jest.MockedFunction<
+          typeof Item.findOne
+        >).mockResolvedValueOnce({ ...dbItem, collection_id: null })
+      })
+
+      it('should respond with a 200 and delete the item', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: true,
+              ok: true,
+            })
+
+            expect(Item.delete).toHaveBeenCalledWith({ id: dbItem.id })
+          })
+      })
+    })
+
+    describe('and the item has a collection', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Item, dbItem.id)
+        mockItemAuthorizationMiddleware(dbItem.id, wallet.address, false, true)
+        ;(Item.findOne as jest.MockedFunction<
+          typeof Item.findOne
+        >).mockResolvedValueOnce(dbItem)
+        ;(Collection.findOne as jest.MockedFunction<
+          typeof Collection.findOne
+        >).mockResolvedValueOnce(collectionAttributesMock)
+      })
+
+      describe('and its collection is already published', () => {
+        beforeEach(() => {
+          mockIsCollectionPublished(collectionAttributesMock.id, true)
+        })
+
+        it('should respond with a 401 and a message signaling that the item is already published', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error: "The item was published. It can't be deleted",
+                data: {
+                  id: dbItem.id,
+                  blockchain_item_id: dbItem.blockchain_item_id,
+                  contract_address: collectionAttributesMock.contract_address,
+                },
+                ok: false,
+              })
+            })
         })
       })
     })

@@ -5,6 +5,7 @@ import {
   mockExistsMiddleware,
   mockOwnableCanUpsert,
   mockCollectionAuthorizationMiddleware,
+  mockIsCollectionPublished,
 } from '../../spec/utils'
 import {
   collectionAttributesMock,
@@ -19,7 +20,6 @@ import { isManager } from '../ethereum/api/tpw'
 import { collectionAPI } from '../ethereum/api/collection'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
-import { isPublished } from '../utils/eth'
 import { Collection } from './Collection.model'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
@@ -420,10 +420,7 @@ describe('Collection router', () => {
             ...dbCollection,
             lock: currentDate,
           })
-          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-            undefined
-          )
-          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+          mockIsCollectionPublished(dbCollection.id, false)
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
         })
 
@@ -481,10 +478,7 @@ describe('Collection router', () => {
             ...dbCollection,
             lock: null,
           })
-          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
-          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-            undefined
-          )
+          mockIsCollectionPublished(dbCollection.id, false)
         })
 
         it('should upsert the collection and respond with a 200 and the upserted collection', () => {
@@ -827,10 +821,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           const lockDate = new Date()
           dbCollection.lock = lockDate
-          ;(collectionAPI.fetchCollection as jest.MockedFunction<
-            typeof collectionAPI.fetchCollection
-          >).mockResolvedValueOnce(null)
-          ;(isPublished as jest.Mock).mockReturnValueOnce(false)
+          mockIsCollectionPublished(dbCollection.id, false)
           jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
         })
 
@@ -859,10 +850,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           const lockDate = new Date()
           dbCollection.lock = lockDate
-          ;(collectionAPI.fetchCollection as jest.MockedFunction<
-            typeof collectionAPI.fetchCollection
-          >).mockResolvedValueOnce(null)
-          ;(isPublished as jest.Mock).mockReturnValueOnce(false)
+          mockIsCollectionPublished(dbCollection.id, false)
           jest
             .spyOn(Date, 'now')
             .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)

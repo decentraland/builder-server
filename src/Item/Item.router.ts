@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import { utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
-
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'

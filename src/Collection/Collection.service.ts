@@ -189,24 +189,11 @@ export class CollectionService {
     ])
   }
 
-  public findCollectionThatOwnsItem(
-    itemId: string
-  ): Promise<CollectionAttributes> {
-    return Collection.findByOwnerOfItem(itemId)
-  }
-
-  public async isCollectionByIdOwnedOrManagedBy(
+  public async isOwnedOrManagedBy(
     id: string,
     ethAddress: string
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
-    return this.isCollectionOwnedOrManagedBy(collection, ethAddress)
-  }
-
-  public async isCollectionOwnedOrManagedBy(
-    collection: CollectionAttributes | undefined,
-    ethAddress: string
-  ): Promise<boolean> {
     if (collection && collection.third_party_id && collection.urn_suffix) {
       return isManager(
         getThirdPartyCollectionURN(

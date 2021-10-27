@@ -1,6 +1,4 @@
 import { Model, raw, SQL } from 'decentraland-server'
-
-import { Item } from '../Item/Item.model'
 import { CollectionAttributes } from './Collection.types'
 
 export class Collection extends Model<CollectionAttributes> {
@@ -18,22 +16,6 @@ export class Collection extends Model<CollectionAttributes> {
     SELECT *
       FROM ${raw(this.tableName)}
       WHERE id = ANY(${ids})`)
-  }
-
-  static async findByOwnerOfItem(
-    itemId: string
-  ): Promise<CollectionAttributes> {
-    const collections = await this.query<CollectionAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)}
-      WHERE ${raw(this.tableName)}.id IN (SELECT collection_id FROM ${raw(
-      Item.tableName
-    )}) WHERE ${raw(Item.tableName)}.id = ${itemId}) LIMIT 1`)
-
-    if (collections.length === 0) {
-      throw new Error('Collection not found')
-    }
-    return collections[0]
   }
 
   /**

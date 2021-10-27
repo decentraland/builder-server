@@ -3,8 +3,8 @@ import { isPublished } from '../utils/eth'
 import { isManager as isTPWManger } from '../ethereum/api/tpw'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
-import { CollectionAttributes, FullCollection } from './Collection.types'
 import { toDBCollection } from './utils'
+import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 
 export class CollectionLockedException extends Error {
@@ -113,6 +113,7 @@ export class CollectionService {
     }
 
     const attributes = toDBCollection(collectionJSON)
+
     // Should we do something with the salt and the contract address? There's no need to have them
     return new Collection(attributes).upsert()
   }

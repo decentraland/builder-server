@@ -3,7 +3,7 @@ import { isPublished } from '../utils/eth'
 import { isManager as isTPWManger } from '../ethereum/api/tpw'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
-import { toDBCollection, decodeTPCollectionURN } from './utils'
+import { toDBCollection } from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 
@@ -112,10 +112,8 @@ export class CollectionService {
       }
     }
 
-    const attributes = toDBCollection({
-      ...collectionJSON,
-      third_party_id: decodeTPCollectionURN(collectionJSON.urn).third_party_id,
-    })
+    const attributes = toDBCollection(collectionJSON)
+
     // Should we do something with the salt and the contract address? There's no need to have them
     return new Collection(attributes).upsert()
   }

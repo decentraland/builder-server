@@ -22,8 +22,8 @@ async function run() {
     const catalystItems = await getCatalystItems(remoteItems)
     const consolidated = await consolidate(dbItems, remoteItems, catalystItems)
 
-    const catalystItemsByUrn = catalystItems.reduce((acc, next) => {
-      acc[next.id] = next
+    const catalystItemsByUrn = catalystItems.reduce((acc, item) => {
+      acc[item.id] = item
       return acc
     }, {} as Record<string, Wearable>)
 
@@ -199,10 +199,10 @@ async function fetchBuffersByHash(contents: Record<string, string>) {
 
   console.log('Content: Fetched #', hashAndBufferTuples.length)
 
-  return hashAndBufferTuples.reduce(
-    (acc, [hash, buffer]) => ({ ...acc, [hash]: buffer }),
-    {} as Record<string, any>
-  )
+  return hashAndBufferTuples.reduce((acc, [hash, buffer]) => {
+    acc[hash] = buffer
+    return acc
+  }, {} as Record<string, any>)
 }
 
 run()

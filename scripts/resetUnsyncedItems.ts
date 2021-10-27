@@ -39,9 +39,9 @@ async function run() {
       return
     }
 
-    const differentIds = differentItems.map((item) => item.id)
+    const differentItemsIds = differentItems.map((item) => item.id)
 
-    console.log('Different Items:', differentIds)
+    console.log('Different Items:', differentItemsIds)
 
     const shouldProceed = await askForConfirmation()
 

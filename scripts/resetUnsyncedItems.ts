@@ -20,7 +20,11 @@ async function run() {
     const dbItems = await getDbItems()
     const remoteItems = await getRemoteItems()
     const catalystItems = await getCatalystItems(remoteItems)
-    const consolidatedItems = await consolidate(dbItems, remoteItems, catalystItems)
+    const consolidatedItems = await consolidate(
+      dbItems,
+      remoteItems,
+      catalystItems
+    )
 
     const catalystItemsByUrn = catalystItems.reduce((acc, item) => {
       acc[item.id] = item
@@ -41,6 +45,7 @@ async function run() {
 
     const differentItemsIds = differentItems.map((item) => item.id)
 
+    console.log('Different Items #', differentItemsIds.length)
     console.log('Different Items:', differentItemsIds)
 
     const shouldProceed = await askForConfirmation()
@@ -49,9 +54,8 @@ async function run() {
       return
     }
 
-    for (const item of differentItems) {
-      await resetItem(item, catalystItemsByUrn[item.urn!])
-    }
+    const failed = await resetItems(differentItems, catalystItemsByUrn)
+    await resetItems(failed, catalystItemsByUrn)
 
     console.log('Different items were reset successfuly!')
   } catch (e) {
@@ -114,23 +118,24 @@ function isDifferent(item: FullItem, catalystItem: Wearable) {
   const hasMetadataChanged =
     item.name !== catalystItem.name ||
     item.description !== catalystItem.description ||
-    item.data.category !== catalystItem.data.category ||
-    item.data.hides.toString() !== catalystItem.data.hides.toString() ||
-    item.data.replaces.toString() !== catalystItem.data.replaces.toString() ||
-    item.data.tags.toString() !== catalystItem.data.tags.toString()
+    !areEqualObjects(item.data, catalystItem.data)
 
   if (hasMetadataChanged) {
     return true
   }
 
-  for (const path in item.contents) {
-    const hash = item.contents[path]
-    if (catalystItem.contents[path] !== hash) {
-      return true
-    }
+  if (!areEqualObjects(item.contents, catalystItem.contents)) {
+    return true
   }
 
   return false
+}
+
+function areEqualObjects(objA: any, objB: any) {
+  return (
+    JSON.stringify(objA, Object.keys(objA).sort()) ===
+    JSON.stringify(objB, Object.keys(objB).sort())
+  )
 }
 
 function askForConfirmation() {
@@ -148,6 +153,28 @@ function askForConfirmation() {
       }
     )
   })
+}
+
+async function resetItems(
+  items: FullItem[],
+  catalystItemsByUrn: Record<string, Wearable>
+) {
+  let count = 1
+  const failed = []
+
+  for (const item of items) {
+    console.log(`Reseting ${count}/${items.length}`)
+    try {
+      await resetItem(item, catalystItemsByUrn[item.urn!])
+    } catch (e) {
+      console.log('Failed to reset:', item.id)
+      console.error(e)
+      failed.push(item)
+    }
+    count++
+  }
+
+  return failed
 }
 
 async function resetItem(item: FullItem, catalystItem: Wearable) {

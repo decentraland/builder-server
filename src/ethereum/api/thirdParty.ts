@@ -16,18 +16,29 @@ import {
 
 export const THIRD_PARTY_URL = env.get('THIRD_PARTY_GRAPH_URL', '')
 
-const getThirdPartiesQuery = (manager: string = '') => gql`
-  query getThirdParties(${PAGINATION_VARIABLES}) {
-    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: ["${manager}"], isApproved: true }) {
+const getThirdPartiesQuery = () => gql`
+  query getThirdParties(${PAGINATION_VARIABLES}, $managers: [String!]) {
+    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: $managers, isApproved: true }) {
       ...thirdPartyFragment
     }
   }
   ${thirdPartyFragment()}
 `
 
-const getThirdPartyQuery = (urn: string, manager: string) => gql`
-  query getThirdPartyQuery {
-    thirdParties(first: 1, where: { id: "${urn}", managers_contains: ["${manager}"], isApproved: true }) {
+const getThirdPartyIdsQuery = () => gql`
+  query getThirdPartyIds(${PAGINATION_VARIABLES}, $managers: [String!]) {
+    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: $managers, isApproved: true }) {
+      id
+    }
+  }
+`
+
+const getThirdPartyQuery = () => gql`
+  query getThirdParty($urn: String!, $managers: [String!]) {
+    thirdParties(
+      first: 1
+      where: { id: $urn, managers_contains: $managers, isApproved: true }
+    ) {
       ...thirdPartyFragment
     }
   }
@@ -57,7 +68,8 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     manager: string = ''
   ): Promise<ThirdPartyFragment[]> => {
     return this.paginate(['thirdParties'], {
-      query: getThirdPartiesQuery(manager),
+      query: getThirdPartiesQuery(),
+      variables: { managers: [manager.toLowerCase()] },
     })
   }
 
@@ -71,14 +83,25 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
   }
 
+  fetchThirdPartyIds = async (manager: string = ''): Promise<string[]> => {
+    const thirdParties = await this.paginate<{ id: string }, 'thirdParties'>(
+      ['thirdParties'],
+      {
+        query: getThirdPartyIdsQuery(),
+        variables: { managers: [manager.toLowerCase()] },
+      }
+    )
+    return thirdParties.map((thirdParty) => thirdParty.id)
+  }
+
   isManager = async (urn: string, manager: string): Promise<boolean> => {
     const {
       data: { thirdParties = [] },
     } = await this.query<{
       thirdParties: ThirdPartyFragment[]
     }>({
-      query: getThirdPartyQuery(urn, manager),
-      variables: { urn, manager: manager.toLowerCase() },
+      query: getThirdPartyQuery(),
+      variables: { urn, managers: [manager.toLowerCase()] },
     })
     return thirdParties.length > 0
   }

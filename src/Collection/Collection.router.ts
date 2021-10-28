@@ -176,7 +176,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getAddressCollections(req: AuthRequest) {
+  getAddressCollections = async (req: AuthRequest) => {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -188,9 +188,14 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [dbCollections, remoteCollections] = await Promise.all([
+    const [
+      dbCollections,
+      remoteCollections,
+      tpwCollections,
+    ] = await Promise.all([
       Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
+      this.service.getDbTPWCollections(eth_address),
     ])
 
     const consolidatedCollections = await Bridge.consolidateCollections(
@@ -199,9 +204,7 @@ export class CollectionRouter extends Router {
     )
 
     // Build the full collection
-    return consolidatedCollections.map((collection) =>
-      toFullCollection(collection)
-    )
+    return consolidatedCollections.concat(tpwCollections).map(toFullCollection)
   }
 
   async getCollection(req: AuthRequest): Promise<FullCollection> {

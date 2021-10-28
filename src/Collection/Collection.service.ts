@@ -309,6 +309,13 @@ export class CollectionService {
       return true
     }
 
-    return await thirdPartyAPI.isManager(urn, address)
+    return thirdPartyAPI.isManager(urn, address)
+  }
+
+  async getDbTPWCollections(address: string): Promise<CollectionAttributes[]> {
+    const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(address)
+    return thirdPartyIds.length > 0
+      ? Collection.findByThirdPartyIds(thirdPartyIds)
+      : []
   }
 }

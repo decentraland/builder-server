@@ -742,12 +742,25 @@ describe('Collection router', () => {
   })
 
   describe('when retrieving the collections of an address', () => {
+    let thirdPartyDbCollection: CollectionAttributes
+
     beforeEach(() => {
+      thirdPartyDbCollection = {
+        ...collectionAttributesMock,
+        urn_suffix: 'thesuffix',
+        third_party_id: 'some:third-party-id',
+      }
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
+      ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
+        thirdPartyDbCollection,
+      ])
       ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock).mockReturnValueOnce(
         []
       )
+      ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([
+        { id: thirdPartyDbCollection.id },
+      ])
       url = `/${wallet.address}/collections`
     })
 
@@ -762,6 +775,10 @@ describe('Collection router', () => {
               {
                 ...resultingCollectionAttributes,
                 urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
+              },
+              {
+                ...toResultCollection(thirdPartyDbCollection),
+                urn: `urn:decentraland:ropsten:collections-thirdparty:${thirdPartyDbCollection.third_party_id}:${thirdPartyDbCollection.urn_suffix}`,
               },
             ],
             ok: true,

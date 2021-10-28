@@ -55,9 +55,19 @@ async function run() {
     }
 
     const failed = await resetItems(differentItems, catalystItemsByUrn)
-    await resetItems(failed, catalystItemsByUrn)
 
-    console.log('Different items were reset successfuly!')
+    if (failed.length > 0) {
+      console.log(
+        'These items could not be reset:',
+        failed.map((item) => item.id)
+      )
+    }
+
+    console.log(
+      `Reset complete for ${differentItems.length - failed.length} / ${
+        differentItems.length
+      }`
+    )
   } catch (e) {
     console.error(e)
   } finally {
@@ -157,13 +167,19 @@ function askForConfirmation() {
 
 async function resetItems(
   items: FullItem[],
-  catalystItemsByUrn: Record<string, Wearable>
-) {
-  let count = 1
-  const failed = []
+  catalystItemsByUrn: Record<string, Wearable>,
+  retries: number = 3,
+  current: number = 1
+): Promise<FullItem[]> {
+  if (items.length === 0 || current > retries) {
+    return items
+  }
+
+  let i = 1
+  const failed: FullItem[] = []
 
   for (const item of items) {
-    console.log(`Reseting ${count}/${items.length}`)
+    console.log(`Reseting ${i}/${items.length}`)
     try {
       await resetItem(item, catalystItemsByUrn[item.urn!])
     } catch (e) {
@@ -171,10 +187,10 @@ async function resetItems(
       console.error(e)
       failed.push(item)
     }
-    count++
+    i++
   }
 
-  return failed
+  return resetItems(failed, catalystItemsByUrn, retries, current + 1)
 }
 
 async function resetItem(item: FullItem, catalystItem: Wearable) {

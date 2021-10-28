@@ -367,17 +367,6 @@ export class CollectionRouter extends Router {
 
     const eth_address = req.auth.ethAddress
 
-    const validate = validator.compile(collectionSchema)
-    validate(collectionJSON)
-
-    if (validate.errors) {
-      throw new HTTPError(
-        'Invalid schema',
-        validate.errors,
-        STATUS_CODES.badRequest
-      )
-    }
-
     if (id !== collectionJSON.id) {
       throw new HTTPError(
         'The body and URL collection ids do not match',

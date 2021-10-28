@@ -22,6 +22,9 @@ export type CollectionAttributes = {
   updated_at: Date
 }
 
-export type FullCollection = Omit<CollectionAttributes, 'urn_suffix'> & {
+export type FullCollection = Omit<
+  CollectionAttributes,
+  'urn_suffix' | 'third_party_id'
+> & {
   urn: string
 }

@@ -5,7 +5,11 @@ import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item/Item.model'
 import { isManager } from '../ethereum/api/tpw'
-import { getThirdPartyCollectionURN, toDBCollection } from './utils'
+import {
+  decodeTPCollectionURN,
+  getThirdPartyCollectionURN,
+  toDBCollection,
+} from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 
@@ -126,7 +130,40 @@ export class CollectionService {
     }
 
     const collection = await Collection.findOne<CollectionAttributes>(id)
+
     if (collection) {
+      if (
+        collection.third_party_id === null ||
+        collection.urn_suffix === null
+      ) {
+        throw new WrongCollectionException(
+          "The collection can't be converted into a third party collection.",
+          { id }
+        )
+      }
+
+      const { third_party_id, urn_suffix } = decodeTPCollectionURN(
+        collectionJSON.urn
+      )
+
+      if (
+        third_party_id !== collection.third_party_id ||
+        urn_suffix !== collection.urn_suffix
+      ) {
+        const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
+          collection.third_party_id!,
+          collection.urn_suffix!
+        )
+        // We can't change the TPW collection's URN if there are already published items
+        if (collectionItems.length > 0) {
+          throw new CollectionAlreadyPublishedException(
+            id,
+            CollectionType.THIRD_PARTY,
+            'updated'
+          )
+        }
+      }
+
       if (this.isLockActive(collection.lock)) {
         throw new CollectionLockedException(id, 'saved')
       }

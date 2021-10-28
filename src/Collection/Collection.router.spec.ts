@@ -17,15 +17,12 @@ import {
   toResultCollection,
 } from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
-import { isManager } from '../ethereum/api/tpw'
 import { collectionAPI } from '../ethereum/api/collection'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
-import { Collection } from './Collection.model'
 import { CollectionFragment } from '../ethereum/api/fragments'
 import { Item } from '../Item/Item.model'
 import { hasAccess } from './access'
-import { CollectionAttributes, FullCollection } from './Collection.types'
 import { toDBCollection, toFullCollection } from './utils'
 import {
   convertItemDatesToISO,
@@ -36,17 +33,19 @@ import { ItemAttributes } from '../Item'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
+import { Collection } from './Collection.model'
+import { CollectionAttributes, FullCollection } from './Collection.types'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
-jest.mock('../ethereum/api/tpw')
-jest.mock('./Collection.model')
-jest.mock('../Committee')
-jest.mock('../Item/Item.model')
-jest.mock('../utils/eth')
 jest.mock('../ethereum/api/thirdParty')
 jest.mock('../Item/Item.model')
+jest.mock('../Committee')
+jest.mock('../Ownable')
+jest.mock('../utils/eth')
+jest.mock('./Collection.model')
 jest.mock('./access')
 
 describe('Collection router', () => {
@@ -176,8 +175,8 @@ describe('Collection router', () => {
 
       describe("and the upserted collection wasn't a third party collection before", () => {
         beforeEach(() => {
-          ;(isManager as jest.MockedFunction<
-            typeof isManager
+          ;(thirdPartyAPI.isManager as jest.MockedFunction<
+            typeof thirdPartyAPI.isManager
           >).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
@@ -212,8 +211,8 @@ describe('Collection router', () => {
             urn_suffix: 'old-urn-suffix',
             third_party_id,
           }
-          ;(isManager as jest.MockedFunction<
-            typeof isManager
+          ;(thirdPartyAPI.isManager as jest.MockedFunction<
+            typeof thirdPartyAPI.isManager
           >).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
@@ -281,7 +280,9 @@ describe('Collection router', () => {
 
       describe('and the collection exists and is locked', () => {
         beforeEach(() => {
-          ;(isManager as jest.Mock).mockReturnValueOnce(true)
+          ;(thirdPartyAPI.isManager as jest.MockedFunction<
+            typeof thirdPartyAPI.isManager
+          >).mockResolvedValueOnce(true)
           const currentDate = Date.now()
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
@@ -323,7 +324,9 @@ describe('Collection router', () => {
         let newCollectionAttributes: CollectionAttributes
         beforeEach(() => {
           upsertMock = jest.fn()
-          ;(isManager as jest.Mock).mockReturnValueOnce(true)
+          ;(thirdPartyAPI.isManager as jest.MockedFunction<
+            typeof thirdPartyAPI.isManager
+          >).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )

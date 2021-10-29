@@ -9,6 +9,9 @@ import { ItemFragment } from '../src/ethereum/api/fragments'
 import { toDBItem } from '../src/Item/utils'
 import { ACL, S3Content } from '../src/S3'
 
+const RESET_IN_PARALLEL = 5
+const FAILURE_RETRIES = 3
+
 async function run() {
   console.log('DB: Connecting...')
 
@@ -168,29 +171,47 @@ function askForConfirmation() {
 async function resetItems(
   items: FullItem[],
   catalystItemsByUrn: Record<string, Wearable>,
-  retries: number = 3,
+  parallel: number = RESET_IN_PARALLEL,
+  retries: number = FAILURE_RETRIES,
   current: number = 1
 ): Promise<FullItem[]> {
   if (items.length === 0 || current > retries) {
     return items
   }
 
-  let i = 1
+  let batchCount = 1
+  let itemCount = 1
   const failed: FullItem[] = []
 
-  for (const item of items) {
-    console.log(`Reseting ${i}/${items.length}`)
-    try {
-      await resetItem(item, catalystItemsByUrn[item.urn!])
-    } catch (e) {
-      console.log('Failed to reset:', item.id)
-      console.error(e)
-      failed.push(item)
+  const batches: FullItem[][] = []
+
+  items.forEach((item, index) => {
+    if (index % parallel === 0) {
+      batches.push([])
     }
-    i++
+    batches[batches.length - 1].push(item)
+  })
+
+  for (const batch of batches) {
+    console.log(`Reseting batch ${batchCount}/${batches.length}`)
+
+    await Promise.all(
+      batch.map(async (item) => {
+        try {
+          console.log(`Reseting item ${itemCount++}/${items.length}`)
+          await resetItem(item, catalystItemsByUrn[item.urn!])
+        } catch (e) {
+          console.log('Failed to reset:', item.id)
+          console.error(e)
+          failed.push(item)
+        }
+      })
+    )
+
+    batchCount++
   }
 
-  return resetItems(failed, catalystItemsByUrn, retries, current + 1)
+  return resetItems(failed, catalystItemsByUrn, parallel, retries, current + 1)
 }
 
 async function resetItem(item: FullItem, catalystItem: Wearable) {
@@ -213,9 +234,7 @@ async function resetItem(item: FullItem, catalystItem: Wearable) {
     const s3Content = new S3Content()
     const exists = await s3Content.checkFile(hash)
 
-    if (exists) {
-      console.log('Content already exists')
-    } else {
+    if (!exists) {
       await new S3Content().saveFile(hash, buffer, ACL.publicRead)
     }
   }

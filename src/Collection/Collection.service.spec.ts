@@ -143,11 +143,11 @@ describe('Collection service', () => {
         ])
       })
 
-      it('should the db collection with the added owner', async () => {
+      it('should the db collection with the added eth_address', async () => {
         expect(await service.getDbTPWCollections(wallet.address)).toEqual([
           {
             ...thirdPartyDbCollection,
-            owner: wallet.address,
+            eth_address: wallet.address,
           },
         ])
         expect(Collection.findByThirdPartyIds).toHaveBeenCalledWith([

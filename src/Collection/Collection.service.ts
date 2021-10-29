@@ -323,7 +323,7 @@ export class CollectionService {
     )
     return dbThridPartyCollections.map((collection) => ({
       ...collection,
-      owner: address,
+      eth_address: address,
     }))
   }
 }

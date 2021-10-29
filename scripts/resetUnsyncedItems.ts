@@ -11,7 +11,7 @@ import { ACL, S3Content } from '../src/S3'
 
 const RESET_IN_PARALLEL = 5
 const FAILURE_RETRIES = 3
-//const ITEM_ID_SET = new Set([])
+// const ITEM_ID_SET = new Set<string>([])
 
 async function run() {
   console.log('DB: Connecting...')
@@ -29,7 +29,6 @@ async function run() {
       remoteItems,
       catalystItems
     )
-    //.then((items) => items.filter((item) => ITEM_ID_SET.has(item.id)))
 
     const catalystItemsByUrn = catalystItems.reduce((acc, item) => {
       acc[item.id] = item
@@ -40,6 +39,7 @@ async function run() {
       (item) =>
         item.urn &&
         catalystItemsByUrn[item.urn] &&
+        // ITEM_ID_SET.has(item.id)
         isDifferent(item, catalystItemsByUrn[item.urn])
     )
 

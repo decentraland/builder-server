@@ -1,9 +1,6 @@
 // DCL: urn:decentraland:{network}:collections-v2:{contract-address}
 // TPW: urn:decentraland:{network}:collections-thirdparty:{third-party-name}:{collection-id}(:{item-id})?
 
-// urn:decentraland:ropsten:collections-thirdparty:thirdparty-id:collection-id
-// ^(urn:decentraland:(mainnet|ropsten|matic|mumbai):collections-thirdparty:[^:|\\s]+):([^:|\\s]+)$
-
 const network = '(mainnet|ropsten|matic|mumbai)'
 const address = '0x[a-fA-F0-9]{40}'
 const urnSlot = '[^:|\\s]+'

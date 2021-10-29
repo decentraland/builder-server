@@ -1,5 +1,9 @@
 import { env } from 'decentraland-commons'
+import { collectionAttributesMock } from '../../spec/mocks/collections'
+import { wallet } from '../../spec/utils'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { Collection } from './Collection.model'
+import { CollectionAttributes } from './Collection.types'
 import { CollectionService } from './Collection.service'
 
 jest.mock('../ethereum/api/thirdParty')
@@ -105,6 +109,50 @@ describe('Collection service', () => {
           expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
           expect(env.get).toHaveBeenCalledWith('TPW_MANAGER_ADDRESSES', '')
         })
+      })
+    })
+  })
+
+  describe('when getting the database TPW collections', () => {
+    const service = new CollectionService()
+
+    describe('when the graph has no third party records', () => {
+      beforeEach(() => {
+        ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([])
+      })
+
+      it('should return an empty array', async () => {
+        expect(await service.getDbTPWCollections(wallet.address)).toEqual([])
+      })
+    })
+
+    describe('when the graph third party records', () => {
+      let thirdPartyDbCollection: CollectionAttributes
+
+      beforeEach(() => {
+        thirdPartyDbCollection = {
+          ...collectionAttributesMock,
+          urn_suffix: 'thesuffix',
+          third_party_id: 'some:third-party-id',
+        }
+        ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([
+          thirdPartyDbCollection.id,
+        ])
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
+          thirdPartyDbCollection,
+        ])
+      })
+
+      it('should the db collection with the added owner', async () => {
+        expect(await service.getDbTPWCollections(wallet.address)).toEqual([
+          {
+            ...thirdPartyDbCollection,
+            owner: wallet.address,
+          },
+        ])
+        expect(Collection.findByThirdPartyIds).toHaveBeenCalledWith([
+          thirdPartyDbCollection.id,
+        ])
       })
     })
   })

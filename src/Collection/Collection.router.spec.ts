@@ -778,6 +778,7 @@ describe('Collection router', () => {
               },
               {
                 ...toResultCollection(thirdPartyDbCollection),
+                owner: wallet.address,
                 urn: `urn:decentraland:ropsten:collections-thirdparty:${thirdPartyDbCollection.third_party_id}:${thirdPartyDbCollection.urn_suffix}`,
               },
             ],

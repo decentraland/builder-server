@@ -314,8 +314,16 @@ export class CollectionService {
 
   async getDbTPWCollections(address: string): Promise<CollectionAttributes[]> {
     const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(address)
-    return thirdPartyIds.length > 0
-      ? Collection.findByThirdPartyIds(thirdPartyIds)
-      : []
+    if (thirdPartyIds.length <= 0) {
+      return []
+    }
+
+    const dbThridPartyCollections = await Collection.findByThirdPartyIds(
+      thirdPartyIds
+    )
+    return dbThridPartyCollections.map((collection) => ({
+      ...collection,
+      owner: address,
+    }))
   }
 }

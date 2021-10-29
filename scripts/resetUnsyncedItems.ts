@@ -11,6 +11,7 @@ import { ACL, S3Content } from '../src/S3'
 
 const RESET_IN_PARALLEL = 5
 const FAILURE_RETRIES = 3
+//const ITEM_ID_SET = new Set([])
 
 async function run() {
   console.log('DB: Connecting...')
@@ -28,6 +29,7 @@ async function run() {
       remoteItems,
       catalystItems
     )
+    //.then((items) => items.filter((item) => ITEM_ID_SET.has(item.id)))
 
     const catalystItemsByUrn = catalystItems.reduce((acc, item) => {
       acc[item.id] = item
@@ -49,7 +51,7 @@ async function run() {
     const differentItemsIds = differentItems.map((item) => item.id)
 
     console.log('Different Items #', differentItemsIds.length)
-    console.log('Different Items:', differentItemsIds)
+    console.log('Different Items:', JSON.stringify(differentItemsIds))
 
     const shouldProceed = await askForConfirmation()
 
@@ -62,7 +64,7 @@ async function run() {
     if (failed.length > 0) {
       console.log(
         'These items could not be reset:',
-        failed.map((item) => item.id)
+        JSON.stringify(failed.map((item) => item.id))
       )
     }
 
@@ -199,7 +201,7 @@ async function resetItems(
   })
 
   for (const batch of batches) {
-    console.log(`Reseting batch ${batchCount}/${batches.length}`)
+    console.log(`Reseting batch ${batchCount++}/${batches.length}`)
 
     await Promise.all(
       batch.map(async (item) => {
@@ -216,61 +218,54 @@ async function resetItems(
 
     if (sigintReceived) {
       console.log('Exiting Safely...')
+      console.log(
+        'Remaining and failed item ids',
+        JSON.stringify([
+          ...failed.map((item) => item.id),
+          ...items.slice(itemCount - 1).map((item) => item.id),
+        ])
+      )
       process.exit(1)
     }
-
-    batchCount++
   }
 
   return resetItems(failed, catalystItemsByUrn, parallel, retries, current + 1)
 }
 
 async function resetItem(item: FullItem, catalystItem: Wearable) {
-  console.log('Item: Resetting...', item.id)
+  console.log('Resetting item', item.id)
 
   const { name, description, contents, data } = catalystItem
   const buffersByHash = await getBuffersByHash(contents)
   const replaceItem = { ...item, name, description, contents, data }
 
-  console.log('Item: Updating...')
+  await Promise.all(
+    Object.entries(buffersByHash).map(async ([hash, buffer]) => {
+      const s3Content = new S3Content()
+      const exists = await s3Content.checkFile(hash)
+
+      if (!exists) {
+        await new S3Content().saveFile(hash, buffer, ACL.publicRead)
+      }
+    })
+  )
 
   await new Item(toDBItem(replaceItem)).upsert()
 
-  console.log('Item: Updated', item.id)
-
-  console.log('Content: Uploading...')
-
-  for (const hash in buffersByHash) {
-    const buffer = buffersByHash[hash]
-    const s3Content = new S3Content()
-    const exists = await s3Content.checkFile(hash)
-
-    if (!exists) {
-      await new S3Content().saveFile(hash, buffer, ACL.publicRead)
-    }
-  }
-
-  console.log('Content: Uploaded')
-
-  console.log('Item: Reset', item.id)
+  console.log('Item reset successfuly', item.id)
 }
 
 async function getBuffersByHash(contents: Record<string, string>) {
   const hashes = Array.from(new Set(Object.values(contents)).values())
 
-  console.log('Content: Fetching...')
-
   const hashAndBufferTuples = await Promise.all(
-    hashes.map(async (hash) => [
-      hash,
-      await fetch(PEER_URL + '/content/contents/' + hash).then((res) =>
-        //@ts-ignore
-        res.buffer()
-      ),
-    ])
+    hashes.map(async (hash) => {
+      const res = await fetch(PEER_URL + '/content/contents/' + hash)
+      //@ts-ignore
+      const buffer = await res.buffer()
+      return [hash, buffer]
+    })
   )
-
-  console.log('Content: Fetched #', hashAndBufferTuples.length)
 
   return hashAndBufferTuples.reduce((acc, [hash, buffer]) => {
     acc[hash] = buffer

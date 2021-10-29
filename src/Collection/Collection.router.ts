@@ -27,11 +27,7 @@ import {
   UnauthorizedCollectionEditException,
 } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import {
-  collectionSchema,
-  upsertCollectionSchema,
-  saveTOSSchema,
-} from './Collection.schema'
+import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollection } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'

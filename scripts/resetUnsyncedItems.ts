@@ -193,12 +193,12 @@ async function resetItems(
   const failed: FullItem[] = []
   const batches: FullItem[][] = []
 
-  items.forEach((item, index) => {
+  for (const [index, item] of items.entries()) {
     if (index % parallel === 0) {
       batches.push([])
     }
     batches[batches.length - 1].push(item)
-  })
+  }
 
   for (const batch of batches) {
     console.log(`Reseting batch ${batchCount++}/${batches.length}`)

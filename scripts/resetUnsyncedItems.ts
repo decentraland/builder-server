@@ -175,14 +175,20 @@ async function resetItems(
   retries: number = FAILURE_RETRIES,
   current: number = 1
 ): Promise<FullItem[]> {
+  let sigintReceived = false
+
+  process.on('SIGINT', () => {
+    sigintReceived = true
+  })
+
   if (items.length === 0 || current > retries) {
     return items
   }
 
   let batchCount = 1
   let itemCount = 1
-  const failed: FullItem[] = []
 
+  const failed: FullItem[] = []
   const batches: FullItem[][] = []
 
   items.forEach((item, index) => {
@@ -207,6 +213,11 @@ async function resetItems(
         }
       })
     )
+
+    if (sigintReceived) {
+      console.log('Exiting Safely...')
+      process.exit(1)
+    }
 
     batchCount++
   }

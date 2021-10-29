@@ -6,6 +6,7 @@ import {
   mockOwnableCanUpsert,
   mockCollectionAuthorizationMiddleware,
   mockIsCollectionPublished,
+  mockThirdPartyCollectionWithItems,
 } from '../../spec/utils'
 import {
   collectionAttributesMock,
@@ -21,11 +22,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { Collection } from './Collection.model'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import {
-  CollectionFragment,
-  ThirdPartyItemsFragment,
-} from '../ethereum/api/fragments'
+import { CollectionFragment } from '../ethereum/api/fragments'
 import { Item } from '../Item/Item.model'
 import { hasAccess } from './access'
 import { CollectionAttributes, FullCollection } from './Collection.types'
@@ -208,37 +205,77 @@ describe('Collection router', () => {
         })
       })
 
-      describe('and the usperted collection is changing the urn and has items already published', () => {
+      describe('and the usperted collection is changing the urn and it already has items published', () => {
         beforeEach(() => {
+          dbTPCollection = {
+            ...dbTPCollection,
+            urn_suffix: 'old-urn-suffix',
+            third_party_id,
+          }
           ;(isManager as jest.MockedFunction<
             typeof isManager
           >).mockResolvedValueOnce(true)
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
-            ...dbTPCollection,
-            urn_suffix: 'another-urn-suffix',
-            third_party_id: baseThirdPartyId,
-          })
-          ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
-            typeof thirdPartyAPI.fetchThirdPartyCollectionItems
-          >).mockResolvedValueOnce([{} as ThirdPartyItemsFragment])
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
         })
 
-        it('should respond with a 409 and a message signaling that ', () => {
-          return server
-            .put(buildURL(url))
-            .set(createAuthHeaders('put', url))
-            .send({ collection: collectionToUpsert })
-            .expect(409)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                ok: false,
-                data: {
-                  id: dbTPCollection.id,
-                },
-                error:
-                  "The third party collection already has published items. It can't be updated.",
+        describe('and it already has items published', () => {
+          beforeEach(() => {
+            mockThirdPartyCollectionWithItems(
+              dbTPCollection.third_party_id!,
+              dbTPCollection.urn_suffix!,
+              true
+            )
+          })
+
+          it("should respond with a 409 and a message signaling that the collection can't be changed because it's already published", () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({ collection: collectionToUpsert })
+              .expect(409)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: false,
+                  data: {
+                    id: dbTPCollection.id,
+                  },
+                  error:
+                    "The third party collection already has published items. It can't be updated or inserted.",
+                })
               })
-            })
+          })
+        })
+
+        describe("and it doesn't have items already published but the new urn points to a collection that does", () => {
+          beforeEach(() => {
+            mockThirdPartyCollectionWithItems(
+              dbTPCollection.third_party_id!,
+              dbTPCollection.urn_suffix!,
+              false
+            )
+
+            mockThirdPartyCollectionWithItems(third_party_id, urn_suffix!, true)
+          })
+
+          it("should respond with a 409 and a message signaling that the collection can't be changed because it's already published", () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({ collection: collectionToUpsert })
+              .expect(409)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: false,
+                  data: {
+                    id: dbTPCollection.id,
+                  },
+                  error:
+                    "The third party collection already has published items. It can't be updated or inserted.",
+                })
+              })
+          })
         })
       })
 
@@ -317,6 +354,75 @@ describe('Collection router', () => {
                 convertCollectionDatesToISO(toDBCollection(collectionToUpsert))
               )
             })
+        })
+      })
+
+      describe("and the collection doesn't exist", () => {
+        beforeEach(() => {
+          ;(isManager as jest.Mock).mockReturnValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(null)
+        })
+
+        describe('and there are items already published with the collection id', () => {
+          beforeEach(() => {
+            mockThirdPartyCollectionWithItems(third_party_id, urn_suffix, true)
+          })
+
+          it('should respond with a 409 and a message saying that the collection has already been published', () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({ collection: collectionToUpsert })
+              .expect(409)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: false,
+                  data: {
+                    id: dbTPCollection.id,
+                  },
+                  error:
+                    "The third party collection already has published items. It can't be updated or inserted.",
+                })
+              })
+          })
+        })
+
+        describe("and there aren't any items published with the collection id", () => {
+          let upsertMock: jest.Mock
+          let newCollectionAttributes: CollectionAttributes
+          beforeEach(() => {
+            upsertMock = jest.fn()
+            mockThirdPartyCollectionWithItems(third_party_id, urn_suffix, false)
+            ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
+              (attributes) => {
+                newCollectionAttributes = attributes
+                upsertMock.mockResolvedValueOnce(attributes)
+                return {
+                  upsert: upsertMock,
+                }
+              }
+            )
+          })
+
+          it('should respond with a 200, the inserted collection and have upserted the collection with the sent collection', () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({ collection: collectionToUpsert })
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: true,
+                  data: toFullCollection(newCollectionAttributes),
+                })
+
+                expect(newCollectionAttributes).toEqual(
+                  convertCollectionDatesToISO(
+                    toDBCollection(collectionToUpsert)
+                  )
+                )
+              })
+          })
         })
       })
     })
@@ -813,9 +919,11 @@ describe('Collection router', () => {
 
         describe('and it has third party items already published', () => {
           beforeEach(() => {
-            ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
-              typeof thirdPartyAPI.fetchThirdPartyCollectionItems
-            >).mockResolvedValueOnce([{} as ThirdPartyItemsFragment])
+            mockThirdPartyCollectionWithItems(
+              dbCollection.third_party_id!,
+              dbCollection.urn_suffix!,
+              true
+            )
           })
 
           it('should respond with a 409 and a message signaling that the collection has already published items', () => {
@@ -840,9 +948,11 @@ describe('Collection router', () => {
           beforeEach(() => {
             const lockDate = new Date()
             dbCollection.lock = lockDate
-            ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
-              typeof thirdPartyAPI.fetchThirdPartyCollectionItems
-            >).mockResolvedValueOnce([])
+            mockThirdPartyCollectionWithItems(
+              dbCollection.third_party_id!,
+              dbCollection.urn_suffix!,
+              false
+            )
             jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
           })
 
@@ -871,9 +981,11 @@ describe('Collection router', () => {
           beforeEach(() => {
             const lockDate = new Date()
             dbCollection.lock = lockDate
-            ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
-              typeof thirdPartyAPI.fetchThirdPartyCollectionItems
-            >).mockResolvedValueOnce([])
+            mockThirdPartyCollectionWithItems(
+              dbCollection.third_party_id!,
+              dbCollection.urn_suffix!,
+              false
+            )
             jest
               .spyOn(Date, 'now')
               .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)

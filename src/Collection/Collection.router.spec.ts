@@ -41,10 +41,9 @@ const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
 jest.mock('../ethereum/api/thirdParty')
-jest.mock('../Item/Item.model')
 jest.mock('../Committee')
-jest.mock('../Ownable')
 jest.mock('../utils/eth')
+jest.mock('../Item/Item.model')
 jest.mock('./Collection.model')
 jest.mock('./access')
 
@@ -149,8 +148,8 @@ describe('Collection router', () => {
 
       describe('and the user is not a manager of the third party collection', () => {
         beforeEach(() => {
-          ;(isManager as jest.MockedFunction<
-            typeof isManager
+          ;(thirdPartyAPI.isManager as jest.MockedFunction<
+            typeof thirdPartyAPI.isManager
           >).mockResolvedValueOnce(false)
         })
 
@@ -362,7 +361,9 @@ describe('Collection router', () => {
 
       describe("and the collection doesn't exist", () => {
         beforeEach(() => {
-          ;(isManager as jest.Mock).mockReturnValueOnce(true)
+          ;(thirdPartyAPI.isManager as jest.MockedFunction<
+            typeof thirdPartyAPI.isManager
+          >).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(null)
         })
 

@@ -34,7 +34,7 @@ export function toFullCollection(
 ): FullCollection {
   const { third_party_id, urn_suffix, contract_address } = dbCollection
   return {
-    ...utils.omit(dbCollection, ['urn_suffix']),
+    ...utils.omit(dbCollection, ['urn_suffix', 'third_party_id']),
     urn:
       third_party_id && urn_suffix
         ? getThirdPartyCollectionURN(third_party_id, urn_suffix)

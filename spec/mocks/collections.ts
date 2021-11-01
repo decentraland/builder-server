@@ -82,7 +82,7 @@ export function toResultCollection(
       ...convertCollectionDatesToISO(collection),
       urn,
     },
-    ['urn_suffix']
+    ['urn_suffix', 'third_party_id']
   )
 }
 

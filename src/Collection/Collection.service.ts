@@ -69,6 +69,26 @@ export class CollectionService {
     }
   }
 
+  private async checkIfThirdPartyCollectionHasPublishedItems(
+    id: string,
+    thirdPartyId: string,
+    collectionUrnSuffix: string
+  ): Promise<void> {
+    const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
+      thirdPartyId,
+      collectionUrnSuffix
+    )
+
+    // We can't change the TPW collection's URN if there are already published items
+    if (collectionItems.length > 0) {
+      throw new CollectionAlreadyPublishedException(
+        id,
+        CollectionType.THIRD_PARTY,
+        'updated or inserted'
+      )
+    }
+  }
+
   async upsertDCLCollection(
     id: string,
     eth_address: string,
@@ -129,6 +149,10 @@ export class CollectionService {
       throw new UnauthorizedCollectionEditException(id, eth_address)
     }
 
+    const { third_party_id, urn_suffix } = decodeTPCollectionURN(
+      collectionJSON.urn
+    )
+
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection) {
@@ -150,23 +174,31 @@ export class CollectionService {
         third_party_id !== collection.third_party_id ||
         urn_suffix !== collection.urn_suffix
       ) {
-        const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
-          collection.third_party_id!,
-          collection.urn_suffix!
-        )
         // We can't change the TPW collection's URN if there are already published items
-        if (collectionItems.length > 0) {
-          throw new CollectionAlreadyPublishedException(
-            id,
-            CollectionType.THIRD_PARTY,
-            'updated'
-          )
-        }
+        await this.checkIfThirdPartyCollectionHasPublishedItems(
+          id,
+          collection.third_party_id,
+          collection.urn_suffix
+        )
+
+        // Check if the new URN for the collection already exists
+        await this.checkIfThirdPartyCollectionHasPublishedItems(
+          id,
+          third_party_id,
+          urn_suffix
+        )
       }
 
       if (this.isLockActive(collection.lock)) {
         throw new CollectionLockedException(id, 'saved')
       }
+    } else {
+      // Check if the URN for the new collection already exists
+      await this.checkIfThirdPartyCollectionHasPublishedItems(
+        id,
+        third_party_id,
+        urn_suffix
+      )
     }
 
     const attributes = toDBCollection(collectionJSON)

@@ -6,11 +6,13 @@ import { collectionAPI } from '../src/ethereum/api/collection'
 import { isPublished } from '../src/utils/eth'
 import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
 import { Collection } from '../src/Collection/Collection.model'
-import { collectionAttributesMock } from './mocks/collections'
-import { wallet } from './mocks/wallet'
 import { Ownable } from '../src/Ownable/Ownable'
 import { Item } from '../src/Item/Item.model'
+import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
+import { wallet } from './mocks/wallet'
+import { collectionAttributesMock } from './mocks/collections'
 import { dbItemMock } from './mocks/items'
+import { ThirdPartyItemsFragment } from '../src/ethereum/api/fragments'
 
 export function buildURL(
   uri: string,
@@ -247,4 +249,36 @@ export function mockIsCollectionPublished(
   if (isCollectionPublished) {
     ;(isPublished as jest.Mock).mockResolvedValueOnce(isCollectionPublished)
   }
+}
+
+/**
+ * Mocks the "fetchThirdPartyCollectionItems" method of the thirdPartyAPI module.
+ * This mock requires the thirdPartyAPI.fetchThirdPartyCollectionItems method to be mocked first.
+ *
+ * @param thirdPartyId - The third party id to mock the response for.
+ * @param collectionUrnSuffix - The collection urn suffix to mock the response for.
+ * @param hasItems - If the third party collection has items or not.
+ */
+export function mockThirdPartyCollectionWithItems(
+  thirdPartyId: string,
+  collectionUrnSuffix: string,
+  hasItems: boolean
+): void {
+  if (!(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.Mock).mock) {
+    throw new Error(
+      "thirdPartyAPI.fetchThirdPartyCollectionItems should be mocked to mock the fetchThirdPartyCollectionItems method but it isn't"
+    )
+  }
+  ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+    typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+  >).mockImplementationOnce((tpId, collectionURN) => {
+    if (tpId !== thirdPartyId || collectionURN !== collectionUrnSuffix) {
+      return Promise.reject(
+        new Error(
+          `Mock was expected to be called with ${thirdPartyId} and ${collectionUrnSuffix} but was called with ${tpId} and ${collectionURN}`
+        )
+      )
+    }
+    return Promise.resolve(hasItems ? [{} as ThirdPartyItemsFragment] : [])
+  })
 }

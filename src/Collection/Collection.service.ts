@@ -191,11 +191,11 @@ export class CollectionService {
 
   public async deleteCollection(collectionId: string): Promise<void> {
     const collection = await this.getDBCollection(collectionId)
-    if (collection.urn_suffix !== null && collection.third_party_id !== null) {
+    if (this.isDBCollectionThirdParty(collection)) {
       // If it's a TPC we must check if there's an item already published under that collection urn suffix
       const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
-        collection.third_party_id,
-        collection.urn_suffix
+        collection.third_party_id!,
+        collection.urn_suffix!
       )
       if (collectionItems.length > 0) {
         throw new CollectionAlreadyPublishedException(
@@ -229,11 +229,11 @@ export class CollectionService {
     ethAddress: string
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
-    if (collection && collection.third_party_id && collection.urn_suffix) {
+    if (collection && this.isDBCollectionThirdParty(collection)) {
       return isManager(
         getThirdPartyCollectionURN(
-          collection.third_party_id,
-          collection.urn_suffix
+          collection.third_party_id!,
+          collection.urn_suffix!
         ),
         ethAddress
       )
@@ -253,5 +253,9 @@ export class CollectionService {
     }
 
     return collection
+  }
+
+  private isDBCollectionThirdParty(collection: CollectionAttributes): boolean {
+    return !!collection.urn_suffix && !!collection.third_party_id
   }
 }

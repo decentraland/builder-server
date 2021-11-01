@@ -48,7 +48,9 @@ export class GenericModel extends Model<any> {}
 // These methods are sadly order bound, meaning that you'll have to check the router and mock the middlewares in the same order they appear there
 export function mockExistsMiddleware(Table: typeof GenericModel, id: string) {
   if (!(Table.count as jest.Mock).mock) {
-    throw new Error('Table.count is not mocked')
+    throw new Error(
+      "Table.count should be mocked to mock the withModelExists middleware but it isn't"
+    )
   }
   ;(Table.count as jest.Mock).mockImplementationOnce(
     (conditions: QueryPart) => {
@@ -67,11 +69,15 @@ export function mockAuthorizationMiddleware(
   eth_address: string
 ) {
   if (!(Table.count as jest.Mock).mock) {
-    throw new Error('Table.count is not mocked')
+    throw new Error(
+      "Table.count should be mocked to mock the withModelAuthorization middleware but it isn't"
+    )
   }
 
   if ((Ownable.prototype.isOwnedBy as jest.Mock).mock) {
-    throw new Error('Ownable.isOwnedBy is mocked')
+    throw new Error(
+      'Ownable.isOwnedBy should not be mocked to correctly mock the withModelAuthorization middleware but it is'
+    )
   }
 
   ;(Table.count as jest.Mock).mockImplementationOnce(
@@ -108,7 +114,9 @@ export function mockCollectionAuthorizationMiddleware(
     eth_address: ethAddress,
   }
   if (!(Collection.findOne as jest.Mock).mock) {
-    throw new Error('Collection.findOne is not mocked')
+    throw new Error(
+      "Collection.findOne should be mocked to mock the withModelAuthorization middleware but isn't"
+    )
   }
 
   ;(Collection.findOne as jest.Mock).mockImplementationOnce((givenId) =>
@@ -120,7 +128,9 @@ export function mockCollectionAuthorizationMiddleware(
   )
   if (isThirdParty) {
     if (!(isManager as jest.Mock).mock) {
-      throw new Error('isManager is not mocked')
+      throw new Error(
+        "isManager should be mocked to mock the withModelExists middleware but it isn't"
+      )
     }
 
     ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
@@ -187,11 +197,15 @@ export function mockOwnableCanUpsert(
     conditions.eth_address === ethAddress
 
   if ((Ownable.prototype.canUpsert as jest.Mock).mock) {
-    throw new Error('Ownable.canUpsert is mocked')
+    throw new Error(
+      'Ownable.canUpsert should not be mocked to correctly mock the Ownable.canUpsert method internally but it is'
+    )
   }
 
   if (!(Model.count as jest.Mock).mock) {
-    throw new Error('Model.count is not mocked')
+    throw new Error(
+      "Model.count should be mocked to mock the Ownable.canUpsert method but it isn't"
+    )
   }
 
   ;(Model.count as jest.Mock)
@@ -215,11 +229,15 @@ export function mockIsCollectionPublished(
   isCollectionPublished: boolean
 ) {
   if (!(collectionAPI.fetchCollection as jest.Mock).mock) {
-    throw new Error('collectionAPI.fetchCollection is not mocked')
+    throw new Error(
+      "collectionAPI.fetchCollection should be mocked to mock the CollectionService.isPublished method but it isn't"
+    )
   }
 
   if (!(isPublished as jest.Mock).mock) {
-    throw new Error('isPublished is not mocked')
+    throw new Error(
+      "isPublished should be mocked to mock the CollectionService.isPublished method but it isn't"
+    )
   }
 
   ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(

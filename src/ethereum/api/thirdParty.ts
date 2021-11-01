@@ -83,16 +83,10 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     return thirdParties.length > 0
   }
 
-  fetchTiers = async (): Promise<TierFragment[]> => {
-    const {
-      data: { tiers = [] },
-    } = await this.query<{
-      tiers: TierFragment[]
-    }>({
+  fetchTiers = (): Promise<TierFragment[]> => {
+    return this.paginate(['tiers'], {
       query: getTiersQuery(),
     })
-
-    return tiers
   }
 }
 

@@ -8,7 +8,7 @@ export class TiersRouter extends Router {
     /**
      * Get all third party tiers
      */
-    this.router.get('/tiers', server.handleRequest(this.getTiers))
+    this.router.get('/tiers/thirdParty', server.handleRequest(this.getTiers))
   }
 
   getTiers(): Promise<TierFragment[]> {

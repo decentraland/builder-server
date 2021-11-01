@@ -9,7 +9,7 @@ jest.mock('../ethereum/api/thirdParty')
 const server = supertest(app.getApp())
 
 describe('when requesting all tiers', () => {
-  const url = '/tiers'
+  const url = '/tiers/thirdParty'
   const errorMessage = 'Error fetching tiers'
 
   describe('and the tiers fetch fails', () => {

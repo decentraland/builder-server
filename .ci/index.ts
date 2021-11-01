@@ -139,6 +139,13 @@ export = async function main() {
         value:
           '0x1D9aa2025b67f0F21d1603ce521bda7869098f8a,0xeDaE96F7739aF8A7fB16E2a888C1E578E1328299,0xeC6E6c0841a2bA474E92Bf42BaF76bFe80e8657C,0x24e5F44999c151f08609F8e27b2238c773C4D020',
       },
+      {
+        name: 'THIRD_PARTY_GRAPH_URL',
+        value:
+          env === 'prd' || env === 'stg'
+            ? 'http://not-working-url'
+            : 'https://api.thegraph.com/subgraphs/name/decentraland/tpr-matic-mumbai',
+      },
     ],
     hostname,
     {

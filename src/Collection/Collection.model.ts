@@ -1,5 +1,4 @@
 import { Model, raw, SQL } from 'decentraland-server'
-
 import { CollectionAttributes } from './Collection.types'
 
 export class Collection extends Model<CollectionAttributes> {

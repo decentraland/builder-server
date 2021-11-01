@@ -1,21 +1,31 @@
 import { collectionAPI } from '../ethereum/api/collection'
 import { isPublished } from '../utils/eth'
-import { isManager as isTPWManger } from '../ethereum/api/tpw'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
-import { toDBCollection } from './utils'
+import { Item } from '../Item/Item.model'
+import { isManager } from '../ethereum/api/tpw'
+import { getThirdPartyCollectionURN, toDBCollection } from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 
+enum CollectionType {
+  THIRD_PARTY,
+  DCL,
+}
 export class CollectionLockedException extends Error {
-  constructor(public id: string) {
-    super("The collection is locked. It can't be saved.")
+  constructor(public id: string, action: string) {
+    super(`The collection is locked. It can't be ${action}.`)
   }
 }
 
 export class CollectionAlreadyPublishedException extends Error {
-  constructor(public id: string) {
-    super("The collection is published. It can't be saved.")
+  constructor(public id: string, type: CollectionType, action: string) {
+    super(
+      type === CollectionType.DCL
+        ? `The collection is published. It can't be ${action}.`
+        : `The third party collection already has published items. It can't be ${action}.`
+    )
   }
 }
 
@@ -28,6 +38,12 @@ export class WrongCollectionException extends Error {
 export class UnauthorizedCollectionEditException extends Error {
   constructor(public id: string, public eth_address: string) {
     super('Unauthorized to upsert collection')
+  }
+}
+
+export class NonExistentCollectionException extends Error {
+  constructor(public id: string) {
+    super("The collection doesn't exist.")
   }
 }
 
@@ -78,11 +94,15 @@ export class CollectionService {
 
     if (collection && collection.contract_address) {
       if (await this.isPublished(collection.contract_address)) {
-        throw new CollectionAlreadyPublishedException(id)
+        throw new CollectionAlreadyPublishedException(
+          id,
+          CollectionType.DCL,
+          'saved'
+        )
       }
 
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id)
+        throw new CollectionLockedException(id, 'saved')
       }
     }
 
@@ -101,14 +121,14 @@ export class CollectionService {
     eth_address: string,
     collectionJSON: FullCollection
   ) {
-    if (!(await isTPWManger(collectionJSON.urn, eth_address))) {
+    if (!(await isManager(collectionJSON.urn, eth_address))) {
       throw new UnauthorizedCollectionEditException(id, eth_address)
     }
 
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection) {
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id)
+        throw new CollectionLockedException(id, 'saved')
       }
     }
 
@@ -130,5 +150,75 @@ export class CollectionService {
     }
 
     return true
+  }
+
+  public async deleteCollection(collectionId: string): Promise<void> {
+    const collection = await this.getDBCollection(collectionId)
+    if (this.isDBCollectionThirdParty(collection)) {
+      // If it's a TPC we must check if there's an item already published under that collection urn suffix
+      const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
+        collection.third_party_id!,
+        collection.urn_suffix!
+      )
+      if (collectionItems.length > 0) {
+        throw new CollectionAlreadyPublishedException(
+          collection.id,
+          CollectionType.THIRD_PARTY,
+          'deleted'
+        )
+      }
+    } else {
+      // If it's a DCL collection, we must check if it was already published
+      if (await this.isPublished(collection.contract_address!)) {
+        throw new CollectionAlreadyPublishedException(
+          collectionId,
+          CollectionType.DCL,
+          'deleted'
+        )
+      }
+    }
+    if (this.isLockActive(collection.lock)) {
+      throw new CollectionLockedException(collection.id, 'deleted')
+    }
+    await Promise.all([
+      Collection.delete({ id: collection.id }),
+      // TODO: This should eventually be in the item's service
+      Item.delete({ collection_id: collection.id }),
+    ])
+  }
+
+  public async isOwnedOrManagedBy(
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> {
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+    if (collection && this.isDBCollectionThirdParty(collection)) {
+      return isManager(
+        getThirdPartyCollectionURN(
+          collection.third_party_id!,
+          collection.urn_suffix!
+        ),
+        ethAddress
+      )
+    } else if (collection) {
+      return collection.eth_address === ethAddress
+    }
+
+    return false
+  }
+
+  private async getDBCollection(
+    collectionId: string
+  ): Promise<CollectionAttributes> {
+    const collection = await Collection.findOne(collectionId)
+    if (!collection) {
+      throw new NonExistentCollectionException(collectionId)
+    }
+
+    return collection
+  }
+
+  private isDBCollectionThirdParty(collection: CollectionAttributes): boolean {
+    return !!collection.urn_suffix && !!collection.third_party_id
   }
 }

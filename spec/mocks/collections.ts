@@ -4,8 +4,8 @@ import {
   CollectionAttributes,
   FullCollection,
 } from '../../src/Collection/Collection.types'
+import { wallet } from './wallet'
 import { CollectionFragment } from '../../src/ethereum/api/fragments'
-import { wallet } from '../utils'
 
 export const collectionAttributesMock: CollectionAttributes = {
   id: uuidv4(),

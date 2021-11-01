@@ -48,7 +48,9 @@ export class BaseGraphAPI {
       )
       partialResult = []
       for (const key of keys) {
-        partialResult = partialResult.concat(queryResult.data[key])
+        if (queryResult.data[key]) {
+          partialResult = partialResult.concat(queryResult.data[key])
+        }
       }
       pagination = pagination.concat(partialResult)
       queryOptions.variables.skip += MAX_RESULTS

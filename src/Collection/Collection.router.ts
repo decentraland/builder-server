@@ -34,15 +34,28 @@ import {
 } from './Collection.schema'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollection } from './utils'
+import { OwnableModel } from '../Ownable/Ownable.types'
 
 const validator = getValidator()
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
 
+  private modelAuthorizationCheck = (
+    _: OwnableModel,
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> => {
+    return this.service.isOwnedOrManagedBy(id, ethAddress)
+  }
+
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
-    const withCollectionAuthorization = withModelAuthorization(Collection)
+    const withCollectionAuthorization = withModelAuthorization(
+      Collection,
+      'id',
+      this.modelAuthorizationCheck
+    )
     const withLowercasedAddress = withLowercasedParams(['address'])
 
     /**
@@ -425,27 +438,26 @@ export class CollectionRouter extends Router {
   deleteCollection = async (req: AuthRequest): Promise<boolean> => {
     const id = server.extractFromReq(req, 'id')
 
-    const collection = (await Collection.findOne(id)) as CollectionAttributes // existance checked on middleware
-    if (await this.service.isPublished(collection.contract_address!)) {
-      throw new HTTPError(
-        "The collection is published. It can't be deleted",
-        { id },
-        STATUS_CODES.unauthorized
-      )
+    try {
+      await this.service.deleteCollection(id)
+    } catch (error) {
+      if (error instanceof CollectionAlreadyPublishedException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof CollectionLockedException) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.locked
+        )
+      }
+
+      throw error
     }
 
-    if (this.service.isLockActive(collection.lock)) {
-      throw new HTTPError(
-        "The collection is locked. It can't be deleted",
-        { id },
-        STATUS_CODES.locked
-      )
-    }
-
-    await Promise.all([
-      Collection.delete({ id }),
-      Item.delete({ collection_id: id }),
-    ])
     return true
   }
 }

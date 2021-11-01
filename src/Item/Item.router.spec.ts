@@ -2,11 +2,12 @@ import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
 import {
-  wallet,
   createAuthHeaders,
   buildURL,
   mockExistsMiddleware,
-  mockAuthorizationMiddleware,
+  mockOwnableCanUpsert,
+  mockItemAuthorizationMiddleware,
+  mockIsCollectionPublished,
 } from '../../spec/utils'
 import { collectionAttributesMock } from '../../spec/mocks/collections'
 import {
@@ -16,11 +17,10 @@ import {
   ResultItem,
   toResultItem,
 } from '../../spec/mocks/items'
+import { wallet } from '../../spec/mocks/wallet'
 import { isCommitteeMember } from '../Committee'
-import { Ownable } from '../Ownable'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
-import { isPublished } from '../utils/eth'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Item } from './Item.model'
 import { hasAccess } from './access'
@@ -37,7 +37,6 @@ jest.mock('../utils/eth')
 jest.mock('../Collection/Collection.model')
 jest.mock('../Committee')
 jest.mock('./access')
-jest.mock('../Ownable')
 
 function mockItemConsolidation(
   itemsAttributes: ItemAttributes[],
@@ -107,7 +106,6 @@ describe('Item router', () => {
   describe('when getting an item', () => {
     beforeEach(() => {
       mockExistsMiddleware(Item, dbItem.id)
-      mockAuthorizationMiddleware(Item, dbItem.id, wallet.address)
       ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
       ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
       url = `/items/${dbItem.id}`
@@ -312,7 +310,6 @@ describe('Item router', () => {
   })
 
   describe('when upserting an item', () => {
-    const mockOwnable = Ownable as jest.MockedClass<typeof Ownable>
     const mockCollection = Collection as jest.Mocked<typeof Collection>
     const mockPeer = peerAPI as jest.Mocked<typeof peerAPI>
     const mockCollectionApi = collectionAPI as jest.Mocked<typeof collectionAPI>
@@ -323,7 +320,6 @@ describe('Item router', () => {
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
-      mockOwnable.prototype.canUpsert.mockResolvedValue(true)
     })
 
     describe('and the param id is different from payload id', () => {
@@ -371,9 +367,10 @@ describe('Item router', () => {
     })
 
     describe('and the user upserting is not authorized to do so', () => {
+      beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, false)
+      })
       it('should fail with unauthorized user message', async () => {
-        mockOwnable.prototype.canUpsert.mockResolvedValueOnce(false)
-
         const response = await server
           .put(buildURL(url))
           .send({ item: dbItem })
@@ -389,6 +386,10 @@ describe('Item router', () => {
     })
 
     describe('and the collection provided in the payload does not exists in the db', () => {
+      beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+      })
+
       it('should fail with collection not found message', async () => {
         const response = await server
           .put(buildURL(url))
@@ -406,13 +407,15 @@ describe('Item router', () => {
 
     describe('and the collection provided in the payload does not belong to the address making the request', () => {
       const differentEthAddress = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8'
-
-      it('should fail with unauthorized user message', async () => {
+      beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: differentEthAddress,
         })
+      })
 
+      it('should fail with unauthorized user message', async () => {
         const response = await server
           .put(buildURL(url))
           .send({ item: dbItem })
@@ -432,6 +435,10 @@ describe('Item router', () => {
     })
 
     describe('and the collection of the item is being changed', () => {
+      beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+      })
+
       it('should fail with cant change item collection message', async () => {
         mockItem.findOne.mockResolvedValueOnce(dbItem)
         mockCollection.findOne.mockResolvedValueOnce({
@@ -455,6 +462,7 @@ describe('Item router', () => {
 
     describe('when the collection given for the item is locked', () => {
       beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
         mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
@@ -462,8 +470,7 @@ describe('Item router', () => {
           contract_address: Wallet.createRandom().address,
           lock: new Date(),
         })
-        mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
-        ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+        mockIsCollectionPublished(collectionAttributesMock.id, false)
       })
 
       describe('and the item is being changed', () => {
@@ -491,6 +498,7 @@ describe('Item router', () => {
 
     describe('when the collection given for the item is already published', () => {
       beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
         mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
@@ -520,9 +528,11 @@ describe('Item router', () => {
       })
 
       describe('and the item is being removed from the collection', () => {
-        it('should fail with can not remove item from published collection message', async () => {
+        beforeEach(() => {
           mockItem.findOne.mockResolvedValueOnce(dbItem)
+        })
 
+        it('should fail with can not remove item from published collection message', async () => {
           const response = await server
             .put(buildURL(url))
             .send({ item: { ...dbItem, collection_id: null } })
@@ -538,9 +548,11 @@ describe('Item router', () => {
       })
 
       describe("and the item's rarity is being changed", () => {
-        it('should fail with can not update items rarity message', async () => {
+        beforeEach(() => {
           mockItem.findOne.mockResolvedValueOnce(dbItem)
+        })
 
+        it('should fail with can not update items rarity message', async () => {
           const response = await server
             .put(buildURL(url))
             .send({ item: { ...dbItem, rarity: ItemRarity.EPIC } })
@@ -563,6 +575,7 @@ describe('Item router', () => {
 
     describe('and all the conditions for success are given', () => {
       beforeEach(() => {
+        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
         mockPeer.fetchWearables.mockResolvedValueOnce([] as Wearable[])
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
@@ -570,8 +583,7 @@ describe('Item router', () => {
           contract_address: Wallet.createRandom().address,
         })
 
-        mockCollectionApi.fetchCollection.mockResolvedValueOnce(null)
-        ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+        mockIsCollectionPublished(collectionAttributesMock.id, false)
         mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
       })
 
@@ -585,6 +597,95 @@ describe('Item router', () => {
         expect(response.body).toEqual({
           data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
           ok: true,
+        })
+      })
+    })
+  })
+
+  describe('when deleting an item', () => {
+    beforeEach(() => {
+      url = `/items/${dbItem.id}`
+    })
+
+    describe('and the user is not authorized', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Item, dbItem.id)
+        mockItemAuthorizationMiddleware(dbItem.id, wallet.address, false, false)
+      })
+
+      it('should respond with a 401 and a message signaling that the user is not authorized', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(401)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              error: `Unauthorized user ${wallet.address} for items ${dbItem.id}`,
+              data: { ethAddress: wallet.address, tableName: Item.tableName },
+              ok: false,
+            })
+          })
+      })
+    })
+
+    describe("and the item doesn't have a collection", () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Item, dbItem.id)
+        mockItemAuthorizationMiddleware(dbItem.id, wallet.address, false, true)
+        ;(Item.findOne as jest.MockedFunction<
+          typeof Item.findOne
+        >).mockResolvedValueOnce({ ...dbItem, collection_id: null })
+      })
+
+      it('should respond with a 200 and delete the item', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: true,
+              ok: true,
+            })
+
+            expect(Item.delete).toHaveBeenCalledWith({ id: dbItem.id })
+          })
+      })
+    })
+
+    describe('and the item has a collection', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Item, dbItem.id)
+        mockItemAuthorizationMiddleware(dbItem.id, wallet.address, false, true)
+        ;(Item.findOne as jest.MockedFunction<
+          typeof Item.findOne
+        >).mockResolvedValueOnce(dbItem)
+        ;(Collection.findOne as jest.MockedFunction<
+          typeof Collection.findOne
+        >).mockResolvedValueOnce(collectionAttributesMock)
+      })
+
+      describe('and its collection is already published', () => {
+        beforeEach(() => {
+          mockIsCollectionPublished(collectionAttributesMock.id, true)
+        })
+
+        it('should respond with a 401 and a message signaling that the item is already published', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error: "The item was published. It can't be deleted",
+                data: {
+                  id: dbItem.id,
+                  blockchain_item_id: dbItem.blockchain_item_id,
+                  contract_address: collectionAttributesMock.contract_address,
+                },
+                ok: false,
+              })
+            })
         })
       })
     })

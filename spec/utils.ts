@@ -1,41 +1,16 @@
-import { Authenticator, AuthIdentity, AuthLinkType } from 'dcl-crypto'
+import { Authenticator, AuthIdentity } from 'dcl-crypto'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
+import { isManager } from '../src/ethereum/api/tpw'
+import { collectionAPI } from '../src/ethereum/api/collection'
+import { isPublished } from '../src/utils/eth'
 import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
-
-export type Wallet = {
-  address: string
-  identity: AuthIdentity
-}
-
-// Mock wallet with a valid identity that lasts until 2026. Useful for making authorized requests to the server
-export const wallet: Wallet = {
-  address: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
-  identity: {
-    ephemeralIdentity: {
-      address: '0x00d1244305653Be915D066d39d4c6b54808e59a9',
-      publicKey:
-        '0x043e17ed6a1e1ea903660fb0be36f841c808aff2a595f9b3e3a3caaf970dbb197bd91e414a945ebd27beb478ab85c361127d2e807d014626035881348ccaf69281',
-      privateKey:
-        '0x91ee230307805931ac133b16a3eae41eeb404c8e16436ade9ea07d736217f8fb',
-    },
-    expiration: new Date('2026-11-01T19:27:26.452Z'),
-    authChain: [
-      {
-        type: AuthLinkType.SIGNER,
-        payload: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
-        signature: '',
-      },
-      {
-        type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
-        payload:
-          'Decentraland Login\nEphemeral address: 0x00d1244305653Be915D066d39d4c6b54808e59a9\nExpiration: 2026-11-01T19:27:26.452Z',
-        signature:
-          '0x22fa60a6f0c5b979524b6ceea6318ca4491ddd831efa7d60369546f2b66f38383014d262c5ce4e4b859298fe1bc992d990909389d7f6cb5c765d17f9ae2118101b',
-      },
-    ],
-  },
-}
+import { Collection } from '../src/Collection/Collection.model'
+import { collectionAttributesMock } from './mocks/collections'
+import { wallet } from './mocks/wallet'
+import { Ownable } from '../src/Ownable/Ownable'
+import { Item } from '../src/Item/Item.model'
+import { dbItemMock } from './mocks/items'
 
 export function buildURL(
   uri: string,
@@ -72,6 +47,11 @@ export class GenericModel extends Model<any> {}
 // Takes in a mocked (jest.mock()) Model class
 // These methods are sadly order bound, meaning that you'll have to check the router and mock the middlewares in the same order they appear there
 export function mockExistsMiddleware(Table: typeof GenericModel, id: string) {
+  if (!(Table.count as jest.Mock).mock) {
+    throw new Error(
+      "Table.count should be mocked to mock the withModelExists middleware but it isn't"
+    )
+  }
   ;(Table.count as jest.Mock).mockImplementationOnce(
     (conditions: QueryPart) => {
       return conditions['id'] === id && Object.keys(conditions).length === 1
@@ -88,6 +68,18 @@ export function mockAuthorizationMiddleware(
   id: string,
   eth_address: string
 ) {
+  if (!(Table.count as jest.Mock).mock) {
+    throw new Error(
+      "Table.count should be mocked to mock the withModelAuthorization middleware but it isn't"
+    )
+  }
+
+  if ((Ownable.prototype.isOwnedBy as jest.Mock).mock) {
+    throw new Error(
+      'Ownable.isOwnedBy should not be mocked to correctly mock the withModelAuthorization middleware but it is'
+    )
+  }
+
   ;(Table.count as jest.Mock).mockImplementationOnce(
     (conditions: QueryPart) => {
       return conditions['id'] === id &&
@@ -97,4 +89,162 @@ export function mockAuthorizationMiddleware(
         : 0
     }
   )
+}
+
+/**
+ * Mocks the "withModelAuthorization" middleware used in the collection's middleware
+ * by mocking all the function calls to the Collection model and the TPW requests.
+ * This mock requires the Collection model and the TPW "isManager" method to be mocked first.
+ *
+ * @param id - The id of the collection to be authorized.
+ * @param ethAddress - The ethAddress of the user that will be requesting authorization to the collection.
+ * @param isThirdParty - If the mock is for a third party collection.
+ * @param isAuthorized - If the user should be authorized or not. This is useful to test the response of the middleware.
+ */
+export function mockCollectionAuthorizationMiddleware(
+  id: string,
+  ethAddress: string,
+  isThirdParty = false,
+  isAuthorized = true
+) {
+  const collectionToReturn = {
+    ...collectionAttributesMock,
+    urn_suffix: isThirdParty ? 'third-party-collection-id' : null,
+    third_party_id: isThirdParty ? 'third-party-id' : null,
+    eth_address: ethAddress,
+  }
+  if (!(Collection.findOne as jest.Mock).mock) {
+    throw new Error(
+      "Collection.findOne should be mocked to mock the withModelAuthorization middleware but isn't"
+    )
+  }
+
+  ;(Collection.findOne as jest.Mock).mockImplementationOnce((givenId) =>
+    Promise.resolve(
+      givenId === id && (isAuthorized || isThirdParty)
+        ? collectionToReturn
+        : undefined
+    )
+  )
+  if (isThirdParty) {
+    if (!(isManager as jest.Mock).mock) {
+      throw new Error(
+        "isManager should be mocked to mock the withModelExists middleware but it isn't"
+      )
+    }
+
+    ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
+      isAuthorized
+    )
+  }
+}
+
+/**
+ * Mocks the "withModelAuthorization" middleware used in the items's middleware
+ * by mocking all the function calls to the Collection model and the TPW requests.
+ * This mock requires the Collection model and the TPW "isManager" method to be mocked first.
+ *
+ * @param id - The id of the item to be authorized.
+ * @param ethAddress - The ethAddress of the user that will be requesting authorization to the item.
+ * @param isThirdParty - If the mock is for a third party item.
+ * @param isAuthorized - If the user should be authorized or not. This is useful to test the response of the middleware.
+ */
+export function mockItemAuthorizationMiddleware(
+  id: string,
+  eth_address: string,
+  isThirdParty = false,
+  isAuthorized = true
+) {
+  const itemToReturn = {
+    ...dbItemMock,
+    urn_suffix: isThirdParty ? 'third-party' : null,
+    eth_address,
+  }
+
+  ;(Item.findOne as jest.Mock).mockImplementationOnce((givenId) =>
+    Promise.resolve(givenId === id && isAuthorized ? itemToReturn : undefined)
+  )
+
+  if (isThirdParty) {
+    mockCollectionAuthorizationMiddleware(
+      dbItemMock.collection_id!,
+      eth_address,
+      isThirdParty,
+      isAuthorized
+    )
+  }
+}
+
+/**
+ * Mocks the "Ownable.canUpsert" method by mocking the all the function calls to the Collection model.
+ * This mock requires the Collection model to be mocked first.
+ * Mocking the Ownable.canUpsert method will make this mock throw.
+ *
+ * @param Model - The model to be authorized.
+ * @param id - The id of the model to be authorized.
+ * @param ethAddress - The ethAddress of the user that will be requesting authorization to the model.
+ * @param expectedUpsert - If the user should be able to upsert the model or not.
+ */
+export function mockOwnableCanUpsert(
+  Model: typeof GenericModel,
+  id: string,
+  ethAddress: string,
+  expectedUpsert: boolean
+) {
+  const canUpsert = (conditions: Record<string, unknown>): boolean =>
+    expectedUpsert &&
+    conditions.id === id &&
+    conditions.eth_address === ethAddress
+
+  if ((Ownable.prototype.canUpsert as jest.Mock).mock) {
+    throw new Error(
+      'Ownable.canUpsert should not be mocked to correctly mock the Ownable.canUpsert method internally but it is'
+    )
+  }
+
+  if (!(Model.count as jest.Mock).mock) {
+    throw new Error(
+      "Model.count should be mocked to mock the Ownable.canUpsert method but it isn't"
+    )
+  }
+
+  ;(Model.count as jest.Mock)
+    .mockImplementationOnce((conditions: QueryPart) =>
+      Promise.resolve(canUpsert(conditions) ? 0 : 1)
+    )
+    .mockImplementationOnce((conditions: QueryPart) =>
+      Promise.resolve(canUpsert(conditions) ? 1 : 0)
+    )
+}
+
+/**
+ * Mocks the "isPublished" method of the CollectionService by mocking the all the function calls.
+ * This mock requires the collectionAPI.fetchCollection module and the isPublished methods to be mocked first.
+ *
+ * @param id - The id of the collection to be checked if published.
+ * @param isCollectionPublished - If the collection is published or not.
+ */
+export function mockIsCollectionPublished(
+  id: string,
+  isCollectionPublished: boolean
+) {
+  if (!(collectionAPI.fetchCollection as jest.Mock).mock) {
+    throw new Error(
+      "collectionAPI.fetchCollection should be mocked to mock the CollectionService.isPublished method but it isn't"
+    )
+  }
+
+  if (!(isPublished as jest.Mock).mock) {
+    throw new Error(
+      "isPublished should be mocked to mock the CollectionService.isPublished method but it isn't"
+    )
+  }
+
+  ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+    (givenId) =>
+      Promise.resolve(id === givenId && isCollectionPublished ? {} : undefined)
+  )
+  if (isCollectionPublished) {
+    ;(isPublished as jest.Mock).mockResolvedValueOnce(isCollectionPublished)
+  }
 }

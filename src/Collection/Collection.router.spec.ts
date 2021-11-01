@@ -1,10 +1,11 @@
 import supertest from 'supertest'
 import {
-  wallet,
   createAuthHeaders,
   buildURL,
   mockExistsMiddleware,
-  mockAuthorizationMiddleware,
+  mockOwnableCanUpsert,
+  mockCollectionAuthorizationMiddleware,
+  mockIsCollectionPublished,
 } from '../../spec/utils'
 import {
   collectionAttributesMock,
@@ -14,14 +15,18 @@ import {
   ResultCollection,
   toResultCollection,
 } from '../../spec/mocks/collections'
+import { wallet } from '../../spec/mocks/wallet'
 import { isManager } from '../ethereum/api/tpw'
 import { collectionAPI } from '../ethereum/api/collection'
-import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
-import { Item } from '../Item/Item.model'
-import { isPublished } from '../utils/eth'
 import { Collection } from './Collection.model'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import {
+  CollectionFragment,
+  ThirdPartyItemsFragment,
+} from '../ethereum/api/fragments'
+import { Item } from '../Item/Item.model'
 import { hasAccess } from './access'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { toDBCollection, toFullCollection } from './utils'
@@ -41,9 +46,10 @@ jest.mock('../ethereum/api/peer')
 jest.mock('../ethereum/api/tpw')
 jest.mock('./Collection.model')
 jest.mock('../Committee')
-jest.mock('../Ownable')
 jest.mock('../Item/Item.model')
 jest.mock('../utils/eth')
+jest.mock('../ethereum/api/thirdParty')
+jest.mock('../Item/Item.model')
 jest.mock('./access')
 
 describe('Collection router', () => {
@@ -66,7 +72,6 @@ describe('Collection router', () => {
     let urn: string
     let collectionToUpsert: FullCollection
     beforeEach(() => {
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       url = `/collections/${dbCollection.id}`
     })
 
@@ -296,9 +301,12 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(false),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            false
+          )
         })
 
         it('should respond with a 401 and an error saying that the user is not authorized', () => {
@@ -326,9 +334,12 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(false)
         })
 
@@ -357,9 +368,15 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
+          ;(Collection.findOne as jest.MockedFunction<
+            typeof Collection.findOne
+          >).mockResolvedValueOnce(dbCollection)
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
           ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
@@ -392,18 +409,18 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;(Ownable.prototype.canUpsert as jest.MockedFunction<
-            typeof Ownable.prototype.canUpsert
-          >).mockResolvedValueOnce(true)
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbCollection,
             lock: currentDate,
           })
-          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-            undefined
-          )
-          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
+          mockIsCollectionPublished(dbCollection.id, false)
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
         })
 
@@ -438,9 +455,15 @@ describe('Collection router', () => {
             ...toFullCollection(dbCollection),
             urn,
           }
-          ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-            canUpsert: jest.fn().mockResolvedValueOnce(true),
-          }))
+          mockOwnableCanUpsert(
+            Collection,
+            dbCollection.id,
+            wallet.address,
+            true
+          )
+          ;(Collection.findOne as jest.MockedFunction<
+            typeof Collection.findOne
+          >).mockResolvedValueOnce(dbCollection)
           ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
             (attributes) => {
               newCollectionAttributes = attributes
@@ -455,10 +478,7 @@ describe('Collection router', () => {
             ...dbCollection,
             lock: null,
           })
-          ;(isPublished as jest.Mock).mockResolvedValueOnce(false)
-          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-            undefined
-          )
+          mockIsCollectionPublished(dbCollection.id, false)
         })
 
         it('should upsert the collection and respond with a 200 and the upserted collection', () => {
@@ -491,7 +511,6 @@ describe('Collection router', () => {
 
   describe('when retrieving all the collections', () => {
     beforeEach(() => {
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Collection.find as jest.Mock)
         .mockResolvedValueOnce([dbCollection])
@@ -524,7 +543,6 @@ describe('Collection router', () => {
 
   describe('when retrieving the collections of an address', () => {
     beforeEach(() => {
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock).mockReturnValueOnce(
@@ -555,7 +573,6 @@ describe('Collection router', () => {
   describe('when retrieving a single collection', () => {
     beforeEach(() => {
       mockExistsMiddleware(Collection, dbCollection.id)
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
       ;(Collection.findOne as jest.Mock).mockReturnValueOnce(dbCollection)
       ;(collectionAPI.fetchCollection as jest.Mock).mockReturnValueOnce(null)
@@ -585,13 +602,10 @@ describe('Collection router', () => {
     beforeEach(() => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
       mockExistsMiddleware(Collection, dbCollection.id)
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
-      ;(Ownable.prototype.canUpsert as jest.MockedFunction<
-        typeof Ownable.prototype.canUpsert
-      >).mockResolvedValueOnce(true)
-      ;(Ownable.prototype.isOwnedBy as jest.MockedFunction<
-        typeof Ownable.prototype.isOwnedBy
-      >).mockResolvedValueOnce(true)
+      mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
+      ;(Collection.findOne as jest.MockedFunction<
+        typeof Collection.findOne
+      >).mockResolvedValueOnce(dbCollection)
       url = `/collections/${dbCollection.id}/lock`
     })
 
@@ -626,10 +640,12 @@ describe('Collection router', () => {
         ;(Collection.update as jest.Mock).mockRejectedValueOnce(
           new Error(errorMessage)
         )
-        ;((Ownable as unknown) as jest.Mock).mockImplementationOnce(() => ({
-          canUpsert: jest.fn().mockResolvedValueOnce(true),
-          isOwnedBy: jest.fn().mockResolvedValueOnce(true),
-        }))
+        ;(Collection.count as jest.MockedFunction<
+          typeof Collection.count
+        >).mockResolvedValueOnce(1)
+        ;(Collection.findOne as jest.MockedFunction<
+          typeof Collection.findOne
+        >).mockResolvedValueOnce(dbCollection)
       })
 
       it('should fail with an error if the update throws', () => {
@@ -652,11 +668,257 @@ describe('Collection router', () => {
     })
   })
 
+  describe('when deleting a collection', () => {
+    beforeEach(() => {
+      url = `/collections/${dbCollection.id}`
+    })
+
+    describe('and the collection is a TP collection', () => {
+      beforeEach(() => {
+        dbCollection.urn_suffix = 'collection-urn-suffix'
+        dbCollection.third_party_id = 'third-party-id'
+        mockExistsMiddleware(Collection, dbCollection.id)
+      })
+
+      describe('and the user is not a manager of the TP collection', () => {
+        beforeEach(() => {
+          mockCollectionAuthorizationMiddleware(
+            dbCollection.id,
+            wallet.address,
+            true,
+            false
+          )
+        })
+
+        it('should respond with a 401 and a message signaling that the user is not authorized', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  ethAddress: wallet.address,
+                  tableName: Collection.tableName,
+                },
+                error: `Unauthorized user ${wallet.address} for collections ${dbCollection.id}`,
+              })
+            })
+        })
+      })
+
+      describe('and the user is a manager of the TP collection', () => {
+        beforeEach(() => {
+          mockCollectionAuthorizationMiddleware(
+            dbCollection.id,
+            wallet.address,
+            true
+          )
+          ;(Collection.findOne as jest.MockedFunction<
+            typeof Collection.findOne
+          >).mockResolvedValueOnce(dbCollection)
+        })
+
+        describe('and it has third party items already published', () => {
+          beforeEach(() => {
+            ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+              typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+            >).mockResolvedValueOnce([{} as ThirdPartyItemsFragment])
+          })
+
+          it('should respond with a 409 and a message signaling that the collection has already published items', () => {
+            return server
+              .delete(buildURL(url))
+              .set(createAuthHeaders('delete', url))
+              .expect(409)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  error:
+                    "The third party collection already has published items. It can't be deleted.",
+                  data: {
+                    id: dbCollection.id,
+                  },
+                  ok: false,
+                })
+              })
+          })
+        })
+
+        describe('and it is locked', () => {
+          beforeEach(() => {
+            const lockDate = new Date()
+            dbCollection.lock = lockDate
+            ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+              typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+            >).mockResolvedValueOnce([])
+            jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
+          })
+
+          beforeEach(() => {
+            ;(Date.now as jest.Mock).mockRestore()
+          })
+
+          it('should respond with a 423 and a message signaling that the collection is locked', () => {
+            return server
+              .delete(buildURL(url))
+              .set(createAuthHeaders('delete', url))
+              .expect(423)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  error: "The collection is locked. It can't be deleted.",
+                  data: {
+                    id: dbCollection.id,
+                  },
+                  ok: false,
+                })
+              })
+          })
+        })
+
+        describe('and its neither locked nor some of its items published', () => {
+          beforeEach(() => {
+            const lockDate = new Date()
+            dbCollection.lock = lockDate
+            ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+              typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+            >).mockResolvedValueOnce([])
+            jest
+              .spyOn(Date, 'now')
+              .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)
+          })
+
+          afterEach(() => {
+            ;(Date.now as jest.Mock).mockRestore()
+          })
+
+          it('should respond with a 200 and deleted the collection and the items of the collection', () => {
+            return server
+              .delete(buildURL(url))
+              .set(createAuthHeaders('delete', url))
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  data: true,
+                  ok: true,
+                })
+
+                expect(Collection.delete).toHaveBeenCalledWith({
+                  id: dbCollection.id,
+                })
+                expect(Item.delete).toHaveBeenCalledWith({
+                  collection_id: dbCollection.id,
+                })
+              })
+          })
+        })
+      })
+    })
+
+    describe('and the collection is a DCL collection', () => {
+      beforeEach(() => {
+        dbCollection.urn_suffix = null
+        mockExistsMiddleware(Collection, dbCollection.id)
+        mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
+        ;(Collection.findOne as jest.MockedFunction<
+          typeof Collection.findOne
+        >).mockResolvedValueOnce(dbCollection)
+      })
+
+      describe('and it is already published', () => {
+        beforeEach(() => {
+          ;(collectionAPI.fetchCollection as jest.MockedFunction<
+            typeof collectionAPI.fetchCollection
+          >).mockResolvedValueOnce({} as CollectionFragment)
+        })
+
+        it('should respond with a 409 and a message signaling that the collection is already published', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error: "The collection is published. It can't be deleted.",
+                data: {
+                  id: dbCollection.id,
+                },
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and it is not published but locked', () => {
+        beforeEach(() => {
+          const lockDate = new Date()
+          dbCollection.lock = lockDate
+          mockIsCollectionPublished(dbCollection.id, false)
+          jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
+        })
+
+        afterEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
+        })
+
+        it('should respond with a 423 and a message signaling that the collection is locked', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(423)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                error: "The collection is locked. It can't be deleted.",
+                data: {
+                  id: dbCollection.id,
+                },
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and its neither locked nor published', () => {
+        beforeEach(() => {
+          const lockDate = new Date()
+          dbCollection.lock = lockDate
+          mockIsCollectionPublished(dbCollection.id, false)
+          jest
+            .spyOn(Date, 'now')
+            .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)
+        })
+
+        afterEach(() => {
+          ;(Date.now as jest.Mock).mockRestore()
+        })
+
+        it('should respond with a 200 and deleted the collection and the items of the collection', () => {
+          return server
+            .delete(buildURL(url))
+            .set(createAuthHeaders('delete', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: true,
+                ok: true,
+              })
+
+              expect(Collection.delete).toHaveBeenCalledWith({
+                id: dbCollection.id,
+              })
+              expect(Item.delete).toHaveBeenCalledWith({
+                collection_id: dbCollection.id,
+              })
+            })
+        })
+      })
+    })
+  })
+
   describe('when publishing a collection', () => {
     beforeEach(() => {
       url = `/collections/${dbCollection.id}/publish`
       mockExistsMiddleware(Collection, dbCollection.id)
-      mockAuthorizationMiddleware(Collection, dbCollection.id, wallet.address)
       ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
     })
 

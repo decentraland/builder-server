@@ -1,7 +1,42 @@
 import { Collection } from '.'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { getMergedCollection } from './utils'
+import { getMergedCollection, decodeTPCollectionURN } from './utils'
+
+describe('when decoding the TPW collection URN', () => {
+  const collectionNetwork = 'ropsten'
+  const thirdPartyId = `urn:decentraland:${collectionNetwork}:collections-thirdparty:a-third-party-id`
+  const collectionURNSuffix = 'a-urn-suffix'
+  let fullUrn: string
+
+  describe('when the URN is not a valid TPW URN', () => {
+    beforeEach(() => {
+      fullUrn = `an-invalid-urn`
+    })
+
+    it('should throw indicating that the URN is not TPW compliant', () => {
+      expect(() => decodeTPCollectionURN(fullUrn)).toThrow(
+        'The given collection URN is not TWP compliant'
+      )
+    })
+  })
+
+  describe('when the URN is a valid TPW URN', () => {
+    beforeEach(() => {
+      fullUrn = `${thirdPartyId}:${collectionURNSuffix}`
+    })
+
+    it('should match the network, the third party id and the collection id', () => {
+      const { network, third_party_id, urn_suffix } = decodeTPCollectionURN(
+        fullUrn
+      )
+
+      expect(network).toEqual(collectionNetwork)
+      expect(third_party_id).toEqual(thirdPartyId)
+      expect(urn_suffix).toEqual(collectionURNSuffix)
+    })
+  })
+})
 
 describe('getMergedCollection', () => {
   let sampleCollection: { id: string }

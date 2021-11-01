@@ -8,7 +8,7 @@ import { Collection } from './Collection.model'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 
 export const tpwCollectionURNRegex = new RegExp(
-  `^(${matchers.baseURN}:${matchers.tpwIdentifier}):${matchers.urnSlot}`
+  `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot})$`
 )
 
 export function getDecentralandCollectionURN(

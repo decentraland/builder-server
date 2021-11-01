@@ -69,13 +69,16 @@ describe('Collection router', () => {
   describe('when upserting a collection', () => {
     const network = 'ropsten'
     const urn_suffix = 'a-urn-suffix'
+    const thirdPartySuffix = 'a-thirdparty-id'
+    const baseThirdPartyId = 'urn:decentraland:ropsten:collections-thirdparty'
+    const third_party_id = `${baseThirdPartyId}:${thirdPartySuffix}`
     let urn: string
     let collectionToUpsert: FullCollection
     beforeEach(() => {
       url = `/collections/${dbCollection.id}`
     })
 
-    describe('when the collection id is different than the one provided as the collection data', () => {
+    describe('and the collection id is different than the one provided as the collection data', () => {
       let otherId: string
       beforeEach(() => {
         otherId = 'bec9eb58-2ac0-11ec-8d3d-0242ac130003'
@@ -104,14 +107,42 @@ describe('Collection router', () => {
       })
     })
 
+    describe('and the request is missing the collection property', () => {
+      it('should return an http error for the invalid request body', () => {
+        return server
+          .put(buildURL(url))
+          .set(createAuthHeaders('put', url))
+          .send({ notCollection: collectionToUpsert })
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: [
+                {
+                  dataPath: '',
+                  keyword: 'required',
+                  message: "should have required property 'collection'",
+                  params: {
+                    missingProperty: 'collection',
+                  },
+                  schemaPath: '#/required',
+                },
+              ],
+              error: 'Invalid request body',
+            })
+          })
+      })
+    })
+
     describe('when the collection is a third party collection', () => {
       let dbTPCollection: CollectionAttributes
       beforeEach(() => {
-        urn = `urn:decentraland:${network}:collections-thirdparty:${dbCollection.name.toLowerCase()}:${urn_suffix}`
+        urn = `${third_party_id}:${urn_suffix}`
         dbTPCollection = {
           ...dbCollection,
           eth_address: '',
           urn_suffix,
+          third_party_id,
           contract_address: '',
         }
         collectionToUpsert = {
@@ -120,28 +151,92 @@ describe('Collection router', () => {
         }
       })
 
-      describe('and the request is missing the collection property', () => {
-        it('should return an http error for the invalid request body', () => {
+      describe('and the user is not a manager of the third party collection', () => {
+        beforeEach(() => {
+          ;(isManager as jest.MockedFunction<
+            typeof isManager
+          >).mockResolvedValueOnce(false)
+        })
+
+        it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
           return server
             .put(buildURL(url))
             .set(createAuthHeaders('put', url))
-            .send({ notCollection: collectionToUpsert })
-            .expect(400)
+            .send({ collection: collectionToUpsert })
+            .expect(401)
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: false,
-                data: [
-                  {
-                    dataPath: '',
-                    keyword: 'required',
-                    message: "should have required property 'collection'",
-                    params: {
-                      missingProperty: 'collection',
-                    },
-                    schemaPath: '#/required',
-                  },
-                ],
-                error: 'Invalid request body',
+                data: {
+                  id: collectionToUpsert.id,
+                  eth_address: wallet.address,
+                },
+                error: 'Unauthorized to upsert collection',
+              })
+            })
+        })
+      })
+
+      describe("and the upserted collection wasn't a third party collection before", () => {
+        beforeEach(() => {
+          ;(isManager as jest.MockedFunction<
+            typeof isManager
+          >).mockResolvedValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+            ...dbTPCollection,
+            urn_suffix: null,
+            third_party_id: null,
+          })
+        })
+
+        it("should respond with a 409 and a message signaling that the collection can't be converted into a third party collection", () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbTPCollection.id,
+                },
+                error:
+                  "The collection can't be converted into a third party collection.",
+              })
+            })
+        })
+      })
+
+      describe('and the usperted collection is changing the urn and has items already published', () => {
+        beforeEach(() => {
+          ;(isManager as jest.MockedFunction<
+            typeof isManager
+          >).mockResolvedValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+            ...dbTPCollection,
+            urn_suffix: 'another-urn-suffix',
+            third_party_id: baseThirdPartyId,
+          })
+          ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
+            typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+          >).mockResolvedValueOnce([{} as ThirdPartyItemsFragment])
+        })
+
+        it('should respond with a 409 and a message signaling that ', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbTPCollection.id,
+                },
+                error:
+                  "The third party collection already has published items. It can't be updated.",
               })
             })
         })
@@ -149,19 +244,16 @@ describe('Collection router', () => {
 
       describe('and the collection exists and is locked', () => {
         beforeEach(() => {
-          const currentDate = Date.now()
-          ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
-            () => ({
-              upsert: jest.fn().mockResolvedValueOnce({
-                ...dbTPCollection,
-                lock: currentDate,
-              }),
-            })
-          )
-          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
-          jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(isManager as jest.Mock).mockReturnValueOnce(true)
+          const currentDate = Date.now()
+          jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+            ...dbTPCollection,
+            lock: new Date(currentDate),
+          })
+          ;(Collection.prototype.upsert as jest.MockedFunction<
+            typeof Collection.prototype.upsert
+          >).mockResolvedValueOnce({
             ...dbTPCollection,
             lock: new Date(currentDate),
           })
@@ -194,6 +286,10 @@ describe('Collection router', () => {
         let newCollectionAttributes: CollectionAttributes
         beforeEach(() => {
           upsertMock = jest.fn()
+          ;(isManager as jest.Mock).mockReturnValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
           ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
             (attributes) => {
               newCollectionAttributes = attributes
@@ -202,11 +298,6 @@ describe('Collection router', () => {
                 upsert: upsertMock,
               }
             }
-          )
-          ;(isManager as jest.Mock).mockReturnValueOnce(true)
-          ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
           )
         })
 

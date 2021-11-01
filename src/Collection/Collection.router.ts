@@ -27,11 +27,7 @@ import {
   UnauthorizedCollectionEditException,
 } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import {
-  collectionSchema,
-  upsertCollectionSchema,
-  saveTOSSchema,
-} from './Collection.schema'
+import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollection } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
@@ -366,17 +362,6 @@ export class CollectionRouter extends Router {
     )
 
     const eth_address = req.auth.ethAddress
-
-    const validate = validator.compile(collectionSchema)
-    validate(collectionJSON)
-
-    if (validate.errors) {
-      throw new HTTPError(
-        'Invalid schema',
-        validate.errors,
-        STATUS_CODES.badRequest
-      )
-    }
 
     if (id !== collectionJSON.id) {
       throw new HTTPError(

@@ -7,7 +7,7 @@ const urnSlot = '[^:|\\s]+'
 const baseURN = `urn:decentraland:${network}`
 
 const dclIdentifier = 'collections-v2'
-const tpwIdentifier = `collections-thirdparty:(${urnSlot})`
+const tpwIdentifier = `collections-thirdparty:${urnSlot}`
 
 const dclSuffix = `${dclIdentifier}:${address}`
 const tpwSuffix = `${tpwIdentifier}:${urnSlot}`

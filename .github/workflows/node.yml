@@ -30,7 +30,7 @@ jobs:
           ANALYTICS_CONNECTION_STRING: ANALYTICS_CONNECTION_STRING
           PEER_URL: https://peer.decentraland.zone
           ETHEREUM_NETWORK: ropsten
-          TPW_MANAGER_ADDRESSES: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9'
+          TPW_MANAGER_ADDRESSES: '0x25349e40543494430ae6d06ca2b31bb844439d09'
           THIRD_PARTY_GRAPH_URL: 'http://thid-party-url'
       - name: Report Coverage
         uses: coverallsapp/github-action@master

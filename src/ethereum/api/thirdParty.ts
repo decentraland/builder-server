@@ -5,6 +5,8 @@ import {
   ThirdPartyFragment,
   ThirdPartyItemsFragment,
   thirdPartyItemFragment,
+  tiersFragment,
+  TierFragment,
 } from './fragments'
 import {
   BaseGraphAPI,
@@ -30,6 +32,15 @@ const getThirdPartyQuery = (urn: string, manager: string) => gql`
     }
   }
   ${thirdPartyFragment()}
+`
+
+const getTiersQuery = () => gql`
+  query getTiersQuery {
+    tiers {
+      ...tiersFragment
+    }
+  }
+  ${tiersFragment()}
 `
 
 const getThirdPartyCollectionItemsQuery = () => gql`
@@ -70,6 +81,18 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       variables: { urn, manager: manager.toLowerCase() },
     })
     return thirdParties.length > 0
+  }
+
+  fetchTiers = async (): Promise<TierFragment[]> => {
+    const {
+      data: { tiers = [] },
+    } = await this.query<{
+      tiers: TierFragment[]
+    }>({
+      query: getTiersQuery(),
+    })
+
+    return tiers
   }
 }
 

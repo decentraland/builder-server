@@ -125,7 +125,7 @@ type GetMergedCollectionResult =
 export const getMergedCollection = async (
   id: string
 ): Promise<GetMergedCollectionResult> => {
-  const dbCollection = await getDBCollection(id)
+  const dbCollection = await Collection.findOne<CollectionAttributes>(id)
 
   if (!dbCollection) {
     return {
@@ -152,9 +152,6 @@ export const getMergedCollection = async (
     collection: mergedCollection,
   }
 }
-
-export const getDBCollection = (id: string) =>
-  Collection.findOne<CollectionAttributes>(id)
 
 export const getRemoteCollection = async (contractAddress: string) =>
   (await collectionAPI.fetchCollection(contractAddress)) || undefined

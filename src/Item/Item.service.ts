@@ -10,15 +10,15 @@ export class ItemService {
     ethAddress: string
   ): Promise<boolean> {
     const dbItem = await Item.findOne<ItemAttributes>(id)
-    if (dbItem?.urn_suffix && dbItem?.collection_id) {
+    if (!dbItem) {
+      return false
+    } else if (dbItem.urn_suffix && dbItem.collection_id) {
       return this.collectionService.isOwnedOrManagedBy(
         dbItem?.collection_id,
         ethAddress
       )
-    } else if (dbItem) {
+    } else {
       return dbItem.eth_address === dbItem.eth_address
     }
-
-    return false
   }
 }

@@ -114,10 +114,10 @@ describe('Collection service', () => {
   })
 
   describe('when getting the database TPW collections', () => {
-    const service = new CollectionService()
-
     describe('when the graph has no third party records', () => {
+      let service: CollectionService
       beforeEach(() => {
+        service = new CollectionService()
         ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([])
       })
 
@@ -126,10 +126,12 @@ describe('Collection service', () => {
       })
     })
 
-    describe('when the graph third party records', () => {
+    describe('when the graph has third party records', () => {
+      let service: CollectionService
       let thirdPartyDbCollection: CollectionAttributes
 
       beforeEach(() => {
+        service = new CollectionService()
         thirdPartyDbCollection = {
           ...collectionAttributesMock,
           urn_suffix: 'thesuffix',
@@ -143,7 +145,7 @@ describe('Collection service', () => {
         ])
       })
 
-      it('should the db collection with the added eth_address', async () => {
+      it('should return the db collections of the third party collections with managed by the given address', async () => {
         expect(await service.getDbTPWCollections(wallet.address)).toEqual([
           {
             ...thirdPartyDbCollection,

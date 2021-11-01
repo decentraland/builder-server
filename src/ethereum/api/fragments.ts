@@ -102,6 +102,20 @@ export const rarityFragment = () => gql`
   }
 `
 
+export const tiersFragment = () => gql`
+  fragment tiersFragment on Tier {
+    id
+    value
+    price
+  }
+`
+
+export type TierFragment = {
+  id: string
+  value: string
+  price: string
+}
+
 export type ItemFragment = {
   id: string
   blockchainId: string

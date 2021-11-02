@@ -7,4 +7,5 @@ export const up = (pgm: MigrationBuilder) => {
   pgm.addColumn(tableName, {
     third_party_id: { type: 'TEXT' },
   })
+  pgm.addIndex(tableName, 'third_party_id')
 }

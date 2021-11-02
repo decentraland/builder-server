@@ -1,7 +1,6 @@
 import { Authenticator, AuthIdentity } from 'dcl-crypto'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
-import { isManager } from '../src/ethereum/api/tpw'
 import { collectionAPI } from '../src/ethereum/api/collection'
 import { isPublished } from '../src/utils/eth'
 import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
@@ -96,7 +95,7 @@ export function mockAuthorizationMiddleware(
 /**
  * Mocks the "withModelAuthorization" middleware used in the collection's middleware
  * by mocking all the function calls to the Collection model and the TPW requests.
- * This mock requires the Collection model and the TPW "isManager" method to be mocked first.
+ * This mock requires the Collection model and the TPW API "isManager" method to be mocked first.
  *
  * @param id - The id of the collection to be authorized.
  * @param ethAddress - The ethAddress of the user that will be requesting authorization to the collection.
@@ -129,22 +128,22 @@ export function mockCollectionAuthorizationMiddleware(
     )
   )
   if (isThirdParty) {
-    if (!(isManager as jest.Mock).mock) {
+    if (!(thirdPartyAPI.isManager as jest.Mock).mock) {
       throw new Error(
         "isManager should be mocked to mock the withModelExists middleware but it isn't"
       )
     }
 
-    ;(isManager as jest.MockedFunction<typeof isManager>).mockResolvedValueOnce(
-      isAuthorized
-    )
+    ;(thirdPartyAPI.isManager as jest.MockedFunction<
+      typeof thirdPartyAPI.isManager
+    >).mockResolvedValueOnce(isAuthorized)
   }
 }
 
 /**
  * Mocks the "withModelAuthorization" middleware used in the items's middleware
  * by mocking all the function calls to the Collection model and the TPW requests.
- * This mock requires the Collection model and the TPW "isManager" method to be mocked first.
+ * This mock requires the Item model findOne method to be mocked first.
  *
  * @param id - The id of the item to be authorized.
  * @param ethAddress - The ethAddress of the user that will be requesting authorization to the item.

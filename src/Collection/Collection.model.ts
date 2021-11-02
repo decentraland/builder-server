@@ -18,6 +18,13 @@ export class Collection extends Model<CollectionAttributes> {
       WHERE id = ANY(${ids})`)
   }
 
+  static findByThirdPartyIds(thirdPartyIds: string[]) {
+    return this.query<CollectionAttributes>(SQL`
+    SELECT *
+      FROM ${raw(this.tableName)}
+      WHERE third_party_id = ANY(${thirdPartyIds})`)
+  }
+
   /**
    * Checks if a collection name is valid.
    * A collection name is valid if there's no other collection that has the given

@@ -24,11 +24,16 @@ export class Bridge {
     ])
 
     for (const dbCollection of allDbCollections) {
-      const remoteCollection = remoteCollections.find(
-        (remoteCollection) =>
-          remoteCollection.id.toLowerCase() ===
-          dbCollection.contract_address!.toLowerCase()
-      )
+      let remoteCollection: CollectionFragment | undefined
+      if (dbCollection.contract_address !== null) {
+        const contractAddress = dbCollection.contract_address.toLowerCase()
+
+        remoteCollection = remoteCollections.find(
+          (remoteCollection) =>
+            remoteCollection.id.toLowerCase() === contractAddress
+        )
+      }
+
       const collection = remoteCollection
         ? Bridge.mergeCollection(dbCollection, remoteCollection)
         : dbCollection

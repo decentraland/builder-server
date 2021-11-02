@@ -1,10 +1,10 @@
+import { env } from 'decentraland-commons'
 import { collectionAPI } from '../ethereum/api/collection'
-import { isPublished } from '../utils/eth'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { isPublished } from '../utils/eth'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item/Item.model'
-import { isManager } from '../ethereum/api/tpw'
 import {
   decodeTPCollectionURN,
   getThirdPartyCollectionURN,
@@ -145,7 +145,7 @@ export class CollectionService {
     eth_address: string,
     collectionJSON: FullCollection
   ) {
-    if (!(await isManager(collectionJSON.urn, eth_address))) {
+    if (!(await this.isTPWManager(collectionJSON.urn, eth_address))) {
       throw new UnauthorizedCollectionEditException(id, eth_address)
     }
 
@@ -262,7 +262,7 @@ export class CollectionService {
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection && this.isDBCollectionThirdParty(collection)) {
-      return isManager(
+      return this.isTPWManager(
         getThirdPartyCollectionURN(
           collection.third_party_id!,
           collection.urn_suffix!
@@ -274,6 +274,44 @@ export class CollectionService {
     }
 
     return false
+  }
+
+  /**
+   * Checks if an address manages a third party wearable collection.
+   *
+   * @param urn - The URN of the TWP collection where to get the information about the collection.
+   * @param address - The address to check if it manages the collection.
+   */
+  public async isTPWManager(urn: string, address: string): Promise<boolean> {
+    const isEnvManager =
+      !env.isProduction() &&
+      env
+        .get('TPW_MANAGER_ADDRESSES', '')
+        .toLowerCase()
+        .search(address.toLowerCase()) > -1
+
+    if (isEnvManager) {
+      return true
+    }
+
+    return thirdPartyAPI.isManager(urn, address)
+  }
+
+  public async getDbTPWCollections(
+    address: string
+  ): Promise<CollectionAttributes[]> {
+    const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(address)
+    if (thirdPartyIds.length <= 0) {
+      return []
+    }
+
+    const dbThridPartyCollections = await Collection.findByThirdPartyIds(
+      thirdPartyIds
+    )
+    return dbThridPartyCollections.map((collection) => ({
+      ...collection,
+      eth_address: address,
+    }))
   }
 
   private async getDBCollection(

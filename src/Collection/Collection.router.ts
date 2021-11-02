@@ -380,7 +380,7 @@ export class CollectionRouter extends Router {
     let upsertedCollection: CollectionAttributes
 
     try {
-      if (isTPCollectionURN(collectionJSON.urn)) {
+      if (collectionJSON.urn && isTPCollectionURN(collectionJSON.urn)) {
         upsertedCollection = await this.service.upsertTPWCollection(
           id,
           eth_address,

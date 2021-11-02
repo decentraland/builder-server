@@ -26,5 +26,5 @@ export type FullCollection = Omit<
   CollectionAttributes,
   'urn_suffix' | 'third_party_id'
 > & {
-  urn: string
+  urn: string | null
 }

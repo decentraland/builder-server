@@ -51,9 +51,9 @@ export function toFullCollection(
 export function toDBCollection(
   collection: FullCollection
 ): CollectionAttributes {
-  const isTPW = isTPCollectionURN(collection.urn)
+  const isTPW = collection.urn && isTPCollectionURN(collection.urn)
   const decodedURN = isTPW
-    ? decodeTPCollectionURN(collection.urn)
+    ? decodeTPCollectionURN(collection.urn!)
     : { urn_suffix: null, third_party_id: null }
 
   let urn_suffix = decodedURN.urn_suffix

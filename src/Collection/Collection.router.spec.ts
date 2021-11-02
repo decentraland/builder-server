@@ -312,7 +312,7 @@ describe('Collection router', () => {
                 data: {
                   id: dbTPCollection.id,
                 },
-                error: "The collection is locked. It can't be saved.",
+                error: "The collection is locked. It can't be updated.",
               })
             })
         })
@@ -593,7 +593,7 @@ describe('Collection router', () => {
                 data: {
                   id: dbCollection.id,
                 },
-                error: "The collection is published. It can't be saved.",
+                error: "The collection is published. It can't be updated.",
               })
             })
         })
@@ -637,7 +637,7 @@ describe('Collection router', () => {
                 data: {
                   id: dbCollection.id,
                 },
-                error: "The collection is locked. It can't be saved.",
+                error: "The collection is locked. It can't be updated.",
               })
             })
         })

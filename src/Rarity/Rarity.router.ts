@@ -1,4 +1,3 @@
-import { utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -14,6 +13,6 @@ export class RarityRouter extends Router {
 
   async getRarities() {
     const rarities = await collectionAPI.fetchRarities()
-    return utils.mapOmit(rarities, ['__typename'])
+    return rarities
   }
 }

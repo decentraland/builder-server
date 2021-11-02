@@ -7,6 +7,7 @@ import {
   withAuthentication,
   withModelExists,
   withLowercasedParams,
+  withSchemaValidation,
   AuthRequest,
 } from '../middleware'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -25,12 +26,12 @@ import {
   WrongCollectionException,
   UnauthorizedCollectionEditException,
 } from './Collection.service'
+import { CollectionAttributes, FullCollection } from './Collection.types'
 import {
-  CollectionAttributes,
   collectionSchema,
-  FullCollection,
+  upsertCollectionSchema,
   saveTOSSchema,
-} from './Collection.types'
+} from './Collection.schema'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollection } from './utils'
 
@@ -111,6 +112,7 @@ export class CollectionRouter extends Router {
     this.router.put(
       '/collections/:id',
       withAuthentication,
+      withSchemaValidation(upsertCollectionSchema),
       server.handleRequest(this.upsertCollection)
     )
 

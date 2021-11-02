@@ -1,11 +1,15 @@
 import { utils } from 'decentraland-commons'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
-import { Collection, CollectionAttributes, FullCollection } from '.'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { CollectionFragment } from '../ethereum/api/fragments'
+import { matchers } from '../common/matchers'
+import { Collection } from './Collection.model'
+import { CollectionAttributes, FullCollection } from './Collection.types'
 
-const tpwCollectionURNRegex = /^urn:decentraland:([^:]+):ext-thirdparty:([^:]+)$/
+export const tpwCollectionURNRegex = new RegExp(
+  `^(${matchers.baseURN}:${matchers.tpwIdentifier}):${matchers.urnSlot}`
+)
 
 export function getDecentralandCollectionURN(
   collectionAddress: string
@@ -13,8 +17,11 @@ export function getDecentralandCollectionURN(
   return `urn:decentraland:${getCurrentNetworkURNProtocol()}:collections-v2:${collectionAddress}`
 }
 
-export function getThirdPartyCollectionURN(urn_suffix: string) {
-  return `urn:decentraland:${getCurrentNetworkURNProtocol()}:ext-thirdparty:${urn_suffix}`
+export function getThirdPartyCollectionURN(
+  third_party_id: string,
+  urn_suffix: string
+) {
+  return `urn:decentraland:${getCurrentNetworkURNProtocol()}:collections-thirdparty:${third_party_id}:${urn_suffix}`
 }
 
 /**
@@ -25,11 +32,13 @@ export function getThirdPartyCollectionURN(urn_suffix: string) {
 export function toFullCollection(
   dbCollection: CollectionAttributes
 ): FullCollection {
+  const { third_party_id, urn_suffix, contract_address } = dbCollection
   return {
     ...utils.omit(dbCollection, ['urn_suffix']),
-    urn: dbCollection.urn_suffix
-      ? getThirdPartyCollectionURN(dbCollection.urn_suffix)
-      : getDecentralandCollectionURN(dbCollection.contract_address!),
+    urn:
+      third_party_id && urn_suffix
+        ? getThirdPartyCollectionURN(third_party_id, urn_suffix)
+        : getDecentralandCollectionURN(contract_address!),
   }
 }
 
@@ -43,9 +52,12 @@ export function toDBCollection(
   collection: FullCollection
 ): CollectionAttributes {
   const isTPW = isTPCollection(collection.urn)
-  let urn_suffix = isTPW
-    ? decodeTPCollectionURN(collection.urn).urn_suffix
-    : null
+  const decodedURN = isTPW
+    ? decodeTPCollectionURN(collection.urn)
+    : { urn_suffix: null, third_party_id: null }
+
+  let urn_suffix = decodedURN.urn_suffix
+  let third_party_id = decodedURN.third_party_id
   let eth_address = isTPW ? '' : collection.eth_address
   let contract_address = isTPW ? null : collection.contract_address
   let salt = isTPW ? '' : collection.salt
@@ -55,6 +67,7 @@ export function toDBCollection(
     urn_suffix,
     eth_address,
     contract_address,
+    third_party_id,
     salt,
   }
 }
@@ -77,13 +90,17 @@ export function isTPCollection(urn: string) {
  */
 export function decodeTPCollectionURN(
   urn: string
-): { network: string; urn_suffix: string } {
+): { third_party_id: string; network: string; urn_suffix: string } {
   const matches = tpwCollectionURNRegex.exec(urn)
   if (matches === null) {
     throw new Error('The given collection URN is not TWP compliant')
   }
 
-  return { network: matches[1], urn_suffix: matches[2] }
+  return {
+    third_party_id: matches[1],
+    network: matches[2],
+    urn_suffix: matches[3],
+  }
 }
 
 type GetMergedCollectionResult =

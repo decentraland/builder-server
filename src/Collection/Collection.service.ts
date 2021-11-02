@@ -116,6 +116,13 @@ export class CollectionService {
     eth_address: string,
     collectionJSON: FullCollection
   ) {
+    if (collectionJSON.urn === null) {
+      throw new WrongCollectionException(
+        'Invalid empty URN for third party collection',
+        { id, eth_address, urn: collectionJSON.urn }
+      )
+    }
+
     if (!(await this.isTPWManager(collectionJSON.urn, eth_address))) {
       throw new UnauthorizedCollectionEditException(id, eth_address)
     }

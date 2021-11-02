@@ -23,7 +23,7 @@ import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasAccess } from './access'
-import { toFullCollection, isTPCollectionURN } from './utils'
+import { toFullCollection, hasTPCollectionURN } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import {
   CollectionAlreadyPublishedException,
@@ -380,7 +380,7 @@ export class CollectionRouter extends Router {
     let upsertedCollection: CollectionAttributes
 
     try {
-      if (isTPCollectionURN(collectionJSON.urn)) {
+      if (hasTPCollectionURN(collectionJSON)) {
         upsertedCollection = await this.service.upsertTPWCollection(
           id,
           eth_address,

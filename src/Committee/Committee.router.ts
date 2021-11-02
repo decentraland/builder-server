@@ -14,6 +14,6 @@ export class CommitteeRouter extends Router {
 
   async getCommittee() {
     const committee = await collectionAPI.fetchCommittee()
-    return utils.mapOmit(committee, ['__typename', 'isCommitteeMember'])
+    return utils.mapOmit(committee, ['isCommitteeMember'])
   }
 }

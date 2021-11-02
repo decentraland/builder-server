@@ -29,7 +29,7 @@ import {
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasAccess } from './access'
-import { toFullCollection, isTPCollectionURN } from './utils'
+import { toFullCollection, hasTPCollectionURN } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
 
 const validator = getValidator()
@@ -380,7 +380,7 @@ export class CollectionRouter extends Router {
     let upsertedCollection: CollectionAttributes
 
     try {
-      if (collectionJSON.urn && isTPCollectionURN(collectionJSON.urn)) {
+      if (hasTPCollectionURN(collectionJSON)) {
         upsertedCollection = await this.service.upsertTPWCollection(
           id,
           eth_address,

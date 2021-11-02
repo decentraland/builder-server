@@ -51,7 +51,7 @@ export function toFullCollection(
 export function toDBCollection(
   collection: FullCollection
 ): CollectionAttributes {
-  const isTPW = collection.urn && isTPCollectionURN(collection.urn)
+  const isTPW = hasTPCollectionURN(collection)
   const decodedURN = isTPW
     ? decodeTPCollectionURN(collection.urn!)
     : { urn_suffix: null, third_party_id: null }
@@ -78,8 +78,8 @@ export function toDBCollection(
  *
  * @param urn - The URN to be checked.
  */
-export function isTPCollectionURN(urn: string) {
-  return tpwCollectionURNRegex.test(urn)
+export function hasTPCollectionURN(collection: FullCollection) {
+  return collection.urn && tpwCollectionURNRegex.test(collection.urn)
 }
 
 /**

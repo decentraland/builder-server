@@ -706,6 +706,40 @@ describe('Collection router', () => {
               })
             })
         })
+
+        describe('and the urn supplied is null', () => {
+          beforeEach(() => {
+            collectionToUpsert = {
+              ...toFullCollection(dbCollection),
+              urn: null,
+            }
+          })
+
+          it('should upsert the collection and respond with a 200 and the upserted collection', () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({
+                collection: collectionToUpsert,
+                data: collectionDataMock,
+              })
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: true,
+                  data: toFullCollection(newCollectionAttributes),
+                })
+
+                expect(newCollectionAttributes).toEqual({
+                  ...convertCollectionDatesToISO(
+                    toDBCollection(collectionToUpsert)
+                  ),
+                  contract_address: expect.any(String),
+                  salt: expect.any(String),
+                })
+              })
+          })
+        })
       })
     })
   })

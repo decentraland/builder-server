@@ -19,18 +19,18 @@ import { isCommitteeMember } from '../Committee'
 import { RequestParameters } from '../RequestParameters'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
-import {
-  CollectionService,
-  CollectionLockedException,
-  CollectionAlreadyPublishedException,
-  WrongCollectionException,
-  UnauthorizedCollectionEditException,
-} from './Collection.service'
+import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasAccess } from './access'
 import { toFullCollection, isTPCollectionURN } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
+import {
+  CollectionAlreadyPublishedException,
+  CollectionLockedException,
+  UnauthorizedCollectionEditException,
+  WrongCollectionException,
+} from './Collection.exceptions'
 
 const validator = getValidator()
 

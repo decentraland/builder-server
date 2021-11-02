@@ -12,44 +12,15 @@ import {
 } from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
-
-enum CollectionType {
-  THIRD_PARTY,
-  DCL,
-}
-export class CollectionLockedException extends Error {
-  constructor(public id: string, action: string) {
-    super(`The collection is locked. It can't be ${action}.`)
-  }
-}
-
-export class CollectionAlreadyPublishedException extends Error {
-  constructor(public id: string, type: CollectionType, action: string) {
-    super(
-      type === CollectionType.DCL
-        ? `The collection is published. It can't be ${action}.`
-        : `The third party collection already has published items. It can't be ${action}.`
-    )
-  }
-}
-
-export class WrongCollectionException extends Error {
-  constructor(m: string, public data: Record<string, any>) {
-    super(m)
-  }
-}
-
-export class UnauthorizedCollectionEditException extends Error {
-  constructor(public id: string, public eth_address: string) {
-    super('Unauthorized to upsert collection')
-  }
-}
-
-export class NonExistentCollectionException extends Error {
-  constructor(public id: string) {
-    super("The collection doesn't exist.")
-  }
-}
+import {
+  CollectionAction,
+  CollectionAlreadyPublishedException,
+  CollectionLockedException,
+  CollectionType,
+  NonExistentCollectionException,
+  UnauthorizedCollectionEditException,
+  WrongCollectionException,
+} from './Collection.exceptions'
 
 export class CollectionService {
   isLockActive(lock: Date | null) {
@@ -84,7 +55,7 @@ export class CollectionService {
       throw new CollectionAlreadyPublishedException(
         id,
         CollectionType.THIRD_PARTY,
-        'updated or inserted'
+        CollectionAction.UPSERT
       )
     }
   }
@@ -121,12 +92,12 @@ export class CollectionService {
         throw new CollectionAlreadyPublishedException(
           id,
           CollectionType.DCL,
-          'saved'
+          CollectionAction.UPDATE
         )
       }
 
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id, 'saved')
+        throw new CollectionLockedException(id, CollectionAction.UPDATE)
       }
     }
 
@@ -190,7 +161,7 @@ export class CollectionService {
       }
 
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id, 'saved')
+        throw new CollectionLockedException(id, CollectionAction.UPDATE)
       }
     } else {
       // Check if the URN for the new collection already exists
@@ -233,7 +204,7 @@ export class CollectionService {
         throw new CollectionAlreadyPublishedException(
           collection.id,
           CollectionType.THIRD_PARTY,
-          'deleted'
+          CollectionAction.DELETE
         )
       }
     } else {
@@ -242,12 +213,15 @@ export class CollectionService {
         throw new CollectionAlreadyPublishedException(
           collectionId,
           CollectionType.DCL,
-          'deleted'
+          CollectionAction.DELETE
         )
       }
     }
     if (this.isLockActive(collection.lock)) {
-      throw new CollectionLockedException(collection.id, 'deleted')
+      throw new CollectionLockedException(
+        collection.id,
+        CollectionAction.DELETE
+      )
     }
     await Promise.all([
       Collection.delete({ id: collection.id }),

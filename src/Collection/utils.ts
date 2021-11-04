@@ -21,7 +21,7 @@ export function getThirdPartyCollectionURN(
   third_party_id: string,
   urn_suffix: string
 ) {
-  return `urn:decentraland:${getCurrentNetworkURNProtocol()}:collections-thirdparty:${third_party_id}:${urn_suffix}`
+  return `${third_party_id}:${urn_suffix}`
 }
 
 /**

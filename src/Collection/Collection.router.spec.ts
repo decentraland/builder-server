@@ -783,7 +783,8 @@ describe('Collection router', () => {
       thirdPartyDbCollection = {
         ...collectionAttributesMock,
         urn_suffix: 'thesuffix',
-        third_party_id: 'some:third-party-id',
+        third_party_id:
+          'urn:decentraland:mumbai:collections-thirdparty:third-party-id',
       }
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
@@ -814,7 +815,7 @@ describe('Collection router', () => {
               {
                 ...toResultCollection(thirdPartyDbCollection),
                 eth_address: wallet.address,
-                urn: `urn:decentraland:ropsten:collections-thirdparty:${thirdPartyDbCollection.third_party_id}:${thirdPartyDbCollection.urn_suffix}`,
+                urn: `${thirdPartyDbCollection.third_party_id}:${thirdPartyDbCollection.urn_suffix}`,
               },
             ],
             ok: true,

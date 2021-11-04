@@ -58,14 +58,12 @@ export function toDBCollection(
 
   let urn_suffix = decodedURN.urn_suffix
   let third_party_id = decodedURN.third_party_id
-  let eth_address = isTPW ? '' : collection.eth_address
   let contract_address = isTPW ? null : collection.contract_address
   let salt = isTPW ? '' : collection.salt
 
   return {
     ...utils.omit(collection, ['urn', 'lock']),
     urn_suffix,
-    eth_address,
     contract_address,
     third_party_id,
     salt,

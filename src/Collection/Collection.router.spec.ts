@@ -340,7 +340,7 @@ describe('Collection router', () => {
           )
         })
 
-        it('should upsert the collection and respond with the upserted collection', () => {
+        it('should upsert the collection and respond with the upserted collection adding the eth_address', () => {
           return server
             .put(buildURL(url))
             .set(createAuthHeaders('put', url))
@@ -349,7 +349,10 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: true,
-                data: toFullCollection(newCollectionAttributes),
+                data: {
+                  ...toFullCollection(newCollectionAttributes),
+                  eth_address: wallet.address,
+                },
               })
 
               expect(newCollectionAttributes).toEqual(
@@ -408,7 +411,7 @@ describe('Collection router', () => {
             )
           })
 
-          it('should respond with a 200, the inserted collection and have upserted the collection with the sent collection', () => {
+          it('should respond with a 200, the inserted collection adding address and have upserted the collection with the sent collection', () => {
             return server
               .put(buildURL(url))
               .set(createAuthHeaders('put', url))
@@ -417,7 +420,10 @@ describe('Collection router', () => {
               .then((response: any) => {
                 expect(response.body).toEqual({
                   ok: true,
-                  data: toFullCollection(newCollectionAttributes),
+                  data: {
+                    ...toFullCollection(newCollectionAttributes),
+                    eth_address: wallet.address,
+                  },
                 })
 
                 expect(newCollectionAttributes).toEqual(

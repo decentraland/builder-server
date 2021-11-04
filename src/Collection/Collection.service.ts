@@ -182,7 +182,9 @@ export class CollectionService {
     const attributes = toDBCollection(collectionJSON)
 
     // Should we do something with the salt and the contract address? There's no need to have them
-    return new Collection(attributes).upsert()
+    await new Collection(attributes).upsert()
+
+    return { ...attributes, eth_address }
   }
 
   async isPublished(contractAddress: string) {

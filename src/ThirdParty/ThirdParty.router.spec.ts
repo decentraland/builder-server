@@ -23,12 +23,12 @@ describe('ThirdParty router', () => {
       thirdParty: { name: 'a name', description: 'a description' },
     }
     fragments = [
-      { id: '1', managers: ['0x1'], maxItems: 3, totalItems: 2, metadata },
+      { id: '1', managers: ['0x1'], maxItems: '3', totalItems: '2', metadata },
       {
         id: '2',
         managers: ['0x2', '0x3'],
-        maxItems: 2,
-        totalItems: 1,
+        maxItems: '2',
+        totalItems: '1',
         metadata,
       },
     ]

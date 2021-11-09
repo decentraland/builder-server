@@ -146,8 +146,8 @@ export type CollectionFragment = {
 export type ThirdPartyFragment = {
   id: string
   managers: string[]
-  maxItems: number
-  totalItems: number
+  maxItems: string
+  totalItems: string
   metadata: ThirdPartyMetadata
 }
 

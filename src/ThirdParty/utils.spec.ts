@@ -13,8 +13,8 @@ describe('toThirdParty', () => {
       fragment = {
         id: 'some:id',
         managers: ['0x1', '0x2'],
-        maxItems: 1,
-        totalItems: 1,
+        maxItems: '1',
+        totalItems: '1',
         metadata: {
           type: ThirdPartyMetadataType.THIRD_PARTY_V1,
           thirdParty: {
@@ -47,8 +47,8 @@ describe('toThirdParty', () => {
       fragment = {
         id: 'some:other:id',
         managers: ['0x2'],
-        maxItems: 2,
-        totalItems: 1,
+        maxItems: '2',
+        totalItems: '1',
         metadata: {
           type: ThirdPartyMetadataType.THIRD_PARTY_V1,
           thirdParty: null,

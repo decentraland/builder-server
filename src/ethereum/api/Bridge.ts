@@ -152,48 +152,21 @@ export class Bridge {
   ): FullItem {
     const { wearable } = remoteItem.metadata
 
-    let name: string
-    let description: string
-    let category: WearableCategory | undefined
-    let rarity: ItemRarity | null
-    let data: WearableData
-    let contents: Record<string, string>
-    let metrics: MetricsAttributes
-    let in_catalyst: boolean
+    const name = dbItem.name
+    const description = dbItem.description
+    const data = dbItem.data
+    const category = data.category
+    const rarity = wearable?.rarity || dbItem.rarity
+    const contents = dbItem.contents
+    const metrics = dbItem.metrics
+    const in_catalyst = !!catalystItem
+
     let urn: string | null = null
 
-    if (catalystItem) {
-      data = catalystItem.data
-      contents = catalystItem.contents
-      metrics = catalystItem.metrics
-      in_catalyst = true
-    } else {
-      data = dbItem.data
-      contents = dbItem.contents
-      metrics = dbItem.metrics
-      in_catalyst = false
-    }
     if (catalystItem) {
       urn = catalystItem.id
     } else if (remoteItem && remoteItem.urn) {
       urn = remoteItem.urn
-    }
-
-    if (wearable) {
-      name = wearable.name
-      description = wearable.description
-      rarity = wearable.rarity
-      category = wearable.category
-    } else if (catalystItem) {
-      name = catalystItem.name
-      description = catalystItem.description
-      rarity = catalystItem.rarity
-      category = data.category
-    } else {
-      name = dbItem.name
-      description = dbItem.description
-      rarity = dbItem.rarity
-      category = data.category
     }
 
     // Caveat!: we're not considering Fragment bodyshapes here, because it's an edge case and it's really hard to consolidate,

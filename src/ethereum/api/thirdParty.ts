@@ -65,11 +65,11 @@ const getThirdPartyCollectionItemsQuery = () => gql`
 
 export class ThirdPartyAPI extends BaseGraphAPI {
   fetchThirdParties = async (
-    manager: string = ''
+    manager?: string
   ): Promise<ThirdPartyFragment[]> => {
     return this.paginate(['thirdParties'], {
       query: getThirdPartiesQuery(),
-      variables: { managers: [manager.toLowerCase()] },
+      variables: { managers: manager ? [manager.toLowerCase()] : [] },
     })
   }
 

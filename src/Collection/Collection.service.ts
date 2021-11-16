@@ -295,7 +295,7 @@ export class CollectionService {
     }))
   }
 
-  private async getDBCollection(
+  public async getDBCollection(
     collectionId: string
   ): Promise<CollectionAttributes> {
     const collection = await Collection.findOne(collectionId)

@@ -63,6 +63,15 @@ const getThirdPartyCollectionItemsQuery = () => gql`
   ${thirdPartyItemFragment()}
 `
 
+const getThirdPartyItemQuery = () => gql`
+  query getThirdPartyItem($urn: String) {
+    items(first: 1, where: { urn: $urn }) {
+      ...thirdPartyItemFragment
+    }
+  }
+  ${thirdPartyItemFragment()}
+`
+
 export class ThirdPartyAPI extends BaseGraphAPI {
   fetchThirdParties = async (
     manager?: string
@@ -110,6 +119,24 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     return this.paginate(['tiers'], {
       query: getTiersQuery(),
     })
+  }
+
+  fetchItem = async (urn: string): Promise<ThirdPartyItemsFragment | null> => {
+    const {
+      data: { items = [] },
+    } = await this.query<{
+      items: ThirdPartyItemsFragment[]
+    }>({
+      query: getThirdPartyItemQuery(),
+      variables: { urn },
+    })
+
+    return items.length > 0 ? items[0] : null
+  }
+
+  itemExists = async (urn: string): Promise<boolean> => {
+    const item = await this.fetchItem(urn)
+    return item != null
   }
 }
 

@@ -24,6 +24,10 @@ export function getThirdPartyCollectionURN(
   return `${third_party_id}:${urn_suffix}`
 }
 
+export function isTPCollection(collection: CollectionAttributes): boolean {
+  return collection.third_party_id === null || collection.urn_suffix === null
+}
+
 /**
  * Converts a collection retrieved from the DB into a "FullCollection".
  *

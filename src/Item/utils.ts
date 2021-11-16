@@ -50,3 +50,7 @@ export function decodeTPItemURN(
 
   return { collectionId: matches[0], itemId: matches[1] }
 }
+
+export function isTPItem(item: ItemAttributes): boolean {
+  return item.urn_suffix !== null
+}

@@ -1,4 +1,5 @@
 import { CollectionService } from '../Collection/Collection.service'
+import { isTPCollection } from '../Collection/utils'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
   CollectionForItemLockedException,
@@ -10,7 +11,7 @@ import {
 } from './Item.exceptions'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
-import { buildTPItemURN } from './utils'
+import { buildTPItemURN, isTPItem } from './utils'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -66,10 +67,7 @@ export class ItemService {
       dbItem.collection_id
     )
 
-    if (
-      dbCollection.third_party_id === null ||
-      dbCollection.urn_suffix === null
-    ) {
+    if (isTPCollection(dbCollection)) {
       throw new InconsistentItemException(
         dbItem.id,
         "The third party item does't belong to a third party collection"
@@ -81,8 +79,8 @@ export class ItemService {
     }
 
     const itemURN = buildTPItemURN(
-      dbCollection.third_party_id,
-      dbCollection.urn_suffix,
+      dbCollection.third_party_id!,
+      dbCollection.urn_suffix!,
       dbItem.urn_suffix!
     )
     if (await thirdPartyAPI.itemExists(itemURN)) {
@@ -102,8 +100,7 @@ export class ItemService {
       throw new NonExistentItemException(id)
     }
 
-    // If the item has a URN suffix, it's a third party item
-    if (dbItem.urn_suffix) {
+    if (isTPItem(dbItem)) {
       await this.deleteThirdPartyItem(dbItem)
     } else {
       await this.deleteDCLItem(dbItem)

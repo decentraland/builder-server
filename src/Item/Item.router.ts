@@ -32,12 +32,12 @@ import { hasAccess } from './access'
 import { getDecentralandItemURN, toDBItem } from './utils'
 import { ItemService } from './Item.service'
 import {
-  CollectionForItemLockedException,
-  DCLItemAlreadyPublishedException,
-  InconsistentItemException,
-  NonExistentItemException,
-  ThirdPartyItemAlreadyPublishedException,
-} from './Item.exceptions'
+  CollectionForItemLockedError,
+  DCLItemAlreadyPublishedError,
+  InconsistentItemError,
+  NonExistentItemError,
+  ThirdPartyItemAlreadyPublishedError,
+} from './Item.errors'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -470,21 +470,21 @@ export class ItemRouter extends Router {
     try {
       await this.itemService.deleteItem(id)
     } catch (error) {
-      if (error instanceof NonExistentItemException) {
+      if (error instanceof NonExistentItemError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.notFound
         )
-      } else if (error instanceof InconsistentItemException) {
+      } else if (error instanceof InconsistentItemError) {
         throw new HTTPError(error.message, { id: error.id }, STATUS_CODES.error)
-      } else if (error instanceof CollectionForItemLockedException) {
+      } else if (error instanceof CollectionForItemLockedError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.locked
         )
-      } else if (error instanceof DCLItemAlreadyPublishedException) {
+      } else if (error instanceof DCLItemAlreadyPublishedError) {
         throw new HTTPError(
           error.message,
           {
@@ -494,7 +494,7 @@ export class ItemRouter extends Router {
           },
           STATUS_CODES.conflict
         )
-      } else if (error instanceof ThirdPartyItemAlreadyPublishedException) {
+      } else if (error instanceof ThirdPartyItemAlreadyPublishedError) {
         throw new HTTPError(
           error.message,
           {

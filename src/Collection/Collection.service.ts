@@ -8,6 +8,7 @@ import { Item } from '../Item/Item.model'
 import {
   decodeTPCollectionURN,
   getThirdPartyCollectionURN,
+  isTPCollection,
   toDBCollection,
 } from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
@@ -134,10 +135,7 @@ export class CollectionService {
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection) {
-      if (
-        collection.third_party_id === null ||
-        collection.urn_suffix === null
-      ) {
+      if (isTPCollection(collection)) {
         throw new WrongCollectionException(
           "The collection can't be converted into a third party collection.",
           { id }
@@ -155,8 +153,8 @@ export class CollectionService {
         // We can't change the TPW collection's URN if there are already published items
         await this.checkIfThirdPartyCollectionHasPublishedItems(
           id,
-          collection.third_party_id,
-          collection.urn_suffix
+          collection.third_party_id!,
+          collection.urn_suffix!
         )
 
         // Check if the new URN for the collection already exists

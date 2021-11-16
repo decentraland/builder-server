@@ -2,13 +2,13 @@ import { CollectionService } from '../Collection/Collection.service'
 import { isTPCollection } from '../Collection/utils'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
-  CollectionForItemLockedException,
+  CollectionForItemLockedError,
   ItemAction,
-  NonExistentItemException,
-  InconsistentItemException,
-  DCLItemAlreadyPublishedException,
-  ThirdPartyItemAlreadyPublishedException,
-} from './Item.exceptions'
+  NonExistentItemError,
+  InconsistentItemError,
+  DCLItemAlreadyPublishedError,
+  ThirdPartyItemAlreadyPublishedError,
+} from './Item.errors'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
 import { buildTPItemURN, isTPItem } from './utils'
@@ -23,9 +23,9 @@ export class ItemService {
     const dbItem = await Item.findOne<ItemAttributes>(id)
     if (!dbItem) {
       return false
-    } else if (dbItem.urn_suffix && dbItem.collection_id) {
+    } else if (isTPItem(dbItem)) {
       return this.collectionService.isOwnedOrManagedBy(
-        dbItem?.collection_id,
+        dbItem.collection_id!,
         ethAddress
       )
     } else {
@@ -41,7 +41,7 @@ export class ItemService {
       if (
         await this.collectionService.isPublished(dbCollection.contract_address!)
       ) {
-        throw new DCLItemAlreadyPublishedException(
+        throw new DCLItemAlreadyPublishedError(
           dbItem.id,
           dbItem.blockchain_item_id!,
           dbCollection.contract_address!,
@@ -49,7 +49,7 @@ export class ItemService {
         )
       }
       if (await this.collectionService.isLockActive(dbCollection.lock)) {
-        throw new CollectionForItemLockedException(dbItem.id, ItemAction.DELETE)
+        throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
       }
     }
     await Item.delete({ id: dbItem.id })
@@ -57,7 +57,7 @@ export class ItemService {
 
   private async deleteThirdPartyItem(dbItem: ItemAttributes): Promise<void> {
     if (!dbItem.collection_id) {
-      throw new InconsistentItemException(
+      throw new InconsistentItemError(
         dbItem.id,
         "The third party item isn't part of a collection"
       )
@@ -68,14 +68,14 @@ export class ItemService {
     )
 
     if (isTPCollection(dbCollection)) {
-      throw new InconsistentItemException(
+      throw new InconsistentItemError(
         dbItem.id,
         "The third party item does't belong to a third party collection"
       )
     }
 
     if (await this.collectionService.isLockActive(dbCollection.lock)) {
-      throw new CollectionForItemLockedException(dbItem.id, ItemAction.DELETE)
+      throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
     }
 
     const itemURN = buildTPItemURN(
@@ -84,7 +84,7 @@ export class ItemService {
       dbItem.urn_suffix!
     )
     if (await thirdPartyAPI.itemExists(itemURN)) {
-      throw new ThirdPartyItemAlreadyPublishedException(
+      throw new ThirdPartyItemAlreadyPublishedError(
         dbItem.id,
         itemURN,
         ItemAction.DELETE
@@ -97,7 +97,7 @@ export class ItemService {
   public async deleteItem(id: string): Promise<void> {
     const dbItem = await Item.findOne<ItemAttributes>(id)
     if (!dbItem) {
-      throw new NonExistentItemException(id)
+      throw new NonExistentItemError(id)
     }
 
     if (isTPItem(dbItem)) {

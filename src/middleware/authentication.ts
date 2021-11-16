@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { AuthLink } from 'dcl-crypto'
+import { AuthLink, Authenticator, AuthChain, AuthLinkType } from 'dcl-crypto'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { AuthRequestLegacy } from './authentication-legacy'
@@ -75,8 +75,20 @@ async function decodeAuthChain(req: Request): Promise<string> {
     } else {
       try {
         const endpoint = (req.method + ':' + req.path).toLowerCase()
-        // We don't use the response, just want to make sure it does not blow up
-        await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
+        if (isEIP1664AuthChain(authChain)) {
+          // We don't use the response, just want to make sure it does not blow up
+          await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
+        } else {
+          const res = await Authenticator.validateSignature(
+            endpoint,
+            authChain,
+            null as any
+          )
+
+          if (!res.ok) {
+            errorMessage = res.message!
+          }
+        }
       } catch (error) {
         errorMessage = error.message
       }
@@ -88,6 +100,19 @@ async function decodeAuthChain(req: Request): Promise<string> {
   }
 
   return ethAddress!.toLowerCase()
+}
+
+export function isEIP1664AuthChain(authChain: AuthChain) {
+  switch (authChain.length) {
+    case 2:
+    case 3:
+      return (
+        authChain[0].type === AuthLinkType.SIGNER &&
+        authChain[1].type === AuthLinkType.ECDSA_EIP_1654_EPHEMERAL
+      )
+    default:
+      return false
+  }
 }
 
 export const withAuthentication = getAuthenticationMiddleware()

@@ -25,3 +25,15 @@ export function toDBItem(item: FullItem): ItemAttributes {
     'content_hash',
   ])
 }
+
+export function buildTPItemURN(
+  thirdPartyId: string,
+  collectionURNSuffix: string,
+  itemURNSuffix: string
+): string {
+  return `${thirdPartyId}:${collectionURNSuffix}:${itemURNSuffix}`
+}
+
+export function isTPItem(item: ItemAttributes): boolean {
+  return item.urn_suffix !== null && item.collection_id !== null
+}

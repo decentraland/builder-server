@@ -31,6 +31,13 @@ import { FullItem } from './Item.types'
 import { hasAccess } from './access'
 import { getDecentralandItemURN, toDBItem } from './utils'
 import { ItemService } from './Item.service'
+import {
+  CollectionForItemLockedError,
+  DCLItemAlreadyPublishedError,
+  InconsistentItemError,
+  NonExistentItemError,
+  ThirdPartyItemAlreadyPublishedError,
+} from './Item.errors'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -458,51 +465,48 @@ export class ItemRouter extends Router {
     return Bridge.toFullItem(item)
   }
 
-  deleteItem = async (req: AuthRequest) => {
+  deleteItem = async (req: AuthRequest): Promise<boolean> => {
     const id = server.extractFromReq(req, 'id')
-
-    const dbItem = await Item.findOne<ItemAttributes>(id)
-    if (!dbItem) {
-      throw new HTTPError('Invalid item', { id }, STATUS_CODES.notFound)
-    }
-
-    if (dbItem.collection_id) {
-      const dbCollection = await Collection.findOne<CollectionAttributes>(
-        dbItem.collection_id
-      )
-
-      if (dbCollection) {
-        if (
-          await this.collectionService.isPublished(
-            dbCollection.contract_address!
-          )
-        ) {
-          throw new HTTPError(
-            "The item was published. It can't be deleted",
-            {
-              id,
-              blockchain_item_id: dbItem.blockchain_item_id,
-              contract_address: dbCollection.contract_address,
-            },
-            STATUS_CODES.unauthorized
-          )
-        }
-
-        if (await this.collectionService.isLockActive(dbCollection.lock)) {
-          throw new HTTPError(
-            "The item collection is locked. It can't be deleted",
-            {
-              id,
-              blockchain_item_id: dbItem.blockchain_item_id,
-              contract_address: dbCollection.contract_address,
-            },
-            STATUS_CODES.locked
-          )
-        }
+    try {
+      await this.itemService.deleteItem(id)
+    } catch (error) {
+      if (error instanceof NonExistentItemError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof InconsistentItemError) {
+        throw new HTTPError(error.message, { id: error.id }, STATUS_CODES.error)
+      } else if (error instanceof CollectionForItemLockedError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.locked
+        )
+      } else if (error instanceof DCLItemAlreadyPublishedError) {
+        throw new HTTPError(
+          error.message,
+          {
+            id: error.id,
+            blockchain_item_id: error.blockchainItemId,
+            contract_address: error.contractAddress,
+          },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof ThirdPartyItemAlreadyPublishedError) {
+        throw new HTTPError(
+          error.message,
+          {
+            id: error.id,
+            urn: error.urn,
+          },
+          STATUS_CODES.conflict
+        )
       }
-    }
 
-    await Item.delete({ id })
+      throw error
+    }
     return true
   }
 

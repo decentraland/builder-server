@@ -74,6 +74,8 @@ async function decodeAuthChain(req: Request): Promise<string> {
       errorMessage = 'Missing ETH address in auth chain'
     } else {
       try {
+        // @TODO: We are waiting for the final implementatio of https://github.com/decentraland/decentraland-crypto-middleware in order to complete use it.
+        // For the time being, we need to reduce the number of request to the catalysts
         const endpoint = (req.method + ':' + req.path).toLowerCase()
         if (isEIP1664AuthChain(authChain)) {
           // We don't use the response, just want to make sure it does not blow up

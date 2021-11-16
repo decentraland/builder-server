@@ -35,5 +35,5 @@ export function buildTPItemURN(
 }
 
 export function isTPItem(item: ItemAttributes): boolean {
-  return item.urn_suffix !== null && item.collection_id === null
+  return item.urn_suffix !== null && item.collection_id !== null
 }

@@ -724,35 +724,6 @@ describe('Item router', () => {
         collectionAttributesMock.third_party_id = 'third-party-id'
       })
 
-      describe("and the item in the db doesn't have a collection id assigned to it", () => {
-        beforeEach(() => {
-          dbItem.collection_id = null
-          mockExistsMiddleware(Item, dbItem.id)
-          mockItemAuthorizationMiddleware(dbItem.id, wallet.address, true, true)
-          ;(Item.findOne as jest.MockedFunction<
-            typeof Item.findOne
-          >).mockResolvedValueOnce(dbItem)
-        })
-
-        it('should respond a 500, a message signaling that the third party item is not part of a collection and not delete the item', () => {
-          return server
-            .delete(buildURL(url))
-            .set(createAuthHeaders('delete', url))
-            .expect(500)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                error: "The third party item isn't part of a collection",
-                data: {
-                  id: dbItem.id,
-                },
-                ok: false,
-              })
-
-              expect(Item.delete).not.toHaveBeenCalled()
-            })
-        })
-      })
-
       describe('and the collection of the item is not part of a third party collection', () => {
         beforeEach(() => {
           collectionAttributesMock.urn_suffix = null

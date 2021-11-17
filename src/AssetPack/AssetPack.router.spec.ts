@@ -1,6 +1,6 @@
 import { ILoggerComponent } from '@well-known-components/interfaces'
-import { AssetPackRouter } from './AssetPack.router'
 import { ExpressApp } from '../common/ExpressApp'
+import { AssetPackRouter } from './AssetPack.router'
 import { AssetPack } from './AssetPack.model'
 import { getDefaultEthAddress } from './utils'
 

@@ -131,7 +131,6 @@ export class CollectionService {
     const { third_party_id, urn_suffix } = decodeTPCollectionURN(
       collectionJSON.urn
     )
-
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection) {
@@ -145,7 +144,6 @@ export class CollectionService {
       const { third_party_id, urn_suffix } = decodeTPCollectionURN(
         collectionJSON.urn
       )
-
       if (
         third_party_id !== collection.third_party_id ||
         urn_suffix !== collection.urn_suffix
@@ -156,7 +154,6 @@ export class CollectionService {
           collection.third_party_id!,
           collection.urn_suffix!
         )
-
         // Check if the new URN for the collection already exists
         await this.checkIfThirdPartyCollectionHasPublishedItems(
           id,
@@ -164,7 +161,6 @@ export class CollectionService {
           urn_suffix
         )
       }
-
       if (this.isLockActive(collection.lock)) {
         throw new CollectionLockedException(id, CollectionAction.UPDATE)
       }

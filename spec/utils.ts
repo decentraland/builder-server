@@ -43,6 +43,15 @@ export function createAuthHeaders(
   return headers
 }
 
+/**
+ * Mocks the "Date.now()" call done in the authentication middleware for tests that
+ * require mocking the "Date.now" call.
+ */
+export function mockAuthenticationSignatureValidationDate() {
+  const currentDate = Date.now()
+  jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
+}
+
 export class GenericModel extends Model<any> {}
 
 // Takes in a mocked (jest.mock()) Model class

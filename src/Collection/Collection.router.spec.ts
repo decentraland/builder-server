@@ -7,6 +7,7 @@ import {
   mockCollectionAuthorizationMiddleware,
   mockIsCollectionPublished,
   mockThirdPartyCollectionWithItems,
+  mockAuthenticationSignatureValidationDate,
 } from '../../spec/utils'
 import {
   collectionAttributesMock,
@@ -279,10 +280,11 @@ describe('Collection router', () => {
 
       describe('and the collection exists and is locked', () => {
         beforeEach(() => {
+          const currentDate = Date.now()
+          mockAuthenticationSignatureValidationDate()
           ;(thirdPartyAPI.isManager as jest.MockedFunction<
             typeof thirdPartyAPI.isManager
           >).mockResolvedValueOnce(true)
-          const currentDate = Date.now()
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
@@ -606,6 +608,7 @@ describe('Collection router', () => {
       describe('and the collection already already exists and is locked', () => {
         beforeEach(() => {
           const currentDate = Date.now()
+          mockAuthenticationSignatureValidationDate()
           collectionToUpsert = {
             ...toFullCollection(dbCollection),
             urn,
@@ -852,8 +855,12 @@ describe('Collection router', () => {
   })
 
   describe('when locking a collection', () => {
-    const now = 1633022119407
+    let now: number
+    let lock: Date
     beforeEach(() => {
+      now = 1633022119407
+      lock = new Date(now)
+      mockAuthenticationSignatureValidationDate()
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
       mockExistsMiddleware(Collection, dbCollection.id)
       mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
@@ -869,7 +876,6 @@ describe('Collection router', () => {
 
     describe('when the lock update succeeds', () => {
       it('should update the lock with .now() on the supplied collection id for the owner', () => {
-        const lock = new Date(now)
         return server
           .post(buildURL(url))
           .set(createAuthHeaders('post', url))
@@ -1004,6 +1010,7 @@ describe('Collection router', () => {
         describe('and it is locked', () => {
           beforeEach(() => {
             const lockDate = new Date()
+            mockAuthenticationSignatureValidationDate()
             dbCollection.lock = lockDate
             mockThirdPartyCollectionWithItems(
               dbCollection.third_party_id!,
@@ -1037,6 +1044,7 @@ describe('Collection router', () => {
         describe('and its neither locked nor some of its items published', () => {
           beforeEach(() => {
             const lockDate = new Date()
+            mockAuthenticationSignatureValidationDate()
             dbCollection.lock = lockDate
             mockThirdPartyCollectionWithItems(
               dbCollection.third_party_id!,
@@ -1112,6 +1120,7 @@ describe('Collection router', () => {
       describe('and it is not published but locked', () => {
         beforeEach(() => {
           const lockDate = new Date()
+          mockAuthenticationSignatureValidationDate()
           dbCollection.lock = lockDate
           mockIsCollectionPublished(dbCollection.id, false)
           jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
@@ -1141,6 +1150,7 @@ describe('Collection router', () => {
       describe('and its neither locked nor published', () => {
         beforeEach(() => {
           const lockDate = new Date()
+          mockAuthenticationSignatureValidationDate()
           dbCollection.lock = lockDate
           mockIsCollectionPublished(dbCollection.id, false)
           jest

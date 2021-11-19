@@ -1,3 +1,4 @@
+import { validate as validateUuid } from 'uuid'
 import { Request, Response, NextFunction } from 'express'
 import { server } from 'decentraland-server'
 
@@ -26,6 +27,13 @@ export function withModelExists(
 ) {
   return async (req: Request, res: Response, next: NextFunction) => {
     const id = server.extractFromReq(req, param)
+
+    if (!validateUuid(id)) {
+      res
+        .status(STATUS_CODES.badRequest)
+        .json(server.sendError({ id }, `Invalid uuid ${id}`))
+      return
+    }
 
     const count = await Model.count({ id, ...enforce })
     if (count <= 0) {

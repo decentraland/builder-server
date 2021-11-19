@@ -1,4 +1,3 @@
-import { validate as validateUuid } from 'uuid'
 import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -38,15 +37,12 @@ const validator = getValidator()
 export class CollectionRouter extends Router {
   public service = new CollectionService()
 
-  private modelAuthorizationCheck = async (
+  private modelAuthorizationCheck = (
     _: OwnableModel,
     id: string,
     ethAddress: string
   ): Promise<boolean> => {
-    return (
-      validateUuid(id) &&
-      (await this.service.isOwnedOrManagedBy(id, ethAddress))
-    )
+    return this.service.isOwnedOrManagedBy(id, ethAddress)
   }
 
   mount() {

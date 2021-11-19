@@ -1,4 +1,3 @@
-import { validate as validateUuid } from 'uuid'
 import { Request, Response } from 'express'
 import { utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
@@ -49,15 +48,12 @@ export class ItemRouter extends Router {
     | ((req: Request, res: Response) => Promise<boolean>) // Promisified RequestHandler
     | undefined
 
-  private modelAuthorizationCheck = async (
+  private modelAuthorizationCheck = (
     _: OwnableModel,
     id: string,
     ethAddress: string
   ): Promise<boolean> => {
-    return (
-      validateUuid(id) &&
-      (await this.itemService.isOwnedOrManagedBy(id, ethAddress))
-    )
+    return this.itemService.isOwnedOrManagedBy(id, ethAddress)
   }
 
   mount() {

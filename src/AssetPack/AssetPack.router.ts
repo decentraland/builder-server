@@ -7,6 +7,7 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
+import { logExecutionTime } from '../utils/logging'
 import {
   withModelExists,
   withModelAuthorization,
@@ -120,8 +121,9 @@ export class AssetPackRouter extends Router {
     if (owner === 'default') {
       return this.sendDefaultAssetPacksRaw(res, tracer)
     } else if (ethAddress && owner === ethAddress) {
-      const usersAssetPacks = await this.logExecutionTime(
+      const usersAssetPacks = await logExecutionTime(
         () => AssetPack.findByEthAddressWithAssets(ethAddress),
+        this.logger,
         `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
@@ -138,8 +140,9 @@ export class AssetPackRouter extends Router {
 
     // Get user asset packs
     if (ethAddress) {
-      assetPacks = await this.logExecutionTime(
+      assetPacks = await logExecutionTime(
         () => AssetPack.findByEthAddressWithAssets(ethAddress),
+        this.logger,
         `Get the user\'s (${ethAddress}) asset packs`,
         tracer
       )
@@ -151,8 +154,9 @@ export class AssetPackRouter extends Router {
 
     // Get default asset packs
     if (ethAddress !== DEFAULT_ETH_ADDRESS) {
-      const [defaultAssetPacks] = await this.logExecutionTime(
+      const [defaultAssetPacks] = await logExecutionTime(
         this.getDefaultAssetPacks,
+        this.logger,
         'Get the default asset packs',
         tracer
       )
@@ -177,8 +181,9 @@ export class AssetPackRouter extends Router {
       `Starting request to get the asset pack with id ${id} and the address ${eth_address} with tracer ${tracer}`
     )
 
-    const isVisible = await this.logExecutionTime(
+    const isVisible = await logExecutionTime(
       () => AssetPack.isVisible(id, [eth_address, DEFAULT_ETH_ADDRESS]),
+      this.logger,
       'Get if asset pack is visible',
       tracer
     )
@@ -195,8 +200,9 @@ export class AssetPackRouter extends Router {
       `[${tracer}] Assets pack with id ${id} is visible to ${eth_address}`
     )
 
-    const assetPack = await this.logExecutionTime(
+    const assetPack = await logExecutionTime(
       () => AssetPack.findOneWithAssets(id),
+      this.logger,
       'Find one with assets',
       tracer
     )
@@ -308,8 +314,9 @@ export class AssetPackRouter extends Router {
     res: express.Response,
     tracer: string
   ) => {
-    const [, defaultAssetPacksRaw] = await this.logExecutionTime(
+    const [, defaultAssetPacksRaw] = await logExecutionTime(
       this.getDefaultAssetPacks,
+      this.logger,
       'Get default asset packs for default owner',
       tracer
     )
@@ -345,20 +352,6 @@ export class AssetPackRouter extends Router {
       )
     }
     return [this.defaultAssetPacks, this.defaultAssetPacksCachedResponse]
-  }
-
-  private logExecutionTime = async <T>(
-    functionToMeasure: () => T | Promise<T>,
-    name: string,
-    tracer: string
-  ): Promise<T> => {
-    const start = process.hrtime.bigint()
-    const result = await functionToMeasure()
-    const end = process.hrtime.bigint()
-    this.logger.info(
-      `[${tracer}] ${name} took ${(end - start) / BigInt(1000000)} ms to run`
-    )
-    return result
   }
 
   private sanitize(assetPacks: FullAssetPackAttributes[]) {

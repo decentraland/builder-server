@@ -1,5 +1,8 @@
 import gql from 'graphql-tag'
 import { env } from 'decentraland-commons'
+import { createConsoleLogComponent } from '@well-known-components/logger'
+import { ILoggerComponent } from '@well-known-components/interfaces'
+import { logExecutionTime } from '../../utils/logging'
 import {
   collectionFragment,
   itemFragment,
@@ -132,6 +135,13 @@ const getRaritiesQuery = () => gql`
 export const COLLECTIONS_URL = env.get('COLLECTIONS_GRAPH_URL', '')
 
 export class CollectionAPI extends BaseGraphAPI {
+  logger: ILoggerComponent.ILogger
+
+  constructor(url: string) {
+    super(url)
+    this.logger = createConsoleLogComponent().getLogger('Collections GraphAPI')
+  }
+
   fetchCollection = async (contractAddress: string) => {
     const {
       data: { collections = [] },
@@ -153,17 +163,26 @@ export class CollectionAPI extends BaseGraphAPI {
   fetchCollectionsByAuthorizedUser = async (
     userAddress: string
   ): Promise<CollectionFragment[]> => {
-    return this.paginate(['creator', 'manager', 'minter'], {
-      query: getCollectionsByAuthorizedUserQuery(),
-      variables: {
-        user: userAddress.toLowerCase(),
-        users: [userAddress.toLowerCase()],
-      },
-    })
+    return logExecutionTime(
+      () =>
+        this.paginate(['creator', 'manager', 'minter'], {
+          query: getCollectionsByAuthorizedUserQuery(),
+          variables: {
+            user: userAddress.toLowerCase(),
+            users: [userAddress.toLowerCase()],
+          },
+        }),
+      this.logger,
+      'Collections by authorized user'
+    )
   }
 
   fetchItems = async (): Promise<ItemFragment[]> => {
-    return this.paginate(['items'], { query: getItemsQuery() })
+    return logExecutionTime(
+      () => this.paginate(['items'], { query: getItemsQuery() }),
+      this.logger,
+      'Items fetch'
+    )
   }
 
   fetchItem = async (contractAddress: string, tokenId: string) => {
@@ -182,10 +201,15 @@ export class CollectionAPI extends BaseGraphAPI {
   ): Promise<ItemFragment[]> => {
     const {
       data: { items = [] },
-    } = await this.query<{ items: ItemFragment[] }>({
-      query: getItemsByCollectionIdQuery(),
-      variables: { collectionId: contractAddress.toLowerCase() },
-    })
+    } = await logExecutionTime(
+      () =>
+        this.query<{ items: ItemFragment[] }>({
+          query: getItemsByCollectionIdQuery(),
+          variables: { collectionId: contractAddress.toLowerCase() },
+        }),
+      this.logger,
+      'Items by contract fetch'
+    )
 
     return items
   }
@@ -193,15 +217,17 @@ export class CollectionAPI extends BaseGraphAPI {
   fetchItemsByAuthorizedUser = async (
     userAddress: string
   ): Promise<ItemFragment[]> => {
-    const result: { items: ItemFragment[] }[] = await this.paginate(
-      ['creator', 'manager', 'minter'],
-      {
-        query: getItemsByAuthorizedUserQuery(),
-        variables: {
-          user: userAddress.toLowerCase(),
-          users: [userAddress.toLowerCase()],
-        },
-      }
+    const result: { items: ItemFragment[] }[] = await logExecutionTime(
+      () =>
+        this.paginate(['creator', 'manager', 'minter'], {
+          query: getItemsByAuthorizedUserQuery(),
+          variables: {
+            user: userAddress.toLowerCase(),
+            users: [userAddress.toLowerCase()],
+          },
+        }),
+      this.logger,
+      'Items by author fetch'
     )
 
     return result.reduce(
@@ -234,7 +260,11 @@ export class CollectionAPI extends BaseGraphAPI {
   }
 
   fetchCommittee = async (): Promise<AccountFragment[]> => {
-    return this.paginate(['accounts'], { query: getCommitteeQuery() })
+    return logExecutionTime(
+      () => this.paginate(['accounts'], { query: getCommitteeQuery() }),
+      this.logger,
+      'Committee fetch'
+    )
   }
 
   fetchRarities = async () => {

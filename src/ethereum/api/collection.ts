@@ -2,6 +2,7 @@ import gql from 'graphql-tag'
 import { env } from 'decentraland-commons'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { ILoggerComponent } from '@well-known-components/interfaces'
+import { logExecutionTime } from '../../utils/logging'
 import {
   collectionFragment,
   itemFragment,
@@ -18,7 +19,6 @@ import {
   PAGINATION_VARIABLES,
   PAGINATION_ARGUMENTS,
 } from './BaseGraphAPI'
-import { logExecutionTime } from '../../utils/logging'
 
 const getCollectionByIdQuery = () => gql`
   query getCollectionById($id: String) {
@@ -139,7 +139,7 @@ export class CollectionAPI extends BaseGraphAPI {
 
   constructor(url: string) {
     super(url)
-    this.logger = createConsoleLogComponent().getLogger('GraphAPI')
+    this.logger = createConsoleLogComponent().getLogger('Collections GraphAPI')
   }
 
   fetchCollection = async (contractAddress: string) => {

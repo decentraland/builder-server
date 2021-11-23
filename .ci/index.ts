@@ -64,7 +64,7 @@ export = async function main() {
       { name: 'CONNECTION_STRING', value: connectionString },
       { name: 'DEFAULT_USER_ID', value: 'email|5dee8964f0099a1255367a35' },
       { name: 'AUTH0_DOMAIN', value: AUTH0_DOMAIN },
-      { name: 'DEFAULT_ASSET_PACK_CACHE', value: '60000' },
+      { name: 'DEFAULT_ASSET_PACK_CACHE', value: '86400000' },
       {
         name: 'BUILDER_URL',
         value:

@@ -35,7 +35,7 @@ const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
 const THUMBNAIL_MIME_TYPES = ['image/png', 'image/jpeg']
 const DEFAULT_ETH_ADDRESS = getDefaultEthAddress()
-const DEFAULT_ASSET_PACK_CACHE = env.get('DEFAULT_ASSET_PACK_CACHE', 1440000)
+const DEFAULT_ASSET_PACK_CACHE = env.get('DEFAULT_ASSET_PACK_CACHE', 86400000)
 
 const validator = getValidator()
 

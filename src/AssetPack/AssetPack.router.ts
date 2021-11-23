@@ -44,6 +44,8 @@ export class AssetPackRouter extends Router {
   private defaultAssetPacksCachedResponse: string | null = null
   private lastDefaultAssetPacksFetch: number = 0
   private logger: ILoggerComponent.ILogger
+  private isUpdatingDefaultAssetPacksCache: boolean = false
+  private defaultAssetPacksCachePromise: Promise<FullAssetPackAttributes[]>
 
   constructor(router: ExpressApp | express.Router, logger: ILoggerComponent) {
     super(router)
@@ -332,19 +334,35 @@ export class AssetPackRouter extends Router {
       currentTimestamp - this.lastDefaultAssetPacksFetch >
       Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
 
-    if (this.defaultAssetPacks.length === 0 || aDayPassed) {
-      const defaultAssetPacks = await AssetPack.findByEthAddressWithAssets(
+    // This is to wait for the cache to be completed if there's no cache ready.
+    // This will execute only the first time the server is up.
+    if (
+      this.isUpdatingDefaultAssetPacksCache &&
+      (!this.defaultAssetPacksCachedResponse || !this.defaultAssetPacks)
+    ) {
+      await this.defaultAssetPacksCachePromise
+    }
+
+    if (
+      (this.defaultAssetPacks.length === 0 || aDayPassed) &&
+      !this.isUpdatingDefaultAssetPacksCache
+    ) {
+      this.isUpdatingDefaultAssetPacksCache = true
+      this.defaultAssetPacksCachePromise = AssetPack.findByEthAddressWithAssets(
         DEFAULT_ETH_ADDRESS
       )
+      const defaultAssetPacks = await this.defaultAssetPacksCachePromise
       this.defaultAssetPacks = this.sanitize(defaultAssetPacks)
       this.defaultAssetPacksCachedResponse = JSON.stringify({
         ok: true,
         data: this.defaultAssetPacks,
       })
       this.lastDefaultAssetPacksFetch = currentTimestamp
+      this.isUpdatingDefaultAssetPacksCache = false
     }
 
-    if (!this.defaultAssetPacksCachedResponse) {
+    // We shouldn't ever reach this.
+    if (!this.defaultAssetPacksCachedResponse || !this.defaultAssetPacks) {
       throw new HTTPError(
         'Default asset packs buffer is not cached yet',
         null,

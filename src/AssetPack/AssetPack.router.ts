@@ -45,7 +45,9 @@ export class AssetPackRouter extends Router {
   private lastDefaultAssetPacksFetch: number = 0
   private logger: ILoggerComponent.ILogger
   private isUpdatingDefaultAssetPacksCache: boolean = false
-  private defaultAssetPacksCachePromise: Promise<FullAssetPackAttributes[]>
+  private defaultAssetPacksCachePromise:
+    | Promise<FullAssetPackAttributes[]>
+    | undefined
 
   constructor(router: ExpressApp | express.Router, logger: ILoggerComponent) {
     super(router)
@@ -330,21 +332,23 @@ export class AssetPackRouter extends Router {
     [FullAssetPackAttributes[], string]
   > => {
     const currentTimestamp = Date.now()
-    const aDayPassed =
+    const cacheHasExpired =
       currentTimestamp - this.lastDefaultAssetPacksFetch >
-      Number(DEFAULT_ASSET_PACK_CACHE) // 24 * 60 * 1000
+      Number(DEFAULT_ASSET_PACK_CACHE)
+
+    const defaultAssetPacksIsNotCached =
+      !this.defaultAssetPacksCachedResponse ||
+      this.defaultAssetPacks.length === 0
 
     // This is to wait for the cache to be completed if there's no cache ready.
-    // This will execute only the first time the server is up.
-    if (
-      this.isUpdatingDefaultAssetPacksCache &&
-      (!this.defaultAssetPacksCachedResponse || !this.defaultAssetPacks)
-    ) {
+    // It will execute only the first time the server is up, as after the first fetch
+    // the default asset packs will be cached.
+    if (this.isUpdatingDefaultAssetPacksCache && defaultAssetPacksIsNotCached) {
       await this.defaultAssetPacksCachePromise
     }
 
     if (
-      (this.defaultAssetPacks.length === 0 || aDayPassed) &&
+      (defaultAssetPacksIsNotCached || cacheHasExpired) &&
       !this.isUpdatingDefaultAssetPacksCache
     ) {
       this.isUpdatingDefaultAssetPacksCache = true
@@ -361,15 +365,7 @@ export class AssetPackRouter extends Router {
       this.isUpdatingDefaultAssetPacksCache = false
     }
 
-    // We shouldn't ever reach this.
-    if (!this.defaultAssetPacksCachedResponse || !this.defaultAssetPacks) {
-      throw new HTTPError(
-        'Default asset packs buffer is not cached yet',
-        null,
-        STATUS_CODES.error
-      )
-    }
-    return [this.defaultAssetPacks, this.defaultAssetPacksCachedResponse]
+    return [this.defaultAssetPacks, this.defaultAssetPacksCachedResponse!]
   }
 
   private sanitize(assetPacks: FullAssetPackAttributes[]) {

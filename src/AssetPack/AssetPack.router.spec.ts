@@ -40,6 +40,24 @@ const anotherSanitizedAssetPack = {
 
 delete anotherSanitizedAssetPack.is_deleted
 
+type MockedRes = {
+  send: jest.Mock
+  json: jest.Mock
+  setHeader: jest.Mock
+  status: jest.Mock
+}
+
+function buildMockedRes(): MockedRes {
+  const anotherRes = {
+    send: jest.fn(),
+    json: jest.fn(),
+    setHeader: jest.fn(),
+    status: jest.fn(),
+  }
+  anotherRes.status.mockReturnValue(anotherRes)
+  return anotherRes
+}
+
 describe('AssetPack router', () => {
   const logger = {
     getLogger: () => ({
@@ -54,23 +72,13 @@ describe('AssetPack router', () => {
     query: Record<string, string>
     auth: { ethAddress?: string }
   }
-  let res: {
-    send: jest.Mock
-    json: jest.Mock
-    setHeader: jest.Mock
-    status: jest.Mock
-  }
+  let res: MockedRes
   let router: AssetPackRouter
+
   beforeEach(() => {
     router = new AssetPackRouter(new ExpressApp(), logger)
     req = { query: {}, auth: { ethAddress: undefined } }
-    res = {
-      send: jest.fn(),
-      json: jest.fn(),
-      setHeader: jest.fn(),
-      status: jest.fn(),
-    }
-    res.status.mockReturnValue(res)
+    res = buildMockedRes()
   })
 
   afterEach(() => {
@@ -254,6 +262,82 @@ describe('AssetPack router', () => {
         expect(res.json).toHaveBeenCalledWith({
           data: [aSanitizedAssetPack, anotherSanitizedAssetPack],
           ok: true,
+        })
+      })
+    })
+
+    describe('when retrieving the default asset pack at the same time', () => {
+      let resolver: (value: unknown) => void
+      let anotherRes: MockedRes
+
+      beforeEach(async () => {
+        anotherRes = buildMockedRes()
+        req.query = { owner: 'default' }
+        jest
+          .spyOn(Date, 'now')
+          .mockReturnValueOnce(172800000)
+          .mockReturnValueOnce(432000000)
+          .mockReturnValueOnce(432000000)
+        ;(AssetPack.findByEthAddressWithAssets as jest.Mock)
+          .mockReset()
+          .mockResolvedValueOnce([aSanitizedAssetPack])
+          .mockReturnValueOnce(new Promise((resolve) => (resolver = resolve)))
+        await router.getAssetPacks(req as any, res as any)
+        res.send.mockReset()
+      })
+
+      describe('and the cache is expired', () => {
+        it('should start updating the cache and return the old cache for the other concurrent requests', async () => {
+          const firstRequest = router.getAssetPacks(req as any, res as any)
+          const secondRequest = router.getAssetPacks(
+            req as any,
+            anotherRes as any
+          )
+          resolver([aSanitizedAssetPack, anotherSanitizedAssetPack])
+          await firstRequest
+          await secondRequest
+
+          expect(res.send).toHaveBeenCalledWith(
+            `{"ok":true,"data":${JSON.stringify([
+              aSanitizedAssetPack,
+              anotherSanitizedAssetPack,
+            ])}}`
+          )
+          expect(anotherRes.send).toHaveBeenCalledWith(
+            `{"ok":true,"data":[${JSON.stringify(aSanitizedAssetPack)}]}`
+          )
+        })
+      })
+
+      describe("and there's no cache", () => {
+        beforeEach(() => {
+          anotherRes = buildMockedRes()
+          req.query = { owner: 'default' }
+          jest
+            .spyOn(Date, 'now')
+            .mockReturnValueOnce(172800000)
+            .mockReturnValueOnce(172800000)
+          ;(AssetPack.findByEthAddressWithAssets as jest.Mock)
+            .mockReset()
+            .mockReturnValueOnce(new Promise((resolve) => (resolver = resolve)))
+        })
+
+        it('should start updating the cache and all concurrent requests should wait for the first one to finish', async () => {
+          const firstRequest = router.getAssetPacks(req as any, res as any)
+          const secondRequest = router.getAssetPacks(
+            req as any,
+            anotherRes as any
+          )
+          resolver([aSanitizedAssetPack])
+          await firstRequest
+          await secondRequest
+
+          expect(res.send).toHaveBeenCalledWith(
+            `{"ok":true,"data":[${JSON.stringify(aSanitizedAssetPack)}]}`
+          )
+          expect(anotherRes.send).toHaveBeenCalledWith(
+            `{"ok":true,"data":[${JSON.stringify(aSanitizedAssetPack)}]}`
+          )
         })
       })
     })

@@ -341,7 +341,7 @@ export class AssetPackRouter extends Router {
       this.defaultAssetPacks.length === 0
 
     // This is to wait for the cache to be completed if there's no cache ready.
-    // It will execute only the first time the server is up, as after the first fetch
+    // It will execute only the first time the server is up, and after the first fetch
     // the default asset packs will be cached.
     if (this.isUpdatingDefaultAssetPacksCache && defaultAssetPacksIsNotCached) {
       await this.defaultAssetPacksCachePromise

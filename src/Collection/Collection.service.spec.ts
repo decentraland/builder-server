@@ -63,7 +63,6 @@ describe('Collection service', () => {
     beforeEach(() => {
       urn = 'some:valid:urn'
       manager = '0x123123'
-      jest.spyOn(env, 'get').mockReturnValueOnce(`0x555,0x444,0x333`)
     })
 
     afterAll(() => {

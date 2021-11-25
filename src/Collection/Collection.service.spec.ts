@@ -81,7 +81,7 @@ describe('Collection service', () => {
       })
     })
 
-    describe('when thegraph does not has a urn with the address as manager', () => {
+    describe('when thegraph does not have a urn with the address as manager', () => {
       beforeEach(() => {
         ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(false)
       })

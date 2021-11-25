@@ -55,6 +55,44 @@ describe('Collection service', () => {
     })
   })
 
+  describe('when checking if an address is a TPW manager', () => {
+    const service = new CollectionService()
+    let urn: string
+    let manager: string
+
+    beforeEach(() => {
+      urn = 'some:valid:urn'
+      manager = '0x123123'
+      jest.spyOn(env, 'get').mockReturnValueOnce(`0x555,0x444,0x333`)
+    })
+
+    afterAll(() => {
+      jest.restoreAllMocks()
+    })
+
+    describe('when thegraph has a urn with the address as manager', () => {
+      beforeEach(() => {
+        ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(true)
+      })
+
+      it('should return true', async () => {
+        expect(await service.isTPWManager(urn, manager)).toBe(true)
+        expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
+      })
+    })
+
+    describe('when thegraph does not has a urn with the address as manager', () => {
+      beforeEach(() => {
+        ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(false)
+      })
+
+      it('should return true', async () => {
+        expect(await service.isTPWManager(urn, manager)).toBe(false)
+        expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
+      })
+    })
+  })
+
   describe('when getting the database TPW collections', () => {
     describe('when the graph has no third party records', () => {
       let service: CollectionService

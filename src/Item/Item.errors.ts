@@ -1,5 +1,8 @@
 export enum ItemAction {
   DELETE = 'deleted',
+  INSERT = 'inserted',
+  UPSERT = 'inserted or updated',
+  RARITY_UPDATE = 'updated with a new rarity',
 }
 
 export enum ItemType {
@@ -22,7 +25,6 @@ export class ThirdPartyItemAlreadyPublishedError extends Error {
 export class DCLItemAlreadyPublishedError extends Error {
   constructor(
     public id: string,
-    public blockchainItemId: string,
     public contractAddress: string,
     action: ItemAction
   ) {
@@ -41,5 +43,27 @@ export class CollectionForItemLockedError extends Error {
 export class InconsistentItemError extends Error {
   constructor(public id: string, message: string) {
     super(message)
+  }
+}
+
+export class ItemCantBeMovedFromCollectionError extends Error {
+  constructor(public id: string) {
+    super("Item can't change between collections")
+  }
+}
+
+export class UnauthorizedToUpsertError extends Error {
+  constructor(public id: string, public eth_address: string) {
+    super('The user is unauthorized to upsert the collection.')
+  }
+}
+
+export class UnauthorizedToChangeToCollection extends Error {
+  constructor(
+    public id: string,
+    public eth_address: string,
+    public collection_id: string
+  ) {
+    super("The new collection for the item isn't owned by the same owner")
   }
 }

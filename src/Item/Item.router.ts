@@ -14,7 +14,7 @@ import {
   withLowercasedParams,
   withSchemaValidation,
 } from '../middleware'
-import { Ownable, OwnableModel } from '../Ownable'
+import { OwnableModel } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import {
@@ -29,15 +29,19 @@ import { ItemAttributes } from './Item.types'
 import { upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasAccess } from './access'
-import { getDecentralandItemURN, toDBItem } from './utils'
+import { getDecentralandItemURN } from './utils'
 import { ItemService } from './Item.service'
 import {
   CollectionForItemLockedError,
   DCLItemAlreadyPublishedError,
   InconsistentItemError,
+  ItemCantBeMovedFromCollectionError,
   NonExistentItemError,
   ThirdPartyItemAlreadyPublishedError,
+  UnauthorizedToChangeToCollection,
+  UnauthorizedToUpsertError,
 } from './Item.errors'
+import { NonExistentCollectionException } from '../Collection/Collection.exceptions'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -316,7 +320,7 @@ export class ItemRouter extends Router {
     return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
-  upsertItem = async (req: AuthRequest) => {
+  upsertItem = async (req: AuthRequest): Promise<FullItem> => {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: FullItem = server.extractFromReq(req, 'item')
 
@@ -332,137 +336,53 @@ export class ItemRouter extends Router {
     }
 
     const eth_address = req.auth.ethAddress.toLowerCase()
-
-    if (itemJSON.is_published || itemJSON.is_approved) {
-      throw new HTTPError(
-        'Can not change is_published or is_approved property',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
+    try {
+      const upsertedItem = await this.itemService.upsertItem(
+        itemJSON,
+        eth_address
       )
-    }
-
-    const canUpsert = await new Ownable(Item).canUpsert(id, eth_address)
-
-    if (!canUpsert) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    const dbItem = await Item.findOne<ItemAttributes>(id)
-
-    if (dbItem) {
-      const areBothCollectionIdsDefined =
-        itemJSON.collection_id && dbItem.collection_id
-
-      const isItemCollectionBeingChanged =
-        areBothCollectionIdsDefined &&
-        itemJSON.collection_id !== dbItem.collection_id
-
-      if (isItemCollectionBeingChanged) {
+      return upsertedItem
+    } catch (error) {
+      if (error instanceof UnauthorizedToUpsertError) {
         throw new HTTPError(
-          "Item can't change between collections",
-          { id },
+          error.message,
+          { id: error.id, eth_address: error.eth_address },
           STATUS_CODES.unauthorized
         )
-      }
-    }
-
-    const findCollection = async (id?: string | null) =>
-      id ? await Collection.findOne<CollectionAttributes>(id) : undefined
-
-    const dbCollection = await findCollection(itemJSON.collection_id)
-
-    if (itemJSON.collection_id && !dbCollection) {
-      throw new HTTPError(
-        'Collection not found',
-        { collectionId: itemJSON.collection_id },
-        STATUS_CODES.notFound
-      )
-    }
-
-    if (dbCollection) {
-      const isCollectionOwnerDifferent =
-        dbCollection.eth_address.toLowerCase() !== eth_address
-
-      if (isCollectionOwnerDifferent) {
+      } else if (error instanceof ItemCantBeMovedFromCollectionError) {
         throw new HTTPError(
-          'Unauthorized user',
-          { id, eth_address, collection_id: itemJSON.collection_id },
+          error.message,
+          { id: error.id },
           STATUS_CODES.unauthorized
         )
-      }
-    }
-
-    const isDbCollectionPublished =
-      dbCollection &&
-      (await this.collectionService.isPublished(dbCollection.contract_address!))
-
-    if (isDbCollectionPublished) {
-      if (!dbItem) {
+      } else if (error instanceof UnauthorizedToChangeToCollection) {
         throw new HTTPError(
-          "Items can't be added to a published collection",
-          { id },
-          STATUS_CODES.badRequest
+          error.message,
+          {
+            id: error.id,
+            eth_address: error.eth_address,
+            collection_id: error.collection_id,
+          },
+          STATUS_CODES.unauthorized
         )
-      }
-
-      const areBothRaritiesDefined = itemJSON.rarity && dbItem.rarity
-
-      const isRarityBeingChanged =
-        areBothRaritiesDefined && itemJSON.rarity !== dbItem.rarity
-
-      if (isRarityBeingChanged) {
+      } else if (error instanceof NonExistentCollectionException) {
         throw new HTTPError(
-          "An item rarity from a published collection can't be changed",
-          { id, current: dbItem.rarity, other: itemJSON.rarity },
-          STATUS_CODES.badRequest
+          error.message,
+          { collectionId: error.id },
+          STATUS_CODES.notFound
         )
-      }
-    }
-
-    if (
-      dbCollection &&
-      !isDbCollectionPublished &&
-      this.collectionService.isLockActive(dbCollection.lock)
-    ) {
-      throw new HTTPError(
-        "Locked collection items can't be updated",
-        { id },
-        STATUS_CODES.locked
-      )
-    }
-
-    const dbItemCollection = await findCollection(dbItem?.collection_id)
-
-    const isDbItemCollectionPublished =
-      dbItemCollection &&
-      (await this.collectionService.isPublished(
-        dbItemCollection.contract_address!
-      ))
-
-    if (isDbItemCollectionPublished && dbItem) {
-      const isItemBeingRemovedFromCollection =
-        !itemJSON.collection_id && dbItem.collection_id
-
-      if (isItemBeingRemovedFromCollection) {
+      } else if (error instanceof DCLItemAlreadyPublishedError) {
         throw new HTTPError(
-          "Items can't be removed from a pubished collection",
-          { id },
-          STATUS_CODES.badRequest
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
         )
+      } else if (error instanceof CollectionForItemLockedError) {
+        throw new HTTPError(error.message, { id }, STATUS_CODES.locked)
       }
+
+      throw error
     }
-
-    const attributes = toDBItem({
-      ...itemJSON,
-      eth_address,
-    })
-
-    const item: ItemAttributes = await new Item(attributes).upsert()
-    return Bridge.toFullItem(item)
   }
 
   deleteItem = async (req: AuthRequest): Promise<boolean> => {
@@ -489,7 +409,6 @@ export class ItemRouter extends Router {
           error.message,
           {
             id: error.id,
-            blockchain_item_id: error.blockchainItemId,
             contract_address: error.contractAddress,
           },
           STATUS_CODES.conflict

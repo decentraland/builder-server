@@ -26,7 +26,7 @@ import { Item } from './Item.model'
 import { hasAccess } from './access'
 import { ItemAttributes, ItemRarity } from './Item.types'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
-import { CollectionFragment, ItemFragment } from '../ethereum/api/fragments'
+import { ItemFragment } from '../ethereum/api/fragments'
 import { STATUS_CODES } from '../common/HTTPError'
 import { Bridge } from '../ethereum/api/Bridge'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
@@ -314,8 +314,6 @@ describe('Item router', () => {
 
   describe('when upserting an item', () => {
     const mockCollection = Collection as jest.Mocked<typeof Collection>
-    const mockPeer = peerAPI as jest.Mocked<typeof peerAPI>
-    const mockCollectionApi = collectionAPI as jest.Mocked<typeof collectionAPI>
     const mockItem = Item as jest.MockedClass<typeof Item> &
       jest.Mocked<typeof Item>
 
@@ -341,34 +339,6 @@ describe('Item router', () => {
       })
     })
 
-    describe('and is_approved or is_published exist in the payload item', () => {
-      const testProperty = async (prop: 'is_published' | 'is_approved') => {
-        const response = await server
-          .put(buildURL(url))
-          .send({ item: { ...dbItem, [prop]: true } })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.unauthorized)
-
-        expect(response.body).toEqual({
-          data: { id: dbItem.id, eth_address: wallet.address },
-          error: 'Can not change is_published or is_approved property',
-          ok: false,
-        })
-      }
-
-      describe('having is_approved present', () => {
-        it('should fail with with cant set is approved or is published message', async () => {
-          testProperty('is_approved')
-        })
-      })
-
-      describe('having is_published present', () => {
-        it('should fail with with cant set is approved or is published message', async () => {
-          testProperty('is_published')
-        })
-      })
-    })
-
     describe('and the user upserting is not authorized to do so', () => {
       beforeEach(() => {
         mockOwnableCanUpsert(Item, dbItem.id, wallet.address, false)
@@ -382,7 +352,7 @@ describe('Item router', () => {
 
         expect(response.body).toEqual({
           data: { id: dbItem.id, eth_address: wallet.address },
-          error: 'Unauthorized user',
+          error: 'The user is unauthorized to upsert the collection.',
           ok: false,
         })
       })
@@ -391,6 +361,7 @@ describe('Item router', () => {
     describe('and the collection provided in the payload does not exists in the db', () => {
       beforeEach(() => {
         mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+        mockCollection.findOne.mockResolvedValueOnce(undefined)
       })
 
       it('should fail with collection not found message', async () => {
@@ -402,7 +373,7 @@ describe('Item router', () => {
 
         expect(response.body).toEqual({
           data: { collectionId: dbItem.collection_id },
-          error: 'Collection not found',
+          error: "The collection doesn't exist.",
           ok: false,
         })
       })
@@ -431,7 +402,8 @@ describe('Item router', () => {
             eth_address: wallet.address,
             collection_id: dbItem.collection_id,
           },
-          error: 'Unauthorized user',
+          error:
+            "The new collection for the item isn't owned by the same owner.",
           ok: false,
         })
       })
@@ -457,7 +429,7 @@ describe('Item router', () => {
 
         expect(response.body).toEqual({
           data: { id: dbItem.id },
-          error: "Item can't change between collections",
+          error: "Item can't change between collections.",
           ok: false,
         })
       })
@@ -466,7 +438,6 @@ describe('Item router', () => {
     describe('when the collection given for the item is locked', () => {
       beforeEach(() => {
         mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
-        mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
@@ -492,7 +463,8 @@ describe('Item router', () => {
             data: {
               id: dbItem.id,
             },
-            error: "Locked collection items can't be updated",
+            error:
+              "The collection for the item is locked. The item can't be inserted or updated.",
             ok: false,
           })
         })
@@ -501,30 +473,33 @@ describe('Item router', () => {
 
     describe('when the collection given for the item is already published', () => {
       beforeEach(() => {
+        dbItem.collection_id = collectionAttributesMock.id
         mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
-        mockPeer.fetchWearables.mockResolvedValueOnce([{}] as Wearable[])
         mockCollection.findOne.mockResolvedValueOnce({
+          ...collectionAttributesMock,
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
           contract_address: Wallet.createRandom().address,
         })
-
-        mockCollectionApi.fetchCollection.mockResolvedValueOnce(
-          {} as CollectionFragment
-        )
+        mockIsCollectionPublished(collectionAttributesMock.id, true)
       })
 
-      describe('and the item is being upserted for the first time', () => {
+      describe('and the item is being inserted', () => {
+        beforeEach(() => {
+          mockItem.findOne.mockResolvedValueOnce(undefined)
+        })
+
         it('should fail with can not add item to published collection message', async () => {
           const response = await server
             .put(buildURL(url))
             .send({ item: dbItem })
             .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.badRequest)
+            .expect(STATUS_CODES.conflict)
 
           expect(response.body).toEqual({
             data: { id: dbItem.id },
-            error: "Items can't be added to a published collection",
+            error:
+              "The collection that contains this item has been already published. The item can't be inserted.",
             ok: false,
           })
         })
@@ -540,11 +515,12 @@ describe('Item router', () => {
             .put(buildURL(url))
             .send({ item: { ...dbItem, collection_id: null } })
             .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.badRequest)
+            .expect(STATUS_CODES.conflict)
 
           expect(response.body).toEqual({
             data: { id: dbItem.id },
-            error: "Items can't be removed from a pubished collection",
+            error:
+              "The collection that contains this item has been already published. The item can't be deleted.",
             ok: false,
           })
         })
@@ -560,16 +536,14 @@ describe('Item router', () => {
             .put(buildURL(url))
             .send({ item: { ...dbItem, rarity: ItemRarity.EPIC } })
             .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.badRequest)
+            .expect(STATUS_CODES.conflict)
 
           expect(response.body).toEqual({
             data: {
               id: dbItem.id,
-              current: dbItem.rarity,
-              other: ItemRarity.EPIC,
             },
             error:
-              "An item rarity from a published collection can't be changed",
+              "The collection that contains this item has been already published. The item can't be updated with a new rarity.",
             ok: false,
           })
         })
@@ -579,7 +553,6 @@ describe('Item router', () => {
     describe('and all the conditions for success are given', () => {
       beforeEach(() => {
         mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
-        mockPeer.fetchWearables.mockResolvedValueOnce([] as Wearable[])
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: wallet.address,
@@ -706,7 +679,6 @@ describe('Item router', () => {
                     "The collection that contains this item has been already published. The item can't be deleted.",
                   data: {
                     id: dbItem.id,
-                    blockchain_item_id: dbItem.blockchain_item_id,
                     contract_address: collectionAttributesMock.contract_address,
                   },
                   ok: false,

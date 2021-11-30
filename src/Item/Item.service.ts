@@ -1,6 +1,8 @@
 import { CollectionService } from '../Collection/Collection.service'
 import { isTPCollection } from '../Collection/utils'
+import { Bridge } from '../ethereum/api/Bridge'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { Ownable } from '../Ownable'
 import {
   CollectionForItemLockedError,
   ItemAction,
@@ -8,10 +10,13 @@ import {
   InconsistentItemError,
   DCLItemAlreadyPublishedError,
   ThirdPartyItemAlreadyPublishedError,
+  ItemCantBeMovedFromCollectionError,
+  UnauthorizedToUpsertError,
+  UnauthorizedToChangeToCollection,
 } from './Item.errors'
 import { Item } from './Item.model'
-import { ItemAttributes } from './Item.types'
-import { buildTPItemURN, isTPItem } from './utils'
+import { FullItem, ItemAttributes } from './Item.types'
+import { buildTPItemURN, isTPItem, toDBItem } from './utils'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -43,7 +48,6 @@ export class ItemService {
       ) {
         throw new DCLItemAlreadyPublishedError(
           dbItem.id,
-          dbItem.blockchain_item_id!,
           dbCollection.contract_address!,
           ItemAction.DELETE
         )
@@ -105,5 +109,114 @@ export class ItemService {
     } else {
       await this.deleteDCLItem(dbItem)
     }
+  }
+
+  private checkItemIsMovedToAnotherCollection(
+    itemToUpsert: FullItem,
+    dbItem: ItemAttributes
+  ): void {
+    const areBothCollectionIdsDefined =
+      itemToUpsert.collection_id && dbItem.collection_id
+
+    const isItemCollectionBeingChanged =
+      areBothCollectionIdsDefined &&
+      itemToUpsert.collection_id !== dbItem.collection_id
+
+    if (isItemCollectionBeingChanged) {
+      throw new ItemCantBeMovedFromCollectionError(itemToUpsert.id)
+    }
+  }
+
+  private async upsertDCLItem(
+    item: FullItem,
+    eth_address: string
+  ): Promise<FullItem> {
+    const canUpsert = await new Ownable(Item).canUpsert(item.id, eth_address)
+    if (!canUpsert) {
+      throw new UnauthorizedToUpsertError(item.id, eth_address)
+    }
+
+    const dbItem = await Item.findOne<ItemAttributes>(item.id)
+    if (dbItem) {
+      this.checkItemIsMovedToAnotherCollection(item, dbItem)
+    }
+
+    const collectionId = item.collection_id || dbItem?.collection_id
+    const dbCollection = collectionId
+      ? await this.collectionService.getDBCollection(collectionId)
+      : undefined
+
+    if (dbCollection) {
+      const isCollectionOwnerDifferent =
+        dbCollection.eth_address.toLowerCase() !== eth_address
+
+      if (isCollectionOwnerDifferent) {
+        throw new UnauthorizedToChangeToCollection(
+          item.id,
+          eth_address,
+          item.collection_id!
+        )
+      }
+
+      const isDbCollectionPublished =
+        dbCollection &&
+        (await this.collectionService.isPublished(
+          dbCollection.contract_address!
+        ))
+
+      if (isDbCollectionPublished) {
+        // Prohibits adding new items to a published collection
+        if (!dbItem) {
+          throw new DCLItemAlreadyPublishedError(
+            item.id,
+            dbCollection.contract_address!,
+            ItemAction.INSERT
+          )
+        }
+
+        // Prohibits removing an item from a published collection
+        const isItemBeingRemovedFromCollection =
+          !item.collection_id && dbItem.collection_id
+
+        if (isItemBeingRemovedFromCollection) {
+          throw new DCLItemAlreadyPublishedError(
+            item.id,
+            dbCollection.contract_address!,
+            ItemAction.DELETE
+          )
+        }
+
+        // Prohibits changing the rarity of a published item.
+        const areBothRaritiesDefined = item.rarity && dbItem.rarity
+
+        const isRarityBeingChanged =
+          areBothRaritiesDefined && item.rarity !== dbItem.rarity
+
+        if (isRarityBeingChanged) {
+          throw new DCLItemAlreadyPublishedError(
+            item.id,
+            dbCollection.contract_address!,
+            ItemAction.RARITY_UPDATE
+          )
+        }
+      } else if (this.collectionService.isLockActive(dbCollection.lock)) {
+        throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
+      }
+    }
+
+    const attributes = toDBItem({
+      ...item,
+      eth_address,
+    })
+
+    const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
+    return Bridge.toFullItem(upsertedItem)
+  }
+
+  public async upsertItem(
+    item: FullItem,
+    eth_address: string
+  ): Promise<FullItem> {
+    return this.upsertDCLItem(item, eth_address)
   }
 }

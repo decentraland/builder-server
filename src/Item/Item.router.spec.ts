@@ -403,7 +403,7 @@ describe('Item router', () => {
             collection_id: dbItem.collection_id,
           },
           error:
-            "The new collection for the item isn't owned by the same owner",
+            "The new collection for the item isn't owned by the same owner.",
           ok: false,
         })
       })
@@ -429,7 +429,7 @@ describe('Item router', () => {
 
         expect(response.body).toEqual({
           data: { id: dbItem.id },
-          error: "Item can't change between collections",
+          error: "Item can't change between collections.",
           ok: false,
         })
       })

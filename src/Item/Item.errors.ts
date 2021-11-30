@@ -48,7 +48,7 @@ export class InconsistentItemError extends Error {
 
 export class ItemCantBeMovedFromCollectionError extends Error {
   constructor(public id: string) {
-    super("Item can't change between collections")
+    super("Item can't change between collections.")
   }
 }
 
@@ -64,6 +64,6 @@ export class UnauthorizedToChangeToCollection extends Error {
     public eth_address: string,
     public collection_id: string
   ) {
-    super("The new collection for the item isn't owned by the same owner")
+    super("The new collection for the item isn't owned by the same owner.")
   }
 }

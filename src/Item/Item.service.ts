@@ -111,7 +111,7 @@ export class ItemService {
     }
   }
 
-  private checkIfItemIsMovedToAnotherCollection(
+  private checkItemIsMovedToAnotherCollection(
     itemToUpsert: FullItem,
     dbItem: ItemAttributes
   ): void {
@@ -138,7 +138,7 @@ export class ItemService {
 
     const dbItem = await Item.findOne<ItemAttributes>(item.id)
     if (dbItem) {
-      this.checkIfItemIsMovedToAnotherCollection(item, dbItem)
+      this.checkItemIsMovedToAnotherCollection(item, dbItem)
     }
 
     const collectionId = item.collection_id || dbItem?.collection_id

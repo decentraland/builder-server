@@ -23,6 +23,8 @@ export const itemSchema = Object.freeze({
     total_supply: { type: 'number', minimum: 0 },
     is_published: { type: 'boolean' },
     is_approved: { type: 'boolean' },
+    created_at: { type: 'string' },
+    updated_at: { type: 'string' },
     type: { enum: Object.values(ItemType) },
     data: { type: 'object', oneOf: [wearableSchema] },
     metrics: metricsSchema,
@@ -31,8 +33,6 @@ export const itemSchema = Object.freeze({
       additionalProperties: true,
     },
     content_hash: { type: ['string', 'null'] },
-    created_at: { type: 'string' },
-    updated_at: { type: 'string' },
   },
   additionalProperties: false,
   required: [
@@ -44,8 +44,6 @@ export const itemSchema = Object.freeze({
     'type',
     'metrics',
     'contents',
-    'created_at',
-    'updated_at',
   ],
 })
 

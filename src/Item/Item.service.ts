@@ -142,6 +142,7 @@ export class ItemService {
       this.checkItemIsMovedToAnotherCollection(item, dbItem)
     } else {
       item.created_at = new Date()
+      item.updated_at = item.created_at
     }
 
     const collectionId = item.collection_id || dbItem?.collection_id

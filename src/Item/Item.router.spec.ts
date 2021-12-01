@@ -1,7 +1,7 @@
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
-import { omit } from 'decentraland-commons/dist/utils'
+import { utils } from 'decentraland-commons'
 import {
   createAuthHeaders,
   buildURL,
@@ -323,7 +323,7 @@ describe('Item router', () => {
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
-      itemToUpsert = omit(dbItem, ['created_at', 'updated_at'])
+      itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
     })
 
     describe('and the param id is different from payload id', () => {

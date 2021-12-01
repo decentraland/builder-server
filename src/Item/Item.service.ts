@@ -139,6 +139,7 @@ export class ItemService {
     const dbItem = await Item.findOne<ItemAttributes>(item.id)
     if (dbItem) {
       item.updated_at = new Date()
+      item.created_at = dbItem.created_at
       this.checkItemIsMovedToAnotherCollection(item, dbItem)
     } else {
       item.created_at = new Date()

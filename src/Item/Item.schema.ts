@@ -31,8 +31,6 @@ export const itemSchema = Object.freeze({
       additionalProperties: true,
     },
     content_hash: { type: ['string', 'null'] },
-    created_at: { type: 'string' },
-    updated_at: { type: 'string' },
   },
   additionalProperties: false,
   required: [
@@ -44,8 +42,6 @@ export const itemSchema = Object.freeze({
     'type',
     'metrics',
     'contents',
-    'created_at',
-    'updated_at',
   ],
 })
 

@@ -19,6 +19,11 @@ export class S3Router extends Router {
      * Get an asset file by file id (also contains items)
      */
     this.router.get('/storage/contents/:filename', this.handleContents)
+
+    /**
+     * Get the response headers for a file
+     */
+    this.router.head('/storage/contents/:filename', this.handleContents)
   }
 
   private buildRedirectUrl(model: S3Model, filename: string) {

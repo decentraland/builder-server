@@ -8,8 +8,12 @@ export const itemSchema = Object.freeze({
   properties: {
     id: { type: 'string', format: 'uuid' },
     urn: { type: ['string', 'null'] },
-    name: { type: 'string', maxLength: 32 },
-    description: { type: ['string', 'null'], maxLength: 64 },
+    name: { type: 'string', maxLength: 32, pattern: '^[^:]*$' },
+    description: {
+      type: ['string', 'null'],
+      maxLength: 64,
+      pattern: '^[^:]*$',
+    },
     thumbnail: { type: 'string' },
     eth_address: { type: 'string' },
     collection_id: { type: ['string', 'null'], format: 'uuid' },

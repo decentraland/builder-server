@@ -18,14 +18,13 @@ describe('S3 router', () => {
       url = `/storage/contents/${fileName}`
     })
 
-    it('should respond with a cached 301 redirecting to the S3 file', () => {
-      return server
+    it('should respond with a cached 301 redirecting to the S3 file', async () => {
+      await server
         .get(buildURL(url))
         .set(createAuthHeaders('get', url))
         .expect('Location', `${getBucketURL()}/contents/${fileName}`)
         .expect('Cache-Control', 'public,max-age=31536000,immutable')
         .expect(301)
-        .then(() => undefined)
     })
   })
 
@@ -34,14 +33,13 @@ describe('S3 router', () => {
       url = `/storage/contents/${fileName}`
     })
 
-    it('should respond with a cached 301 redirecting to the S3 file', () => {
-      return server
+    it('should respond with a cached 301 redirecting to the S3 file', async () => {
+      await server
         .get(buildURL(url))
         .set(createAuthHeaders('head', url))
         .expect('Location', `${getBucketURL()}/contents/${fileName}`)
         .expect('Cache-Control', 'public,max-age=31536000,immutable')
         .expect(301)
-        .then(() => undefined)
     })
   })
 })

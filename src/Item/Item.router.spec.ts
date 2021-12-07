@@ -326,6 +326,59 @@ describe('Item router', () => {
       itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
     })
 
+    describe('and the item inserted has an invalid name', () => {
+      it("should fail with a message indicating that the name doesn't match the pattern", () => {
+        return server
+          .put(buildURL(url))
+          .send({ item: { ...itemToUpsert, name: 'anInvalid:name' } })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.badRequest)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  dataPath: '/item/name',
+                  keyword: 'pattern',
+                  message: 'should match pattern "^[^:]*$"',
+                  params: { pattern: '^[^:]*$' },
+                  schemaPath: '#/properties/item/properties/name/pattern',
+                },
+              ],
+              error: 'Invalid request body',
+              ok: false,
+            })
+          })
+      })
+    })
+
+    describe('and the item inserted has an invalid description', () => {
+      it("should fail with a message indicating that the description doesn't match the pattern", () => {
+        return server
+          .put(buildURL(url))
+          .send({
+            item: { ...itemToUpsert, description: 'anInvalid:nescription' },
+          })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.badRequest)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  dataPath: '/item/description',
+                  keyword: 'pattern',
+                  message: 'should match pattern "^[^:]*$"',
+                  params: { pattern: '^[^:]*$' },
+                  schemaPath:
+                    '#/properties/item/properties/description/pattern',
+                },
+              ],
+              error: 'Invalid request body',
+              ok: false,
+            })
+          })
+      })
+    })
+
     describe('and the param id is different from payload id', () => {
       it('should fail with body and url ids do not match message', async () => {
         const response = await server

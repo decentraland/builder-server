@@ -9,13 +9,13 @@ export enum CollectionAction {
   UPDATE = 'updated',
 }
 
-export class CollectionLockedException extends Error {
+export class CollectionLockedError extends Error {
   constructor(public id: string, action: CollectionAction) {
     super(`The collection is locked. It can't be ${action}.`)
   }
 }
 
-export class CollectionAlreadyPublishedException extends Error {
+export class CollectionAlreadyPublishedError extends Error {
   constructor(
     public id: string,
     type: CollectionType,
@@ -29,19 +29,19 @@ export class CollectionAlreadyPublishedException extends Error {
   }
 }
 
-export class WrongCollectionException extends Error {
+export class WrongCollectionError extends Error {
   constructor(m: string, public data: Record<string, any>) {
     super(m)
   }
 }
 
-export class UnauthorizedCollectionEditException extends Error {
+export class UnauthorizedCollectionEditError extends Error {
   constructor(public id: string, public eth_address: string) {
     super('Unauthorized to upsert collection')
   }
 }
 
-export class NonExistentCollectionException extends Error {
+export class NonExistentCollectionError extends Error {
   constructor(public id: string) {
     super("The collection doesn't exist.")
   }

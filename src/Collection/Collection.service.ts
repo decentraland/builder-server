@@ -15,13 +15,13 @@ import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 import {
   CollectionAction,
-  CollectionAlreadyPublishedException,
-  CollectionLockedException,
+  CollectionAlreadyPublishedError,
+  CollectionLockedError,
   CollectionType,
-  NonExistentCollectionException,
-  UnauthorizedCollectionEditException,
-  WrongCollectionException,
-} from './Collection.exceptions'
+  NonExistentCollectionError,
+  UnauthorizedCollectionEditError,
+  WrongCollectionError,
+} from './Collection.errors'
 
 export class CollectionService {
   isLockActive(lock: Date | null) {
@@ -37,7 +37,7 @@ export class CollectionService {
 
   private async checkIfNameIsValid(id: string, name: string): Promise<void> {
     if (!(await Collection.isValidName(id, name.trim()))) {
-      throw new WrongCollectionException('Name already in use', { id, name })
+      throw new WrongCollectionError('Name already in use', { id, name })
     }
   }
 
@@ -53,7 +53,7 @@ export class CollectionService {
 
     // We can't change the TPW collection's URN if there are already published items
     if (collectionItems.length > 0) {
-      throw new CollectionAlreadyPublishedException(
+      throw new CollectionAlreadyPublishedError(
         id,
         CollectionType.THIRD_PARTY,
         CollectionAction.UPSERT
@@ -68,7 +68,7 @@ export class CollectionService {
     data: string
   ): Promise<CollectionAttributes> {
     if (collectionJSON.is_published || collectionJSON.is_approved) {
-      throw new WrongCollectionException(
+      throw new WrongCollectionError(
         'Can not change the is_published or is_approved property',
         { id, eth_address }
       )
@@ -76,7 +76,7 @@ export class CollectionService {
 
     const canUpsert = await new Ownable(Collection).canUpsert(id, eth_address)
     if (!canUpsert) {
-      throw new UnauthorizedCollectionEditException(id, eth_address)
+      throw new UnauthorizedCollectionEditError(id, eth_address)
     }
 
     const attributes = toDBCollection({
@@ -90,7 +90,7 @@ export class CollectionService {
 
     if (collection && collection.contract_address) {
       if (await this.isPublished(collection.contract_address)) {
-        throw new CollectionAlreadyPublishedException(
+        throw new CollectionAlreadyPublishedError(
           id,
           CollectionType.DCL,
           CollectionAction.UPDATE
@@ -98,7 +98,7 @@ export class CollectionService {
       }
 
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id, CollectionAction.UPDATE)
+        throw new CollectionLockedError(id, CollectionAction.UPDATE)
       }
     }
 
@@ -118,14 +118,14 @@ export class CollectionService {
     collectionJSON: FullCollection
   ) {
     if (collectionJSON.urn === null) {
-      throw new WrongCollectionException(
+      throw new WrongCollectionError(
         'Invalid empty URN for third party collection',
         { id, eth_address, urn: collectionJSON.urn }
       )
     }
 
     if (!(await this.isTPWManager(collectionJSON.urn, eth_address))) {
-      throw new UnauthorizedCollectionEditException(id, eth_address)
+      throw new UnauthorizedCollectionEditError(id, eth_address)
     }
 
     const { third_party_id, urn_suffix } = decodeTPCollectionURN(
@@ -135,7 +135,7 @@ export class CollectionService {
 
     if (collection) {
       if (isTPCollection(collection)) {
-        throw new WrongCollectionException(
+        throw new WrongCollectionError(
           "The collection can't be converted into a third party collection.",
           { id }
         )
@@ -162,7 +162,7 @@ export class CollectionService {
         )
       }
       if (this.isLockActive(collection.lock)) {
-        throw new CollectionLockedException(id, CollectionAction.UPDATE)
+        throw new CollectionLockedError(id, CollectionAction.UPDATE)
       }
     } else {
       // Check if the URN for the new collection already exists
@@ -202,7 +202,7 @@ export class CollectionService {
         collection.urn_suffix!
       )
       if (collectionItems.length > 0) {
-        throw new CollectionAlreadyPublishedException(
+        throw new CollectionAlreadyPublishedError(
           collection.id,
           CollectionType.THIRD_PARTY,
           CollectionAction.DELETE
@@ -211,7 +211,7 @@ export class CollectionService {
     } else {
       // If it's a DCL collection, we must check if it was already published
       if (await this.isPublished(collection.contract_address!)) {
-        throw new CollectionAlreadyPublishedException(
+        throw new CollectionAlreadyPublishedError(
           collectionId,
           CollectionType.DCL,
           CollectionAction.DELETE
@@ -219,10 +219,7 @@ export class CollectionService {
       }
     }
     if (this.isLockActive(collection.lock)) {
-      throw new CollectionLockedException(
-        collection.id,
-        CollectionAction.DELETE
-      )
+      throw new CollectionLockedError(collection.id, CollectionAction.DELETE)
     }
     await Promise.all([
       Collection.delete({ id: collection.id }),
@@ -294,7 +291,7 @@ export class CollectionService {
   ): Promise<CollectionAttributes> {
     const collection = await Collection.findOne(collectionId)
     if (!collection) {
-      throw new NonExistentCollectionException(collectionId)
+      throw new NonExistentCollectionError(collectionId)
     }
 
     return collection

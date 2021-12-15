@@ -1,4 +1,3 @@
-import { env } from 'decentraland-commons'
 import { collectionAttributesMock } from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'

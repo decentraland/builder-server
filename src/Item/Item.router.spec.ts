@@ -24,7 +24,7 @@ import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Item } from './Item.model'
-import { hasAccess } from './access'
+import { hasPublicAccess } from './access'
 import { ItemAttributes, ItemRarity } from './Item.types'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { ItemFragment } from '../ethereum/api/fragments'
@@ -110,7 +110,7 @@ describe('Item router', () => {
   describe('when getting an item', () => {
     beforeEach(() => {
       mockExistsMiddleware(Item, dbItem.id)
-      ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
+      ;(hasPublicAccess as jest.Mock).mockResolvedValueOnce(true)
       ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
       url = `/items/${dbItem.id}`
     })
@@ -280,7 +280,7 @@ describe('Item router', () => {
         dbItem,
         dbItemNotPublished,
       ])
-      ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
+      ;(hasPublicAccess as jest.Mock).mockResolvedValueOnce(true)
       ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
         { collection: itemFragment.collection, items: [itemFragment] }
       )

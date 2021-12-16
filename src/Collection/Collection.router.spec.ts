@@ -23,7 +23,7 @@ import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { CollectionFragment } from '../ethereum/api/fragments'
 import { Item } from '../Item/Item.model'
-import { hasAccess } from './access'
+import { hasPublicAccess } from './access'
 import { toDBCollection, toFullCollection } from './utils'
 import {
   convertItemDatesToISO,
@@ -830,7 +830,7 @@ describe('Collection router', () => {
   describe('when retrieving a single collection', () => {
     beforeEach(() => {
       mockExistsMiddleware(Collection, dbCollection.id)
-      ;(hasAccess as jest.Mock).mockResolvedValueOnce(true)
+      ;(hasPublicAccess as jest.Mock).mockResolvedValueOnce(true)
       ;(Collection.findOne as jest.Mock).mockReturnValueOnce(dbCollection)
       ;(collectionAPI.fetchCollection as jest.Mock).mockReturnValueOnce(null)
       url = `/collections/${dbCollection.id}`

@@ -1,9 +1,12 @@
-export type CurationAttributes = {
-  id: string
-  collection_id: string
-  status: 'pending' | 'approved' | 'rejected'
-  created_at: Date
-  updated_at: Date
+export enum CurationType {
+  COLLECTION = 'collection',
+  ITEM = 'item',
+}
+
+export enum CurationStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected',
 }
 
 export const patchCurationSchema = Object.freeze({

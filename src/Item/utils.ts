@@ -37,3 +37,8 @@ export function buildTPItemURN(
 export function isTPItem(item: ItemAttributes): boolean {
   return item.urn_suffix !== null && item.collection_id !== null
 }
+
+// TODO: @TPW: implement this
+export function getMergedItem(_id: string): Promise<FullItem> {
+  return {} as any
+}

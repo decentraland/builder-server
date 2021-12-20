@@ -24,10 +24,12 @@ const validator = getValidator()
 export class CurationRouter extends Router {
   mount() {
     this.router.get(
-      '/curations',
+      '/curations', // TODO: add another one with the same handler to /collectionCurations
       withAuthentication,
       server.handleRequest(this.getCollectionCurations)
     )
+
+    // TODO: '/collections/:id/itemCurations'
 
     this.router.get(
       '/collections/:id/curation',
@@ -119,20 +121,42 @@ export class CurationRouter extends Router {
   }
 
   updateCollectionCuration = async (req: AuthRequest) => {
-    return this.updateCuration(req, CurationType.ITEM)
+    const collectionId = server.extractFromReq(req, 'id')
+    const curationJSON: any = server.extractFromReq(req, 'curation')
+    const ethAddress = req.auth.ethAddress
+    return this.updateCuration(
+      collectionId,
+      ethAddress,
+      curationJSON,
+      CurationType.COLLECTION
+    )
   }
 
   updateItemCuration = async (req: AuthRequest) => {
-    return this.updateCuration(req, CurationType.ITEM)
+    const itemId = server.extractFromReq(req, 'id')
+    const curationJSON: any = server.extractFromReq(req, 'curation')
+    const ethAddress = req.auth.ethAddress
+    return this.updateCuration(
+      itemId,
+      ethAddress,
+      curationJSON,
+      CurationType.ITEM
+    )
   }
 
   insertCollectionCuration = async (req: AuthRequest) => {
     try {
-      const id = server.extractFromReq(req, 'id')
-      // Check if the collection is valid by requesting it to the different origins
-      await getMergedCollection(id)
+      const collectionId = server.extractFromReq(req, 'id')
+      const ethAddress = req.auth.ethAddress
 
-      return this.insertCuration(req, CurationType.COLLECTION)
+      // Check if the collection is valid by requesting it to the different origins
+      await getMergedCollection(collectionId)
+
+      return this.insertCuration(
+        collectionId,
+        ethAddress,
+        CurationType.COLLECTION
+      )
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
@@ -155,14 +179,18 @@ export class CurationRouter extends Router {
   }
 
   insertItemCuration = async (req: AuthRequest) => {
-    return this.insertCuration(req, CurationType.ITEM)
+    const itemId = server.extractFromReq(req, 'id')
+    const ethAddress = req.auth.ethAddress
+    return this.insertCuration(itemId, ethAddress, CurationType.ITEM)
   }
 
-  private updateCuration = async (req: AuthRequest, type: CurationType) => {
-    const id = server.extractFromReq(req, 'id')
+  private updateCuration = async (
+    id: string,
+    ethAddress: string,
+    curationJSON: any,
+    type: CurationType
+  ) => {
     const curationService = CurationService.byType(type)
-    const curationJSON: any = server.extractFromReq(req, 'curation')
-    const ethAddress = req.auth.ethAddress
 
     await this.validateAccessToCuration(curationService, ethAddress, id)
 
@@ -198,9 +226,11 @@ export class CurationRouter extends Router {
     )
   }
 
-  private insertCuration = async (req: AuthRequest, type: CurationType) => {
-    const id = server.extractFromReq(req, 'id')
-    const ethAddress = req.auth.ethAddress
+  private insertCuration = async (
+    id: string,
+    ethAddress: string,
+    type: CurationType
+  ) => {
     const curationService = CurationService.byType(type)
 
     await this.validateAccessToCuration(curationService, ethAddress, id)

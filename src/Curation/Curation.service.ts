@@ -72,7 +72,6 @@ export class CurationService<
     switch (this.type) {
       case CurationType.COLLECTION: {
         const collection = await getMergedCollection(id)
-        console.log('collection ->', collection)
         return collection && hasCollectionAccess(ethAddress, collection)
       }
       case CurationType.ITEM: {

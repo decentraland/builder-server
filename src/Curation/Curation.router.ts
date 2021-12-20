@@ -7,6 +7,7 @@ import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
 import { getValidator } from '../utils/validator'
 import { Collection } from '../Collection'
+import { Item } from '../Item'
 import { CurationStatus, patchCurationSchema } from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
@@ -15,12 +16,14 @@ import {
 } from '../Collection/Collection.errors'
 import { CurationType } from '.'
 import { getMergedCollection } from '../Collection/utils'
-import { CollectionCurationAttributes } from './CollectionCuration'
+import {
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from './CollectionCuration'
 import { ItemCurationAttributes } from './ItemCuration'
 
 const validator = getValidator()
 
-// TODO: Use CurationStatus everywhere
 export class CurationRouter extends Router {
   mount() {
     this.router.get(
@@ -181,7 +184,26 @@ export class CurationRouter extends Router {
   insertItemCuration = async (req: AuthRequest) => {
     const itemId = server.extractFromReq(req, 'id')
     const ethAddress = req.auth.ethAddress
-    return this.insertCuration(itemId, ethAddress, CurationType.ITEM)
+    const itemCuration = await this.insertCuration(
+      itemId,
+      ethAddress,
+      CurationType.ITEM
+    )
+
+    const item = await Item.findOne(itemId)
+    const collectionCuration = await CollectionCuration.findOne(
+      item.collection_id
+    )
+
+    if (!collectionCuration) {
+      await this.insertCuration(
+        item.collection_id,
+        ethAddress,
+        CurationType.COLLECTION
+      )
+    }
+
+    return itemCuration
   }
 
   private updateCuration = async (
@@ -237,7 +259,7 @@ export class CurationRouter extends Router {
 
     const curation = await curationService.getLatestById(id)
 
-    if (curation && curation.status === 'pending') {
+    if (curation && curation.status === CurationStatus.PENDING) {
       throw new HTTPError(
         'There is already an ongoing review request',
         { id },

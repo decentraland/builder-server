@@ -1,17 +1,20 @@
 import { ExpressApp } from '../common/ExpressApp'
-import { isCommitteeMember } from '../Committee'
-import { getMergedCollection } from '../Collection/utils'
 import { collectionAPI } from '../ethereum/api/collection'
-import { Collection } from '../Collection'
+import { dbItemMock } from '../../spec/mocks/items'
+import { getMergedCollection } from '../Collection/utils'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
+import { Collection } from '../Collection'
+import { Item, ItemAttributes } from '../Item'
+import { isCommitteeMember } from '../Committee'
+import { AuthRequest } from '../middleware'
 import { CurationRouter } from './Curation.router'
 import { CollectionCuration } from './CollectionCuration'
 import { ItemCuration } from './ItemCuration'
 import { CurationService } from './Curation.service'
-import { AuthRequest } from '../middleware'
+import { CurationStatus } from './Curation.types'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
@@ -151,9 +154,7 @@ describe('when handling a request', () => {
       })
 
       it('should resolve with the expected curation', async () => {
-        await expect(router.getCollectionCuration(req)).resolves.toStrictEqual(
-          {}
-        )
+        expect(await router.getCollectionCuration(req)).toEqual({})
       })
     })
   })
@@ -242,7 +243,7 @@ describe('when handling a request', () => {
           params: { id: 'some id' },
           body: {
             curation: {
-              status: 'rejected',
+              status: CurationStatus.REJECTED,
             },
           },
         } as any
@@ -284,7 +285,7 @@ describe('when handling a request', () => {
           params: { id: 'some id' },
           body: {
             curation: {
-              status: 'rejected',
+              status: CurationStatus.REJECTED,
             },
           },
         } as any
@@ -303,14 +304,12 @@ describe('when handling a request', () => {
             .spyOn(CollectionCuration, 'update')
             .mockResolvedValueOnce({} as any)
 
-          await expect(
-            router.updateCollectionCuration(req)
-          ).resolves.toStrictEqual({})
+          expect(await router.updateCollectionCuration(req)).toEqual({})
 
           expect(updateSpy).toHaveBeenCalledWith(
             {
               id: 'curationId',
-              status: 'rejected',
+              status: CurationStatus.REJECTED,
               updated_at: expect.any(String),
             },
             { id: 'curationId' }
@@ -331,14 +330,12 @@ describe('when handling a request', () => {
             .spyOn(ItemCuration, 'update')
             .mockResolvedValueOnce({} as any)
 
-          await expect(router.updateItemCuration(req)).resolves.toStrictEqual(
-            {}
-          )
+          expect(await router.updateItemCuration(req)).toEqual({})
 
           expect(updateSpy).toHaveBeenCalledWith(
             {
               id: 'curationId',
-              status: 'rejected',
+              status: CurationStatus.REJECTED,
               updated_at: expect.any(String),
             },
             { id: 'curationId' }
@@ -450,7 +447,7 @@ describe('when handling a request', () => {
 
           jest
             .spyOn(service, 'getLatestById')
-            .mockResolvedValueOnce({ status: 'pending' } as any)
+            .mockResolvedValueOnce({ status: CurationStatus.PENDING } as any)
         })
 
         it('should reject with an ongoing review message', async () => {
@@ -466,7 +463,7 @@ describe('when handling a request', () => {
 
           jest
             .spyOn(service, 'getLatestById')
-            .mockResolvedValueOnce({ status: 'pending' } as any)
+            .mockResolvedValueOnce({ status: CurationStatus.PENDING } as any)
         })
 
         it('should reject with an ongoing review message', async () => {
@@ -500,14 +497,12 @@ describe('when handling a request', () => {
             .spyOn(CollectionCuration, 'create')
             .mockResolvedValueOnce({} as any)
 
-          await expect(
-            router.insertCollectionCuration(req)
-          ).resolves.toStrictEqual({})
+          expect(await router.insertCollectionCuration(req)).toEqual({})
 
           expect(createSpy).toHaveBeenCalledWith({
             id: expect.any(String),
             collection_id: 'some id',
-            status: 'pending',
+            status: CurationStatus.PENDING,
             created_at: expect.any(Date),
             updated_at: expect.any(Date),
           })
@@ -515,26 +510,75 @@ describe('when handling a request', () => {
       })
 
       describe('when updating an item', () => {
-        beforeEach(() => {
-          service = mockServiceWithAccess(ItemCuration, true)
-          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
-        })
+        let item: ItemAttributes
+        let createItemCurationSpy: jest.SpyInstance
+        let createCollectionCurationSpy: jest.SpyInstance
+        let findSpy: jest.SpyInstance
+        let collectionService: CurationService<any>
 
-        it('should resolve with the inserted curation', async () => {
-          const createSpy = jest
+        beforeEach(() => {
+          item = { ...dbItemMock }
+          service = mockServiceWithAccess(ItemCuration, true)
+          collectionService = mockServiceWithAccess(CollectionCuration, true)
+
+          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
+          jest
+            .spyOn(collectionService, 'getLatestById')
+            .mockResolvedValueOnce(undefined)
+
+          jest.spyOn(Item, 'findOne').mockResolvedValueOnce(item)
+
+          createItemCurationSpy = jest
             .spyOn(ItemCuration, 'create')
             .mockResolvedValueOnce({} as any)
+        })
 
-          await expect(router.insertItemCuration(req)).resolves.toStrictEqual(
-            {}
-          )
+        describe('when the item collection already has a (virtual) curation', () => {
+          beforeEach(() => {
+            findSpy = jest
+              .spyOn(CollectionCuration, 'findOne')
+              .mockResolvedValueOnce({ 1: 2 })
+          })
 
-          expect(createSpy).toHaveBeenCalledWith({
-            id: expect.any(String),
-            item_id: 'some id',
-            status: 'pending',
-            created_at: expect.any(Date),
-            updated_at: expect.any(Date),
+          it('should resolve with the inserted curation', async () => {
+            expect(await router.insertItemCuration(req)).toEqual({})
+
+            expect(createItemCurationSpy).toHaveBeenCalledWith({
+              id: expect.any(String),
+              item_id: 'some id',
+              status: CurationStatus.PENDING,
+              created_at: expect.any(Date),
+              updated_at: expect.any(Date),
+            })
+          })
+
+          it('should call the collection curation to check if it exists', async () => {
+            expect(await router.insertItemCuration(req)).toEqual({})
+            expect(findSpy).toHaveBeenCalledWith(item.collection_id)
+          })
+        })
+
+        describe('when the item collection does not have a virtual curation', () => {
+          beforeEach(() => {
+            createCollectionCurationSpy = jest
+              .spyOn(CollectionCuration, 'create')
+              .mockResolvedValueOnce({} as any)
+
+            jest
+              .spyOn(CollectionCuration, 'findOne')
+              .mockResolvedValueOnce(undefined)
+          })
+
+          it('should create the virtual collection', async () => {
+            await router.insertItemCuration(req)
+
+            expect(createCollectionCurationSpy).toHaveBeenCalledWith({
+              id: expect.any(String),
+              collection_id: item.collection_id,
+              status: CurationStatus.PENDING,
+              created_at: expect.any(Date),
+              updated_at: expect.any(Date),
+            })
           })
         })
       })

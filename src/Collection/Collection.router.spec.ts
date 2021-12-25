@@ -783,11 +783,13 @@ describe('Collection router', () => {
     let thirdPartyDbCollection: CollectionAttributes
 
     beforeEach(() => {
+      const urn_suffix = 'thesuffix'
+      const third_party_id =
+        'urn:decentraland:mumbai:collections-thirdparty:third-party-id'
       thirdPartyDbCollection = {
         ...collectionAttributesMock,
-        urn_suffix: 'thesuffix',
-        third_party_id:
-          'urn:decentraland:mumbai:collections-thirdparty:third-party-id',
+        urn_suffix,
+        third_party_id,
       }
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
@@ -800,6 +802,7 @@ describe('Collection router', () => {
       ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([
         { id: thirdPartyDbCollection.id },
       ])
+      mockThirdPartyCollectionWithItems(third_party_id, urn_suffix, false)
       url = `/${wallet.address}/collections`
     })
 
@@ -1273,9 +1276,6 @@ describe('Collection router', () => {
           ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
             typeof collectionAPI.fetchItemsByContractAddress
           >).mockResolvedValueOnce([anotherItemFragment, itemFragmentMock])
-          ;(Collection.findByContractAddresses as jest.MockedFunction<
-            typeof Collection.findByContractAddresses
-          >).mockResolvedValueOnce([dbCollection])
           ;(Item.findByBlockchainIdsAndContractAddresses as jest.MockedFunction<
             typeof Item.findByBlockchainIdsAndContractAddresses
           >).mockResolvedValueOnce([dbItemMock, anotherDBItem])
@@ -1295,9 +1295,14 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 data: {
-                  collection: [
-                    convertCollectionDatesToISO(toFullCollection(dbCollection)),
-                  ],
+                  collection: convertCollectionDatesToISO(
+                    toFullCollection(
+                      Bridge.mergeCollection(
+                        dbCollection,
+                        collectionFragment as CollectionFragment
+                      )
+                    )
+                  ),
                   items: [
                     convertItemDatesToISO(
                       Bridge.toFullItem({

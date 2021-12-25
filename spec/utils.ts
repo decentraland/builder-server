@@ -11,7 +11,6 @@ import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
 import { wallet } from './mocks/wallet'
 import { collectionAttributesMock } from './mocks/collections'
 import { dbItemMock } from './mocks/items'
-import { ThirdPartyItemsFragment } from '../src/ethereum/api/fragments'
 
 export function buildURL(
   uri: string,
@@ -260,8 +259,8 @@ export function mockIsCollectionPublished(
 }
 
 /**
- * Mocks the "fetchThirdPartyCollectionItems" method of the thirdPartyAPI module.
- * This mock requires the thirdPartyAPI.fetchThirdPartyCollectionItems method to be mocked first.
+ * Mocks the "isPublished" method of the thirdPartyAPI module.
+ * This mock requires the thirdPartyAPI.isPublished method to be mocked first.
  *
  * @param thirdPartyId - The third party id to mock the response for.
  * @param collectionUrnSuffix - The collection urn suffix to mock the response for.
@@ -272,13 +271,13 @@ export function mockThirdPartyCollectionWithItems(
   collectionUrnSuffix: string,
   hasItems: boolean
 ): void {
-  if (!(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.Mock).mock) {
+  if (!(thirdPartyAPI.isPublished as jest.Mock).mock) {
     throw new Error(
-      "thirdPartyAPI.fetchThirdPartyCollectionItems should be mocked to mock the fetchThirdPartyCollectionItems method but it isn't"
+      "thirdPartyAPI.isPublished should be mocked to mock the isPublished method but it isn't"
     )
   }
-  ;(thirdPartyAPI.fetchThirdPartyCollectionItems as jest.MockedFunction<
-    typeof thirdPartyAPI.fetchThirdPartyCollectionItems
+  ;(thirdPartyAPI.isPublished as jest.MockedFunction<
+    typeof thirdPartyAPI.isPublished
   >).mockImplementationOnce((tpId, collectionURN) => {
     if (tpId !== thirdPartyId || collectionURN !== collectionUrnSuffix) {
       return Promise.reject(
@@ -287,6 +286,6 @@ export function mockThirdPartyCollectionWithItems(
         )
       )
     }
-    return Promise.resolve(hasItems ? [{} as ThirdPartyItemsFragment] : [])
+    return Promise.resolve(hasItems)
   })
 }

@@ -46,13 +46,13 @@ export class CollectionService {
     thirdPartyId: string,
     collectionUrnSuffix: string
   ): Promise<void> {
-    const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
+    const isPublished = await thirdPartyAPI.isPublished(
       thirdPartyId,
       collectionUrnSuffix
     )
 
     // We can't change the TPW collection's URN if there are already published items
-    if (collectionItems.length > 0) {
+    if (isPublished) {
       throw new AlreadyPublishedCollectionError(
         id,
         CollectionType.THIRD_PARTY,
@@ -134,7 +134,7 @@ export class CollectionService {
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection) {
-      if (isTPCollection(collection)) {
+      if (!isTPCollection(collection)) {
         throw new WrongCollectionError(
           "The collection can't be converted into a third party collection.",
           { id }
@@ -195,13 +195,13 @@ export class CollectionService {
 
   public async deleteCollection(collectionId: string): Promise<void> {
     const collection = await this.getDBCollection(collectionId)
-    if (this.isDBCollectionThirdParty(collection)) {
+    if (isTPCollection(collection)) {
       // If it's a TPC we must check if there's an item already published under that collection urn suffix
-      const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
-        collection.third_party_id!,
-        collection.urn_suffix!
+      const isPublished = await thirdPartyAPI.isPublished(
+        collection.third_party_id,
+        collection.urn_suffix
       )
-      if (collectionItems.length > 0) {
+      if (isPublished) {
         throw new AlreadyPublishedCollectionError(
           collection.id,
           CollectionType.THIRD_PARTY,
@@ -233,11 +233,11 @@ export class CollectionService {
     ethAddress: string
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
-    if (collection && this.isDBCollectionThirdParty(collection)) {
+    if (collection && isTPCollection(collection)) {
       return this.isTPWManager(
         getThirdPartyCollectionURN(
-          collection.third_party_id!,
-          collection.urn_suffix!
+          collection.third_party_id,
+          collection.urn_suffix
         ),
         ethAddress
       )
@@ -295,9 +295,5 @@ export class CollectionService {
     }
 
     return collection
-  }
-
-  private isDBCollectionThirdParty(collection: CollectionAttributes): boolean {
-    return !!collection.urn_suffix && !!collection.third_party_id
   }
 }

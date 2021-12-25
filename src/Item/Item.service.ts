@@ -88,7 +88,7 @@ export class ItemService {
           ItemAction.DELETE
         )
       }
-      if (await this.collectionService.isLockActive(dbCollection.lock)) {
+      if (this.collectionService.isLockActive(dbCollection.lock)) {
         throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
       }
     }
@@ -107,20 +107,20 @@ export class ItemService {
       dbItem.collection_id
     )
 
-    if (isTPCollection(dbCollection)) {
+    if (!isTPCollection(dbCollection)) {
       throw new InconsistentItemError(
         dbItem.id,
         "The third party item does't belong to a third party collection"
       )
     }
 
-    if (await this.collectionService.isLockActive(dbCollection.lock)) {
+    if (this.collectionService.isLockActive(dbCollection.lock)) {
       throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
     }
 
     const itemURN = buildTPItemURN(
-      dbCollection.third_party_id!,
-      dbCollection.urn_suffix!,
+      dbCollection.third_party_id,
+      dbCollection.urn_suffix,
       dbItem.urn_suffix!
     )
     if (await thirdPartyAPI.itemExists(itemURN)) {

@@ -20,3 +20,7 @@ export function toArray<T = any>(value: T | T[] | null): T[] {
 export function fromUnixTimestamp(timestamp: number | string): Date {
   return new Date(Number(timestamp) * 1000)
 }
+
+export function toUnixTimestamp(timestamp: Date | number | string): string {
+  return (Number(timestamp) / 1000).toString()
+}

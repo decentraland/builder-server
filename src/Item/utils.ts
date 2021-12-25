@@ -34,7 +34,9 @@ export function buildTPItemURN(
   return `${thirdPartyId}:${collectionURNSuffix}:${itemURNSuffix}`
 }
 
-export function isTPItem(item: ItemAttributes): boolean {
+export function isTPItem(
+  item: ItemAttributes
+): item is ItemAttributes & { urn_suffix: string; collection_id: string } {
   return item.urn_suffix !== null && item.collection_id !== null
 }
 

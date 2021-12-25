@@ -5,12 +5,22 @@ import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { Wearable } from './peer'
 import { fromUnixTimestamp } from '../../utils/parse'
+import { isTPCollection } from '../../Collection/utils'
+import { thirdPartyAPI } from './thirdParty'
 
 export class Bridge {
+  static async consolidateTPCollections(
+    collections: CollectionAttributes[]
+  ): Promise<CollectionAttributes[]> {
+    return Promise.all(
+      collections.map((collection) => Bridge.mergeTPCollection(collection))
+    )
+  }
+
   static async consolidateCollections(
     dbCollections: CollectionAttributes[],
     remoteCollections: CollectionFragment[]
-  ) {
+  ): Promise<CollectionAttributes[]> {
     const collections: CollectionAttributes[] = []
 
     const dbCollectionsByRemotes = await Collection.findByContractAddresses(
@@ -44,26 +54,11 @@ export class Bridge {
     return collections
   }
 
-  static toFullItem(dbItem: ItemAttributes): FullItem {
-    return utils.omit(
-      {
-        ...dbItem,
-        urn: null,
-        in_catalyst: false,
-        is_approved: false,
-        is_published: false,
-        total_supply: 0,
-        content_hash: null,
-      },
-      ['urn_suffix']
-    )
-  }
-
   static async consolidateItems(
     dbItems: ItemAttributes[],
     remoteItems: ItemFragment[],
     catalystItems: Wearable[]
-  ) {
+  ): Promise<FullItem[]> {
     const items: FullItem[] = []
 
     // To avoid multiple queries to the db, we will fetch all the items that match the blockchain_id and their collections
@@ -147,6 +142,20 @@ export class Bridge {
     }
   }
 
+  static async mergeTPCollection(
+    collection: CollectionAttributes
+  ): Promise<CollectionAttributes> {
+    return isTPCollection(collection)
+      ? {
+          ...collection,
+          is_published: await thirdPartyAPI.isPublished(
+            collection.third_party_id!,
+            collection.urn_suffix!
+          ),
+        }
+      : { ...collection }
+  }
+
   static mergeItem(
     dbItem: ItemAttributes,
     remoteItem: ItemFragment,
@@ -197,7 +206,24 @@ export class Bridge {
     }
   }
 
-  static indexById<T extends { id: string }>(list: (T | undefined)[]) {
+  static toFullItem(dbItem: ItemAttributes): FullItem {
+    return utils.omit(
+      {
+        ...dbItem,
+        urn: null,
+        in_catalyst: false,
+        is_approved: false,
+        is_published: false,
+        total_supply: 0,
+        content_hash: null,
+      },
+      ['urn_suffix']
+    )
+  }
+
+  static indexById<T extends { id: string }>(
+    list: (T | undefined)[]
+  ): Record<string, T> {
     return list.reduce((obj, result) => {
       if (result) {
         obj[result.id.toLowerCase()] = result

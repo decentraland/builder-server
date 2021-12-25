@@ -54,9 +54,18 @@ const getTiersQuery = () => gql`
   ${tiersFragment()}
 `
 
-const getThirdPartyCollectionItemsQuery = () => gql`
-  query getThirdPartyCollectionItems(${PAGINATION_VARIABLES}, $collectionId: String, $thirdPartyId: String) {
-    items(${PAGINATION_ARGUMENTS}, where: { searchCollectionId : $collectionId, searchThirdPartyId: $thirdPartyId }) {
+const getFirstThirdPartyCollectionItemQuery = () => gql`
+  query getThirdPartyCollectionItems(
+    $thirdPartyId: String
+    $collectionId: String
+  ) {
+    items(
+      first: 1
+      where: {
+        searchThirdPartyId: $thirdPartyId
+        searchCollectionId: $collectionId
+      }
+    ) {
       ...thirdPartyItemFragment
     }
   }
@@ -82,16 +91,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
   }
 
-  fetchThirdPartyCollectionItems = async (
-    thirdPartyId: string,
-    collectionId: string
-  ): Promise<ThirdPartyItemsFragment[]> => {
-    return this.paginate(['items'], {
-      query: getThirdPartyCollectionItemsQuery(),
-      variables: { thirdPartyId, collectionId },
-    })
-  }
-
   fetchThirdPartyIds = async (manager: string = ''): Promise<string[]> => {
     const thirdParties = await this.paginate<{ id: string }, 'thirdParties'>(
       ['thirdParties'],
@@ -101,6 +100,18 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       }
     )
     return thirdParties.map((thirdParty) => thirdParty.id)
+  }
+
+  isPublished = async (thirdPartyId: string, collectionId: string) => {
+    const {
+      data: { thirdPartyItems = [] },
+    } = await this.query<{
+      thirdPartyItems: ThirdPartyItemsFragment[]
+    }>({
+      query: getFirstThirdPartyCollectionItemQuery(),
+      variables: { thirdPartyId, collectionId },
+    })
+    return thirdPartyItems.length > 0
   }
 
   isManager = async (urn: string, manager: string): Promise<boolean> => {
@@ -136,7 +147,7 @@ export class ThirdPartyAPI extends BaseGraphAPI {
 
   itemExists = async (urn: string): Promise<boolean> => {
     const item = await this.fetchItem(urn)
-    return item != null
+    return item !== null
   }
 }
 

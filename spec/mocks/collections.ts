@@ -4,8 +4,9 @@ import {
   CollectionAttributes,
   FullCollection,
 } from '../../src/Collection/Collection.types'
-import { wallet } from './wallet'
 import { CollectionFragment } from '../../src/ethereum/api/fragments'
+import { toUnixTimestamp } from '../../src/utils/parse'
+import { wallet } from './wallet'
 
 export const collectionAttributesMock: CollectionAttributes = {
   id: uuidv4(),
@@ -38,10 +39,10 @@ export const collectionFragment: Omit<
   minters: collectionAttributesMock.minters,
   managers: collectionAttributesMock.managers,
   reviewedAt: collectionAttributesMock.reviewed_at
-    ? collectionAttributesMock.reviewed_at.toISOString()
+    ? toUnixTimestamp(collectionAttributesMock.reviewed_at)
     : null,
-  updatedAt: collectionAttributesMock.updated_at.toISOString(),
-  createdAt: collectionAttributesMock.created_at.toISOString(),
+  updatedAt: toUnixTimestamp(collectionAttributesMock.updated_at),
+  createdAt: toUnixTimestamp(collectionAttributesMock.created_at),
 }
 
 export type ResultCollection = Omit<

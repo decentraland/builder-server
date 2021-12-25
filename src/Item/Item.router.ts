@@ -16,7 +16,6 @@ import {
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
-import { RequestParameters } from '../RequestParameters'
 import {
   Collection,
   CollectionAttributes,
@@ -157,17 +156,14 @@ export class ItemRouter extends Router {
       )
     }
 
-    let is_published: boolean | undefined
-    try {
-      is_published = new RequestParameters(req).getBoolean('is_published')
-    } catch (error) {
-      // No is_published param
-    }
-
     const [dbItems, remoteItems] = await Promise.all([
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
     ])
+
+    // TODO: get all DB third party collections (or the ones that are related to the items fetched)
+    // and used them to compute the URN to then check if each item exists in thegraph (is published)
+    // Repeat this process for each request
 
     const catalystItems = await peerAPI.fetchWearables(
       remoteItems.map((item) => item.urn)
@@ -179,11 +175,7 @@ export class ItemRouter extends Router {
       catalystItems
     )
 
-    return items.filter(
-      (item) =>
-        typeof is_published === 'undefined' ||
-        item.is_published === is_published
-    )
+    return items
   }
 
   async getAddressItems(req: AuthRequest): Promise<FullItem[]> {
@@ -201,6 +193,7 @@ export class ItemRouter extends Router {
     const [dbItems, remoteItems] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
+      // TODO: this.service.getDbTPWItems()
     ])
 
     const catalystItems = await peerAPI.fetchWearables(

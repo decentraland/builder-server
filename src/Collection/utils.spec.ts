@@ -20,7 +20,7 @@ describe('when decoding the TPW collection URN', () => {
 
     it('should throw indicating that the URN is not TPW compliant', () => {
       expect(() => decodeTPCollectionURN(fullUrn)).toThrow(
-        'The given collection URN is not TWP compliant'
+        'The given collection URN is not Third Party compliant'
       )
     })
   })

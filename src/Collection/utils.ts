@@ -10,7 +10,7 @@ import {
   UnpublishedCollectionError,
 } from './Collection.errors'
 
-export const tpwCollectionURNRegex = new RegExp(
+export const tpCollectionURNRegex = new RegExp(
   `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot})$`
 )
 
@@ -27,8 +27,13 @@ export function getThirdPartyCollectionURN(
   return `${third_party_id}:${urn_suffix}`
 }
 
-export function isTPCollection(collection: CollectionAttributes): boolean {
-  return collection.third_party_id === null || collection.urn_suffix === null
+export function isTPCollection(
+  collection: CollectionAttributes
+): collection is CollectionAttributes & {
+  third_party_id: string
+  urn_suffix: string
+} {
+  return collection.third_party_id !== null && collection.urn_suffix !== null
 }
 
 /**
@@ -40,6 +45,7 @@ export function toFullCollection(
   dbCollection: CollectionAttributes
 ): FullCollection {
   const { third_party_id, urn_suffix, contract_address } = dbCollection
+
   return {
     ...utils.omit(dbCollection, ['urn_suffix', 'third_party_id']),
     urn:
@@ -86,7 +92,7 @@ export function toDBCollection(
  * @param urn - The URN to be checked.
  */
 export function hasTPCollectionURN(collection: FullCollection) {
-  return collection.urn && tpwCollectionURNRegex.test(collection.urn)
+  return collection.urn && tpCollectionURNRegex.test(collection.urn)
 }
 
 /**
@@ -98,9 +104,9 @@ export function hasTPCollectionURN(collection: FullCollection) {
 export function decodeTPCollectionURN(
   urn: string
 ): { third_party_id: string; network: string; urn_suffix: string } {
-  const matches = tpwCollectionURNRegex.exec(urn)
+  const matches = tpCollectionURNRegex.exec(urn)
   if (matches === null) {
-    throw new Error('The given collection URN is not TWP compliant')
+    throw new Error('The given collection URN is not Third Party compliant')
   }
 
   return {
@@ -137,6 +143,3 @@ export async function getMergedCollection(
 
 export const getRemoteCollection = async (contractAddress: string) =>
   (await collectionAPI.fetchCollection(contractAddress)) || undefined
-
-export const getRemoteCollections = async () =>
-  await collectionAPI.fetchCollections()

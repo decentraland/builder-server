@@ -16,14 +16,13 @@ import { ItemFragment } from '../ethereum/api/fragments'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
-import { RequestParameters } from '../RequestParameters'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
-import { toFullCollection, hasTPCollectionURN } from './utils'
+import { toFullCollection, hasTPCollectionURN, isTPCollection } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import {
   AlreadyPublishedCollectionError,
@@ -149,26 +148,15 @@ export class CollectionRouter extends Router {
       )
     }
 
-    let is_published: boolean | undefined
-    try {
-      is_published = new RequestParameters(req).getBoolean('isPublished')
-    } catch (error) {
-      // No is_published param
-    }
-
-    // The current implementation only supports fetching published/unpublished collections and items
-    // If, in the future we need to add multiple query params, a more flexible implementation is required
     const [dbCollections, remoteCollections] = await Promise.all([
-      typeof is_published === 'undefined'
-        ? Collection.find<CollectionAttributes>()
-        : Collection.find<CollectionAttributes>({ is_published }),
+      Collection.find<CollectionAttributes>(),
       collectionAPI.fetchCollections(),
     ])
 
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
       remoteCollections
-    )
+    ).then(Bridge.consolidateTPCollections)
 
     // Build the full collection
     return consolidatedCollections.map((collection) =>
@@ -176,7 +164,9 @@ export class CollectionRouter extends Router {
     )
   }
 
-  getAddressCollections = async (req: AuthRequest) => {
+  getAddressCollections = async (
+    req: AuthRequest
+  ): Promise<FullCollection[]> => {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -202,9 +192,14 @@ export class CollectionRouter extends Router {
       dbCollections,
       remoteCollections
     )
+    const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
+      tpwCollections
+    )
 
     // Build the full collection
-    return consolidatedCollections.concat(tpwCollections).map(toFullCollection)
+    return consolidatedCollections
+      .concat(consolidatedTPWCollections)
+      .map(toFullCollection)
   }
 
   async getCollection(req: AuthRequest): Promise<FullCollection> {
@@ -220,13 +215,19 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection.contract_address!
-    )
+    let fullCollection: CollectionAttributes
 
-    const fullCollection = remoteCollection
-      ? Bridge.mergeCollection(dbCollection, remoteCollection)
-      : dbCollection
+    if (isTPCollection(dbCollection)) {
+      fullCollection = await Bridge.mergeTPCollection(dbCollection)
+    } else {
+      const remoteCollection = await collectionAPI.fetchCollection(
+        dbCollection.contract_address!
+      )
+
+      fullCollection = remoteCollection
+        ? Bridge.mergeCollection(dbCollection, remoteCollection)
+        : dbCollection
+    }
 
     if (!(await hasPublicAccess(eth_address, fullCollection))) {
       throw new HTTPError(
@@ -241,7 +242,7 @@ export class CollectionRouter extends Router {
 
   publishCollection = async (
     req: AuthRequest
-  ): Promise<{ collection: FullCollection[]; items: FullItem[] }> => {
+  ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
     const id = server.extractFromReq(req, 'id')
 
     // We are using the withCollectionExists middleware so we can safely assert the collection exists
@@ -305,10 +306,10 @@ export class CollectionRouter extends Router {
       remoteItems.map((item) => item.urn)
     )
 
+    const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
+
     return {
-      collection: (
-        await Bridge.consolidateCollections([dbCollection!], [remoteCollection])
-      ).map((collection) => toFullCollection(collection)),
+      collection: toFullCollection(collection),
       items: await Bridge.consolidateItems(items, remoteItems, catalystItems),
     }
   }

@@ -55,16 +55,13 @@ const getTiersQuery = () => gql`
 `
 
 const getFirstThirdPartyCollectionItemQuery = () => gql`
-  query getThirdPartyCollectionItems(
+  query getFirstThirdPartyCollectionItemQuery(
     $thirdPartyId: String
     $collectionId: String
   ) {
     items(
       first: 1
-      where: {
-        searchThirdPartyId: $thirdPartyId
-        searchCollectionId: $collectionId
-      }
+      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
     ) {
       ...thirdPartyItemFragment
     }
@@ -104,14 +101,14 @@ export class ThirdPartyAPI extends BaseGraphAPI {
 
   isPublished = async (thirdPartyId: string, collectionId: string) => {
     const {
-      data: { thirdPartyItems = [] },
+      data: { items = [] },
     } = await this.query<{
-      thirdPartyItems: ThirdPartyItemsFragment[]
+      items: ThirdPartyItemsFragment[]
     }>({
       query: getFirstThirdPartyCollectionItemQuery(),
       variables: { thirdPartyId, collectionId },
     })
-    return thirdPartyItems.length > 0
+    return items.length > 0
   }
 
   isManager = async (urn: string, manager: string): Promise<boolean> => {

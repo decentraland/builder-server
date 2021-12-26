@@ -149,8 +149,8 @@ export class Bridge {
       ? {
           ...collection,
           is_published: await thirdPartyAPI.isPublished(
-            collection.third_party_id!,
-            collection.urn_suffix!
+            collection.third_party_id,
+            collection.urn_suffix
           ),
         }
       : { ...collection }

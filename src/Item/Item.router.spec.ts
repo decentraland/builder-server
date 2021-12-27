@@ -1,6 +1,7 @@
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
+import { utils } from 'decentraland-commons'
 import {
   createAuthHeaders,
   buildURL,
@@ -318,16 +319,71 @@ describe('Item router', () => {
       jest.Mocked<typeof Item>
 
     const mockUUID = '75e7da02-a727-48de-a4da-d0778395067b'
+    let itemToUpsert: Omit<ItemAttributes, 'created_at' | 'updated_at'>
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
+      itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
+    })
+
+    describe('and the item inserted has an invalid name', () => {
+      it("should fail with a message indicating that the name doesn't match the pattern", () => {
+        return server
+          .put(buildURL(url))
+          .send({ item: { ...itemToUpsert, name: 'anInvalid:name' } })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.badRequest)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  dataPath: '/item/name',
+                  keyword: 'pattern',
+                  message: 'should match pattern "^[^:]*$"',
+                  params: { pattern: '^[^:]*$' },
+                  schemaPath: '#/properties/item/properties/name/pattern',
+                },
+              ],
+              error: 'Invalid request body',
+              ok: false,
+            })
+          })
+      })
+    })
+
+    describe('and the item inserted has an invalid description', () => {
+      it("should fail with a message indicating that the description doesn't match the pattern", () => {
+        return server
+          .put(buildURL(url))
+          .send({
+            item: { ...itemToUpsert, description: 'anInvalid:nescription' },
+          })
+          .set(createAuthHeaders('put', url))
+          .expect(STATUS_CODES.badRequest)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  dataPath: '/item/description',
+                  keyword: 'pattern',
+                  message: 'should match pattern "^[^:]*$"',
+                  params: { pattern: '^[^:]*$' },
+                  schemaPath:
+                    '#/properties/item/properties/description/pattern',
+                },
+              ],
+              error: 'Invalid request body',
+              ok: false,
+            })
+          })
+      })
     })
 
     describe('and the param id is different from payload id', () => {
       it('should fail with body and url ids do not match message', async () => {
         const response = await server
           .put(buildURL(url))
-          .send({ item: { ...dbItem, id: mockUUID } })
+          .send({ item: { ...itemToUpsert, id: mockUUID } })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.badRequest)
 
@@ -341,12 +397,12 @@ describe('Item router', () => {
 
     describe('and the user upserting is not authorized to do so', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, false)
+        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, false)
       })
       it('should fail with unauthorized user message', async () => {
         const response = await server
           .put(buildURL(url))
-          .send({ item: dbItem })
+          .send({ item: itemToUpsert })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.unauthorized)
 
@@ -360,14 +416,14 @@ describe('Item router', () => {
 
     describe('and the collection provided in the payload does not exists in the db', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         mockCollection.findOne.mockResolvedValueOnce(undefined)
       })
 
       it('should fail with collection not found message', async () => {
         const response = await server
           .put(buildURL(url))
-          .send({ item: dbItem })
+          .send({ item: itemToUpsert })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.notFound)
 
@@ -382,7 +438,7 @@ describe('Item router', () => {
     describe('and the collection provided in the payload does not belong to the address making the request', () => {
       const differentEthAddress = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8'
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         mockCollection.findOne.mockResolvedValueOnce({
           collection_id: dbItem.collection_id,
           eth_address: differentEthAddress,
@@ -392,18 +448,18 @@ describe('Item router', () => {
       it('should fail with unauthorized user message', async () => {
         const response = await server
           .put(buildURL(url))
-          .send({ item: dbItem })
+          .send({ item: itemToUpsert })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.unauthorized)
 
         expect(response.body).toEqual({
           data: {
-            id: dbItem.id,
+            id: itemToUpsert.id,
             eth_address: wallet.address,
-            collection_id: dbItem.collection_id,
+            collection_id: itemToUpsert.collection_id,
           },
           error:
-            "The new collection for the item isn't owned by the same owner",
+            "The new collection for the item isn't owned by the same owner.",
           ok: false,
         })
       })
@@ -411,25 +467,25 @@ describe('Item router', () => {
 
     describe('and the collection of the item is being changed', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
       })
 
       it('should fail with cant change item collection message', async () => {
-        mockItem.findOne.mockResolvedValueOnce(dbItem)
+        mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
         mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: dbItem.collection_id,
+          collection_id: itemToUpsert.collection_id,
           eth_address: wallet.address,
         })
 
         const response = await server
           .put(buildURL(url))
-          .send({ item: { ...dbItem, collection_id: mockUUID } })
+          .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.unauthorized)
 
         expect(response.body).toEqual({
           data: { id: dbItem.id },
-          error: "Item can't change between collections",
+          error: "Item can't change between collections.",
           ok: false,
         })
       })
@@ -437,9 +493,9 @@ describe('Item router', () => {
 
     describe('when the collection given for the item is locked', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: dbItem.collection_id,
+          collection_id: itemToUpsert.collection_id,
           eth_address: wallet.address,
           contract_address: Wallet.createRandom().address,
           lock: new Date(),
@@ -455,13 +511,13 @@ describe('Item router', () => {
         it('should fail with can not update locked collection items message', async () => {
           const response = await server
             .put(buildURL(url))
-            .send({ item: { ...dbItem, name: 'new name' } })
+            .send({ item: { ...itemToUpsert, name: 'new name' } })
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.locked)
 
           expect(response.body).toEqual({
             data: {
-              id: dbItem.id,
+              id: itemToUpsert.id,
             },
             error:
               "The collection for the item is locked. The item can't be inserted or updated.",
@@ -474,10 +530,10 @@ describe('Item router', () => {
     describe('when the collection given for the item is already published', () => {
       beforeEach(() => {
         dbItem.collection_id = collectionAttributesMock.id
-        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         mockCollection.findOne.mockResolvedValueOnce({
           ...collectionAttributesMock,
-          collection_id: dbItem.collection_id,
+          collection_id: itemToUpsert.collection_id,
           eth_address: wallet.address,
           contract_address: Wallet.createRandom().address,
         })
@@ -492,12 +548,12 @@ describe('Item router', () => {
         it('should fail with can not add item to published collection message', async () => {
           const response = await server
             .put(buildURL(url))
-            .send({ item: dbItem })
+            .send({ item: itemToUpsert })
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.conflict)
 
           expect(response.body).toEqual({
-            data: { id: dbItem.id },
+            data: { id: itemToUpsert.id },
             error:
               "The collection that contains this item has been already published. The item can't be inserted.",
             ok: false,
@@ -507,18 +563,18 @@ describe('Item router', () => {
 
       describe('and the item is being removed from the collection', () => {
         beforeEach(() => {
-          mockItem.findOne.mockResolvedValueOnce(dbItem)
+          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
         })
 
         it('should fail with can not remove item from published collection message', async () => {
           const response = await server
             .put(buildURL(url))
-            .send({ item: { ...dbItem, collection_id: null } })
+            .send({ item: { ...itemToUpsert, collection_id: null } })
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.conflict)
 
           expect(response.body).toEqual({
-            data: { id: dbItem.id },
+            data: { id: itemToUpsert.id },
             error:
               "The collection that contains this item has been already published. The item can't be deleted.",
             ok: false,
@@ -534,13 +590,13 @@ describe('Item router', () => {
         it('should fail with can not update items rarity message', async () => {
           const response = await server
             .put(buildURL(url))
-            .send({ item: { ...dbItem, rarity: ItemRarity.EPIC } })
+            .send({ item: { ...itemToUpsert, rarity: ItemRarity.EPIC } })
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.conflict)
 
           expect(response.body).toEqual({
             data: {
-              id: dbItem.id,
+              id: itemToUpsert.id,
             },
             error:
               "The collection that contains this item has been already published. The item can't be updated with a new rarity.",
@@ -552,9 +608,9 @@ describe('Item router', () => {
 
     describe('and all the conditions for success are given', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, dbItem.id, wallet.address, true)
+        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: dbItem.collection_id,
+          collection_id: itemToUpsert.collection_id,
           eth_address: wallet.address,
           contract_address: Wallet.createRandom().address,
         })
@@ -566,7 +622,7 @@ describe('Item router', () => {
       it('should respond with the upserted item', async () => {
         const response = await server
           .put(buildURL(url))
-          .send({ item: dbItem })
+          .send({ item: itemToUpsert })
           .set(createAuthHeaders('put', url))
           .expect(STATUS_CODES.ok)
 

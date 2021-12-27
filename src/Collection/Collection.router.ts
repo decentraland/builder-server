@@ -26,11 +26,11 @@ import { hasAccess } from './access'
 import { toFullCollection, hasTPCollectionURN } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import {
-  CollectionAlreadyPublishedException,
-  CollectionLockedException,
-  UnauthorizedCollectionEditException,
-  WrongCollectionException,
-} from './Collection.exceptions'
+  CollectionAlreadyPublishedError,
+  CollectionLockedError,
+  UnauthorizedCollectionEditError,
+  WrongCollectionError,
+} from './Collection.errors'
 
 const validator = getValidator()
 
@@ -395,21 +395,21 @@ export class CollectionRouter extends Router {
         )
       }
     } catch (error) {
-      if (error instanceof CollectionLockedException) {
+      if (error instanceof CollectionLockedError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.locked
         )
-      } else if (error instanceof CollectionAlreadyPublishedException) {
+      } else if (error instanceof CollectionAlreadyPublishedError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.conflict
         )
-      } else if (error instanceof WrongCollectionException) {
+      } else if (error instanceof WrongCollectionError) {
         throw new HTTPError(error.message, error.data, STATUS_CODES.conflict)
-      } else if (error instanceof UnauthorizedCollectionEditException) {
+      } else if (error instanceof UnauthorizedCollectionEditError) {
         throw new HTTPError(
           error.message,
           { id: error.id, eth_address: error.eth_address },
@@ -429,13 +429,13 @@ export class CollectionRouter extends Router {
     try {
       await this.service.deleteCollection(id)
     } catch (error) {
-      if (error instanceof CollectionAlreadyPublishedException) {
+      if (error instanceof CollectionAlreadyPublishedError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.conflict
         )
-      } else if (error instanceof CollectionLockedException) {
+      } else if (error instanceof CollectionLockedError) {
         throw new HTTPError(
           error.message,
           { id: error.id },

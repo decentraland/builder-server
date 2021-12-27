@@ -41,7 +41,7 @@ import {
   UnauthorizedToChangeToCollection,
   UnauthorizedToUpsertError,
 } from './Item.errors'
-import { NonExistentCollectionException } from '../Collection/Collection.exceptions'
+import { NonExistentCollectionError } from '../Collection/Collection.errors'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -365,7 +365,7 @@ export class ItemRouter extends Router {
           },
           STATUS_CODES.unauthorized
         )
-      } else if (error instanceof NonExistentCollectionException) {
+      } else if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
           error.message,
           { collectionId: error.id },

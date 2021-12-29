@@ -20,7 +20,6 @@ import { FullItem, ItemAttributes } from './Item.types'
 import {
   buildTPItemURN,
   decodeThirdPartyItemURN,
-  isThirdPartyItemURNValid,
   isTPItem,
   toDBItem,
 } from './utils'

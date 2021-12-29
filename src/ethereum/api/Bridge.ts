@@ -60,8 +60,8 @@ export class Bridge {
         ...dbItem,
         urn: hasURN
           ? buildTPItemURN(
-              dbCollection.third_party_id!,
-              dbCollection.urn_suffix!,
+              dbCollection!.third_party_id!,
+              dbCollection!.urn_suffix!,
               dbItem.urn_suffix!
             )
           : null,

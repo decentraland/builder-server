@@ -45,10 +45,6 @@ export function isTPItem(item: ItemAttributes): boolean {
   return item.urn_suffix !== null && item.collection_id !== null
 }
 
-export function isThirdPartyItemURNValid(itemURN: string): boolean {
-  return tpwItemURNRegex.test(itemURN)
-}
-
 export function decodeThirdPartyItemURN(
   itemURN: string
 ): {

@@ -25,7 +25,7 @@ export function getThirdPartyCollectionURN(
 }
 
 export function isTPCollection(collection: CollectionAttributes): boolean {
-  return collection.third_party_id === null || collection.urn_suffix === null
+  return collection.third_party_id !== null && collection.urn_suffix !== null
 }
 
 /**

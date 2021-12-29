@@ -7,6 +7,8 @@ import {
   ItemRarity,
   ItemType,
 } from '../../src/Item/Item.types'
+import { buildTPItemURN } from '../../src/Item/utils'
+import { CollectionAttributes } from '../../src/Collection'
 import { collectionAttributesMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
@@ -17,8 +19,15 @@ export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
 export function toResultItem(
   itemAttributes: ItemAttributes,
   itemFragment?: ItemFragment,
-  catalystItem?: Wearable
+  catalystItem?: Wearable,
+  dbCollection?: CollectionAttributes
 ): ResultItem {
+  const hasURN =
+    itemAttributes.urn_suffix &&
+    dbCollection &&
+    dbCollection.urn_suffix &&
+    dbCollection.third_party_id
+
   const resultItem = {
     ...itemAttributes,
     created_at: itemAttributes.created_at.toISOString(),
@@ -28,7 +37,13 @@ export function toResultItem(
     is_published:
       Boolean(itemAttributes.collection_id) &&
       Boolean(itemAttributes.blockchain_item_id),
-    urn: null,
+    urn: hasURN
+      ? buildTPItemURN(
+          dbCollection!.third_party_id!,
+          dbCollection!.urn_suffix!,
+          itemAttributes!.urn_suffix!
+        )
+      : null,
     total_supply: itemFragment?.totalSupply
       ? Number(itemFragment?.totalSupply)
       : 0,

@@ -9,6 +9,8 @@ import {
   mockOwnableCanUpsert,
   mockItemAuthorizationMiddleware,
   mockIsCollectionPublished,
+  mockIsThirdPartyManager,
+  mockThirdPartyItemExists,
 } from '../../spec/utils'
 import { collectionAttributesMock } from '../../spec/mocks/collections'
 import {
@@ -23,15 +25,16 @@ import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
-import { Item } from './Item.model'
-import { hasAccess } from './access'
-import { ItemAttributes, ItemRarity } from './Item.types'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { STATUS_CODES } from '../common/HTTPError'
 import { Bridge } from '../ethereum/api/Bridge'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { CollectionAttributes } from '../Collection/Collection.types'
+import { Item } from './Item.model'
+import { hasAccess } from './access'
 import { buildTPItemURN } from './utils'
+import { FullItem, ItemAttributes, ItemRarity } from './Item.types'
 
 jest.mock('./Item.model')
 jest.mock('../ethereum/api/collection')
@@ -319,331 +322,913 @@ describe('Item router', () => {
       jest.Mocked<typeof Item>
 
     const mockUUID = '75e7da02-a727-48de-a4da-d0778395067b'
-    let itemToUpsert: Omit<ItemAttributes, 'created_at' | 'updated_at'>
+    let itemToUpsert: FullItem
+    let collectionMock: CollectionAttributes
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
       itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
+      collectionMock = { ...collectionAttributesMock }
     })
 
-    describe('and the item inserted has an invalid name', () => {
-      it("should fail with a message indicating that the name doesn't match the pattern", () => {
-        return server
-          .put(buildURL(url))
-          .send({ item: { ...itemToUpsert, name: 'anInvalid:name' } })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.badRequest)
-          .then((response: any) => {
-            expect(response.body).toEqual({
-              data: [
-                {
-                  dataPath: '/item/name',
-                  keyword: 'pattern',
-                  message: 'should match pattern "^[^:]*$"',
-                  params: { pattern: '^[^:]*$' },
-                  schemaPath: '#/properties/item/properties/name/pattern',
-                },
-              ],
-              error: 'Invalid request body',
-              ok: false,
-            })
-          })
-      })
-    })
+    describe('and the item is a third party item', () => {
+      const itemUrnSuffix = 'an-item-urn-suffix'
 
-    describe('and the item inserted has an invalid description', () => {
-      it("should fail with a message indicating that the description doesn't match the pattern", () => {
-        return server
-          .put(buildURL(url))
-          .send({
-            item: { ...itemToUpsert, description: 'anInvalid:nescription' },
-          })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.badRequest)
-          .then((response: any) => {
-            expect(response.body).toEqual({
-              data: [
-                {
-                  dataPath: '/item/description',
-                  keyword: 'pattern',
-                  message: 'should match pattern "^[^:]*$"',
-                  params: { pattern: '^[^:]*$' },
-                  schemaPath:
-                    '#/properties/item/properties/description/pattern',
-                },
-              ],
-              error: 'Invalid request body',
-              ok: false,
-            })
-          })
-      })
-    })
-
-    describe('and the param id is different from payload id', () => {
-      it('should fail with body and url ids do not match message', async () => {
-        const response = await server
-          .put(buildURL(url))
-          .send({ item: { ...itemToUpsert, id: mockUUID } })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.badRequest)
-
-        expect(response.body).toEqual({
-          data: { bodyId: mockUUID, urlId: dbItem.id },
-          error: 'The body and URL item ids do not match',
-          ok: false,
-        })
-      })
-    })
-
-    describe('and the user upserting is not authorized to do so', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, false)
-      })
-      it('should fail with unauthorized user message', async () => {
-        const response = await server
-          .put(buildURL(url))
-          .send({ item: itemToUpsert })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.unauthorized)
-
-        expect(response.body).toEqual({
-          data: { id: dbItem.id, eth_address: wallet.address },
-          error: 'The user is unauthorized to upsert the collection.',
-          ok: false,
-        })
-      })
-    })
-
-    describe('and the collection provided in the payload does not exists in the db', () => {
-      beforeEach(() => {
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-        mockCollection.findOne.mockResolvedValueOnce(undefined)
+        collectionMock = {
+          ...collectionMock,
+          urn_suffix: 'a-collection-urn-suffix',
+          third_party_id:
+            'urn:decentraland:matic:collections-thirdparty:a-third-party-id',
+        }
+        dbItem = { ...dbItem, blockchain_item_id: null }
       })
 
-      it('should fail with collection not found message', async () => {
-        const response = await server
-          .put(buildURL(url))
-          .send({ item: itemToUpsert })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.notFound)
-
-        expect(response.body).toEqual({
-          data: { collectionId: dbItem.collection_id },
-          error: "The collection doesn't exist.",
-          ok: false,
-        })
-      })
-    })
-
-    describe('and the collection provided in the payload does not belong to the address making the request', () => {
-      const differentEthAddress = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8'
-      beforeEach(() => {
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-        mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: dbItem.collection_id,
-          eth_address: differentEthAddress,
-        })
-      })
-
-      it('should fail with unauthorized user message', async () => {
-        const response = await server
-          .put(buildURL(url))
-          .send({ item: itemToUpsert })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.unauthorized)
-
-        expect(response.body).toEqual({
-          data: {
-            id: itemToUpsert.id,
-            eth_address: wallet.address,
-            collection_id: itemToUpsert.collection_id,
-          },
-          error:
-            "The new collection for the item isn't owned by the same owner.",
-          ok: false,
-        })
-      })
-    })
-
-    describe('and the collection of the item is being changed', () => {
-      beforeEach(() => {
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-      })
-
-      it('should fail with cant change item collection message', async () => {
-        mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
-        mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: itemToUpsert.collection_id,
-          eth_address: wallet.address,
-        })
-
-        const response = await server
-          .put(buildURL(url))
-          .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.unauthorized)
-
-        expect(response.body).toEqual({
-          data: { id: dbItem.id },
-          error: "Item can't change between collections.",
-          ok: false,
-        })
-      })
-    })
-
-    describe('when the collection given for the item is locked', () => {
-      beforeEach(() => {
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-        mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: itemToUpsert.collection_id,
-          eth_address: wallet.address,
-          contract_address: Wallet.createRandom().address,
-          lock: new Date(),
-        })
-        mockIsCollectionPublished(collectionAttributesMock.id, false)
-      })
-
-      describe('and the item is being changed', () => {
+      describe('and the user upserting is not authorized to do so', () => {
         beforeEach(() => {
-          mockItem.findOne.mockResolvedValueOnce(dbItem)
+          itemToUpsert = { ...itemToUpsert, collection_id: collectionMock.id }
+          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          mockCollection.findOne.mockResolvedValueOnce(collectionMock)
+          mockIsThirdPartyManager(wallet.address, false)
         })
 
-        it('should fail with can not update locked collection items message', async () => {
-          const response = await server
+        it('should respond with a 401 signaling that hte user is unauthorized to upsert the item in the collection', () => {
+          return server
             .put(buildURL(url))
-            .send({ item: { ...itemToUpsert, name: 'new name' } })
+            .send({ item: itemToUpsert })
             .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.locked)
-
-          expect(response.body).toEqual({
-            data: {
-              id: itemToUpsert.id,
-            },
-            error:
-              "The collection for the item is locked. The item can't be inserted or updated.",
-            ok: false,
-          })
+            .expect(STATUS_CODES.unauthorized)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: { id: dbItem.id, eth_address: wallet.address },
+                error: 'The user is unauthorized to upsert the collection.',
+                ok: false,
+              })
+            })
         })
       })
-    })
 
-    describe('when the collection given for the item is already published', () => {
-      beforeEach(() => {
-        dbItem.collection_id = collectionAttributesMock.id
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-        mockCollection.findOne.mockResolvedValueOnce({
-          ...collectionAttributesMock,
-          collection_id: itemToUpsert.collection_id,
-          eth_address: wallet.address,
-          contract_address: Wallet.createRandom().address,
+      describe("and the item's urn is not valid", () => {
+        beforeEach(() => {
+          itemToUpsert = { ...itemToUpsert, urn: 'some-invalid-urn' }
         })
-        mockIsCollectionPublished(collectionAttributesMock.id, true)
+
+        it('should respond with a 400 and a message signaling that the URN is invalid', () => {
+          return server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  expect.objectContaining({
+                    dataPath: '/item/urn',
+                    keyword: 'pattern',
+                  }),
+                ],
+                error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and the item is being updated', () => {
+        beforeEach(() => {
+          mockIsThirdPartyManager(wallet.address, true)
+        })
+
+        describe('and the update moves the item out of the collection', () => {
+          beforeEach(() => {
+            itemToUpsert = { ...itemToUpsert, collection_id: null }
+            dbItem = { ...dbItem, collection_id: collectionMock.id }
+          })
+
+          describe('and the item has an URN', () => {
+            let dbItemURN: string
+            beforeEach(() => {
+              itemToUpsert = { ...itemToUpsert, collection_id: null }
+              const itemUrnSuffix = 'an-item-urn-suffix'
+              dbItemURN = buildTPItemURN(
+                collectionMock.third_party_id!,
+                collectionMock.urn_suffix!,
+                itemUrnSuffix
+              )
+              mockItem.findOne.mockResolvedValueOnce({
+                ...dbItem,
+                collection_id: collectionMock.id,
+                urn_suffix: itemUrnSuffix,
+              })
+              mockCollection.findOne.mockResolvedValueOnce(collectionMock)
+            })
+
+            describe('and is not published', () => {
+              let resultingItem: ResultItem
+
+              beforeEach(() => {
+                const updatedItem = {
+                  ...dbItem,
+                  urn_suffix: null,
+                  collection_id: null,
+                }
+                mockThirdPartyItemExists(dbItemURN, false)
+                mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
+                resultingItem = toResultItem(
+                  updatedItem,
+                  undefined,
+                  undefined,
+                  collectionMock
+                )
+              })
+
+              it('should respond with a 200, update the item and return the updated item', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(200)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: resultingItem,
+                      ok: true,
+                    })
+                  })
+              })
+            })
+
+            describe("and it's published", () => {
+              beforeEach(() => {
+                mockThirdPartyItemExists(dbItemURN, true)
+              })
+
+              it('should fail with 409 and a message saying that the item is already published', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(409)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: {
+                        id: itemToUpsert.id,
+                        urn: dbItemURN,
+                      },
+                      error:
+                        "The third party item is already published. It can't be inserted or updated.",
+                      ok: false,
+                    })
+                  })
+              })
+            })
+          })
+
+          describe("and the item doesn't have an URN", () => {
+            beforeEach(() => {
+              itemToUpsert = { ...itemToUpsert, urn: null }
+              mockItem.findOne.mockResolvedValueOnce({
+                ...dbItem,
+                urn_suffix: null,
+                collection_id: collectionMock.id,
+              })
+              mockCollection.findOne.mockResolvedValueOnce(collectionMock)
+              const updatedItem = {
+                ...dbItem,
+                urn_suffix: null,
+                collection_id: null,
+              }
+              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
+              resultingItem = toResultItem(
+                updatedItem,
+                undefined,
+                undefined,
+                collectionMock
+              )
+            })
+
+            it('should respond with a 200, update the item and return the updated item', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(200)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    data: resultingItem,
+                    ok: true,
+                  })
+                })
+            })
+          })
+        })
+
+        describe('and the update moves the item into the collection', () => {
+          beforeEach(() => {
+            mockItem.findOne.mockResolvedValueOnce({
+              ...dbItem,
+              collection_id: null,
+              urn_suffix: null,
+            })
+            mockCollection.findOne.mockResolvedValueOnce(collectionMock)
+            itemToUpsert = { ...itemToUpsert, collection_id: collectionMock.id }
+          })
+
+          describe('and the item has an urn', () => {
+            let itemToUspertURN: string
+            const itemUrnSuffix = 'an-item-urn-suffix'
+
+            beforeEach(() => {
+              itemToUspertURN = buildTPItemURN(
+                collectionMock.third_party_id!,
+                collectionMock.urn_suffix!,
+                itemUrnSuffix
+              )
+
+              itemToUpsert = { ...itemToUpsert, urn: itemToUspertURN }
+            })
+
+            describe('and the URN already exists', () => {
+              beforeEach(() => {
+                mockThirdPartyItemExists(itemToUspertURN, true)
+              })
+
+              it('should fail with 409 and a message saying that the item is already published', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(409)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: {
+                        id: itemToUpsert.id,
+                        urn: itemToUspertURN,
+                      },
+                      error:
+                        "The third party item is already published. It can't be inserted or updated.",
+                      ok: false,
+                    })
+                  })
+              })
+            })
+
+            describe("and the URN doesn't exist", () => {
+              let resultingItem: ResultItem
+
+              beforeEach(() => {
+                const updatedItem = {
+                  ...dbItem,
+                  urn_suffix: itemUrnSuffix,
+                  collection_id: collectionMock.id,
+                }
+                mockThirdPartyItemExists(itemToUspertURN, false)
+                mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
+                resultingItem = toResultItem(
+                  updatedItem,
+                  undefined,
+                  undefined,
+                  collectionMock
+                )
+              })
+
+              it('should respond with a 200, update the item and return the updated item', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(200)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: resultingItem,
+                      ok: true,
+                    })
+                  })
+              })
+            })
+          })
+
+          describe("and the item doesn't have an urn", () => {
+            let resultingItem: ResultItem
+            beforeEach(() => {
+              itemToUpsert = { ...itemToUpsert, urn: null }
+              const updatedItem = {
+                ...dbItem,
+                urn_suffix: null,
+                collection_id: collectionMock.id,
+              }
+              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
+              resultingItem = toResultItem(
+                updatedItem,
+                undefined,
+                undefined,
+                collectionMock
+              )
+            })
+
+            it('should respond with a 200, update the item and return the updated item', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(200)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    data: resultingItem,
+                    ok: true,
+                  })
+                })
+            })
+          })
+        })
+
+        describe("and the item's collection doesn't change", () => {
+          let dbItemURN: string
+
+          beforeEach(() => {
+            dbItem = { ...dbItem, urn_suffix: itemUrnSuffix }
+            dbItemURN = buildTPItemURN(
+              collectionMock.third_party_id!,
+              collectionMock.urn_suffix!,
+              itemUrnSuffix
+            )
+            mockItem.findOne.mockResolvedValueOnce({
+              ...dbItem,
+              collection_id: collectionMock.id,
+              urn_suffix: itemUrnSuffix,
+            })
+            mockCollection.findOne.mockResolvedValueOnce(collectionMock)
+          })
+
+          describe('and the URN changes', () => {
+            beforeEach(() => {
+              itemToUpsert = {
+                ...itemToUpsert,
+                collection_id: dbItem.collection_id,
+                urn: buildTPItemURN(
+                  collectionMock.third_party_id!,
+                  collectionMock.urn_suffix!,
+                  'some-other-item-urn-suffix'
+                ),
+              }
+            })
+
+            describe('and the item is already published', () => {
+              beforeEach(() => {
+                mockThirdPartyItemExists(dbItemURN, true)
+              })
+
+              it('should fail with 409 and a message saying that the item is already published', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(409)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: {
+                        id: itemToUpsert.id,
+                        urn: dbItemURN,
+                      },
+                      error:
+                        "The third party item is already published. It can't be inserted or updated.",
+                      ok: false,
+                    })
+                  })
+              })
+            })
+
+            describe('and the item is not published but the new URN is already in use', () => {
+              beforeEach(() => {
+                mockThirdPartyItemExists(dbItemURN, false)
+                mockThirdPartyItemExists(itemToUpsert.urn!, true)
+              })
+
+              it('should fail with 409 and a message saying that the item is already published', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(409)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: {
+                        id: itemToUpsert.id,
+                        urn: itemToUpsert.urn!,
+                      },
+                      error:
+                        "The third party item is already published. It can't be inserted or updated.",
+                      ok: false,
+                    })
+                  })
+              })
+            })
+          })
+          describe("and the URN doesn't change", () => {
+            let resultingItem: ResultItem
+
+            beforeEach(() => {
+              itemToUpsert = {
+                ...itemToUpsert,
+                collection_id: dbItem.collection_id,
+                urn: dbItemURN,
+              }
+
+              const updatedItem = {
+                ...dbItem,
+                urn_suffix: itemUrnSuffix,
+                collection_id: collectionMock.id,
+              }
+              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
+              resultingItem = toResultItem(
+                updatedItem,
+                undefined,
+                undefined,
+                collectionMock
+              )
+            })
+
+            it('should respond with a 200, update the item and return the updated item', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(200)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    data: resultingItem,
+                    ok: true,
+                  })
+                })
+            })
+          })
+        })
       })
 
       describe('and the item is being inserted', () => {
         beforeEach(() => {
           mockItem.findOne.mockResolvedValueOnce(undefined)
+          mockCollection.findOne.mockResolvedValueOnce(collectionMock)
+          mockIsThirdPartyManager(wallet.address, true)
         })
 
-        it('should fail with can not add item to published collection message', async () => {
-          const response = await server
-            .put(buildURL(url))
-            .send({ item: itemToUpsert })
-            .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.conflict)
+        describe('and the item to insert has an URN', () => {
+          beforeEach(() => {
+            itemToUpsert = {
+              ...itemToUpsert,
+              collection_id: collectionMock.id,
+              urn: buildTPItemURN(
+                collectionMock.third_party_id!,
+                collectionMock.urn_suffix!,
+                'some-item-urn-suffix'
+              ),
+            }
+          })
 
-          expect(response.body).toEqual({
-            data: { id: itemToUpsert.id },
-            error:
-              "The collection that contains this item has been already published. The item can't be inserted.",
-            ok: false,
+          describe('and the URN is already in use', () => {
+            beforeEach(() => {
+              mockThirdPartyItemExists(itemToUpsert.urn!, true)
+            })
+
+            it('should fail with 409 and a message saying that the item is already published', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(409)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    data: {
+                      id: itemToUpsert.id,
+                      urn: itemToUpsert.urn!,
+                    },
+                    error:
+                      "The third party item is already published. It can't be inserted or updated.",
+                    ok: false,
+                  })
+                })
+            })
+          })
+
+          describe('and the URN is not in use', () => {
+            let resultingItem: ResultItem
+
+            beforeEach(() => {
+              const updatedItem = {
+                ...dbItem,
+                urn_suffix: itemUrnSuffix,
+                collection_id: collectionMock.id,
+              }
+              mockThirdPartyItemExists(itemToUpsert.urn!, false)
+              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
+              resultingItem = toResultItem(
+                updatedItem,
+                undefined,
+                undefined,
+                collectionMock
+              )
+            })
+
+            it('should respond with a 200, update the item and return the updated item', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(200)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    data: resultingItem,
+                    ok: true,
+                  })
+                })
+            })
           })
         })
-      })
 
-      describe('and the item is being removed from the collection', () => {
-        beforeEach(() => {
-          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
-        })
+        describe("and the item doesn't have an URN", () => {
+          let resultingItem: ResultItem
 
-        it('should fail with can not remove item from published collection message', async () => {
-          const response = await server
-            .put(buildURL(url))
-            .send({ item: { ...itemToUpsert, collection_id: null } })
-            .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.conflict)
-
-          expect(response.body).toEqual({
-            data: { id: itemToUpsert.id },
-            error:
-              "The collection that contains this item has been already published. The item can't be deleted.",
-            ok: false,
+          beforeEach(() => {
+            itemToUpsert = {
+              ...itemToUpsert,
+              collection_id: collectionMock.id,
+              urn: null,
+            }
+            const updatedItem = {
+              ...dbItem,
+              urn_suffix: null,
+              collection_id: collectionMock.id,
+            }
+            mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
+            resultingItem = toResultItem(
+              updatedItem,
+              undefined,
+              undefined,
+              collectionMock
+            )
           })
-        })
-      })
 
-      describe("and the item's rarity is being changed", () => {
-        beforeEach(() => {
-          mockItem.findOne.mockResolvedValueOnce(dbItem)
-        })
-
-        it('should fail with can not update items rarity message', async () => {
-          const response = await server
-            .put(buildURL(url))
-            .send({ item: { ...itemToUpsert, rarity: ItemRarity.EPIC } })
-            .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.conflict)
-
-          expect(response.body).toEqual({
-            data: {
-              id: itemToUpsert.id,
-            },
-            error:
-              "The collection that contains this item has been already published. The item can't be updated with a new rarity.",
-            ok: false,
+          it('should respond with a 200, update the item and return the updated item', () => {
+            return server
+              .put(buildURL(url))
+              .send({ item: itemToUpsert })
+              .set(createAuthHeaders('put', url))
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  data: resultingItem,
+                  ok: true,
+                })
+              })
           })
         })
       })
     })
 
-    describe('and all the conditions for success are given', () => {
+    describe('and the item is a DCL item', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-        mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: itemToUpsert.collection_id,
-          eth_address: wallet.address,
-          contract_address: Wallet.createRandom().address,
-        })
-
-        mockIsCollectionPublished(collectionAttributesMock.id, false)
-        mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+        itemToUpsert = { ...itemToUpsert, urn: null }
+        collectionMock = {
+          ...collectionMock,
+          urn_suffix: null,
+          third_party_id: null,
+        }
       })
 
-      it('should respond with the upserted item', async () => {
-        const response = await server
-          .put(buildURL(url))
-          .send({ item: itemToUpsert })
-          .set(createAuthHeaders('put', url))
-          .expect(STATUS_CODES.ok)
+      describe('and the item inserted has an invalid name', () => {
+        it("should fail with a message indicating that the name doesn't match the pattern", () => {
+          return server
+            .put(buildURL(url))
+            .send({ item: { ...itemToUpsert, name: 'anInvalid:name' } })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  {
+                    dataPath: '/item/name',
+                    keyword: 'pattern',
+                    message: 'should match pattern "^[^:]*$"',
+                    params: { pattern: '^[^:]*$' },
+                    schemaPath: '#/properties/item/properties/name/pattern',
+                  },
+                ],
+                error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
 
-        expect(response.body).toEqual({
-          data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
-          ok: true,
+      describe('and the item inserted has an invalid description', () => {
+        it("should fail with a message indicating that the description doesn't match the pattern", () => {
+          return server
+            .put(buildURL(url))
+            .send({
+              item: { ...itemToUpsert, description: 'anInvalid:nescription' },
+            })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  {
+                    dataPath: '/item/description',
+                    keyword: 'pattern',
+                    message: 'should match pattern "^[^:]*$"',
+                    params: { pattern: '^[^:]*$' },
+                    schemaPath:
+                      '#/properties/item/properties/description/pattern',
+                  },
+                ],
+                error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and the param id is different from payload id', () => {
+        it('should fail with body and url ids do not match message', async () => {
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: { ...itemToUpsert, id: mockUUID } })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+
+          expect(response.body).toEqual({
+            data: { bodyId: mockUUID, urlId: dbItem.id },
+            error: 'The body and URL item ids do not match',
+            ok: false,
+          })
+        })
+      })
+
+      describe('and the user upserting is not authorized to do so', () => {
+        beforeEach(() => {
+          itemToUpsert = { ...itemToUpsert, collection_id: null }
+          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          mockCollection.findOne.mockResolvedValueOnce(undefined)
+          mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, false)
+        })
+        it('should fail with unauthorized user message', async () => {
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.unauthorized)
+
+          expect(response.body).toEqual({
+            data: { id: dbItem.id, eth_address: wallet.address },
+            error: 'The user is unauthorized to upsert the collection.',
+            ok: false,
+          })
+        })
+      })
+
+      describe('and the collection provided in the payload does not exists in the db', () => {
+        beforeEach(() => {
+          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          mockCollection.findOne.mockResolvedValueOnce(undefined)
+        })
+
+        it('should fail with collection not found message', async () => {
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.notFound)
+
+          expect(response.body).toEqual({
+            data: { collectionId: dbItem.collection_id },
+            error: "The collection doesn't exist.",
+            ok: false,
+          })
+        })
+      })
+
+      describe('and the collection provided in the payload does not belong to the address making the request', () => {
+        const differentEthAddress = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8'
+        beforeEach(() => {
+          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          mockCollection.findOne.mockResolvedValueOnce({
+            ...collectionMock,
+            collection_id: dbItem.collection_id,
+            eth_address: differentEthAddress,
+          })
+          mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
+        })
+
+        it('should fail with unauthorized user message', async () => {
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.unauthorized)
+
+          expect(response.body).toEqual({
+            data: {
+              id: itemToUpsert.id,
+              eth_address: wallet.address,
+              collection_id: itemToUpsert.collection_id,
+            },
+            error:
+              "The new collection for the item isn't owned by the same owner.",
+            ok: false,
+          })
+        })
+      })
+
+      describe('and the collection of the item is being changed', () => {
+        beforeEach(() => {
+          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          mockCollection.findOne.mockResolvedValueOnce({
+            ...collectionMock,
+            collection_id: itemToUpsert.collection_id,
+            eth_address: wallet.address,
+          })
+          mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
+        })
+
+        it('should fail with cant change item collection message', async () => {
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.unauthorized)
+
+          expect(response.body).toEqual({
+            data: { id: dbItem.id },
+            error: "Item can't change between collections.",
+            ok: false,
+          })
+        })
+      })
+
+      describe('when the collection given for the item is locked', () => {
+        beforeEach(() => {
+          mockCollection.findOne.mockResolvedValueOnce({
+            ...collectionMock,
+            collection_id: itemToUpsert.collection_id,
+            eth_address: wallet.address,
+            contract_address: Wallet.createRandom().address,
+            lock: new Date(),
+          })
+          mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
+          mockIsCollectionPublished(collectionAttributesMock.id, false)
+        })
+
+        describe('and the item is being changed', () => {
+          beforeEach(() => {
+            mockItem.findOne.mockResolvedValueOnce(dbItem)
+          })
+
+          it('should fail with can not update locked collection items message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, name: 'new name' } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.locked)
+
+            expect(response.body).toEqual({
+              data: {
+                id: itemToUpsert.id,
+              },
+              error:
+                "The collection for the item is locked. The item can't be inserted or updated.",
+              ok: false,
+            })
+          })
+        })
+      })
+
+      describe('when the collection given for the item is already published', () => {
+        beforeEach(() => {
+          dbItem.collection_id = collectionMock.id
+          mockCollection.findOne.mockResolvedValueOnce({
+            ...collectionMock,
+            collection_id: itemToUpsert.collection_id,
+            eth_address: wallet.address,
+            contract_address: Wallet.createRandom().address,
+          })
+          mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
+          mockIsCollectionPublished(collectionMock.id, true)
+        })
+
+        describe('and the item is being inserted', () => {
+          beforeEach(() => {
+            mockItem.findOne.mockResolvedValueOnce(undefined)
+          })
+
+          it('should fail with can not add item to published collection message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: itemToUpsert })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.conflict)
+
+            expect(mockItem.findOne).toHaveBeenCalledTimes(1)
+            expect(mockCollection.findOne).toHaveBeenCalledTimes(1)
+
+            expect(response.body).toEqual({
+              data: { id: itemToUpsert.id },
+              error:
+                "The collection that contains this item has been already published. The item can't be inserted.",
+              ok: false,
+            })
+          })
+        })
+
+        describe('and the item is being removed from the collection', () => {
+          beforeEach(() => {
+            mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          })
+
+          it('should fail with can not remove item from published collection message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, collection_id: null } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.conflict)
+
+            expect(response.body).toEqual({
+              data: { id: itemToUpsert.id },
+              error:
+                "The collection that contains this item has been already published. The item can't be deleted.",
+              ok: false,
+            })
+          })
+        })
+
+        describe("and the item's rarity is being changed", () => {
+          beforeEach(() => {
+            mockItem.findOne.mockResolvedValueOnce(dbItem)
+          })
+
+          it('should fail with can not update items rarity message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, rarity: ItemRarity.EPIC } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.conflict)
+
+            expect(response.body).toEqual({
+              data: {
+                id: itemToUpsert.id,
+              },
+              error:
+                "The collection that contains this item has been already published. The item can't be updated with a new rarity.",
+              ok: false,
+            })
+          })
+        })
+      })
+
+      describe('and all the conditions for success are given', () => {
+        beforeEach(() => {
+          mockCollection.findOne.mockResolvedValueOnce({
+            ...collectionMock,
+            collection_id: itemToUpsert.collection_id,
+            eth_address: wallet.address,
+            contract_address: Wallet.createRandom().address,
+          })
+          mockItem.findOne.mockResolvedValueOnce(undefined)
+          mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
+          mockIsCollectionPublished(collectionMock.id, false)
+          mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+        })
+
+        it('should respond with the upserted item', async () => {
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.ok)
+
+          expect(response.body).toEqual({
+            data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
+            ok: true,
+          })
         })
       })
     })
   })
 
   describe('when deleting an item', () => {
+    let collectionMock: CollectionAttributes
+
     beforeEach(() => {
       url = `/items/${dbItem.id}`
+      collectionMock = { ...collectionMock }
     })
 
     describe('and the item is a DCL item', () => {
       beforeEach(() => {
         dbItem.urn_suffix = null
-        collectionAttributesMock.urn_suffix = null
-        collectionAttributesMock.third_party_id = null
+        collectionMock = {
+          ...collectionMock,
+          urn_suffix: null,
+          third_party_id: null,
+        }
       })
 
       describe('and the user is not authorized', () => {
@@ -716,12 +1301,12 @@ describe('Item router', () => {
           >).mockResolvedValueOnce(dbItem)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(collectionMock)
         })
 
         describe('and its collection is already published', () => {
           beforeEach(() => {
-            mockIsCollectionPublished(collectionAttributesMock.id, true)
+            mockIsCollectionPublished(collectionMock.id, true)
           })
 
           it('should respond with a 409 and a message signaling that the item is already published', () => {
@@ -735,7 +1320,7 @@ describe('Item router', () => {
                     "The collection that contains this item has been already published. The item can't be deleted.",
                   data: {
                     id: dbItem.id,
-                    contract_address: collectionAttributesMock.contract_address,
+                    contract_address: collectionMock.contract_address,
                   },
                   ok: false,
                 })
@@ -748,14 +1333,17 @@ describe('Item router', () => {
     describe('and the item is a third party item', () => {
       beforeEach(() => {
         dbItem.urn_suffix = '0'
-        collectionAttributesMock.urn_suffix = 'collection-id'
-        collectionAttributesMock.third_party_id = 'third-party-id'
+        collectionMock = {
+          ...collectionMock,
+          urn_suffix: 'collection-id',
+          third_party_id: 'third-party-id',
+        }
       })
 
       describe('and the collection of the item is not part of a third party collection', () => {
         beforeEach(() => {
-          collectionAttributesMock.urn_suffix = null
-          collectionAttributesMock.third_party_id = null
+          collectionMock.urn_suffix = null
+          collectionMock.third_party_id = null
           mockExistsMiddleware(Item, dbItem.id)
           mockItemAuthorizationMiddleware(dbItem.id, wallet.address, true, true)
           ;(Item.findOne as jest.MockedFunction<
@@ -763,7 +1351,7 @@ describe('Item router', () => {
           >).mockResolvedValueOnce(dbItem)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(collectionMock)
         })
 
         it('should respond a 500, a message signaling that the third party item belongs to a non third party collection and not delete the item', () => {
@@ -798,7 +1386,7 @@ describe('Item router', () => {
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
           >).mockResolvedValueOnce({
-            ...collectionAttributesMock,
+            ...collectionMock,
             lock: new Date(currentDate),
           })
         })
@@ -836,7 +1424,7 @@ describe('Item router', () => {
           >).mockResolvedValueOnce(dbItem)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(collectionMock)
           ;(thirdPartyAPI.itemExists as jest.MockedFunction<
             typeof thirdPartyAPI.itemExists
           >).mockResolvedValueOnce(true)
@@ -854,8 +1442,8 @@ describe('Item router', () => {
                 data: {
                   id: dbItem.id,
                   urn: buildTPItemURN(
-                    collectionAttributesMock.third_party_id!,
-                    collectionAttributesMock.urn_suffix!,
+                    collectionMock.third_party_id!,
+                    collectionMock.urn_suffix!,
                     dbItem.urn_suffix!
                   ),
                 },
@@ -876,7 +1464,7 @@ describe('Item router', () => {
           >).mockResolvedValueOnce(dbItem)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(collectionMock)
           ;(thirdPartyAPI.itemExists as jest.MockedFunction<
             typeof thirdPartyAPI.itemExists
           >).mockResolvedValueOnce(false)

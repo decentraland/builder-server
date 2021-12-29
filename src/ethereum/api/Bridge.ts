@@ -5,6 +5,7 @@ import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { Wearable } from './peer'
 import { fromUnixTimestamp } from '../../utils/parse'
+import { buildTPItemURN } from '../../Item/utils'
 
 export class Bridge {
   static async consolidateCollections(
@@ -44,11 +45,26 @@ export class Bridge {
     return collections
   }
 
-  static toFullItem(dbItem: ItemAttributes): FullItem {
+  static toFullItem(
+    dbItem: ItemAttributes,
+    dbCollection?: CollectionAttributes
+  ): FullItem {
+    const hasURN =
+      dbItem.urn_suffix &&
+      dbCollection &&
+      dbCollection.urn_suffix &&
+      dbCollection.third_party_id
+
     return utils.omit(
       {
         ...dbItem,
-        urn: null,
+        urn: hasURN
+          ? buildTPItemURN(
+              dbCollection.third_party_id!,
+              dbCollection.urn_suffix!,
+              dbItem.urn_suffix!
+            )
+          : null,
         in_catalyst: false,
         is_approved: false,
         is_published: false,

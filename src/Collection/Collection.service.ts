@@ -134,7 +134,7 @@ export class CollectionService {
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection) {
-      if (isTPCollection(collection)) {
+      if (!isTPCollection(collection)) {
         throw new WrongCollectionError(
           "The collection can't be converted into a third party collection.",
           { id }

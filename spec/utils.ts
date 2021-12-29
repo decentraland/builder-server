@@ -149,6 +149,37 @@ export function mockCollectionAuthorizationMiddleware(
   }
 }
 
+export function mockIsThirdPartyManager(
+  ethAddress: string,
+  isManager: boolean
+) {
+  if (!(thirdPartyAPI.isManager as jest.Mock).mock) {
+    throw new Error(
+      "isManager should be mocked to mock the withModelExists middleware but it isn't"
+    )
+  }
+
+  ;(thirdPartyAPI.isManager as jest.MockedFunction<
+    typeof thirdPartyAPI.isManager
+  >).mockImplementationOnce((_, manager) =>
+    Promise.resolve(manager === ethAddress && isManager)
+  )
+}
+
+export function mockThirdPartyItemExists(urn: string, exists: boolean) {
+  if (!(thirdPartyAPI.itemExists as jest.Mock).mock) {
+    throw new Error(
+      "exists should be mocked to mock the withModelExists middleware but it isn't"
+    )
+  }
+
+  ;(thirdPartyAPI.itemExists as jest.MockedFunction<
+    typeof thirdPartyAPI.itemExists
+  >).mockImplementationOnce((URNToCheck) =>
+    Promise.resolve(URNToCheck === urn && exists)
+  )
+}
+
 /**
  * Mocks the "withModelAuthorization" middleware used in the items's middleware
  * by mocking all the function calls to the Collection model and the TPW requests.

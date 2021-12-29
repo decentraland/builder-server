@@ -19,6 +19,7 @@ export type ItemAttributes = {
   id: string // uuid
   /**
    * The urn_suffix field holds the item part of the URN in third party items.
+   * TODO: what about this? The urn_suffix will remain null until the user sets it.
    * All Decentraland items will contain this column as null.
    */
   urn_suffix: string | null

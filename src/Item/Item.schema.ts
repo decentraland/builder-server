@@ -1,3 +1,4 @@
+import { matchers } from '../common/matchers'
 import { metricsSchema } from '../Metrics/Metrics.schema'
 import { ItemRarity, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
@@ -7,7 +8,7 @@ export const itemSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
-    urn: { type: ['string', 'null'] },
+    urn: { type: ['string', 'null'], pattern: matchers.urn },
     name: { type: 'string', maxLength: 32, pattern: '^[^:]*$' },
     description: {
       type: ['string', 'null'],

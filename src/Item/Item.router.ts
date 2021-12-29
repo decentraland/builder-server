@@ -379,6 +379,12 @@ export class ItemRouter extends Router {
         )
       } else if (error instanceof CollectionForItemLockedError) {
         throw new HTTPError(error.message, { id }, STATUS_CODES.locked)
+      } else if (error instanceof ThirdPartyItemAlreadyPublishedError) {
+        throw new HTTPError(
+          error.message,
+          { id, urn: error.urn },
+          STATUS_CODES.conflict
+        )
       }
 
       throw error

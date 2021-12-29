@@ -137,18 +137,17 @@ export function mockCollectionAuthorizationMiddleware(
     )
   )
   if (isThirdParty) {
-    if (!(thirdPartyAPI.isManager as jest.Mock).mock) {
-      throw new Error(
-        "isManager should be mocked to mock the withModelExists middleware but it isn't"
-      )
-    }
-
-    ;(thirdPartyAPI.isManager as jest.MockedFunction<
-      typeof thirdPartyAPI.isManager
-    >).mockResolvedValueOnce(isAuthorized)
+    mockIsThirdPartyManager(ethAddress, isAuthorized)
   }
 }
 
+/**
+ * Mocks the "isManager" method of the thirdPartyAPI module.
+ * This mock requires the thirdPartyAPI's isManager method to be mocked first.
+ *
+ * @param ethAddress - The ethAddress of the user that will be requesting authorization to the collection.
+ * @param isManager - If the user is a manager or not.
+ */
 export function mockIsThirdPartyManager(
   ethAddress: string,
   isManager: boolean
@@ -166,6 +165,13 @@ export function mockIsThirdPartyManager(
   )
 }
 
+/**
+ * Mocks the "itemExists" method of the thirdPartyAPI module.
+ * This mock requires the thirdPartyAPI's itemExists method to be mocked first.
+ *
+ * @param urn - The URN of the item that will be checked for existence.
+ * @param exists - If the item with the given URN exists or not.
+ */
 export function mockThirdPartyItemExists(urn: string, exists: boolean) {
   if (!(thirdPartyAPI.itemExists as jest.Mock).mock) {
     throw new Error(

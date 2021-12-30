@@ -155,7 +155,7 @@ export class CollectionRouter extends Router {
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
       remoteCollections
-    ).then(Bridge.consolidateTPCollections)
+    ).then(Bridge.consolidateTPCollections) // TODO: consolidateTPCollections should receive the lastPublishedItem for each TP collection that has it. Same for mergeTPCollection
 
     // Build the full collection
     return consolidatedCollections.map((collection) =>

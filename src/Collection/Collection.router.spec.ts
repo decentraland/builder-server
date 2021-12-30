@@ -147,32 +147,6 @@ describe('Collection router', () => {
         }
       })
 
-      describe('and the user is not a manager of the third party collection', () => {
-        beforeEach(() => {
-          ;(thirdPartyAPI.isManager as jest.MockedFunction<
-            typeof thirdPartyAPI.isManager
-          >).mockResolvedValueOnce(false)
-        })
-
-        it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
-          return server
-            .put(buildURL(url))
-            .set(createAuthHeaders('put', url))
-            .send({ collection: collectionToUpsert })
-            .expect(401)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                ok: false,
-                data: {
-                  id: collectionToUpsert.id,
-                  eth_address: wallet.address,
-                },
-                error: 'Unauthorized to upsert collection',
-              })
-            })
-        })
-      })
-
       describe("and the upserted collection wasn't a third party collection before", () => {
         beforeEach(() => {
           ;(thirdPartyAPI.isManager as jest.MockedFunction<
@@ -320,6 +294,35 @@ describe('Collection router', () => {
         })
       })
 
+      describe('and the collection exists and the user is not a manager of the third party registry', () => {
+        beforeEach(() => {
+          ;(thirdPartyAPI.isManager as jest.MockedFunction<
+            typeof thirdPartyAPI.isManager
+          >).mockResolvedValueOnce(false)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
+        })
+
+        it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert })
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: collectionToUpsert.id,
+                  eth_address: wallet.address,
+                },
+                error: 'Unauthorized to upsert collection',
+              })
+            })
+        })
+      })
+
       describe('and the collection exists and is not locked', () => {
         let upsertMock: jest.Mock
         let newCollectionAttributes: CollectionAttributes
@@ -363,14 +366,40 @@ describe('Collection router', () => {
 
       describe("and the collection doesn't exist", () => {
         beforeEach(() => {
-          ;(thirdPartyAPI.isManager as jest.MockedFunction<
-            typeof thirdPartyAPI.isManager
-          >).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(null)
+        })
+
+        describe('and the user is not a manager of the third party registry given in the URN', () => {
+          beforeEach(() => {
+            ;(thirdPartyAPI.isManager as jest.MockedFunction<
+              typeof thirdPartyAPI.isManager
+            >).mockResolvedValueOnce(false)
+          })
+
+          it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({ collection: collectionToUpsert })
+              .expect(401)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: false,
+                  data: {
+                    id: collectionToUpsert.id,
+                    eth_address: wallet.address,
+                  },
+                  error: 'Unauthorized to upsert collection',
+                })
+              })
+          })
         })
 
         describe('and there are items already published with the collection id', () => {
           beforeEach(() => {
+            ;(thirdPartyAPI.isManager as jest.MockedFunction<
+              typeof thirdPartyAPI.isManager
+            >).mockResolvedValueOnce(true)
             mockThirdPartyCollectionWithItems(third_party_id, urn_suffix, true)
           })
 
@@ -397,6 +426,9 @@ describe('Collection router', () => {
           let upsertMock: jest.Mock
           let newCollectionAttributes: CollectionAttributes
           beforeEach(() => {
+            ;(thirdPartyAPI.isManager as jest.MockedFunction<
+              typeof thirdPartyAPI.isManager
+            >).mockResolvedValueOnce(true)
             upsertMock = jest.fn()
             mockThirdPartyCollectionWithItems(third_party_id, urn_suffix, false)
             ;((Collection as unknown) as jest.Mock).mockImplementationOnce(

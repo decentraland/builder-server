@@ -5,12 +5,7 @@ import { isPublished } from '../utils/eth'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item/Item.model'
-import {
-  decodeTPCollectionURN,
-  getThirdPartyCollectionURN,
-  isTPCollection,
-  toDBCollection,
-} from './utils'
+import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 import {
@@ -124,13 +119,10 @@ export class CollectionService {
       )
     }
 
-    if (!(await this.isTPWManager(collectionJSON.urn, eth_address))) {
-      throw new UnauthorizedCollectionEditError(id, eth_address)
-    }
-
     const { third_party_id, urn_suffix } = decodeTPCollectionURN(
       collectionJSON.urn
     )
+
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection) {
@@ -141,23 +133,24 @@ export class CollectionService {
         )
       }
 
-      const { third_party_id, urn_suffix } = decodeTPCollectionURN(
-        collectionJSON.urn
-      )
-      if (
-        third_party_id !== collection.third_party_id ||
-        urn_suffix !== collection.urn_suffix
-      ) {
+      // Check that the given collection belongs to a manageable third party
+      if (!(await this.isTPWManager(collection.third_party_id!, eth_address))) {
+        throw new UnauthorizedCollectionEditError(id, eth_address)
+      }
+
+      // If the urn suffix is different, the collection's URN is being changed.
+      if (urn_suffix !== collection.urn_suffix) {
         // We can't change the TPW collection's URN if there are already published items
         await this.checkIfThirdPartyCollectionHasPublishedItems(
           id,
           collection.third_party_id!,
           collection.urn_suffix!
         )
+
         // Check if the new URN for the collection already exists
         await this.checkIfThirdPartyCollectionHasPublishedItems(
           id,
-          third_party_id,
+          collection.third_party_id!,
           urn_suffix
         )
       }
@@ -165,6 +158,11 @@ export class CollectionService {
         throw new CollectionLockedError(id, CollectionAction.UPDATE)
       }
     } else {
+      // Check that the given third party id is manageable by the user
+      if (!(await this.isTPWManager(third_party_id, eth_address))) {
+        throw new UnauthorizedCollectionEditError(id, eth_address)
+      }
+
       // Check if the URN for the new collection already exists
       await this.checkIfThirdPartyCollectionHasPublishedItems(
         id,
@@ -234,13 +232,7 @@ export class CollectionService {
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection && this.isDBCollectionThirdParty(collection)) {
-      return this.isTPWManager(
-        getThirdPartyCollectionURN(
-          collection.third_party_id!,
-          collection.urn_suffix!
-        ),
-        ethAddress
-      )
+      return this.isTPWManager(collection.third_party_id!, ethAddress)
     } else if (collection) {
       return collection.eth_address === ethAddress
     }

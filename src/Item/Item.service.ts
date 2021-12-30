@@ -30,7 +30,7 @@ export class ItemService {
       return false
     } else if (isTPItem(dbItem)) {
       return this.collectionService.isOwnedOrManagedBy(
-        dbItem.collection_id!,
+        dbItem.collection_id,
         ethAddress
       )
     } else {

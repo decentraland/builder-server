@@ -38,6 +38,7 @@ export class Collection extends Model<CollectionAttributes> {
     SELECT count(*) as count
       FROM ${raw(this.tableName)}
       WHERE id != ${id}
+        AND third_party_id IS NULL
         AND urn_suffix IS NULL
         AND LOWER(name) = ${name.toLowerCase()}`)
 

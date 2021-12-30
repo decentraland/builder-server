@@ -1,11 +1,12 @@
 import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
+import { buildTPItemURN, isTPItem } from '../../Item/utils'
+import { isTPCollection } from '../../Collection/utils'
+import { fromUnixTimestamp } from '../../utils/parse'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { Wearable } from './peer'
-import { fromUnixTimestamp } from '../../utils/parse'
-import { isTPCollection } from '../../Collection/utils'
 import { thirdPartyAPI } from './thirdParty'
 
 export class Bridge {
@@ -15,6 +16,55 @@ export class Bridge {
     return Promise.all(
       collections.map((collection) => Bridge.mergeTPCollection(collection))
     )
+  }
+
+  static async consolidateTPItems(
+    items: ItemAttributes[]
+  ): Promise<FullItem[]> {
+    // TODO: get all DB third party collections related to the items fetched
+    // and used them to compute the URN to then check if each item exists in thegraph (is published)
+    // Repeat this process for each request
+
+    const tpCollectionIds = items
+      .filter(isTPItem)
+      .map((item) => item.collection_id)
+
+    const tpCollections = await Collection.findByIds(tpCollectionIds)
+
+    const consolidatedItemPromises = items.map(async (item) => {
+      if (!isTPItem(item)) {
+        return Bridge.toFullItem(item)
+      }
+      const tpCollection = tpCollections.find(
+        (collection) => collection.id === item.collection_id
+      )
+      return Bridge.mergeTPItem(item, tpCollection!)
+    })
+
+    return Promise.all(consolidatedItemPromises)
+  }
+
+  static async mergeTPItem(
+    item: ItemAttributes,
+    collection: CollectionAttributes
+  ): Promise<FullItem> {
+    const urn = buildTPItemURN(
+      collection.third_party_id!,
+      collection.urn_suffix!,
+      item.urn_suffix!
+    )
+    const remoteItem = await thirdPartyAPI.fetchItem(urn)
+    return remoteItem
+      ? {
+          ...item,
+          urn,
+          is_published: !!remoteItem,
+          is_approved: remoteItem ? remoteItem.isApproved : false,
+          content_hash: remoteItem.contentHash,
+          in_catalyst: false, // TODO: Get the catalyst items here...somehow
+          total_supply: 0, // TODO: The supply only lives on the collection at the moment, move it to the item too?
+        }
+      : Bridge.toFullItem(item)
   }
 
   static async consolidateCollections(

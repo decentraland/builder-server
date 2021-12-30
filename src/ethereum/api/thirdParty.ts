@@ -7,6 +7,7 @@ import {
   thirdPartyItemFragment,
   tiersFragment,
   TierFragment,
+  IdFragment,
 } from './fragments'
 import {
   BaseGraphAPI,
@@ -33,16 +34,13 @@ const getThirdPartyIdsQuery = () => gql`
   }
 `
 
-const getThirdPartyQuery = () => gql`
-  query getThirdParty($urn: String!, $managers: [String!]) {
-    thirdParties(
-      first: 1
-      where: { id: $urn, managers_contains: $managers, isApproved: true }
-    ) {
-      ...thirdPartyFragment
+const getThirdPartyItemQuery = () => gql`
+  query getThirdPartyItem($urn: String) {
+    items(first: 1, where: { urn: $urn }) {
+      ...thirdPartyItemFragment
     }
   }
-  ${thirdPartyFragment()}
+  ${thirdPartyItemFragment()}
 `
 
 const getTiersQuery = () => gql`
@@ -54,28 +52,34 @@ const getTiersQuery = () => gql`
   ${tiersFragment()}
 `
 
-const getFirstThirdPartyCollectionItemQuery = () => gql`
-  query getFirstThirdPartyCollectionItemQuery(
-    $thirdPartyId: String
-    $collectionId: String
-  ) {
+const itemExistsQuery = () => gql`
+  query getThirdPartyItem($urn: String) {
+    items(first: 1, where: { urn: $urn }) {
+      id
+    }
+  }
+`
+
+const isPublishedQuery = () => gql`
+  query isPublished($thirdPartyId: String, $collectionId: String) {
     items(
       first: 1
       where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
     ) {
-      ...thirdPartyItemFragment
+      id
     }
   }
-  ${thirdPartyItemFragment()}
 `
 
-const getThirdPartyItemQuery = () => gql`
-  query getThirdPartyItem($urn: String) {
-    items(first: 1, where: { urn: $urn }) {
-      ...thirdPartyItemFragment
+const isManagerQuery = () => gql`
+  query isManager($urn: String!, $managers: [String!]) {
+    thirdParties(
+      first: 1
+      where: { id: $urn, managers_contains: $managers, isApproved: true }
+    ) {
+      id
     }
   }
-  ${thirdPartyItemFragment()}
 `
 
 export class ThirdPartyAPI extends BaseGraphAPI {
@@ -89,7 +93,7 @@ export class ThirdPartyAPI extends BaseGraphAPI {
   }
 
   fetchThirdPartyIds = async (manager: string = ''): Promise<string[]> => {
-    const thirdParties = await this.paginate<{ id: string }, 'thirdParties'>(
+    const thirdParties = await this.paginate<IdFragment, 'thirdParties'>(
       ['thirdParties'],
       {
         query: getThirdPartyIdsQuery(),
@@ -97,30 +101,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       }
     )
     return thirdParties.map((thirdParty) => thirdParty.id)
-  }
-
-  isPublished = async (thirdPartyId: string, collectionId: string) => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: ThirdPartyItemsFragment[]
-    }>({
-      query: getFirstThirdPartyCollectionItemQuery(),
-      variables: { thirdPartyId, collectionId },
-    })
-    return items.length > 0
-  }
-
-  isManager = async (urn: string, manager: string): Promise<boolean> => {
-    const {
-      data: { thirdParties = [] },
-    } = await this.query<{
-      thirdParties: ThirdPartyFragment[]
-    }>({
-      query: getThirdPartyQuery(),
-      variables: { urn, managers: [manager.toLowerCase()] },
-    })
-    return thirdParties.length > 0
   }
 
   fetchTiers = (): Promise<TierFragment[]> => {
@@ -143,8 +123,40 @@ export class ThirdPartyAPI extends BaseGraphAPI {
   }
 
   itemExists = async (urn: string): Promise<boolean> => {
-    const item = await this.fetchItem(urn)
-    return item !== null
+    const {
+      data: { items = [] },
+    } = await this.query<{
+      items: IdFragment[]
+    }>({
+      query: itemExistsQuery(),
+      variables: { urn },
+    })
+
+    return items.length > 0
+  }
+
+  isPublished = async (thirdPartyId: string, collectionId: string) => {
+    const {
+      data: { items = [] },
+    } = await this.query<{
+      items: IdFragment[]
+    }>({
+      query: isPublishedQuery(),
+      variables: { thirdPartyId, collectionId },
+    })
+    return items.length > 0
+  }
+
+  isManager = async (urn: string, manager: string): Promise<boolean> => {
+    const {
+      data: { thirdParties = [] },
+    } = await this.query<{
+      thirdParties: IdFragment[]
+    }>({
+      query: isManagerQuery(),
+      variables: { urn, managers: [manager.toLowerCase()] },
+    })
+    return thirdParties.length > 0
   }
 }
 

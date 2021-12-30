@@ -13,7 +13,6 @@ import {
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { ItemFragment } from '../ethereum/api/fragments'
-import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { sendDataToWarehouse } from '../warehouse'
@@ -265,7 +264,6 @@ export class CollectionRouter extends Router {
 
     const items: ItemAttributes[] = [...dbItems]
     let remoteItems: ItemFragment[] = []
-    let catalystItems: Wearable[] = []
 
     const isMissingBlockchainItemIds = dbItems.some(
       (item) => item.blockchain_item_id == null
@@ -302,15 +300,11 @@ export class CollectionRouter extends Router {
       await Promise.all(updates)
     }
 
-    catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
-
     const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
 
     return {
       collection: toFullCollection(collection),
-      items: await Bridge.consolidateItems(items, remoteItems, catalystItems),
+      items: await Bridge.consolidateItems(items, remoteItems),
     }
   }
 

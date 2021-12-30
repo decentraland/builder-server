@@ -69,6 +69,8 @@ export const thirdPartyItemFragment = () => gql`
   fragment thirdPartyItemFragment on Item {
     urn
     blockchainItemId
+    contentHash
+    isApproved
     metadata {
       itemWearable {
         name
@@ -77,8 +79,6 @@ export const thirdPartyItemFragment = () => gql`
         bodyShapes
       }
     }
-    rawMetadata
-    isApproved
     thirdParty {
       id
     }
@@ -182,11 +182,12 @@ type ThirdPartyItemWearableMetadata = {
   bodyShapes: BodyShape[] | null
 }
 
-export type ThirdPartyItemsFragment = {
+export type ThirdPartyItemFragment = {
   urn: string
   blockchainItemId: string
-  metadata: ThirdPartyItemMetadata
+  contentHash: string
   isApproved: boolean
+  metadata: ThirdPartyItemMetadata
   thirdParty: {
     id: string
   }

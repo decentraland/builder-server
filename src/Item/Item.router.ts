@@ -4,6 +4,7 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
 import {
@@ -28,7 +29,7 @@ import { ItemAttributes } from './Item.types'
 import { upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasPublicAccess } from './access'
-import { getDecentralandItemURN } from './utils'
+import { getDecentralandItemURN, isTPItem } from './utils'
 import { ItemService } from './Item.service'
 import {
   CollectionForItemLockedError,
@@ -156,26 +157,22 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [dbItems, remoteItems] = await Promise.all([
+    // TODO: We need to paginate this. To do it, we'll have to fetch remote items via the paginated dbItemIds
+    const [allItems, remoteItems, remoteTPItems] = await Promise.all([
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
+      thirdPartyAPI.fetchItems(),
     ])
 
-    // TODO: get all DB third party collections (or the ones that are related to the items fetched)
-    // and used them to compute the URN to then check if each item exists in thegraph (is published)
-    // Repeat this process for each request
+    const { items, tpItems } = this.itemService.splitItems(allItems)
 
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
+    const [fullItems, fullTPItems] = await Promise.all([
+      Bridge.consolidateItems(items, remoteItems),
+      Bridge.consolidateTPItems(tpItems, remoteTPItems),
+    ])
 
-    const items = await Bridge.consolidateItems(
-      dbItems,
-      remoteItems,
-      catalystItems
-    )
-
-    return items
+    // TODO: sorting (we're not breaking pagination)
+    return fullItems.concat(fullTPItems)
   }
 
   async getAddressItems(req: AuthRequest): Promise<FullItem[]> {
@@ -190,17 +187,20 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [dbItems, remoteItems] = await Promise.all([
+    const [dbItems, remoteItems, dbTPItems, remoteTPItems] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
-      // TODO: this.service.getDbTPWItems()
+      this.itemService.getDbTPWItems(eth_address),
+      thirdPartyAPI.fetchItemsByManager(eth_address),
     ])
 
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
+    const [items, tpItems] = await Promise.all([
+      Bridge.consolidateItems(dbItems, remoteItems),
+      Bridge.consolidateTPItems(dbTPItems, remoteTPItems),
+    ])
 
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    // TODO: sorting (we're not breaking pagination)
+    return items.concat(tpItems)
   }
 
   async getItem(req: AuthRequest) {
@@ -226,7 +226,7 @@ export class ItemRouter extends Router {
 
       if (!dbCollection) {
         throw new HTTPError(
-          "Invalid item. It's collection seems to be missing",
+          'Invalid item. Its collection seems to be missing',
           { id, eth_address, collection_id: dbItem.collection_id },
           STATUS_CODES.error
         )
@@ -294,10 +294,6 @@ export class ItemRouter extends Router {
       ),
     ])
 
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
-
     const fullCollection = remoteCollection
       ? Bridge.mergeCollection(dbCollection, remoteCollection)
       : dbCollection
@@ -310,7 +306,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    return Bridge.consolidateItems(dbItems, remoteItems)
   }
 
   upsertItem = async (req: AuthRequest): Promise<FullItem> => {

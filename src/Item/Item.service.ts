@@ -224,4 +224,21 @@ export class ItemService {
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem)
   }
+
+  splitItems(
+    allItems: ItemAttributes[]
+  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
+    const items: ItemAttributes[] = []
+    const tpItems: ItemAttributes[] = []
+
+    for (const item of allItems) {
+      if (isTPItem(item)) {
+        tpItems.push(item)
+      } else {
+        items.push(item)
+      }
+    }
+
+    return { items, tpItems }
+  }
 }

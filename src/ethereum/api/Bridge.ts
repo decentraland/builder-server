@@ -1,11 +1,16 @@
 import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
-import { ItemFragment, CollectionFragment } from './fragments'
-import { collectionAPI } from './collection'
-import { Wearable } from './peer'
 import { fromUnixTimestamp } from '../../utils/parse'
 import { isTPCollection } from '../../Collection/utils'
+import { buildTPItemURN } from '../../Item/utils'
+import {
+  ItemFragment,
+  CollectionFragment,
+  ThirdPartyItemFragment,
+} from './fragments'
+import { collectionAPI } from './collection'
+import { peerAPI, Wearable } from './peer'
 import { thirdPartyAPI } from './thirdParty'
 
 export class Bridge {
@@ -15,6 +20,95 @@ export class Bridge {
     return Promise.all(
       collections.map((collection) => Bridge.mergeTPCollection(collection))
     )
+  }
+
+  static async consolidateTPItems(
+    dbItems: ItemAttributes[],
+    remoteItems: ThirdPartyItemFragment[]
+  ): Promise<FullItem[]> {
+    const dbTPItemIds = dbItems.map((item) => item.id)
+    const dbTPCollections = await Collection.findByIds(dbTPItemIds)
+
+    const itemsByURN: Record<
+      string,
+      { item: ItemAttributes; remoteItem: ThirdPartyItemFragment }
+    > = {}
+
+    const tpItemURNs = dbItems.map((item) => {
+      const collection = dbTPCollections.find(
+        (collection) => collection.id === item.id
+      )
+      if (!collection) {
+        throw new Error(`Could not find a valid collection for item ${item.id}`)
+      }
+
+      const urn = buildTPItemURN(
+        collection.third_party_id!,
+        collection.urn_suffix!,
+        item.urn_suffix! // TODO: careful here
+      )
+
+      const remoteItem = remoteItems.find(
+        (remoteItem) => remoteItem.urn === urn
+      )
+      if (!remoteItem) {
+        throw new Error(
+          `Could not find a valid remote item for item ${item.id} and URN ${urn}`
+        )
+      }
+
+      itemsByURN[urn] = { item, remoteItem }
+
+      return urn
+    })
+
+    const tpCatalystItems = await peerAPI.fetchWearables(tpItemURNs)
+    const fullItems: FullItem[] = []
+
+    for (const urn in itemsByURN) {
+      const catalystItem = tpCatalystItems.find(
+        (catalystItem) => catalystItem.id === urn
+      )
+      const { item, remoteItem } = itemsByURN[urn]
+
+      fullItems.push(Bridge.mergeTPTItem(item, remoteItem, catalystItem))
+    }
+
+    return fullItems
+  }
+
+  static mergeTPTItem(
+    dbItem: ItemAttributes,
+    remoteItem: ThirdPartyItemFragment,
+    catalystItem?: Wearable
+  ): FullItem {
+    const data = dbItem.data
+    const category = data.category
+    const in_catalyst = !!catalystItem
+
+    let urn: string | null = null
+
+    if (catalystItem) {
+      urn = catalystItem.id
+    } else if (remoteItem && remoteItem.urn) {
+      urn = remoteItem.urn
+    }
+    return {
+      ...Bridge.toFullItem(dbItem),
+      urn,
+      in_catalyst,
+      is_published: true,
+      total_supply: 0, // TODO: Number(remoteItem.totalSupply) ??
+      is_approved: remoteItem.isApproved,
+      // price: remoteItem.price,
+      // beneficiary: remoteItem.beneficiary, // TODO: ??
+      blockchain_item_id: remoteItem.blockchainItemId,
+      content_hash: remoteItem.contentHash || null,
+      data: {
+        ...data,
+        category,
+      },
+    }
   }
 
   static async consolidateCollections(
@@ -56,8 +150,7 @@ export class Bridge {
 
   static async consolidateItems(
     dbItems: ItemAttributes[],
-    remoteItems: ItemFragment[],
-    catalystItems: Wearable[]
+    remoteItems: ItemFragment[]
   ): Promise<FullItem[]> {
     const items: FullItem[] = []
 
@@ -84,7 +177,10 @@ export class Bridge {
       }
     }
 
-    const dbResults = await Collection.findByIds(collectionIds)
+    const [dbResults, catalystItems] = await Promise.all([
+      Collection.findByIds(collectionIds),
+      peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
+    ])
 
     // Reduce it to a map for fast lookup
     const dbCollectionsIndex = this.indexById(dbResults)
@@ -142,6 +238,9 @@ export class Bridge {
     }
   }
 
+  // TODO: This being async is weird. Problem is that TP colletions are different from everything else.
+  // An entity we can use to pass here to check if they're published doesn't exist. It should be the first items (or list of items)
+  // So we can then check if it's length is bigger than 0
   static async mergeTPCollection(
     collection: CollectionAttributes
   ): Promise<CollectionAttributes> {
@@ -164,13 +263,9 @@ export class Bridge {
   ): FullItem {
     const { wearable } = remoteItem.metadata
 
-    const name = dbItem.name
-    const description = dbItem.description
     const data = dbItem.data
     const category = data.category
     const rarity = wearable?.rarity || dbItem.rarity
-    const contents = dbItem.contents
-    const metrics = dbItem.metrics
     const in_catalyst = !!catalystItem
 
     let urn: string | null = null
@@ -185,19 +280,15 @@ export class Bridge {
     // which means that if the user sends a transaction changing those values, it won't be reflected in the builder
     return {
       ...Bridge.toFullItem(dbItem),
-      name,
       urn,
-      description,
       rarity,
+      in_catalyst,
+      is_published: true,
+      is_approved: remoteCollection.isApproved,
       price: remoteItem.price,
       beneficiary: remoteItem.beneficiary,
       blockchain_item_id: remoteItem.blockchainId,
-      is_published: true,
-      is_approved: remoteCollection.isApproved,
       total_supply: Number(remoteItem.totalSupply),
-      in_catalyst,
-      metrics,
-      contents,
       content_hash: remoteItem.contentHash || null,
       data: {
         ...data,

@@ -3,7 +3,7 @@ import { env } from 'decentraland-commons'
 import {
   thirdPartyFragment,
   ThirdPartyFragment,
-  ThirdPartyItemsFragment,
+  ThirdPartyItemFragment,
   thirdPartyItemFragment,
   tiersFragment,
   TierFragment,
@@ -62,7 +62,9 @@ const getFirstThirdPartyCollectionItemQuery = () => gql`
     items(
       first: 1
       where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
-    ) {
+    ) # orderBy: createdAt
+    # orderDirection: desc
+    {
       ...thirdPartyItemFragment
     }
   }
@@ -72,6 +74,15 @@ const getFirstThirdPartyCollectionItemQuery = () => gql`
 const getThirdPartyItemQuery = () => gql`
   query getThirdPartyItem($urn: String) {
     items(first: 1, where: { urn: $urn }) {
+      ...thirdPartyItemFragment
+    }
+  }
+  ${thirdPartyItemFragment()}
+`
+
+const getThirdPartyItemsQuery = () => gql`
+  query getThirdPartyItems {
+    items {
       ...thirdPartyItemFragment
     }
   }
@@ -103,7 +114,7 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     const {
       data: { items = [] },
     } = await this.query<{
-      items: ThirdPartyItemsFragment[]
+      items: ThirdPartyItemFragment[]
     }>({
       query: getFirstThirdPartyCollectionItemQuery(),
       variables: { thirdPartyId, collectionId },
@@ -129,11 +140,17 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
   }
 
-  fetchItem = async (urn: string): Promise<ThirdPartyItemsFragment | null> => {
+  fetchItems = async (): Promise<ThirdPartyItemFragment[]> => {
+    return this.paginate(['items'], {
+      query: getThirdPartyItemsQuery(),
+    })
+  }
+
+  fetchItem = async (urn: string): Promise<ThirdPartyItemFragment | null> => {
     const {
       data: { items = [] },
     } = await this.query<{
-      items: ThirdPartyItemsFragment[]
+      items: ThirdPartyItemFragment[]
     }>({
       query: getThirdPartyItemQuery(),
       variables: { urn },

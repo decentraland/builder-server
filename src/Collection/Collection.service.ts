@@ -269,7 +269,7 @@ export class CollectionService {
     return thirdPartyAPI.isManager(urn, address)
   }
 
-  public async getDbTPWCollections(
+  public async getDbTPCollectionsByManager(
     manager: string
   ): Promise<CollectionAttributes[]> {
     const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(manager)
@@ -277,10 +277,8 @@ export class CollectionService {
       return []
     }
 
-    const dbThridPartyCollections = await Collection.findByThirdPartyIds(
-      thirdPartyIds
-    )
-    return dbThridPartyCollections.map((collection) => ({
+    const dbTPCollections = await Collection.findByThirdPartyIds(thirdPartyIds)
+    return dbTPCollections.map((collection) => ({
       ...collection,
       eth_address: manager,
     }))

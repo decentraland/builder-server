@@ -6,7 +6,14 @@ import { ItemAttributes } from './Item.types'
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
-  static findOrderedItemsByCollectionId(
+  static findByCollectionIds(collectionIds: string[]) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ANY(${collectionIds})`)
+  }
+
+  static findOrderedByCollectionId(
     collectionId: string,
     order: 'ASC' | 'DESC' = 'ASC'
   ) {

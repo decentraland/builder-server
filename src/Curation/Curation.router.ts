@@ -104,7 +104,7 @@ export class CurationRouter extends Router {
       return curationService.getLatest()
     }
 
-    // TODO: @TPW *IF we need to show tpw collections* we need to add it here  ( this.service.getDbTPWCollections(eth_address) ).
+    // TODO: @TPW *IF we need to show tpw collections* we need to add it here  ( this.service.getDbTPCollections(eth_address) ).
     //            We'll also need to check that they're published (at least one item is published)
     const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
       ethAddress

@@ -1197,9 +1197,7 @@ describe('Collection router', () => {
 
     describe("and the remote collection doesn't exist yet", () => {
       beforeEach(() => {
-        ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
-          []
-        )
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce([])
         ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
           undefined
         )
@@ -1231,9 +1229,10 @@ describe('Collection router', () => {
           id: '2f161c60-aee6-4bae-97fa-4642b3680a5c',
         }
         dbItemMock.blockchain_item_id = null
-        ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
-          [dbItemMock, anotherDBItem]
-        )
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce([
+          dbItemMock,
+          anotherDBItem,
+        ])
         ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
           collectionFragment
         )
@@ -1269,9 +1268,10 @@ describe('Collection router', () => {
             blockchainId: '1',
           }
 
-          ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
-            [dbItemMock, anotherDBItem]
-          )
+          ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce([
+            dbItemMock,
+            anotherDBItem,
+          ])
           // Items are reverted in order in the response that comes from the graph
           ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
             typeof collectionAPI.fetchItemsByContractAddress

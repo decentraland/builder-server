@@ -1,6 +1,10 @@
+import { Collection, CollectionAttributes } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
 import { isTPCollection } from '../Collection/utils'
 import { Bridge } from '../ethereum/api/Bridge'
+import { collectionAPI } from '../ethereum/api/collection'
+import { ThirdPartyItemFragment } from '../ethereum/api/fragments'
+import { peerAPI } from '../ethereum/api/peer'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Ownable } from '../Ownable'
 import {
@@ -16,7 +20,12 @@ import {
 } from './Item.errors'
 import { Item } from './Item.model'
 import { FullItem, ItemAttributes } from './Item.types'
-import { buildTPItemURN, isTPItem, toDBItem } from './utils'
+import {
+  buildTPItemURN,
+  getDecentralandItemURN,
+  isTPItem,
+  toDBItem,
+} from './utils'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -36,6 +45,94 @@ export class ItemService {
     } else {
       return dbItem.eth_address === dbItem.eth_address
     }
+  }
+
+  public async getItem(
+    id: string
+  ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
+    const dbItem = await Item.findOne<ItemAttributes>(id)
+    if (!dbItem) {
+      throw new NonExistentItemError(id)
+    }
+
+    return isTPItem(dbItem) ? this.getTPItem(dbItem) : this.getDCLItem(dbItem)
+  }
+
+  public async getTPItem(
+    dbItem: ItemAttributes
+  ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
+    let item: FullItem = Bridge.toFullItem(dbItem)
+    let collection: CollectionAttributes | undefined = undefined
+
+    if (dbItem.collection_id) {
+      collection = await Collection.findOne(dbItem.collection_id)
+
+      // TODO: Merge TP collection
+
+      if (collection) {
+        const urn = buildTPItemURN(
+          collection.third_party_id!,
+          collection.urn_suffix!,
+          dbItem.urn_suffix!
+        )
+        const remoteItem = await thirdPartyAPI.fetchItem(urn)
+        if (remoteItem) {
+          const [catalystItem] = await peerAPI.fetchWearables([urn])
+          item = Bridge.mergeTPTItem(dbItem, remoteItem, catalystItem)
+        }
+      }
+    }
+
+    return { item, collection }
+  }
+
+  public async getDCLItem(
+    dbItem: ItemAttributes
+  ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
+    let item: FullItem = Bridge.toFullItem(dbItem)
+    let collection: CollectionAttributes | undefined
+
+    if (dbItem.collection_id && dbItem.blockchain_item_id) {
+      const dbCollection = await Collection.findOne<CollectionAttributes>(
+        dbItem.collection_id
+      )
+
+      if (!dbCollection) {
+        throw new InconsistentItemError(
+          dbItem.id,
+          'Invalid item. Its collection seems to be missing'
+        )
+      }
+
+      const [remoteItem, remoteCollection] = await Promise.all([
+        collectionAPI.fetchItem(
+          dbCollection.contract_address!,
+          dbItem.blockchain_item_id
+        ),
+        collectionAPI.fetchCollection(dbCollection.contract_address!),
+      ])
+
+      if (remoteCollection) {
+        collection = Bridge.mergeCollection(dbCollection, remoteCollection)
+
+        if (remoteItem) {
+          const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
+          item = Bridge.mergeItem(
+            dbItem,
+            remoteItem,
+            remoteCollection,
+            catalystItem
+          )
+        }
+      }
+
+      // Set the item's URN
+      item.urn =
+        item.urn ??
+        getDecentralandItemURN(dbItem, dbCollection.contract_address!)
+    }
+
+    return { item, collection }
   }
 
   public async deleteItem(id: string): Promise<void> {
@@ -223,6 +320,31 @@ export class ItemService {
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem)
+  }
+
+  public async getTPItemsByManager(
+    manager: string
+  ): Promise<{
+    dbTPItems: ItemAttributes[]
+    remoteTPItems: ThirdPartyItemFragment[]
+  }> {
+    const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(manager)
+    if (thirdPartyIds.length <= 0) {
+      return { dbTPItems: [], remoteTPItems: [] }
+    }
+
+    const dbTPCollections = await Collection.findByThirdPartyIds(thirdPartyIds)
+    const tpCollectionIds = dbTPCollections.map((collection) => collection.id)
+
+    const [dbTPItems, remoteTPItems] = await Promise.all([
+      Item.findByCollectionIds(tpCollectionIds),
+      thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
+    ])
+
+    return {
+      dbTPItems: dbTPItems.map((item) => ({ ...item, eth_address: manager })),
+      remoteTPItems,
+    }
   }
 
   splitItems(

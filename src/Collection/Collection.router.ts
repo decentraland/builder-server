@@ -184,7 +184,7 @@ export class CollectionRouter extends Router {
     ] = await Promise.all([
       Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
-      this.service.getDbTPWCollections(eth_address),
+      this.service.getDbTPCollectionsByManager(eth_address),
     ])
 
     const consolidatedCollections = await Bridge.consolidateCollections(
@@ -247,7 +247,7 @@ export class CollectionRouter extends Router {
     // We are using the withCollectionExists middleware so we can safely assert the collection exists
     const [dbCollection, dbItems] = await Promise.all([
       Collection.findOne<CollectionAttributes>(id),
-      Item.findOrderedItemsByCollectionId(id),
+      Item.findOrderedByCollectionId(id),
     ])
     const remoteCollection = await collectionAPI.fetchCollection(
       dbCollection!.contract_address!

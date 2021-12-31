@@ -122,7 +122,9 @@ describe('Collection service', () => {
       })
 
       it('should return an empty array', async () => {
-        expect(await service.getDbTPWCollections(wallet.address)).toEqual([])
+        expect(
+          await service.getDbTPCollectionsByManager(wallet.address)
+        ).toEqual([])
       })
     })
 
@@ -146,7 +148,9 @@ describe('Collection service', () => {
       })
 
       it('should return the db collections of the third party collections with managed by the given address', async () => {
-        expect(await service.getDbTPWCollections(wallet.address)).toEqual([
+        expect(
+          await service.getDbTPCollectionsByManager(wallet.address)
+        ).toEqual([
           {
             ...thirdPartyDbCollection,
             eth_address: wallet.address,

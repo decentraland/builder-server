@@ -64,9 +64,8 @@ const isPublishedQuery = () => gql`
   query isPublished($thirdPartyId: String, $collectionId: String) {
     items(
       first: 1
-      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId } # orderBy: createdAt
-    ) # orderDirection: desc
-    {
+      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId } # orderBy: createdAt # orderDirection: desc
+    ) {
       id
     }
   }
@@ -116,6 +115,15 @@ export class ThirdPartyAPI extends BaseGraphAPI {
   fetchTiers = (): Promise<TierFragment[]> => {
     return this.paginate(['tiers'], {
       query: getTiersQuery(),
+    })
+  }
+
+  fetchItemsByThirdParties = async (
+    thirdPartyIds: string[]
+  ): Promise<ThirdPartyItemFragment[]> => {
+    return this.paginate(['items'], {
+      query: getThirdPartyItemsQuery(),
+      variables: { thirdPartyIds },
     })
   }
 

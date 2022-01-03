@@ -62,19 +62,29 @@ export class ItemService {
     dbItem: ItemAttributes
   ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
     let item: FullItem = Bridge.toFullItem(dbItem)
-    let collection: CollectionAttributes | undefined = undefined
+    let collection: CollectionAttributes | undefined
 
     if (dbItem.collection_id) {
       collection = await Collection.findOne(dbItem.collection_id)
 
-      // TODO: Merge TP collection
-
-      if (collection) {
+      if (collection && isTPCollection(collection)) {
         const urn = buildTPItemURN(
-          collection.third_party_id!,
-          collection.urn_suffix!,
+          collection.third_party_id,
+          collection.urn_suffix,
           dbItem.urn_suffix!
         )
+
+        const {
+          thirdParty,
+          item: lastItem,
+        } = await thirdPartyAPI.fetchThirdPartyWithLastItem(
+          collection.third_party_id,
+          collection.urn_suffix
+        )
+        collection = thirdParty
+          ? Bridge.mergeTPCollection(collection, thirdParty, lastItem)
+          : collection
+
         const remoteItem = await thirdPartyAPI.fetchItem(urn)
         if (remoteItem) {
           const [catalystItem] = await peerAPI.fetchWearables([urn])
@@ -328,16 +338,15 @@ export class ItemService {
     dbTPItems: ItemAttributes[]
     remoteTPItems: ThirdPartyItemFragment[]
   }> {
-    const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(manager)
-    if (thirdPartyIds.length <= 0) {
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+    if (thirdParties.length <= 0) {
       return { dbTPItems: [], remoteTPItems: [] }
     }
 
-    const dbTPCollections = await Collection.findByThirdPartyIds(thirdPartyIds)
-    const tpCollectionIds = dbTPCollections.map((collection) => collection.id)
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
     const [dbTPItems, remoteTPItems] = await Promise.all([
-      Item.findByCollectionIds(tpCollectionIds),
+      Item.findByThirdPartyIds(thirdPartyIds),
       thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
     ])
 

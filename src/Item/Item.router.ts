@@ -40,6 +40,7 @@ import {
   UnauthorizedToUpsertError,
 } from './Item.errors'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
+import { isTPCollection } from '../Collection/utils'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -260,19 +261,43 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [
-      dbItems,
-      { collection: remoteCollection, items: remoteItems },
-    ] = await Promise.all([
-      Item.find<ItemAttributes>({ collection_id: id }),
-      collectionAPI.fetchCollectionWithItemsByContractAddress(
-        dbCollection.contract_address!
-      ),
-    ])
+    let fullItems: FullItem[] = []
+    let fullCollection: CollectionAttributes | undefined
 
-    const fullCollection = remoteCollection
-      ? Bridge.mergeCollection(dbCollection, remoteCollection)
-      : dbCollection
+    const dbItems = await Item.find<ItemAttributes>({ collection_id: id })
+
+    // TODO: Add to ItemService#getCollectionItems ?
+    if (isTPCollection(dbCollection)) {
+      const [{ thirdParty, item: lastItem }, remoteItems] = await Promise.all([
+        thirdPartyAPI.fetchThirdPartyWithLastItem(
+          dbCollection.third_party_id,
+          dbCollection.urn_suffix
+        ),
+        thirdPartyAPI.fetchItemsByCollection(
+          dbCollection.third_party_id,
+          dbCollection.urn_suffix
+        ),
+      ])
+
+      fullCollection = thirdParty
+        ? Bridge.mergeTPCollection(dbCollection, thirdParty, lastItem)
+        : dbCollection
+
+      fullItems = await Bridge.consolidateTPItems(dbItems, remoteItems)
+    } else {
+      const {
+        collection: remoteCollection,
+        items: remoteItems,
+      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
+        dbCollection.contract_address!
+      )
+
+      fullCollection = remoteCollection
+        ? Bridge.mergeCollection(dbCollection, remoteCollection)
+        : dbCollection
+
+      fullItems = await Bridge.consolidateItems(dbItems, remoteItems)
+    }
 
     if (!(await hasCollectionAccess(eth_address, fullCollection))) {
       throw new HTTPError(
@@ -282,7 +307,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    return Bridge.consolidateItems(dbItems, remoteItems)
+    return fullItems
   }
 
   upsertItem = async (req: AuthRequest): Promise<FullItem> => {

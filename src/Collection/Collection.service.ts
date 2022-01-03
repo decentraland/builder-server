@@ -1,10 +1,11 @@
 import { env } from 'decentraland-commons'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { isPublished } from '../utils/eth'
+import { ThirdPartyFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
+import { isPublished } from '../utils/eth'
 import { Ownable } from '../Ownable'
-import { Item } from '../Item/Item.model'
+import { Item } from '../Item'
 import {
   decodeTPCollectionURN,
   getThirdPartyCollectionURN,
@@ -251,7 +252,7 @@ export class CollectionService {
   /**
    * Checks if an address manages a third party wearable collection.
    *
-   * @param urn - The URN of the TWP collection where to get the information about the collection.
+   * @param urn - The URN of the TPW collection where to get the information about the collection.
    * @param address - The address to check if it manages the collection.
    */
   public async isTPWManager(urn: string, address: string): Promise<boolean> {
@@ -269,19 +270,16 @@ export class CollectionService {
     return thirdPartyAPI.isManager(urn, address)
   }
 
-  public async getDbTPCollectionsByManager(
-    manager: string
+  // TODO: rename by thirdPartyies?
+  public async getDbTPCollections(
+    thirdParties: ThirdPartyFragment[]
   ): Promise<CollectionAttributes[]> {
-    const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(manager)
-    if (thirdPartyIds.length <= 0) {
+    if (thirdParties.length <= 0) {
       return []
     }
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
-    const dbTPCollections = await Collection.findByThirdPartyIds(thirdPartyIds)
-    return dbTPCollections.map((collection) => ({
-      ...collection,
-      eth_address: manager,
-    }))
+    return Collection.findByThirdPartyIds(thirdPartyIds)
   }
 
   public async getDBCollection(

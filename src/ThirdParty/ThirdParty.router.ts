@@ -25,7 +25,7 @@ export class ThirdPartyRouter extends Router {
     } catch (e) {
       // We support empty manager filters on the query string
     }
-    const fragments = await thirdPartyAPI.fetchThirdParties(manager)
+    const fragments = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
     return fragments.map(toThirdParty)
   }
 }

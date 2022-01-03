@@ -71,6 +71,9 @@ export const thirdPartyItemFragment = () => gql`
     blockchainItemId
     contentHash
     isApproved
+    reviewedAt
+    updatedAt
+    createdAt
     metadata {
       itemWearable {
         name
@@ -191,6 +194,9 @@ export type ThirdPartyItemFragment = {
   blockchainItemId: string
   contentHash: string
   isApproved: boolean
+  reviewedAt: string
+  updatedAt: string
+  createdAt: string
   metadata: ThirdPartyItemMetadata
   thirdParty: {
     id: string

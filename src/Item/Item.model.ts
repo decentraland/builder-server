@@ -13,6 +13,14 @@ export class Item extends Model<ItemAttributes> {
         WHERE collection_id = ANY(${collectionIds})`)
   }
 
+  static findByThirdPartyIds(thirdPartyIds: string[]) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)} i 
+        JOIN ${raw(Collection.tableName)} c ON c.id = i.collection_id
+        WHERE c.third_party_id = ANY(${thirdPartyIds})`)
+  }
+
   static findOrderedByCollectionId(
     collectionId: string,
     order: 'ASC' | 'DESC' = 'ASC'

@@ -10,9 +10,10 @@ import {
   withSchemaValidation,
   AuthRequest,
 } from '../middleware'
-import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
+import { collectionAPI } from '../ethereum/api/collection'
 import { ItemFragment } from '../ethereum/api/fragments'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { sendDataToWarehouse } from '../warehouse'
@@ -147,20 +148,26 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [dbCollections, remoteCollections] = await Promise.all([
+    const [dbCollections, remoteCollections, thirdParties] = await Promise.all([
       Collection.find<CollectionAttributes>(),
       collectionAPI.fetchCollections(),
+      thirdPartyAPI.fetchThirdParties(),
     ])
+    const dbTPCollections = await this.service.getDbTPCollections(thirdParties)
 
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
       remoteCollections
-    ).then(Bridge.consolidateTPCollections) // TODO: consolidateTPCollections should receive the lastPublishedItem for each TP collection that has it. Same for mergeTPCollection
+    )
+    const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
+      dbTPCollections,
+      thirdParties
+    )
 
     // Build the full collection
-    return consolidatedCollections.map((collection) =>
-      toFullCollection(collection)
-    )
+    return consolidatedCollections
+      .concat(consolidatedTPWCollections)
+      .map((collection) => toFullCollection(collection, eth_address))
   }
 
   getAddressCollections = async (
@@ -177,28 +184,26 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [
-      dbCollections,
-      remoteCollections,
-      tpwCollections,
-    ] = await Promise.all([
+    const [dbCollections, remoteCollections, thirdParties] = await Promise.all([
       Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
-      this.service.getDbTPCollectionsByManager(eth_address),
+      thirdPartyAPI.fetchThirdPartiesByManager(eth_address),
     ])
+    const dbTPCollections = await this.service.getDbTPCollections(thirdParties)
 
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
       remoteCollections
     )
     const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
-      tpwCollections
+      dbTPCollections,
+      thirdParties
     )
 
     // Build the full collection
     return consolidatedCollections
       .concat(consolidatedTPWCollections)
-      .map(toFullCollection)
+      .map((collection) => toFullCollection(collection, eth_address))
   }
 
   async getCollection(req: AuthRequest): Promise<FullCollection> {
@@ -216,8 +221,18 @@ export class CollectionRouter extends Router {
 
     let fullCollection: CollectionAttributes
 
+    // TODO: Move to CollectionService#getCollection
     if (isTPCollection(dbCollection)) {
-      fullCollection = await Bridge.mergeTPCollection(dbCollection)
+      const {
+        thirdParty,
+        item,
+      } = await thirdPartyAPI.fetchThirdPartyWithLastItem(
+        dbCollection.third_party_id,
+        dbCollection.urn_suffix
+      )
+      fullCollection = thirdParty
+        ? Bridge.mergeTPCollection(dbCollection, thirdParty, item)
+        : dbCollection
     } else {
       const remoteCollection = await collectionAPI.fetchCollection(
         dbCollection.contract_address!
@@ -236,13 +251,14 @@ export class CollectionRouter extends Router {
       )
     }
 
-    return toFullCollection(fullCollection)
+    return toFullCollection(fullCollection, eth_address)
   }
 
   publishCollection = async (
     req: AuthRequest
   ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
     const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
 
     // We are using the withCollectionExists middleware so we can safely assert the collection exists
     const [dbCollection, dbItems] = await Promise.all([
@@ -303,7 +319,7 @@ export class CollectionRouter extends Router {
     const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
 
     return {
-      collection: toFullCollection(collection),
+      collection: toFullCollection(collection, eth_address),
       items: await Bridge.consolidateItems(items, remoteItems),
     }
   }
@@ -358,7 +374,6 @@ export class CollectionRouter extends Router {
       req,
       'collection'
     )
-
     const eth_address = req.auth.ethAddress
 
     if (id !== collectionJSON.id) {
@@ -415,7 +430,7 @@ export class CollectionRouter extends Router {
       throw error
     }
 
-    return toFullCollection(upsertedCollection)
+    return toFullCollection(upsertedCollection, eth_address)
   }
 
   deleteCollection = async (req: AuthRequest): Promise<boolean> => {

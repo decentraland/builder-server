@@ -42,12 +42,14 @@ export function isTPCollection(
  * @param dbCollection - The "FullCollection" to be converted into a DB collection.
  */
 export function toFullCollection(
-  dbCollection: CollectionAttributes
+  dbCollection: CollectionAttributes,
+  eth_address: string
 ): FullCollection {
   const { third_party_id, urn_suffix, contract_address } = dbCollection
 
   return {
     ...utils.omit(dbCollection, ['urn_suffix', 'third_party_id']),
+    eth_address,
     urn:
       third_party_id && urn_suffix
         ? getThirdPartyCollectionURN(third_party_id, urn_suffix)

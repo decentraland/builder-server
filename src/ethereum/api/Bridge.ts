@@ -2,24 +2,46 @@ import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
 import { fromUnixTimestamp } from '../../utils/parse'
-import { isTPCollection } from '../../Collection/utils'
 import { buildTPItemURN } from '../../Item/utils'
 import {
   ItemFragment,
   CollectionFragment,
   ThirdPartyItemFragment,
+  ThirdPartyFragment,
 } from './fragments'
 import { collectionAPI } from './collection'
 import { peerAPI, Wearable } from './peer'
 import { thirdPartyAPI } from './thirdParty'
+import { isTPCollection } from '../../Collection/utils'
 
 export class Bridge {
   static async consolidateTPCollections(
-    collections: CollectionAttributes[]
+    dbCollections: CollectionAttributes[],
+    thirdParties: ThirdPartyFragment[]
   ): Promise<CollectionAttributes[]> {
-    return Promise.all(
-      collections.map((collection) => Bridge.mergeTPCollection(collection))
-    )
+    const collections: CollectionAttributes[] = []
+
+    for (const dbCollection of dbCollections) {
+      if (isTPCollection(dbCollection)) {
+        const thirdParty = thirdParties.find(
+          (thirdParty) => thirdParty.id === dbCollection.third_party_id
+        )
+
+        if (thirdParty) {
+          const lastItem = await thirdPartyAPI.fetchLastItem(
+            thirdParty.id,
+            dbCollection.urn_suffix
+          )
+          const collection = Bridge.mergeTPCollection(
+            dbCollection,
+            thirdParty,
+            lastItem
+          )
+          collections.push(collection)
+        }
+      }
+    }
+    return collections
   }
 
   static async consolidateTPItems(
@@ -98,7 +120,7 @@ export class Bridge {
       urn,
       in_catalyst,
       is_published: true,
-      total_supply: 0, // TODO: Number(remoteItem.totalSupply) ??
+      total_supply: 0, // TODO: ??
       is_approved: remoteItem.isApproved,
       // price: remoteItem.price,
       // beneficiary: remoteItem.beneficiary, // TODO: ??
@@ -241,18 +263,23 @@ export class Bridge {
   // TODO: This being async is weird. Problem is that TP colletions are different from everything else.
   // An entity we can use to pass here to check if they're published doesn't exist. It should be the first items (or list of items)
   // So we can then check if it's length is bigger than 0
-  static async mergeTPCollection(
-    collection: CollectionAttributes
-  ): Promise<CollectionAttributes> {
-    return isTPCollection(collection)
-      ? {
-          ...collection,
-          is_published: await thirdPartyAPI.isPublished(
-            collection.third_party_id,
-            collection.urn_suffix
-          ),
-        }
-      : { ...collection }
+  static mergeTPCollection(
+    collection: CollectionAttributes,
+    thirdParty: ThirdPartyFragment,
+    lastItem?: ThirdPartyItemFragment
+  ): CollectionAttributes {
+    return {
+      ...collection,
+      managers: thirdParty.managers,
+      is_published: !!lastItem,
+      reviewed_at: lastItem ? fromUnixTimestamp(lastItem.reviewedAt) : null,
+      created_at: lastItem
+        ? fromUnixTimestamp(lastItem.createdAt)
+        : collection.created_at,
+      updated_at: lastItem
+        ? fromUnixTimestamp(lastItem.updatedAt)
+        : collection.updated_at,
+    }
   }
 
   static mergeItem(

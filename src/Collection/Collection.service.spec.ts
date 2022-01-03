@@ -84,7 +84,7 @@ describe('Collection service', () => {
         ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(false)
       })
 
-      it('should return true', async () => {
+      it('should return false', async () => {
         expect(await service.isTPWManager(urn, manager)).toBe(false)
         expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
       })

@@ -1,5 +1,5 @@
 import { MigrationBuilder } from 'node-pg-migrate'
-import { Collection } from '../src/Collection'
+import { Item } from '../src/Item'
 import { ItemCuration } from '../src/Curation/ItemCuration'
 
 const tableName = ItemCuration.tableName
@@ -18,7 +18,7 @@ export const up = (pgm: MigrationBuilder) => {
       ifNotExists: true,
       constraints: {
         foreignKeys: {
-          references: Collection.tableName,
+          references: Item.tableName,
           columns: 'item_id',
           onDelete: 'CASCADE',
         },

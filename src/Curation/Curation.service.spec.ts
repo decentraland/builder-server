@@ -40,24 +40,33 @@ describe('when getting the access to an element', () => {
     })
 
     describe('when the address belongs to the committe', () => {
-      it('should resolve to true', () => {
+      beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(true)
         mockGetMergedCollection.mockResolvedValueOnce(collection)
+      })
+
+      it('should resolve to true', () => {
         return testHasAccessToCollectionToBe(true)
       })
     })
 
     describe('when the collection belongs to the address', () => {
-      it('should resolve to true', () => {
+      beforeEach(() => {
         mockGetMergedCollection.mockResolvedValueOnce(collection)
         isOwnedBySpy.mockResolvedValueOnce(true)
+      })
+
+      it('should resolve to true', () => {
         return testHasAccessToCollectionToBe(true)
       })
     })
 
     describe('when the address is a manager of the collection', () => {
-      it('should resolve to true', () => {
+      beforeEach(() => {
         mockGetMergedCollection.mockResolvedValueOnce(collection)
+      })
+
+      it('should resolve to true', () => {
         return testHasAccessToCollectionToBe(true)
       })
     })
@@ -65,10 +74,10 @@ describe('when getting the access to an element', () => {
     describe('when the none of the managers of a collection match with the provided address', () => {
       beforeEach(() => {
         collection = { ...collection, managers: ['another address'] }
+        mockGetMergedCollection.mockResolvedValueOnce(collection)
       })
 
       it('should resolve to false', () => {
-        mockGetMergedCollection.mockResolvedValueOnce(collection)
         return testHasAccessToCollectionToBe(false)
       })
     })
@@ -99,25 +108,34 @@ describe('when getting the access to an element', () => {
     })
 
     describe('when the address belongs to the committe', () => {
-      it('should resolve to true', () => {
+      beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(true)
         mockGetMergedItem.mockResolvedValueOnce(item)
+      })
+
+      it('should resolve to true', () => {
         return testHasAccessToItemToBe(true)
       })
     })
 
     describe('when the item belongs to the address', () => {
-      it('should resolve to true', () => {
+      beforeEach(() => {
         mockGetMergedItem.mockResolvedValueOnce(collection)
         isOwnedBySpy.mockResolvedValueOnce(true)
+      })
+
+      it('should resolve to true', () => {
         return testHasAccessToItemToBe(true)
       })
     })
 
     describe('when the address is a manager of the collection', () => {
-      it('should resolve to true', () => {
+      beforeEach(() => {
         mockGetMergedItem.mockResolvedValueOnce(item)
         mockGetMergedCollection.mockResolvedValueOnce(collection)
+      })
+
+      it('should resolve to true', () => {
         return testHasAccessToItemToBe(true)
       })
     })
@@ -125,11 +143,11 @@ describe('when getting the access to an element', () => {
     describe('when the none of the managers of a collection match with the provided address', () => {
       beforeEach(() => {
         collection = { ...collection, managers: ['another address'] }
+        mockGetMergedItem.mockResolvedValueOnce(item)
+        mockGetMergedCollection.mockResolvedValueOnce(collection)
       })
 
       it('should resolve to false', () => {
-        mockGetMergedItem.mockResolvedValueOnce(item)
-        mockGetMergedCollection.mockResolvedValueOnce(collection)
         return testHasAccessToItemToBe(false)
       })
     })

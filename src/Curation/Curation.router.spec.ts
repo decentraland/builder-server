@@ -58,7 +58,7 @@ describe('when handling a request', () => {
         mockIsComiteeMember.mockResolvedValueOnce(true)
       })
 
-      it('should resolve with the collections provided by Curation.getAllLatestByCollection', async () => {
+      it('should resolve with the collections provided by Curation.getLatest', async () => {
         const getAllLatestSpy = jest
           .spyOn(service, 'getLatest')
           .mockResolvedValueOnce([])
@@ -79,7 +79,7 @@ describe('when handling a request', () => {
         mockIsComiteeMember.mockResolvedValueOnce(false)
       })
 
-      it('should resolve with the collections provided by Curation.getAllLatestForCollections', async () => {
+      it('should resolve with the collections provided by Curation.getLatestByIds', async () => {
         const fetchCollectionsByAuthorizedUserSpy = jest
           .spyOn(collectionAPI, 'fetchCollectionsByAuthorizedUser')
           .mockResolvedValueOnce([
@@ -172,7 +172,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, false)
         })
@@ -184,7 +184,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, false)
         })
@@ -208,7 +208,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
         })
@@ -220,7 +220,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
         })
@@ -248,7 +248,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
@@ -261,7 +261,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
@@ -290,7 +290,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
           jest
@@ -318,7 +318,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
           jest
@@ -361,7 +361,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, false)
         })
@@ -373,7 +373,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, false)
         })
@@ -444,7 +444,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
 
@@ -460,7 +460,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
 
@@ -489,7 +489,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
@@ -514,7 +514,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)

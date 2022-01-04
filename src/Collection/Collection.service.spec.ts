@@ -1,4 +1,3 @@
-import { env } from 'decentraland-commons'
 import { collectionAttributesMock } from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
@@ -57,58 +56,37 @@ describe('Collection service', () => {
 
   describe('when checking if an address is a TPW manager', () => {
     const service = new CollectionService()
+    let urn: string
+    let manager: string
+
+    beforeEach(() => {
+      urn = 'some:valid:urn'
+      manager = '0x123123'
+    })
 
     afterAll(() => {
       jest.restoreAllMocks()
     })
 
-    describe('when an address belongs to the TPW_MANAGER_ADDRESSES env var', () => {
-      let manager: string
+    describe('when thegraph has a urn with the address as manager', () => {
       beforeEach(() => {
-        manager = '0x123123'
-        jest
-          .spyOn(env, 'get')
-          .mockReturnValueOnce(`0x555,${manager},0x444,0x333`)
+        ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(true)
       })
 
       it('should return true', async () => {
-        expect(await service.isTPWManager('', manager)).toBe(true)
-        expect(env.get).toHaveBeenCalledWith('TPW_MANAGER_ADDRESSES', '')
+        expect(await service.isTPWManager(urn, manager)).toBe(true)
+        expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
       })
     })
 
-    describe('when an address does not belong to the TPW_MANAGER_ADDRESSES env var', () => {
-      let urn: string
-      let manager: string
-
+    describe('when thegraph does not have a urn with the address as manager', () => {
       beforeEach(() => {
-        urn = 'some:valid:urn'
-        manager = '0x123123'
-        jest.spyOn(env, 'get').mockReturnValueOnce(`0x555,0x444,0x333`)
+        ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(false)
       })
 
-      describe('when thegraph has a urn with the address as manager', () => {
-        beforeEach(() => {
-          ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(true)
-        })
-
-        it('should return true', async () => {
-          expect(await service.isTPWManager(urn, manager)).toBe(true)
-          expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
-          expect(env.get).toHaveBeenCalledWith('TPW_MANAGER_ADDRESSES', '')
-        })
-      })
-
-      describe('when thegraph does not has a urn with the address as manager', () => {
-        beforeEach(() => {
-          ;(thirdPartyAPI.isManager as jest.Mock).mockReturnValueOnce(false)
-        })
-
-        it('should return true', async () => {
-          expect(await service.isTPWManager(urn, manager)).toBe(false)
-          expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
-          expect(env.get).toHaveBeenCalledWith('TPW_MANAGER_ADDRESSES', '')
-        })
+      it('should return false', async () => {
+        expect(await service.isTPWManager(urn, manager)).toBe(false)
+        expect(thirdPartyAPI.isManager).toHaveBeenCalledWith(urn, manager)
       })
     })
   })

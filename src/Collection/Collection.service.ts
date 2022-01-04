@@ -1,4 +1,3 @@
-import { env } from 'decentraland-commons'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { isPublished } from '../utils/eth'
@@ -255,17 +254,6 @@ export class CollectionService {
    * @param address - The address to check if it manages the collection.
    */
   public async isTPWManager(urn: string, address: string): Promise<boolean> {
-    const isEnvManager =
-      !env.isProduction() &&
-      env
-        .get('TPW_MANAGER_ADDRESSES', '')
-        .toLowerCase()
-        .search(address.toLowerCase()) > -1
-
-    if (isEnvManager) {
-      return true
-    }
-
     return thirdPartyAPI.isManager(urn, address)
   }
 

@@ -136,7 +136,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections(req: AuthRequest): Promise<FullCollection[]> {
+  getCollections = async (req: AuthRequest): Promise<FullCollection[]> => {
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 

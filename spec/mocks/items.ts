@@ -8,6 +8,7 @@ import {
   ItemType,
 } from '../../src/Item/Item.types'
 import { collectionAttributesMock } from './collections'
+import { toUnixTimestamp } from '../../src/utils/parse'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
   created_at: string
@@ -95,12 +96,29 @@ export const itemFragmentMock = {
     isApproved: collectionAttributesMock.is_approved,
     minters: [],
     managers: [],
-    reviewedAt: collectionAttributesMock.reviewed_at!.toISOString(),
-    updatedAt: collectionAttributesMock.updated_at.toISOString(),
-    createdAt: collectionAttributesMock.created_at.toISOString(),
+    reviewedAt: toUnixTimestamp(collectionAttributesMock.reviewed_at!),
+    updatedAt: toUnixTimestamp(collectionAttributesMock.updated_at),
+    createdAt: toUnixTimestamp(collectionAttributesMock.created_at),
   },
   metadata: {},
   contentHash: '',
+}
+
+export const thirdPartyId =
+  'urn:decentraland:mumbai:collections-thirdparty:third-party-id'
+
+export const thirdPartyItemFragmentMock = {
+  urn: `${thirdPartyId}:thesuffix`,
+  blockchainItemId: '1',
+  contentHash: '',
+  isApproved: true,
+  metadata: {},
+  thirdParty: {
+    id: thirdPartyId,
+  },
+  reviewedAt: toUnixTimestamp(collectionAttributesMock.reviewed_at!),
+  updatedAt: toUnixTimestamp(collectionAttributesMock.updated_at),
+  createdAt: toUnixTimestamp(collectionAttributesMock.created_at),
 }
 
 export function convertItemDatesToISO<T extends ItemAttributes | FullItem>(

@@ -22,12 +22,12 @@ import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
-import { hasAccess } from './access'
+import { hasPublicAccess } from './access'
 import { toFullCollection, hasTPCollectionURN } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import {
-  CollectionAlreadyPublishedError,
-  CollectionLockedError,
+  AlreadyPublishedCollectionError,
+  LockedCollectionError,
   UnauthorizedCollectionEditError,
   WrongCollectionError,
 } from './Collection.errors'
@@ -228,7 +228,7 @@ export class CollectionRouter extends Router {
       ? Bridge.mergeCollection(dbCollection, remoteCollection)
       : dbCollection
 
-    if (!(await hasAccess(eth_address, fullCollection))) {
+    if (!(await hasPublicAccess(eth_address, fullCollection))) {
       throw new HTTPError(
         'Unauthorized',
         { id, eth_address },
@@ -395,13 +395,13 @@ export class CollectionRouter extends Router {
         )
       }
     } catch (error) {
-      if (error instanceof CollectionLockedError) {
+      if (error instanceof LockedCollectionError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.locked
         )
-      } else if (error instanceof CollectionAlreadyPublishedError) {
+      } else if (error instanceof AlreadyPublishedCollectionError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
@@ -429,13 +429,13 @@ export class CollectionRouter extends Router {
     try {
       await this.service.deleteCollection(id)
     } catch (error) {
-      if (error instanceof CollectionAlreadyPublishedError) {
+      if (error instanceof AlreadyPublishedCollectionError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.conflict
         )
-      } else if (error instanceof CollectionLockedError) {
+      } else if (error instanceof LockedCollectionError) {
         throw new HTTPError(
           error.message,
           { id: error.id },

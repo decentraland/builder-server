@@ -38,6 +38,42 @@ export class ItemService {
     }
   }
 
+  public async deleteItem(id: string): Promise<void> {
+    const dbItem = await Item.findOne<ItemAttributes>(id)
+    if (!dbItem) {
+      throw new NonExistentItemError(id)
+    }
+
+    if (isTPItem(dbItem)) {
+      await this.deleteThirdPartyItem(dbItem)
+    } else {
+      await this.deleteDCLItem(dbItem)
+    }
+  }
+
+  public async upsertItem(
+    item: FullItem,
+    eth_address: string
+  ): Promise<FullItem> {
+    return this.upsertDCLItem(item, eth_address)
+  }
+
+  private checkItemIsMovedToAnotherCollection(
+    itemToUpsert: FullItem,
+    dbItem: ItemAttributes
+  ): void {
+    const areBothCollectionIdsDefined =
+      itemToUpsert.collection_id && dbItem.collection_id
+
+    const isItemCollectionBeingChanged =
+      areBothCollectionIdsDefined &&
+      itemToUpsert.collection_id !== dbItem.collection_id
+
+    if (isItemCollectionBeingChanged) {
+      throw new ItemCantBeMovedFromCollectionError(itemToUpsert.id)
+    }
+  }
+
   private async deleteDCLItem(dbItem: ItemAttributes): Promise<void> {
     if (dbItem.collection_id) {
       const dbCollection = await this.collectionService.getDBCollection(
@@ -96,35 +132,6 @@ export class ItemService {
     }
 
     await Item.delete({ id: dbItem.id })
-  }
-
-  public async deleteItem(id: string): Promise<void> {
-    const dbItem = await Item.findOne<ItemAttributes>(id)
-    if (!dbItem) {
-      throw new NonExistentItemError(id)
-    }
-
-    if (isTPItem(dbItem)) {
-      await this.deleteThirdPartyItem(dbItem)
-    } else {
-      await this.deleteDCLItem(dbItem)
-    }
-  }
-
-  private checkItemIsMovedToAnotherCollection(
-    itemToUpsert: FullItem,
-    dbItem: ItemAttributes
-  ): void {
-    const areBothCollectionIdsDefined =
-      itemToUpsert.collection_id && dbItem.collection_id
-
-    const isItemCollectionBeingChanged =
-      areBothCollectionIdsDefined &&
-      itemToUpsert.collection_id !== dbItem.collection_id
-
-    if (isItemCollectionBeingChanged) {
-      throw new ItemCantBeMovedFromCollectionError(itemToUpsert.id)
-    }
   }
 
   private async upsertDCLItem(
@@ -216,12 +223,5 @@ export class ItemService {
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem)
-  }
-
-  public async upsertItem(
-    item: FullItem,
-    eth_address: string
-  ): Promise<FullItem> {
-    return this.upsertDCLItem(item, eth_address)
   }
 }

@@ -1,17 +1,15 @@
 import { MigrationBuilder } from 'node-pg-migrate'
-import { Collection } from '../src/Collection'
+import { Item } from '../src/Item'
+import { ItemCuration } from '../src/Curation/ItemCuration'
 
-const tableName = 'curations' // This was renamed from Curation to CollectionCuration so we just use the original string.
-const curationStatus = 'curation_status'
+const tableName = ItemCuration.tableName
 
 export const up = (pgm: MigrationBuilder) => {
-  pgm.createType(curationStatus, ['pending', 'approved', 'rejected'])
-
   pgm.createTable(
     tableName,
     {
       id: { type: 'UUID', primaryKey: true, unique: true, notNull: true },
-      collection_id: { type: 'UUID', notNull: true },
+      item_id: { type: 'UUID', notNull: true },
       status: { type: 'CURATION_STATUS', notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },
       updated_at: { type: 'TIMESTAMP', notNull: true },
@@ -20,18 +18,17 @@ export const up = (pgm: MigrationBuilder) => {
       ifNotExists: true,
       constraints: {
         foreignKeys: {
-          references: Collection.tableName,
-          columns: 'collection_id',
+          references: Item.tableName,
+          columns: 'item_id',
           onDelete: 'CASCADE',
         },
       },
     }
   )
 
-  pgm.createIndex(tableName, 'collection_id')
+  pgm.createIndex(tableName, 'item_id')
 }
 
 export const down = (pgm: MigrationBuilder) => {
   pgm.dropTable(tableName, {})
-  pgm.dropType(curationStatus)
 }

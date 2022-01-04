@@ -1,6 +1,10 @@
 import { Collection } from '.'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
+import {
+  NonExistentCollectionError,
+  UnpublishedCollectionError,
+} from './Collection.errors'
 import { getMergedCollection, decodeTPCollectionURN } from './utils'
 
 describe('when decoding the TPW collection URN', () => {
@@ -50,13 +54,9 @@ describe('getMergedCollection', () => {
   describe('when the db collection can not be found', () => {
     it('should resolve with an undefined collection and a not found status', async () => {
       jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
-
-      const { collection, status } = await getMergedCollection(
-        sampleCollection.id
+      return expect(getMergedCollection(sampleCollection.id)).rejects.toEqual(
+        new NonExistentCollectionError(sampleCollection.id)
       )
-
-      expect(status).toBe('not_found')
-      expect(collection).toBeUndefined()
     })
   })
 
@@ -64,13 +64,9 @@ describe('getMergedCollection', () => {
     it('should resolve with the db collection and an incomplete status', async () => {
       jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(sampleCollection)
       jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
-
-      const { collection, status } = await getMergedCollection(
-        sampleCollection.id
+      return expect(getMergedCollection(sampleCollection.id)).rejects.toEqual(
+        new UnpublishedCollectionError(sampleCollection.id)
       )
-
-      expect(status).toBe('incomplete')
-      expect(collection).toStrictEqual(sampleCollection)
     })
   })
 
@@ -86,9 +82,7 @@ describe('getMergedCollection', () => {
         .spyOn(Bridge, 'mergeCollection')
         .mockReturnValueOnce(sampleCollection as any)
 
-      const { collection, status } = await getMergedCollection('collectionId')
-
-      expect(status).toBe('complete')
+      const collection = await getMergedCollection('collectionId')
       expect(collection).toStrictEqual(sampleCollection)
     })
   })

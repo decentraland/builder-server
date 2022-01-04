@@ -22,13 +22,13 @@ import {
   CollectionAttributes,
   CollectionService,
 } from '../Collection'
-import { hasAccess as hasCollectionAccess } from '../Collection/access'
+import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
 import { upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
-import { hasAccess } from './access'
+import { hasPublicAccess } from './access'
 import { getDecentralandItemURN } from './utils'
 import { ItemService } from './Item.service'
 import {
@@ -267,7 +267,7 @@ export class ItemRouter extends Router {
         getDecentralandItemURN(dbItem, dbCollection.contract_address!)
     }
 
-    if (!(await hasAccess(eth_address, fullItem, fullCollection))) {
+    if (!(await hasPublicAccess(eth_address, fullItem, fullCollection))) {
       throw new HTTPError(
         'Unauthorized',
         { id, eth_address },

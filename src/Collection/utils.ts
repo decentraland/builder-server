@@ -2,10 +2,13 @@ import { utils } from 'decentraland-commons'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { CollectionFragment } from '../ethereum/api/fragments'
 import { matchers } from '../common/matchers'
 import { Collection } from './Collection.model'
 import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  NonExistentCollectionError,
+  UnpublishedCollectionError,
+} from './Collection.errors'
 
 export const tpwCollectionURNRegex = new RegExp(
   `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot})$`
@@ -107,35 +110,18 @@ export function decodeTPCollectionURN(
   }
 }
 
-type GetMergedCollectionResult =
-  | { status: 'not_found'; collection: undefined }
-  | { status: 'incomplete' | 'complete'; collection: CollectionAttributes }
-
 /**
  * Will return a collection formed by merging the collection present in
  * the database and the one found in the graph.
- *
- * The result will depend according to the availability of those collections.
- *
- * When the collection does not exist on the database:
- * status = not_found
- *
- * When the collection does not exist on the graph:
- * status = incomplete & collection = database collection
- *
- * When both collections are available:
- * status = complete & collection = merged db and graph collection
  */
-export const getMergedCollection = async (
+// TODO: @TPW: `getMergedCollection` is using getRemoteCollection by collection_address. Does not support TPW
+export async function getMergedCollection(
   id: string
-): Promise<GetMergedCollectionResult> => {
+): Promise<CollectionAttributes> {
   const dbCollection = await Collection.findOne<CollectionAttributes>(id)
 
   if (!dbCollection) {
-    return {
-      status: 'not_found',
-      collection: undefined,
-    }
+    throw new NonExistentCollectionError(id)
   }
 
   const remoteCollection = await getRemoteCollection(
@@ -143,18 +129,10 @@ export const getMergedCollection = async (
   )
 
   if (!remoteCollection) {
-    return {
-      status: 'incomplete',
-      collection: dbCollection,
-    }
+    throw new UnpublishedCollectionError(id)
   }
 
-  const mergedCollection = mergeCollections(dbCollection, remoteCollection)
-
-  return {
-    status: 'complete',
-    collection: mergedCollection,
-  }
+  return Bridge.mergeCollection(dbCollection, remoteCollection)
 }
 
 export const getRemoteCollection = async (contractAddress: string) =>
@@ -162,8 +140,3 @@ export const getRemoteCollection = async (contractAddress: string) =>
 
 export const getRemoteCollections = async () =>
   await collectionAPI.fetchCollections()
-
-export const mergeCollections = (
-  db: CollectionAttributes,
-  remote: CollectionFragment
-) => Bridge.mergeCollection(db, remote)

@@ -268,6 +268,7 @@ export class ItemRouter extends Router {
 
     // TODO: Add to ItemService#getCollectionItems ?
     if (isTPCollection(dbCollection)) {
+      // TODO: This could be a single query, the problem is paginating the thing. We should only paginate remoteItems
       const [{ thirdParty, item: lastItem }, remoteItems] = await Promise.all([
         thirdPartyAPI.fetchThirdPartyWithLastItem(
           dbCollection.third_party_id,

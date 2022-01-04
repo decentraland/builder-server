@@ -274,7 +274,7 @@ describe('Item router', () => {
     })
   })
 
-  describe('when getting all the items of a collection', () => {
+  describe.only('when getting all the items of a collection', () => {
     beforeEach(() => {
       ;(Item.find as jest.Mock).mockResolvedValueOnce([
         dbItem,
@@ -287,9 +287,16 @@ describe('Item router', () => {
       ;(Collection.findOne as jest.Mock).mockResolvedValueOnce([
         collectionAttributesMock,
       ])
+      ;(thirdPartyAPI.fetchThirdPartyWithLastItem as jest.Mock).mockResolvedValueOnce(
+        {}
+      )
+      ;(thirdPartyAPI.fetchItemsByCollection as jest.Mock).mockResolvedValueOnce(
+        []
+      )
       mockItemConsolidation([dbItem], [wearable])
       url = `/collections/${collectionAttributesMock.id}/items`
     })
+
     it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
       return server
         .get(buildURL(url))

@@ -133,7 +133,12 @@ export class CollectionService {
       }
 
       // Check that the given collection belongs to a manageable third party
-      if (!(await this.isTPWManager(collection.third_party_id!, eth_address))) {
+      if (
+        !(await thirdPartyAPI.isManager(
+          collection.third_party_id!,
+          eth_address
+        ))
+      ) {
         throw new UnauthorizedCollectionEditError(id, eth_address)
       }
 
@@ -158,7 +163,7 @@ export class CollectionService {
       }
     } else {
       // Check that the given third party id is manageable by the user
-      if (!(await this.isTPWManager(third_party_id, eth_address))) {
+      if (!(await thirdPartyAPI.isManager(third_party_id, eth_address))) {
         throw new UnauthorizedCollectionEditError(id, eth_address)
       }
 
@@ -231,22 +236,12 @@ export class CollectionService {
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection && this.isDBCollectionThirdParty(collection)) {
-      return this.isTPWManager(collection.third_party_id!, ethAddress)
+      return thirdPartyAPI.isManager(collection.third_party_id!, ethAddress)
     } else if (collection) {
       return collection.eth_address === ethAddress
     }
 
     return false
-  }
-
-  /**
-   * Checks if an address manages a third party wearable collection.
-   *
-   * @param urn - The URN of the TWP collection where to get the information about the collection.
-   * @param address - The address to check if it manages the collection.
-   */
-  public async isTPWManager(urn: string, address: string): Promise<boolean> {
-    return thirdPartyAPI.isManager(urn, address)
   }
 
   public async getDbTPWCollections(

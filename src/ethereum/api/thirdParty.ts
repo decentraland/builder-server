@@ -103,14 +103,20 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     return thirdParties.map((thirdParty) => thirdParty.id)
   }
 
-  isManager = async (urn: string, manager: string): Promise<boolean> => {
+  isManager = async (
+    thirdPartyRecordUrn: string,
+    manager: string
+  ): Promise<boolean> => {
     const {
       data: { thirdParties = [] },
     } = await this.query<{
       thirdParties: ThirdPartyFragment[]
     }>({
       query: getThirdPartyQuery(),
-      variables: { urn, managers: [manager.toLowerCase()] },
+      variables: {
+        urn: thirdPartyRecordUrn,
+        managers: [manager.toLowerCase()],
+      },
     })
     return thirdParties.length > 0
   }

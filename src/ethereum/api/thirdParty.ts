@@ -34,10 +34,14 @@ const getThirdPartyIdsQuery = () => gql`
 `
 
 const getThirdPartyQuery = () => gql`
-  query getThirdParty($urn: String!, $managers: [String!]) {
+  query getThirdParty($thirdPartyId: String!, $managers: [String!]) {
     thirdParties(
       first: 1
-      where: { id: $urn, managers_contains: $managers, isApproved: true }
+      where: {
+        id: $thirdPartyId
+        managers_contains: $managers
+        isApproved: true
+      }
     ) {
       ...thirdPartyFragment
     }
@@ -103,14 +107,20 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     return thirdParties.map((thirdParty) => thirdParty.id)
   }
 
-  isManager = async (urn: string, manager: string): Promise<boolean> => {
+  isManager = async (
+    thirdPartyId: string,
+    manager: string
+  ): Promise<boolean> => {
     const {
       data: { thirdParties = [] },
     } = await this.query<{
       thirdParties: ThirdPartyFragment[]
     }>({
       query: getThirdPartyQuery(),
-      variables: { urn, managers: [manager.toLowerCase()] },
+      variables: {
+        thirdPartyId,
+        managers: [manager.toLowerCase()],
+      },
     })
     return thirdParties.length > 0
   }

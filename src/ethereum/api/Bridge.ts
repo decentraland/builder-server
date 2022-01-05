@@ -58,15 +58,15 @@ export class Bridge {
 
     const tpItemURNs = dbItems.map((item) => {
       const collection = dbTPCollections.find(
-        (collection) => collection.id === item.id
+        (collection) => collection.id === item.collection_id
       )
-      if (!collection) {
+      if (!collection || !isTPCollection(collection)) {
         throw new Error(`Could not find a valid collection for item ${item.id}`)
       }
 
       const urn = buildTPItemURN(
-        collection.third_party_id!,
-        collection.urn_suffix!,
+        collection.third_party_id,
+        collection.urn_suffix,
         item.urn_suffix! // TODO: careful here
       )
 

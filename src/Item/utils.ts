@@ -65,3 +65,8 @@ export function decodeThirdPartyItemURN(
     item_urn_suffix: matches[4],
   }
 }
+
+// TODO: @TPW: implement this
+export function getMergedItem(_id: string): Promise<FullItem> {
+  return {} as any
+}

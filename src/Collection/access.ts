@@ -3,7 +3,7 @@ import { CollectionAttributes } from './Collection.types'
 import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
 
-export async function hasAccess(
+export async function hasPublicAccess(
   eth_address: string,
   collection: CollectionAttributes
 ): Promise<boolean> {
@@ -11,6 +11,13 @@ export async function hasAccess(
     return true
   }
 
+  return hasAccess(eth_address, collection)
+}
+
+export async function hasAccess(
+  eth_address: string,
+  collection: CollectionAttributes
+): Promise<boolean> {
   const [isOwner, isCommittee] = await Promise.all([
     new Ownable(Collection).isOwnedBy(collection.id, eth_address),
     isCommitteeMember(eth_address),

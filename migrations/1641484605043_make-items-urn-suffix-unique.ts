@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/naming-convention */
 import { MigrationBuilder } from 'node-pg-migrate'
 import { Item } from '../src/Item/Item.model'
 

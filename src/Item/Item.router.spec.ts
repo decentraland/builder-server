@@ -10,11 +10,16 @@ import {
   mockItemAuthorizationMiddleware,
   mockIsCollectionPublished,
 } from '../../spec/utils'
-import { collectionAttributesMock } from '../../spec/mocks/collections'
+import {
+  dbCollectionMock,
+  dbTPCollectionMock,
+  thirdPartyFragmentMock,
+} from '../../spec/mocks/collections'
 import {
   dbItemMock,
+  dbTPItemMock,
   itemFragmentMock,
-  itemURNMock,
+  thirdPartyItemFragmentMock,
   ResultItem,
   toResultItem,
 } from '../../spec/mocks/items'
@@ -53,9 +58,7 @@ function mockItemConsolidation(
   ;(collectionAPI.buildItemId as jest.Mock).mockImplementation(
     (contractAddress, tokenId) => contractAddress + '-' + tokenId
   )
-  ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
-    collectionAttributesMock,
-  ])
+  ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([dbCollectionMock])
 }
 
 const server = supertest(app.getApp())
@@ -72,13 +75,13 @@ describe('Item router', () => {
 
   beforeEach(() => {
     dbItem = { ...dbItemMock }
-    urn = itemURNMock
+    urn = itemFragmentMock.urn
     itemFragment = { ...itemFragmentMock }
     wearable = {
       id: urn,
       name: dbItem.name,
       description: dbItem.description,
-      collectionAddress: collectionAttributesMock.contract_address!,
+      collectionAddress: dbCollectionMock.contract_address!,
       rarity: ItemRarity.COMMON,
       image: '',
       thumbnail: '',
@@ -96,7 +99,7 @@ describe('Item router', () => {
     dbItemNotPublished = {
       ...dbItem,
       id: uuidv4(),
-      collection_id: collectionAttributesMock.id,
+      collection_id: dbCollectionMock.id,
       blockchain_item_id: null,
     }
     resultingItem = toResultItem(dbItem, itemFragment, wearable)
@@ -117,10 +120,10 @@ describe('Item router', () => {
 
     describe('when the item belongs to a published collection', () => {
       beforeEach(() => {
-        dbItem.collection_id = collectionAttributesMock.id
+        dbItem.collection_id = dbCollectionMock.id
         dbItem.blockchain_item_id = '0'
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-          collectionAttributesMock
+          dbCollectionMock
         )
         ;(collectionAPI.fetchItem as jest.Mock).mockResolvedValueOnce(
           itemFragment
@@ -206,12 +209,20 @@ describe('Item router', () => {
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Item.find as jest.Mock).mockResolvedValueOnce([
         dbItem,
+        dbTPItemMock,
         dbItemNotPublished,
       ])
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
         itemFragment,
       ])
+      ;(thirdPartyAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
+        thirdPartyItemFragmentMock,
+      ])
+      ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+        dbTPCollectionMock,
+      ]) // for third parties
       mockItemConsolidation([dbItem], [wearable])
+      ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
       url = '/items'
     })
 
@@ -231,6 +242,15 @@ describe('Item router', () => {
                 urn,
               },
               resultItemNotPublished,
+              {
+                ...resultingItem,
+                in_catalyst: false,
+                is_approved: true,
+                total_supply: 0,
+                collection_id: dbTPItemMock.collection_id,
+                blockchain_item_id: thirdPartyItemFragmentMock.blockchainItemId,
+                urn: thirdPartyItemFragmentMock.urn,
+              },
             ],
             ok: true,
           })
@@ -244,9 +264,22 @@ describe('Item router', () => {
         dbItem,
         dbItemNotPublished,
       ])
+      ;(Item.findByThirdPartyIds as jest.Mock).mockResolvedValueOnce([
+        dbTPItemMock,
+      ])
+      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
+        [thirdPartyFragmentMock]
+      )
+      ;(thirdPartyAPI.fetchItemsByThirdParties as jest.Mock).mockResolvedValueOnce(
+        [thirdPartyItemFragmentMock]
+      )
       ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(
         [itemFragment]
       )
+      ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+        dbTPCollectionMock,
+      ]) // for third parties
+      ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
       mockItemConsolidation([dbItem], [wearable])
       url = `/${wallet.address}/items`
     })
@@ -267,6 +300,16 @@ describe('Item router', () => {
                 urn,
               },
               resultItemNotPublished,
+              {
+                ...resultingItem,
+                eth_address: wallet.address,
+                in_catalyst: false,
+                is_approved: true,
+                total_supply: 0,
+                collection_id: dbTPItemMock.collection_id,
+                blockchain_item_id: thirdPartyItemFragmentMock.blockchainItemId,
+                urn: thirdPartyItemFragmentMock.urn,
+              },
             ],
             ok: true,
           })
@@ -274,49 +317,101 @@ describe('Item router', () => {
     })
   })
 
-  describe.only('when getting all the items of a collection', () => {
-    beforeEach(() => {
-      ;(Item.find as jest.Mock).mockResolvedValueOnce([
-        dbItem,
-        dbItemNotPublished,
-      ])
-      ;(hasPublicAccess as jest.Mock).mockResolvedValueOnce(true)
-      ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
-        { collection: itemFragment.collection, items: [itemFragment] }
-      )
-      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce([
-        collectionAttributesMock,
-      ])
-      ;(thirdPartyAPI.fetchThirdPartyWithLastItem as jest.Mock).mockResolvedValueOnce(
-        {}
-      )
-      ;(thirdPartyAPI.fetchItemsByCollection as jest.Mock).mockResolvedValueOnce(
-        []
-      )
-      mockItemConsolidation([dbItem], [wearable])
-      url = `/collections/${collectionAttributesMock.id}/items`
+  describe('when getting all the items of a collection', () => {
+    describe('and the collection is a DCL collection', () => {
+      beforeEach(() => {
+        ;(Item.find as jest.Mock).mockResolvedValueOnce([
+          dbItemMock,
+          dbItemNotPublished,
+        ])
+        ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragment.collection, items: [itemFragment] }
+        )
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbCollectionMock
+        )
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollectionMock,
+        ])
+        mockItemConsolidation([dbItemMock], [wearable])
+        url = `/collections/${dbCollectionMock.id}/items`
+      })
+
+      it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  ...resultingItem,
+                  beneficiary: itemFragment.beneficiary,
+                  collection_id: dbItem.collection_id,
+                  blockchain_item_id: dbItem.blockchain_item_id,
+                  urn,
+                },
+                resultItemNotPublished,
+              ],
+              ok: true,
+            })
+          })
+      })
     })
 
-    it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
-      return server
-        .get(buildURL(url))
-        .set(createAuthHeaders('get', url))
-        .expect(200)
-        .then((response: any) => {
-          expect(response.body).toEqual({
-            data: [
-              {
-                ...resultingItem,
-                beneficiary: itemFragment.beneficiary,
-                collection_id: dbItem.collection_id,
-                blockchain_item_id: dbItem.blockchain_item_id,
-                urn,
-              },
-              resultItemNotPublished,
-            ],
-            ok: true,
+    describe('and the collection is a third party collection', () => {
+      beforeEach(() => {
+        ;(Item.find as jest.Mock).mockResolvedValueOnce([
+          dbTPItemMock,
+          dbItemNotPublished,
+        ])
+        ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragment.collection, items: [itemFragment] }
+        )
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbTPCollectionMock
+        )
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbTPCollectionMock,
+        ])
+        ;(thirdPartyAPI.fetchThirdPartyWithLastItem as jest.Mock).mockResolvedValueOnce(
+          {
+            thirdParty: thirdPartyFragmentMock,
+            item: thirdPartyItemFragmentMock,
+          }
+        )
+        ;(thirdPartyAPI.fetchItemsByCollection as jest.Mock).mockResolvedValueOnce(
+          [thirdPartyItemFragmentMock]
+        )
+        mockItemConsolidation([dbItemMock], [wearable])
+        url = `/collections/${dbCollectionMock.id}/items`
+      })
+
+      it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  ...resultingItem,
+                  in_catalyst: false,
+                  is_approved: true,
+                  total_supply: 0,
+                  collection_id: dbTPItemMock.collection_id,
+                  blockchain_item_id:
+                    thirdPartyItemFragmentMock.blockchainItemId,
+                  urn: thirdPartyItemFragmentMock.urn,
+                },
+                resultItemNotPublished,
+              ],
+              ok: true,
+            })
           })
-        })
+      })
     })
   })
 
@@ -507,7 +602,7 @@ describe('Item router', () => {
           contract_address: Wallet.createRandom().address,
           lock: new Date(),
         })
-        mockIsCollectionPublished(collectionAttributesMock.id, false)
+        mockIsCollectionPublished(dbCollectionMock.id, false)
       })
 
       describe('and the item is being changed', () => {
@@ -536,15 +631,15 @@ describe('Item router', () => {
 
     describe('when the collection given for the item is already published', () => {
       beforeEach(() => {
-        dbItem.collection_id = collectionAttributesMock.id
+        dbItem.collection_id = dbCollectionMock.id
         mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         mockCollection.findOne.mockResolvedValueOnce({
-          ...collectionAttributesMock,
+          ...dbCollectionMock,
           collection_id: itemToUpsert.collection_id,
           eth_address: wallet.address,
           contract_address: Wallet.createRandom().address,
         })
-        mockIsCollectionPublished(collectionAttributesMock.id, true)
+        mockIsCollectionPublished(dbCollectionMock.id, true)
       })
 
       describe('and the item is being inserted', () => {
@@ -622,7 +717,7 @@ describe('Item router', () => {
           contract_address: Wallet.createRandom().address,
         })
 
-        mockIsCollectionPublished(collectionAttributesMock.id, false)
+        mockIsCollectionPublished(dbCollectionMock.id, false)
         mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
       })
 
@@ -647,12 +742,6 @@ describe('Item router', () => {
     })
 
     describe('and the item is a DCL item', () => {
-      beforeEach(() => {
-        dbItem.urn_suffix = null
-        collectionAttributesMock.urn_suffix = null
-        collectionAttributesMock.third_party_id = null
-      })
-
       describe('and the user is not authorized', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbItem.id)
@@ -723,12 +812,12 @@ describe('Item router', () => {
           >).mockResolvedValueOnce(dbItem)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(dbCollectionMock)
         })
 
         describe('and its collection is already published', () => {
           beforeEach(() => {
-            mockIsCollectionPublished(collectionAttributesMock.id, true)
+            mockIsCollectionPublished(dbCollectionMock.id, true)
           })
 
           it('should respond with a 409 and a message signaling that the item is already published', () => {
@@ -742,7 +831,7 @@ describe('Item router', () => {
                     "The collection that contains this item has been already published. The item can't be deleted.",
                   data: {
                     id: dbItem.id,
-                    contract_address: collectionAttributesMock.contract_address,
+                    contract_address: dbCollectionMock.contract_address,
                   },
                   ok: false,
                 })
@@ -753,24 +842,21 @@ describe('Item router', () => {
     })
 
     describe('and the item is a third party item', () => {
-      beforeEach(() => {
-        dbItem.urn_suffix = '0'
-        collectionAttributesMock.urn_suffix = 'collection-id'
-        collectionAttributesMock.third_party_id = 'third-party-id'
-      })
-
       describe('and the collection of the item is not part of a third party collection', () => {
         beforeEach(() => {
-          collectionAttributesMock.urn_suffix = null
-          collectionAttributesMock.third_party_id = null
-          mockExistsMiddleware(Item, dbItem.id)
-          mockItemAuthorizationMiddleware(dbItem.id, wallet.address, true, true)
+          mockExistsMiddleware(Item, dbTPItemMock.id)
+          mockItemAuthorizationMiddleware(
+            dbTPItemMock.id,
+            wallet.address,
+            true,
+            true
+          )
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
-          >).mockResolvedValueOnce(dbItem)
+          >).mockResolvedValueOnce(dbTPItemMock)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(dbCollectionMock)
         })
 
         it('should respond a 500, a message signaling that the third party item belongs to a non third party collection and not delete the item', () => {
@@ -783,7 +869,7 @@ describe('Item router', () => {
                 error:
                   "The third party item does't belong to a third party collection",
                 data: {
-                  id: dbItem.id,
+                  id: dbTPItemMock.id,
                 },
                 ok: false,
               })
@@ -795,17 +881,22 @@ describe('Item router', () => {
 
       describe('and the collection of the item is locked', () => {
         beforeEach(() => {
-          mockExistsMiddleware(Item, dbItem.id)
-          mockItemAuthorizationMiddleware(dbItem.id, wallet.address, true, true)
+          mockExistsMiddleware(Item, dbTPItemMock.id)
+          mockItemAuthorizationMiddleware(
+            dbTPItemMock.id,
+            wallet.address,
+            true,
+            true
+          )
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
-          >).mockResolvedValueOnce(dbItem)
+          >).mockResolvedValueOnce(dbTPItemMock)
           const currentDate = Date.now()
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
           >).mockResolvedValueOnce({
-            ...collectionAttributesMock,
+            ...dbTPCollectionMock,
             lock: new Date(currentDate),
           })
         })
@@ -824,7 +915,7 @@ describe('Item router', () => {
                 error:
                   "The collection for the item is locked. The item can't be deleted.",
                 data: {
-                  id: dbItem.id,
+                  id: dbTPItemMock.id,
                 },
                 ok: false,
               })
@@ -836,14 +927,19 @@ describe('Item router', () => {
 
       describe('and the item exists in the blockchain', () => {
         beforeEach(() => {
-          mockExistsMiddleware(Item, dbItem.id)
-          mockItemAuthorizationMiddleware(dbItem.id, wallet.address, true, true)
+          mockExistsMiddleware(Item, dbTPItemMock.id)
+          mockItemAuthorizationMiddleware(
+            dbTPItemMock.id,
+            wallet.address,
+            true,
+            true
+          )
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
-          >).mockResolvedValueOnce(dbItem)
+          >).mockResolvedValueOnce(dbTPItemMock)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(dbTPCollectionMock)
           ;(thirdPartyAPI.itemExists as jest.MockedFunction<
             typeof thirdPartyAPI.itemExists
           >).mockResolvedValueOnce(true)
@@ -859,11 +955,11 @@ describe('Item router', () => {
                 error:
                   "The third party item is already published. It can't be deleted.",
                 data: {
-                  id: dbItem.id,
+                  id: dbTPItemMock.id,
                   urn: buildTPItemURN(
-                    collectionAttributesMock.third_party_id!,
-                    collectionAttributesMock.urn_suffix!,
-                    dbItem.urn_suffix!
+                    dbTPCollectionMock.third_party_id,
+                    dbTPCollectionMock.urn_suffix,
+                    dbTPItemMock.urn_suffix
                   ),
                 },
                 ok: false,
@@ -876,14 +972,19 @@ describe('Item router', () => {
 
       describe("and the item doesn't exist in the blockchain and the third party collection is not locked", () => {
         beforeEach(() => {
-          mockExistsMiddleware(Item, dbItem.id)
-          mockItemAuthorizationMiddleware(dbItem.id, wallet.address, true, true)
+          mockExistsMiddleware(Item, dbTPItemMock.id)
+          mockItemAuthorizationMiddleware(
+            dbTPItemMock.id,
+            wallet.address,
+            true,
+            true
+          )
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
-          >).mockResolvedValueOnce(dbItem)
+          >).mockResolvedValueOnce(dbTPItemMock)
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(collectionAttributesMock)
+          >).mockResolvedValueOnce(dbTPCollectionMock)
           ;(thirdPartyAPI.itemExists as jest.MockedFunction<
             typeof thirdPartyAPI.itemExists
           >).mockResolvedValueOnce(false)
@@ -900,7 +1001,7 @@ describe('Item router', () => {
                 ok: true,
               })
 
-              expect(Item.delete).toHaveBeenCalledWith({ id: dbItem.id })
+              expect(Item.delete).toHaveBeenCalledWith({ id: dbTPItemMock.id })
             })
         })
       })

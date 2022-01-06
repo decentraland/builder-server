@@ -1,14 +1,20 @@
 import { v4 as uuidv4 } from 'uuid'
 import { Wearable } from '../../src/ethereum/api/peer'
-import { ItemFragment } from '../../src/ethereum/api/fragments'
+import {
+  ItemFragment,
+  ThirdPartyItemFragment,
+  ThirdPartyItemMetadataType,
+} from '../../src/ethereum/api/fragments'
 import {
   FullItem,
   ItemAttributes,
   ItemRarity,
   ItemType,
+  ThirdPartyItemAttributes,
 } from '../../src/Item/Item.types'
-import { collectionAttributesMock } from './collections'
+import { dbCollectionMock, dbTPCollectionMock } from './collections'
 import { toUnixTimestamp } from '../../src/utils/parse'
+import { buildTPItemURN } from '../../src/Item/utils'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
   created_at: string
@@ -49,7 +55,7 @@ export const dbItemMock: ItemAttributes = {
   description: '',
   thumbnail: '',
   eth_address: '',
-  collection_id: collectionAttributesMock.id,
+  collection_id: dbCollectionMock.id,
   blockchain_item_id: '0',
   price: '',
   beneficiary: '',
@@ -74,51 +80,60 @@ export const dbItemMock: ItemAttributes = {
   updated_at: new Date(),
 }
 
-export const itemURNMock = `urn:decentraland:ropsten:collections-v2:${collectionAttributesMock.contract_address}:${dbItemMock.blockchain_item_id}`
+export const dbTPItemMock: ThirdPartyItemAttributes = {
+  ...dbItemMock,
+  urn_suffix: '1',
+}
 
 export const itemFragmentMock = {
-  id:
-    collectionAttributesMock.contract_address +
-    '-' +
-    dbItemMock.blockchain_item_id,
+  id: dbCollectionMock.contract_address + '-' + dbItemMock.blockchain_item_id,
   blockchainId: '0',
-  urn: itemURNMock,
+  urn: `urn:decentraland:ropsten:collections-v2:${dbCollectionMock.contract_address}:${dbItemMock.blockchain_item_id}`,
   totalSupply: '1',
   price: dbItemMock.price!.toString(),
   beneficiary: 'aBeneficiary',
   minters: [],
   managers: [],
   collection: {
-    id: collectionAttributesMock.id,
+    id: dbCollectionMock.id,
     creator: 'aCreator',
     owner: 'anOwner',
-    name: collectionAttributesMock.name,
-    isApproved: collectionAttributesMock.is_approved,
+    name: dbCollectionMock.name,
+    isApproved: dbCollectionMock.is_approved,
     minters: [],
     managers: [],
-    reviewedAt: toUnixTimestamp(collectionAttributesMock.reviewed_at!),
-    updatedAt: toUnixTimestamp(collectionAttributesMock.updated_at),
-    createdAt: toUnixTimestamp(collectionAttributesMock.created_at),
+    reviewedAt: toUnixTimestamp(dbCollectionMock.reviewed_at!),
+    updatedAt: toUnixTimestamp(dbCollectionMock.updated_at),
+    createdAt: toUnixTimestamp(dbCollectionMock.created_at),
   },
   metadata: {},
   contentHash: '',
 }
 
-export const thirdPartyId =
-  'urn:decentraland:mumbai:collections-thirdparty:third-party-id'
-
-export const thirdPartyItemFragmentMock = {
-  urn: `${thirdPartyId}:thesuffix`,
+export const thirdPartyItemFragmentMock: ThirdPartyItemFragment = {
+  urn: buildTPItemURN(
+    dbTPCollectionMock.third_party_id,
+    dbTPCollectionMock.urn_suffix,
+    dbTPItemMock.urn_suffix
+  ),
   blockchainItemId: '1',
   contentHash: '',
   isApproved: true,
-  metadata: {},
-  thirdParty: {
-    id: thirdPartyId,
+  metadata: {
+    type: ThirdPartyItemMetadataType.third_party_v1,
+    itemWearable: {
+      name: 'Fragment Name',
+      description: null,
+      category: null,
+      bodyShapes: null,
+    },
   },
-  reviewedAt: toUnixTimestamp(collectionAttributesMock.reviewed_at!),
-  updatedAt: toUnixTimestamp(collectionAttributesMock.updated_at),
-  createdAt: toUnixTimestamp(collectionAttributesMock.created_at),
+  thirdParty: {
+    id: dbTPCollectionMock.third_party_id,
+  },
+  reviewedAt: toUnixTimestamp(dbTPCollectionMock.reviewed_at!),
+  updatedAt: toUnixTimestamp(dbTPCollectionMock.updated_at),
+  createdAt: toUnixTimestamp(dbTPCollectionMock.created_at),
 }
 
 export function convertItemDatesToISO<T extends ItemAttributes | FullItem>(

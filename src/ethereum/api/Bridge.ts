@@ -22,6 +22,8 @@ export class Bridge {
     const collections: CollectionAttributes[] = []
 
     for (const dbCollection of dbCollections) {
+      let fullCollection: CollectionAttributes = { ...dbCollection }
+
       if (isTPCollection(dbCollection)) {
         const thirdParty = thirdParties.find(
           (thirdParty) => thirdParty.id === dbCollection.third_party_id
@@ -32,14 +34,15 @@ export class Bridge {
             thirdParty.id,
             dbCollection.urn_suffix
           )
-          const collection = Bridge.mergeTPCollection(
+          fullCollection = Bridge.mergeTPCollection(
             dbCollection,
             thirdParty,
             lastItem
           )
-          collections.push(collection)
         }
       }
+
+      collections.push(fullCollection)
     }
     return collections
   }
@@ -53,7 +56,7 @@ export class Bridge {
 
     const itemsByURN: Record<
       string,
-      { item: ItemAttributes; remoteItem: ThirdPartyItemFragment }
+      { item: ItemAttributes; remoteItem?: ThirdPartyItemFragment }
     > = {}
 
     const tpItemURNs = dbItems.map((item) => {
@@ -67,17 +70,12 @@ export class Bridge {
       const urn = buildTPItemURN(
         collection.third_party_id,
         collection.urn_suffix,
-        item.urn_suffix! // TODO: careful here
+        item.urn_suffix!
       )
 
       const remoteItem = remoteItems.find(
         (remoteItem) => remoteItem.urn === urn
       )
-      if (!remoteItem) {
-        throw new Error(
-          `Could not find a valid remote item for item ${item.id} and URN ${urn}`
-        )
-      }
 
       itemsByURN[urn] = { item, remoteItem }
 
@@ -88,18 +86,26 @@ export class Bridge {
     const fullItems: FullItem[] = []
 
     for (const urn in itemsByURN) {
-      const catalystItem = tpCatalystItems.find(
-        (catalystItem) => catalystItem.id === urn
-      )
       const { item, remoteItem } = itemsByURN[urn]
+      let fullItem: FullItem
 
-      fullItems.push(Bridge.mergeTPTItem(item, remoteItem, catalystItem))
+      if (remoteItem) {
+        const catalystItem = tpCatalystItems.find(
+          (catalystItem) => catalystItem.id === urn
+        )
+
+        fullItem = Bridge.mergeTPItem(item, remoteItem, catalystItem)
+      } else {
+        fullItem = Bridge.toFullItem(item)
+      }
+
+      fullItems.push(fullItem)
     }
 
     return fullItems
   }
 
-  static mergeTPTItem(
+  static mergeTPItem(
     dbItem: ItemAttributes,
     remoteItem: ThirdPartyItemFragment,
     catalystItem?: Wearable
@@ -115,6 +121,7 @@ export class Bridge {
     } else if (remoteItem && remoteItem.urn) {
       urn = remoteItem.urn
     }
+
     return {
       ...Bridge.toFullItem(dbItem),
       urn,

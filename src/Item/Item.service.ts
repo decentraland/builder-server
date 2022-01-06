@@ -88,7 +88,7 @@ export class ItemService {
         const remoteItem = await thirdPartyAPI.fetchItem(urn)
         if (remoteItem) {
           const [catalystItem] = await peerAPI.fetchWearables([urn])
-          item = Bridge.mergeTPTItem(dbItem, remoteItem, catalystItem)
+          item = Bridge.mergeTPItem(dbItem, remoteItem, catalystItem)
         }
       }
     }

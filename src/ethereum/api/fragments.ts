@@ -158,30 +158,6 @@ export type ThirdPartyFragment = {
   metadata: ThirdPartyMetadata
 }
 
-export type ThirdPartyMetadata = {
-  type: ThirdPartyMetadataType
-  thirdParty: { name: string; description: string } | null
-}
-
-export enum ThirdPartyMetadataType {
-  THIRD_PARTY_V1 = 'third_party_v1',
-}
-
-enum BodyShape {
-  BaseMale,
-  BaseFemale,
-}
-
-enum MetadataType {
-  third_party_v1,
-  item_wearable_v1,
-}
-
-type ThirdPartyItemMetadata = {
-  type: MetadataType | undefined
-  itemWearable: ThirdPartyItemWearableMetadata
-}
-
 type ThirdPartyItemWearableMetadata = {
   name: string | null
   description: string | null
@@ -201,6 +177,30 @@ export type ThirdPartyItemFragment = {
   thirdParty: {
     id: string
   }
+}
+
+export type ThirdPartyMetadata = {
+  type: ThirdPartyMetadataType
+  thirdParty: { name: string; description: string } | null
+}
+
+type ThirdPartyItemMetadata = {
+  type: ThirdPartyItemMetadataType | undefined
+  itemWearable: ThirdPartyItemWearableMetadata
+}
+
+export enum ThirdPartyMetadataType {
+  THIRD_PARTY_V1 = 'third_party_v1',
+}
+
+export enum ThirdPartyItemMetadataType {
+  third_party_v1 = 'third_party_v1',
+  item_wearable_v1 = 'item_wearable_v1',
+}
+
+enum BodyShape {
+  BaseMale,
+  BaseFemale,
 }
 
 export type AccountFragment = {

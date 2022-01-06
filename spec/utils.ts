@@ -9,7 +9,7 @@ import { Ownable } from '../src/Ownable/Ownable'
 import { Item } from '../src/Item/Item.model'
 import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
 import { wallet } from './mocks/wallet'
-import { collectionAttributesMock } from './mocks/collections'
+import { dbCollectionMock } from './mocks/collections'
 import { dbItemMock } from './mocks/items'
 
 export function buildURL(
@@ -117,7 +117,7 @@ export function mockCollectionAuthorizationMiddleware(
   isAuthorized = true
 ) {
   const collectionToReturn = {
-    ...collectionAttributesMock,
+    ...dbCollectionMock,
     urn_suffix: isThirdParty ? 'third-party-collection-id' : null,
     third_party_id: isThirdParty ? 'third-party-id' : null,
     eth_address: ethAddress,

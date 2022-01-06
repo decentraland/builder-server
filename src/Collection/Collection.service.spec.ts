@@ -1,24 +1,33 @@
 import { env } from 'decentraland-commons'
-import { collectionAttributesMock } from '../../spec/mocks/collections'
+import {
+  dbCollectionMock,
+  dbTPCollectionMock,
+  thirdPartyFragmentMock,
+} from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Collection } from './Collection.model'
 import { CollectionAttributes } from './Collection.types'
 import { CollectionService } from './Collection.service'
+import { ThirdPartyFragment } from '../ethereum/api/fragments'
 
 jest.mock('../ethereum/api/thirdParty')
 jest.mock('./Collection.model')
 
 describe('Collection service', () => {
-  describe('when checking if the lock is active', () => {
-    const service = new CollectionService()
+  let service: CollectionService
 
+  beforeEach(() => {
+    service = new CollectionService()
+  })
+
+  describe('when checking if the lock is active', () => {
     const twoDaysInMilliseconds = 2 * 24 * 60 * 60 * 1000
     const thrityMinutesInMilliseconds = 30 * 60 * 1000
 
     describe('when the collection does not have a lock set', () => {
-      it('should return false', async () => {
-        expect(await service.isLockActive(null)).toBe(false)
+      it('should return false', () => {
+        expect(service.isLockActive(null)).toBe(false)
       })
     })
 
@@ -37,8 +46,8 @@ describe('Collection service', () => {
         jest.restoreAllMocks()
       })
 
-      it('should return false', async () => {
-        expect(await service.isLockActive(lock)).toBe(false)
+      it('should return false', () => {
+        expect(service.isLockActive(lock)).toBe(false)
       })
     })
 
@@ -49,15 +58,13 @@ describe('Collection service', () => {
         lock = new Date(Date.now() + thrityMinutesInMilliseconds)
       })
 
-      it('should return true', async () => {
-        expect(await service.isLockActive(lock)).toBe(true)
+      it('should return true', () => {
+        expect(service.isLockActive(lock)).toBe(true)
       })
     })
   })
 
   describe('when checking if an address is a TPW manager', () => {
-    const service = new CollectionService()
-
     afterAll(() => {
       jest.restoreAllMocks()
     })
@@ -114,47 +121,34 @@ describe('Collection service', () => {
   })
 
   describe('when getting the database TPW collections', () => {
-    describe('when the graph has no third party records', () => {
-      let service: CollectionService
-      beforeEach(() => {
-        service = new CollectionService()
-        ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([])
-      })
-
+    describe('when no third party is supplied', () => {
       it('should return an empty array', async () => {
-        expect(await service.getDbTPCollections(wallet.address)).toEqual([])
+        expect(await service.getDbTPCollections([])).toEqual([])
       })
     })
 
-    describe('when the graph has third party records', () => {
-      let service: CollectionService
-      let thirdPartyDbCollection: CollectionAttributes
+    describe('when third party records are supplied', () => {
+      let thirdPartyFragments: ThirdPartyFragment[]
 
       beforeEach(() => {
-        service = new CollectionService()
-        thirdPartyDbCollection = {
-          ...collectionAttributesMock,
-          urn_suffix: 'thesuffix',
-          third_party_id: 'some:third-party-id',
-        }
-        ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([
-          thirdPartyDbCollection.id,
-        ])
         ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
-          thirdPartyDbCollection,
+          dbTPCollectionMock,
+        ])
+        thirdPartyFragments = [
+          thirdPartyFragmentMock,
+          { ...thirdPartyFragmentMock, id: 'nonsense-id' },
+        ]
+      })
+
+      it('should return the db third party collections with the record ids', async () => {
+        expect(await service.getDbTPCollections(thirdPartyFragments)).toEqual([
+          dbTPCollectionMock,
         ])
       })
 
-      it('should return the db collections of the third party collections with managed by the given address', async () => {
-        expect(await service.getDbTPCollections(wallet.address)).toEqual([
-          {
-            ...thirdPartyDbCollection,
-            eth_address: wallet.address,
-          },
-        ])
-        expect(Collection.findByThirdPartyIds).toHaveBeenCalledWith([
-          thirdPartyDbCollection.id,
-        ])
+      it('should try to fetch db collections with all the ids', () => {
+        const ids = thirdPartyFragments.map((fragment) => fragment.id)
+        expect(Collection.findByThirdPartyIds).toHaveBeenCalledWith(ids)
       })
     })
   })

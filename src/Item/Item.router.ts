@@ -144,7 +144,7 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems(req: AuthRequest): Promise<FullItem[]> {
+  getItems = async (req: AuthRequest): Promise<FullItem[]> => {
     const eth_address = req.auth.ethAddress
     const canRequestItems = await isCommitteeMember(eth_address)
 
@@ -174,7 +174,7 @@ export class ItemRouter extends Router {
     return fullItems.concat(fullTPItems)
   }
 
-  async getAddressItems(req: AuthRequest): Promise<FullItem[]> {
+  getAddressItems = async (req: AuthRequest): Promise<FullItem[]> => {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -205,18 +205,9 @@ export class ItemRouter extends Router {
     return items.concat(tpItems)
   }
 
-  async getItem(req: AuthRequest): Promise<FullItem> {
+  getItem = async (req: AuthRequest): Promise<FullItem> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
-
-    const dbItem = await Item.findOne<ItemAttributes>(id)
-    if (!dbItem) {
-      throw new HTTPError(
-        'Not found',
-        { id, eth_address },
-        STATUS_CODES.notFound
-      )
-    }
 
     try {
       const { item, collection } = await this.itemService.getItem(id)
@@ -248,7 +239,7 @@ export class ItemRouter extends Router {
     }
   }
 
-  async getCollectionItems(req: AuthRequest): Promise<FullItem[]> {
+  getCollectionItems = async (req: AuthRequest): Promise<FullItem[]> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 

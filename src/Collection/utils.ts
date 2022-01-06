@@ -4,7 +4,11 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { matchers } from '../common/matchers'
 import { Collection } from './Collection.model'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  CollectionAttributes,
+  ThirdPartyCollectionAttributes,
+  FullCollection,
+} from './Collection.types'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
@@ -29,10 +33,7 @@ export function getThirdPartyCollectionURN(
 
 export function isTPCollection(
   collection: CollectionAttributes
-): collection is CollectionAttributes & {
-  third_party_id: string
-  urn_suffix: string
-} {
+): collection is ThirdPartyCollectionAttributes {
   return collection.third_party_id !== null && collection.urn_suffix !== null
 }
 

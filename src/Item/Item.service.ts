@@ -309,10 +309,6 @@ export class ItemService {
         // Null the item URN so we get a nulled urn_suffix when inserting it into the DB
         item.urn = null
       } else if (isMovingItemIntoACollection) {
-        // if (item.urn === null) {
-        //   throw new InvalidItemURNError()
-        // }
-
         const decodedItemURN = decodeThirdPartyItemURN(item.urn!)
         const dbItemURN = buildTPItemURN(
           dbCollection!.third_party_id!,
@@ -331,10 +327,6 @@ export class ItemService {
       }
       // Collection doesn't change.
       else {
-        // if (item.urn === null) {
-        //   throw new InvalidItemURNError()
-        // }
-
         const decodedURN = decodeThirdPartyItemURN(item.urn!)
         if (dbItem.urn_suffix !== decodedURN.item_urn_suffix) {
           const dbItemURN = buildTPItemURN(

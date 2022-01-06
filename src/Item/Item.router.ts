@@ -35,10 +35,11 @@ import {
   CollectionForItemLockedError,
   DCLItemAlreadyPublishedError,
   InconsistentItemError,
+  InvalidItemURNError,
   ItemCantBeMovedFromCollectionError,
   NonExistentItemError,
   ThirdPartyItemAlreadyPublishedError,
-  UnauthorizedToChangeToCollection,
+  UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
 } from './Item.errors'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
@@ -355,7 +356,7 @@ export class ItemRouter extends Router {
           { id: error.id },
           STATUS_CODES.unauthorized
         )
-      } else if (error instanceof UnauthorizedToChangeToCollection) {
+      } else if (error instanceof UnauthorizedToChangeToCollectionError) {
         throw new HTTPError(
           error.message,
           {
@@ -379,6 +380,14 @@ export class ItemRouter extends Router {
         )
       } else if (error instanceof CollectionForItemLockedError) {
         throw new HTTPError(error.message, { id }, STATUS_CODES.locked)
+      } else if (error instanceof ThirdPartyItemAlreadyPublishedError) {
+        throw new HTTPError(
+          error.message,
+          { id, urn: error.urn },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof InvalidItemURNError) {
+        throw new HTTPError(error.message, null, STATUS_CODES.badRequest)
       }
 
       throw error

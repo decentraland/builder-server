@@ -231,7 +231,7 @@ export class ItemRouter extends Router {
       } else if (error instanceof InconsistentItemError) {
         throw new HTTPError(
           error.message,
-          { id, eth_address, collection_id: dbItem.collection_id },
+          { id, eth_address },
           STATUS_CODES.error
         )
       }

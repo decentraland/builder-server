@@ -1,13 +1,10 @@
 import { env } from 'decentraland-commons'
 import {
-  dbCollectionMock,
   dbTPCollectionMock,
   thirdPartyFragmentMock,
 } from '../../spec/mocks/collections'
-import { wallet } from '../../spec/mocks/wallet'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Collection } from './Collection.model'
-import { CollectionAttributes } from './Collection.types'
 import { CollectionService } from './Collection.service'
 import { ThirdPartyFragment } from '../ethereum/api/fragments'
 

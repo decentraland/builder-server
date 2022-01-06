@@ -10,6 +10,7 @@ import {
 import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
 import { collectionAttributesMock } from './collections'
+import { isTPCollection } from '../../src/Collection/utils'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
   created_at: string
@@ -23,10 +24,7 @@ export function toResultItem(
   dbCollection?: CollectionAttributes
 ): ResultItem {
   const hasURN =
-    itemAttributes.urn_suffix &&
-    dbCollection &&
-    dbCollection.urn_suffix &&
-    dbCollection.third_party_id
+    itemAttributes.urn_suffix && dbCollection && isTPCollection(dbCollection)
 
   const resultItem = {
     ...itemAttributes,

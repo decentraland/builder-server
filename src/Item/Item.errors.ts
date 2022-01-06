@@ -58,12 +58,18 @@ export class UnauthorizedToUpsertError extends Error {
   }
 }
 
-export class UnauthorizedToChangeToCollection extends Error {
+export class UnauthorizedToChangeToCollectionError extends Error {
   constructor(
     public id: string,
     public eth_address: string,
     public collection_id: string
   ) {
     super("The new collection for the item isn't owned by the same owner.")
+  }
+}
+
+export class InvalidItemURNError extends Error {
+  constructor() {
+    super('The item URN is invalid.')
   }
 }

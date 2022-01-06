@@ -55,7 +55,7 @@ export function decodeThirdPartyItemURN(
 } {
   const matches = tpwItemURNRegex.exec(itemURN)
   if (matches === null) {
-    throw new Error('The given item URN is not TWP compliant')
+    throw new Error('The given item URN is not TPW compliant')
   }
 
   return {

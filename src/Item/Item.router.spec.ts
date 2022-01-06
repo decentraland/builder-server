@@ -400,103 +400,34 @@ describe('Item router', () => {
         })
 
         describe('and the update moves the item out of the collection', () => {
+          let dbItemURN: string
           beforeEach(() => {
             itemToUpsert = { ...itemToUpsert, collection_id: null }
             dbItem = { ...dbItem, collection_id: collectionMock.id }
+            const itemUrnSuffix = 'an-item-urn-suffix'
+            dbItemURN = buildTPItemURN(
+              collectionMock.third_party_id!,
+              collectionMock.urn_suffix!,
+              itemUrnSuffix
+            )
+            mockItem.findOne.mockResolvedValueOnce({
+              ...dbItem,
+              collection_id: collectionMock.id,
+              urn_suffix: itemUrnSuffix,
+            })
+            mockCollection.findOne.mockResolvedValueOnce(collectionMock)
           })
 
-          describe('and the item has an URN', () => {
-            let dbItemURN: string
+          describe('and is not published', () => {
+            let resultingItem: ResultItem
+
             beforeEach(() => {
-              itemToUpsert = { ...itemToUpsert, collection_id: null }
-              const itemUrnSuffix = 'an-item-urn-suffix'
-              dbItemURN = buildTPItemURN(
-                collectionMock.third_party_id!,
-                collectionMock.urn_suffix!,
-                itemUrnSuffix
-              )
-              mockItem.findOne.mockResolvedValueOnce({
-                ...dbItem,
-                collection_id: collectionMock.id,
-                urn_suffix: itemUrnSuffix,
-              })
-              mockCollection.findOne.mockResolvedValueOnce(collectionMock)
-            })
-
-            describe('and is not published', () => {
-              let resultingItem: ResultItem
-
-              beforeEach(() => {
-                const updatedItem = {
-                  ...dbItem,
-                  urn_suffix: null,
-                  collection_id: null,
-                }
-                mockThirdPartyItemExists(dbItemURN, false)
-                mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
-                resultingItem = toResultItem(
-                  updatedItem,
-                  undefined,
-                  undefined,
-                  collectionMock
-                )
-              })
-
-              it('should respond with a 200, update the item and return the updated item', () => {
-                return server
-                  .put(buildURL(url))
-                  .send({ item: itemToUpsert })
-                  .set(createAuthHeaders('put', url))
-                  .expect(200)
-                  .then((response: any) => {
-                    expect(response.body).toEqual({
-                      data: resultingItem,
-                      ok: true,
-                    })
-                  })
-              })
-            })
-
-            describe("and it's published", () => {
-              beforeEach(() => {
-                mockThirdPartyItemExists(dbItemURN, true)
-              })
-
-              it('should fail with 409 and a message saying that the item is already published', () => {
-                return server
-                  .put(buildURL(url))
-                  .send({ item: itemToUpsert })
-                  .set(createAuthHeaders('put', url))
-                  .expect(409)
-                  .then((response: any) => {
-                    expect(response.body).toEqual({
-                      data: {
-                        id: itemToUpsert.id,
-                        urn: dbItemURN,
-                      },
-                      error:
-                        "The third party item is already published. It can't be inserted or updated.",
-                      ok: false,
-                    })
-                  })
-              })
-            })
-          })
-
-          describe("and the item doesn't have an URN", () => {
-            beforeEach(() => {
-              itemToUpsert = { ...itemToUpsert, urn: null }
-              mockItem.findOne.mockResolvedValueOnce({
-                ...dbItem,
-                urn_suffix: null,
-                collection_id: collectionMock.id,
-              })
-              mockCollection.findOne.mockResolvedValueOnce(collectionMock)
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: null,
                 collection_id: null,
               }
+              mockThirdPartyItemExists(dbItemURN, false)
               mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
               resultingItem = toResultItem(
                 updatedItem,
@@ -520,6 +451,31 @@ describe('Item router', () => {
                 })
             })
           })
+
+          describe("and it's published", () => {
+            beforeEach(() => {
+              mockThirdPartyItemExists(dbItemURN, true)
+            })
+
+            it('should fail with 409 and a message saying that the item is already published', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(409)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    data: {
+                      id: itemToUpsert.id,
+                      urn: dbItemURN,
+                    },
+                    error:
+                      "The third party item is already published. It can't be inserted or updated.",
+                    ok: false,
+                  })
+                })
+            })
+          })
         })
 
         describe('and the update moves the item into the collection', () => {
@@ -533,7 +489,7 @@ describe('Item router', () => {
             itemToUpsert = { ...itemToUpsert, collection_id: collectionMock.id }
           })
 
-          describe('and the item has an urn', () => {
+          describe('and the new item has an urn', () => {
             let itemToUspertURN: string
             const itemUrnSuffix = 'an-item-urn-suffix'
 
@@ -607,34 +563,22 @@ describe('Item router', () => {
             })
           })
 
-          describe("and the item doesn't have an urn", () => {
-            let resultingItem: ResultItem
+          describe("and the new item doesn't have an urn", () => {
             beforeEach(() => {
               itemToUpsert = { ...itemToUpsert, urn: null }
-              const updatedItem = {
-                ...dbItem,
-                urn_suffix: null,
-                collection_id: collectionMock.id,
-              }
-              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
-              resultingItem = toResultItem(
-                updatedItem,
-                undefined,
-                undefined,
-                collectionMock
-              )
             })
 
-            it('should respond with a 200, update the item and return the updated item', () => {
+            it('should respond with a 400, signaling that the URN is not valid', () => {
               return server
                 .put(buildURL(url))
                 .send({ item: itemToUpsert })
                 .set(createAuthHeaders('put', url))
-                .expect(200)
+                .expect(400)
                 .then((response: any) => {
                   expect(response.body).toEqual({
-                    data: resultingItem,
-                    ok: true,
+                    error: 'The item URN is invalid.',
+                    data: {},
+                    ok: false,
                   })
                 })
             })
@@ -845,38 +789,25 @@ describe('Item router', () => {
         })
 
         describe("and the item doesn't have an URN", () => {
-          let resultingItem: ResultItem
-
           beforeEach(() => {
             itemToUpsert = {
               ...itemToUpsert,
               collection_id: collectionMock.id,
               urn: null,
             }
-            const updatedItem = {
-              ...dbItem,
-              urn_suffix: null,
-              collection_id: collectionMock.id,
-            }
-            mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
-            resultingItem = toResultItem(
-              updatedItem,
-              undefined,
-              undefined,
-              collectionMock
-            )
           })
 
-          it('should respond with a 200, update the item and return the updated item', () => {
+          it('should respond with a 400, signaling that the URN is not valid', () => {
             return server
               .put(buildURL(url))
               .send({ item: itemToUpsert })
               .set(createAuthHeaders('put', url))
-              .expect(200)
+              .expect(400)
               .then((response: any) => {
                 expect(response.body).toEqual({
-                  data: resultingItem,
-                  ok: true,
+                  error: 'The item URN is invalid.',
+                  data: {},
+                  ok: false,
                 })
               })
           })

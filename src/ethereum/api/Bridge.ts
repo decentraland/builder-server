@@ -335,19 +335,19 @@ export class Bridge {
     dbItem: ItemAttributes,
     dbCollection?: CollectionAttributes
   ): FullItem {
-    const hasURN =
-      dbItem.urn_suffix && dbCollection && isTPCollection(dbCollection)
+    const hasURN = !!dbItem.urn_suffix
 
     return utils.omit(
       {
         ...dbItem,
-        urn: hasURN
-          ? buildTPItemURN(
-              dbCollection.third_party_id,
-              dbCollection.urn_suffix,
-              dbItem.urn_suffix!
-            )
-          : null,
+        urn:
+          hasURN && dbCollection && isTPCollection(dbCollection)
+            ? buildTPItemURN(
+                dbCollection.third_party_id,
+                dbCollection.urn_suffix,
+                dbItem.urn_suffix!
+              )
+            : null,
         in_catalyst: false,
         is_approved: false,
         is_published: false,

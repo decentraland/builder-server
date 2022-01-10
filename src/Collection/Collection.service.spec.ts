@@ -2,7 +2,6 @@ import {
   dbTPCollectionMock,
   thirdPartyFragmentMock,
 } from '../../spec/mocks/collections'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import { ThirdPartyFragment } from '../ethereum/api/fragments'

@@ -11,8 +11,11 @@ import { Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { AuthRequest } from '../middleware'
 import { CurationRouter } from './Curation.router'
-import { CollectionCuration } from './CollectionCuration'
-import { ItemCuration } from './ItemCuration'
+import {
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from './CollectionCuration'
+import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { CurationService } from './Curation.service'
 import { CurationStatus } from './Curation.types'
 
@@ -61,7 +64,7 @@ describe('when handling a request', () => {
         mockIsComiteeMember.mockResolvedValueOnce(true)
       })
 
-      it('should resolve with the collections provided by Curation.getAllLatestByCollection', async () => {
+      it('should resolve with the collections provided by Curation.getLatest', async () => {
         const getAllLatestSpy = jest
           .spyOn(service, 'getLatest')
           .mockResolvedValueOnce([])
@@ -82,7 +85,7 @@ describe('when handling a request', () => {
         mockIsComiteeMember.mockResolvedValueOnce(false)
       })
 
-      it('should resolve with the collections provided by Curation.getAllLatestForCollections', async () => {
+      it('should resolve with the collections provided by Curation.getLatestByIds', async () => {
         const fetchCollectionsByAuthorizedUserSpy = jest
           .spyOn(collectionAPI, 'fetchCollectionsByAuthorizedUser')
           .mockResolvedValueOnce([
@@ -173,7 +176,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, false)
         })
@@ -185,7 +188,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, false)
         })
@@ -209,7 +212,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
         })
@@ -221,7 +224,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
         })
@@ -249,7 +252,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
@@ -262,7 +265,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
@@ -291,20 +294,33 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
+        let updateSpy: jest.SpyInstance<Promise<ItemAttributes>>
+        let expectedCuration: CollectionCurationAttributes
+
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
+          expectedCuration = {
+            id: 'uuid-123123-123123',
+          } as CollectionCurationAttributes
+
           jest
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
+
+          updateSpy = jest
+            .spyOn(CollectionCuration, 'update')
+            .mockResolvedValueOnce(expectedCuration)
         })
 
         it('should resolve with the updated curation', async () => {
-          const updateSpy = jest
-            .spyOn(CollectionCuration, 'update')
-            .mockResolvedValueOnce({} as any)
+          await expect(
+            router.updateCollectionCuration(req)
+          ).resolves.toStrictEqual(expectedCuration)
+        })
 
-          expect(await router.updateCollectionCuration(req)).toEqual({})
+        it('should call the update method with the right data', async () => {
+          await router.updateCollectionCuration(req)
 
           expect(updateSpy).toHaveBeenCalledWith(
             {
@@ -317,20 +333,33 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
+        let updateSpy: jest.SpyInstance<Promise<ItemAttributes>>
+        let expectedCuration: ItemCurationAttributes
+
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
+          expectedCuration = {
+            id: 'uuid-123123-123123',
+          } as ItemCurationAttributes
+
           jest
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
+
+          updateSpy = jest
+            .spyOn(ItemCuration, 'update')
+            .mockResolvedValueOnce(expectedCuration)
         })
 
         it('should resolve with the updated curation', async () => {
-          const updateSpy = jest
-            .spyOn(ItemCuration, 'update')
-            .mockResolvedValueOnce({} as any)
+          await expect(router.updateItemCuration(req)).resolves.toStrictEqual(
+            expectedCuration
+          )
+        })
 
-          expect(await router.updateItemCuration(req)).toEqual({})
+        it('should call the update method with the right data', async () => {
+          await router.updateItemCuration(req)
 
           expect(updateSpy).toHaveBeenCalledWith(
             {
@@ -358,7 +387,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, false)
         })
@@ -370,7 +399,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, false)
         })
@@ -441,7 +470,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
 
@@ -457,7 +486,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item', () => {
+      describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
 
@@ -486,7 +515,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection', () => {
+      describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)

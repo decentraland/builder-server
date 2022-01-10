@@ -1,4 +1,3 @@
-import { env } from 'decentraland-commons'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ThirdPartyFragment } from '../ethereum/api/fragments'
@@ -6,12 +5,7 @@ import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { isPublished } from '../utils/eth'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item'
-import {
-  decodeTPCollectionURN,
-  getThirdPartyCollectionURN,
-  isTPCollection,
-  toDBCollection,
-} from './utils'
+import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
 import {
@@ -125,13 +119,10 @@ export class CollectionService {
       )
     }
 
-    if (!(await this.isTPWManager(collectionJSON.urn, eth_address))) {
-      throw new UnauthorizedCollectionEditError(id, eth_address)
-    }
-
     const { third_party_id, urn_suffix } = decodeTPCollectionURN(
       collectionJSON.urn
     )
+
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection) {
@@ -142,23 +133,29 @@ export class CollectionService {
         )
       }
 
-      const { third_party_id, urn_suffix } = decodeTPCollectionURN(
-        collectionJSON.urn
-      )
+      // Check that the given collection belongs to a manageable third party
       if (
-        third_party_id !== collection.third_party_id ||
-        urn_suffix !== collection.urn_suffix
+        !(await thirdPartyAPI.isManager(
+          collection.third_party_id!,
+          eth_address
+        ))
       ) {
+        throw new UnauthorizedCollectionEditError(id, eth_address)
+      }
+
+      // If the urn suffix is different, the collection's URN is being changed.
+      if (urn_suffix !== collection.urn_suffix) {
         // We can't change the TPW collection's URN if there are already published items
         await this.checkIfThirdPartyCollectionHasPublishedItems(
           id,
           collection.third_party_id!,
           collection.urn_suffix!
         )
+
         // Check if the new URN for the collection already exists
         await this.checkIfThirdPartyCollectionHasPublishedItems(
           id,
-          third_party_id,
+          collection.third_party_id!,
           urn_suffix
         )
       }
@@ -166,6 +163,11 @@ export class CollectionService {
         throw new LockedCollectionError(id, CollectionAction.UPDATE)
       }
     } else {
+      // Check that the given third party id is manageable by the user
+      if (!(await thirdPartyAPI.isManager(third_party_id, eth_address))) {
+        throw new UnauthorizedCollectionEditError(id, eth_address)
+      }
+
       // Check if the URN for the new collection already exists
       await this.checkIfThirdPartyCollectionHasPublishedItems(
         id,
@@ -235,13 +237,7 @@ export class CollectionService {
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection && isTPCollection(collection)) {
-      return this.isTPWManager(
-        getThirdPartyCollectionURN(
-          collection.third_party_id,
-          collection.urn_suffix
-        ),
-        ethAddress
-      )
+      return thirdPartyAPI.isManager(collection.third_party_id!, ethAddress)
     } else if (collection) {
       return collection.eth_address === ethAddress
     }
@@ -249,28 +245,7 @@ export class CollectionService {
     return false
   }
 
-  /**
-   * Checks if an address manages a third party wearable collection.
-   *
-   * @param urn - The URN of the TPW collection where to get the information about the collection.
-   * @param address - The address to check if it manages the collection.
-   */
-  public async isTPWManager(urn: string, address: string): Promise<boolean> {
-    const isEnvManager =
-      !env.isProduction() &&
-      env
-        .get('TPW_MANAGER_ADDRESSES', '')
-        .toLowerCase()
-        .search(address.toLowerCase()) > -1
-
-    if (isEnvManager) {
-      return true
-    }
-
-    return thirdPartyAPI.isManager(urn, address)
-  }
-
-  // TODO: rename by thirdPartyies?
+  // TODO: rename by getDbTPCollectionsByThirdParties?
   public async getDbTPCollections(
     thirdParties: ThirdPartyFragment[]
   ): Promise<CollectionAttributes[]> {

@@ -1,6 +1,11 @@
 import { utils } from 'decentraland-commons'
 import { getDecentralandCollectionURN } from '../Collection/utils'
+import { matchers } from '../common/matchers'
 import { FullItem, ItemAttributes } from './Item.types'
+
+const tpItemURNRegex = new RegExp(
+  `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot}):(${matchers.urnSlot})$`
+)
 
 export function getDecentralandItemURN(
   item: ItemAttributes,
@@ -14,7 +19,9 @@ export function getDecentralandItemURN(
 export function toDBItem(item: FullItem): ItemAttributes {
   const attributes = {
     ...item,
-    urn_suffix: null,
+    urn_suffix: item.urn
+      ? decodeThirdPartyItemURN(item.urn).item_urn_suffix
+      : null,
   }
   return utils.omit(attributes, [
     'urn',
@@ -38,6 +45,27 @@ export function isTPItem(
   item: ItemAttributes
 ): item is ItemAttributes & { urn_suffix: string; collection_id: string } {
   return item.urn_suffix !== null && item.collection_id !== null
+}
+
+export function decodeThirdPartyItemURN(
+  itemURN: string
+): {
+  third_party_id: string
+  network: string
+  collection_urn_suffix: string
+  item_urn_suffix: string
+} {
+  const matches = tpItemURNRegex.exec(itemURN)
+  if (matches === null) {
+    throw new Error('The given item URN is not TPW compliant')
+  }
+
+  return {
+    third_party_id: matches[1],
+    network: matches[2],
+    collection_urn_suffix: matches[3],
+    item_urn_suffix: matches[4],
+  }
 }
 
 // TODO: @TPW: implement this

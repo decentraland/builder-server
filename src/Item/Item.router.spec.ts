@@ -35,9 +35,13 @@ import { ItemFragment } from '../ethereum/api/fragments'
 import { STATUS_CODES } from '../common/HTTPError'
 import { Bridge } from '../ethereum/api/Bridge'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { CollectionAttributes, ThirdPartyCollectionAttributes } from '../Collection/Collection.types'
-import { Item } from './Item.model'
+import {
+  CollectionAttributes,
+  ThirdPartyCollectionAttributes,
+} from '../Collection/Collection.types'
 import { buildTPItemURN } from './utils'
+import { hasPublicAccess } from './access'
+import { Item } from './Item.model'
 import { FullItem, ItemAttributes, ItemRarity } from './Item.types'
 
 jest.mock('./Item.model')
@@ -583,7 +587,10 @@ describe('Item router', () => {
               urn_suffix: null,
             })
             mockCollection.findOne.mockResolvedValueOnce(tpCollectionMock)
-            itemToUpsert = { ...itemToUpsert, collection_id: tpCollectionMock.id }
+            itemToUpsert = {
+              ...itemToUpsert,
+              collection_id: tpCollectionMock.id,
+            }
           })
 
           describe('and the new item has an urn', () => {
@@ -763,6 +770,7 @@ describe('Item router', () => {
               })
             })
           })
+
           describe("and the URN doesn't change", () => {
             let resultingItem: ResultItem
 
@@ -910,17 +918,10 @@ describe('Item router', () => {
         })
       })
     })
-    
+
     describe('and the item is a DCL item', () => {
       beforeEach(() => {
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-        mockCollection.findOne.mockResolvedValueOnce({
-          collection_id: itemToUpsert.collection_id,
-          eth_address: wallet.address,
-          contract_address: Wallet.createRandom().address,
-          lock: new Date(),
-        })
-        mockIsCollectionPublished(dbCollectionMock.id, false)
+        itemToUpsert = { ...itemToUpsert, urn: null }
       })
 
       describe('and the item inserted has an invalid name', () => {
@@ -990,19 +991,6 @@ describe('Item router', () => {
             ok: false,
           })
         })
-      })
-
-    describe('when the collection given for the item is already published', () => {
-      beforeEach(() => {
-        dbItem.collection_id = dbCollectionMock.id
-        mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-        mockCollection.findOne.mockResolvedValueOnce({
-          ...dbCollectionMock,
-          collection_id: itemToUpsert.collection_id,
-          eth_address: wallet.address,
-          contract_address: Wallet.createRandom().address,
-        })
-        mockIsCollectionPublished(dbCollectionMock.id, true)
       })
 
       describe('and the item is being inserted', () => {
@@ -1092,8 +1080,19 @@ describe('Item router', () => {
           mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         })
 
-        mockIsCollectionPublished(dbCollectionMock.id, false)
-        mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+        it('should fail with cant change item collection message', async () => {
+          const response = await server
+            .put(buildURL(url))
+            .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.unauthorized)
+
+          expect(response.body).toEqual({
+            data: { id: dbItem.id },
+            error: "Item can't change between collections.",
+            ok: false,
+          })
+        })
       })
 
       describe('when the collection given for the item is locked', () => {
@@ -1273,7 +1272,10 @@ describe('Item router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 error: `Unauthorized user ${wallet.address} for items ${dbItem.id}`,
-                data: { ethAddress: wallet.address, tableName: Item.tableName },
+                data: {
+                  ethAddress: wallet.address,
+                  tableName: Item.tableName,
+                },
                 ok: false,
               })
             })
@@ -1513,7 +1515,9 @@ describe('Item router', () => {
                 ok: true,
               })
 
-              expect(Item.delete).toHaveBeenCalledWith({ id: dbTPItemMock.id })
+              expect(Item.delete).toHaveBeenCalledWith({
+                id: dbTPItemMock.id,
+              })
             })
         })
       })

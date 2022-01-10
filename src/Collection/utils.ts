@@ -34,7 +34,7 @@ export function getThirdPartyCollectionURN(
 export function isTPCollection(
   collection: CollectionAttributes
 ): collection is ThirdPartyCollectionAttributes {
-  return collection.third_party_id !== null && collection.urn_suffix !== null
+  return !!collection.third_party_id && !!collection.urn_suffix
 }
 
 /**
@@ -123,7 +123,7 @@ export function decodeTPCollectionURN(
  * Will return a collection formed by merging the collection present in
  * the database and the one found in the graph.
  */
-// TODO: @TPW: `getMergedCollection` is using getRemoteCollection by collection_address. Does not support TPW
+// TODO: @TPW: `getMergedCollection` is using collectionAPI.fetchCollection by collection_address. Does not support TPW
 export async function getMergedCollection(
   id: string
 ): Promise<CollectionAttributes> {
@@ -133,7 +133,7 @@ export async function getMergedCollection(
     throw new NonExistentCollectionError(id)
   }
 
-  const remoteCollection = await getRemoteCollection(
+  const remoteCollection = await collectionAPI.fetchCollection(
     dbCollection.contract_address!
   )
 
@@ -143,6 +143,3 @@ export async function getMergedCollection(
 
   return Bridge.mergeCollection(dbCollection, remoteCollection)
 }
-
-export const getRemoteCollection = async (contractAddress: string) =>
-  (await collectionAPI.fetchCollection(contractAddress)) || undefined

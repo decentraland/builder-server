@@ -16,12 +16,9 @@ import {
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
-import {
-  Collection,
-  CollectionAttributes,
-  CollectionService,
-} from '../Collection'
+import { Collection, CollectionService } from '../Collection'
 import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
+import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
@@ -40,8 +37,6 @@ import {
   UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
 } from './Item.errors'
-import { NonExistentCollectionError } from '../Collection/Collection.errors'
-import { isTPCollection } from '../Collection/utils'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -203,7 +198,7 @@ export class ItemRouter extends Router {
     ])
 
     // TODO: add sorting (we're not breaking pagination)
-    return items.concat(tpItems)
+    return items.concat(this.itemService.withOwner(tpItems, eth_address))
   }
 
   getItem = async (req: AuthRequest): Promise<FullItem> => {

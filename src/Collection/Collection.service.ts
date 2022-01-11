@@ -2,6 +2,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ThirdPartyFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
+import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item'
@@ -17,9 +18,10 @@ import {
   UnauthorizedCollectionEditError,
   WrongCollectionError,
 } from './Collection.errors'
+import { ThirdPartyCollectionAttributes } from '.'
 
 export class CollectionService {
-  isLockActive(lock: Date | null) {
+  public isLockActive(lock: Date | null) {
     if (!lock) {
       return false
     }
@@ -30,33 +32,7 @@ export class CollectionService {
     return deadline.getTime() > Date.now()
   }
 
-  private async checkIfNameIsValid(id: string, name: string): Promise<void> {
-    if (!(await Collection.isValidName(id, name.trim()))) {
-      throw new WrongCollectionError('Name already in use', { id, name })
-    }
-  }
-
-  private async checkIfThirdPartyCollectionHasPublishedItems(
-    id: string,
-    thirdPartyId: string,
-    collectionUrnSuffix: string
-  ): Promise<void> {
-    const isPublished = await thirdPartyAPI.isPublished(
-      thirdPartyId,
-      collectionUrnSuffix
-    )
-
-    // We can't change the TPW collection's URN if there are already published items
-    if (isPublished) {
-      throw new AlreadyPublishedCollectionError(
-        id,
-        CollectionType.THIRD_PARTY,
-        CollectionAction.UPSERT
-      )
-    }
-  }
-
-  async upsertDCLCollection(
+  public async upsertDCLCollection(
     id: string,
     eth_address: string,
     collectionJSON: FullCollection,
@@ -266,5 +242,66 @@ export class CollectionService {
     }
 
     return collection
+  }
+
+  public async getCollection(id: string): Promise<CollectionAttributes> {
+    const dbCollection = await this.getDBCollection(id)
+
+    return isTPCollection(dbCollection)
+      ? this.getTPCollection(dbCollection)
+      : this.getDCLCollection(dbCollection)
+  }
+
+  private async getTPCollection(
+    dbCollection: ThirdPartyCollectionAttributes
+  ): Promise<CollectionAttributes> {
+    const {
+      thirdParty,
+      item,
+    } = await thirdPartyAPI.fetchThirdPartyWithLastItem(
+      dbCollection.third_party_id,
+      dbCollection.urn_suffix
+    )
+    return thirdParty
+      ? Bridge.mergeTPCollection(dbCollection, thirdParty, item)
+      : dbCollection
+  }
+
+  private async getDCLCollection(
+    dbCollection: CollectionAttributes
+  ): Promise<CollectionAttributes> {
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection.contract_address!
+    )
+
+    return remoteCollection
+      ? Bridge.mergeCollection(dbCollection, remoteCollection)
+      : dbCollection
+  }
+
+  private async checkIfNameIsValid(id: string, name: string): Promise<void> {
+    if (!(await Collection.isValidName(id, name.trim()))) {
+      throw new WrongCollectionError('Name already in use', { id, name })
+    }
+  }
+
+  private async checkIfThirdPartyCollectionHasPublishedItems(
+    id: string,
+    thirdPartyId: string,
+    collectionUrnSuffix: string
+  ): Promise<void> {
+    const isPublished = await thirdPartyAPI.isPublished(
+      thirdPartyId,
+      collectionUrnSuffix
+    )
+
+    // We can't change the TPW collection's URN if there are already published items
+    if (isPublished) {
+      throw new AlreadyPublishedCollectionError(
+        id,
+        CollectionType.THIRD_PARTY,
+        CollectionAction.UPSERT
+      )
+    }
   }
 }

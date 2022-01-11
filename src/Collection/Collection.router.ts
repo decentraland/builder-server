@@ -22,11 +22,12 @@ import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
-import { toFullCollection, hasTPCollectionURN, isTPCollection } from './utils'
+import { toFullCollection, hasTPCollectionURN } from './utils'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import {
   AlreadyPublishedCollectionError,
   LockedCollectionError,
+  NonExistentCollectionError,
   UnauthorizedCollectionEditError,
   WrongCollectionError,
 } from './Collection.errors'
@@ -206,52 +207,33 @@ export class CollectionRouter extends Router {
       .map((collection) => toFullCollection(collection, eth_address))
   }
 
-  async getCollection(req: AuthRequest): Promise<FullCollection> {
+  getCollection = async (req: AuthRequest): Promise<FullCollection> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
-    const dbCollection = await Collection.findOne<CollectionAttributes>(id)
-    if (!dbCollection) {
-      throw new HTTPError(
-        'Not found',
-        { id, eth_address },
-        STATUS_CODES.notFound
-      )
+    try {
+      const collection = await this.service.getCollection(id)
+
+      if (!(await hasPublicAccess(eth_address, collection))) {
+        throw new HTTPError(
+          'Unauthorized',
+          { id, eth_address },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      return toFullCollection(collection, eth_address)
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id, eth_address },
+          STATUS_CODES.notFound
+        )
+      }
+
+      throw error
     }
-
-    let fullCollection: CollectionAttributes
-
-    // TODO: Move to CollectionService#getCollection
-    if (isTPCollection(dbCollection)) {
-      const {
-        thirdParty,
-        item,
-      } = await thirdPartyAPI.fetchThirdPartyWithLastItem(
-        dbCollection.third_party_id,
-        dbCollection.urn_suffix
-      )
-      fullCollection = thirdParty
-        ? Bridge.mergeTPCollection(dbCollection, thirdParty, item)
-        : dbCollection
-    } else {
-      const remoteCollection = await collectionAPI.fetchCollection(
-        dbCollection.contract_address!
-      )
-
-      fullCollection = remoteCollection
-        ? Bridge.mergeCollection(dbCollection, remoteCollection)
-        : dbCollection
-    }
-
-    if (!(await hasPublicAccess(eth_address, fullCollection))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    return toFullCollection(fullCollection, eth_address)
   }
 
   publishCollection = async (

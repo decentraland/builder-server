@@ -128,6 +128,51 @@ export class ItemService {
       : this.getDCLCollectionItems(dbCollection, dbItems)
   }
 
+  public async getTPItemsByManager(
+    manager: string
+  ): Promise<{
+    dbTPItems: ItemAttributes[]
+    remoteTPItems: ThirdPartyItemFragment[]
+  }> {
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+    if (thirdParties.length <= 0) {
+      return { dbTPItems: [], remoteTPItems: [] }
+    }
+
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
+
+    const [dbTPItems, remoteTPItems] = await Promise.all([
+      Item.findByThirdPartyIds(thirdPartyIds),
+      thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
+    ])
+
+    return { dbTPItems, remoteTPItems }
+  }
+
+  public splitItems(
+    allItems: ItemAttributes[]
+  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
+    const items: ItemAttributes[] = []
+    const tpItems: ItemAttributes[] = []
+
+    for (const item of allItems) {
+      if (isTPItem(item)) {
+        tpItems.push(item)
+      } else {
+        items.push(item)
+      }
+    }
+
+    return { items, tpItems }
+  }
+
+  public withOwner<T extends FullItem | ItemAttributes>(
+    items: T[],
+    ethAddress: string
+  ) {
+    return items.map((item) => ({ ...item, eth_address: ethAddress }))
+  }
+
   private async getTPCollectionItems(
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[]
@@ -168,47 +213,6 @@ export class ItemService {
     const items = await Bridge.consolidateItems(dbItems, remoteItems)
 
     return { collection, items }
-  }
-
-  public async getTPItemsByManager(
-    manager: string
-  ): Promise<{
-    dbTPItems: ItemAttributes[]
-    remoteTPItems: ThirdPartyItemFragment[]
-  }> {
-    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
-    if (thirdParties.length <= 0) {
-      return { dbTPItems: [], remoteTPItems: [] }
-    }
-
-    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
-
-    const [dbTPItems, remoteTPItems] = await Promise.all([
-      Item.findByThirdPartyIds(thirdPartyIds),
-      thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
-    ])
-
-    return {
-      dbTPItems: dbTPItems.map((item) => ({ ...item, eth_address: manager })),
-      remoteTPItems,
-    }
-  }
-
-  public splitItems(
-    allItems: ItemAttributes[]
-  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
-    const items: ItemAttributes[] = []
-    const tpItems: ItemAttributes[] = []
-
-    for (const item of allItems) {
-      if (isTPItem(item)) {
-        tpItems.push(item)
-      } else {
-        items.push(item)
-      }
-    }
-
-    return { items, tpItems }
   }
 
   private async getTPItem(

@@ -168,7 +168,7 @@ export class CollectionRouter extends Router {
     // Build the full collection
     return consolidatedCollections
       .concat(consolidatedTPWCollections)
-      .map((collection) => toFullCollection(collection, eth_address))
+      .map(toFullCollection)
   }
 
   getAddressCollections = async (
@@ -204,7 +204,7 @@ export class CollectionRouter extends Router {
     // Build the full collection
     return consolidatedCollections
       .concat(consolidatedTPWCollections)
-      .map((collection) => toFullCollection(collection, eth_address))
+      .map(toFullCollection)
   }
 
   getCollection = async (req: AuthRequest): Promise<FullCollection> => {
@@ -222,7 +222,7 @@ export class CollectionRouter extends Router {
         )
       }
 
-      return toFullCollection(collection, eth_address)
+      return toFullCollection(collection)
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
@@ -240,7 +240,6 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
     const id = server.extractFromReq(req, 'id')
-    const eth_address = req.auth.ethAddress
 
     // We are using the withCollectionExists middleware so we can safely assert the collection exists
     const [dbCollection, dbItems] = await Promise.all([
@@ -301,7 +300,7 @@ export class CollectionRouter extends Router {
     const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
 
     return {
-      collection: toFullCollection(collection, eth_address),
+      collection: toFullCollection(collection),
       items: await Bridge.consolidateItems(items, remoteItems),
     }
   }
@@ -412,7 +411,7 @@ export class CollectionRouter extends Router {
       throw error
     }
 
-    return toFullCollection(upsertedCollection, eth_address)
+    return toFullCollection(upsertedCollection)
   }
 
   deleteCollection = async (req: AuthRequest): Promise<boolean> => {

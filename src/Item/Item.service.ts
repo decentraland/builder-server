@@ -189,7 +189,7 @@ export class ItemService {
       ),
     ])
     const collection = thirdParty
-      ? Bridge.mergeTPCollection(dbCollection, thirdParty, lastItem)
+      ? Bridge.mergeTPCollection(dbCollection, lastItem)
       : dbCollection
 
     const items = await Bridge.consolidateTPItems(dbItems, remoteItems)
@@ -239,7 +239,7 @@ export class ItemService {
           collection.urn_suffix
         )
         collection = thirdParty
-          ? Bridge.mergeTPCollection(collection, thirdParty, lastItem)
+          ? Bridge.mergeTPCollection(collection, lastItem)
           : collection
 
         const remoteItem = await thirdPartyAPI.fetchItem(urn)

@@ -34,11 +34,7 @@ export class Bridge {
             thirdParty.id,
             dbCollection.urn_suffix
           )
-          fullCollection = Bridge.mergeTPCollection(
-            dbCollection,
-            thirdParty,
-            lastItem
-          )
+          fullCollection = Bridge.mergeTPCollection(dbCollection, lastItem)
         }
       }
 
@@ -272,12 +268,10 @@ export class Bridge {
   // So we can then check if it's length is bigger than 0
   static mergeTPCollection(
     collection: CollectionAttributes,
-    thirdParty: ThirdPartyFragment,
     lastItem?: ThirdPartyItemFragment
   ): CollectionAttributes {
     return {
       ...collection,
-      managers: thirdParty.managers,
       is_published: !!lastItem,
       reviewed_at: lastItem ? fromUnixTimestamp(lastItem.reviewedAt) : null,
       created_at: lastItem

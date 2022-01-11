@@ -263,7 +263,7 @@ export class CollectionService {
       dbCollection.urn_suffix
     )
     return thirdParty
-      ? Bridge.mergeTPCollection(dbCollection, thirdParty, item)
+      ? Bridge.mergeTPCollection(dbCollection, item)
       : dbCollection
   }
 

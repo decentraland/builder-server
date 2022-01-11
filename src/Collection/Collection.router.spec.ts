@@ -89,7 +89,7 @@ describe('Collection router', () => {
       beforeEach(() => {
         otherId = 'bec9eb58-2ac0-11ec-8d3d-0242ac130003'
         collectionToUpsert = {
-          ...toFullCollection(dbCollectionMock, wallet.address),
+          ...toFullCollection(dbCollectionMock),
           id: otherId,
         }
       })
@@ -144,7 +144,7 @@ describe('Collection router', () => {
       beforeEach(() => {
         urn = `${third_party_id}:${urn_suffix}`
         collectionToUpsert = {
-          ...toFullCollection(dbTPCollection, wallet.address),
+          ...toFullCollection(dbTPCollection),
           urn,
         }
       })
@@ -357,7 +357,7 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: true,
-                data: toFullCollection(newCollectionAttributes, wallet.address),
+                data: toFullCollection(newCollectionAttributes),
               })
 
               expect(newCollectionAttributes).toEqual(
@@ -455,10 +455,7 @@ describe('Collection router', () => {
               .then((response: any) => {
                 expect(response.body).toEqual({
                   ok: true,
-                  data: toFullCollection(
-                    newCollectionAttributes,
-                    wallet.address
-                  ),
+                  data: toFullCollection(newCollectionAttributes),
                 })
 
                 expect(newCollectionAttributes).toEqual(
@@ -480,7 +477,7 @@ describe('Collection router', () => {
       describe('and the collection to upsert has the is_published property', () => {
         beforeEach(() => {
           collectionToUpsert = {
-            ...toFullCollection(dbCollection, wallet.address),
+            ...toFullCollection(dbCollection),
             is_published: true,
             is_approved: false,
             urn,
@@ -510,7 +507,7 @@ describe('Collection router', () => {
       describe('and the collection to upsert has the is_approved property set', () => {
         beforeEach(() => {
           collectionToUpsert = {
-            ...toFullCollection(dbCollection, wallet.address),
+            ...toFullCollection(dbCollection),
             is_published: false,
             is_approved: true,
             urn,
@@ -540,7 +537,7 @@ describe('Collection router', () => {
       describe("and the user doesn't own the collection", () => {
         beforeEach(() => {
           collectionToUpsert = {
-            ...toFullCollection(dbCollection, wallet.address),
+            ...toFullCollection(dbCollection),
             urn,
           }
           mockOwnableCanUpsert(
@@ -573,7 +570,7 @@ describe('Collection router', () => {
       describe('and the collection name is not valid', () => {
         beforeEach(() => {
           collectionToUpsert = {
-            ...toFullCollection(dbCollection, wallet.address),
+            ...toFullCollection(dbCollection),
             urn,
           }
           mockOwnableCanUpsert(
@@ -607,7 +604,7 @@ describe('Collection router', () => {
       describe('and the collection already exists and is published', () => {
         beforeEach(() => {
           collectionToUpsert = {
-            ...toFullCollection(dbCollection, wallet.address),
+            ...toFullCollection(dbCollection),
             urn,
           }
           mockOwnableCanUpsert(
@@ -649,7 +646,7 @@ describe('Collection router', () => {
           const currentDate = Date.now()
           mockAuthenticationSignatureValidationDate()
           collectionToUpsert = {
-            ...toFullCollection(dbCollection, wallet.address),
+            ...toFullCollection(dbCollection),
             urn,
           }
           mockOwnableCanUpsert(
@@ -695,7 +692,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           upsertMock = jest.fn()
           collectionToUpsert = {
-            ...toFullCollection(dbCollection, wallet.address),
+            ...toFullCollection(dbCollection),
             urn,
           }
           mockOwnableCanUpsert(
@@ -736,7 +733,7 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: true,
-                data: toFullCollection(newCollectionAttributes, wallet.address),
+                data: toFullCollection(newCollectionAttributes),
               })
 
               expect(newCollectionAttributes).toEqual({
@@ -752,7 +749,7 @@ describe('Collection router', () => {
         describe('and the urn supplied is null', () => {
           beforeEach(() => {
             collectionToUpsert = {
-              ...toFullCollection(dbCollection, wallet.address),
+              ...toFullCollection(dbCollection),
               urn: null,
             }
           })
@@ -769,10 +766,7 @@ describe('Collection router', () => {
               .then((response: any) => {
                 expect(response.body).toEqual({
                   ok: true,
-                  data: toFullCollection(
-                    newCollectionAttributes,
-                    wallet.address
-                  ),
+                  data: toFullCollection(newCollectionAttributes),
                 })
 
                 expect(newCollectionAttributes).toEqual({
@@ -823,11 +817,8 @@ describe('Collection router', () => {
   })
 
   describe('when retrieving the collections of an address', () => {
-    let managers: string[]
-
     beforeEach(() => {
       const { urn_suffix, third_party_id } = dbTPCollection
-      managers = ['0xdeadbeef', '0x123123']
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
@@ -837,7 +828,7 @@ describe('Collection router', () => {
         []
       )
       ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
-        [{ id: third_party_id, managers }]
+        [{ id: third_party_id }]
       )
       ;(thirdPartyAPI.fetchLastItem as jest.Mock).mockReturnValueOnce(
         thirdPartyItemFragmentMock
@@ -861,8 +852,6 @@ describe('Collection router', () => {
               {
                 ...toResultCollection(dbTPCollection),
                 is_published: true,
-                managers,
-                eth_address: wallet.address,
                 urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
               },
             ],
@@ -1340,8 +1329,7 @@ describe('Collection router', () => {
                       Bridge.mergeCollection(
                         dbCollection,
                         collectionFragmentMock as CollectionFragment
-                      ),
-                      wallet.address
+                      )
                     )
                   ),
                   items: [

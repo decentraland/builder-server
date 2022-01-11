@@ -1,4 +1,8 @@
-import { Collection, CollectionAttributes } from '../Collection'
+import {
+  Collection,
+  CollectionAttributes,
+  ThirdPartyCollectionAttributes,
+} from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
 import { isTPCollection } from '../Collection/utils'
 import { Bridge } from '../ethereum/api/Bridge'
@@ -109,7 +113,105 @@ export class ItemService {
     return isTPItem(dbItem) ? this.getTPItem(dbItem) : this.getDCLItem(dbItem)
   }
 
-  public async getTPItem(
+  public async getCollectionItems(
+    collectionId: string
+  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
+    const dbCollection = await this.collectionService.getDBCollection(
+      collectionId
+    )
+    const dbItems = await Item.find<ItemAttributes>({
+      collection_id: collectionId,
+    })
+
+    return isTPCollection(dbCollection)
+      ? this.getTPCollectionItems(dbCollection, dbItems)
+      : this.getDCLCollectionItems(dbCollection, dbItems)
+  }
+
+  private async getTPCollectionItems(
+    dbCollection: ThirdPartyCollectionAttributes,
+    dbItems: ItemAttributes[]
+  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
+    // TODO: This could be a single query, the problem is paginating the thing. We should only paginate remoteItems
+    const [{ thirdParty, item: lastItem }, remoteItems] = await Promise.all([
+      thirdPartyAPI.fetchThirdPartyWithLastItem(
+        dbCollection.third_party_id,
+        dbCollection.urn_suffix
+      ),
+      thirdPartyAPI.fetchItemsByCollection(
+        dbCollection.third_party_id,
+        dbCollection.urn_suffix
+      ),
+    ])
+    const collection = thirdParty
+      ? Bridge.mergeTPCollection(dbCollection, thirdParty, lastItem)
+      : dbCollection
+
+    const items = await Bridge.consolidateTPItems(dbItems, remoteItems)
+    return { collection, items }
+  }
+
+  private async getDCLCollectionItems(
+    dbCollection: CollectionAttributes,
+    dbItems: ItemAttributes[]
+  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
+    const {
+      collection: remoteCollection,
+      items: remoteItems,
+    } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
+      dbCollection.contract_address!
+    )
+    const collection = remoteCollection
+      ? Bridge.mergeCollection(dbCollection, remoteCollection)
+      : dbCollection
+
+    const items = await Bridge.consolidateItems(dbItems, remoteItems)
+
+    return { collection, items }
+  }
+
+  public async getTPItemsByManager(
+    manager: string
+  ): Promise<{
+    dbTPItems: ItemAttributes[]
+    remoteTPItems: ThirdPartyItemFragment[]
+  }> {
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+    if (thirdParties.length <= 0) {
+      return { dbTPItems: [], remoteTPItems: [] }
+    }
+
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
+
+    const [dbTPItems, remoteTPItems] = await Promise.all([
+      Item.findByThirdPartyIds(thirdPartyIds),
+      thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
+    ])
+
+    return {
+      dbTPItems: dbTPItems.map((item) => ({ ...item, eth_address: manager })),
+      remoteTPItems,
+    }
+  }
+
+  public splitItems(
+    allItems: ItemAttributes[]
+  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
+    const items: ItemAttributes[] = []
+    const tpItems: ItemAttributes[] = []
+
+    for (const item of allItems) {
+      if (isTPItem(item)) {
+        tpItems.push(item)
+      } else {
+        items.push(item)
+      }
+    }
+
+    return { items, tpItems }
+  }
+
+  private async getTPItem(
     dbItem: ItemAttributes
   ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
     let item: FullItem = Bridge.toFullItem(dbItem)
@@ -147,7 +249,7 @@ export class ItemService {
     return { item, collection }
   }
 
-  public async getDCLItem(
+  private async getDCLItem(
     dbItem: ItemAttributes
   ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
     let item: FullItem = Bridge.toFullItem(dbItem)
@@ -496,46 +598,5 @@ export class ItemService {
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem, dbCollection)
-  }
-
-  public async getTPItemsByManager(
-    manager: string
-  ): Promise<{
-    dbTPItems: ItemAttributes[]
-    remoteTPItems: ThirdPartyItemFragment[]
-  }> {
-    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
-    if (thirdParties.length <= 0) {
-      return { dbTPItems: [], remoteTPItems: [] }
-    }
-
-    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
-
-    const [dbTPItems, remoteTPItems] = await Promise.all([
-      Item.findByThirdPartyIds(thirdPartyIds),
-      thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
-    ])
-
-    return {
-      dbTPItems: dbTPItems.map((item) => ({ ...item, eth_address: manager })),
-      remoteTPItems,
-    }
-  }
-
-  splitItems(
-    allItems: ItemAttributes[]
-  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
-    const items: ItemAttributes[] = []
-    const tpItems: ItemAttributes[] = []
-
-    for (const item of allItems) {
-      if (isTPItem(item)) {
-        tpItems.push(item)
-      } else {
-        items.push(item)
-      }
-    }
-
-    return { items, tpItems }
   }
 }

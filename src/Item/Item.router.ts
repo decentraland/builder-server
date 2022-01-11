@@ -244,63 +244,31 @@ export class ItemRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
-    const dbCollection = await Collection.findOne<CollectionAttributes>(id)
-    if (!dbCollection) {
-      throw new HTTPError(
-        'Not found',
-        { id, eth_address },
-        STATUS_CODES.notFound
-      )
-    }
-
-    let fullItems: FullItem[] = []
-    let fullCollection: CollectionAttributes | undefined
-
-    const dbItems = await Item.find<ItemAttributes>({ collection_id: id })
-
-    // TODO: Add to ItemService#getCollectionItems ?
-    if (isTPCollection(dbCollection)) {
-      // TODO: This could be a single query, the problem is paginating the thing. We should only paginate remoteItems
-      const [{ thirdParty, item: lastItem }, remoteItems] = await Promise.all([
-        thirdPartyAPI.fetchThirdPartyWithLastItem(
-          dbCollection.third_party_id,
-          dbCollection.urn_suffix
-        ),
-        thirdPartyAPI.fetchItemsByCollection(
-          dbCollection.third_party_id,
-          dbCollection.urn_suffix
-        ),
-      ])
-
-      fullCollection = thirdParty
-        ? Bridge.mergeTPCollection(dbCollection, thirdParty, lastItem)
-        : dbCollection
-
-      fullItems = await Bridge.consolidateTPItems(dbItems, remoteItems)
-    } else {
-      const {
-        collection: remoteCollection,
-        items: remoteItems,
-      } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
-        dbCollection.contract_address!
+    try {
+      const { collection, items } = await this.itemService.getCollectionItems(
+        id
       )
 
-      fullCollection = remoteCollection
-        ? Bridge.mergeCollection(dbCollection, remoteCollection)
-        : dbCollection
+      if (!(await hasCollectionAccess(eth_address, collection))) {
+        throw new HTTPError(
+          'Unauthorized',
+          { eth_address },
+          STATUS_CODES.unauthorized
+        )
+      }
 
-      fullItems = await Bridge.consolidateItems(dbItems, remoteItems)
+      return items
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id, eth_address },
+          STATUS_CODES.notFound
+        )
+      }
+
+      throw error
     }
-
-    if (!(await hasCollectionAccess(eth_address, fullCollection))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    return fullItems
   }
 
   upsertItem = async (req: AuthRequest): Promise<FullItem> => {

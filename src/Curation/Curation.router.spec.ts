@@ -582,7 +582,7 @@ describe('when handling a request', () => {
           })
 
           it('should call the collection curation to check if it exists', async () => {
-            expect(await router.insertItemCuration(req)).toEqual({})
+            await router.insertItemCuration(req)
             expect(findSpy).toHaveBeenCalledWith(item.collection_id)
           })
         })

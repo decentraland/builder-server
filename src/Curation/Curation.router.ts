@@ -6,8 +6,7 @@ import { withAuthentication, AuthRequest } from '../middleware'
 import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
 import { getValidator } from '../utils/validator'
-import { Collection } from '../Collection'
-import { Item } from '../Item'
+import { Collection, CollectionService } from '../Collection'
 import { CurationStatus, patchCurationSchema } from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
@@ -20,20 +19,36 @@ import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from './CollectionCuration'
-import { ItemCurationAttributes } from './ItemCuration'
+import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { Item } from '../Item'
 
 const validator = getValidator()
 
 // TODO: Use CurationStatus everywhere
 export class CurationRouter extends Router {
   mount() {
+    // TODO: we might need to rename all endpoints to their actual entities:
+    //   - /collections/:id/curation -> /collectionCurations/:id
+    //   - /items/:id/curation -> /itemCurations/:id
+    //   - etc
     this.router.get(
-      '/curations', // TODO: add another one with the same handler to /collectionCurations
+      '/curations',
       withAuthentication,
       server.handleRequest(this.getCollectionCurations)
     )
 
-    // TODO: '/collections/:id/itemCurations'
+    this.router.get(
+      '/collectionCuration/:id/itemStats',
+      withAuthentication,
+      server.handleRequest(this.getCollectionCurationItemStats)
+    )
+
+    this.router.get(
+      '/collections/:id/itemCurations',
+      withAuthentication,
+      server.handleRequest(this.getCollectionItemCurations)
+    )
 
     this.router.get(
       '/collections/:id/curation',
@@ -53,8 +68,6 @@ export class CurationRouter extends Router {
       server.handleRequest(this.insertCollectionCuration)
     )
 
-    // TODO: '/collections/:id/itemCurations'
-
     this.router.get(
       '/items/:id/curation',
       withAuthentication,
@@ -72,12 +85,42 @@ export class CurationRouter extends Router {
       withAuthentication,
       server.handleRequest(this.insertItemCuration)
     )
+  }
 
-    this.router.post(
-      '/items/:id/curation',
-      withAuthentication,
-      server.handleRequest(this.insertItemCuration)
+  // TODO: Paginate this
+  getCollectionCurations = async (req: AuthRequest) => {
+    const ethAddress = req.auth.ethAddress
+    const curationService = CurationService.byType(CurationType.COLLECTION)
+
+    if (await isCommitteeMember(ethAddress)) {
+      return curationService.getLatest()
+    }
+
+    const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
+      ethAddress
     )
+
+    const contractAddresses = remoteCollections.map(
+      (collection) => collection.id
+    )
+
+    const [dbCollections, thirdParties] = await Promise.all([
+      Collection.findByContractAddresses(contractAddresses),
+      thirdPartyAPI.fetchThirdPartiesByManager(ethAddress),
+    ])
+    const dbTPCollections = await new CollectionService().getDbTPCollections(
+      thirdParties
+    )
+
+    const collectionIds = dbCollections
+      .concat(dbTPCollections)
+      .map((collection) => collection.id)
+
+    return curationService.getLatestByIds(collectionIds)
+  }
+
+  getCollectionCurationItemStats = async (_req: AuthRequest) => {
+    return {}
   }
 
   getCollectionCuration = async (req: AuthRequest) => {
@@ -94,6 +137,20 @@ export class CurationRouter extends Router {
     return curationService.getLatestById(collectionId)
   }
 
+  getCollectionItemCurations = async (req: AuthRequest) => {
+    const collectionId = server.extractFromReq(req, 'id')
+    const ethAddress = req.auth.ethAddress
+    const curationService = CurationService.byType(CurationType.COLLECTION)
+
+    await this.validateAccessToCuration(
+      curationService,
+      ethAddress,
+      collectionId
+    )
+
+    return ItemCuration.findByCollectionId(collectionId)
+  }
+
   getItemCuration = async (req: AuthRequest) => {
     const itemId = server.extractFromReq(req, 'id')
     const ethAddress = req.auth.ethAddress
@@ -102,34 +159,6 @@ export class CurationRouter extends Router {
     await this.validateAccessToCuration(curationService, ethAddress, itemId)
 
     return curationService.getLatestById(itemId)
-  }
-
-  // TODO: @TPW Scope this for item/collection?
-  getCollectionCurations = async (req: AuthRequest) => {
-    const ethAddress = req.auth.ethAddress
-    const curationService = CurationService.byType(CurationType.COLLECTION)
-
-    if (await isCommitteeMember(ethAddress)) {
-      return curationService.getLatest()
-    }
-
-    // TODO: @TPW *IF we need to show tpw collections* we need to add it here  ( this.service.getDbTPCollections(eth_address) ).
-    //            We'll also need to check that they're published (at least one item is published)
-    const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
-      ethAddress
-    )
-
-    const contractAddresses = remoteCollections.map(
-      (collection) => collection.id
-    )
-
-    const dbCollections = await Collection.findByContractAddresses(
-      contractAddresses
-    )
-
-    const dbCollectionIds = dbCollections.map((collection) => collection.id)
-
-    return curationService.getLatestByIds(dbCollectionIds)
   }
 
   updateCollectionCuration = async (req: AuthRequest) => {
@@ -199,6 +228,7 @@ export class CurationRouter extends Router {
       CurationType.ITEM
     )
 
+    // TODO: CollectionCuration.findByItemId()
     const item = await Item.findOne(itemId)
     const collectionCuration = await CollectionCuration.findOne(
       item.collection_id
@@ -268,7 +298,7 @@ export class CurationRouter extends Router {
 
     const curation = await curationService.getLatestById(id)
 
-    if (curation && curation.status === CurationStatus.PENDING) {
+    if (curation && curation.status === 'pending') {
       throw new HTTPError(
         'There is already an ongoing review request',
         { id },

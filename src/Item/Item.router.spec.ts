@@ -817,7 +817,7 @@ describe('Item router', () => {
 
     describe('and the item is a DCL item', () => {
       beforeEach(() => {
-        itemToUpsert = { ...itemToUpsert, urn: null }
+        itemToUpsert = { ...itemToUpsert, urn }
         collectionMock = {
           ...collectionMock,
           urn_suffix: null,

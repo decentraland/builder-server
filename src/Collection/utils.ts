@@ -13,6 +13,7 @@ import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from './Collection.errors'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 
 export const tpCollectionURNRegex = new RegExp(
   `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot})$`
@@ -121,7 +122,6 @@ export function decodeTPCollectionURN(
  * Will return a collection formed by merging the collection present in
  * the database and the one found in the graph.
  */
-// TODO: @TPW: `getMergedCollection` is using collectionAPI.fetchCollection by collection_address. Does not support TPW
 export async function getMergedCollection(
   id: string
 ): Promise<CollectionAttributes> {
@@ -131,13 +131,30 @@ export async function getMergedCollection(
     throw new NonExistentCollectionError(id)
   }
 
-  const remoteCollection = await collectionAPI.fetchCollection(
-    dbCollection.contract_address!
-  )
+  let mergedCollection: CollectionAttributes
 
-  if (!remoteCollection) {
-    throw new UnpublishedCollectionError(id)
+  if (isTPCollection(dbCollection)) {
+    const lastItem = await thirdPartyAPI.fetchLastItem(
+      dbCollection.third_party_id,
+      dbCollection.urn_suffix
+    )
+
+    if (!lastItem) {
+      throw new UnpublishedCollectionError(id)
+    }
+
+    mergedCollection = Bridge.mergeTPCollection(dbCollection, lastItem)
+  } else {
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection.contract_address!
+    )
+
+    if (!remoteCollection) {
+      throw new UnpublishedCollectionError(id)
+    }
+
+    mergedCollection = Bridge.mergeCollection(dbCollection, remoteCollection)
   }
 
-  return Bridge.mergeCollection(dbCollection, remoteCollection)
+  return mergedCollection
 }

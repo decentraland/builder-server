@@ -163,7 +163,6 @@ describe('when handling a request', () => {
   })
 
   describe('when trying to get the item stats for a collection curation', () => {
-    let service: CurationService<any>
     let req: AuthRequest
     let collection: CollectionAttributes
 
@@ -174,7 +173,7 @@ describe('when handling a request', () => {
           params: { id: 'some id' },
         } as any
 
-        service = mockServiceWithAccess(CollectionCuration, false)
+        mockServiceWithAccess(CollectionCuration, false)
       })
 
       it('should reject with an unauthorized message', async () => {
@@ -192,7 +191,7 @@ describe('when handling a request', () => {
         } as any
         collection = { ...dbCollectionMock }
 
-        service = mockServiceWithAccess(CollectionCuration, true)
+        mockServiceWithAccess(CollectionCuration, true)
 
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
       })
@@ -212,7 +211,7 @@ describe('when handling a request', () => {
         } as any
         collection = { ...dbTPCollectionMock }
 
-        service = mockServiceWithAccess(CollectionCuration, true)
+        mockServiceWithAccess(CollectionCuration, true)
 
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
         jest
@@ -240,7 +239,7 @@ describe('when handling a request', () => {
         } as any
         collection = { ...dbTPCollectionMock }
 
-        service = mockServiceWithAccess(CollectionCuration, true)
+        mockServiceWithAccess(CollectionCuration, true)
 
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
         jest

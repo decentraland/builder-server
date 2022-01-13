@@ -21,7 +21,7 @@ import {
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { Item, ItemRouter } from '../Item'
+import { Item } from '../Item'
 
 const validator = getValidator()
 

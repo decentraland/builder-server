@@ -381,11 +381,8 @@ describe('Item router', () => {
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbTPCollectionMock,
         ])
-        ;(thirdPartyAPI.fetchThirdPartyWithLastItem as jest.Mock).mockResolvedValueOnce(
-          {
-            thirdParty: thirdPartyFragmentMock,
-            item: thirdPartyItemFragmentMock,
-          }
+        ;(thirdPartyAPI.fetchLastItem as jest.Mock).mockResolvedValueOnce(
+          thirdPartyItemFragmentMock
         )
         ;(thirdPartyAPI.fetchItemsByCollection as jest.Mock).mockResolvedValueOnce(
           [thirdPartyItemFragmentMock]

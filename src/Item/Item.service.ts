@@ -178,8 +178,8 @@ export class ItemService {
     dbItems: ItemAttributes[]
   ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
     // TODO: This could be a single query, the problem is paginating the thing. We should only paginate remoteItems
-    const [{ thirdParty, item: lastItem }, remoteItems] = await Promise.all([
-      thirdPartyAPI.fetchThirdPartyWithLastItem(
+    const [lastItem, remoteItems] = await Promise.all([
+      thirdPartyAPI.fetchLastItem(
         dbCollection.third_party_id,
         dbCollection.urn_suffix
       ),
@@ -188,7 +188,7 @@ export class ItemService {
         dbCollection.urn_suffix
       ),
     ])
-    const collection = thirdParty
+    const collection = lastItem
       ? Bridge.mergeTPCollection(dbCollection, lastItem)
       : dbCollection
 
@@ -231,14 +231,11 @@ export class ItemService {
           dbItem.urn_suffix!
         )
 
-        const {
-          thirdParty,
-          item: lastItem,
-        } = await thirdPartyAPI.fetchThirdPartyWithLastItem(
+        const lastItem = await thirdPartyAPI.fetchLastItem(
           collection.third_party_id,
           collection.urn_suffix
         )
-        collection = thirdParty
+        collection = lastItem
           ? Bridge.mergeTPCollection(collection, lastItem)
           : collection
 

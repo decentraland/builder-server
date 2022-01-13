@@ -35,24 +35,6 @@ const getThirdPartiesByManagerQuery = () => gql`
   ${thirdPartyFragment()}
 `
 
-const getThirdPartyWithLastItemQuery = () => gql`
-  query getThirdPartyWithLastItem($id: String!, $collectionId: String!) {
-    thirdParties(where: { id: $id, isApproved: true }) {
-      ...thirdPartyFragment
-    }
-    items(
-      first: 1
-      where: { thirdParty: $id, searchCollectionId: $collectionId }
-      orderBy: reviewedAt
-      orderDirection: desc
-    ) {
-      ...thirdPartyItemFragment
-    }
-  }
-  ${thirdPartyFragment()}
-  ${thirdPartyItemFragment()}
-`
-
 const getItemsQuery = () => gql`
   query getItems {
     items {
@@ -162,26 +144,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       query: getThirdPartiesByManagerQuery(),
       variables: { managers: manager ? [manager.toLowerCase()] : [] },
     })
-  }
-
-  fetchThirdPartyWithLastItem = async (
-    id: string,
-    collectionId: string
-  ): Promise<{
-    thirdParty?: ThirdPartyFragment
-    item: ThirdPartyItemFragment
-  }> => {
-    const {
-      data: { thirdParties = [], items = [] },
-    } = await this.query<{
-      thirdParties: ThirdPartyFragment[]
-      items: ThirdPartyItemFragment[]
-    }>({
-      query: getThirdPartyWithLastItemQuery(),
-      variables: { id, collectionId },
-    })
-
-    return { thirdParty: thirdParties[0], item: items[0] }
   }
 
   fetchTiers = (): Promise<TierFragment[]> => {

@@ -255,15 +255,12 @@ export class CollectionService {
   private async getTPCollection(
     dbCollection: ThirdPartyCollectionAttributes
   ): Promise<CollectionAttributes> {
-    const {
-      thirdParty,
-      item,
-    } = await thirdPartyAPI.fetchThirdPartyWithLastItem(
+    const lastItem = await thirdPartyAPI.fetchLastItem(
       dbCollection.third_party_id,
       dbCollection.urn_suffix
     )
-    return thirdParty
-      ? Bridge.mergeTPCollection(dbCollection, item)
+    return lastItem
+      ? Bridge.mergeTPCollection(dbCollection, lastItem)
       : dbCollection
   }
 

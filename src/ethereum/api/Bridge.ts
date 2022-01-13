@@ -7,7 +7,6 @@ import {
   ItemFragment,
   CollectionFragment,
   ThirdPartyItemFragment,
-  ThirdPartyFragment,
 } from './fragments'
 import { collectionAPI } from './collection'
 import { peerAPI, Wearable } from './peer'
@@ -16,8 +15,7 @@ import { isTPCollection } from '../../Collection/utils'
 
 export class Bridge {
   static async consolidateTPCollections(
-    dbCollections: CollectionAttributes[],
-    thirdParties: ThirdPartyFragment[]
+    dbCollections: CollectionAttributes[]
   ): Promise<CollectionAttributes[]> {
     const collections: CollectionAttributes[] = []
 
@@ -25,15 +23,11 @@ export class Bridge {
       let fullCollection: CollectionAttributes = { ...dbCollection }
 
       if (isTPCollection(dbCollection)) {
-        const thirdParty = thirdParties.find(
-          (thirdParty) => thirdParty.id === dbCollection.third_party_id
+        const lastItem = await thirdPartyAPI.fetchLastItem(
+          dbCollection.third_party_id,
+          dbCollection.urn_suffix
         )
-
-        if (thirdParty) {
-          const lastItem = await thirdPartyAPI.fetchLastItem(
-            thirdParty.id,
-            dbCollection.urn_suffix
-          )
+        if (lastItem) {
           fullCollection = Bridge.mergeTPCollection(dbCollection, lastItem)
         }
       }
@@ -268,7 +262,7 @@ export class Bridge {
   // So we can then check if it's length is bigger than 0
   static mergeTPCollection(
     collection: CollectionAttributes,
-    lastItem?: ThirdPartyItemFragment
+    lastItem: ThirdPartyItemFragment
   ): CollectionAttributes {
     return {
       ...collection,

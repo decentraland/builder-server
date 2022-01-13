@@ -161,8 +161,7 @@ export class CollectionRouter extends Router {
       remoteCollections
     )
     const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
-      dbTPCollections,
-      thirdParties
+      dbTPCollections
     )
 
     // Build the full collection
@@ -197,8 +196,7 @@ export class CollectionRouter extends Router {
       remoteCollections
     )
     const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
-      dbTPCollections,
-      thirdParties
+      dbTPCollections
     )
 
     // Build the full collection

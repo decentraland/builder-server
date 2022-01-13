@@ -1,6 +1,16 @@
 import { utils } from 'decentraland-commons'
-import { getDecentralandCollectionURN } from '../Collection/utils'
+import { Collection } from '../Collection'
+import { NonExistentCollectionError } from '../Collection/Collection.errors'
+import {
+  getDecentralandCollectionURN,
+  isTPCollection,
+} from '../Collection/utils'
 import { matchers } from '../common/matchers'
+import { Bridge } from '../ethereum/api/Bridge'
+import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { NonExistentItemError, UnpublishedItemError } from './Item.errors'
+import { Item } from './Item.model'
 import { FullItem, ItemAttributes } from './Item.types'
 
 const tpItemURNRegex = new RegExp(
@@ -68,7 +78,47 @@ export function decodeThirdPartyItemURN(
   }
 }
 
-// TODO: @TPW: implement this
-export function getMergedItem(_id: string): Promise<FullItem> {
-  return {} as any
+export async function getMergedItem(id: string): Promise<FullItem> {
+  const dbItem = await Item.findOne(id)
+  if (!dbItem) {
+    throw new NonExistentItemError(id)
+  }
+
+  const dbCollection = await Collection.findOne(dbItem.collection_id)
+  if (!dbCollection) {
+    throw new NonExistentCollectionError(id)
+  }
+
+  let fullItem: FullItem
+
+  if (isTPItem(dbItem) && isTPCollection(dbCollection)) {
+    const urn = buildTPItemURN(
+      dbCollection.third_party_id,
+      dbCollection.urn_suffix,
+      dbItem.urn_suffix
+    )
+    const remoteItem = await thirdPartyAPI.fetchItem(urn)
+
+    if (!remoteItem) {
+      throw new UnpublishedItemError(id)
+    }
+
+    fullItem = Bridge.mergeTPItem(dbItem, remoteItem)
+  } else {
+    const {
+      collection: remoteCollection,
+      item: remoteItem,
+    } = await collectionAPI.fetchCollectionWithItem(
+      dbCollection.contract_address,
+      dbItem.blockchain_item_id
+    )
+
+    if (!remoteCollection || !remoteItem) {
+      throw new UnpublishedItemError(id)
+    }
+
+    fullItem = Bridge.mergeItem(dbItem, remoteItem, remoteCollection)
+  }
+
+  return fullItem
 }

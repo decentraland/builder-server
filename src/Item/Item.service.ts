@@ -268,13 +268,13 @@ export class ItemService {
         )
       }
 
-      const [remoteItem, remoteCollection] = await Promise.all([
-        collectionAPI.fetchItem(
-          dbCollection.contract_address!,
-          dbItem.blockchain_item_id
-        ),
-        collectionAPI.fetchCollection(dbCollection.contract_address!),
-      ])
+      const {
+        collection: remoteCollection,
+        item: remoteItem,
+      } = await collectionAPI.fetchCollectionWithItem(
+        dbCollection.contract_address!,
+        dbItem.blockchain_item_id
+      )
 
       if (remoteCollection) {
         collection = Bridge.mergeCollection(dbCollection, remoteCollection)

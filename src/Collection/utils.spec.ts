@@ -1,4 +1,3 @@
-import { Collection, CollectionAttributes } from '.'
 import {
   collectionFragmentMock,
   dbCollectionMock,
@@ -11,6 +10,8 @@ import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from './Collection.errors'
+import { CollectionAttributes } from './Collection.types'
+import { Collection } from './Collection.model'
 import { getMergedCollection, decodeTPCollectionURN } from './utils'
 
 describe('when decoding the TPW collection URN', () => {
@@ -51,23 +52,23 @@ describe('when decoding the TPW collection URN', () => {
 describe('getMergedCollection', () => {
   let collection: CollectionAttributes
 
+  describe('when the db collection can not be found', () => {
+    beforeEach(() => {
+      jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
+    })
+
+    it('should throw a non existent collection error', async () => {
+      return expect(getMergedCollection('id')).rejects.toEqual(
+        new NonExistentCollectionError('id')
+      )
+    })
+  })
+
   describe('when the collection is a dcl collection', () => {
     beforeEach(() => {
       collection = {
         ...dbCollectionMock,
       } as CollectionAttributes
-    })
-
-    describe('when the db collection can not be found', () => {
-      beforeEach(() => {
-        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
-      })
-
-      it('should resolve with an undefined collection and a not found status', async () => {
-        return expect(getMergedCollection(collection.id)).rejects.toEqual(
-          new NonExistentCollectionError(collection.id)
-        )
-      })
     })
 
     describe('when the remote collection can not be found', () => {
@@ -76,7 +77,7 @@ describe('getMergedCollection', () => {
         jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
       })
 
-      it('should resolve with the db collection and an incomplete status', async () => {
+      it('should throw an unpublished collection error', async () => {
         return expect(getMergedCollection(collection.id)).rejects.toEqual(
           new UnpublishedCollectionError(collection.id)
         )
@@ -92,7 +93,7 @@ describe('getMergedCollection', () => {
           .mockResolvedValueOnce(collectionFragmentMock)
       })
 
-      it('should resolve with the merged collection and a complete status', async () => {
+      it('should resolve with the merged collection', async () => {
         const result = await getMergedCollection('collectionId')
 
         expect(result).toStrictEqual({
@@ -111,18 +112,6 @@ describe('getMergedCollection', () => {
       } as CollectionAttributes
     })
 
-    describe('when the db collection can not be found', () => {
-      beforeEach(() => {
-        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
-      })
-
-      it('should resolve with an undefined collection and a not found status', async () => {
-        return expect(getMergedCollection(collection.id)).rejects.toEqual(
-          new NonExistentCollectionError(collection.id)
-        )
-      })
-    })
-
     describe('when the remote collection can not be found', () => {
       beforeEach(() => {
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
@@ -131,7 +120,7 @@ describe('getMergedCollection', () => {
           .mockResolvedValueOnce(undefined)
       })
 
-      it('should resolve with the db collection and an incomplete status', async () => {
+      it('should throw an unpublished error', async () => {
         return expect(getMergedCollection(collection.id)).rejects.toEqual(
           new UnpublishedCollectionError(collection.id)
         )
@@ -147,7 +136,7 @@ describe('getMergedCollection', () => {
           .mockResolvedValueOnce(thirdPartyItemFragmentMock)
       })
 
-      it('should resolve with the merged collection and a complete status', async () => {
+      it('should resolve with the merged collection', async () => {
         const result = await getMergedCollection('collectionId')
 
         expect(result).toStrictEqual({

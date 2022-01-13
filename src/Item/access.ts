@@ -17,6 +17,7 @@ export async function hasPublicAccess(
   return hasAccess(eth_address, item, collection)
 }
 
+// TODO: Make TP enabled
 export async function hasAccess(
   eth_address: string,
   item: FullItem,

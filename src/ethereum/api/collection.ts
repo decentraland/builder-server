@@ -15,7 +15,6 @@ import {
 } from './fragments'
 import {
   BaseGraphAPI,
-  MAX_RESULTS,
   PAGINATION_VARIABLES,
   PAGINATION_ARGUMENTS,
 } from './BaseGraphAPI'
@@ -53,9 +52,22 @@ const getCollectionsByAuthorizedUserQuery = () => gql`
   ${collectionFragment()}
 `
 
+const getCollectionWithItemByIdsQuery = () => gql`
+  query getCollectionWithItemByIds($id: String, $itemId: String) {
+    collections(where: { id: $id }) {
+      ...collectionFragment
+    }
+    items(where: { id: $itemId }) {
+      ...itemFragment
+    }
+  }
+  ${collectionFragment()}
+  ${itemFragment()}
+`
+
 const getCollectionWithItemsByCollectionIdQuery = () => gql`
-  query getCollectionWithItemsByCollectionIdQuery($id: String) {
-    collections(first: ${MAX_RESULTS}, where: { id: $id }) {
+  query getCollectionWithItemsByCollectionId($id: String) {
+    collections(where: { id: $id }) {
       ...collectionFragment
       items {
         ...itemFragment
@@ -177,6 +189,49 @@ export class CollectionAPI extends BaseGraphAPI {
     )
   }
 
+  fetchCollectionWithItem = async (
+    contractAddress: string,
+    tokenId: string
+  ) => {
+    const {
+      data: { collections = [], items = [] },
+    } = await this.query<{
+      collections: CollectionFragment[]
+      items: ItemFragment[]
+    }>({
+      query: getCollectionWithItemByIdsQuery(),
+      variables: { id: contractAddress.toLowerCase(), tokenId },
+    })
+
+    return {
+      collection: collections.length > 0 ? collections[0] : null,
+      item: items.length > 0 ? items[0] : null,
+    }
+  }
+
+  fetchCollectionWithItemsByContractAddress = async (
+    contractAddress: string
+  ): Promise<{
+    collection?: CollectionFragment
+    items: ItemFragment[]
+  }> => {
+    const {
+      data: { collections = [] },
+    } = await this.query<{
+      collections: (CollectionFragment & { items: ItemFragment[] })[]
+    }>({
+      query: getCollectionWithItemsByCollectionIdQuery(),
+      variables: { id: contractAddress.toLowerCase() },
+    })
+
+    if (collections.length > 0) {
+      const [{ items, ...collection }] = collections
+      return { collection, items }
+    }
+
+    return { collection: undefined, items: [] }
+  }
+
   fetchItems = async (): Promise<ItemFragment[]> => {
     return logExecutionTime(
       () => this.paginate(['items'], { query: getItemsQuery() }),
@@ -234,29 +289,6 @@ export class CollectionAPI extends BaseGraphAPI {
       (items, collection) => [...items, ...collection.items],
       [] as ItemFragment[]
     )
-  }
-
-  fetchCollectionWithItemsByContractAddress = async (
-    contractAddress: string
-  ): Promise<{
-    collection?: CollectionFragment
-    items: ItemFragment[]
-  }> => {
-    const {
-      data: { collections = [] },
-    } = await this.query<{
-      collections: (CollectionFragment & { items: ItemFragment[] })[]
-    }>({
-      query: getCollectionWithItemsByCollectionIdQuery(),
-      variables: { id: contractAddress.toLowerCase() },
-    })
-
-    if (collections.length > 0) {
-      const [{ items, ...collection }] = collections
-      return { collection, items }
-    }
-
-    return { collection: undefined, items: [] }
   }
 
   fetchCommittee = async (): Promise<AccountFragment[]> => {

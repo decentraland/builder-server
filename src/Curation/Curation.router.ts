@@ -14,14 +14,14 @@ import {
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
 import { CurationType } from '.'
-import { getMergedCollection } from '../Collection/utils'
+import { getMergedCollection, isTPCollection } from '../Collection/utils'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { Item } from '../Item'
+import { Item, ItemRouter } from '../Item'
 
 const validator = getValidator()
 
@@ -119,8 +119,52 @@ export class CurationRouter extends Router {
     return curationService.getLatestByIds(collectionIds)
   }
 
-  getCollectionCurationItemStats = async (_req: AuthRequest) => {
-    return {}
+  getCollectionCurationItemStats = async (req: AuthRequest) => {
+    const collectionId = server.extractFromReq(req, 'id')
+    const ethAddress = req.auth.ethAddress
+    const curationService = CurationService.byType(CurationType.COLLECTION)
+
+    await this.validateAccessToCuration(
+      curationService,
+      ethAddress,
+      collectionId
+    )
+
+    const collection = await Collection.findOne(collectionId)
+    if (!isTPCollection(collection)) {
+      throw new HTTPError(
+        'Collection is not a third party collection',
+        { id: collectionId },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    const publishedItems = await thirdPartyAPI.fetchItemsByCollection(
+      collection.third_party_id,
+      collectionId
+    )
+
+    const total = publishedItems.length
+    let approved = 0
+    let rejected = 0
+    let needsReview = 0
+
+    for (const item of publishedItems) {
+      if (item.isApproved) {
+        approved += 1
+      } else if (item.createdAt === item.reviewedAt) {
+        needsReview += 1
+      } else {
+        rejected += 1
+      }
+    }
+
+    return {
+      total,
+      approved,
+      rejected,
+      needsReview,
+    }
   }
 
   getCollectionCuration = async (req: AuthRequest) => {
@@ -298,7 +342,7 @@ export class CurationRouter extends Router {
 
     const curation = await curationService.getLatestById(id)
 
-    if (curation && curation.status === 'pending') {
+    if (curation && curation.status === CurationStatus.PENDING) {
       throw new HTTPError(
         'There is already an ongoing review request',
         { id },

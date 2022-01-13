@@ -221,7 +221,10 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     return items.length > 0
   }
 
-  isPublished = async (thirdPartyId: string, collectionId: string) => {
+  isPublished = async (
+    thirdPartyId: string,
+    collectionId: string
+  ): Promise<boolean> => {
     const {
       data: { items = [] },
     } = await this.query<{

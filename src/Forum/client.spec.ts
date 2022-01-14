@@ -1,7 +1,7 @@
 import { removeEmojis } from '.'
 
-describe('foo', () => {
-  it('bar', () => {
+describe('when removing emojis from a string that has 2 ⚡️', () => {
+  it('should return a string without the ⚡️s', () => {
     const result = removeEmojis('⚡️ VOLTZ ⚡️ Genesis Drop #ØØ')
     const expected = '  VOLTZ   Genesis Drop #ØØ'
 

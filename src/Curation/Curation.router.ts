@@ -272,13 +272,11 @@ export class CurationRouter extends Router {
       CurationType.ITEM
     )
 
-    // TODO: CollectionCuration.findByItemId()
-    const item = await Item.findOne(itemId)
-    const collectionCuration = await CollectionCuration.findOne(
-      item.collection_id
-    )
+    const collectionCuration = await CollectionCuration.findByItemId(itemId)
 
     if (!collectionCuration) {
+      const item = await Item.findOne(itemId)
+
       await this.insertCuration(
         item.collection_id,
         ethAddress,

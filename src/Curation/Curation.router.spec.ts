@@ -690,10 +690,14 @@ describe('when handling a request', () => {
         })
 
         describe('when the item collection already has a (virtual) curation', () => {
+          let collectionCuration: CollectionCurationAttributes
+
           beforeEach(() => {
+            collectionCuration = { id: 'my id' } as CollectionCurationAttributes
+
             findSpy = jest
-              .spyOn(CollectionCuration, 'findOne')
-              .mockResolvedValueOnce({ 1: 2 })
+              .spyOn(CollectionCuration, 'findByItemId')
+              .mockResolvedValueOnce(collectionCuration)
           })
 
           it('should resolve with the inserted curation', async () => {
@@ -710,7 +714,7 @@ describe('when handling a request', () => {
 
           it('should call the collection curation to check if it exists', async () => {
             await router.insertItemCuration(req)
-            expect(findSpy).toHaveBeenCalledWith(item.collection_id)
+            expect(findSpy).toHaveBeenCalledWith(req.params.id)
           })
         })
 
@@ -721,7 +725,7 @@ describe('when handling a request', () => {
               .mockResolvedValueOnce({} as any)
 
             jest
-              .spyOn(CollectionCuration, 'findOne')
+              .spyOn(CollectionCuration, 'findByItemId')
               .mockResolvedValueOnce(undefined)
           })
 

@@ -41,7 +41,7 @@ export class Bridge {
     dbItems: ItemAttributes[],
     remoteItems: ThirdPartyItemFragment[]
   ): Promise<FullItem[]> {
-    const dbTPItemIds = dbItems.map((item) => item.id)
+    const dbTPItemIds = dbItems.map((item) => item.collection_id!)
     const dbTPCollections = await Collection.findByIds(dbTPItemIds)
 
     const itemsByURN: Record<
@@ -53,6 +53,7 @@ export class Bridge {
       const collection = dbTPCollections.find(
         (collection) => collection.id === item.collection_id
       )
+
       if (!collection || !isTPCollection(collection)) {
         throw new Error(`Could not find a valid collection for item ${item.id}`)
       }

@@ -346,7 +346,7 @@ describe('Item router', () => {
         url = `/collections/${dbCollectionMock.id}/items`
       })
 
-      it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
+      it('should return all the items of a collection with their URN', () => {
         return server
           .get(buildURL(url))
           .set(createAuthHeaders('get', url))

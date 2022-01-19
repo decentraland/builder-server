@@ -221,16 +221,16 @@ export class CollectionService {
     return false
   }
 
-  // TODO: rename by getDbTPCollectionsByThirdParties?
-  public async getDbTPCollections(
-    thirdParties: ThirdPartyFragment[]
-  ): Promise<CollectionAttributes[]> {
-    if (thirdParties.length <= 0) {
-      return []
-    }
-    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
+  public async getDbTPCollections(): Promise<CollectionAttributes[]> {
+    const thirdParties = await thirdPartyAPI.fetchThirdParties()
+    return this.getDbTPCollectionsByThirdParties(thirdParties)
+  }
 
-    return Collection.findByThirdPartyIds(thirdPartyIds)
+  public async getDbTPCollectionsByManager(
+    manager: string
+  ): Promise<CollectionAttributes[]> {
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+    return this.getDbTPCollectionsByThirdParties(thirdParties)
   }
 
   public async getDBCollection(
@@ -250,6 +250,17 @@ export class CollectionService {
     return isTPCollection(dbCollection)
       ? this.getTPCollection(dbCollection)
       : this.getDCLCollection(dbCollection)
+  }
+
+  private async getDbTPCollectionsByThirdParties(
+    thirdParties: ThirdPartyFragment[]
+  ): Promise<CollectionAttributes[]> {
+    if (thirdParties.length <= 0) {
+      return []
+    }
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
+
+    return Collection.findByThirdPartyIds(thirdPartyIds)
   }
 
   private async getTPCollection(

@@ -13,7 +13,6 @@ import {
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { ItemFragment } from '../ethereum/api/fragments'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { sendDataToWarehouse } from '../warehouse'
@@ -149,12 +148,15 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [dbCollections, remoteCollections, thirdParties] = await Promise.all([
+    const [
+      dbCollections,
+      remoteCollections,
+      dbTPCollections,
+    ] = await Promise.all([
       Collection.find<CollectionAttributes>(),
       collectionAPI.fetchCollections(),
-      thirdPartyAPI.fetchThirdParties(),
+      this.service.getDbTPCollections(),
     ])
-    const dbTPCollections = await this.service.getDbTPCollections(thirdParties)
 
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
@@ -184,12 +186,15 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [dbCollections, remoteCollections, thirdParties] = await Promise.all([
+    const [
+      dbCollections,
+      remoteCollections,
+      dbTPCollections,
+    ] = await Promise.all([
       Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
-      thirdPartyAPI.fetchThirdPartiesByManager(eth_address),
+      this.service.getDbTPCollectionsByManager(eth_address),
     ])
-    const dbTPCollections = await this.service.getDbTPCollections(thirdParties)
 
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,

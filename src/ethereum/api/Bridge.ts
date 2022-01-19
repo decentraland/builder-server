@@ -1,3 +1,4 @@
+import { constants } from 'ethers'
 import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
@@ -115,13 +116,16 @@ export class Bridge {
 
     return {
       ...Bridge.toFullItem(dbItem),
+      // The total supply for TP items will be 0 as they won't be minted.
+      total_supply: 0,
+      // The price will remain as 0 as TP items will not be sold in the marketplace
+      price: '0',
+      // The benefiary will remain as the address zero as TP items will not be sold in the marketplace
+      beneficiary: constants.AddressZero,
       urn,
       in_catalyst,
       is_published: true,
-      total_supply: 0, // TODO: ??
       is_approved: remoteItem.isApproved,
-      // price: remoteItem.price,
-      // beneficiary: remoteItem.beneficiary, // TODO: ??
       blockchain_item_id: remoteItem.blockchainItemId,
       content_hash: remoteItem.contentHash || null,
       data: {
@@ -258,9 +262,6 @@ export class Bridge {
     }
   }
 
-  // TODO: This being async is weird. Problem is that TP colletions are different from everything else.
-  // An entity we can use to pass here to check if they're published doesn't exist. It should be the first items (or list of items)
-  // So we can then check if it's length is bigger than 0
   static mergeTPCollection(
     collection: CollectionAttributes,
     lastItem: ThirdPartyItemFragment

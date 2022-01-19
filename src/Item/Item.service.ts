@@ -25,7 +25,11 @@ import {
   InvalidItemURNError,
 } from './Item.errors'
 import { Item } from './Item.model'
-import { FullItem, ItemAttributes } from './Item.types'
+import {
+  FullItem,
+  ItemAttributes,
+  ThirdPartyItemAttributes,
+} from './Item.types'
 import {
   buildTPItemURN,
   getDecentralandItemURN,
@@ -166,13 +170,6 @@ export class ItemService {
     return { items, tpItems }
   }
 
-  public withOwner<T extends FullItem | ItemAttributes>(
-    items: T[],
-    ethAddress: string
-  ) {
-    return items.map((item) => ({ ...item, eth_address: ethAddress }))
-  }
-
   private async getTPCollectionItems(
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[]
@@ -216,34 +213,30 @@ export class ItemService {
   }
 
   private async getTPItem(
-    dbItem: ItemAttributes
+    dbItem: ThirdPartyItemAttributes
   ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
     let item: FullItem = Bridge.toFullItem(dbItem)
-    let collection: CollectionAttributes | undefined
+    let collection = await Collection.findOne(dbItem.collection_id)
 
-    if (dbItem.collection_id) {
-      collection = await Collection.findOne(dbItem.collection_id)
+    if (collection && isTPCollection(collection)) {
+      const urn = buildTPItemURN(
+        collection.third_party_id,
+        collection.urn_suffix,
+        dbItem.urn_suffix!
+      )
 
-      if (collection && isTPCollection(collection)) {
-        const urn = buildTPItemURN(
-          collection.third_party_id,
-          collection.urn_suffix,
-          dbItem.urn_suffix!
-        )
+      const lastItem = await thirdPartyAPI.fetchLastItem(
+        collection.third_party_id,
+        collection.urn_suffix
+      )
+      collection = lastItem
+        ? Bridge.mergeTPCollection(collection, lastItem)
+        : collection
 
-        const lastItem = await thirdPartyAPI.fetchLastItem(
-          collection.third_party_id,
-          collection.urn_suffix
-        )
-        collection = lastItem
-          ? Bridge.mergeTPCollection(collection, lastItem)
-          : collection
-
-        const remoteItem = await thirdPartyAPI.fetchItem(urn)
-        if (remoteItem) {
-          const [catalystItem] = await peerAPI.fetchWearables([urn])
-          item = Bridge.mergeTPItem(dbItem, remoteItem, catalystItem)
-        }
+      const remoteItem = await thirdPartyAPI.fetchItem(urn)
+      if (remoteItem) {
+        const [catalystItem] = await peerAPI.fetchWearables([urn])
+        item = Bridge.mergeTPItem(dbItem, remoteItem, catalystItem)
       }
     }
 

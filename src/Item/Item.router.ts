@@ -198,7 +198,7 @@ export class ItemRouter extends Router {
     ])
 
     // TODO: add sorting (we're not breaking pagination)
-    return items.concat(this.itemService.withOwner(tpItems, eth_address))
+    return items.concat(tpItems)
   }
 
   getItem = async (req: AuthRequest): Promise<FullItem> => {

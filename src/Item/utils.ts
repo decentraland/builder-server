@@ -70,7 +70,7 @@ export function decodeThirdPartyItemURN(
 }
 
 export function isTPItemURN(itemURN: string): boolean {
-  return tpwItemURNRegex.test(itemURN)
+  return tpItemURNRegex.test(itemURN)
 }
 
 // TODO: @TPW: implement this

@@ -19,6 +19,8 @@ import {
   WrongCollectionError,
 } from './Collection.errors'
 import { ThirdPartyCollectionAttributes } from '.'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { CurationStatus } from '../Curation'
 
 export class CollectionService {
   public isLockActive(lock: Date | null) {
@@ -122,14 +124,10 @@ export class CollectionService {
       // If the urn suffix is different, the collection's URN is being changed.
       if (urn_suffix !== collection.urn_suffix) {
         // We can't change the TPW collection's URN if there are already published items
-        await this.checkIfThirdPartyCollectionHasPublishedItems(
-          id,
-          collection.third_party_id!,
-          collection.urn_suffix!
-        )
+        await this.checkIfThirdPartyCollectionHasPublishedItems(id)
 
         // Check if the new URN for the collection already exists
-        await this.checkIfThirdPartyCollectionHasPublishedItems(
+        await this.checkIfThirdPartyCollectionURNExists(
           id,
           collection.third_party_id!,
           urn_suffix
@@ -145,7 +143,7 @@ export class CollectionService {
       }
 
       // Check if the URN for the new collection already exists
-      await this.checkIfThirdPartyCollectionHasPublishedItems(
+      await this.checkIfThirdPartyCollectionURNExists(
         id,
         third_party_id,
         urn_suffix
@@ -174,19 +172,12 @@ export class CollectionService {
 
   public async deleteCollection(collectionId: string): Promise<void> {
     const collection = await this.getDBCollection(collectionId)
+
     if (isTPCollection(collection)) {
-      // If it's a TPC we must check if there's an item already published under that collection urn suffix
-      const isPublished = await thirdPartyAPI.isPublished(
-        collection.third_party_id,
-        collection.urn_suffix
+      await this.checkIfThirdPartyCollectionHasPublishedItems(
+        collection.id,
+        CollectionAction.DELETE
       )
-      if (isPublished) {
-        throw new AlreadyPublishedCollectionError(
-          collection.id,
-          CollectionType.THIRD_PARTY,
-          CollectionAction.DELETE
-        )
-      }
     } else {
       // If it's a DCL collection, we must check if it was already published
       if (await this.isPublished(collection.contract_address!)) {
@@ -266,12 +257,12 @@ export class CollectionService {
   private async getTPCollection(
     dbCollection: ThirdPartyCollectionAttributes
   ): Promise<CollectionAttributes> {
-    const lastItem = await thirdPartyAPI.fetchLastItem(
-      dbCollection.third_party_id,
-      dbCollection.urn_suffix
+    const lastItemCuration = await ItemCuration.findLastByCollectionIdAndStatus(
+      dbCollection.id,
+      CurationStatus.APPROVED
     )
-    return lastItem
-      ? Bridge.mergeTPCollection(dbCollection, lastItem)
+    return lastItemCuration
+      ? Bridge.mergeTPCollection(dbCollection, lastItemCuration)
       : dbCollection
   }
 
@@ -295,20 +286,28 @@ export class CollectionService {
 
   private async checkIfThirdPartyCollectionHasPublishedItems(
     id: string,
-    thirdPartyId: string,
-    collectionUrnSuffix: string
+    action = CollectionAction.UPSERT
   ): Promise<void> {
-    const isPublished = await thirdPartyAPI.isPublished(
-      thirdPartyId,
-      collectionUrnSuffix
-    )
-
-    // We can't change the TPW collection's URN if there are already published items
-    if (isPublished) {
+    if (await ItemCuration.existsByCollectionId(id)) {
       throw new AlreadyPublishedCollectionError(
         id,
         CollectionType.THIRD_PARTY,
-        CollectionAction.UPSERT
+        action
+      )
+    }
+  }
+
+  private async checkIfThirdPartyCollectionURNExists(
+    id: string,
+    third_party_id: string,
+    urn_suffix: string,
+    action = CollectionAction.UPSERT
+  ): Promise<void> {
+    if (await Collection.isURNRepeated(id, third_party_id, urn_suffix)) {
+      throw new AlreadyPublishedCollectionError(
+        id,
+        CollectionType.THIRD_PARTY,
+        action
       )
     }
   }

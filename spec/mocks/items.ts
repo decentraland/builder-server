@@ -1,3 +1,4 @@
+import { constants } from 'ethers'
 import { v4 as uuidv4 } from 'uuid'
 import { Wearable } from '../../src/ethereum/api/peer'
 import {
@@ -17,6 +18,7 @@ import { toUnixTimestamp } from '../../src/utils/parse'
 import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
 import { isTPCollection } from '../../src/Collection/utils'
+import { Bridge } from '../../src/ethereum/api/Bridge'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
   created_at: string
@@ -60,6 +62,48 @@ export function toResultItem(
   return resultItem
 }
 
+export function asResultItem(item: ItemAttributes): ResultItem {
+  return {
+    ...Bridge.toFullItem(item),
+    created_at: item.created_at.toISOString(),
+    updated_at: item.updated_at.toISOString(),
+  }
+}
+
+export function toResultTPItem(
+  itemAttributes: ItemAttributes,
+  dbCollection?: CollectionAttributes
+): ResultItem {
+  const hasURN =
+    itemAttributes.urn_suffix && dbCollection && isTPCollection(dbCollection)
+
+  const resultItem = {
+    ...itemAttributes,
+    created_at: itemAttributes.created_at.toISOString(),
+    updated_at: itemAttributes.updated_at.toISOString(),
+    is_approved: true,
+    in_catalyst: true,
+    is_published: true,
+    urn: hasURN
+      ? buildTPItemURN(
+          dbCollection!.third_party_id!,
+          dbCollection!.urn_suffix!,
+          itemAttributes!.urn_suffix!
+        )
+      : null,
+    blockchain_item_id: itemAttributes.urn_suffix,
+    total_supply: 0,
+    price: '0',
+    beneficiary: constants.AddressZero,
+    content_hash: '',
+  }
+  delete (resultItem as Omit<typeof resultItem, 'urn_suffix'> & {
+    urn_suffix: unknown
+  }).urn_suffix
+
+  return resultItem
+}
+
 export const dbItemMock: ItemAttributes = {
   id: uuidv4(),
   urn_suffix: null,
@@ -94,6 +138,7 @@ export const dbItemMock: ItemAttributes = {
 
 export const dbTPItemMock: ThirdPartyItemAttributes = {
   ...dbItemMock,
+  blockchain_item_id: null,
   collection_id: dbTPCollectionMock.id,
   urn_suffix: '1',
 }

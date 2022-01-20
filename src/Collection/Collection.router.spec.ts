@@ -6,8 +6,9 @@ import {
   mockOwnableCanUpsert,
   mockCollectionAuthorizationMiddleware,
   mockIsCollectionPublished,
-  mockThirdPartyIsPublished,
+  mockThirdPartyCollectionIsPublished,
   mockAuthenticationSignatureValidationDate,
+  mockThirdPartyCollectionURNExists,
 } from '../../spec/utils'
 import {
   dbCollectionMock,
@@ -30,7 +31,6 @@ import {
   convertItemDatesToISO,
   dbItemMock,
   itemFragmentMock,
-  thirdPartyItemFragmentMock,
 } from '../../spec/mocks/items'
 import { ItemAttributes } from '../Item'
 import { ItemFragment } from '../ethereum/api/fragments'
@@ -43,6 +43,8 @@ import {
   FullCollection,
 } from './Collection.types'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { itemCurationMock } from '../../spec/mocks/itemCuration'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
@@ -51,6 +53,7 @@ jest.mock('../ethereum/api/thirdParty')
 jest.mock('../Committee')
 jest.mock('../utils/eth')
 jest.mock('../Item/Item.model')
+jest.mock('../Curation/ItemCuration')
 jest.mock('./Collection.model')
 jest.mock('./access')
 
@@ -197,11 +200,7 @@ describe('Collection router', () => {
 
         describe('and it already has items published', () => {
           beforeEach(() => {
-            mockThirdPartyIsPublished(
-              dbTPCollection.third_party_id,
-              dbTPCollection.urn_suffix,
-              true
-            )
+            mockThirdPartyCollectionIsPublished(dbTPCollection.id, true)
           })
 
           it("should respond with a 409 and a message signaling that the collection can't be changed because it's already published", () => {
@@ -225,13 +224,13 @@ describe('Collection router', () => {
 
         describe("and it doesn't have items already published but the new urn points to a collection that does", () => {
           beforeEach(() => {
-            mockThirdPartyIsPublished(
-              dbTPCollection.third_party_id,
-              dbTPCollection.urn_suffix,
-              false
+            mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
+            mockThirdPartyCollectionURNExists(
+              collectionToUpsert.id,
+              third_party_id,
+              urn_suffix,
+              true
             )
-
-            mockThirdPartyIsPublished(third_party_id, urn_suffix, true)
           })
 
           it("should respond with a 409 and a message signaling that the collection can't be changed because it's already published", () => {
@@ -403,7 +402,12 @@ describe('Collection router', () => {
             ;(thirdPartyAPI.isManager as jest.MockedFunction<
               typeof thirdPartyAPI.isManager
             >).mockResolvedValueOnce(true)
-            mockThirdPartyIsPublished(third_party_id, urn_suffix, true)
+            mockThirdPartyCollectionURNExists(
+              collectionToUpsert.id,
+              third_party_id,
+              urn_suffix,
+              true
+            )
           })
 
           it('should respond with a 409 and a message saying that the collection has already been published', () => {
@@ -434,7 +438,12 @@ describe('Collection router', () => {
               typeof thirdPartyAPI.isManager
             >).mockResolvedValueOnce(true)
             upsertMock = jest.fn()
-            mockThirdPartyIsPublished(third_party_id, urn_suffix, false)
+            mockThirdPartyCollectionURNExists(
+              collectionToUpsert.id,
+              third_party_id,
+              urn_suffix,
+              false
+            )
             ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
               (attributes) => {
                 newCollectionAttributes = attributes
@@ -818,7 +827,6 @@ describe('Collection router', () => {
 
   describe('when retrieving the collections of an address', () => {
     beforeEach(() => {
-      const { urn_suffix, third_party_id } = dbTPCollection
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
@@ -828,12 +836,12 @@ describe('Collection router', () => {
         []
       )
       ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
-        [{ id: third_party_id }]
+        [{ id: dbTPCollection.third_party_id }]
       )
-      ;(thirdPartyAPI.fetchLastItem as jest.Mock).mockReturnValueOnce(
-        thirdPartyItemFragmentMock
+      ;(ItemCuration.findLastByCollectionIdAndStatus as jest.Mock).mockReturnValueOnce(
+        itemCurationMock
       )
-      mockThirdPartyIsPublished(third_party_id, urn_suffix, false)
+      mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
       url = `/${wallet.address}/collections`
     })
 
@@ -853,6 +861,9 @@ describe('Collection router', () => {
                 ...toResultCollection(dbTPCollection),
                 is_published: true,
                 urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
+                reviewed_at: itemCurationMock.updated_at.toISOString(),
+                created_at: itemCurationMock.created_at.toISOString(),
+                updated_at: itemCurationMock.updated_at.toISOString(),
               },
             ],
             ok: true,
@@ -1015,11 +1026,7 @@ describe('Collection router', () => {
 
         describe('and it has third party items already published', () => {
           beforeEach(() => {
-            mockThirdPartyIsPublished(
-              dbTPCollection.third_party_id,
-              dbTPCollection.urn_suffix,
-              true
-            )
+            mockThirdPartyCollectionIsPublished(dbTPCollection.id, true)
           })
 
           it('should respond with a 409 and a message signaling that the collection has already published items', () => {
@@ -1045,11 +1052,7 @@ describe('Collection router', () => {
             const lockDate = new Date()
             mockAuthenticationSignatureValidationDate()
             dbTPCollection.lock = lockDate
-            mockThirdPartyIsPublished(
-              dbTPCollection.third_party_id,
-              dbTPCollection.urn_suffix,
-              false
-            )
+            mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
             jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
           })
 
@@ -1079,11 +1082,7 @@ describe('Collection router', () => {
             const lockDate = new Date()
             mockAuthenticationSignatureValidationDate()
             dbTPCollection.lock = lockDate
-            mockThirdPartyIsPublished(
-              dbTPCollection.third_party_id,
-              dbTPCollection.urn_suffix,
-              false
-            )
+            mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
             jest
               .spyOn(Date, 'now')
               .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)

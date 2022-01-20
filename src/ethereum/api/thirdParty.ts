@@ -7,7 +7,6 @@ import {
   thirdPartyItemFragment,
   tiersFragment,
   TierFragment,
-  IdFragment,
 } from './fragments'
 import {
   BaseGraphAPI,
@@ -92,25 +91,6 @@ const getTiersQuery = () => gql`
     }
   }
   ${tiersFragment()}
-`
-
-const itemExistsQuery = () => gql`
-  query getThirdPartyItem($urn: String) {
-    items(first: 1, where: { urn: $urn }) {
-      id
-    }
-  }
-`
-
-const isPublishedQuery = () => gql`
-  query isPublished($thirdPartyId: String, $collectionId: String) {
-    items(
-      first: 1
-      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
-    ) {
-      id
-    }
-  }
 `
 
 const isManagerQuery = () => gql`
@@ -206,31 +186,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
 
     return items[0]
-  }
-
-  itemExists = async (urn: string): Promise<boolean> => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: IdFragment[]
-    }>({
-      query: itemExistsQuery(),
-      variables: { urn },
-    })
-
-    return items.length > 0
-  }
-
-  isPublished = async (thirdPartyId: string, collectionId: string) => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: IdFragment[]
-    }>({
-      query: isPublishedQuery(),
-      variables: { thirdPartyId, collectionId },
-    })
-    return items.length > 0
   }
 
   isManager = async (

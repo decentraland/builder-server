@@ -15,6 +15,12 @@ import { thirdPartyAPI } from './thirdParty'
 import { isTPCollection } from '../../Collection/utils'
 
 export class Bridge {
+  /**
+   * Takes TP collections found in the database and merges each one with the data from the last published (blockchain) item it has.
+   * If no published item is found or a non-TP collection is supplied, it'll be returned as-is.
+   * For more info on what data is updated from the published item, see `Bridge.mergeTPCollection`
+   * @param dbCollections - TP collections from the database
+   */
   static async consolidateTPCollections(
     dbCollections: CollectionAttributes[]
   ): Promise<CollectionAttributes[]> {
@@ -38,6 +44,14 @@ export class Bridge {
     return collections
   }
 
+  /**
+   * Takes TP items found in the database and remote items from the blockchain.
+   * If the remote data exists it'll also fetch the catalyst item and merges all data.
+   * If remote data is found the item will just be converted to FullItem and returned as-is.
+   * For more info on how a full item looks, see `Bridge.toFullItem`. For more info on the merge see `Bridge.mergeTPItem`
+   * @param dbItems - Database TP items
+   * @param remoteItems - Blockchain TP items
+   */
   static async consolidateTPItems(
     dbItems: ItemAttributes[],
     remoteItems: ThirdPartyItemFragment[]
@@ -45,16 +59,10 @@ export class Bridge {
     const dbTPItemIds = dbItems.map((item) => item.collection_id!)
     const dbTPCollections = await Collection.findByIds(dbTPItemIds)
 
-    const itemsByURN: Record<
-      string,
-      { item: ItemAttributes; remoteItem?: ThirdPartyItemFragment }
-    > = {}
+    const dbTPCollectionsIndex = this.indexById(dbTPCollections)
 
-    const tpItemURNs = dbItems.map((item) => {
-      const collection = dbTPCollections.find(
-        (collection) => collection.id === item.collection_id
-      )
-
+    const itemsByURN = dbItems.map((item) => {
+      const collection = dbTPCollectionsIndex[item.collection_id!]
       if (!collection || !isTPCollection(collection)) {
         throw new Error(`Could not find a valid collection for item ${item.id}`)
       }
@@ -69,11 +77,10 @@ export class Bridge {
         (remoteItem) => remoteItem.urn === urn
       )
 
-      itemsByURN[urn] = { item, remoteItem }
-
-      return urn
+      return { item, remoteItem }
     })
 
+    const tpItemURNs = Object.keys(itemsByURN)
     const tpCatalystItems = await peerAPI.fetchWearables(tpItemURNs)
     const fullItems: FullItem[] = []
 
@@ -97,6 +104,13 @@ export class Bridge {
     return fullItems
   }
 
+  /**
+   * Merges the remote data, which comes from the blockchain, and the catalyst data (if it exists) *into* the db data
+   * The db item is first converted to a full item and then get's the appropiate data merged into it
+   * @param dbItem - Database TP item
+   * @param remoteItem - Blockchain item
+   * @param catalystItem - Catalyst item
+   */
   static mergeTPItem(
     dbItem: ItemAttributes,
     remoteItem: ThirdPartyItemFragment,
@@ -135,6 +149,13 @@ export class Bridge {
     }
   }
 
+  /**
+   * Takes collections found in the database and merges each one with the data from the remote published (blockchain) collection counterpart
+   * If no published collection is found, it'll be returned as-is.
+   * For more info on what data is updated from the published item, see `Bridge.mergeCollection`
+   * @param dbCollections - DB standard collections
+   * @param remoteCollections - Blockchain standard collections
+   */
   static async consolidateCollections(
     dbCollections: CollectionAttributes[],
     remoteCollections: CollectionFragment[]
@@ -172,6 +193,14 @@ export class Bridge {
     return collections
   }
 
+  /**
+   * Takes items found in the database and merges each one with the data from the remote published (blockchain) item counterpart
+   * If the published item exists it'll fech the Catalyst item and use its data for the merge aswell.
+   * If no published item is found, it'll be returned as-is.
+   * For more info on what data is updated from the published item, see `Bridge.mergeItem`
+   * @param dbItems - DB stantdard items
+   * @param remoteItems - blockchain standard items (inside a collection)
+   */
   static async consolidateItems(
     dbItems: ItemAttributes[],
     remoteItems: ItemFragment[]
@@ -243,6 +272,12 @@ export class Bridge {
     return items
   }
 
+  /**
+   * Takes a db standard collection and a published (blockchain) collection and merges the remote data *into* the db object
+   * to get the updated information we don't store in the database (like if the collection is approved)
+   * @param dbCollection - DB standard collection
+   * @param remoteCollection - Blockchain collection
+   */
   static mergeCollection(
     dbCollection: CollectionAttributes,
     remoteCollection: CollectionFragment
@@ -262,6 +297,12 @@ export class Bridge {
     }
   }
 
+  /**
+   * Takes a db TP collection and its last published (blockchain) item and merges the remote data *into* the db object
+   * to get the updated information we don't store in the database (like reviewed at)
+   * @param collection - TP db collection
+   * @param lastItem - Last blockchain item
+   */
   static mergeTPCollection(
     collection: CollectionAttributes,
     lastItem: ThirdPartyItemFragment
@@ -279,6 +320,14 @@ export class Bridge {
     }
   }
 
+  /**
+   * Takes a db standard item, a published (blockchain) data and the catalyst item and merges the remote data *into* the db object
+   * to get the updated information we don't store in the database (like the price or if it's approved)
+   * @param dbItem - DB standard item
+   * @param remoteItem - Blockchain item
+   * @param remoteCollection - Blockchain collection
+   * @param catalystItem - Catalyst item
+   */
   static mergeItem(
     dbItem: ItemAttributes,
     remoteItem: ItemFragment,

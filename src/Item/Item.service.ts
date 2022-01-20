@@ -153,6 +153,11 @@ export class ItemService {
     return { dbTPItems, remoteTPItems }
   }
 
+  /**
+   *
+   * @param allItems
+   * @returns
+   */
   public splitItems(
     allItems: ItemAttributes[]
   ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {

@@ -154,9 +154,8 @@ export class ItemService {
   }
 
   /**
-   *
-   * @param allItems
-   * @returns
+   * Takes a list of items and returns an object containing two sets, one of standard items and the other of TP items
+   * @param allItems - Items to split, can be any combination of item types
    */
   public splitItems(
     allItems: ItemAttributes[]

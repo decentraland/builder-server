@@ -1,6 +1,6 @@
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
-import { Wallet } from 'ethers'
+import { constants, Wallet } from 'ethers'
 import { utils } from 'decentraland-commons'
 import {
   createAuthHeaders,
@@ -249,6 +249,8 @@ describe('Item router', () => {
                 ...resultingItem,
                 in_catalyst: false,
                 is_approved: true,
+                beneficiary: constants.AddressZero,
+                price: '0',
                 total_supply: 0,
                 collection_id: dbTPItemMock.collection_id,
                 blockchain_item_id: thirdPartyItemFragmentMock.blockchainItemId,
@@ -305,9 +307,10 @@ describe('Item router', () => {
               resultItemNotPublished,
               {
                 ...resultingItem,
-                eth_address: wallet.address,
                 in_catalyst: false,
                 is_approved: true,
+                beneficiary: constants.AddressZero,
+                price: '0',
                 total_supply: 0,
                 collection_id: dbTPItemMock.collection_id,
                 blockchain_item_id: thirdPartyItemFragmentMock.blockchainItemId,
@@ -340,7 +343,7 @@ describe('Item router', () => {
         url = `/collections/${dbCollectionMock.id}/items`
       })
 
-      it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
+      it('should return all the items of a collection with their URN', () => {
         return server
           .get(buildURL(url))
           .set(createAuthHeaders('get', url))
@@ -400,7 +403,9 @@ describe('Item router', () => {
                   ...resultingItem,
                   in_catalyst: false,
                   is_approved: true,
+                  beneficiary: constants.AddressZero,
                   total_supply: 0,
+                  price: '0',
                   collection_id: dbTPItemMock.collection_id,
                   blockchain_item_id:
                     thirdPartyItemFragmentMock.blockchainItemId,

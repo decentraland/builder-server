@@ -29,9 +29,10 @@ export function getDecentralandItemURN(
 export function toDBItem(item: FullItem): ItemAttributes {
   const attributes = {
     ...item,
-    urn_suffix: item.urn
-      ? decodeThirdPartyItemURN(item.urn).item_urn_suffix
-      : null,
+    urn_suffix:
+      item.urn && isTPItemURN(item.urn)
+        ? decodeThirdPartyItemURN(item.urn).item_urn_suffix
+        : null,
   }
   return utils.omit(attributes, [
     'urn',
@@ -76,6 +77,10 @@ export function decodeThirdPartyItemURN(
     collection_urn_suffix: matches[3],
     item_urn_suffix: matches[4],
   }
+}
+
+export function isTPItemURN(itemURN: string): boolean {
+  return tpItemURNRegex.test(itemURN)
 }
 
 export async function getMergedItem(id: string): Promise<FullItem> {

@@ -1,3 +1,4 @@
+import { constants } from 'ethers'
 import {
   dbItemMock,
   dbTPItemMock,
@@ -163,6 +164,8 @@ describe('getMergedItem', () => {
           is_approved: thirdPartyItemFragmentMock.isApproved,
           blockchain_item_id: thirdPartyItemFragmentMock.blockchainItemId,
           urn: thirdPartyItemFragmentMock.urn,
+          price: '0',
+          beneficiary: constants.AddressZero,
           data: { ...item.data, category: undefined },
         })
       })

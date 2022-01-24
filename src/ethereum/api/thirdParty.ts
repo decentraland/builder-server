@@ -71,7 +71,7 @@ const getItemQuery = () => gql`
   ${thirdPartyItemFragment()}
 `
 
-const getLastItemQuery = () => gql`
+const getLastReviewedItemQuery = () => gql`
   query getLastItem($thirdPartyId: String, $collectionId: String) {
     items(
       first: 1
@@ -186,7 +186,7 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     } = await this.query<{
       items: ThirdPartyItemFragment[]
     }>({
-      query: getLastItemQuery(),
+      query: getLastReviewedItemQuery(),
       variables: { thirdPartyId, collectionId },
     })
 

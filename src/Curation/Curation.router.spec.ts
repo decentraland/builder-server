@@ -1,8 +1,7 @@
 import { ExpressApp } from '../common/ExpressApp'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { dbItemMock, thirdPartyItemFragmentMock } from '../../spec/mocks/items'
-import { Collection, CollectionAttributes } from '../Collection'
+import { dbItemMock } from '../../spec/mocks/items'
+import { Collection } from '../Collection'
 import { Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { AuthRequest } from '../middleware'
@@ -17,9 +16,8 @@ import { CurationStatus } from './Curation.types'
 import {
   collectionFragmentMock,
   dbCollectionMock,
-  dbTPCollectionMock,
 } from '../../spec/mocks/collections'
-import { toUnixTimestamp } from '../utils/parse'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
@@ -100,7 +98,18 @@ describe('when handling a request', () => {
             { id: 'collectionId2' },
           ] as any)
 
-        const getAllLatestForCollectionsSpy = jest
+        jest
+          .spyOn(thirdPartyAPI, 'fetchThirdParties')
+          .mockResolvedValueOnce([{ id: 'thirdPartyRecordId' } as any])
+
+        const findByThirdPartyIdsSpy = jest
+          .spyOn(Collection, 'findByThirdPartyIds')
+          .mockResolvedValueOnce([
+            { id: 'tpCollectionId1' },
+            { id: 'tpCollectionId2' },
+          ] as any)
+
+        const getLatestByIdsCollectionsSpy = jest
           .spyOn(service, 'getLatestByIds')
           .mockResolvedValueOnce([])
 
@@ -119,9 +128,15 @@ describe('when handling a request', () => {
           'contractAddress2',
         ])
 
-        expect(getAllLatestForCollectionsSpy).toHaveBeenCalledWith([
+        expect(findByThirdPartyIdsSpy).toHaveBeenCalledWith([
+          'thirdPartyRecordId',
+        ])
+
+        expect(getLatestByIdsCollectionsSpy).toHaveBeenCalledWith([
           'collectionId1',
           'collectionId2',
+          'tpCollectionId1',
+          'tpCollectionId2',
         ])
       })
     })
@@ -158,117 +173,6 @@ describe('when handling a request', () => {
 
       it('should resolve with the expected curation', async () => {
         expect(await router.getCollectionCuration(req)).toEqual({})
-      })
-    })
-  })
-
-  describe('when trying to get the item stats for a collection curation', () => {
-    let req: AuthRequest
-    let collection: CollectionAttributes
-
-    describe('when the caller has no access to the collection', () => {
-      beforeEach(() => {
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-        } as any
-
-        mockServiceWithAccess(CollectionCuration, false)
-      })
-
-      it('should reject with an unauthorized message', async () => {
-        await expect(
-          router.getCollectionCurationItemStats(req)
-        ).rejects.toThrowError('Unauthorized')
-      })
-    })
-
-    describe('when the collection is not a TP collection', () => {
-      beforeEach(() => {
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-        } as any
-        collection = { ...dbCollectionMock }
-
-        mockServiceWithAccess(CollectionCuration, true)
-
-        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
-      })
-
-      it('should reject with an bad request', async () => {
-        await expect(
-          router.getCollectionCurationItemStats(req)
-        ).rejects.toThrowError('Collection is not a third party collection')
-      })
-    })
-
-    describe('when there are no remote published items', () => {
-      beforeEach(() => {
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-        } as any
-        collection = { ...dbTPCollectionMock }
-
-        mockServiceWithAccess(CollectionCuration, true)
-
-        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
-        jest
-          .spyOn(thirdPartyAPI, 'fetchItemsByCollection')
-          .mockResolvedValueOnce([])
-      })
-
-      it('should return 0 for all stats', async () => {
-        await expect(
-          router.getCollectionCurationItemStats(req)
-        ).resolves.toStrictEqual({
-          total: 0,
-          approved: 0,
-          rejected: 0,
-          needsReview: 0,
-        })
-      })
-    })
-
-    describe('when there are remote published items', () => {
-      beforeEach(() => {
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-        } as any
-        collection = { ...dbTPCollectionMock }
-
-        mockServiceWithAccess(CollectionCuration, true)
-
-        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
-        jest
-          .spyOn(thirdPartyAPI, 'fetchItemsByCollection')
-          .mockResolvedValueOnce([
-            // Approved
-            { ...thirdPartyItemFragmentMock, isApproved: true },
-            { ...thirdPartyItemFragmentMock, isApproved: true },
-            // Rejected
-            {
-              ...thirdPartyItemFragmentMock,
-              isApproved: false,
-              reviewedAt: toUnixTimestamp(Date.now()),
-            },
-            // Needs review
-            { ...thirdPartyItemFragmentMock, isApproved: false },
-            { ...thirdPartyItemFragmentMock, isApproved: false },
-          ])
-      })
-
-      it('should count them for each related total', async () => {
-        await expect(
-          router.getCollectionCurationItemStats(req)
-        ).resolves.toStrictEqual({
-          total: 5,
-          approved: 2,
-          rejected: 1,
-          needsReview: 2,
-        })
       })
     })
   })

@@ -40,7 +40,10 @@ export type ItemAttributes = {
   updated_at: Date
 }
 
-export type ThirdPartyItemAttributes = ItemAttributes & { urn_suffix: string }
+export type ThirdPartyItemAttributes = ItemAttributes & {
+  urn_suffix: string
+  collection_id: string
+}
 
 export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   /**

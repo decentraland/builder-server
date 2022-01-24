@@ -2,6 +2,7 @@ import { utils } from 'decentraland-commons'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { matchers } from '../common/matchers'
 import { Collection } from './Collection.model'
 import {
@@ -13,7 +14,6 @@ import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from './Collection.errors'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 
 export const tpCollectionURNRegex = new RegExp(
   `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot})$`

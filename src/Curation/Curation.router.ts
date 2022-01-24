@@ -5,23 +5,26 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, AuthRequest } from '../middleware'
 import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
-import { CurationStatus, patchCurationSchema } from './Curation.types'
+import { getMergedCollection, isTPCollection } from '../Collection/utils'
+import { Item } from '../Item'
+import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import {
+  CurationStatus,
+  CurationType,
+  patchCurationSchema,
+} from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
-import { CurationType } from '.'
-import { getMergedCollection, isTPCollection } from '../Collection/utils'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from './CollectionCuration'
-import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { Item } from '../Item'
 
 const validator = getValidator()
 
@@ -68,6 +71,8 @@ export class CurationRouter extends Router {
       server.handleRequest(this.insertCollectionCuration)
     )
 
+    // TODO: '/collections/:id/itemCurations'
+
     this.router.get(
       '/items/:id/curation',
       withAuthentication,
@@ -78,6 +83,12 @@ export class CurationRouter extends Router {
       '/items/:id/curation',
       withAuthentication,
       server.handleRequest(this.updateItemCuration)
+    )
+
+    this.router.post(
+      '/items/:id/curation',
+      withAuthentication,
+      server.handleRequest(this.insertItemCuration)
     )
 
     this.router.post(
@@ -104,13 +115,10 @@ export class CurationRouter extends Router {
       (collection) => collection.id
     )
 
-    const [dbCollections, thirdParties] = await Promise.all([
+    const [dbCollections, dbTPCollections] = await Promise.all([
       Collection.findByContractAddresses(contractAddresses),
-      thirdPartyAPI.fetchThirdPartiesByManager(ethAddress),
+      new CollectionService().getDbTPCollections(),
     ])
-    const dbTPCollections = await new CollectionService().getDbTPCollections(
-      thirdParties
-    )
 
     const collectionIds = dbCollections
       .concat(dbTPCollections)

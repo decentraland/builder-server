@@ -94,6 +94,7 @@ export const dbItemMock: ItemAttributes = {
 
 export const dbTPItemMock: ThirdPartyItemAttributes = {
   ...dbItemMock,
+  collection_id: dbTPCollectionMock.id,
   urn_suffix: '1',
 }
 

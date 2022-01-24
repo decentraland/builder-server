@@ -303,7 +303,7 @@ export function mockIsCollectionPublished(
  * @param collectionUrnSuffix - The collection urn suffix to mock the response for.
  * @param hasItems - If the third party collection has items or not.
  */
-export function mockThirdPartyCollectionWithItems(
+export function mockThirdPartyIsPublished(
   thirdPartyId: string,
   collectionUrnSuffix: string,
   hasItems: boolean

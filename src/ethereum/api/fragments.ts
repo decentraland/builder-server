@@ -69,6 +69,11 @@ export const thirdPartyItemFragment = () => gql`
   fragment thirdPartyItemFragment on Item {
     urn
     blockchainItemId
+    contentHash
+    isApproved
+    reviewedAt
+    updatedAt
+    createdAt
     metadata {
       itemWearable {
         name
@@ -77,8 +82,6 @@ export const thirdPartyItemFragment = () => gql`
         bodyShapes
       }
     }
-    rawMetadata
-    isApproved
     thirdParty {
       id
     }
@@ -109,6 +112,10 @@ export const tiersFragment = () => gql`
     price
   }
 `
+
+export type IdFragment = {
+  id: string
+}
 
 export type TierFragment = {
   id: string
@@ -151,30 +158,6 @@ export type ThirdPartyFragment = {
   metadata: ThirdPartyMetadata
 }
 
-export type ThirdPartyMetadata = {
-  type: ThirdPartyMetadataType
-  thirdParty: { name: string; description: string } | null
-}
-
-export enum ThirdPartyMetadataType {
-  THIRD_PARTY_V1 = 'third_party_v1',
-}
-
-enum BodyShape {
-  BaseMale,
-  BaseFemale,
-}
-
-enum MetadataType {
-  third_party_v1,
-  item_wearable_v1,
-}
-
-type ThirdPartyItemMetadata = {
-  type: MetadataType | undefined
-  itemWearable: ThirdPartyItemWearableMetadata
-}
-
 type ThirdPartyItemWearableMetadata = {
   name: string | null
   description: string | null
@@ -182,14 +165,42 @@ type ThirdPartyItemWearableMetadata = {
   bodyShapes: BodyShape[] | null
 }
 
-export type ThirdPartyItemsFragment = {
+export type ThirdPartyItemFragment = {
   urn: string
   blockchainItemId: string
-  metadata: ThirdPartyItemMetadata
+  contentHash: string
   isApproved: boolean
+  reviewedAt: string
+  updatedAt: string
+  createdAt: string
+  metadata: ThirdPartyItemMetadata
   thirdParty: {
     id: string
   }
+}
+
+export type ThirdPartyMetadata = {
+  type: ThirdPartyMetadataType
+  thirdParty: { name: string; description: string } | null
+}
+
+type ThirdPartyItemMetadata = {
+  type: ThirdPartyItemMetadataType | undefined
+  itemWearable: ThirdPartyItemWearableMetadata
+}
+
+export enum ThirdPartyMetadataType {
+  THIRD_PARTY_V1 = 'third_party_v1',
+}
+
+export enum ThirdPartyItemMetadataType {
+  third_party_v1 = 'third_party_v1',
+  item_wearable_v1 = 'item_wearable_v1',
+}
+
+enum BodyShape {
+  BaseMale,
+  BaseFemale,
 }
 
 export type AccountFragment = {

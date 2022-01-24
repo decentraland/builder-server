@@ -24,11 +24,7 @@ async function run() {
     const dbItems = await getDbItems()
     const remoteItems = await getRemoteItems()
     const catalystItems = await getCatalystItems(remoteItems)
-    const consolidatedItems = await consolidate(
-      dbItems,
-      remoteItems,
-      catalystItems
-    )
+    const consolidatedItems = await consolidate(dbItems, remoteItems)
 
     const catalystItemsByUrn = catalystItems.reduce((acc, item) => {
       acc[item.id] = item
@@ -113,16 +109,11 @@ async function getCatalystItems(remoteItems: ItemFragment[]) {
 
 async function consolidate(
   dbItems: ItemAttributes[],
-  remoteItems: ItemFragment[],
-  catalystItems: Wearable[]
+  remoteItems: ItemFragment[]
 ) {
   console.log('Items: Consolidating...')
 
-  const consolidated = await Bridge.consolidateItems(
-    dbItems,
-    remoteItems,
-    catalystItems
-  )
+  const consolidated = await Bridge.consolidateItems(dbItems, remoteItems)
 
   console.log('Items: Consolidated #', consolidated.length)
 

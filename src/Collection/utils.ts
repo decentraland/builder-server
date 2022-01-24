@@ -4,13 +4,17 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { matchers } from '../common/matchers'
 import { Collection } from './Collection.model'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  CollectionAttributes,
+  ThirdPartyCollectionAttributes,
+  FullCollection,
+} from './Collection.types'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from './Collection.errors'
 
-export const tpwCollectionURNRegex = new RegExp(
+export const tpCollectionURNRegex = new RegExp(
   `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot})$`
 )
 
@@ -27,8 +31,10 @@ export function getThirdPartyCollectionURN(
   return `${third_party_id}:${urn_suffix}`
 }
 
-export function isTPCollection(collection: CollectionAttributes): boolean {
-  return collection.third_party_id !== null && collection.urn_suffix !== null
+export function isTPCollection(
+  collection: CollectionAttributes
+): collection is ThirdPartyCollectionAttributes {
+  return !!collection.third_party_id && !!collection.urn_suffix
 }
 
 /**
@@ -40,6 +46,7 @@ export function toFullCollection(
   dbCollection: CollectionAttributes
 ): FullCollection {
   const { third_party_id, urn_suffix, contract_address } = dbCollection
+
   return {
     ...utils.omit(dbCollection, ['urn_suffix', 'third_party_id']),
     urn:
@@ -86,7 +93,7 @@ export function toDBCollection(
  * @param urn - The URN to be checked.
  */
 export function hasTPCollectionURN(collection: FullCollection) {
-  return collection.urn && tpwCollectionURNRegex.test(collection.urn)
+  return collection.urn && tpCollectionURNRegex.test(collection.urn)
 }
 
 /**
@@ -98,9 +105,9 @@ export function hasTPCollectionURN(collection: FullCollection) {
 export function decodeTPCollectionURN(
   urn: string
 ): { third_party_id: string; network: string; urn_suffix: string } {
-  const matches = tpwCollectionURNRegex.exec(urn)
+  const matches = tpCollectionURNRegex.exec(urn)
   if (matches === null) {
-    throw new Error('The given collection URN is not TWP compliant')
+    throw new Error('The given collection URN is not Third Party compliant')
   }
 
   return {
@@ -114,7 +121,7 @@ export function decodeTPCollectionURN(
  * Will return a collection formed by merging the collection present in
  * the database and the one found in the graph.
  */
-// TODO: @TPW: `getMergedCollection` is using getRemoteCollection by collection_address. Does not support TPW
+// TODO: @TPW: `getMergedCollection` is using collectionAPI.fetchCollection by collection_address. Does not support TPW
 export async function getMergedCollection(
   id: string
 ): Promise<CollectionAttributes> {
@@ -124,7 +131,7 @@ export async function getMergedCollection(
     throw new NonExistentCollectionError(id)
   }
 
-  const remoteCollection = await getRemoteCollection(
+  const remoteCollection = await collectionAPI.fetchCollection(
     dbCollection.contract_address!
   )
 
@@ -134,9 +141,3 @@ export async function getMergedCollection(
 
   return Bridge.mergeCollection(dbCollection, remoteCollection)
 }
-
-export const getRemoteCollection = async (contractAddress: string) =>
-  (await collectionAPI.fetchCollection(contractAddress)) || undefined
-
-export const getRemoteCollections = async () =>
-  await collectionAPI.fetchCollections()

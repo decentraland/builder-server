@@ -6,15 +6,16 @@ import {
   mockOwnableCanUpsert,
   mockCollectionAuthorizationMiddleware,
   mockIsCollectionPublished,
-  mockThirdPartyCollectionWithItems,
+  mockThirdPartyIsPublished,
   mockAuthenticationSignatureValidationDate,
 } from '../../spec/utils'
 import {
-  collectionAttributesMock,
+  dbCollectionMock,
   collectionDataMock,
-  collectionFragment,
+  collectionFragmentMock,
   convertCollectionDatesToISO,
   ResultCollection,
+  dbTPCollectionMock,
   toResultCollection,
 } from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
@@ -29,13 +30,18 @@ import {
   convertItemDatesToISO,
   dbItemMock,
   itemFragmentMock,
+  thirdPartyItemFragmentMock,
 } from '../../spec/mocks/items'
 import { ItemAttributes } from '../Item'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
 import { Collection } from './Collection.model'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  CollectionAttributes,
+  ThirdPartyCollectionAttributes,
+  FullCollection,
+} from './Collection.types'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 
 const server = supertest(app.getApp())
@@ -50,11 +56,13 @@ jest.mock('./access')
 
 describe('Collection router', () => {
   let dbCollection: CollectionAttributes
+  let dbTPCollection: ThirdPartyCollectionAttributes
   let resultingCollectionAttributes: ResultCollection
   let url: string
 
   beforeEach(() => {
-    dbCollection = { ...collectionAttributesMock }
+    dbCollection = { ...dbCollectionMock }
+    dbTPCollection = { ...dbTPCollectionMock }
     resultingCollectionAttributes = toResultCollection(dbCollection)
   })
 
@@ -64,22 +72,24 @@ describe('Collection router', () => {
 
   describe('when upserting a collection', () => {
     const network = 'ropsten'
-    const urn_suffix = 'a-urn-suffix'
-    const thirdPartySuffix = 'a-thirdparty-id'
-    const baseThirdPartyId = 'urn:decentraland:ropsten:collections-thirdparty'
-    const third_party_id = `${baseThirdPartyId}:${thirdPartySuffix}`
+    let urn_suffix: string
+    let third_party_id: string
     let urn: string
     let collectionToUpsert: FullCollection
+
     beforeEach(() => {
       url = `/collections/${dbCollection.id}`
+      urn_suffix = dbTPCollection.urn_suffix
+      third_party_id = dbTPCollection.third_party_id
     })
 
     describe('and the collection id is different than the one provided as the collection data', () => {
       let otherId: string
+
       beforeEach(() => {
         otherId = 'bec9eb58-2ac0-11ec-8d3d-0242ac130003'
         collectionToUpsert = {
-          ...toFullCollection(collectionAttributesMock),
+          ...toFullCollection(dbCollectionMock),
           id: otherId,
         }
       })
@@ -131,16 +141,8 @@ describe('Collection router', () => {
     })
 
     describe('when the collection is a third party collection', () => {
-      let dbTPCollection: CollectionAttributes
       beforeEach(() => {
         urn = `${third_party_id}:${urn_suffix}`
-        dbTPCollection = {
-          ...dbCollection,
-          eth_address: '',
-          urn_suffix,
-          third_party_id,
-          contract_address: '',
-        }
         collectionToUpsert = {
           ...toFullCollection(dbTPCollection),
           urn,
@@ -195,9 +197,9 @@ describe('Collection router', () => {
 
         describe('and it already has items published', () => {
           beforeEach(() => {
-            mockThirdPartyCollectionWithItems(
-              dbTPCollection.third_party_id!,
-              dbTPCollection.urn_suffix!,
+            mockThirdPartyIsPublished(
+              dbTPCollection.third_party_id,
+              dbTPCollection.urn_suffix,
               true
             )
           })
@@ -223,13 +225,13 @@ describe('Collection router', () => {
 
         describe("and it doesn't have items already published but the new urn points to a collection that does", () => {
           beforeEach(() => {
-            mockThirdPartyCollectionWithItems(
-              dbTPCollection.third_party_id!,
-              dbTPCollection.urn_suffix!,
+            mockThirdPartyIsPublished(
+              dbTPCollection.third_party_id,
+              dbTPCollection.urn_suffix,
               false
             )
 
-            mockThirdPartyCollectionWithItems(third_party_id, urn_suffix!, true)
+            mockThirdPartyIsPublished(third_party_id, urn_suffix, true)
           })
 
           it("should respond with a 409 and a message signaling that the collection can't be changed because it's already published", () => {
@@ -326,6 +328,7 @@ describe('Collection router', () => {
       describe('and the collection exists and is not locked', () => {
         let upsertMock: jest.Mock
         let newCollectionAttributes: CollectionAttributes
+
         beforeEach(() => {
           upsertMock = jest.fn()
           ;(thirdPartyAPI.isManager as jest.MockedFunction<
@@ -400,7 +403,7 @@ describe('Collection router', () => {
             ;(thirdPartyAPI.isManager as jest.MockedFunction<
               typeof thirdPartyAPI.isManager
             >).mockResolvedValueOnce(true)
-            mockThirdPartyCollectionWithItems(third_party_id, urn_suffix, true)
+            mockThirdPartyIsPublished(third_party_id, urn_suffix, true)
           })
 
           it('should respond with a 409 and a message saying that the collection has already been published', () => {
@@ -425,12 +428,13 @@ describe('Collection router', () => {
         describe("and there aren't any items published with the collection id", () => {
           let upsertMock: jest.Mock
           let newCollectionAttributes: CollectionAttributes
+
           beforeEach(() => {
             ;(thirdPartyAPI.isManager as jest.MockedFunction<
               typeof thirdPartyAPI.isManager
             >).mockResolvedValueOnce(true)
             upsertMock = jest.fn()
-            mockThirdPartyCollectionWithItems(third_party_id, urn_suffix, false)
+            mockThirdPartyIsPublished(third_party_id, urn_suffix, false)
             ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
               (attributes) => {
                 newCollectionAttributes = attributes
@@ -789,6 +793,7 @@ describe('Collection router', () => {
         []
       )
       ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
+      ;(thirdPartyAPI.fetchThirdParties as jest.Mock).mockReturnValueOnce([])
       url = `/collections`
     })
 
@@ -812,26 +817,23 @@ describe('Collection router', () => {
   })
 
   describe('when retrieving the collections of an address', () => {
-    let thirdPartyDbCollection: CollectionAttributes
-
     beforeEach(() => {
-      thirdPartyDbCollection = {
-        ...collectionAttributesMock,
-        urn_suffix: 'thesuffix',
-        third_party_id:
-          'urn:decentraland:mumbai:collections-thirdparty:third-party-id',
-      }
+      const { urn_suffix, third_party_id } = dbTPCollection
       ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
-        thirdPartyDbCollection,
+        dbTPCollection,
       ])
       ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock).mockReturnValueOnce(
         []
       )
-      ;(thirdPartyAPI.fetchThirdPartyIds as jest.Mock).mockReturnValueOnce([
-        { id: thirdPartyDbCollection.id },
-      ])
+      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
+        [{ id: third_party_id }]
+      )
+      ;(thirdPartyAPI.fetchLastItem as jest.Mock).mockReturnValueOnce(
+        thirdPartyItemFragmentMock
+      )
+      mockThirdPartyIsPublished(third_party_id, urn_suffix, false)
       url = `/${wallet.address}/collections`
     })
 
@@ -848,9 +850,9 @@ describe('Collection router', () => {
                 urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
               },
               {
-                ...toResultCollection(thirdPartyDbCollection),
-                eth_address: wallet.address,
-                urn: `${thirdPartyDbCollection.third_party_id}:${thirdPartyDbCollection.urn_suffix}`,
+                ...toResultCollection(dbTPCollection),
+                is_published: true,
+                urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
               },
             ],
             ok: true,
@@ -889,6 +891,7 @@ describe('Collection router', () => {
   describe('when locking a collection', () => {
     let now: number
     let lock: Date
+
     beforeEach(() => {
       now = 1633022119407
       lock = new Date(now)
@@ -962,20 +965,18 @@ describe('Collection router', () => {
 
   describe('when deleting a collection', () => {
     beforeEach(() => {
-      url = `/collections/${dbCollection.id}`
+      url = `/collections/${dbTPCollection.id}`
     })
 
     describe('and the collection is a TP collection', () => {
       beforeEach(() => {
-        dbCollection.urn_suffix = 'collection-urn-suffix'
-        dbCollection.third_party_id = 'third-party-id'
-        mockExistsMiddleware(Collection, dbCollection.id)
+        mockExistsMiddleware(Collection, dbTPCollection.id)
       })
 
       describe('and the user is not a manager of the TP collection', () => {
         beforeEach(() => {
           mockCollectionAuthorizationMiddleware(
-            dbCollection.id,
+            dbTPCollection.id,
             wallet.address,
             true,
             false
@@ -994,7 +995,7 @@ describe('Collection router', () => {
                   ethAddress: wallet.address,
                   tableName: Collection.tableName,
                 },
-                error: `Unauthorized user ${wallet.address} for collections ${dbCollection.id}`,
+                error: `Unauthorized user ${wallet.address} for collections ${dbTPCollection.id}`,
               })
             })
         })
@@ -1003,20 +1004,20 @@ describe('Collection router', () => {
       describe('and the user is a manager of the TP collection', () => {
         beforeEach(() => {
           mockCollectionAuthorizationMiddleware(
-            dbCollection.id,
+            dbTPCollection.id,
             wallet.address,
             true
           )
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(dbCollection)
+          >).mockResolvedValueOnce(dbTPCollection)
         })
 
         describe('and it has third party items already published', () => {
           beforeEach(() => {
-            mockThirdPartyCollectionWithItems(
-              dbCollection.third_party_id!,
-              dbCollection.urn_suffix!,
+            mockThirdPartyIsPublished(
+              dbTPCollection.third_party_id,
+              dbTPCollection.urn_suffix,
               true
             )
           })
@@ -1031,7 +1032,7 @@ describe('Collection router', () => {
                   error:
                     "The third party collection already has published items. It can't be deleted.",
                   data: {
-                    id: dbCollection.id,
+                    id: dbTPCollection.id,
                   },
                   ok: false,
                 })
@@ -1043,10 +1044,10 @@ describe('Collection router', () => {
           beforeEach(() => {
             const lockDate = new Date()
             mockAuthenticationSignatureValidationDate()
-            dbCollection.lock = lockDate
-            mockThirdPartyCollectionWithItems(
-              dbCollection.third_party_id!,
-              dbCollection.urn_suffix!,
+            dbTPCollection.lock = lockDate
+            mockThirdPartyIsPublished(
+              dbTPCollection.third_party_id,
+              dbTPCollection.urn_suffix,
               false
             )
             jest.spyOn(Date, 'now').mockReturnValueOnce(lockDate.getTime())
@@ -1065,7 +1066,7 @@ describe('Collection router', () => {
                 expect(response.body).toEqual({
                   error: "The collection is locked. It can't be deleted.",
                   data: {
-                    id: dbCollection.id,
+                    id: dbTPCollection.id,
                   },
                   ok: false,
                 })
@@ -1077,10 +1078,10 @@ describe('Collection router', () => {
           beforeEach(() => {
             const lockDate = new Date()
             mockAuthenticationSignatureValidationDate()
-            dbCollection.lock = lockDate
-            mockThirdPartyCollectionWithItems(
-              dbCollection.third_party_id!,
-              dbCollection.urn_suffix!,
+            dbTPCollection.lock = lockDate
+            mockThirdPartyIsPublished(
+              dbTPCollection.third_party_id,
+              dbTPCollection.urn_suffix,
               false
             )
             jest
@@ -1104,10 +1105,10 @@ describe('Collection router', () => {
                 })
 
                 expect(Collection.delete).toHaveBeenCalledWith({
-                  id: dbCollection.id,
+                  id: dbTPCollection.id,
                 })
                 expect(Item.delete).toHaveBeenCalledWith({
-                  collection_id: dbCollection.id,
+                  collection_id: dbTPCollection.id,
                 })
               })
           })
@@ -1117,7 +1118,6 @@ describe('Collection router', () => {
 
     describe('and the collection is a DCL collection', () => {
       beforeEach(() => {
-        dbCollection.urn_suffix = null
         mockExistsMiddleware(Collection, dbCollection.id)
         mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
         ;(Collection.findOne as jest.MockedFunction<
@@ -1226,9 +1226,7 @@ describe('Collection router', () => {
 
     describe("and the remote collection doesn't exist yet", () => {
       beforeEach(() => {
-        ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
-          []
-        )
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce([])
         ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
           undefined
         )
@@ -1260,11 +1258,12 @@ describe('Collection router', () => {
           id: '2f161c60-aee6-4bae-97fa-4642b3680a5c',
         }
         dbItemMock.blockchain_item_id = null
-        ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
-          [dbItemMock, anotherDBItem]
-        )
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce([
+          dbItemMock,
+          anotherDBItem,
+        ])
         ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-          collectionFragment
+          collectionFragmentMock
         )
       })
 
@@ -1298,16 +1297,14 @@ describe('Collection router', () => {
             blockchainId: '1',
           }
 
-          ;(Item.findOrderedItemsByCollectionId as jest.Mock).mockResolvedValueOnce(
-            [dbItemMock, anotherDBItem]
-          )
+          ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce([
+            dbItemMock,
+            anotherDBItem,
+          ])
           // Items are reverted in order in the response that comes from the graph
           ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
             typeof collectionAPI.fetchItemsByContractAddress
           >).mockResolvedValueOnce([anotherItemFragment, itemFragmentMock])
-          ;(Collection.findByContractAddresses as jest.MockedFunction<
-            typeof Collection.findByContractAddresses
-          >).mockResolvedValueOnce([dbCollection])
           ;(Item.findByBlockchainIdsAndContractAddresses as jest.MockedFunction<
             typeof Item.findByBlockchainIdsAndContractAddresses
           >).mockResolvedValueOnce([dbItemMock, anotherDBItem])
@@ -1327,9 +1324,14 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 data: {
-                  collection: [
-                    convertCollectionDatesToISO(toFullCollection(dbCollection)),
-                  ],
+                  collection: convertCollectionDatesToISO(
+                    toFullCollection(
+                      Bridge.mergeCollection(
+                        dbCollection,
+                        collectionFragmentMock as CollectionFragment
+                      )
+                    )
+                  ),
                   items: [
                     convertItemDatesToISO(
                       Bridge.toFullItem({

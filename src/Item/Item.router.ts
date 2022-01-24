@@ -4,8 +4,8 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Bridge } from '../ethereum/api/Bridge'
-import { peerAPI } from '../ethereum/api/peer'
 import {
   withModelAuthorization,
   withAuthentication,
@@ -16,20 +16,15 @@ import {
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
 import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
-import { RequestParameters } from '../RequestParameters'
-import {
-  Collection,
-  CollectionAttributes,
-  CollectionService,
-} from '../Collection'
+import { Collection, CollectionService } from '../Collection'
 import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
+import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
 import { upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasPublicAccess } from './access'
-import { getDecentralandItemURN } from './utils'
 import { ItemService } from './Item.service'
 import {
   CollectionForItemLockedError,
@@ -42,7 +37,6 @@ import {
   UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
 } from './Item.errors'
-import { NonExistentCollectionError } from '../Collection/Collection.errors'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -146,7 +140,7 @@ export class ItemRouter extends Router {
     )
   }
 
-  async getItems(req: AuthRequest): Promise<FullItem[]> {
+  getItems = async (req: AuthRequest): Promise<FullItem[]> => {
     const eth_address = req.auth.ethAddress
     const canRequestItems = await isCommitteeMember(eth_address)
 
@@ -158,36 +152,25 @@ export class ItemRouter extends Router {
       )
     }
 
-    let is_published: boolean | undefined
-    try {
-      is_published = new RequestParameters(req).getBoolean('is_published')
-    } catch (error) {
-      // No is_published param
-    }
-
-    const [dbItems, remoteItems] = await Promise.all([
+    // TODO: We need to paginate this. To do it, we'll have to fetch remote items via the paginated dbItemIds
+    const [allItems, remoteItems, remoteTPItems] = await Promise.all([
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
+      thirdPartyAPI.fetchItems(),
     ])
 
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
+    const { items, tpItems } = this.itemService.splitItems(allItems)
 
-    const items = await Bridge.consolidateItems(
-      dbItems,
-      remoteItems,
-      catalystItems
-    )
+    const [fullItems, fullTPItems] = await Promise.all([
+      Bridge.consolidateItems(items, remoteItems),
+      Bridge.consolidateTPItems(tpItems, remoteTPItems),
+    ])
 
-    return items.filter(
-      (item) =>
-        typeof is_published === 'undefined' ||
-        item.is_published === is_published
-    )
+    // TODO: sorting (we're not breaking pagination)
+    return fullItems.concat(fullTPItems)
   }
 
-  async getAddressItems(req: AuthRequest): Promise<FullItem[]> {
+  getAddressItems = async (req: AuthRequest): Promise<FullItem[]> => {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -199,126 +182,90 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [dbItems, remoteItems] = await Promise.all([
+    const [
+      dbItems,
+      remoteItems,
+      { dbTPItems, remoteTPItems },
+    ] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
+      this.itemService.getTPItemsByManager(eth_address),
     ])
 
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
+    const [items, tpItems] = await Promise.all([
+      Bridge.consolidateItems(dbItems, remoteItems),
+      Bridge.consolidateTPItems(dbTPItems, remoteTPItems),
+    ])
 
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
+    // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.
+    //       We'll need to add it after concatenating, cause if we don't it will have a different order each time
+    return items.concat(tpItems)
   }
 
-  async getItem(req: AuthRequest) {
+  getItem = async (req: AuthRequest): Promise<FullItem> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
-    const dbItem = await Item.findOne<ItemAttributes>(id)
-    if (!dbItem) {
-      throw new HTTPError(
-        'Not found',
-        { id, eth_address },
-        STATUS_CODES.notFound
-      )
-    }
+    try {
+      // TODO: both this method and this.itemService.getCollectionItems return a tuple of collection and items. Check if we can just return the items (as the method names implied)
+      const { item, collection } = await this.itemService.getItem(id)
 
-    let fullItem: FullItem = Bridge.toFullItem(dbItem)
-    let fullCollection: CollectionAttributes | undefined = undefined
-
-    if (dbItem.collection_id && dbItem.blockchain_item_id) {
-      const dbCollection = await Collection.findOne<CollectionAttributes>(
-        dbItem.collection_id
-      )
-
-      if (!dbCollection) {
+      if (!(await hasPublicAccess(eth_address, item, collection))) {
         throw new HTTPError(
-          "Invalid item. It's collection seems to be missing",
-          { id, eth_address, collection_id: dbItem.collection_id },
-          STATUS_CODES.error
+          'Unauthorized',
+          { id, eth_address },
+          STATUS_CODES.unauthorized
         )
       }
 
-      const [remoteItem, remoteCollection] = await Promise.all([
-        collectionAPI.fetchItem(
-          dbCollection.contract_address!,
-          dbItem.blockchain_item_id
-        ),
-        collectionAPI.fetchCollection(dbCollection.contract_address!),
-      ])
-
-      if (remoteCollection) {
-        fullCollection = Bridge.mergeCollection(dbCollection, remoteCollection)
-
-        if (remoteItem) {
-          const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
-          fullItem = Bridge.mergeItem(
-            dbItem,
-            remoteItem,
-            remoteCollection,
-            catalystItem
-          )
-        }
+      return item
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id, eth_address },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof InconsistentItemError) {
+        throw new HTTPError(
+          error.message,
+          { id, eth_address },
+          STATUS_CODES.error
+        )
       }
-
-      // Set the item's URN
-      fullItem.urn =
-        fullItem.urn ??
-        getDecentralandItemURN(dbItem, dbCollection.contract_address!)
+      throw error
     }
-
-    if (!(await hasPublicAccess(eth_address, fullItem, fullCollection))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    return fullItem
   }
 
-  async getCollectionItems(req: AuthRequest): Promise<FullItem[]> {
+  getCollectionItems = async (req: AuthRequest): Promise<FullItem[]> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
-    const dbCollection = await Collection.findOne<CollectionAttributes>(id)
-    if (!dbCollection) {
-      throw new HTTPError(
-        'Not found',
-        { id, eth_address },
-        STATUS_CODES.notFound
+    try {
+      const { collection, items } = await this.itemService.getCollectionItems(
+        id
       )
+
+      if (!(await hasCollectionAccess(eth_address, collection))) {
+        throw new HTTPError(
+          'Unauthorized',
+          { eth_address },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      return items
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id, eth_address },
+          STATUS_CODES.notFound
+        )
+      }
+
+      throw error
     }
-
-    const [
-      dbItems,
-      { collection: remoteCollection, items: remoteItems },
-    ] = await Promise.all([
-      Item.find<ItemAttributes>({ collection_id: id }),
-      collectionAPI.fetchCollectionWithItemsByContractAddress(
-        dbCollection.contract_address!
-      ),
-    ])
-
-    const catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
-
-    const fullCollection = remoteCollection
-      ? Bridge.mergeCollection(dbCollection, remoteCollection)
-      : dbCollection
-
-    if (!(await hasCollectionAccess(eth_address, fullCollection))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    return Bridge.consolidateItems(dbItems, remoteItems, catalystItems)
   }
 
   upsertItem = async (req: AuthRequest): Promise<FullItem> => {

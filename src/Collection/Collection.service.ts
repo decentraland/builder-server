@@ -1,9 +1,11 @@
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { isPublished } from '../utils/eth'
+import { ThirdPartyFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
+import { Bridge } from '../ethereum/api/Bridge'
+import { isPublished } from '../utils/eth'
 import { Ownable } from '../Ownable'
-import { Item } from '../Item/Item.model'
+import { Item } from '../Item'
 import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
@@ -16,9 +18,10 @@ import {
   UnauthorizedCollectionEditError,
   WrongCollectionError,
 } from './Collection.errors'
+import { ThirdPartyCollectionAttributes } from '.'
 
 export class CollectionService {
-  isLockActive(lock: Date | null) {
+  public isLockActive(lock: Date | null) {
     if (!lock) {
       return false
     }
@@ -29,33 +32,7 @@ export class CollectionService {
     return deadline.getTime() > Date.now()
   }
 
-  private async checkIfNameIsValid(id: string, name: string): Promise<void> {
-    if (!(await Collection.isValidName(id, name.trim()))) {
-      throw new WrongCollectionError('Name already in use', { id, name })
-    }
-  }
-
-  private async checkIfThirdPartyCollectionHasPublishedItems(
-    id: string,
-    thirdPartyId: string,
-    collectionUrnSuffix: string
-  ): Promise<void> {
-    const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
-      thirdPartyId,
-      collectionUrnSuffix
-    )
-
-    // We can't change the TPW collection's URN if there are already published items
-    if (collectionItems.length > 0) {
-      throw new AlreadyPublishedCollectionError(
-        id,
-        CollectionType.THIRD_PARTY,
-        CollectionAction.UPSERT
-      )
-    }
-  }
-
-  async upsertDCLCollection(
+  public async upsertDCLCollection(
     id: string,
     eth_address: string,
     collectionJSON: FullCollection,
@@ -197,13 +174,13 @@ export class CollectionService {
 
   public async deleteCollection(collectionId: string): Promise<void> {
     const collection = await this.getDBCollection(collectionId)
-    if (this.isDBCollectionThirdParty(collection)) {
+    if (isTPCollection(collection)) {
       // If it's a TPC we must check if there's an item already published under that collection urn suffix
-      const collectionItems = await thirdPartyAPI.fetchThirdPartyCollectionItems(
-        collection.third_party_id!,
-        collection.urn_suffix!
+      const isPublished = await thirdPartyAPI.isPublished(
+        collection.third_party_id,
+        collection.urn_suffix
       )
-      if (collectionItems.length > 0) {
+      if (isPublished) {
         throw new AlreadyPublishedCollectionError(
           collection.id,
           CollectionType.THIRD_PARTY,
@@ -235,7 +212,7 @@ export class CollectionService {
     ethAddress: string
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
-    if (collection && this.isDBCollectionThirdParty(collection)) {
+    if (collection && isTPCollection(collection)) {
       return thirdPartyAPI.isManager(collection.third_party_id!, ethAddress)
     } else if (collection) {
       return collection.eth_address === ethAddress
@@ -244,21 +221,16 @@ export class CollectionService {
     return false
   }
 
-  public async getDbTPWCollections(
+  public async getDbTPCollections(): Promise<CollectionAttributes[]> {
+    const thirdParties = await thirdPartyAPI.fetchThirdParties()
+    return this.getDbTPCollectionsByThirdParties(thirdParties)
+  }
+
+  public async getDbTPCollectionsByManager(
     manager: string
   ): Promise<CollectionAttributes[]> {
-    const thirdPartyIds = await thirdPartyAPI.fetchThirdPartyIds(manager)
-    if (thirdPartyIds.length <= 0) {
-      return []
-    }
-
-    const dbThridPartyCollections = await Collection.findByThirdPartyIds(
-      thirdPartyIds
-    )
-    return dbThridPartyCollections.map((collection) => ({
-      ...collection,
-      eth_address: manager,
-    }))
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+    return this.getDbTPCollectionsByThirdParties(thirdParties)
   }
 
   public async getDBCollection(
@@ -272,7 +244,72 @@ export class CollectionService {
     return collection
   }
 
-  private isDBCollectionThirdParty(collection: CollectionAttributes): boolean {
-    return !!collection.urn_suffix && !!collection.third_party_id
+  public async getCollection(id: string): Promise<CollectionAttributes> {
+    const dbCollection = await this.getDBCollection(id)
+
+    return isTPCollection(dbCollection)
+      ? this.getTPCollection(dbCollection)
+      : this.getDCLCollection(dbCollection)
+  }
+
+  private async getDbTPCollectionsByThirdParties(
+    thirdParties: ThirdPartyFragment[]
+  ): Promise<CollectionAttributes[]> {
+    if (thirdParties.length <= 0) {
+      return []
+    }
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
+
+    return Collection.findByThirdPartyIds(thirdPartyIds)
+  }
+
+  private async getTPCollection(
+    dbCollection: ThirdPartyCollectionAttributes
+  ): Promise<CollectionAttributes> {
+    const lastItem = await thirdPartyAPI.fetchLastItem(
+      dbCollection.third_party_id,
+      dbCollection.urn_suffix
+    )
+    return lastItem
+      ? Bridge.mergeTPCollection(dbCollection, lastItem)
+      : dbCollection
+  }
+
+  private async getDCLCollection(
+    dbCollection: CollectionAttributes
+  ): Promise<CollectionAttributes> {
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection.contract_address!
+    )
+
+    return remoteCollection
+      ? Bridge.mergeCollection(dbCollection, remoteCollection)
+      : dbCollection
+  }
+
+  private async checkIfNameIsValid(id: string, name: string): Promise<void> {
+    if (!(await Collection.isValidName(id, name.trim()))) {
+      throw new WrongCollectionError('Name already in use', { id, name })
+    }
+  }
+
+  private async checkIfThirdPartyCollectionHasPublishedItems(
+    id: string,
+    thirdPartyId: string,
+    collectionUrnSuffix: string
+  ): Promise<void> {
+    const isPublished = await thirdPartyAPI.isPublished(
+      thirdPartyId,
+      collectionUrnSuffix
+    )
+
+    // We can't change the TPW collection's URN if there are already published items
+    if (isPublished) {
+      throw new AlreadyPublishedCollectionError(
+        id,
+        CollectionType.THIRD_PARTY,
+        CollectionAction.UPSERT
+      )
+    }
   }
 }

@@ -3,14 +3,19 @@ import { omit } from 'decentraland-commons/dist/utils'
 import {
   CollectionAttributes,
   FullCollection,
+  ThirdPartyCollectionAttributes,
 } from '../../src/Collection/Collection.types'
+import {
+  CollectionFragment,
+  ThirdPartyFragment,
+  ThirdPartyMetadataType,
+} from '../../src/ethereum/api/fragments'
+import { toUnixTimestamp } from '../../src/utils/parse'
 import { wallet } from './wallet'
-import { CollectionFragment } from '../../src/ethereum/api/fragments'
 
-export const collectionAttributesMock: CollectionAttributes = {
+export const dbCollectionMock: CollectionAttributes = {
   id: uuidv4(),
   name: 'Test',
-  urn_suffix: null,
   eth_address: wallet.address,
   salt: '',
   contract_address: '0x02b6bD2420cCADC38726BD34BB7f5c52B3F4F3ff',
@@ -20,28 +25,49 @@ export const collectionAttributesMock: CollectionAttributes = {
   managers: [],
   forum_link: null,
   lock: null,
+  urn_suffix: null,
   third_party_id: null,
   reviewed_at: new Date(),
   created_at: new Date(),
   updated_at: new Date(),
 }
 
-export const collectionFragment: Omit<
+export const dbTPCollectionMock: ThirdPartyCollectionAttributes = {
+  ...dbCollectionMock,
+  eth_address: '',
+  contract_address: '',
+  urn_suffix: 'collection-id',
+  third_party_id:
+    'urn:decentraland:mumbai:collections-thirdparty:third-party-id',
+}
+
+export const collectionFragmentMock: Omit<
   CollectionFragment,
   'reviewedAt' | 'updatedAt' | 'createdAt'
 > & { reviewedAt: string | null; updatedAt: string; createdAt: string } = {
   id: 'string',
-  creator: collectionAttributesMock.eth_address,
-  owner: collectionAttributesMock.eth_address,
-  name: collectionAttributesMock.name,
-  isApproved: collectionAttributesMock.is_approved,
-  minters: collectionAttributesMock.minters,
-  managers: collectionAttributesMock.managers,
-  reviewedAt: collectionAttributesMock.reviewed_at
-    ? collectionAttributesMock.reviewed_at.toISOString()
+  creator: dbCollectionMock.eth_address,
+  owner: dbCollectionMock.eth_address,
+  name: dbCollectionMock.name,
+  isApproved: dbCollectionMock.is_approved,
+  minters: dbCollectionMock.minters,
+  managers: dbCollectionMock.managers,
+  reviewedAt: dbCollectionMock.reviewed_at
+    ? toUnixTimestamp(dbCollectionMock.reviewed_at)
     : null,
-  updatedAt: collectionAttributesMock.updated_at.toISOString(),
-  createdAt: collectionAttributesMock.created_at.toISOString(),
+  updatedAt: toUnixTimestamp(dbCollectionMock.updated_at),
+  createdAt: toUnixTimestamp(dbCollectionMock.created_at),
+}
+
+export const thirdPartyFragmentMock: ThirdPartyFragment = {
+  id: dbTPCollectionMock.third_party_id,
+  managers: [wallet.address],
+  maxItems: '10',
+  totalItems: '1',
+  metadata: {
+    type: ThirdPartyMetadataType.THIRD_PARTY_V1,
+    thirdParty: null,
+  },
 }
 
 export type ResultCollection = Omit<

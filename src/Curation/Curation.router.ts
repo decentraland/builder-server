@@ -7,6 +7,7 @@ import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
 import { getValidator } from '../utils/validator'
 import { Collection } from '../Collection'
+import { Item } from '../Item'
 import { CurationStatus, patchCurationSchema } from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
@@ -15,7 +16,10 @@ import {
 } from '../Collection/Collection.errors'
 import { CurationType } from '.'
 import { getMergedCollection } from '../Collection/utils'
-import { CollectionCurationAttributes } from './CollectionCuration'
+import {
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from './CollectionCuration'
 import { ItemCurationAttributes } from './ItemCuration'
 
 const validator = getValidator()
@@ -49,6 +53,8 @@ export class CurationRouter extends Router {
       server.handleRequest(this.insertCollectionCuration)
     )
 
+    // TODO: '/collections/:id/itemCurations'
+
     this.router.get(
       '/items/:id/curation',
       withAuthentication,
@@ -59,6 +65,12 @@ export class CurationRouter extends Router {
       '/items/:id/curation',
       withAuthentication,
       server.handleRequest(this.updateItemCuration)
+    )
+
+    this.router.post(
+      '/items/:id/curation',
+      withAuthentication,
+      server.handleRequest(this.insertItemCuration)
     )
 
     this.router.post(
@@ -101,7 +113,7 @@ export class CurationRouter extends Router {
       return curationService.getLatest()
     }
 
-    // TODO: @TPW *IF we need to show tpw collections* we need to add it here  ( this.service.getDbTPWCollections(eth_address) ).
+    // TODO: @TPW *IF we need to show tpw collections* we need to add it here  ( this.service.getDbTPCollections(eth_address) ).
     //            We'll also need to check that they're published (at least one item is published)
     const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
       ethAddress
@@ -181,7 +193,26 @@ export class CurationRouter extends Router {
   insertItemCuration = async (req: AuthRequest) => {
     const itemId = server.extractFromReq(req, 'id')
     const ethAddress = req.auth.ethAddress
-    return this.insertCuration(itemId, ethAddress, CurationType.ITEM)
+    const itemCuration = await this.insertCuration(
+      itemId,
+      ethAddress,
+      CurationType.ITEM
+    )
+
+    const item = await Item.findOne(itemId)
+    const collectionCuration = await CollectionCuration.findOne(
+      item.collection_id
+    )
+
+    if (!collectionCuration) {
+      await this.insertCuration(
+        item.collection_id,
+        ethAddress,
+        CurationType.COLLECTION
+      )
+    }
+
+    return itemCuration
   }
 
   private updateCuration = async (
@@ -237,7 +268,7 @@ export class CurationRouter extends Router {
 
     const curation = await curationService.getLatestById(id)
 
-    if (curation && curation.status === 'pending') {
+    if (curation && curation.status === CurationStatus.PENDING) {
       throw new HTTPError(
         'There is already an ongoing review request',
         { id },

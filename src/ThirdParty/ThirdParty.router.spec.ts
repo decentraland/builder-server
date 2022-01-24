@@ -39,7 +39,7 @@ describe('ThirdParty router', () => {
     let url: string
 
     beforeEach(() => {
-      ;(thirdPartyAPI.fetchThirdParties as jest.Mock).mockResolvedValueOnce(
+      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
         fragments
       )
       url = '/thirdParties'
@@ -69,7 +69,7 @@ describe('ThirdParty router', () => {
     beforeEach(() => {
       manager = '0x1'
       managerFragments = fragments.slice(0, 1)
-      ;(thirdPartyAPI.fetchThirdParties as jest.Mock).mockResolvedValueOnce(
+      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
         managerFragments
       )
       managerThirdParties = managerFragments.map(toThirdParty)
@@ -87,7 +87,9 @@ describe('ThirdParty router', () => {
             data: managerThirdParties,
             ok: true,
           })
-          expect(thirdPartyAPI.fetchThirdParties).toHaveBeenCalledWith(manager)
+          expect(thirdPartyAPI.fetchThirdPartiesByManager).toHaveBeenCalledWith(
+            manager
+          )
         })
     })
   })

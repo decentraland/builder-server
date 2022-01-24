@@ -10,13 +10,11 @@ import {
   withSchemaValidation,
   AuthRequest,
 } from '../middleware'
-import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
+import { collectionAPI } from '../ethereum/api/collection'
 import { ItemFragment } from '../ethereum/api/fragments'
-import { peerAPI, Wearable } from '../ethereum/api/peer'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
-import { RequestParameters } from '../RequestParameters'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -28,6 +26,7 @@ import { OwnableModel } from '../Ownable/Ownable.types'
 import {
   AlreadyPublishedCollectionError,
   LockedCollectionError,
+  NonExistentCollectionError,
   UnauthorizedCollectionEditError,
   WrongCollectionError,
 } from './Collection.errors'
@@ -137,7 +136,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  async getCollections(req: AuthRequest): Promise<FullCollection[]> {
+  getCollections = async (req: AuthRequest): Promise<FullCollection[]> => {
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -149,34 +148,33 @@ export class CollectionRouter extends Router {
       )
     }
 
-    let is_published: boolean | undefined
-    try {
-      is_published = new RequestParameters(req).getBoolean('isPublished')
-    } catch (error) {
-      // No is_published param
-    }
-
-    // The current implementation only supports fetching published/unpublished collections and items
-    // If, in the future we need to add multiple query params, a more flexible implementation is required
-    const [dbCollections, remoteCollections] = await Promise.all([
-      typeof is_published === 'undefined'
-        ? Collection.find<CollectionAttributes>()
-        : Collection.find<CollectionAttributes>({ is_published }),
+    const [
+      dbCollections,
+      remoteCollections,
+      dbTPCollections,
+    ] = await Promise.all([
+      Collection.find<CollectionAttributes>(),
       collectionAPI.fetchCollections(),
+      this.service.getDbTPCollections(),
     ])
 
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
       remoteCollections
     )
+    const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
+      dbTPCollections
+    )
 
     // Build the full collection
-    return consolidatedCollections.map((collection) =>
-      toFullCollection(collection)
-    )
+    return consolidatedCollections
+      .concat(consolidatedTPWCollections)
+      .map(toFullCollection)
   }
 
-  getAddressCollections = async (req: AuthRequest) => {
+  getAddressCollections = async (
+    req: AuthRequest
+  ): Promise<FullCollection[]> => {
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -191,63 +189,65 @@ export class CollectionRouter extends Router {
     const [
       dbCollections,
       remoteCollections,
-      tpwCollections,
+      dbTPCollections,
     ] = await Promise.all([
       Collection.find<CollectionAttributes>({ eth_address }),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
-      this.service.getDbTPWCollections(eth_address),
+      this.service.getDbTPCollectionsByManager(eth_address),
     ])
 
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
       remoteCollections
     )
+    const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
+      dbTPCollections
+    )
 
     // Build the full collection
-    return consolidatedCollections.concat(tpwCollections).map(toFullCollection)
+    return consolidatedCollections
+      .concat(consolidatedTPWCollections)
+      .map(toFullCollection)
   }
 
-  async getCollection(req: AuthRequest): Promise<FullCollection> {
+  getCollection = async (req: AuthRequest): Promise<FullCollection> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
-    const dbCollection = await Collection.findOne<CollectionAttributes>(id)
-    if (!dbCollection) {
-      throw new HTTPError(
-        'Not found',
-        { id, eth_address },
-        STATUS_CODES.notFound
-      )
+    try {
+      const collection = await this.service.getCollection(id)
+
+      if (!(await hasPublicAccess(eth_address, collection))) {
+        throw new HTTPError(
+          'Unauthorized',
+          { id, eth_address },
+          STATUS_CODES.unauthorized
+        )
+      }
+
+      return toFullCollection(collection)
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id, eth_address },
+          STATUS_CODES.notFound
+        )
+      }
+
+      throw error
     }
-
-    const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection.contract_address!
-    )
-
-    const fullCollection = remoteCollection
-      ? Bridge.mergeCollection(dbCollection, remoteCollection)
-      : dbCollection
-
-    if (!(await hasPublicAccess(eth_address, fullCollection))) {
-      throw new HTTPError(
-        'Unauthorized',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    return toFullCollection(fullCollection)
   }
 
   publishCollection = async (
     req: AuthRequest
-  ): Promise<{ collection: FullCollection[]; items: FullItem[] }> => {
+  ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
     const id = server.extractFromReq(req, 'id')
 
     // We are using the withCollectionExists middleware so we can safely assert the collection exists
     const [dbCollection, dbItems] = await Promise.all([
       Collection.findOne<CollectionAttributes>(id),
-      Item.findOrderedItemsByCollectionId(id),
+      Item.findOrderedByCollectionId(id),
     ])
     const remoteCollection = await collectionAPI.fetchCollection(
       dbCollection!.contract_address!
@@ -264,7 +264,6 @@ export class CollectionRouter extends Router {
 
     const items: ItemAttributes[] = [...dbItems]
     let remoteItems: ItemFragment[] = []
-    let catalystItems: Wearable[] = []
 
     const isMissingBlockchainItemIds = dbItems.some(
       (item) => item.blockchain_item_id == null
@@ -301,15 +300,11 @@ export class CollectionRouter extends Router {
       await Promise.all(updates)
     }
 
-    catalystItems = await peerAPI.fetchWearables(
-      remoteItems.map((item) => item.urn)
-    )
+    const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
 
     return {
-      collection: (
-        await Bridge.consolidateCollections([dbCollection!], [remoteCollection])
-      ).map((collection) => toFullCollection(collection)),
-      items: await Bridge.consolidateItems(items, remoteItems, catalystItems),
+      collection: toFullCollection(collection),
+      items: await Bridge.consolidateItems(items, remoteItems),
     }
   }
 
@@ -363,7 +358,6 @@ export class CollectionRouter extends Router {
       req,
       'collection'
     )
-
     const eth_address = req.auth.ethAddress
 
     if (id !== collectionJSON.id) {

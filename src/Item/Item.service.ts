@@ -1,7 +1,14 @@
-import { CollectionAttributes } from '../Collection'
+import {
+  Collection,
+  CollectionAttributes,
+  ThirdPartyCollectionAttributes,
+} from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
 import { isTPCollection } from '../Collection/utils'
 import { Bridge } from '../ethereum/api/Bridge'
+import { collectionAPI } from '../ethereum/api/collection'
+import { ThirdPartyItemFragment } from '../ethereum/api/fragments'
+import { peerAPI } from '../ethereum/api/peer'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Ownable } from '../Ownable'
 import { buildModelDates } from '../utils/dates'
@@ -18,9 +25,14 @@ import {
   InvalidItemURNError,
 } from './Item.errors'
 import { Item } from './Item.model'
-import { FullItem, ItemAttributes } from './Item.types'
+import {
+  FullItem,
+  ItemAttributes,
+  ThirdPartyItemAttributes,
+} from './Item.types'
 import {
   buildTPItemURN,
+  getDecentralandItemURN,
   decodeThirdPartyItemURN,
   isTPItem,
   toDBItem,
@@ -28,6 +40,7 @@ import {
 
 export class ItemService {
   private collectionService = new CollectionService()
+
   /**
    * Updates or insert an item, either a third party item or a decentraland item.
    *
@@ -85,12 +98,202 @@ export class ItemService {
       return false
     } else if (isTPItem(dbItem)) {
       return this.collectionService.isOwnedOrManagedBy(
-        dbItem.collection_id!,
+        dbItem.collection_id,
         ethAddress
       )
     } else {
       return dbItem.eth_address === dbItem.eth_address
     }
+  }
+
+  public async getItem(
+    id: string
+  ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
+    const dbItem = await Item.findOne<ItemAttributes>(id)
+    if (!dbItem) {
+      throw new NonExistentItemError(id)
+    }
+
+    return isTPItem(dbItem) ? this.getTPItem(dbItem) : this.getDCLItem(dbItem)
+  }
+
+  public async getCollectionItems(
+    collectionId: string
+  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
+    const dbCollection = await this.collectionService.getDBCollection(
+      collectionId
+    )
+    const dbItems = await Item.find<ItemAttributes>({
+      collection_id: collectionId,
+    })
+
+    return isTPCollection(dbCollection)
+      ? this.getTPCollectionItems(dbCollection, dbItems)
+      : this.getDCLCollectionItems(dbCollection, dbItems)
+  }
+
+  public async getTPItemsByManager(
+    manager: string
+  ): Promise<{
+    dbTPItems: ItemAttributes[]
+    remoteTPItems: ThirdPartyItemFragment[]
+  }> {
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+    if (thirdParties.length <= 0) {
+      return { dbTPItems: [], remoteTPItems: [] }
+    }
+
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
+
+    const [dbTPItems, remoteTPItems] = await Promise.all([
+      Item.findByThirdPartyIds(thirdPartyIds),
+      thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
+    ])
+
+    return { dbTPItems, remoteTPItems }
+  }
+
+  /**
+   * Takes a list of items and returns an object containing two sets, one of standard items and the other of TP items
+   * @param allItems - Items to split, can be any combination of item types
+   */
+  public splitItems(
+    allItems: ItemAttributes[]
+  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
+    const items: ItemAttributes[] = []
+    const tpItems: ItemAttributes[] = []
+
+    for (const item of allItems) {
+      if (isTPItem(item)) {
+        tpItems.push(item)
+      } else {
+        items.push(item)
+      }
+    }
+
+    return { items, tpItems }
+  }
+
+  private async getTPCollectionItems(
+    dbCollection: ThirdPartyCollectionAttributes,
+    dbItems: ItemAttributes[]
+  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
+    // TODO: This could be a single query, the problem is paginating the thing. We should only paginate remoteItems
+    const [lastItem, remoteItems] = await Promise.all([
+      thirdPartyAPI.fetchLastItem(
+        dbCollection.third_party_id,
+        dbCollection.urn_suffix
+      ),
+      thirdPartyAPI.fetchItemsByCollection(
+        dbCollection.third_party_id,
+        dbCollection.urn_suffix
+      ),
+    ])
+    const collection = lastItem
+      ? Bridge.mergeTPCollection(dbCollection, lastItem)
+      : dbCollection
+
+    const items = await Bridge.consolidateTPItems(dbItems, remoteItems)
+    return { collection, items }
+  }
+
+  private async getDCLCollectionItems(
+    dbCollection: CollectionAttributes,
+    dbItems: ItemAttributes[]
+  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
+    const {
+      collection: remoteCollection,
+      items: remoteItems,
+    } = await collectionAPI.fetchCollectionWithItemsByContractAddress(
+      dbCollection.contract_address!
+    )
+    const collection = remoteCollection
+      ? Bridge.mergeCollection(dbCollection, remoteCollection)
+      : dbCollection
+
+    const items = await Bridge.consolidateItems(dbItems, remoteItems)
+
+    return { collection, items }
+  }
+
+  private async getTPItem(
+    dbItem: ThirdPartyItemAttributes
+  ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
+    let item: FullItem = Bridge.toFullItem(dbItem)
+    let collection = await Collection.findOne(dbItem.collection_id)
+
+    if (collection && isTPCollection(collection)) {
+      const urn = buildTPItemURN(
+        collection.third_party_id,
+        collection.urn_suffix,
+        dbItem.urn_suffix!
+      )
+
+      const lastItem = await thirdPartyAPI.fetchLastItem(
+        collection.third_party_id,
+        collection.urn_suffix
+      )
+      collection = lastItem
+        ? Bridge.mergeTPCollection(collection, lastItem)
+        : collection
+
+      const remoteItem = await thirdPartyAPI.fetchItem(urn)
+      if (remoteItem) {
+        const [catalystItem] = await peerAPI.fetchWearables([urn])
+        item = Bridge.mergeTPItem(dbItem, remoteItem, catalystItem)
+      }
+    }
+
+    return { item, collection }
+  }
+
+  private async getDCLItem(
+    dbItem: ItemAttributes
+  ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
+    let item: FullItem = Bridge.toFullItem(dbItem)
+    let collection: CollectionAttributes | undefined
+
+    if (dbItem.collection_id && dbItem.blockchain_item_id) {
+      const dbCollection = await Collection.findOne<CollectionAttributes>(
+        dbItem.collection_id
+      )
+
+      if (!dbCollection) {
+        throw new InconsistentItemError(
+          dbItem.id,
+          'Invalid item. Its collection seems to be missing'
+        )
+      }
+
+      const [remoteItem, remoteCollection] = await Promise.all([
+        collectionAPI.fetchItem(
+          dbCollection.contract_address!,
+          dbItem.blockchain_item_id
+        ),
+        collectionAPI.fetchCollection(dbCollection.contract_address!),
+      ])
+
+      if (remoteCollection) {
+        collection = Bridge.mergeCollection(dbCollection, remoteCollection)
+
+        if (remoteItem) {
+          const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
+          item = Bridge.mergeItem(
+            dbItem,
+            remoteItem,
+            remoteCollection,
+            catalystItem
+          )
+        }
+      }
+
+      // Set the item's URN
+      item.urn =
+        item.urn ??
+        getDecentralandItemURN(dbItem, dbCollection.contract_address!)
+    }
+
+    return { item, collection }
   }
 
   private checkItemIsMovedToAnotherCollection(
@@ -123,7 +326,7 @@ export class ItemService {
           ItemAction.DELETE
         )
       }
-      if (await this.collectionService.isLockActive(dbCollection.lock)) {
+      if (this.collectionService.isLockActive(dbCollection.lock)) {
         throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
       }
     }
@@ -148,13 +351,13 @@ export class ItemService {
       )
     }
 
-    if (await this.collectionService.isLockActive(dbCollection.lock)) {
+    if (this.collectionService.isLockActive(dbCollection.lock)) {
       throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
     }
 
     const itemURN = buildTPItemURN(
-      dbCollection.third_party_id!,
-      dbCollection.urn_suffix!,
+      dbCollection.third_party_id,
+      dbCollection.urn_suffix,
       dbItem.urn_suffix!
     )
     if (await thirdPartyAPI.itemExists(itemURN)) {

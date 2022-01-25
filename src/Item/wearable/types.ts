@@ -15,6 +15,7 @@ export enum WearableCategory {
   MASK = 'mask',
   TIARA = 'tiara',
   TOP_HEAD = 'top_head',
+  SKIN = 'skin',
 }
 
 export enum WearableBodyShape {

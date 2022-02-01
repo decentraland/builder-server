@@ -6,6 +6,14 @@ import { ItemAttributes } from './Item.types'
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
+  static findApprovalDataByCollectionId(collectionId: string) {
+    return this.query<Pick<ItemAttributes, 'urn_suffix' | 'content_hash'>>(SQL`
+      SELECT urn_suffix, content_hash
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ${collectionId}
+        LIMIT 450000`)
+  }
+
   static findByCollectionIds(collectionIds: string[]) {
     return this.query<ItemAttributes>(SQL`
       SELECT *

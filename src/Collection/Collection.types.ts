@@ -33,3 +33,8 @@ export type FullCollection = Omit<
 > & {
   urn: string | null
 }
+
+export type ApprovalData = {
+  urn: string
+  contentHash: string
+}

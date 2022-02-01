@@ -23,6 +23,7 @@ export type ItemAttributes = {
    * All Decentraland items will contain this column as null.
    */
   urn_suffix: string | null
+  content_hash: string | null
   name: string
   description: string
   thumbnail: string

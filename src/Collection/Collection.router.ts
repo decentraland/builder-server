@@ -18,7 +18,11 @@ import { isCommitteeMember } from '../Committee'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  ApprovalData,
+  CollectionAttributes,
+  FullCollection,
+} from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
 import { toFullCollection, hasTPCollectionURN } from './utils'
@@ -30,6 +34,7 @@ import {
   UnauthorizedCollectionEditError,
   WrongCollectionError,
 } from './Collection.errors'
+import { buildTPItemURN } from '../Item/utils'
 
 const validator = getValidator()
 
@@ -52,6 +57,11 @@ export class CollectionRouter extends Router {
       this.modelAuthorizationCheck
     )
     const withLowercasedAddress = withLowercasedParams(['address'])
+
+    this.router.get(
+      '/collections/:id/approvalData',
+      server.handleRequest(this.getApprovalData)
+    )
 
     /**
      * Returns all collections
@@ -134,6 +144,32 @@ export class CollectionRouter extends Router {
       withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
+  }
+
+  getApprovalData = async (req: AuthRequest): Promise<ApprovalData[]> => {
+    const collectionId = server.extractFromReq(req, 'id')
+
+    // TODO: AUTH
+
+    console.time('GET APPROVAL DATA')
+    const [collection, itemData] = await Promise.all([
+      Collection.findOne(collectionId),
+      Item.findApprovalDataByCollectionId(collectionId),
+    ])
+    console.timeEnd('GET APPROVAL DATA')
+
+    console.time('FOR')
+    const approvalData = itemData.map((data) => ({
+      urn: buildTPItemURN(
+        collection.third_party_id!,
+        collection.urn_suffix,
+        data.urn_suffix!
+      ),
+      contentHash: data.content_hash!,
+    }))
+    console.timeEnd('FOR')
+
+    return approvalData
   }
 
   getCollections = async (req: AuthRequest): Promise<FullCollection[]> => {

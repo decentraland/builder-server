@@ -21,7 +21,7 @@ import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { Item } from './Item.model'
-import { ItemAttributes } from './Item.types'
+// import { ItemAttributes } from './Item.types'
 import { upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasPublicAccess } from './access'
@@ -154,7 +154,7 @@ export class ItemRouter extends Router {
 
     // TODO: We need to paginate this. To do it, we'll have to fetch remote items via the paginated dbItemIds
     const [allItems, remoteItems, remoteTPItems] = await Promise.all([
-      Item.find<ItemAttributes>(),
+      [], //Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
       thirdPartyAPI.fetchItems(),
     ])
@@ -187,9 +187,9 @@ export class ItemRouter extends Router {
       remoteItems,
       { dbTPItems, remoteTPItems },
     ] = await Promise.all([
-      Item.find<ItemAttributes>({ eth_address }),
+      [], //Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
-      this.itemService.getTPItemsByManager(eth_address),
+      { dbTPItems: [], remoteTPItems: [] }, //this.itemService.getTPItemsByManager(eth_address),
     ])
 
     const [items, tpItems] = await Promise.all([

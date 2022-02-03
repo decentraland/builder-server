@@ -42,7 +42,7 @@ export class CurationRouter extends Router {
     )
 
     this.router.get(
-      '/collectionCuration/:id/itemStats',
+      '/collectionCuration/:id/itemsStats',
       withAuthentication,
       server.handleRequest(this.getCollectionCurationItemStats)
     )

@@ -1,9 +1,9 @@
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Collection } from './Collection.model'
 import { CollectionAttributes } from './Collection.types'
 import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
 import { isTPCollection } from './utils'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 
 export async function hasPublicAccess(
   eth_address: string,

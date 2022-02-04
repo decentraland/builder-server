@@ -7,8 +7,8 @@ import {
 } from '../../spec/mocks/collections'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { isManager as isCollectionManager } from '../Collection/access'
-import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
+import { isCommitteeMember } from '../Committee'
 import { hasPublicAccess, hasAccess } from './access'
 import { FullItem } from './Item.types'
 

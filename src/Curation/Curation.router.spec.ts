@@ -2,10 +2,12 @@ import { ExpressApp } from '../common/ExpressApp'
 import {
   collectionFragmentMock,
   dbCollectionMock,
+  dbTPCollectionMock,
 } from '../../spec/mocks/collections'
-import { dbItemMock } from '../../spec/mocks/items'
+import { dbItemMock, thirdPartyItemFragmentMock } from '../../spec/mocks/items'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { collectionAPI } from '../ethereum/api/collection'
+import { toUnixTimestamp } from '../utils/parse'
 import { Collection } from '../Collection'
 import { Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
@@ -53,6 +55,91 @@ describe('when handling a request', () => {
     jest.restoreAllMocks()
   })
 
+  describe('when trying to obtain the curation stats for each item on a collection', () => {
+    let req: AuthRequest
+
+    beforeEach(() => {
+      req = {
+        auth: { ethAddress: 'ethAddress' },
+        params: { id: 'collectionId' },
+      } as any
+    })
+
+    describe('if the address does not have access to the collection', () => {
+      beforeEach(() => {
+        mockServiceWithAccess(CollectionCuration, false)
+      })
+
+      it('should reject with an unauthorized message', async () => {
+        await expect(
+          router.getCollectionCurationItemStats(req)
+        ).rejects.toThrowError('Unauthorized')
+      })
+    })
+
+    describe('if the collection id does not belong to a TP collection', () => {
+      beforeEach(() => {
+        mockServiceWithAccess(CollectionCuration, true)
+
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce(dbCollectionMock)
+      })
+
+      it('should reject with an unauthorized message', async () => {
+        await expect(
+          router.getCollectionCurationItemStats(req)
+        ).rejects.toThrowError('Collection is not a third party collection')
+      })
+    })
+
+    describe('if it fetching items form an mananged TP collection', () => {
+      let fetchItemsByCollectionSpy: jest.SpyInstance<
+        ReturnType<typeof thirdPartyAPI['fetchItemsByCollection']>
+      >
+
+      beforeEach(() => {
+        mockServiceWithAccess(CollectionCuration, true)
+
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce(dbTPCollectionMock)
+
+        fetchItemsByCollectionSpy = fetchItemsByCollectionSpy = jest
+          .spyOn(thirdPartyAPI, 'fetchItemsByCollection')
+          .mockResolvedValueOnce([
+            { ...thirdPartyItemFragmentMock }, // approved
+            { ...thirdPartyItemFragmentMock }, // approved
+            {
+              ...thirdPartyItemFragmentMock,
+              isApproved: false,
+              reviewedAt: toUnixTimestamp(new Date()),
+            }, // rejected
+            { ...thirdPartyItemFragmentMock, isApproved: false }, // under review
+            { ...thirdPartyItemFragmentMock, isApproved: false }, // under review
+          ])
+      })
+
+      it('should fetch the items for the collection id and its third party id', async () => {
+        await router.getCollectionCurationItemStats(req)
+        expect(fetchItemsByCollectionSpy).toHaveBeenCalledWith(
+          dbTPCollectionMock.third_party_id,
+          req.params.id
+        )
+      })
+
+      it('should use the fetched items to count and return an object with the values', async () => {
+        const stats = await router.getCollectionCurationItemStats(req)
+        expect(stats).toEqual({
+          total: 5,
+          approved: 2,
+          rejected: 1,
+          needsReview: 2,
+        })
+      })
+    })
+  })
+
   describe('when trying to obtain a list of collection curations', () => {
     let service: CurationService<any>
 
@@ -69,7 +156,7 @@ describe('when handling a request', () => {
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
-        } as any
+        } as AuthRequest
 
         await router.getCollectionCurations(req)
 
@@ -115,7 +202,7 @@ describe('when handling a request', () => {
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
-        } as any
+        } as AuthRequest
 
         await router.getCollectionCurations(req)
 

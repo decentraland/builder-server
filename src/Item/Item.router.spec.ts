@@ -42,7 +42,12 @@ import {
 import { buildTPItemURN } from './utils'
 import { hasPublicAccess } from './access'
 import { Item } from './Item.model'
-import { FullItem, ItemAttributes, ItemRarity } from './Item.types'
+import {
+  FullItem,
+  ItemAttributes,
+  ItemRarity,
+  ThirdPartyItemAttributes,
+} from './Item.types'
 
 jest.mock('./Item.model')
 jest.mock('../ethereum/api/collection')
@@ -211,11 +216,25 @@ describe('Item router', () => {
   })
 
   describe('when getting all the items', () => {
+    let dbTPItemNotPublishedMock: ThirdPartyItemAttributes
+    let dbTPItemNotPublishedUrn: string
+
     beforeEach(() => {
+      dbTPItemNotPublishedMock = {
+        ...dbTPItemMock,
+        urn_suffix: '2',
+      }
+
+      dbTPItemNotPublishedUrn = buildTPItemURN(
+        dbTPCollectionMock.third_party_id,
+        dbTPCollectionMock.urn_suffix,
+        dbTPItemNotPublishedMock.urn_suffix!
+      )
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Item.find as jest.Mock).mockResolvedValueOnce([
         dbItem,
         dbTPItemMock,
+        dbTPItemNotPublishedMock,
         dbItemNotPublished,
       ])
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
@@ -258,6 +277,18 @@ describe('Item router', () => {
                 collection_id: dbTPItemMock.collection_id,
                 blockchain_item_id: thirdPartyItemFragmentMock.blockchainItemId,
                 urn: thirdPartyItemFragmentMock.urn,
+              },
+              {
+                ...resultingItem,
+                in_catalyst: false,
+                is_approved: false,
+                is_published: false,
+                beneficiary: '',
+                price: '',
+                total_supply: 0,
+                collection_id: dbTPItemNotPublishedMock.collection_id,
+                blockchain_item_id: '0',
+                urn: dbTPItemNotPublishedUrn,
               },
             ],
             ok: true,

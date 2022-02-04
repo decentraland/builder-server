@@ -98,7 +98,10 @@ export class Bridge {
 
         fullItem = Bridge.mergeTPItem(item, remoteItem, catalystItem)
       } else {
-        fullItem = Bridge.toFullItem(item)
+        fullItem = Bridge.toFullItem(
+          item,
+          dbTPCollectionsIndex[item.collection_id!]
+        )
       }
 
       fullItems.push(fullItem)

@@ -96,7 +96,7 @@ describe('getMergedItem', () => {
       })
     })
 
-    describe('when the remote and db data is ok', () => {
+    describe('when the remote and db data are available', () => {
       beforeEach(() => {
         jest.spyOn(Item, 'findOne').mockResolvedValueOnce(item)
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
@@ -147,7 +147,7 @@ describe('getMergedItem', () => {
       })
     })
 
-    describe('when the remote and db data is ok', () => {
+    describe('when the remote and db data are available', () => {
       beforeEach(() => {
         jest.spyOn(Item, 'findOne').mockResolvedValueOnce(item)
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)

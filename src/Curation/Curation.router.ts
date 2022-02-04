@@ -71,8 +71,6 @@ export class CurationRouter extends Router {
       server.handleRequest(this.insertCollectionCuration)
     )
 
-    // TODO: '/collections/:id/itemCurations'
-
     this.router.get(
       '/items/:id/curation',
       withAuthentication,
@@ -98,7 +96,12 @@ export class CurationRouter extends Router {
     )
   }
 
-  // TODO: Paginate this
+  /**
+   * This endpoint will return all collection curations an address has.
+   * If the address is a commitee member, it'll return ALL curations. Otherwise it'll return the curations the address can see/manage.
+   * Keep in mind that standard collections have a CollectionCuration that shows the state the collection is in it's curation process.
+   * Conversely, TP collections have a virtual CollectionCuration which is created when its first item is curated. It'll remain `pending` forever
+   */
   getCollectionCurations = async (req: AuthRequest) => {
     const ethAddress = req.auth.ethAddress
     const curationService = CurationService.byType(CurationType.COLLECTION)
@@ -117,7 +120,7 @@ export class CurationRouter extends Router {
 
     const [dbCollections, dbTPCollections] = await Promise.all([
       Collection.findByContractAddresses(contractAddresses),
-      new CollectionService().getDbTPCollections(),
+      new CollectionService().getDbTPCollectionsByManager(ethAddress),
     ])
 
     const collectionIds = dbCollections

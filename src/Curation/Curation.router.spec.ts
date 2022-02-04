@@ -1,6 +1,11 @@
 import { ExpressApp } from '../common/ExpressApp'
-import { collectionAPI } from '../ethereum/api/collection'
+import {
+  collectionFragmentMock,
+  dbCollectionMock,
+} from '../../spec/mocks/collections'
 import { dbItemMock } from '../../spec/mocks/items'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { collectionAPI } from '../ethereum/api/collection'
 import { Collection } from '../Collection'
 import { Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
@@ -13,11 +18,6 @@ import {
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { CurationService } from './Curation.service'
 import { CurationStatus } from './Curation.types'
-import {
-  collectionFragmentMock,
-  dbCollectionMock,
-} from '../../spec/mocks/collections'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')

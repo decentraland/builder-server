@@ -10,12 +10,11 @@ export class CollectionCuration extends Model<CollectionCurationAttributes> {
   static async findByItemId(
     itemId: string
   ): Promise<CollectionCurationAttributes | undefined> {
+    // prettier-ignore
     const curations = await this.query<CollectionCurationAttributes>(SQL`
       SELECT cc.*
         FROM ${raw(this.tableName)} cc
-        INNER JOIN ${raw(
-          Item.tableName
-        )} i ON i.id = i.collection_id AND i.id = ${itemId}`)
+        INNER JOIN ${raw(Item.tableName)} i ON i.id = i.collection_id AND i.id = ${itemId}`)
 
     return curations[0]
   }

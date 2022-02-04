@@ -119,8 +119,8 @@ export function decodeTPCollectionURN(
 }
 
 /**
- * Will return a collection formed by merging the collection present in
- * the database and the one found in the graph.
+ * Will return a collection by merging the collection present in the database and the one found in the graph.
+ * If the graph version does not exist, it'll throw. This works for both standard and TP collections
  */
 export async function getMergedCollection(
   id: string

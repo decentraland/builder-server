@@ -83,6 +83,11 @@ export function isTPItemURN(itemURN: string): boolean {
   return tpItemURNRegex.test(itemURN)
 }
 
+/**
+ * Will return an item by merging the item present in the database and the one found in the graph.
+ * If the graph version does not exist, it'll throw. This works for both standard and TP collections
+ * Because the publication (graph version) is mandatory, this method will also throw if the item has no collection
+ */
 export async function getMergedItem(id: string): Promise<FullItem> {
   const dbItem = await Item.findOne(id)
   if (!dbItem) {

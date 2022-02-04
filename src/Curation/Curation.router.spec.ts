@@ -99,7 +99,7 @@ describe('when handling a request', () => {
           ] as any)
 
         jest
-          .spyOn(thirdPartyAPI, 'fetchThirdParties')
+          .spyOn(thirdPartyAPI, 'fetchThirdPartiesByManager')
           .mockResolvedValueOnce([{ id: 'thirdPartyRecordId' } as any])
 
         const findByThirdPartyIdsSpy = jest

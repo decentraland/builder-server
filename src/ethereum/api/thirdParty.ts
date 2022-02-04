@@ -45,7 +45,7 @@ const getItemsQuery = () => gql`
 `
 
 const getItemsByThirdPartyIdsQuery = () => gql`
-  query getItemsByThirdPartyIds(${PAGINATION_VARIABLES}, $thirdPartiesIds: [String!])) {
+  query getItemsByThirdPartyIds(${PAGINATION_VARIABLES}, $thirdPartiesIds: [String!]) {
     items(${PAGINATION_ARGUMENTS}, where: { thirdParty_in: $thirdPartiesIds }) {
       ...thirdPartyItemFragment
     }
@@ -54,7 +54,7 @@ const getItemsByThirdPartyIdsQuery = () => gql`
 `
 
 const getItemsByCollectionQuery = () => gql`
-  query getItemsByCollection(${PAGINATION_VARIABLES}, $thirdPartiesId: String!, $collectionId: String!)) {
+  query getItemsByCollection(${PAGINATION_VARIABLES}, $thirdPartiesId: String!, $collectionId: String!) {
     items(${PAGINATION_ARGUMENTS}, where: { thirdParty: $thirdPartiesId, searchCollectionId: $collectionId }) {
       ...thirdPartyItemFragment
     }

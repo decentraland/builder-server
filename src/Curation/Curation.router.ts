@@ -150,6 +150,7 @@ export class CurationRouter extends Router {
       )
     }
 
+    // TODO: This request could be huge. The method should work, as it's fetching page after page of items but this endpoint should probably be paginated.
     const publishedItems = await thirdPartyAPI.fetchItemsByCollection(
       collection.third_party_id,
       collectionId

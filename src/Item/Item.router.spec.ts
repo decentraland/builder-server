@@ -136,11 +136,8 @@ describe('Item router', () => {
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
           dbCollectionMock
         )
-        ;(collectionAPI.fetchItem as jest.Mock).mockResolvedValueOnce(
-          itemFragment
-        )
-        ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-          itemFragment.collection
+        ;(collectionAPI.fetchCollectionWithItem as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragment.collection, item: itemFragment }
         )
         ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
         resultingItem = toResultItem(dbItem, itemFragment, wearable)

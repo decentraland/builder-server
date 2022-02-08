@@ -16,6 +16,12 @@ export class NonExistentItemError extends Error {
   }
 }
 
+export class UnpublishedItemError extends Error {
+  constructor(public id: string) {
+    super('The item is not published.')
+  }
+}
+
 export class ThirdPartyItemAlreadyPublishedError extends Error {
   constructor(public id: string, public urn: string, action: ItemAction) {
     super(`The third party item is already published. It can't be ${action}.`)

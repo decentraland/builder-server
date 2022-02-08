@@ -93,7 +93,7 @@ describe('when handling a request', () => {
       })
     })
 
-    describe('if it fetching items form an mananged TP collection', () => {
+    describe('if it is fetching items form a managed TP collection', () => {
       let fetchItemsByCollectionSpy: jest.SpyInstance<
         ReturnType<typeof thirdPartyAPI['fetchItemsByCollection']>
       >

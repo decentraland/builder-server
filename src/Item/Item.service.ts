@@ -12,6 +12,7 @@ import { peerAPI } from '../ethereum/api/peer'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Ownable } from '../Ownable'
 import { buildModelDates } from '../utils/dates'
+import { calculateItemContentHash } from './hashes'
 import {
   CollectionForItemLockedError,
   ItemAction,
@@ -377,6 +378,7 @@ export class ItemService {
     dbCollection: CollectionAttributes | undefined,
     eth_address: string
   ): Promise<FullItem> {
+    let contentHash = null
     const canUpsert = await new Ownable(Item).canUpsert(item.id, eth_address)
     if (!canUpsert) {
       throw new UnauthorizedToUpsertError(item.id, eth_address)
@@ -436,6 +438,12 @@ export class ItemService {
             ItemAction.RARITY_UPDATE
           )
         }
+
+        // Compute the content hash of the item to later store it in the DB
+        contentHash = await calculateItemContentHash(
+          dbItem,
+          dbCollection.contract_address!
+        )
       } else if (this.collectionService.isLockActive(dbCollection.lock)) {
         throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
       }
@@ -444,6 +452,7 @@ export class ItemService {
     const attributes = toDBItem({
       ...item,
       eth_address,
+      content_hash: contentHash,
     })
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()

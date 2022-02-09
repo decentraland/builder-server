@@ -1,6 +1,6 @@
 import { matchers } from '../common/matchers'
 import { metricsSchema } from '../Metrics/Metrics.schema'
-import { ItemRarity, ItemType } from './Item.types'
+import { FullItem, ItemRarity, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
 
 // The schema is placed into this file to avoid a circular dependency.
@@ -60,3 +60,12 @@ export const upsertItemSchema = Object.freeze({
   additionalProperties: false,
   required: ['item'],
 })
+
+export function areItemRepresentationsValid(item: FullItem): boolean {
+  const contentFiles = Object.keys(item.contents)
+  return item.data.representations.every(
+    (representation) =>
+      representation.contents.includes(representation.mainFile) &&
+      representation.contents.every((file) => contentFiles.includes(file))
+  )
+}

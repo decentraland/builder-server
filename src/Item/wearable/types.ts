@@ -75,6 +75,7 @@ export const wearableSchema = Object.freeze({
           'overrideHides',
         ],
       },
+      minItems: 1,
     },
     replaces: {
       type: 'array',

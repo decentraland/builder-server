@@ -53,6 +53,14 @@ const getItemsByThirdPartyIdsQuery = () => gql`
   ${thirdPartyItemFragment()}
 `
 
+const getThirdPartyMaxItems = () => gql`
+  query getThirdPartyAvailableSlots($thirdPartyId: String!) {
+    thirdParties(where: { id: $thirdPartyId }) {
+      maxItems
+    }
+  }
+`
+
 const getItemsByCollectionQuery = () => gql`
   query getItemsByCollection(${PAGINATION_VARIABLES}, $thirdPartiesId: String!, $collectionId: String!) {
     items(${PAGINATION_ARGUMENTS}, where: { thirdParty: $thirdPartiesId, searchCollectionId: $collectionId }) {
@@ -169,6 +177,18 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       query: getItemsByCollectionQuery(),
       variables: { thirdPartyId, collectionId },
     })
+  }
+
+  fetchMaxItemsByThirdParty = async (thirdPartyId: string): Promise<number> => {
+    const {
+      data: { thirdParties },
+    } = await this.query<{
+      thirdParties: { maxItems: string }[]
+    }>({
+      query: getThirdPartyMaxItems(),
+      variables: { thirdPartyId },
+    })
+    return +thirdParties[0].maxItems
   }
 
   fetchItems = async (): Promise<ThirdPartyItemFragment[]> => {

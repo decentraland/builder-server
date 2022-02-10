@@ -3,7 +3,7 @@ import { dbItemMock } from '../../spec/mocks/items'
 import { areItemRepresentationsValid } from './Item.schema'
 import { FullItem } from './Item.types'
 
-describe("when checking if and item's representations are valid", () => {
+describe("when checking if an item's representations are valid", () => {
   let item: FullItem
 
   beforeEach(() => {

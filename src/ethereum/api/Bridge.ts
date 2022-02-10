@@ -16,7 +16,7 @@ import { CurationStatus } from '../../Curation'
 
 export class Bridge {
   /**
-   * Takes TP collections found in the database and merges each one with the data from the last published item it has.
+   * Takes TP collections found in the database and combines each one with the data from the last published item it has.
    * To get the published information, it'll check the last curation made to an item each collection has, as each curation is updated *after* being uploaded to the Catalyst.
    * If no published item is found or a non-TP collection is supplied, it'll be returned as-is.
    * For more info on what data is merged, see `Bridge.mergeTPCollection`
@@ -49,7 +49,7 @@ export class Bridge {
   }
 
   /**
-   * Takes TP items found in the database and it'll fetch the catalyst item for each one and merges the data.
+   * Takes TP items found in the database and it'll fetch the catalyst item for each one and combines the data.
    * If remote data is found the item will just be converted to FullItem and returned as-is.
    * For more info on how a full item looks, see `Bridge.toFullItem`. For more info on the merge see `Bridge.mergeTPItem`
    * @param dbItems - Database TP items

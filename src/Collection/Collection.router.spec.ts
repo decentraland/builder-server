@@ -31,6 +31,7 @@ import {
   convertItemDatesToISO,
   dbItemMock,
   itemFragmentMock,
+  thirdPartyItemFragmentMock,
 } from '../../spec/mocks/items'
 import { ItemAttributes } from '../Item'
 import { ItemFragment } from '../ethereum/api/fragments'

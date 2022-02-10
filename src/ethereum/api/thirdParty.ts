@@ -72,6 +72,7 @@ const getItemsByCollectionQuery = () => gql`
       ...thirdPartyItemFragment
     }
   }
+  ${thirdPartyFragment()}
 `
 
 const getItemQuery = () => gql`
@@ -86,16 +87,14 @@ const isManagerQuery = () => gql`
   query isManager($thirdPartyId: String!, $managers: [String!]) {
     thirdParties(
       first: 1
-      where: {
-        id: $thirdPartyId
-        managers_contains: $managers
-        isApproved: true
-      }
+      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
+      orderBy: reviewedAt
+      orderDirection: desc
     ) {
-      ...thirdPartyFragment
+      ...thirdPartyItemFragment
     }
   }
-  ${thirdPartyFragment()}
+  ${thirdPartyItemFragment()}
 `
 
 const getTiersQuery = () => gql`

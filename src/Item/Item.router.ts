@@ -4,6 +4,7 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Bridge } from '../ethereum/api/Bridge'
 import {
   withModelAuthorization,
@@ -155,6 +156,7 @@ export class ItemRouter extends Router {
     const [allItems, remoteItems] = await Promise.all([
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
+      thirdPartyAPI.fetchItems(),
     ])
 
     const { items, tpItems } = this.itemService.splitItems(allItems)

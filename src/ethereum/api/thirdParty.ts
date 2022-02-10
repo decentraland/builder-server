@@ -188,7 +188,7 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       query: getThirdPartyMaxItems(),
       variables: { thirdPartyId },
     })
-    return +thirdParties[0].maxItems
+    return Number(thirdParties[0].maxItems)
   }
 
   fetchItems = async (): Promise<ThirdPartyItemFragment[]> => {

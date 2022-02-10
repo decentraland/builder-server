@@ -4,9 +4,9 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { AuthRequest, withAuthentication } from '../middleware/authentication'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { ItemCuration } from '../Curation/ItemCuration'
 import { ThirdParty } from './ThirdParty.types'
 import { toThirdParty } from './utils'
+import { ThirdPartyService } from './ThirdParty.service'
 
 export class ThirdPartyRouter extends Router {
   mount() {
@@ -49,10 +49,10 @@ export class ThirdPartyRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
-    const maxItems = await thirdPartyAPI.fetchMaxItemsByThirdParty(thirdPartyId)
-    const itemCurationsCount = await ItemCuration.getItemCurationCountByThirdPartyId(
+
+    const availableSlots = await ThirdPartyService.getThirdPartyAvailableSlots(
       thirdPartyId
     )
-    return maxItems - itemCurationsCount[0].count
+    return availableSlots
   }
 }

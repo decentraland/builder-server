@@ -16,7 +16,9 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
       INNER JOIN ${raw(Item.tableName)} i ON i.id = ic.item_id AND i.collection_id = ${collectionId}`)
   }
 
-  static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {
+  static async getItemCurationCountByThirdPartyId(
+    thirdPartyId: string
+  ): Promise<{ count: number }[]> {
     return this.query(
       SQL`SELECT COUNT(DISTINCT ${raw(ItemCuration.tableName)}.id) as Count
         FROM ${raw(ItemCuration.tableName)}

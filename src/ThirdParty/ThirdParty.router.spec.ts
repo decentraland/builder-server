@@ -116,7 +116,7 @@ describe('ThirdParty router', () => {
       jest.restoreAllMocks()
     })
 
-    it('should respond with the correct count', () => {
+    it('should respond with the difference between the maximum slots of the third party and the items in curation', () => {
       return server
         .get(buildURL(url))
         .set(createAuthHeaders('get', url))

@@ -43,6 +43,20 @@ const getItemsQuery = () => gql`
   ${thirdPartyItemFragment()}
 `
 
+const getLastReviewedItemQuery = () => gql`
+  query getLastItem($thirdPartyId: String, $collectionId: String) {
+    items(
+      first: 1
+      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
+      orderBy: reviewedAt
+      orderDirection: desc
+    ) {
+      ...thirdPartyItemFragment
+    }
+  }
+  ${thirdPartyItemFragment()}
+`
+
 const getItemsByThirdPartyIdsQuery = () => gql`
   query getItemsByThirdPartyIds(${PAGINATION_VARIABLES}, $thirdPartiesIds: [String!])) {
     items(${PAGINATION_ARGUMENTS}, where: { thirdParty_in: $thirdPartiesIds }) {
@@ -58,7 +72,6 @@ const getItemsByCollectionQuery = () => gql`
       ...thirdPartyItemFragment
     }
   }
-  ${thirdPartyItemFragment()}
 `
 
 const getItemQuery = () => gql`
@@ -67,30 +80,6 @@ const getItemQuery = () => gql`
       ...thirdPartyItemFragment
     }
   }
-  ${thirdPartyItemFragment()}
-`
-
-const getLastReviewedItemQuery = () => gql`
-  query getLastItem($thirdPartyId: String, $collectionId: String) {
-    items(
-      first: 1
-      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
-      orderBy: reviewedAt
-      orderDirection: desc
-    ) {
-      ...thirdPartyItemFragment
-    }
-  }
-  ${thirdPartyItemFragment()}
-`
-
-const getTiersQuery = () => gql`
-  query getTiersQuery {
-    tiers {
-      ...tiersFragment
-    }
-  }
-  ${tiersFragment()}
 `
 
 const isManagerQuery = () => gql`
@@ -107,6 +96,15 @@ const isManagerQuery = () => gql`
     }
   }
   ${thirdPartyFragment()}
+`
+
+const getTiersQuery = () => gql`
+  query getTiersQuery {
+    tiers {
+      ...tiersFragment
+    }
+  }
+  ${tiersFragment()}
 `
 
 export class ThirdPartyAPI extends BaseGraphAPI {

@@ -143,11 +143,8 @@ describe('Item router', () => {
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
           dbCollectionMock
         )
-        ;(collectionAPI.fetchItem as jest.Mock).mockResolvedValueOnce(
-          itemFragment
-        )
-        ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-          itemFragment.collection
+        ;(collectionAPI.fetchCollectionWithItem as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragment.collection, item: itemFragment }
         )
         ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
         resultingItem = toResultItem(dbItem, itemFragment, wearable)
@@ -223,11 +220,18 @@ describe('Item router', () => {
   })
 
   describe('when getting all the items', () => {
+    let dbTPItemNotPublishedMock: ThirdPartyItemAttributes
+
     beforeEach(() => {
+      dbTPItemNotPublishedMock = {
+        ...dbTPItemNotPublished,
+        urn_suffix: '2',
+      }
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Item.find as jest.Mock).mockResolvedValueOnce([
         dbItem,
-        dbTPItem,
+        dbTPItemMock,
+        dbTPItemNotPublishedMock,
         dbItemNotPublished,
       ])
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
@@ -259,6 +263,7 @@ describe('Item router', () => {
               },
               resultItemNotPublished,
               resultingTPItem,
+              resultTPItemNotPublished,
             ],
             ok: true,
           })

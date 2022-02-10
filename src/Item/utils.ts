@@ -1,6 +1,16 @@
 import { utils } from 'decentraland-commons'
-import { getDecentralandCollectionURN } from '../Collection/utils'
+import { Collection } from '../Collection'
+import { NonExistentCollectionError } from '../Collection/Collection.errors'
+import {
+  getDecentralandCollectionURN,
+  isTPCollection,
+} from '../Collection/utils'
 import { matchers } from '../common/matchers'
+import { Bridge } from '../ethereum/api/Bridge'
+import { collectionAPI } from '../ethereum/api/collection'
+import { peerAPI } from '../ethereum/api/peer'
+import { NonExistentItemError, UnpublishedItemError } from './Item.errors'
+import { Item } from './Item.model'
 import { FullItem, ItemAttributes } from './Item.types'
 
 const tpItemURNRegex = new RegExp(
@@ -19,9 +29,10 @@ export function getDecentralandItemURN(
 export function toDBItem(item: FullItem): ItemAttributes {
   const attributes = {
     ...item,
-    urn_suffix: item.urn
-      ? decodeThirdPartyItemURN(item.urn).item_urn_suffix
-      : null,
+    urn_suffix:
+      item.urn && isTPItemURN(item.urn)
+        ? decodeThirdPartyItemURN(item.urn).item_urn_suffix
+        : null,
   }
   return utils.omit(attributes, [
     'urn',
@@ -68,7 +79,56 @@ export function decodeThirdPartyItemURN(
   }
 }
 
-// TODO: @TPW: implement this
-export function getMergedItem(_id: string): Promise<FullItem> {
-  return {} as any
+export function isTPItemURN(itemURN: string): boolean {
+  return tpItemURNRegex.test(itemURN)
+}
+
+/**
+ * Will return an item by merging the item present in the database and the one found in the graph.
+ * If the graph version does not exist, it'll throw. This works for both standard and TP collections
+ * Because the publication (graph version) is mandatory, this method will also throw if the item has no collection
+ */
+export async function getMergedItem(id: string): Promise<FullItem> {
+  const dbItem = await Item.findOne(id)
+  if (!dbItem) {
+    throw new NonExistentItemError(id)
+  }
+
+  const dbCollection = await Collection.findOne(dbItem.collection_id)
+  if (!dbCollection) {
+    throw new NonExistentCollectionError(id)
+  }
+
+  let fullItem: FullItem
+
+  if (isTPItem(dbItem) && isTPCollection(dbCollection)) {
+    const urn = buildTPItemURN(
+      dbCollection.third_party_id,
+      dbCollection.urn_suffix,
+      dbItem.urn_suffix
+    )
+    const [wearable] = await peerAPI.fetchWearables([urn])
+
+    if (!wearable) {
+      throw new UnpublishedItemError(id)
+    }
+
+    fullItem = Bridge.mergeTPItem(dbItem, wearable)
+  } else {
+    const {
+      collection: remoteCollection,
+      item: remoteItem,
+    } = await collectionAPI.fetchCollectionWithItem(
+      dbCollection.contract_address,
+      dbItem.blockchain_item_id
+    )
+
+    if (!remoteCollection || !remoteItem) {
+      throw new UnpublishedItemError(id)
+    }
+
+    fullItem = Bridge.mergeItem(dbItem, remoteItem, remoteCollection)
+  }
+
+  return fullItem
 }

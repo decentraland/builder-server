@@ -191,7 +191,8 @@ export class ItemRouter extends Router {
       Bridge.consolidateTPItems(dbTPItems),
     ])
 
-    // TODO: add sorting (we're not breaking pagination)
+    // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.
+    //       We'll need to add it after concatenating, cause if we don't it will have a different order each time
     return items.concat(tpItems)
   }
 
@@ -200,6 +201,7 @@ export class ItemRouter extends Router {
     const eth_address = req.auth.ethAddress
 
     try {
+      // TODO: both this method and this.itemService.getCollectionItems return a tuple of collection and items. Check if we can just return the items (as the method names implied)
       const { item, collection } = await this.itemService.getItem(id)
 
       if (!(await hasPublicAccess(eth_address, item, collection))) {

@@ -63,7 +63,7 @@ contents
 ```
 
 #Extra Info
-If you are usign windows subsystem, you will need to start the postgresql service each time 
+If you are usign windows subsystem, you will need to start the postgresql service each time
 
 `sudo service postgresql start`
 
@@ -77,7 +77,7 @@ First, run all services simultaneously with:
 
 `docker-compose up -d`
 
-`-d or --detach` will run the processes on the background instead of running on the terminal which executed the command. 
+`-d or --detach` will run the processes on the background instead of running on the terminal which executed the command.
 You can ignore this flag if you don't care about it.
 
 Before running the `builder-server`, make sure that the following `.env` variables are set correctly so the services run by docker-compose work as expected.
@@ -93,3 +93,5 @@ AWS_STORAGE_URL=http://localhost:9000
 You can then run the `builder-service` normally as instructed in [RUN](#run)
 
 This method also provides some utilities to facilitate developer experience with a database viewer that can be accessed in http://localhost:8080, as well as an object storage viewer in http://localhost:9001
+
+.

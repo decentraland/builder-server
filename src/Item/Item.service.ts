@@ -145,9 +145,8 @@ export class ItemService {
   }
 
   /**
-   *
-   * @param allItems
-   * @returns
+   * Takes a list of items and returns an object containing two sets, one of standard items and the other of TP items
+   * @param allItems - Items to split, can be any combination of item types
    */
   public splitItems(
     allItems: ItemAttributes[]
@@ -249,13 +248,13 @@ export class ItemService {
         )
       }
 
-      const [remoteItem, remoteCollection] = await Promise.all([
-        collectionAPI.fetchItem(
-          dbCollection.contract_address!,
-          dbItem.blockchain_item_id
-        ),
-        collectionAPI.fetchCollection(dbCollection.contract_address!),
-      ])
+      const {
+        collection: remoteCollection,
+        item: remoteItem,
+      } = await collectionAPI.fetchCollectionWithItem(
+        dbCollection.contract_address!,
+        dbItem.blockchain_item_id
+      )
 
       if (remoteCollection) {
         collection = Bridge.mergeCollection(dbCollection, remoteCollection)

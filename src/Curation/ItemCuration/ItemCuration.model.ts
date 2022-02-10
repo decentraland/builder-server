@@ -41,4 +41,13 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
 
     return itemCurations[0]
   }
+
+  static async findByCollectionId(collectionId: string) {
+    return this.query<ItemCurationAttributes>(SQL`
+    SELECT ic.*
+      FROM ${raw(this.tableName)} ic
+      INNER JOIN ${raw(
+        Item.tableName
+      )} i ON i.id = ic.item_id AND i.collection_id = ${collectionId}`)
+  }
 }

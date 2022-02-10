@@ -4,10 +4,16 @@ import { ThirdPartyFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { CurationStatus } from '../Curation'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item'
 import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  CollectionAttributes,
+  FullCollection,
+  ThirdPartyCollectionAttributes,
+} from './Collection.types'
 import { Collection } from './Collection.model'
 import {
   CollectionAction,
@@ -18,9 +24,6 @@ import {
   UnauthorizedCollectionEditError,
   WrongCollectionError,
 } from './Collection.errors'
-import { ThirdPartyCollectionAttributes } from '.'
-import { ItemCuration } from '../Curation/ItemCuration'
-import { CurationStatus } from '../Curation'
 
 export class CollectionService {
   public isLockActive(lock: Date | null) {

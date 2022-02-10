@@ -3,6 +3,8 @@ import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { matchers } from '../common/matchers'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { CurationStatus } from '../Curation'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -118,10 +120,9 @@ export function decodeTPCollectionURN(
 }
 
 /**
- * Will return a collection formed by merging the collection present in
- * the database and the one found in the graph.
+ * Will return a collection by merging the collection present in the database and the one found in the graph.
+ * If the graph version does not exist, it'll throw. This works for both standard and TP collections
  */
-// TODO: @TPW: `getMergedCollection` is using collectionAPI.fetchCollection by collection_address. Does not support TPW
 export async function getMergedCollection(
   id: string
 ): Promise<CollectionAttributes> {
@@ -131,13 +132,30 @@ export async function getMergedCollection(
     throw new NonExistentCollectionError(id)
   }
 
-  const remoteCollection = await collectionAPI.fetchCollection(
-    dbCollection.contract_address!
-  )
+  let mergedCollection: CollectionAttributes
 
-  if (!remoteCollection) {
-    throw new UnpublishedCollectionError(id)
+  if (isTPCollection(dbCollection)) {
+    const lastItemCuration = await ItemCuration.findLastByCollectionIdAndStatus(
+      dbCollection.id,
+      CurationStatus.APPROVED
+    )
+
+    if (!lastItemCuration) {
+      throw new UnpublishedCollectionError(id)
+    }
+
+    mergedCollection = Bridge.mergeTPCollection(dbCollection, lastItemCuration)
+  } else {
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection.contract_address!
+    )
+
+    if (!remoteCollection) {
+      throw new UnpublishedCollectionError(id)
+    }
+
+    mergedCollection = Bridge.mergeCollection(dbCollection, remoteCollection)
   }
 
-  return Bridge.mergeCollection(dbCollection, remoteCollection)
+  return mergedCollection
 }

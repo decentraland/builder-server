@@ -107,10 +107,9 @@ export class Bridge {
   }
 
   /**
-   * Merges the remote data, which comes from the blockchain, and the catalyst data (if it exists) *into* the db data
-   * The db item is first converted to a full item and then get's the appropiate data merged into it
+   * Combines the catalyst data and the item's DB data *into* a FullItem.
+   * The db item is first converted to a FullItem and then the appropiate data is merged into it
    * @param dbItem - Database TP item
-   * @param remoteItem - Blockchain item
    * @param catalystItem - Catalyst item
    */
   static mergeTPItem(dbItem: ItemAttributes, catalystItem: Wearable): FullItem {
@@ -143,7 +142,7 @@ export class Bridge {
   }
 
   /**
-   * Takes collections found in the database and merges each one with the data from the remote published (blockchain) collection counterpart
+   * Takes collections found in the database and combines each one with the data from the remote published (blockchain) collection counterpart
    * If no published collection is found, it'll be returned as-is.
    * For more info on what data is updated from the published item, see `Bridge.mergeCollection`
    * @param dbCollections - DB standard collections
@@ -187,7 +186,7 @@ export class Bridge {
   }
 
   /**
-   * Takes items found in the database and merges each one with the data from the remote published (blockchain) item counterpart
+   * Takes items found in the database and combines each one with the data from the remote published (blockchain) item counterpart
    * If the published item exists it'll fech the Catalyst item and use its data for the merge aswell.
    * If no published item is found, it'll be returned as-is.
    * For more info on what data is updated from the published item, see `Bridge.mergeItem`
@@ -266,7 +265,7 @@ export class Bridge {
   }
 
   /**
-   * Takes a db standard collection and a published (blockchain) collection and merges the remote data *into* the db object
+   * Takes a db standard collection and a published (blockchain) collection and combines the remote data *into* the db object
    * to get the updated information we don't store in the database (like if the collection is approved)
    * @param dbCollection - DB standard collection
    * @param remoteCollection - Blockchain collection
@@ -291,7 +290,7 @@ export class Bridge {
   }
 
   /**
-   * Takes a db TP collection and the last curation an item has for this collection, and merges it *into* the db object
+   * Takes a db TP collection and the last curation an item has for this collection, and combines it *into* the db object
    * to get the updated information.
    * @param collection - TP db collection
    * @param lastItemCuration - Last item curation for the collection
@@ -310,7 +309,7 @@ export class Bridge {
   }
 
   /**
-   * Takes a db standard item, a published (blockchain) data and the catalyst item and merges the remote data *into* the db object
+   * Takes a db standard item, a published (blockchain) data and the catalyst item and combines the remote data *into* the db object
    * to get the updated information we don't store in the database (like the price or if it's approved)
    * @param dbItem - DB standard item
    * @param remoteItem - Blockchain item

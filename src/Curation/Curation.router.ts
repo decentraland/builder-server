@@ -5,35 +5,53 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, AuthRequest } from '../middleware'
 import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
-import { Collection } from '../Collection'
+import { Collection, CollectionService } from '../Collection'
+import { getMergedCollection, isTPCollection } from '../Collection/utils'
 import { Item } from '../Item'
-import { CurationStatus, patchCurationSchema } from './Curation.types'
+import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import {
+  CurationStatus,
+  CurationType,
+  patchCurationSchema,
+} from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
-import { CurationType } from '.'
-import { getMergedCollection } from '../Collection/utils'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from './CollectionCuration'
-import { ItemCurationAttributes } from './ItemCuration'
 
 const validator = getValidator()
 
 // TODO: Use CurationStatus everywhere
 export class CurationRouter extends Router {
   mount() {
+    // TODO: we might need to rename all endpoints to their actual entities:
+    //   - /collections/:id/curation -> /collectionCurations/:id
+    //   - /items/:id/curation -> /itemCurations/:id
+    //   - etc
     this.router.get(
-      '/curations', // TODO: add another one with the same handler to /collectionCurations
+      '/curations',
       withAuthentication,
       server.handleRequest(this.getCollectionCurations)
     )
 
-    // TODO: '/collections/:id/itemCurations'
+    this.router.get(
+      '/collectionCuration/:id/itemsStats',
+      withAuthentication,
+      server.handleRequest(this.getCollectionCurationItemStats)
+    )
+
+    this.router.get(
+      '/collections/:id/itemCurations',
+      withAuthentication,
+      server.handleRequest(this.getCollectionItemCurations)
+    )
 
     this.router.get(
       '/collections/:id/curation',
@@ -80,6 +98,89 @@ export class CurationRouter extends Router {
     )
   }
 
+  /**
+   * This endpoint will return all collection curations an address has.
+   * If the address is a commitee member, it'll return ALL curations. Otherwise it'll return the curations the address can see/manage.
+   * Keep in mind that standard collections have a CollectionCuration that shows the state the collection is in it's curation process.
+   * Conversely, TP collections have a virtual CollectionCuration which is created when its first item is curated. It'll remain `pending` forever
+   */
+  getCollectionCurations = async (req: AuthRequest) => {
+    const ethAddress = req.auth.ethAddress
+    const curationService = CurationService.byType(CurationType.COLLECTION)
+
+    if (await isCommitteeMember(ethAddress)) {
+      return curationService.getLatest()
+    }
+
+    const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
+      ethAddress
+    )
+
+    const contractAddresses = remoteCollections.map(
+      (collection) => collection.id
+    )
+
+    const [dbCollections, dbTPCollections] = await Promise.all([
+      Collection.findByContractAddresses(contractAddresses),
+      new CollectionService().getDbTPCollectionsByManager(ethAddress),
+    ])
+
+    const collectionIds = dbCollections
+      .concat(dbTPCollections)
+      .map((collection) => collection.id)
+
+    return curationService.getLatestByIds(collectionIds)
+  }
+
+  getCollectionCurationItemStats = async (req: AuthRequest) => {
+    const collectionId = server.extractFromReq(req, 'id')
+    const ethAddress = req.auth.ethAddress
+    const curationService = CurationService.byType(CurationType.COLLECTION)
+
+    await this.validateAccessToCuration(
+      curationService,
+      ethAddress,
+      collectionId
+    )
+
+    const collection = await Collection.findOne(collectionId)
+    if (!isTPCollection(collection)) {
+      throw new HTTPError(
+        'Collection is not a third party collection',
+        { id: collectionId },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    // TODO: This request could be huge. The method should work, as it's fetching page after page of items but this endpoint should probably be paginated.
+    const publishedItems = await thirdPartyAPI.fetchItemsByCollection(
+      collection.third_party_id,
+      collectionId
+    )
+
+    const total = publishedItems.length
+    let approved = 0
+    let rejected = 0
+    let needsReview = 0
+
+    for (const item of publishedItems) {
+      if (item.isApproved) {
+        approved += 1
+      } else if (item.createdAt === item.reviewedAt) {
+        needsReview += 1
+      } else {
+        rejected += 1
+      }
+    }
+
+    return {
+      total,
+      approved,
+      rejected,
+      needsReview,
+    }
+  }
+
   getCollectionCuration = async (req: AuthRequest) => {
     const collectionId = server.extractFromReq(req, 'id')
     const ethAddress = req.auth.ethAddress
@@ -94,6 +195,20 @@ export class CurationRouter extends Router {
     return curationService.getLatestById(collectionId)
   }
 
+  getCollectionItemCurations = async (req: AuthRequest) => {
+    const collectionId = server.extractFromReq(req, 'id')
+    const ethAddress = req.auth.ethAddress
+    const curationService = CurationService.byType(CurationType.COLLECTION)
+
+    await this.validateAccessToCuration(
+      curationService,
+      ethAddress,
+      collectionId
+    )
+
+    return ItemCuration.findByCollectionId(collectionId)
+  }
+
   getItemCuration = async (req: AuthRequest) => {
     const itemId = server.extractFromReq(req, 'id')
     const ethAddress = req.auth.ethAddress
@@ -102,34 +217,6 @@ export class CurationRouter extends Router {
     await this.validateAccessToCuration(curationService, ethAddress, itemId)
 
     return curationService.getLatestById(itemId)
-  }
-
-  // TODO: @TPW Scope this for item/collection?
-  getCollectionCurations = async (req: AuthRequest) => {
-    const ethAddress = req.auth.ethAddress
-    const curationService = CurationService.byType(CurationType.COLLECTION)
-
-    if (await isCommitteeMember(ethAddress)) {
-      return curationService.getLatest()
-    }
-
-    // TODO: @TPW *IF we need to show tpw collections* we need to add it here  ( this.service.getDbTPCollections(eth_address) ).
-    //            We'll also need to check that they're published (at least one item is published)
-    const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
-      ethAddress
-    )
-
-    const contractAddresses = remoteCollections.map(
-      (collection) => collection.id
-    )
-
-    const dbCollections = await Collection.findByContractAddresses(
-      contractAddresses
-    )
-
-    const dbCollectionIds = dbCollections.map((collection) => collection.id)
-
-    return curationService.getLatestByIds(dbCollectionIds)
   }
 
   updateCollectionCuration = async (req: AuthRequest) => {
@@ -199,12 +286,11 @@ export class CurationRouter extends Router {
       CurationType.ITEM
     )
 
-    const item = await Item.findOne(itemId)
-    const collectionCuration = await CollectionCuration.findOne(
-      item.collection_id
-    )
+    const collectionCuration = await CollectionCuration.findByItemId(itemId)
 
     if (!collectionCuration) {
+      const item = await Item.findOne(itemId)
+
       await this.insertCuration(
         item.collection_id,
         ethAddress,

@@ -88,7 +88,7 @@ export class CollectionService {
     return new Collection(attributes).upsert()
   }
 
-  async upsertTPWCollection(
+  async upsertTPCollection(
     id: string,
     eth_address: string,
     collectionJSON: FullCollection
@@ -126,7 +126,7 @@ export class CollectionService {
 
       // If the urn suffix is different, the collection's URN is being changed.
       if (urn_suffix !== collection.urn_suffix) {
-        // We can't change the TPW collection's URN if there are already published items
+        // We can't change the TP collection's URN if there are already published items
         await this.checkIfThirdPartyCollectionHasPublishedItems(id)
 
         // Check if the new URN for the collection already exists

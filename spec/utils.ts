@@ -105,8 +105,8 @@ export function mockAuthorizationMiddleware(
 
 /**
  * Mocks the "withModelAuthorization" middleware used in the collection's middleware
- * by mocking all the function calls to the Collection model and the TPW requests.
- * This mock requires the Collection model and the TPW API "isManager" method to be mocked first.
+ * by mocking all the function calls to the Collection model and the TP requests.
+ * This mock requires the Collection model and the TP API "isManager" method to be mocked first.
  *
  * @param id - The id of the collection to be authorized.
  * @param ethAddress - The ethAddress of the user that will be requesting authorization to the collection.
@@ -218,7 +218,7 @@ export function mockThirdPartyURNExists(
 
 /**
  * Mocks the "withModelAuthorization" middleware used in the items's middleware
- * by mocking all the function calls to the Collection model and the TPW requests.
+ * by mocking all the function calls to the Collection model and the TP requests.
  * This mock requires the Item model findOne method to be mocked first.
  *
  * @param id - The id of the item to be authorized.

@@ -162,13 +162,13 @@ export class CollectionRouter extends Router {
       dbCollections,
       remoteCollections
     )
-    const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
+    const consolidatedTPCollections = await Bridge.consolidateTPCollections(
       dbTPCollections
     )
 
     // Build the full collection
     return consolidatedCollections
-      .concat(consolidatedTPWCollections)
+      .concat(consolidatedTPCollections)
       .map(toFullCollection)
   }
 
@@ -200,13 +200,13 @@ export class CollectionRouter extends Router {
       dbCollections,
       remoteCollections
     )
-    const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
+    const consolidatedTPCollections = await Bridge.consolidateTPCollections(
       dbTPCollections
     )
 
     // Build the full collection
     return consolidatedCollections
-      .concat(consolidatedTPWCollections)
+      .concat(consolidatedTPCollections)
       .map(toFullCollection)
   }
 
@@ -375,7 +375,7 @@ export class CollectionRouter extends Router {
 
     try {
       if (hasTPCollectionURN(collectionJSON)) {
-        upsertedCollection = await this.service.upsertTPWCollection(
+        upsertedCollection = await this.service.upsertTPCollection(
           id,
           eth_address,
           collectionJSON

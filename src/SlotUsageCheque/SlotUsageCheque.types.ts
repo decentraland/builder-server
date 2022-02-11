@@ -1,6 +1,6 @@
 export type SlotUsageChequeAttributes = {
   id: string
-  signature: string
+  signedMessage: string
   quantity: string
   salt: string
   collection_id: string

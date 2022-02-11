@@ -16,19 +16,16 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
       INNER JOIN ${raw(Item.tableName)} i ON i.id = ic.item_id AND i.collection_id = ${collectionId}`)
   }
 
-  static async getItemCurationCountByThirdPartyId(
-    thirdPartyId: string
-  ): Promise<{ count: number }[]> {
-    return this.query(
-      SQL`SELECT COUNT(DISTINCT ${raw(ItemCuration.tableName)}.id) as Count
-        FROM ${raw(ItemCuration.tableName)}
-        JOIN ${raw(Item.tableName)} ON ${raw(Item.tableName)}.id=${raw(
-        ItemCuration.tableName
-      )}.item_id
-        JOIN ${raw(Collection.tableName)} ON ${raw(
-        Collection.tableName
-      )}.id=${raw(Item.tableName)}.collection_id
-        WHERE ${raw(Collection.tableName)}.third_party_id=${thirdPartyId}`
+  static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {
+    const counts = await this.query<{ count: number }>(
+      SQL`SELECT COUNT(DISTINCT item_curations.id) AS Count
+        FROM ${raw(ItemCuration.tableName)} AS item_curations
+        JOIN ${raw(Item.tableName)} AS items ON items.id=item_curations.item_id
+        JOIN ${raw(
+          Collection.tableName
+        )} AS collections ON collections.id=items.collection_id
+        WHERE collections.third_party_id=${thirdPartyId}`
     )
+    return counts[0].count
   }
 }

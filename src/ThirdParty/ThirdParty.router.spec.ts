@@ -101,20 +101,14 @@ describe('ThirdParty router', () => {
     const maxSlots = 10
     const itemsInCuration = 6
 
-    beforeEach(() => {
-      ;(thirdPartyAPI.fetchMaxItemsByThirdParty as jest.Mock).mockResolvedValueOnce(
-        maxSlots
-      )
-      ;(thirdPartyAPI.isManager as jest.Mock).mockResolvedValueOnce(true)
-      ;(ItemCuration.getItemCurationCountByThirdPartyId as jest.Mock).mockResolvedValueOnce(
-        [{ count: itemsInCuration }]
-      )
-      url = '/thirdParties/aThirdPartyId/slots'
-    })
-
-    afterEach(() => {
-      jest.restoreAllMocks()
-    })
+    ;(thirdPartyAPI.fetchMaxItemsByThirdParty as jest.Mock).mockResolvedValueOnce(
+      maxSlots
+    )
+    ;(thirdPartyAPI.isManager as jest.Mock).mockResolvedValueOnce(true)
+    ;(ItemCuration.getItemCurationCountByThirdPartyId as jest.Mock).mockResolvedValueOnce(
+      itemsInCuration
+    )
+    url = '/thirdParties/aThirdPartyId/slots'
 
     it('should respond with the difference between the maximum slots of the third party and the items in curation', () => {
       return server

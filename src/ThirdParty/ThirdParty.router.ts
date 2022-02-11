@@ -9,6 +9,7 @@ import { toThirdParty } from './utils'
 import { ThirdPartyService } from './ThirdParty.service'
 
 export class ThirdPartyRouter extends Router {
+  private thirdPartyService = new ThirdPartyService()
   mount() {
     /**
      * Get third party records
@@ -39,7 +40,7 @@ export class ThirdPartyRouter extends Router {
     return fragments.map(toThirdParty)
   }
 
-  async getThirdPartyAvailableSlots(req: AuthRequest): Promise<number> {
+  getThirdPartyAvailableSlots = async (req: AuthRequest): Promise<number> => {
     const thirdPartyId = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
     if (!(await thirdPartyAPI.isManager(thirdPartyId, eth_address))) {
@@ -50,7 +51,7 @@ export class ThirdPartyRouter extends Router {
       )
     }
 
-    const availableSlots = await ThirdPartyService.getThirdPartyAvailableSlots(
+    const availableSlots = await this.thirdPartyService.getThirdPartyAvailableSlots(
       thirdPartyId
     )
     return availableSlots

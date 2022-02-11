@@ -4,6 +4,7 @@ import {
   Hashing,
 } from 'dcl-catalyst-commons'
 import { omit } from 'decentraland-commons/dist/utils'
+import JSONStableStringify from 'json-stable-stringify'
 import { CollectionAttributes } from '../Collection'
 import { isTPCollection } from '../Collection/utils'
 import { DCLCatalystItem, ItemAttributes, TPCatalystItem } from './Item.types'
@@ -30,7 +31,6 @@ function buildItemEntityMetadata(
     ),
   }))
 
-  // This has a heavy assumption that the keys of the object will have always the same order.
   const itemMetadata: DCLCatalystItem = {
     id:
       isTPCollection(collection) && item.urn_suffix
@@ -73,7 +73,7 @@ async function calculateContentHash(
   content: EntityContentItemReference[],
   metadata: EntityMetadata
 ) {
-  const data = JSON.stringify({
+  const data = JSONStableStringify({
     content: content
       .sort((a: EntityContentItemReference, b: EntityContentItemReference) => {
         if (a.hash > b.hash) return 1
@@ -84,9 +84,7 @@ async function calculateContentHash(
     metadata,
   })
   const buffer = Buffer.from(data)
-  // We should use the new one.
-  return Hashing.calculateBufferHash(buffer)
-  // return Hashing.calculateIPFSHash(buffer)
+  return Hashing.calculateIPFSHash(buffer)
 }
 
 export async function calculateItemContentHash(

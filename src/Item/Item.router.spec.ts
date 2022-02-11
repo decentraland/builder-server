@@ -1026,7 +1026,7 @@ describe('Item router', () => {
         })
       })
 
-      describe('and the item is being inserted', () => {
+      describe("and the user doesn't have permission to insert or update an item", () => {
         beforeEach(() => {
           itemToUpsert = { ...itemToUpsert, collection_id: null }
           mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
@@ -1242,6 +1242,33 @@ describe('Item router', () => {
               error:
                 "The collection that contains this item has been already published. The item can't be updated with a new rarity.",
               ok: false,
+            })
+          })
+        })
+
+        describe.only("and the item's metadata (not rarity nor collection) and content is being updated", () => {
+          beforeEach(() => {
+            mockCollection.findOne.mockResolvedValueOnce({
+              ...collectionMock,
+              collection_id: itemToUpsert.collection_id,
+              eth_address: wallet.address,
+              contract_address: Wallet.createRandom().address,
+            })
+            mockItem.findOne.mockResolvedValueOnce(dbItem)
+            mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
+            mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+          })
+
+          it('should respond with the updated item', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: itemToUpsert, name: 'aNewName' })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.ok)
+
+            expect(response.body).toEqual({
+              data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
+              ok: true,
             })
           })
         })

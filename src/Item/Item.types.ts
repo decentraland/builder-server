@@ -38,6 +38,7 @@ export type ItemAttributes = {
   contents: Record<string, string>
   created_at: Date
   updated_at: Date
+  content_hash: string | null
 }
 
 export type ThirdPartyItemAttributes = ItemAttributes & {

@@ -449,8 +449,9 @@ export class ItemService {
     const attributes = toDBItem({
       ...item,
       eth_address,
-      content_hash: contentHash,
     })
+
+    attributes.content_hash = contentHash
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem, dbCollection)
@@ -599,6 +600,11 @@ export class ItemService {
       ...item,
       eth_address,
     })
+
+    attributes.content_hash = await calculateItemContentHash(
+      attributes,
+      dbCollection
+    )
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem, dbCollection)

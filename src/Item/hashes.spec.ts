@@ -57,6 +57,8 @@ describe('when calculating the hashes of an item', () => {
   it("should return the hash of the item's entity", () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
-    ).resolves.toEqual('QmehW1ccHcvdKp8NNhrr6PdxEDHGYa9j6xmu9Bojg8jcjN')
+    ).resolves.toEqual(
+      'bafkreif74bjg675rbb4l4ksz3fbqwul7anbcps6qgw5caoyzmncdiqipm4'
+    )
   })
 })

@@ -440,10 +440,7 @@ export class ItemService {
         }
 
         // Compute the content hash of the item to later store it in the DB
-        contentHash = await calculateItemContentHash(
-          dbItem,
-          dbCollection.contract_address!
-        )
+        contentHash = await calculateItemContentHash(dbItem, dbCollection!)
       } else if (this.collectionService.isLockActive(dbCollection.lock)) {
         throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
       }

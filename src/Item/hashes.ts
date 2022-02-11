@@ -3,17 +3,25 @@ import {
   EntityMetadata,
   Hashing,
 } from 'dcl-catalyst-commons'
-import { ItemAttributes } from './Item.types'
-// import { getDecentralandItemURN } from './utils'
+import { omit } from 'decentraland-commons/dist/utils'
+import { CollectionAttributes } from '../Collection'
+import { isTPCollection } from '../Collection/utils'
+import { DCLCatalystItem, ItemAttributes, TPCatalystItem } from './Item.types'
+import { buildTPItemURN, getDecentralandItemURN } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
 
-// TODO type this.
-function buildDCLItemEntityMetadata(
+function buildItemEntityMetadata(
   item: ItemAttributes,
-  collectionAddress: string
-): any {
+  collection: CollectionAttributes
+): DCLCatalystItem | TPCatalystItem {
+  if (!collection.contract_address) {
+    throw new Error(
+      "The item's collection must be published to build its metadata"
+    )
+  }
+
   // We strip the thumbnail from the representations contents as they're not being used by the Catalyst and just occupy extra space
   const representations = item.data.representations.map((representation) => ({
     ...representation,
@@ -22,15 +30,20 @@ function buildDCLItemEntityMetadata(
     ),
   }))
 
-  return {
-    // id: getDecentralandItemURN(item, collectionAddress),
-    // How do we know where the item comes from?
+  // This has a heavy assumption that the keys of the object will have always the same order.
+  const itemMetadata: DCLCatalystItem = {
     id:
-      'urn:decentraland:mumbai:collections-v2:0x6319d66715faf411f8c37a2f5858e0bce90da5ae:0',
+      isTPCollection(collection) && item.urn_suffix
+        ? buildTPItemURN(
+            collection.third_party_id,
+            collection.urn_suffix,
+            item.urn_suffix
+          )
+        : getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,
     description: item.description,
-    collectionAddress: collectionAddress,
-    rarity: item.rarity,
+    collectionAddress: collection.contract_address!,
+    rarity: item.rarity ?? undefined,
     i18n: [{ code: 'en', text: item.name }],
     data: {
       replaces: item.data.replaces,
@@ -43,6 +56,17 @@ function buildDCLItemEntityMetadata(
     thumbnail: THUMBNAIL_PATH,
     metrics: item.metrics,
   }
+
+  if (!item.rarity) {
+    delete itemMetadata.rarity
+  }
+
+  if (isTPCollection(collection) && item.urn_suffix) {
+    // How is the metadata for a TP item built?
+    return omit(itemMetadata, ['collectionAddress'])
+  }
+
+  return itemMetadata
 }
 
 async function calculateContentHash(
@@ -60,20 +84,19 @@ async function calculateContentHash(
     metadata,
   })
   const buffer = Buffer.from(data)
-  // Calculate buffer hash will be deprecated. This hash function produces a different hash from
-  // the one that we're currently using. This is a big issue.
+  // We should use the new one.
   return Hashing.calculateBufferHash(buffer)
   // return Hashing.calculateIPFSHash(buffer)
 }
 
 export async function calculateItemContentHash(
   item: ItemAttributes,
-  collectionAddress: string
+  collection: CollectionAttributes
 ): Promise<string> {
   const content = Object.keys(item.contents).map((file) => ({
     file,
     hash: item.contents[file],
   }))
-  const metadata = await buildDCLItemEntityMetadata(item, collectionAddress)
+  const metadata = await buildItemEntityMetadata(item, collection)
   return calculateContentHash(content, metadata)
 }

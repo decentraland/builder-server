@@ -7,7 +7,7 @@ describe('matchers', () => {
 
     beforeEach(() => {
       decentralandURN =
-        'urn:decentraland:ropsten:collections-v2:0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8'
+        'urn:decentraland:mumbai:collections-v2:0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd8'
       thirdPartyURN =
         'urn:decentraland:matic:collections-thirdparty:crypto-motors:some-name'
     })

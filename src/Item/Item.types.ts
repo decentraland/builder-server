@@ -56,3 +56,21 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   total_supply: number
   content_hash: string | null
 }
+
+type BaseCatalystItem = {
+  id: string // uuid
+  name: string
+  thumbnail: string
+  description: string
+  rarity?: ItemRarity
+  metrics: MetricsAttributes
+  i18n: { code: string; text: string }[]
+  data: WearableData
+  image: string
+}
+
+export type TPCatalystItem = BaseCatalystItem
+
+export type DCLCatalystItem = BaseCatalystItem & {
+  collectionAddress: string
+}

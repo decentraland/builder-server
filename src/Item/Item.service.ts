@@ -48,6 +48,7 @@ export class ItemService {
    * @param item - The item to be updated or inserted.
    * @param eth_address - The item in the DB to be updated or inserted.
    */
+  // TODO: Most (if not all) service methods receive an id/primitive value, both here and on CollectionService. We might want to change the first param
   public async upsertItem(
     item: FullItem,
     eth_address: string
@@ -121,12 +122,10 @@ export class ItemService {
   public async getCollectionItems(
     collectionId: string
   ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
-    const dbCollection = await this.collectionService.getDBCollection(
-      collectionId
-    )
-    const dbItems = await Item.find<ItemAttributes>({
-      collection_id: collectionId,
-    })
+    const [dbCollection, dbItems] = await Promise.all([
+      this.collectionService.getDBCollection(collectionId),
+      Item.find<ItemAttributes>({ collection_id: collectionId }),
+    ])
 
     return isTPCollection(dbCollection)
       ? this.getTPCollectionItems(dbCollection, dbItems)
@@ -301,7 +300,9 @@ export class ItemService {
         dbItem.collection_id
       )
       if (
-        await this.collectionService.isPublished(dbCollection.contract_address!)
+        await this.collectionService.isDCLPublished(
+          dbCollection.contract_address!
+        )
       ) {
         throw new DCLItemAlreadyPublishedError(
           dbItem.id,
@@ -380,7 +381,7 @@ export class ItemService {
 
       const isDbCollectionPublished =
         dbCollection &&
-        (await this.collectionService.isPublished(
+        (await this.collectionService.isDCLPublished(
           dbCollection.contract_address!
         ))
 

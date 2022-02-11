@@ -1,14 +1,20 @@
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { ThirdPartyFragment } from '../ethereum/api/fragments'
+import { ItemFragment, ThirdPartyFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { CurationStatus } from '../Curation'
 import { Ownable } from '../Ownable'
-import { Item } from '../Item'
-import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
+import { FullItem, Item, ItemAttributes } from '../Item'
+import { UnpublishedItemError } from '../Item/Item.errors'
+import {
+  decodeTPCollectionURN,
+  hasTPCollectionURN,
+  isTPCollection,
+  toDBCollection,
+} from './utils'
 import {
   CollectionAttributes,
   FullCollection,
@@ -23,9 +29,70 @@ import {
   NonExistentCollectionError,
   UnauthorizedCollectionEditError,
   WrongCollectionError,
+  UnpublishedCollectionError,
 } from './Collection.errors'
 
 export class CollectionService {
+  public async getCollection(id: string): Promise<CollectionAttributes> {
+    const dbCollection = await this.getDBCollection(id)
+
+    return isTPCollection(dbCollection)
+      ? this.getTPCollection(dbCollection)
+      : this.getDCLCollection(dbCollection)
+  }
+
+  public async upsertCollection(
+    id: string,
+    eth_address: string,
+    collectionJSON: FullCollection,
+    data = ''
+  ) {
+    return hasTPCollectionURN(collectionJSON)
+      ? this.upsertTPCollection(id, eth_address, collectionJSON)
+      : this.upsertDCLCollection(id, eth_address, collectionJSON, data)
+  }
+
+  public async deleteCollection(collectionId: string): Promise<void> {
+    const collection = await this.getDBCollection(collectionId)
+
+    if (isTPCollection(collection)) {
+      await this.checkIfThirdPartyCollectionHasPublishedItems(
+        collection.id,
+        CollectionAction.DELETE
+      )
+    } else {
+      // If it's a DCL collection, we must check if it was already published
+      if (await this.isDCLPublished(collection.contract_address!)) {
+        throw new AlreadyPublishedCollectionError(
+          collectionId,
+          CollectionType.DCL,
+          CollectionAction.DELETE
+        )
+      }
+    }
+    if (this.isLockActive(collection.lock)) {
+      throw new LockedCollectionError(collection.id, CollectionAction.DELETE)
+    }
+    await Promise.all([
+      Collection.delete({ id: collection.id }),
+      // TODO: This should eventually be in the item's service
+      Item.delete({ collection_id: collection.id }),
+    ])
+  }
+
+  public async publishCollection(
+    id: string
+  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
+    const [dbCollection, dbItems] = await Promise.all([
+      this.getDBCollection(id),
+      Item.findOrderedByCollectionId(id),
+    ])
+
+    return isTPCollection(dbCollection)
+      ? this.publishTPCollection()
+      : this.publishDCLCollection(dbCollection, dbItems)
+  }
+
   public isLockActive(lock: Date | null) {
     if (!lock) {
       return false
@@ -37,7 +104,83 @@ export class CollectionService {
     return deadline.getTime() > Date.now()
   }
 
-  public async upsertDCLCollection(
+  public async isDCLPublished(contractAddress: string) {
+    const remoteCollection = await collectionAPI.fetchCollection(
+      contractAddress
+    )
+
+    // Fallback: check against the blockchain, in case the subgraph is lagging
+    if (!remoteCollection) {
+      const isCollectionPublished = await isPublished(contractAddress)
+      return isCollectionPublished
+    }
+
+    return true
+  }
+
+  private async publishDCLCollection(
+    dbCollection: CollectionAttributes,
+    dbItems: ItemAttributes[]
+  ) {
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection!.contract_address!
+    )
+
+    if (!remoteCollection) {
+      // This might be a problem with the graph lagging but we delegate the retry logic on the client
+      throw new UnpublishedCollectionError(dbCollection.id)
+    }
+
+    const items: ItemAttributes[] = [...dbItems]
+    let remoteItems: ItemFragment[] = []
+
+    const isMissingBlockchainItemIds = dbItems.some(
+      (item) => item.blockchain_item_id == null
+    )
+
+    if (isMissingBlockchainItemIds) {
+      remoteItems = await collectionAPI.fetchItemsByContractAddress(
+        dbCollection!.contract_address!
+      )
+
+      const updates = []
+
+      for (const [index, item] of items.entries()) {
+        const remoteItem = remoteItems.find(
+          (remoteItem) => Number(remoteItem.blockchainId) === index
+        )
+        if (!remoteItem) {
+          throw new UnpublishedItemError(item.id)
+        }
+
+        items[index].blockchain_item_id = remoteItem.blockchainId
+        updates.push(
+          Item.update(
+            { blockchain_item_id: remoteItem.blockchainId },
+            { id: item.id }
+          )
+        )
+      }
+
+      await Promise.all(updates)
+    }
+
+    const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
+
+    return {
+      collection,
+      items: await Bridge.consolidateItems(items, remoteItems),
+    }
+  }
+
+  private async publishTPCollection(): Promise<{
+    collection: CollectionAttributes
+    items: FullItem[]
+  }> {
+    return {} as any
+  }
+
+  private async upsertDCLCollection(
     id: string,
     eth_address: string,
     collectionJSON: FullCollection,
@@ -65,7 +208,7 @@ export class CollectionService {
     const collection = await Collection.findOne<CollectionAttributes>(id)
 
     if (collection && collection.contract_address) {
-      if (await this.isPublished(collection.contract_address)) {
+      if (await this.isDCLPublished(collection.contract_address)) {
         throw new AlreadyPublishedCollectionError(
           id,
           CollectionType.DCL,
@@ -88,7 +231,7 @@ export class CollectionService {
     return new Collection(attributes).upsert()
   }
 
-  async upsertTPCollection(
+  private async upsertTPCollection(
     id: string,
     eth_address: string,
     collectionJSON: FullCollection
@@ -159,48 +302,6 @@ export class CollectionService {
     return new Collection(attributes).upsert()
   }
 
-  async isPublished(contractAddress: string) {
-    const remoteCollection = await collectionAPI.fetchCollection(
-      contractAddress
-    )
-
-    // Fallback: check against the blockchain, in case the subgraph is lagging
-    if (!remoteCollection) {
-      const isCollectionPublished = await isPublished(contractAddress)
-      return isCollectionPublished
-    }
-
-    return true
-  }
-
-  public async deleteCollection(collectionId: string): Promise<void> {
-    const collection = await this.getDBCollection(collectionId)
-
-    if (isTPCollection(collection)) {
-      await this.checkIfThirdPartyCollectionHasPublishedItems(
-        collection.id,
-        CollectionAction.DELETE
-      )
-    } else {
-      // If it's a DCL collection, we must check if it was already published
-      if (await this.isPublished(collection.contract_address!)) {
-        throw new AlreadyPublishedCollectionError(
-          collectionId,
-          CollectionType.DCL,
-          CollectionAction.DELETE
-        )
-      }
-    }
-    if (this.isLockActive(collection.lock)) {
-      throw new LockedCollectionError(collection.id, CollectionAction.DELETE)
-    }
-    await Promise.all([
-      Collection.delete({ id: collection.id }),
-      // TODO: This should eventually be in the item's service
-      Item.delete({ collection_id: collection.id }),
-    ])
-  }
-
   public async isOwnedOrManagedBy(
     id: string,
     ethAddress: string
@@ -236,14 +337,6 @@ export class CollectionService {
     }
 
     return collection
-  }
-
-  public async getCollection(id: string): Promise<CollectionAttributes> {
-    const dbCollection = await this.getDBCollection(id)
-
-    return isTPCollection(dbCollection)
-      ? this.getTPCollection(dbCollection)
-      : this.getDCLCollection(dbCollection)
   }
 
   private async getDbTPCollectionsByThirdParties(

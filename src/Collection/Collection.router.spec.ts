@@ -1238,7 +1238,7 @@ describe('Collection router', () => {
           .expect(401)
           .then((response: any) => {
             expect(response.body).toEqual({
-              error: 'The collection is not published yet',
+              error: 'The collection is not published.',
               data: { id: dbCollection.id },
               ok: false,
             })
@@ -1280,9 +1280,8 @@ describe('Collection router', () => {
             .expect(409)
             .then((response: any) => {
               expect(response.body).toEqual({
-                error:
-                  "An item couldn't be matched with the one in the blockchain",
-                data: { itemId: dbItemMock.id, collectionId: dbCollection.id },
+                error: 'The item is not published.',
+                data: { id: dbItemMock.id },
                 ok: false,
               })
             })

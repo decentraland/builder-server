@@ -1,5 +1,6 @@
 import supertest from 'supertest'
 import { createAuthHeaders, buildURL } from '../../spec/utils'
+import { ItemCuration } from '../Curation/ItemCuration'
 import {
   ThirdPartyFragment,
   ThirdPartyMetadataType,
@@ -12,6 +13,7 @@ import { toThirdParty } from './utils'
 const server = supertest(app.getApp())
 
 jest.mock('../ethereum/api/thirdParty')
+jest.mock('../Curation/ItemCuration')
 
 describe('ThirdParty router', () => {
   let fragments: ThirdPartyFragment[]
@@ -90,6 +92,38 @@ describe('ThirdParty router', () => {
           expect(thirdPartyAPI.fetchThirdPartiesByManager).toHaveBeenCalledWith(
             manager
           )
+        })
+    })
+  })
+
+  describe('when retreiving the available slots for a third party', () => {
+    let url: string
+    let maxSlots: number
+    let itemsInCuration: number
+
+    beforeEach(() => {
+      maxSlots = 10
+      itemsInCuration = 6
+      ;(thirdPartyAPI.fetchMaxItemsByThirdParty as jest.Mock).mockResolvedValueOnce(
+        maxSlots
+      )
+      ;(thirdPartyAPI.isManager as jest.Mock).mockResolvedValueOnce(true)
+      ;(ItemCuration.getItemCurationCountByThirdPartyId as jest.Mock).mockResolvedValueOnce(
+        itemsInCuration
+      )
+      url = '/thirdParties/aThirdPartyId/slots'
+    })
+
+    it('should respond with the difference between the maximum slots of the third party and the items in curation', () => {
+      return server
+        .get(buildURL(url))
+        .set(createAuthHeaders('get', url))
+        .expect(200)
+        .then((response: any) => {
+          expect(response.body).toEqual({
+            data: maxSlots - itemsInCuration,
+            ok: true,
+          })
         })
     })
   })

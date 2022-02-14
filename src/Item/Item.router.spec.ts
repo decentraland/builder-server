@@ -477,6 +477,42 @@ describe('Item router', () => {
         })
       })
 
+      describe("and the item contains a representation with file names that aren't included in the contents", () => {
+        beforeEach(() => {
+          itemToUpsert = {
+            ...itemToUpsert,
+            data: {
+              ...itemToUpsert.data,
+              representations: [
+                {
+                  ...itemToUpsert.data.representations[0],
+                  mainFile: 'some-file-that-does-not-exist.glb',
+                  contents: ['male/another-file-that-doesnt-exist.glb'],
+                },
+              ],
+            },
+          }
+        })
+
+        it('should respond with a 400 and a message signaling that the representation contains files that are not included in the contents', () => {
+          return server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  id: itemToUpsert.id,
+                },
+                error:
+                  "Representation files must be part of the item's content",
+                ok: false,
+              })
+            })
+        })
+      })
+
       describe('and the item is being updated', () => {
         beforeEach(() => {
           mockIsThirdPartyManager(wallet.address, true)

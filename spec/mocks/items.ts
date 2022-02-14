@@ -12,11 +12,12 @@ import {
   ItemType,
   ThirdPartyItemAttributes,
 } from '../../src/Item/Item.types'
-import { dbCollectionMock, dbTPCollectionMock } from './collections'
 import { toUnixTimestamp } from '../../src/utils/parse'
 import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
 import { isTPCollection } from '../../src/Collection/utils'
+import { WearableBodyShape } from '../../src/Item/wearable/types'
+import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
   created_at: string
@@ -74,7 +75,15 @@ export const dbItemMock: ItemAttributes = {
   rarity: ItemRarity.COMMON,
   type: ItemType.WEARABLE,
   data: {
-    representations: [],
+    representations: [
+      {
+        bodyShapes: [WearableBodyShape.MALE],
+        mainFile: 'male/M_3LAU_Hat_Blue.glb',
+        contents: ['male/M_3LAU_Hat_Blue.glb'],
+        overrideHides: [],
+        overrideReplaces: [],
+      },
+    ],
     replaces: [],
     hides: [],
     tags: [],
@@ -87,7 +96,11 @@ export const dbItemMock: ItemAttributes = {
     triangles: 5,
     entities: 6,
   },
-  contents: {},
+  contents: {
+    'male/M_3LAU_Hat_Blue.glb':
+      'QmebRdUS12afshxzNtTb2h6UhSXjMrGTGeZWcwwtmhTJng',
+    'thumbnail.png': 'QmPP232rkN2UDg8yGAyJ6hkHGsDFwXivcv9MXFfnW8r34y',
+  },
   created_at: new Date(),
   updated_at: new Date(),
 }

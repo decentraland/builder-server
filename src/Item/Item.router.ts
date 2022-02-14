@@ -22,7 +22,7 @@ import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
-import { upsertItemSchema } from './Item.schema'
+import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasPublicAccess } from './access'
 import { ItemService } from './Item.service'
@@ -278,6 +278,16 @@ export class ItemRouter extends Router {
         {
           urlId: id,
           bodyId: itemJSON.id,
+        },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    if (!areItemRepresentationsValid(itemJSON)) {
+      throw new HTTPError(
+        "Representation files must be part of the item's content",
+        {
+          id,
         },
         STATUS_CODES.badRequest
       )

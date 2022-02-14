@@ -18,6 +18,10 @@ describe('Collection service', () => {
     service = new CollectionService()
   })
 
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
   describe('when checking if the lock is active', () => {
     const twoDaysInMilliseconds = 2 * 24 * 60 * 60 * 1000
     const thrityMinutesInMilliseconds = 30 * 60 * 1000
@@ -36,11 +40,6 @@ describe('Collection service', () => {
         jest
           .spyOn(Date, 'now')
           .mockReturnValueOnce(Date.now() + twoDaysInMilliseconds)
-      })
-
-      afterAll(() => {
-        // Just in case something goes wrong with the test and the Date.now function never gets executed.
-        jest.restoreAllMocks()
       })
 
       it('should return false', () => {

@@ -76,9 +76,7 @@ export class CurationService<
       }
       case CurationType.ITEM: {
         const item = await getMergedItem(id)
-        const collection = item.collection_id
-          ? await getMergedCollection(item.collection_id)
-          : undefined
+        const collection = await getMergedCollection(item.collection_id!) // the item WILL have an id here, otherwise getMergedItem throws
         return hasItemAccess(ethAddress, item, collection)
       }
       default:

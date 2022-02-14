@@ -136,11 +136,8 @@ describe('Item router', () => {
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
           dbCollectionMock
         )
-        ;(collectionAPI.fetchItem as jest.Mock).mockResolvedValueOnce(
-          itemFragment
-        )
-        ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
-          itemFragment.collection
+        ;(collectionAPI.fetchCollectionWithItem as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragment.collection, item: itemFragment }
         )
         ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
         resultingItem = toResultItem(dbItem, itemFragment, wearable)
@@ -522,6 +519,42 @@ describe('Item router', () => {
                   }),
                 ],
                 error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe("and the item contains a representation with file names that aren't included in the contents", () => {
+        beforeEach(() => {
+          itemToUpsert = {
+            ...itemToUpsert,
+            data: {
+              ...itemToUpsert.data,
+              representations: [
+                {
+                  ...itemToUpsert.data.representations[0],
+                  mainFile: 'some-file-that-does-not-exist.glb',
+                  contents: ['male/another-file-that-doesnt-exist.glb'],
+                },
+              ],
+            },
+          }
+        })
+
+        it('should respond with a 400 and a message signaling that the representation contains files that are not included in the contents', () => {
+          return server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  id: itemToUpsert.id,
+                },
+                error:
+                  "Representation files must be part of the item's content",
                 ok: false,
               })
             })

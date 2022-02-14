@@ -1,11 +1,13 @@
 import { ExpressApp } from '../common/ExpressApp'
-import { collectionAPI } from '../ethereum/api/collection'
-import { dbItemMock } from '../../spec/mocks/items'
-import { getMergedCollection } from '../Collection/utils'
 import {
-  NonExistentCollectionError,
-  UnpublishedCollectionError,
-} from '../Collection/Collection.errors'
+  collectionFragmentMock,
+  dbCollectionMock,
+  dbTPCollectionMock,
+} from '../../spec/mocks/collections'
+import { dbItemMock, thirdPartyItemFragmentMock } from '../../spec/mocks/items'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { collectionAPI } from '../ethereum/api/collection'
+import { toUnixTimestamp } from '../utils/parse'
 import { Collection } from '../Collection'
 import { Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
@@ -22,10 +24,8 @@ import { CurationStatus } from './Curation.types'
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
-jest.mock('../Collection/utils')
 
 const mockIsComiteeMember = isCommitteeMember as jest.Mock
-const mockGetMergedCollection = getMergedCollection as jest.Mock
 
 describe('when handling a request', () => {
   let router: CurationRouter
@@ -55,6 +55,91 @@ describe('when handling a request', () => {
     jest.restoreAllMocks()
   })
 
+  describe('when trying to obtain the curation stats for each item on a collection', () => {
+    let req: AuthRequest
+
+    beforeEach(() => {
+      req = {
+        auth: { ethAddress: 'ethAddress' },
+        params: { id: 'collectionId' },
+      } as any
+    })
+
+    describe('if the address does not have access to the collection', () => {
+      beforeEach(() => {
+        mockServiceWithAccess(CollectionCuration, false)
+      })
+
+      it('should reject with an unauthorized message', async () => {
+        await expect(
+          router.getCollectionCurationItemStats(req)
+        ).rejects.toThrowError('Unauthorized')
+      })
+    })
+
+    describe('if the collection id does not belong to a TP collection', () => {
+      beforeEach(() => {
+        mockServiceWithAccess(CollectionCuration, true)
+
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce(dbCollectionMock)
+      })
+
+      it('should reject with an unauthorized message', async () => {
+        await expect(
+          router.getCollectionCurationItemStats(req)
+        ).rejects.toThrowError('Collection is not a third party collection')
+      })
+    })
+
+    describe('if it is fetching items form a managed TP collection', () => {
+      let fetchItemsByCollectionSpy: jest.SpyInstance<
+        ReturnType<typeof thirdPartyAPI['fetchItemsByCollection']>
+      >
+
+      beforeEach(() => {
+        mockServiceWithAccess(CollectionCuration, true)
+
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce(dbTPCollectionMock)
+
+        fetchItemsByCollectionSpy = fetchItemsByCollectionSpy = jest
+          .spyOn(thirdPartyAPI, 'fetchItemsByCollection')
+          .mockResolvedValueOnce([
+            { ...thirdPartyItemFragmentMock }, // approved
+            { ...thirdPartyItemFragmentMock }, // approved
+            {
+              ...thirdPartyItemFragmentMock,
+              isApproved: false,
+              reviewedAt: toUnixTimestamp(new Date()),
+            }, // rejected
+            { ...thirdPartyItemFragmentMock, isApproved: false }, // under review
+            { ...thirdPartyItemFragmentMock, isApproved: false }, // under review
+          ])
+      })
+
+      it('should fetch the items for the collection id and its third party id', async () => {
+        await router.getCollectionCurationItemStats(req)
+        expect(fetchItemsByCollectionSpy).toHaveBeenCalledWith(
+          dbTPCollectionMock.third_party_id,
+          req.params.id
+        )
+      })
+
+      it('should use the fetched items to count and return an object with the values', async () => {
+        const stats = await router.getCollectionCurationItemStats(req)
+        expect(stats).toEqual({
+          total: 5,
+          approved: 2,
+          rejected: 1,
+          needsReview: 2,
+        })
+      })
+    })
+  })
+
   describe('when trying to obtain a list of collection curations', () => {
     let service: CurationService<any>
 
@@ -71,7 +156,7 @@ describe('when handling a request', () => {
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
-        } as any
+        } as AuthRequest
 
         await router.getCollectionCurations(req)
 
@@ -100,13 +185,24 @@ describe('when handling a request', () => {
             { id: 'collectionId2' },
           ] as any)
 
-        const getAllLatestForCollectionsSpy = jest
+        jest
+          .spyOn(thirdPartyAPI, 'fetchThirdPartiesByManager')
+          .mockResolvedValueOnce([{ id: 'thirdPartyRecordId' } as any])
+
+        const findByThirdPartyIdsSpy = jest
+          .spyOn(Collection, 'findByThirdPartyIds')
+          .mockResolvedValueOnce([
+            { id: 'tpCollectionId1' },
+            { id: 'tpCollectionId2' },
+          ] as any)
+
+        const getLatestByIdsCollectionsSpy = jest
           .spyOn(service, 'getLatestByIds')
           .mockResolvedValueOnce([])
 
         const req = {
           auth: { ethAddress: 'ethAddress' },
-        } as any
+        } as AuthRequest
 
         await router.getCollectionCurations(req)
 
@@ -119,9 +215,15 @@ describe('when handling a request', () => {
           'contractAddress2',
         ])
 
-        expect(getAllLatestForCollectionsSpy).toHaveBeenCalledWith([
+        expect(findByThirdPartyIdsSpy).toHaveBeenCalledWith([
+          'thirdPartyRecordId',
+        ])
+
+        expect(getLatestByIdsCollectionsSpy).toHaveBeenCalledWith([
           'collectionId1',
           'collectionId2',
+          'tpCollectionId1',
+          'tpCollectionId2',
         ])
       })
     })
@@ -387,9 +489,16 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection curation', () => {
+      describe('when inserting a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, false)
+
+          jest
+            .spyOn(Collection, 'findOne')
+            .mockResolvedValueOnce({ ...dbCollectionMock })
+          jest
+            .spyOn(collectionAPI, 'fetchCollection')
+            .mockResolvedValueOnce({ ...collectionFragmentMock })
         })
 
         it('should reject with an unauthorized message', async () => {
@@ -399,7 +508,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item curation', () => {
+      describe('when inserting an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, false)
         })
@@ -418,9 +527,7 @@ describe('when handling a request', () => {
       beforeEach(() => {
         service = mockServiceWithAccess(CollectionCuration, true)
 
-        mockGetMergedCollection.mockRejectedValueOnce(
-          new NonExistentCollectionError('collectionId')
-        )
+        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
 
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -441,9 +548,10 @@ describe('when handling a request', () => {
       beforeEach(() => {
         service = mockServiceWithAccess(CollectionCuration, true)
 
-        mockGetMergedCollection.mockRejectedValueOnce(
-          new UnpublishedCollectionError('collectionId')
-        )
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce({ ...dbCollectionMock })
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
 
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -462,7 +570,12 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
-        mockGetMergedCollection.mockResolvedValueOnce({})
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce({ ...dbCollectionMock })
+        jest
+          .spyOn(collectionAPI, 'fetchCollection')
+          .mockResolvedValueOnce({ ...collectionFragmentMock })
 
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -507,7 +620,12 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
-        mockGetMergedCollection.mockResolvedValueOnce({})
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce({ ...dbCollectionMock })
+        jest
+          .spyOn(collectionAPI, 'fetchCollection')
+          .mockResolvedValueOnce({ ...collectionFragmentMock })
 
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -563,10 +681,14 @@ describe('when handling a request', () => {
         })
 
         describe('when the item collection already has a (virtual) curation', () => {
+          let collectionCuration: CollectionCurationAttributes
+
           beforeEach(() => {
+            collectionCuration = { id: 'my id' } as CollectionCurationAttributes
+
             findSpy = jest
-              .spyOn(CollectionCuration, 'findOne')
-              .mockResolvedValueOnce({ 1: 2 })
+              .spyOn(CollectionCuration, 'findByItemId')
+              .mockResolvedValueOnce(collectionCuration)
           })
 
           it('should resolve with the inserted curation', async () => {
@@ -582,8 +704,8 @@ describe('when handling a request', () => {
           })
 
           it('should call the collection curation to check if it exists', async () => {
-            expect(await router.insertItemCuration(req)).toEqual({})
-            expect(findSpy).toHaveBeenCalledWith(item.collection_id)
+            await router.insertItemCuration(req)
+            expect(findSpy).toHaveBeenCalledWith(req.params.id)
           })
         })
 
@@ -594,7 +716,7 @@ describe('when handling a request', () => {
               .mockResolvedValueOnce({} as any)
 
             jest
-              .spyOn(CollectionCuration, 'findOne')
+              .spyOn(CollectionCuration, 'findByItemId')
               .mockResolvedValueOnce(undefined)
           })
 

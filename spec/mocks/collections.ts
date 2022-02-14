@@ -41,10 +41,7 @@ export const dbTPCollectionMock: ThirdPartyCollectionAttributes = {
     'urn:decentraland:mumbai:collections-thirdparty:third-party-id',
 }
 
-export const collectionFragmentMock: Omit<
-  CollectionFragment,
-  'reviewedAt' | 'updatedAt' | 'createdAt'
-> & { reviewedAt: string | null; updatedAt: string; createdAt: string } = {
+export const collectionFragmentMock: CollectionFragment = {
   id: 'string',
   creator: dbCollectionMock.eth_address,
   owner: dbCollectionMock.eth_address,
@@ -52,9 +49,7 @@ export const collectionFragmentMock: Omit<
   isApproved: dbCollectionMock.is_approved,
   minters: dbCollectionMock.minters,
   managers: dbCollectionMock.managers,
-  reviewedAt: dbCollectionMock.reviewed_at
-    ? toUnixTimestamp(dbCollectionMock.reviewed_at)
-    : null,
+  reviewedAt: toUnixTimestamp(dbCollectionMock.reviewed_at!),
   updatedAt: toUnixTimestamp(dbCollectionMock.updated_at),
   createdAt: toUnixTimestamp(dbCollectionMock.created_at),
 }

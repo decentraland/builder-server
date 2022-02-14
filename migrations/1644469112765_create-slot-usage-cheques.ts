@@ -9,8 +9,6 @@ export const up = (pgm: MigrationBuilder) => {
     {
       id: { type: 'UUID', primaryKey: true, unique: true, notNull: true },
       signedMessage: { type: 'TEXT', notNull: true },
-      quantity: { type: 'TEXT', notNull: true },
-      salt: { type: 'TEXT', notNull: true },
       collection_id: { type: 'TEXT', notNull: true },
       third_party_id: { type: 'TEXT', notNull: true },
       created_at: { type: 'TIMESTAMP', notNull: true },

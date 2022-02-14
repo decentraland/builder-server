@@ -31,7 +31,7 @@ export class Bridge {
       let fullCollection: CollectionAttributes = { ...dbCollection }
 
       if (isTPCollection(dbCollection)) {
-        const lastItemCuration = await ItemCuration.findLastByCollectionIdAndStatus(
+        const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
           dbCollection.id,
           CurationStatus.APPROVED
         )
@@ -49,7 +49,7 @@ export class Bridge {
   }
 
   /**
-   * Takes TP items found in the database and it'll fetch the catalyst item for each one and combines the data.
+   * Takes TP items found in the database and it'll fetch the catalyst item for each one to combine their data.
    * If remote data is found the item will just be converted to FullItem and returned as-is.
    * For more info on how a full item looks, see `Bridge.toFullItem`. For more info on the merge see `Bridge.mergeTPItem`
    * @param dbItems - Database TP items

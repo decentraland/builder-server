@@ -178,14 +178,14 @@ export function mockThirdPartyItemCurationExists(
   itemId: string,
   exists: boolean
 ) {
-  if (!(ItemCuration.exists as jest.Mock).mock) {
+  if (!(ItemCuration.existsByItemId as jest.Mock).mock) {
     throw new Error(
       "ItemCuration.exists should be mocked to use mockThirdPartyItemExists but isn't"
     )
   }
 
-  ;(ItemCuration.exists as jest.MockedFunction<
-    typeof ItemCuration.exists
+  ;(ItemCuration.existsByItemId as jest.MockedFunction<
+    typeof ItemCuration.existsByItemId
   >).mockImplementationOnce((idToCheck) =>
     Promise.resolve(idToCheck === itemId && exists)
   )

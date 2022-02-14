@@ -43,22 +43,8 @@ const getItemsQuery = () => gql`
   ${thirdPartyItemFragment()}
 `
 
-const getLastReviewedItemQuery = () => gql`
-  query getLastItem($thirdPartyId: String, $collectionId: String) {
-    items(
-      first: 1
-      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
-      orderBy: reviewedAt
-      orderDirection: desc
-    ) {
-      ...thirdPartyItemFragment
-    }
-  }
-  ${thirdPartyItemFragment()}
-`
-
 const getItemsByThirdPartyIdsQuery = () => gql`
-  query getItemsByThirdPartyIds(${PAGINATION_VARIABLES}, $thirdPartiesIds: [String!])) {
+  query getItemsByThirdPartyIds(${PAGINATION_VARIABLES}, $thirdPartiesIds: [String!]) {
     items(${PAGINATION_ARGUMENTS}, where: { thirdParty_in: $thirdPartiesIds }) {
       ...thirdPartyItemFragment
     }
@@ -67,7 +53,7 @@ const getItemsByThirdPartyIdsQuery = () => gql`
 `
 
 const getItemsByCollectionQuery = () => gql`
-  query getItemsByCollection(${PAGINATION_VARIABLES}, $thirdPartiesId: String!, $collectionId: String!)) {
+  query getItemsByCollection(${PAGINATION_VARIABLES}, $thirdPartiesId: String!, $collectionId: String!) {
     items(${PAGINATION_ARGUMENTS}, where: { thirdParty: $thirdPartiesId, searchCollectionId: $collectionId }) {
       ...thirdPartyItemFragment
     }
@@ -152,22 +138,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     return this.paginate(['items'], {
       query: getItemsQuery(),
     })
-  }
-
-  fetchLastItem = async (
-    thirdPartyId: string,
-    collectionId: string
-  ): Promise<ThirdPartyItemFragment | undefined> => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: ThirdPartyItemFragment[]
-    }>({
-      query: getLastReviewedItemQuery(),
-      variables: { thirdPartyId, collectionId },
-    })
-
-    return items[0]
   }
 
   fetchItem = async (

@@ -7,7 +7,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
   static tableName = 'item_curations'
   static type = CurationType.ITEM
 
-  static async exists(itemId: string): Promise<boolean> {
+  static async existsByItemId(itemId: string): Promise<boolean> {
     const counts = await this.query<{ count: number }>(SQL`
     SELECT COUNT(*) as count
       FROM ${raw(this.tableName)}
@@ -26,7 +26,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return counts[0].count > 0
   }
 
-  static async findLastByCollectionIdAndStatus(
+  static async findLastCreatedByCollectionIdAndStatus(
     collectionId: string,
     curationStatus: CurationStatus
   ): Promise<ItemCurationAttributes | undefined> {

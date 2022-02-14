@@ -338,7 +338,7 @@ export class ItemService {
       throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
     }
 
-    if (await ItemCuration.exists(dbItem.id)) {
+    if (await ItemCuration.existsByItemId(dbItem.id)) {
       const itemURN = buildTPItemURN(
         dbCollection.third_party_id,
         dbCollection.urn_suffix,
@@ -478,7 +478,7 @@ export class ItemService {
 
       if (isMovingItemOutOfACollection) {
         // The item can't be moved if published
-        if (await ItemCuration.exists(dbItem.id)) {
+        if (await ItemCuration.existsByItemId(dbItem.id)) {
           const dbItemURN = buildTPItemURN(
             dbCollection!.third_party_id!,
             dbCollection!.urn_suffix!,
@@ -497,7 +497,7 @@ export class ItemService {
         const decodedItemURN = decodeThirdPartyItemURN(item.urn!)
 
         // Can't add an item with a URN that already exists (If it was URN)
-        if (await ItemCuration.exists(dbItem.id)) {
+        if (await ItemCuration.existsByItemId(dbItem.id)) {
           const dbItemURN = buildTPItemURN(
             dbCollection!.third_party_id!,
             dbCollection!.urn_suffix!,
@@ -515,7 +515,7 @@ export class ItemService {
         const decodedURN = decodeThirdPartyItemURN(item.urn!)
         if (dbItem.urn_suffix !== decodedURN.item_urn_suffix) {
           // Check if the item is published before changing it
-          if (await ItemCuration.exists(dbItem.id)) {
+          if (await ItemCuration.existsByItemId(dbItem.id)) {
             const dbItemURN = buildTPItemURN(
               dbCollection.third_party_id!,
               dbCollection.urn_suffix!,

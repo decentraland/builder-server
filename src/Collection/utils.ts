@@ -120,8 +120,9 @@ export function decodeTPCollectionURN(
 }
 
 /**
- * Will return a collection by merging the collection present in the database and the one found in the graph.
- * If the graph version does not exist, it'll throw. This works for both standard and TP collections
+ * Will return a collection by merging the collection present in the database and the remote counterpart.
+ * For standard collections, the remote collection will be fetched from thegraph, if it's not present it'll throw.
+ * For TP collections, the remote collection is fetched from the Catalyst, if it's not present it'll throw
  */
 export async function getMergedCollection(
   id: string
@@ -135,7 +136,7 @@ export async function getMergedCollection(
   let mergedCollection: CollectionAttributes
 
   if (isTPCollection(dbCollection)) {
-    const lastItemCuration = await ItemCuration.findLastByCollectionIdAndStatus(
+    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
       dbCollection.id,
       CurationStatus.APPROVED
     )

@@ -169,7 +169,7 @@ export class ItemService {
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[]
   ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
-    const lastItemCuration = await ItemCuration.findLastByCollectionIdAndStatus(
+    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
       dbCollection.id,
       CurationStatus.APPROVED
     )
@@ -213,7 +213,7 @@ export class ItemService {
         dbItem.urn_suffix!
       )
 
-      const lastItemCuration = await ItemCuration.findLastByCollectionIdAndStatus(
+      const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
         collection.id,
         CurationStatus.APPROVED
       )

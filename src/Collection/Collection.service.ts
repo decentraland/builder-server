@@ -260,7 +260,7 @@ export class CollectionService {
   private async getTPCollection(
     dbCollection: ThirdPartyCollectionAttributes
   ): Promise<CollectionAttributes> {
-    const lastItemCuration = await ItemCuration.findLastByCollectionIdAndStatus(
+    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
       dbCollection.id,
       CurationStatus.APPROVED
     )

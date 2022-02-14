@@ -263,7 +263,14 @@ describe('Item router', () => {
               },
               resultItemNotPublished,
               resultingTPItem,
-              resultTPItemNotPublished,
+              {
+                ...resultTPItemNotPublished,
+                urn: buildTPItemURN(
+                  dbTPCollectionMock.third_party_id,
+                  dbTPCollectionMock.urn_suffix,
+                  dbTPItemNotPublishedMock.urn_suffix!
+                ),
+              },
             ],
             ok: true,
           })
@@ -374,7 +381,7 @@ describe('Item router', () => {
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbTPCollectionMock,
         ])
-        ;(ItemCuration.findLastByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
+        ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
           itemCurationMock
         )
         mockItemConsolidation([dbItemMock], [tpWearable])

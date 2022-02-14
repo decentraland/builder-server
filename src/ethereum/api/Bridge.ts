@@ -60,12 +60,12 @@ export class Bridge {
     const dbTPItemIds = dbItems.map((item) => item.collection_id!)
     const dbTPCollections = await Collection.findByIds(dbTPItemIds)
 
-    const itemsByURN: Record<string, { item: ItemAttributes }> = {}
+    const dbTPCollectionsIndex = this.indexById(dbTPCollections)
+
+    const itemsByURN: Record<string, ItemAttributes> = {}
 
     for (const item of dbItems) {
-      const collection = dbTPCollections.find(
-        (collection) => collection.id === item.collection_id
-      )
+      const collection = dbTPCollectionsIndex[item.collection_id!]
 
       if (!collection || !isTPCollection(collection)) {
         throw new Error(`Could not find a valid collection for item ${item.id}`)
@@ -77,7 +77,7 @@ export class Bridge {
         item.urn_suffix!
       )
 
-      itemsByURN[urn] = { item }
+      itemsByURN[urn] = item
     }
 
     const tpCatalystItems = await peerAPI.fetchWearables(
@@ -87,7 +87,7 @@ export class Bridge {
     const fullItems: FullItem[] = []
 
     for (const urn in itemsByURN) {
-      const { item } = itemsByURN[urn]
+      const item = itemsByURN[urn]
       let fullItem: FullItem
 
       const catalystItem = tpCatalystItems.find(
@@ -97,7 +97,8 @@ export class Bridge {
       if (catalystItem) {
         fullItem = Bridge.mergeTPItem(item, catalystItem)
       } else {
-        fullItem = Bridge.toFullItem(item)
+        const collection = dbTPCollectionsIndex[item.collection_id!]
+        fullItem = Bridge.toFullItem(item, collection)
       }
 
       fullItems.push(fullItem)

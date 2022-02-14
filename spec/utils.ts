@@ -198,7 +198,11 @@ export function mockThirdPartyItemCurationExists(
  * @param urn - The URN of the item that will be checked for existence.
  * @param exists - If the item with the given URN exists or not.
  */
-export function mockThirdPartyURNExists(urn: string, exists: boolean) {
+export function mockThirdPartyURNExists(
+  urn: string,
+  exists: boolean,
+  mock = tpWearableMock
+) {
   if (!(peerAPI.fetchWearables as jest.Mock).mock) {
     throw new Error(
       "peerAPI.fetchWearables should be mocked to use mockThirdPartyURNExists but isn't"
@@ -208,7 +212,7 @@ export function mockThirdPartyURNExists(urn: string, exists: boolean) {
   ;(peerAPI.fetchWearables as jest.MockedFunction<
     typeof peerAPI.fetchWearables
   >).mockImplementationOnce(([urnToCheck]) =>
-    Promise.resolve(urnToCheck === urn && exists ? [tpWearableMock] : [])
+    Promise.resolve(urnToCheck === urn && exists ? [mock] : [])
   )
 }
 

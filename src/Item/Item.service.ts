@@ -451,7 +451,7 @@ export class ItemService {
       eth_address,
     })
 
-    attributes.content_hash = contentHash
+    attributes.local_content_hash = contentHash
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem, dbCollection)
@@ -601,7 +601,7 @@ export class ItemService {
       eth_address,
     })
 
-    attributes.content_hash = await calculateItemContentHash(
+    attributes.local_content_hash = await calculateItemContentHash(
       attributes,
       dbCollection
     )

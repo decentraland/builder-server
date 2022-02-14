@@ -2,7 +2,7 @@ import { MigrationBuilder } from 'node-pg-migrate'
 import { Item } from '../src/Item/Item.model'
 
 const tableName = Item.tableName
-const columnName = 'content_hash'
+const columnName = 'local_content_hash'
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.addColumn(tableName, {

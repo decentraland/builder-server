@@ -396,6 +396,7 @@ export class Bridge {
         in_catalyst: false,
         is_approved: false,
         is_published: false,
+        content_hash: null,
         total_supply: 0,
       },
       ['urn_suffix']

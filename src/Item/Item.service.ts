@@ -477,6 +477,7 @@ export class ItemService {
     dbCollection: CollectionAttributes,
     eth_address: string
   ): Promise<FullItem> {
+    let contentHash: string | null = null
     // Check if the collection being used in this update or insert process is accessible by the user
     if (dbCollection) {
       if (
@@ -489,13 +490,13 @@ export class ItemService {
       }
     }
 
+    const isMovingItemOutOfACollection =
+      dbItem && dbItem.collection_id !== null && item.collection_id === null
+    const isMovingItemIntoACollection =
+      dbItem && dbItem.collection_id === null && item.collection_id !== null
+
     // If there's an existing item already, we'll update it
     if (dbItem) {
-      const isMovingItemOutOfACollection =
-        dbItem.collection_id !== null && item.collection_id === null
-      const isMovingItemIntoACollection =
-        dbItem.collection_id === null && item.collection_id !== null
-
       if (!isMovingItemOutOfACollection && item.urn === null) {
         throw new InvalidItemURNError()
       }
@@ -601,10 +602,11 @@ export class ItemService {
       eth_address,
     })
 
-    attributes.local_content_hash = await calculateItemContentHash(
-      attributes,
-      dbCollection
-    )
+    if (!isMovingItemOutOfACollection) {
+      contentHash = await calculateItemContentHash(attributes, dbCollection)
+    }
+
+    attributes.local_content_hash = contentHash
 
     const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
     return Bridge.toFullItem(upsertedItem, dbCollection)

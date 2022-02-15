@@ -577,6 +577,13 @@ describe('Item router', () => {
               tpCollectionMock.urn_suffix,
               itemUrnSuffix
             )
+            const originalItemMock = { ...new Item() }
+            mockItem.mockImplementation((createdItem) => {
+              return {
+                ...originalItemMock,
+                upsert: jest.fn().mockResolvedValueOnce(createdItem),
+              } as any
+            })
             mockItem.findOne.mockResolvedValueOnce({
               ...dbItem,
               collection_id: tpCollectionMock.id,
@@ -585,7 +592,7 @@ describe('Item router', () => {
             mockCollection.findOne.mockResolvedValueOnce(tpCollectionMock)
           })
 
-          describe('and is not published', () => {
+          describe.only('and is not published', () => {
             let resultingItem: ResultItem
 
             beforeEach(() => {
@@ -1205,7 +1212,7 @@ describe('Item router', () => {
             ...collectionMock,
             collection_id: itemToUpsert.collection_id,
             eth_address: wallet.address,
-            contract_address: Wallet.createRandom().address,
+            contract_address: '0x3DC9C91cAB92E5806250E2f5cabe711ad79296ea',
           })
           mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
           mockIsCollectionPublished(collectionMock.id, true)
@@ -1279,17 +1286,26 @@ describe('Item router', () => {
           })
         })
 
-        describe.only("and the item's metadata (not rarity nor collection) and content is being updated", () => {
+        describe("and the item's metadata (not rarity nor collection) and content is being updated", () => {
+          let currentDate: Date
+
           beforeEach(() => {
-            mockCollection.findOne.mockResolvedValueOnce({
-              ...collectionMock,
-              collection_id: itemToUpsert.collection_id,
-              eth_address: wallet.address,
-              contract_address: Wallet.createRandom().address,
+            currentDate = new Date()
+            jest.useFakeTimers()
+            jest.setSystemTime(currentDate)
+            const originalItemMock = { ...new Item() }
+            mockItem.mockImplementation((createdItem) => {
+              return {
+                ...originalItemMock,
+                upsert: jest.fn().mockResolvedValueOnce(createdItem),
+              } as any
             })
+
             mockItem.findOne.mockResolvedValueOnce(dbItem)
-            mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
-            mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+          })
+
+          afterEach(() => {
+            jest.useRealTimers()
           })
 
           it('should respond with the updated item', async () => {
@@ -1300,7 +1316,14 @@ describe('Item router', () => {
               .expect(STATUS_CODES.ok)
 
             expect(response.body).toEqual({
-              data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
+              data: {
+                ...Bridge.toFullItem(dbItem),
+                local_content_hash:
+                  'bafkreiejcahiwp257urwn5u2wn5os3mcjhvid6eqhmok7tezzhvdm5njqy',
+                eth_address: wallet.address,
+                created_at: dbItem.created_at.toISOString(),
+                updated_at: currentDate.toISOString(),
+              },
               ok: true,
             })
           })

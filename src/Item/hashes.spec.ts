@@ -58,7 +58,7 @@ describe('when calculating the hashes of an item', () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      'bafkreif74bjg675rbb4l4ksz3fbqwul7anbcps6qgw5caoyzmncdiqipm4'
+      'bafkreihtcjnfcahy3nomnhxiuyjyzj2fxzy3eab7ctmxl237nf2vsoqkmu'
     )
   })
 })

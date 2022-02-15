@@ -4,11 +4,10 @@ import {
   Hashing,
 } from 'dcl-catalyst-commons'
 import { omit } from 'decentraland-commons/dist/utils'
-import JSONStableStringify from 'json-stable-stringify'
 import { CollectionAttributes } from '../Collection'
 import { isTPCollection } from '../Collection/utils'
 import { DCLCatalystItem, ItemAttributes, TPCatalystItem } from './Item.types'
-import { buildTPItemURN, getDecentralandItemURN } from './utils'
+import { buildTPItemURN, getDecentralandItemURN, isTPItem } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
@@ -17,7 +16,9 @@ function buildItemEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): DCLCatalystItem | TPCatalystItem {
-  if (!collection.contract_address) {
+  const isTPEntity = isTPCollection(collection) && isTPItem(item)
+
+  if (!collection.contract_address && !isTPEntity) {
     throw new Error(
       "The item's collection must be published to build its metadata"
     )
@@ -32,14 +33,13 @@ function buildItemEntityMetadata(
   }))
 
   const itemMetadata: DCLCatalystItem = {
-    id:
-      isTPCollection(collection) && item.urn_suffix
-        ? buildTPItemURN(
-            collection.third_party_id,
-            collection.urn_suffix,
-            item.urn_suffix
-          )
-        : getDecentralandItemURN(item, collection.contract_address!),
+    id: isTPEntity
+      ? buildTPItemURN(
+          collection.third_party_id,
+          collection.urn_suffix,
+          item.urn_suffix
+        )
+      : getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,
     description: item.description,
     collectionAddress: collection.contract_address!,
@@ -61,7 +61,7 @@ function buildItemEntityMetadata(
     delete itemMetadata.rarity
   }
 
-  if (isTPCollection(collection) && item.urn_suffix) {
+  if (isTPEntity) {
     // How is the metadata for a TP item built?
     return omit(itemMetadata, ['collectionAddress'])
   }
@@ -73,7 +73,8 @@ async function calculateContentHash(
   content: EntityContentItemReference[],
   metadata: EntityMetadata
 ) {
-  const data = JSONStableStringify({
+  // The stringify procedure doesn't ensure that the keys will always have the same order when printed.
+  const data = JSON.stringify({
     content: content
       .sort((a: EntityContentItemReference, b: EntityContentItemReference) => {
         if (a.hash > b.hash) return 1

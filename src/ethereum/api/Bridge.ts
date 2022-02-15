@@ -86,8 +86,6 @@ export class Bridge {
 
     const fullItems: FullItem[] = []
 
-    console.log('dbTPCollectionsIndex', dbTPCollectionsIndex)
-
     for (const urn in itemsByURN) {
       const item = itemsByURN[urn]
       let fullItem: FullItem

@@ -48,7 +48,6 @@ export class ItemService {
    * @param item - The item to be updated or inserted.
    * @param eth_address - The item in the DB to be updated or inserted.
    */
-  // TODO: Most (if not all) service methods receive an id/primitive value, both here and on CollectionService. We might want to change the first param
   public async upsertItem(
     item: FullItem,
     eth_address: string

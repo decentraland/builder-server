@@ -659,8 +659,6 @@ describe('when handling a request', () => {
       describe('when updating an item', () => {
         let item: ItemAttributes
         let createItemCurationSpy: jest.SpyInstance
-        let createCollectionCurationSpy: jest.SpyInstance
-        let findSpy: jest.SpyInstance
         let collectionService: CurationService<any>
 
         beforeEach(() => {
@@ -680,58 +678,19 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce({} as any)
         })
 
-        describe('when the item collection already has a (virtual) curation', () => {
-          let collectionCuration: CollectionCurationAttributes
+        it('should resolve with the inserted curation', async () => {
+          expect(await router.insertItemCuration(req)).toEqual({})
 
-          beforeEach(() => {
-            collectionCuration = { id: 'my id' } as CollectionCurationAttributes
-
-            findSpy = jest
-              .spyOn(CollectionCuration, 'findByItemId')
-              .mockResolvedValueOnce(collectionCuration)
-          })
-
-          it('should resolve with the inserted curation', async () => {
-            expect(await router.insertItemCuration(req)).toEqual({})
-
-            expect(createItemCurationSpy).toHaveBeenCalledWith({
-              id: expect.any(String),
-              item_id: 'some id',
-              status: CurationStatus.PENDING,
-              created_at: expect.any(Date),
-              updated_at: expect.any(Date),
-            })
-          })
-
-          it('should call the collection curation to check if it exists', async () => {
-            await router.insertItemCuration(req)
-            expect(findSpy).toHaveBeenCalledWith(req.params.id)
+          expect(createItemCurationSpy).toHaveBeenCalledWith({
+            id: expect.any(String),
+            item_id: 'some id',
+            status: CurationStatus.PENDING,
+            created_at: expect.any(Date),
+            updated_at: expect.any(Date),
           })
         })
 
-        describe('when the item collection does not have a virtual curation', () => {
-          beforeEach(() => {
-            createCollectionCurationSpy = jest
-              .spyOn(CollectionCuration, 'create')
-              .mockResolvedValueOnce({} as any)
-
-            jest
-              .spyOn(CollectionCuration, 'findByItemId')
-              .mockResolvedValueOnce(undefined)
-          })
-
-          it('should create the virtual collection', async () => {
-            await router.insertItemCuration(req)
-
-            expect(createCollectionCurationSpy).toHaveBeenCalledWith({
-              id: expect.any(String),
-              collection_id: item.collection_id,
-              status: CurationStatus.PENDING,
-              created_at: expect.any(Date),
-              updated_at: expect.any(Date),
-            })
-          })
-        })
+        // TODO: getMergedItem mocks and errors
       })
     })
   })

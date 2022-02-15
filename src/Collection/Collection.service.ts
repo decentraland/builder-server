@@ -1,20 +1,22 @@
+import { v4 as uuid } from 'uuid'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ItemFragment, ThirdPartyFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
-import { ItemCuration } from '../Curation/ItemCuration'
-import { CurationStatus } from '../Curation'
+import { InvalidRequestError } from '../utils/errors'
 import { Ownable } from '../Ownable'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import { UnpublishedItemError } from '../Item/Item.errors'
+import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
+import { SlotUsageCheque } from '../SlotUsageCheque'
 import {
-  decodeTPCollectionURN,
-  hasTPCollectionURN,
-  isTPCollection,
-  toDBCollection,
-} from './utils'
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from '../Curation/CollectionCuration'
+import { CurationStatus } from '../Curation'
+import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
 import {
   CollectionAttributes,
   FullCollection,
@@ -33,23 +35,16 @@ import {
 } from './Collection.errors'
 
 export class CollectionService {
+  /**
+   * Main Methods
+   */
+
   public async getCollection(id: string): Promise<CollectionAttributes> {
     const dbCollection = await this.getDBCollection(id)
 
     return isTPCollection(dbCollection)
       ? this.getTPCollection(dbCollection)
       : this.getDCLCollection(dbCollection)
-  }
-
-  public async upsertCollection(
-    id: string,
-    eth_address: string,
-    collectionJSON: FullCollection,
-    data = ''
-  ) {
-    return hasTPCollectionURN(collectionJSON)
-      ? this.upsertTPCollection(id, eth_address, collectionJSON)
-      : this.upsertDCLCollection(id, eth_address, collectionJSON, data)
   }
 
   public async deleteCollection(collectionId: string): Promise<void> {
@@ -80,45 +75,7 @@ export class CollectionService {
     ])
   }
 
-  public async publishCollection(
-    id: string
-  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
-    const [dbCollection, dbItems] = await Promise.all([
-      this.getDBCollection(id),
-      Item.findOrderedByCollectionId(id),
-    ])
-
-    return isTPCollection(dbCollection)
-      ? this.publishTPCollection()
-      : this.publishDCLCollection(dbCollection, dbItems)
-  }
-
-  public isLockActive(lock: Date | null) {
-    if (!lock) {
-      return false
-    }
-
-    const deadline = new Date(lock)
-    deadline.setDate(deadline.getDate() + 1)
-
-    return deadline.getTime() > Date.now()
-  }
-
-  public async isDCLPublished(contractAddress: string) {
-    const remoteCollection = await collectionAPI.fetchCollection(
-      contractAddress
-    )
-
-    // Fallback: check against the blockchain, in case the subgraph is lagging
-    if (!remoteCollection) {
-      const isCollectionPublished = await isPublished(contractAddress)
-      return isCollectionPublished
-    }
-
-    return true
-  }
-
-  private async publishDCLCollection(
+  public async publishDCLCollection(
     dbCollection: CollectionAttributes,
     dbItems: ItemAttributes[]
   ) {
@@ -165,30 +122,136 @@ export class CollectionService {
       await Promise.all(updates)
     }
 
-    const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
-
     return {
-      collection,
+      collection: Bridge.mergeCollection(dbCollection!, remoteCollection),
       items: await Bridge.consolidateItems(items, remoteItems),
     }
   }
 
-  private async publishTPCollection(): Promise<{
+  /**
+   * It should receive the list of items to be operated on so it can decide where it should create or update the curations for them accordingly
+   * It will also receive a signed message as part of the body and store it in the SlotUsageCheque
+   * (if it's updating the item or it's publishing it).
+   * It will publish a forum post designed for the TP collections.
+   */
+  public async publishTPCollection(
+    dbCollection: CollectionAttributes,
+    dbItems: ItemAttributes[],
+    signedMessage: string
+  ): Promise<{
     collection: CollectionAttributes
     items: FullItem[]
   }> {
-    return {} as any
+    // For DCL collections, once a published collection item changes, the PUSH CHANGES button appears
+    // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
+    // Subsequent changes will not show the push changes button, as it's already under_review
+
+    // For TP items, creations always exist. PUSH CHANGES should appear if the item has an approved ItemCuration and has changes in the Catalyst
+    // That should fire /items/:id/curation for each item that changed
+
+    // What we should migrate over here is the creation of the virtual CollectionCuration, as there'll always be a publish before a PUSH CHANGES
+
+    if (dbItems.length === 0) {
+      throw new InvalidRequestError('Tried to publish no TP items')
+    }
+
+    // TODO: Check the signed message is valid?
+    if (!signedMessage) {
+      throw new InvalidRequestError(
+        'Tried to publish TP items without a valid signed message'
+      )
+    }
+
+    const collectionId = dbItems[0].collection_id
+    if (!collectionId) {
+      throw new InvalidRequestError(
+        'Cannot publish items without a collection id'
+      )
+    }
+
+    const allTheSameCollection = dbItems.every(
+      (item) => item.collection_id === collectionId
+    )
+    if (!allTheSameCollection) {
+      throw new InvalidRequestError(
+        'Cannot publish items that belong to different collections'
+      )
+    }
+
+    const isPublished = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
+      collectionId,
+      CurationStatus.PENDING
+    )
+    if (isPublished) {
+      throw new AlreadyPublishedCollectionError(
+        collectionId,
+        CollectionType.THIRD_PARTY,
+        CollectionAction.UPDATE
+      )
+    }
+
+    await SlotUsageCheque.create({
+      id: uuid(),
+      signedMessage,
+      collection_id: dbCollection.id,
+      third_party_id: dbCollection.third_party_id,
+    })
+
+    const promises = []
+    for (const item of dbItems) {
+      // TODO: This could probably be abstracted. Check insertCuration on CurationRouter
+      promises.push(
+        ItemCuration.create<ItemCurationAttributes>({
+          id: uuid(),
+          item_id: item.id,
+          status: CurationStatus.PENDING,
+          created_at: new Date(),
+          updated_at: new Date(),
+        })
+      )
+    }
+    const itemCurations = await Promise.all(promises)
+    const [lastItemCuration] = itemCurations.slice(-1)
+
+    const collectionCuration = await CollectionCuration.findOne(collectionId)
+    if (collectionCuration) {
+      CollectionCuration.update(
+        { id: collectionCuration.id },
+        { updated_at: new Date() }
+      )
+    } else {
+      // TODO: This could probably be abstracted. Check insertCuration on CurationRouter
+      CollectionCuration.create<CollectionCurationAttributes>({
+        id: uuid(),
+        collection_id: collectionId,
+        status: CurationStatus.PENDING,
+        created_at: new Date(),
+        updated_at: new Date(),
+      })
+    }
+
+    return {
+      collection: Bridge.mergeTPCollection(dbCollection, lastItemCuration),
+      items: await Bridge.consolidateTPItems(dbItems),
+    }
   }
 
-  private async upsertDCLCollection(
+  public async upsertDCLCollection(
     id: string,
     eth_address: string,
     collectionJSON: FullCollection,
     data: string
   ): Promise<CollectionAttributes> {
+    if (!data) {
+      throw new WrongCollectionError(
+        'Cannot upsert a collection without a valid data',
+        { id, eth_address }
+      )
+    }
+
     if (collectionJSON.is_published || collectionJSON.is_approved) {
       throw new WrongCollectionError(
-        'Can not change the is_published or is_approved property',
+        'Cannot change the is_published or is_approved property',
         { id, eth_address }
       )
     }
@@ -231,7 +294,7 @@ export class CollectionService {
     return new Collection(attributes).upsert()
   }
 
-  private async upsertTPCollection(
+  public async upsertTPCollection(
     id: string,
     eth_address: string,
     collectionJSON: FullCollection
@@ -302,6 +365,35 @@ export class CollectionService {
     return new Collection(attributes).upsert()
   }
 
+  /**
+   * Helpers
+   */
+
+  public isLockActive(lock: Date | null) {
+    if (!lock) {
+      return false
+    }
+
+    const deadline = new Date(lock)
+    deadline.setDate(deadline.getDate() + 1)
+
+    return deadline.getTime() > Date.now()
+  }
+
+  public async isDCLPublished(contractAddress: string) {
+    const remoteCollection = await collectionAPI.fetchCollection(
+      contractAddress
+    )
+
+    // Fallback: check against the blockchain, in case the subgraph is lagging
+    if (!remoteCollection) {
+      const isCollectionPublished = await isPublished(contractAddress)
+      return isCollectionPublished
+    }
+
+    return true
+  }
+
   public async isOwnedOrManagedBy(
     id: string,
     ethAddress: string
@@ -338,6 +430,10 @@ export class CollectionService {
 
     return collection
   }
+
+  /**
+   * Private methods
+   */
 
   private async getDbTPCollectionsByThirdParties(
     thirdParties: ThirdPartyFragment[]

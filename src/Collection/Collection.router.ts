@@ -12,17 +12,18 @@ import {
 } from '../middleware'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
+import { OwnableModel } from '../Ownable/Ownable.types'
 import { UnpublishedItemError } from '../Item/Item.errors'
-import { FullItem } from '../Item'
+import { FullItem, Item } from '../Item'
 import { isCommitteeMember } from '../Committee'
+// import { createPost, ForumPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
-import { toFullCollection } from './utils'
-import { OwnableModel } from '../Ownable/Ownable.types'
+import { hasTPCollectionURN, isTPCollection, toFullCollection } from './utils'
 import {
   AlreadyPublishedCollectionError,
   LockedCollectionError,
@@ -246,11 +247,36 @@ export class CollectionRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     try {
-      const { collection, items } = await this.service.publishCollection(id)
+      const dbCollection = await this.service.getDBCollection(id)
+
+      let result: { collection: CollectionAttributes; items: FullItem[] }
+
+      if (isTPCollection(dbCollection)) {
+        const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
+        const dbItems = await Item.findByIds(itemIds)
+        result = await this.service.publishTPCollection(
+          dbCollection,
+          dbItems,
+          server.extractFromReq(req, 'signedMessage')
+        )
+
+        // TODO: Steal create forum post from front-end
+        // Eventually, posting to the forum will be done from the server for both collection types.
+        // DCL Collections posts are being handled by the front-end at the moment
+        // const forumPost: ForumPost = {
+        //   title: 'Some title',
+        //   raw: 'Body?',
+        //   created_at: new Date().toISOString(),
+        // }
+        // await createPost(forumPost)
+      } else {
+        const dbItems = await Item.findOrderedByCollectionId(id)
+        result = await this.service.publishDCLCollection(dbCollection, dbItems)
+      }
 
       return {
-        collection: toFullCollection(collection),
-        items,
+        collection: toFullCollection(result.collection),
+        items: result.items,
       }
     } catch (error) {
       if (error instanceof UnpublishedCollectionError) {
@@ -335,23 +361,23 @@ export class CollectionRouter extends Router {
     }
 
     let upsertedCollection: CollectionAttributes
-    let data: string = ''
 
     try {
-      data = server.extractFromReq(req, 'data')
-    } catch (error) {}
-
-    try {
-      upsertedCollection = await this.service.upsertCollection(
-        id,
-        eth_address,
-        collectionJSON,
-        data
-      )
+      if (hasTPCollectionURN(collectionJSON)) {
+        upsertedCollection = await this.service.upsertTPCollection(
+          id,
+          eth_address,
+          collectionJSON
+        )
+      } else {
+        upsertedCollection = await this.service.upsertDCLCollection(
+          id,
+          eth_address,
+          collectionJSON,
+          server.extractFromReq(req, 'data')
+        )
+      }
     } catch (error) {
-      console.log('***********************************')
-      console.log(error)
-      console.log('***********************************')
       if (error instanceof LockedCollectionError) {
         throw new HTTPError(
           error.message,

@@ -43,6 +43,17 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return itemCurations[0]
   }
 
+  static async findDistinctByItemIdsAndStatus(
+    itemIds: string[],
+    curationStatus: CurationStatus
+  ) {
+    return this.query<ItemCurationAttributes>(SQL`
+    SELECT DISTINCT ON(item_id) *
+      FROM ${raw(this.tableName)}
+      WHERE item_id = ANY(${itemIds})
+        AND status = ${curationStatus}`)
+  }
+
   static async findByCollectionId(collectionId: string) {
     return this.query<ItemCurationAttributes>(SQL`
     SELECT ic.*

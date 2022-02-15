@@ -6,11 +6,13 @@ import {
   thirdPartyItemFragmentMock,
 } from '../../spec/mocks/items'
 import { collectionAPI } from '../ethereum/api/collection'
+import { peerAPI } from '../ethereum/api/peer'
 import {
   collectionFragmentMock,
   dbCollectionMock,
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
+import { tpWearableMock } from '../../spec/mocks/peer'
 import { Collection, CollectionAttributes } from '../Collection'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { NonExistentItemError, UnpublishedItemError } from './Item.errors'
@@ -153,17 +155,19 @@ describe('getMergedItem', () => {
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
 
         jest
-          .spyOn(thirdPartyAPI, 'fetchItem')
-          .mockResolvedValueOnce(thirdPartyItemFragmentMock)
+          .spyOn(peerAPI, 'fetchWearables')
+          .mockResolvedValueOnce([tpWearableMock])
       })
 
       it('should return the merged item', async () => {
         expect(await getMergedItem(item.id)).toEqual({
           ...Bridge.toFullItem(item),
+          in_catalyst: true,
           is_published: true,
           is_approved: thirdPartyItemFragmentMock.isApproved,
           blockchain_item_id: thirdPartyItemFragmentMock.blockchainItemId,
           urn: thirdPartyItemFragmentMock.urn,
+          content_hash: '',
           price: '0',
           beneficiary: constants.AddressZero,
           data: { ...item.data, category: undefined },

@@ -3,9 +3,9 @@ import {
   dbCollectionMock,
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
-import { thirdPartyItemFragmentMock } from '../../spec/mocks/items'
+import { itemCurationMock } from '../../spec/mocks/itemCuration'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { ItemCuration } from '../Curation/ItemCuration'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
@@ -115,8 +115,9 @@ describe('getMergedCollection', () => {
     describe('when the remote collection can not be found', () => {
       beforeEach(() => {
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
+
         jest
-          .spyOn(thirdPartyAPI, 'fetchLastItem')
+          .spyOn(ItemCuration, 'findLastCreatedByCollectionIdAndStatus')
           .mockResolvedValueOnce(undefined)
       })
 
@@ -132,8 +133,8 @@ describe('getMergedCollection', () => {
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
 
         jest
-          .spyOn(thirdPartyAPI, 'fetchLastItem')
-          .mockResolvedValueOnce(thirdPartyItemFragmentMock)
+          .spyOn(ItemCuration, 'findLastCreatedByCollectionIdAndStatus')
+          .mockResolvedValueOnce(itemCurationMock)
       })
 
       it('should resolve with the merged collection', async () => {
@@ -141,6 +142,9 @@ describe('getMergedCollection', () => {
 
         expect(result).toStrictEqual({
           ...collection,
+          reviewed_at: itemCurationMock.updated_at,
+          created_at: itemCurationMock.created_at,
+          updated_at: itemCurationMock.updated_at,
           is_published: true,
         })
       })

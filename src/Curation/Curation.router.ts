@@ -71,6 +71,8 @@ export class CurationRouter extends Router {
       server.handleRequest(this.insertCollectionCuration)
     )
 
+    // TODO: '/collections/:id/itemCurations'
+
     this.router.get(
       '/items/:id/curation',
       withAuthentication,

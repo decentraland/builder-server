@@ -3,22 +3,23 @@ import { utils } from 'decentraland-commons'
 import { CollectionAttributes, Collection } from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
 import { fromUnixTimestamp } from '../../utils/parse'
-import { buildTPItemURN } from '../../Item/utils'
-import {
-  ItemFragment,
-  CollectionFragment,
-  ThirdPartyItemFragment,
-} from './fragments'
+import { buildTPItemURN, decodeThirdPartyItemURN } from '../../Item/utils'
+import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
 import { peerAPI, Wearable } from './peer'
-import { thirdPartyAPI } from './thirdParty'
 import { isTPCollection } from '../../Collection/utils'
+import {
+  ItemCuration,
+  ItemCurationAttributes,
+} from '../../Curation/ItemCuration'
+import { CurationStatus } from '../../Curation'
 
 export class Bridge {
   /**
-   * Takes TP collections found in the database and combines each one with the data from the last published (blockchain) item it has.
+   * Takes TP collections found in the database and combines each one with the data from the last published item it has.
+   * To get the published information, it'll check the last curation made to an item each collection has, as each curation is updated *after* being uploaded to the Catalyst.
    * If no published item is found or a non-TP collection is supplied, it'll be returned as-is.
-   * For more info on what data is updated from the published item, see `Bridge.mergeTPCollection`
+   * For more info on what data is merged, see `Bridge.mergeTPCollection`
    * @param dbCollections - TP collections from the database
    */
   static async consolidateTPCollections(
@@ -30,12 +31,15 @@ export class Bridge {
       let fullCollection: CollectionAttributes = { ...dbCollection }
 
       if (isTPCollection(dbCollection)) {
-        const lastItem = await thirdPartyAPI.fetchLastItem(
-          dbCollection.third_party_id,
-          dbCollection.urn_suffix
+        const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
+          dbCollection.id,
+          CurationStatus.APPROVED
         )
-        if (lastItem) {
-          fullCollection = Bridge.mergeTPCollection(dbCollection, lastItem)
+        if (lastItemCuration) {
+          fullCollection = Bridge.mergeTPCollection(
+            dbCollection,
+            lastItemCuration
+          )
         }
       }
 
@@ -45,24 +49,24 @@ export class Bridge {
   }
 
   /**
-   * Takes TP items found in the database and remote items from the blockchain.
-   * If the remote data exists it'll also fetch the catalyst item and combines all data.
+   * Takes TP items found in the database and it'll fetch the catalyst item for each one to combine their data.
    * If remote data is found the item will just be converted to FullItem and returned as-is.
    * For more info on how a full item looks, see `Bridge.toFullItem`. For more info on the merge see `Bridge.mergeTPItem`
    * @param dbItems - Database TP items
-   * @param remoteItems - Blockchain TP items
    */
   static async consolidateTPItems(
-    dbItems: ItemAttributes[],
-    remoteItems: ThirdPartyItemFragment[]
+    dbItems: ItemAttributes[]
   ): Promise<FullItem[]> {
     const dbTPItemIds = dbItems.map((item) => item.collection_id!)
     const dbTPCollections = await Collection.findByIds(dbTPItemIds)
 
     const dbTPCollectionsIndex = this.indexById(dbTPCollections)
 
-    const itemsByURN = dbItems.reduce((acc, item) => {
+    const itemsByURN: Record<string, ItemAttributes> = {}
+
+    for (const item of dbItems) {
       const collection = dbTPCollectionsIndex[item.collection_id!]
+
       if (!collection || !isTPCollection(collection)) {
         throw new Error(`Could not find a valid collection for item ${item.id}`)
       }
@@ -73,35 +77,30 @@ export class Bridge {
         item.urn_suffix!
       )
 
-      const remoteItem = remoteItems.find(
-        (remoteItem) => remoteItem.urn === urn
-      )
+      itemsByURN[urn] = item
+    }
 
-      return {
-        ...acc,
-        [urn]: { item, remoteItem },
-      }
-    }, {} as Record<string, { item: ItemAttributes; remoteItem?: ThirdPartyItemFragment }>)
+    const tpCatalystItems = await peerAPI.fetchWearables(
+      Object.keys(itemsByURN)
+    )
 
-    const tpItemURNs = Object.keys(itemsByURN)
-    const tpCatalystItems = await peerAPI.fetchWearables(tpItemURNs)
     const fullItems: FullItem[] = []
 
+    console.log('dbTPCollectionsIndex', dbTPCollectionsIndex)
+
     for (const urn in itemsByURN) {
-      const { item, remoteItem } = itemsByURN[urn]
+      const item = itemsByURN[urn]
       let fullItem: FullItem
 
-      if (remoteItem) {
-        const catalystItem = tpCatalystItems.find(
-          (catalystItem) => catalystItem.id === urn
-        )
+      const catalystItem = tpCatalystItems.find(
+        (catalystItem) => catalystItem.id === urn
+      )
 
-        fullItem = Bridge.mergeTPItem(item, remoteItem, catalystItem)
+      if (catalystItem) {
+        fullItem = Bridge.mergeTPItem(item, catalystItem)
       } else {
-        fullItem = Bridge.toFullItem(
-          item,
-          dbTPCollectionsIndex[item.collection_id!]
-        )
+        const collection = dbTPCollectionsIndex[item.collection_id!]
+        fullItem = Bridge.toFullItem(item, collection)
       }
 
       fullItems.push(fullItem)
@@ -111,28 +110,15 @@ export class Bridge {
   }
 
   /**
-   * Combines the remote data (item from the blockchain), the catalyst data (if it exists) and the item's DB data *into* a FullItem.
+   * Combines the catalyst data and the item's DB data *into* a FullItem.
    * The db item is first converted to a FullItem and then the appropiate data is merged into it
    * @param dbItem - Database TP item
-   * @param remoteItem - Blockchain item
    * @param catalystItem - Catalyst item
    */
-  static mergeTPItem(
-    dbItem: ItemAttributes,
-    remoteItem: ThirdPartyItemFragment,
-    catalystItem?: Wearable
-  ): FullItem {
+  static mergeTPItem(dbItem: ItemAttributes, catalystItem: Wearable): FullItem {
     const data = dbItem.data
     const category = data.category
-    const in_catalyst = !!catalystItem
-
-    let urn: string | null = null
-
-    if (catalystItem) {
-      urn = catalystItem.id
-    } else if (remoteItem && remoteItem.urn) {
-      urn = remoteItem.urn
-    }
+    const urn: string = catalystItem.id
 
     return {
       ...Bridge.toFullItem(dbItem),
@@ -142,12 +128,15 @@ export class Bridge {
       price: '0',
       // The benefiary will remain as the address zero as TP items will not be sold in the marketplace
       beneficiary: constants.AddressZero,
+      // blockchain_item_id is not in the Catalyst, so we're using the token id from the URN
+      blockchain_item_id: decodeThirdPartyItemURN(urn).item_urn_suffix,
       urn,
-      in_catalyst,
+      in_catalyst: true,
       is_published: true,
-      is_approved: remoteItem.isApproved,
-      blockchain_item_id: remoteItem.blockchainItemId,
-      content_hash: remoteItem.contentHash || null,
+      // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
+      is_approved: true,
+      // TODO: This will be resolved when we tackle #394
+      content_hash: '',
       data: {
         ...data,
         category,
@@ -304,25 +293,21 @@ export class Bridge {
   }
 
   /**
-   * Takes a db TP collection and its last published (blockchain) item and combines the remote data *into* the db object
-   * to get the updated information we don't store in the database (like reviewed at)
+   * Takes a db TP collection and the last curation an item has for this collection, and combines it *into* the db object
+   * to get the updated information.
    * @param collection - TP db collection
-   * @param lastItem - Last blockchain item
+   * @param lastItemCuration - Last item curation for the collection
    */
   static mergeTPCollection(
     collection: CollectionAttributes,
-    lastItem: ThirdPartyItemFragment
+    lastItemCuration: ItemCurationAttributes
   ): CollectionAttributes {
     return {
       ...collection,
-      is_published: !!lastItem,
-      reviewed_at: lastItem ? fromUnixTimestamp(lastItem.reviewedAt) : null,
-      created_at: lastItem
-        ? fromUnixTimestamp(lastItem.createdAt)
-        : collection.created_at,
-      updated_at: lastItem
-        ? fromUnixTimestamp(lastItem.updatedAt)
-        : collection.updated_at,
+      is_published: true,
+      reviewed_at: lastItemCuration.updated_at,
+      created_at: lastItemCuration.created_at,
+      updated_at: lastItemCuration.updated_at,
     }
   }
 

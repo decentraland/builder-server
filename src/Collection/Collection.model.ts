@@ -25,6 +25,21 @@ export class Collection extends Model<CollectionAttributes> {
       WHERE third_party_id = ANY(${thirdPartyIds})`)
   }
 
+  static async isURNRepeated(
+    id: string,
+    thirdPartyId: string,
+    urnSuffix: string
+  ): Promise<boolean> {
+    const counts = await this.query<{ count: number }>(SQL`
+      SELECT COUNT(*) as count
+        FROM ${raw(this.tableName)}
+        WHERE id != ${id}
+          AND third_party_id = ${thirdPartyId}
+          AND urn_suffix = ${urnSuffix}`)
+
+    return counts[0].count > 0
+  }
+
   /**
    * Checks if a collection name is valid.
    * A collection name is valid if there's no other collection that has the given

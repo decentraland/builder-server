@@ -7,7 +7,6 @@ import {
   thirdPartyItemFragment,
   tiersFragment,
   TierFragment,
-  IdFragment,
 } from './fragments'
 import {
   BaseGraphAPI,
@@ -67,7 +66,7 @@ const getItemsByCollectionQuery = () => gql`
       ...thirdPartyItemFragment
     }
   }
-  ${thirdPartyItemFragment()}
+  ${thirdPartyFragment()}
 `
 
 const getItemQuery = () => gql`
@@ -76,12 +75,11 @@ const getItemQuery = () => gql`
       ...thirdPartyItemFragment
     }
   }
-  ${thirdPartyItemFragment()}
 `
 
-const getLastReviewedItemQuery = () => gql`
-  query getLastItem($thirdPartyId: String, $collectionId: String) {
-    items(
+const isManagerQuery = () => gql`
+  query isManager($thirdPartyId: String!, $managers: [String!]) {
+    thirdParties(
       first: 1
       where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
       orderBy: reviewedAt
@@ -100,41 +98,6 @@ const getTiersQuery = () => gql`
     }
   }
   ${tiersFragment()}
-`
-
-const itemExistsQuery = () => gql`
-  query getThirdPartyItem($urn: String) {
-    items(first: 1, where: { urn: $urn }) {
-      id
-    }
-  }
-`
-
-const isPublishedQuery = () => gql`
-  query isPublished($thirdPartyId: String, $collectionId: String) {
-    items(
-      first: 1
-      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
-    ) {
-      id
-    }
-  }
-`
-
-const isManagerQuery = () => gql`
-  query isManager($thirdPartyId: String!, $managers: [String!]) {
-    thirdParties(
-      first: 1
-      where: {
-        id: $thirdPartyId
-        managers_contains: $managers
-        isApproved: true
-      }
-    ) {
-      ...thirdPartyFragment
-    }
-  }
-  ${thirdPartyFragment()}
 `
 
 export class ThirdPartyAPI extends BaseGraphAPI {
@@ -197,22 +160,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
   }
 
-  fetchLastItem = async (
-    thirdPartyId: string,
-    collectionId: string
-  ): Promise<ThirdPartyItemFragment | undefined> => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: ThirdPartyItemFragment[]
-    }>({
-      query: getLastReviewedItemQuery(),
-      variables: { thirdPartyId, collectionId },
-    })
-
-    return items[0]
-  }
-
   fetchItem = async (
     urn: string
   ): Promise<ThirdPartyItemFragment | undefined> => {
@@ -226,34 +173,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
 
     return items[0]
-  }
-
-  itemExists = async (urn: string): Promise<boolean> => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: IdFragment[]
-    }>({
-      query: itemExistsQuery(),
-      variables: { urn },
-    })
-
-    return items.length > 0
-  }
-
-  isPublished = async (
-    thirdPartyId: string,
-    collectionId: string
-  ): Promise<boolean> => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: IdFragment[]
-    }>({
-      query: isPublishedQuery(),
-      variables: { thirdPartyId, collectionId },
-    })
-    return items.length > 0
   }
 
   isManager = async (

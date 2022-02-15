@@ -113,10 +113,6 @@ export const tiersFragment = () => gql`
   }
 `
 
-export type IdFragment = {
-  id: string
-}
-
 export type TierFragment = {
   id: string
   value: string

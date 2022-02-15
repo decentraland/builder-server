@@ -2,15 +2,18 @@ import { Authenticator, AuthIdentity } from 'dcl-crypto'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 import { collectionAPI } from '../src/ethereum/api/collection'
+import { peerAPI } from '../src/ethereum/api/peer'
 import { isPublished } from '../src/utils/eth'
 import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
-import { Collection } from '../src/Collection/Collection.model'
+import { Collection } from '../src/Collection'
+import { ItemCuration } from '../src/Curation/ItemCuration'
 import { Ownable } from '../src/Ownable/Ownable'
 import { Item } from '../src/Item/Item.model'
 import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
 import { wallet } from './mocks/wallet'
 import { dbCollectionMock } from './mocks/collections'
 import { dbItemMock } from './mocks/items'
+import { tpWearableMock } from './mocks/peer'
 
 export function buildURL(
   uri: string,
@@ -165,23 +168,51 @@ export function mockIsThirdPartyManager(
 }
 
 /**
- * Mocks the "itemExists" method of the thirdPartyAPI module.
- * This mock requires the thirdPartyAPI's itemExists method to be mocked first.
+ * Mocks the "exists" method of the ItemCuration Model
+ * This mock requires the ItemCuration's exists method to be mocked first.
+ *
+ * @param itemId - The id of the item that will be checked for a curation.
+ * @param exists - If the item with the given URN exists or not.
+ */
+export function mockThirdPartyItemCurationExists(
+  itemId: string,
+  exists: boolean
+) {
+  if (!(ItemCuration.existsByItemId as jest.Mock).mock) {
+    throw new Error(
+      "ItemCuration.exists should be mocked to use mockThirdPartyItemExists but isn't"
+    )
+  }
+
+  ;(ItemCuration.existsByItemId as jest.MockedFunction<
+    typeof ItemCuration.existsByItemId
+  >).mockImplementationOnce((idToCheck) =>
+    Promise.resolve(idToCheck === itemId && exists)
+  )
+}
+
+/**
+ * Mocks the "exists" method of the ItemCuration Model
+ * This mock requires the ItemCuration's exists method to be mocked first.
  *
  * @param urn - The URN of the item that will be checked for existence.
  * @param exists - If the item with the given URN exists or not.
  */
-export function mockThirdPartyItemExists(urn: string, exists: boolean) {
-  if (!(thirdPartyAPI.itemExists as jest.Mock).mock) {
+export function mockThirdPartyURNExists(
+  urn: string,
+  exists: boolean,
+  mock = tpWearableMock
+) {
+  if (!(peerAPI.fetchWearables as jest.Mock).mock) {
     throw new Error(
-      "exists should be mocked to mock the withModelExists middleware but it isn't"
+      "peerAPI.fetchWearables should be mocked to use mockThirdPartyURNExists but isn't"
     )
   }
 
-  ;(thirdPartyAPI.itemExists as jest.MockedFunction<
-    typeof thirdPartyAPI.itemExists
-  >).mockImplementationOnce((URNToCheck) =>
-    Promise.resolve(URNToCheck === urn && exists)
+  ;(peerAPI.fetchWearables as jest.MockedFunction<
+    typeof peerAPI.fetchWearables
+  >).mockImplementationOnce(([urnToCheck]) =>
+    Promise.resolve(urnToCheck === urn && exists ? [mock] : [])
   )
 }
 
@@ -296,33 +327,69 @@ export function mockIsCollectionPublished(
 }
 
 /**
- * Mocks the "isPublished" method of the thirdPartyAPI module.
- * This mock requires the thirdPartyAPI.isPublished method to be mocked first.
+ * Mocks the "existsByCollectionId" method of the ItemCuration Model.
+ * Each item curation that exists counts as a publication (that might be pending)
+ * This mock requires ItemCuration to be mocked first.
  *
- * @param thirdPartyId - The third party id to mock the response for.
- * @param collectionUrnSuffix - The collection urn suffix to mock the response for.
- * @param hasItems - If the third party collection has items or not.
+ * @param collectionId - The id of the collection to check
+ * @param hasItems - If the third party collection has published items or not.
  */
-export function mockThirdPartyIsPublished(
-  thirdPartyId: string,
-  collectionUrnSuffix: string,
+export function mockThirdPartyCollectionIsPublished(
+  collectionId: string,
   hasItems: boolean
 ): void {
-  if (!(thirdPartyAPI.isPublished as jest.Mock).mock) {
+  if (!(ItemCuration.existsByCollectionId as jest.Mock).mock) {
     throw new Error(
-      "thirdPartyAPI.isPublished should be mocked to mock the isPublished method but it isn't"
+      "ItemCuration.existsByCollectionId should be mocked to use mockThirdPartyCollectionIsPublished but it isn't"
     )
   }
-  ;(thirdPartyAPI.isPublished as jest.MockedFunction<
-    typeof thirdPartyAPI.isPublished
-  >).mockImplementationOnce((tpId, collectionURN) => {
-    if (tpId !== thirdPartyId || collectionURN !== collectionUrnSuffix) {
+  ;(ItemCuration.existsByCollectionId as jest.MockedFunction<
+    typeof ItemCuration.existsByCollectionId
+  >).mockImplementationOnce((id) => {
+    if (id !== collectionId) {
       return Promise.reject(
         new Error(
-          `Mock was expected to be called with ${thirdPartyId} and ${collectionUrnSuffix} but was called with ${tpId} and ${collectionURN}`
+          `Mock was expected to be called with ${collectionId} but was called with ${id}`
         )
       )
     }
     return Promise.resolve(hasItems)
+  })
+}
+
+/**
+ * Mocks checking the database for an existing collection URN.
+ * This mock requires Collection to be mocked first.
+ *
+ * @param collectionId - The original collection id that has the URN we're looking duplicates for.
+ * @param thirdPartyId - The third party id to build the URN to look for.
+ * @param collectionUrnSuffix - The collection urn suffix to build the URN to look for
+ */
+export function mockThirdPartyCollectionURNExists(
+  collectionId: string,
+  thirdPartyId: string,
+  collectionUrnSuffix: string,
+  urnExists: boolean
+): void {
+  if (!(Collection.isURNRepeated as jest.Mock).mock) {
+    throw new Error(
+      "thirdPartyAPI.isPublished should be mocked to mock the isPublished method but it isn't"
+    )
+  }
+  ;(Collection.isURNRepeated as jest.MockedFunction<
+    typeof Collection.isURNRepeated
+  >).mockImplementationOnce((id, tpId, urnSuffix) => {
+    if (
+      id !== collectionId ||
+      tpId !== thirdPartyId ||
+      urnSuffix !== collectionUrnSuffix
+    ) {
+      return Promise.reject(
+        new Error(
+          `Mock was expected to be called with ${collectionId}, ${thirdPartyId} and ${collectionUrnSuffix} but was called with ${id}, ${tpId} and ${urnSuffix}`
+        )
+      )
+    }
+    return Promise.resolve(urnExists)
   })
 }

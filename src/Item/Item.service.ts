@@ -5,9 +5,10 @@ import {
 } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
 import { isTPCollection } from '../Collection/utils'
+import { CurationStatus } from '../Curation'
+import { ItemCuration } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { ThirdPartyItemFragment } from '../ethereum/api/fragments'
 import { peerAPI } from '../ethereum/api/peer'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Ownable } from '../Ownable'
@@ -132,25 +133,15 @@ export class ItemService {
       : this.getDCLCollectionItems(dbCollection, dbItems)
   }
 
-  public async getTPItemsByManager(
-    manager: string
-  ): Promise<{
-    dbTPItems: ItemAttributes[]
-    remoteTPItems: ThirdPartyItemFragment[]
-  }> {
+  public async getTPItemsByManager(manager: string): Promise<ItemAttributes[]> {
     const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
     if (thirdParties.length <= 0) {
-      return { dbTPItems: [], remoteTPItems: [] }
+      return []
     }
 
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
-    const [dbTPItems, remoteTPItems] = await Promise.all([
-      Item.findByThirdPartyIds(thirdPartyIds),
-      thirdPartyAPI.fetchItemsByThirdParties(thirdPartyIds),
-    ])
-
-    return { dbTPItems, remoteTPItems }
+    return Item.findByThirdPartyIds(thirdPartyIds)
   }
 
   /**
@@ -178,22 +169,15 @@ export class ItemService {
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[]
   ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
-    // TODO: This could be a single query, the problem is paginating the thing. We should only paginate remoteItems
-    const [lastItem, remoteItems] = await Promise.all([
-      thirdPartyAPI.fetchLastItem(
-        dbCollection.third_party_id,
-        dbCollection.urn_suffix
-      ),
-      thirdPartyAPI.fetchItemsByCollection(
-        dbCollection.third_party_id,
-        dbCollection.urn_suffix
-      ),
-    ])
-    const collection = lastItem
-      ? Bridge.mergeTPCollection(dbCollection, lastItem)
+    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
+      dbCollection.id,
+      CurationStatus.APPROVED
+    )
+    const collection = lastItemCuration
+      ? Bridge.mergeTPCollection(dbCollection, lastItemCuration)
       : dbCollection
 
-    const items = await Bridge.consolidateTPItems(dbItems, remoteItems)
+    const items = await Bridge.consolidateTPItems(dbItems)
     return { collection, items }
   }
 
@@ -229,18 +213,17 @@ export class ItemService {
         dbItem.urn_suffix!
       )
 
-      const lastItem = await thirdPartyAPI.fetchLastItem(
-        collection.third_party_id,
-        collection.urn_suffix
+      const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
+        collection.id,
+        CurationStatus.APPROVED
       )
-      collection = lastItem
-        ? Bridge.mergeTPCollection(collection, lastItem)
+      collection = lastItemCuration
+        ? Bridge.mergeTPCollection(collection, lastItemCuration)
         : collection
 
-      const remoteItem = await thirdPartyAPI.fetchItem(urn)
-      if (remoteItem) {
-        const [catalystItem] = await peerAPI.fetchWearables([urn])
-        item = Bridge.mergeTPItem(dbItem, remoteItem, catalystItem)
+      const catalystItems = await peerAPI.fetchWearables([urn])
+      if (catalystItems.length > 0) {
+        item = Bridge.mergeTPItem(dbItem, catalystItems[0])
       }
     }
 
@@ -355,12 +338,12 @@ export class ItemService {
       throw new CollectionForItemLockedError(dbItem.id, ItemAction.DELETE)
     }
 
-    const itemURN = buildTPItemURN(
-      dbCollection.third_party_id,
-      dbCollection.urn_suffix,
-      dbItem.urn_suffix!
-    )
-    if (await thirdPartyAPI.itemExists(itemURN)) {
+    if (await ItemCuration.existsByItemId(dbItem.id)) {
+      const itemURN = buildTPItemURN(
+        dbCollection.third_party_id,
+        dbCollection.urn_suffix,
+        dbItem.urn_suffix!
+      )
       throw new ThirdPartyItemAlreadyPublishedError(
         dbItem.id,
         itemURN,
@@ -494,14 +477,13 @@ export class ItemService {
       }
 
       if (isMovingItemOutOfACollection) {
-        const dbItemURN = buildTPItemURN(
-          dbCollection!.third_party_id!,
-          dbCollection!.urn_suffix!,
-          dbItem.urn_suffix!
-        )
-
         // The item can't be moved if published
-        if (await thirdPartyAPI.itemExists(dbItemURN)) {
+        if (await ItemCuration.existsByItemId(dbItem.id)) {
+          const dbItemURN = buildTPItemURN(
+            dbCollection!.third_party_id!,
+            dbCollection!.urn_suffix!,
+            dbItem.urn_suffix!
+          )
           throw new ThirdPartyItemAlreadyPublishedError(
             dbItem.id,
             dbItemURN,
@@ -509,18 +491,18 @@ export class ItemService {
           )
         }
 
-        // Null the item URN so we get a nulled urn_suffix when inserting it into the DB
+        // nullify the item URN so we get a nulled urn_suffix when inserting it into the DB
         item.urn = null
       } else if (isMovingItemIntoACollection) {
         const decodedItemURN = decodeThirdPartyItemURN(item.urn!)
-        const dbItemURN = buildTPItemURN(
-          dbCollection!.third_party_id!,
-          dbCollection!.urn_suffix!,
-          decodedItemURN.item_urn_suffix
-        )
 
         // Can't add an item with a URN that already exists (If it was URN)
-        if (await thirdPartyAPI.itemExists(dbItemURN)) {
+        if (await ItemCuration.existsByItemId(dbItem.id)) {
+          const dbItemURN = buildTPItemURN(
+            dbCollection!.third_party_id!,
+            dbCollection!.urn_suffix!,
+            decodedItemURN.item_urn_suffix
+          )
           throw new ThirdPartyItemAlreadyPublishedError(
             dbItem.id,
             dbItemURN,
@@ -532,11 +514,20 @@ export class ItemService {
       else {
         const decodedURN = decodeThirdPartyItemURN(item.urn!)
         if (dbItem.urn_suffix !== decodedURN.item_urn_suffix) {
-          const dbItemURN = buildTPItemURN(
-            dbCollection.third_party_id!,
-            dbCollection.urn_suffix!,
-            dbItem.urn_suffix!
-          )
+          // Check if the item is published before changing it
+          if (await ItemCuration.existsByItemId(dbItem.id)) {
+            const dbItemURN = buildTPItemURN(
+              dbCollection.third_party_id!,
+              dbCollection.urn_suffix!,
+              dbItem.urn_suffix!
+            )
+
+            throw new ThirdPartyItemAlreadyPublishedError(
+              dbItem.id,
+              dbItemURN,
+              ItemAction.UPSERT
+            )
+          }
 
           // Build the item's URN using the third party id and the urn suffix in the collection
           // to prevent URNs from being manipulated.
@@ -546,17 +537,9 @@ export class ItemService {
             decodedURN.item_urn_suffix
           )
 
-          // Check if the item's URN in the DB is published before changing it
-          if (await thirdPartyAPI.itemExists(dbItemURN)) {
-            throw new ThirdPartyItemAlreadyPublishedError(
-              dbItem.id,
-              dbItemURN,
-              ItemAction.UPSERT
-            )
-          }
-
           // Check if the new URN is not already in use
-          if (await thirdPartyAPI.itemExists(itemURN)) {
+          const [wearable] = await peerAPI.fetchWearables([itemURN])
+          if (wearable) {
             throw new ThirdPartyItemAlreadyPublishedError(
               item.id,
               item.urn!,
@@ -580,7 +563,8 @@ export class ItemService {
       )
 
       // Check if the chosen URN is already in use
-      if (await thirdPartyAPI.itemExists(itemURN)) {
+      const [wearable] = await peerAPI.fetchWearables([itemURN])
+      if (wearable) {
         throw new ThirdPartyItemAlreadyPublishedError(
           item.id,
           itemURN,

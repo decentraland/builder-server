@@ -463,7 +463,6 @@ describe('Item router', () => {
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
-      itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
       collectionMock = { ...dbCollectionMock }
       tpCollectionMock = { ...dbTPCollectionMock }
     })
@@ -473,11 +472,15 @@ describe('Item router', () => {
 
       beforeEach(() => {
         dbItem = { ...dbItem, blockchain_item_id: null }
+        itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
       })
 
       describe('and the user upserting is not authorized to do so', () => {
         beforeEach(() => {
-          itemToUpsert = { ...itemToUpsert, collection_id: tpCollectionMock.id }
+          itemToUpsert = {
+            ...itemToUpsert,
+            collection_id: tpCollectionMock.id,
+          }
           mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
           mockCollection.findOne.mockResolvedValueOnce(tpCollectionMock)
           mockIsThirdPartyManager(wallet.address, false)
@@ -568,8 +571,12 @@ describe('Item router', () => {
 
         describe('and the update moves the item out of the collection', () => {
           let dbItemURN: string
+          let currentDate: Date
 
           beforeEach(() => {
+            currentDate = new Date()
+            jest.useFakeTimers()
+            jest.setSystemTime(currentDate)
             itemToUpsert = { ...itemToUpsert, collection_id: null }
             dbItem = { ...dbItem, collection_id: tpCollectionMock.id }
             dbItemURN = buildTPItemURN(
@@ -592,23 +599,37 @@ describe('Item router', () => {
             mockCollection.findOne.mockResolvedValueOnce(tpCollectionMock)
           })
 
-          describe.only('and is not published', () => {
+          afterEach(() => {
+            jest.useRealTimers()
+          })
+
+          describe('and is not published', () => {
             let resultingItem: ResultItem
+            let currentDate: Date
 
             beforeEach(() => {
+              currentDate = new Date()
+              jest.useFakeTimers()
+              jest.setSystemTime(currentDate)
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: null,
                 collection_id: null,
+                eth_address: wallet.address,
+                updated_at: currentDate,
               }
+
               mockThirdPartyItemExists(dbItemURN, false)
-              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
               resultingItem = toResultItem(
                 updatedItem,
                 undefined,
                 undefined,
                 tpCollectionMock
               )
+            })
+
+            afterEach(() => {
+              jest.useRealTimers()
             })
 
             it('should respond with a 200, update the item and return the updated item', () => {
@@ -706,21 +727,39 @@ describe('Item router', () => {
 
             describe("and the URN doesn't exist", () => {
               let resultingItem: ResultItem
+              let currentDate: Date
 
               beforeEach(() => {
+                currentDate = new Date()
+                jest.useFakeTimers()
+                jest.setSystemTime(currentDate)
                 const updatedItem = {
                   ...dbItem,
                   urn_suffix: itemUrnSuffix,
                   collection_id: tpCollectionMock.id,
+                  eth_address: wallet.address,
+                  local_content_hash:
+                    'bafkreibvycle2nvoi2ss254gymthq3unznjcxippifiy7zygxqd3363xlu',
+                  updated_at: currentDate,
                 }
+                const originalItemMock = { ...new Item() }
+                mockItem.mockImplementation((createdItem) => {
+                  return {
+                    ...originalItemMock,
+                    upsert: jest.fn().mockResolvedValueOnce(createdItem),
+                  } as any
+                })
                 mockThirdPartyItemExists(itemToUspertURN, false)
-                mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
                 resultingItem = toResultItem(
                   updatedItem,
                   undefined,
                   undefined,
                   tpCollectionMock
                 )
+              })
+
+              afterEach(() => {
+                jest.useRealTimers()
               })
 
               it('should respond with a 200, update the item and return the updated item', () => {
@@ -846,26 +885,43 @@ describe('Item router', () => {
 
           describe("and the URN doesn't change", () => {
             let resultingItem: ResultItem
+            let currentDate: Date
 
             beforeEach(() => {
+              currentDate = new Date()
+              jest.useFakeTimers()
+              jest.setSystemTime(currentDate)
               itemToUpsert = {
                 ...itemToUpsert,
                 collection_id: dbItem.collection_id,
                 urn: dbItemURN,
               }
-
+              const originalItemMock = { ...new Item() }
+              mockItem.mockImplementation((createdItem) => {
+                return {
+                  ...originalItemMock,
+                  upsert: jest.fn().mockResolvedValueOnce(createdItem),
+                } as any
+              })
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: itemUrnSuffix,
                 collection_id: tpCollectionMock.id,
+                eth_address: wallet.address,
+                local_content_hash:
+                  'bafkreibvycle2nvoi2ss254gymthq3unznjcxippifiy7zygxqd3363xlu',
+                updated_at: currentDate,
               }
-              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
               resultingItem = toResultItem(
                 updatedItem,
                 undefined,
                 undefined,
                 tpCollectionMock
               )
+            })
+
+            afterEach(() => {
+              jest.useRealTimers()
             })
 
             it('should respond with a 200, update the item and return the updated item', () => {
@@ -900,7 +956,7 @@ describe('Item router', () => {
               urn: buildTPItemURN(
                 tpCollectionMock.third_party_id,
                 tpCollectionMock.urn_suffix,
-                'some-item-urn-suffix'
+                itemUrnSuffix
               ),
             }
           })
@@ -932,21 +988,40 @@ describe('Item router', () => {
 
           describe('and the URN is not in use', () => {
             let resultingItem: ResultItem
+            let currentDate: Date
 
             beforeEach(() => {
+              currentDate = new Date()
+              jest.useFakeTimers()
+              jest.setSystemTime(currentDate)
+              const originalItemMock = { ...new Item() }
+              mockItem.mockImplementation((createdItem) => {
+                return {
+                  ...originalItemMock,
+                  upsert: jest.fn().mockResolvedValueOnce(createdItem),
+                } as any
+              })
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: itemUrnSuffix,
                 collection_id: tpCollectionMock.id,
+                eth_address: wallet.address,
+                local_content_hash:
+                  'bafkreibvycle2nvoi2ss254gymthq3unznjcxippifiy7zygxqd3363xlu',
+                updated_at: currentDate,
+                created_at: currentDate,
               }
               mockThirdPartyItemExists(itemToUpsert.urn!, false)
-              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
               resultingItem = toResultItem(
                 updatedItem,
                 undefined,
                 undefined,
                 tpCollectionMock
               )
+            })
+
+            afterEach(() => {
+              jest.useRealTimers()
             })
 
             it('should respond with a 200, update the item and return the updated item', () => {
@@ -994,7 +1069,10 @@ describe('Item router', () => {
 
     describe('and the item is a DCL item', () => {
       beforeEach(() => {
-        itemToUpsert = { ...itemToUpsert, urn: null }
+        itemToUpsert = {
+          ...utils.omit(dbItem, ['created_at', 'updated_at']),
+          urn: null,
+        }
       })
 
       describe('and the item inserted has an invalid name', () => {

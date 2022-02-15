@@ -35,9 +35,9 @@ function buildItemEntityMetadata(
   const itemMetadata: DCLCatalystItem = {
     id: isTPEntity
       ? buildTPItemURN(
-          collection.third_party_id,
-          collection.urn_suffix,
-          item.urn_suffix
+          collection.third_party_id!,
+          collection.urn_suffix!,
+          item.urn_suffix!
         )
       : getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,

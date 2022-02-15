@@ -90,12 +90,6 @@ export class CurationRouter extends Router {
       withAuthentication,
       server.handleRequest(this.insertItemCuration)
     )
-
-    this.router.post(
-      '/items/:id/curation',
-      withAuthentication,
-      server.handleRequest(this.insertItemCuration)
-    )
   }
 
   /**

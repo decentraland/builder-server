@@ -36,7 +36,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
       FROM ${raw(this.tableName)} c
       JOIN ${raw(Item.tableName)} i ON i.id = c.item_id
       WHERE i.collection_id = ${collectionId}
-        AND i.status = ${curationStatus}
+        AND c.status = ${curationStatus}
       ORDER BY created_at DESC
       LIMIT 1`)
 

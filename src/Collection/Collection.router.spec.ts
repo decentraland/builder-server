@@ -39,6 +39,7 @@ import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from '../Curation/CollectionCuration'
+import { buildCollectionForumPost, createPost } from '../Forum'
 import { SlotUsageCheque } from '../SlotUsageCheque'
 import { CurationStatus } from '../Curation'
 import { isCommitteeMember } from '../Committee'
@@ -58,6 +59,7 @@ jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
 jest.mock('../ethereum/api/thirdParty')
 jest.mock('../utils/eth')
+jest.mock('../Forum/client')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Curation/CollectionCuration')
 jest.mock('../Committee')
@@ -191,7 +193,7 @@ describe('Collection router', () => {
         })
       })
 
-      describe('and the usperted collection is changing the urn and it already has items published', () => {
+      describe('and the upserted collection is changing the urn and it already has items published', () => {
         beforeEach(() => {
           dbTPCollection = {
             ...dbTPCollection,
@@ -1386,6 +1388,7 @@ describe('Collection router', () => {
         >
         let items: ThirdPartyItemAttributes[]
         let itemIds: string[]
+        let forumLink: string
 
         beforeEach(() => {
           items = [
@@ -1394,6 +1397,7 @@ describe('Collection router', () => {
             { ...dbTPItemMock, id: uuid() },
           ]
           itemIds = items.map((item) => item.id)
+          forumLink = 'https://forum.com/some/forum/link'
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
           ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
             undefined
@@ -1401,6 +1405,7 @@ describe('Collection router', () => {
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
             dbTPCollectionMock,
           ])
+          ;(createPost as jest.Mock).mockResolvedValueOnce(forumLink)
 
           slotUsageChequeCreateSpy = jest
             .spyOn(SlotUsageCheque, 'create')
@@ -1415,14 +1420,7 @@ describe('Collection router', () => {
             .mockResolvedValueOnce(items as any)
         })
 
-        describe('when the item collection does not have a virtual curation', () => {
-          beforeEach(() => {
-            ;(CollectionCuration.findOne as jest.Mock).mockResolvedValueOnce(
-              undefined
-            )
-            ;(CollectionCuration.create as jest.Mock).mockResolvedValueOnce({})
-          })
-
+        describe('and the item collection does not have a virtual curation', () => {
           it('should create a SlotUsageCheque record with the request data', () => {
             const signedMessage = 'a signed message'
 
@@ -1491,40 +1489,9 @@ describe('Collection router', () => {
                 })
               })
           })
-
-          it('should return the collection and items already consolidated', () => {
-            return server
-              .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
-              .send({
-                itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
-              })
-              .expect(200)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  data: {
-                    collection: {
-                      ...toFullCollection(dbTPCollection),
-                      is_published: true,
-                      reviewed_at: itemCurationMock.updated_at.toISOString(),
-                      created_at: itemCurationMock.created_at.toISOString(),
-                      updated_at: itemCurationMock.updated_at.toISOString(),
-                    },
-                    items: items.map((item) => ({
-                      ...item,
-                      created_at: item.created_at.toISOString(),
-                      updated_at: item.updated_at.toISOString(),
-                    })),
-                  },
-                  ok: true,
-                })
-              })
-          })
         })
 
-        describe('when the item collection already has a virtual curation', () => {
+        describe('and the item collection already has a virtual curation', () => {
           let collectionCuration: CollectionCurationAttributes
 
           beforeEach(() => {
@@ -1552,6 +1519,17 @@ describe('Collection router', () => {
                 )
               })
           })
+        })
+
+        describe('and the server responds correctly', () => {
+          beforeEach(() => {
+            // Using CollectionCuration-less items here wihtout any particular reason
+            // This describe is here to avoid having to repeat these tests, which run for both casses
+            ;(CollectionCuration.findOne as jest.Mock).mockResolvedValueOnce(
+              undefined
+            )
+            ;(CollectionCuration.create as jest.Mock).mockResolvedValueOnce({})
+          })
 
           it('should return the collection and items already consolidated', () => {
             return server
@@ -1581,6 +1559,41 @@ describe('Collection router', () => {
                   },
                   ok: true,
                 })
+              })
+          })
+
+          it('should create a forum post with the response data', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage: 'message',
+                signature: 'signature',
+              })
+              .expect(200)
+              .then(() => {
+                expect(createPost).toHaveBeenCalledWith(
+                  buildCollectionForumPost(dbTPCollection, items as any)
+                )
+              })
+          })
+
+          it('should update the collection forum_link property with the post creation', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage: 'message',
+                signature: 'signature',
+              })
+              .expect(200)
+              .then(() => {
+                expect(Collection.update).toHaveBeenCalledWith(
+                  { forum_link: forumLink },
+                  { id: dbTPCollection.id }
+                )
               })
           })
         })

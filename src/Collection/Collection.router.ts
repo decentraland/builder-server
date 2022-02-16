@@ -17,7 +17,7 @@ import { OwnableModel } from '../Ownable/Ownable.types'
 import { UnpublishedItemError } from '../Item/Item.errors'
 import { FullItem, Item } from '../Item'
 import { isCommitteeMember } from '../Committee'
-// import { createPost, ForumPost } from '../Forum'
+import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -262,15 +262,15 @@ export class CollectionRouter extends Router {
           server.extractFromReq(req, 'signature')
         )
 
-        // TODO: Steal create forum post from front-end
-        // Eventually, posting to the forum will be done from the server for both collection types.
-        // DCL Collections posts are being handled by the front-end at the moment
-        // const forumPost: ForumPost = {
-        //   title: 'Some title',
-        //   raw: 'Body?',
-        //   created_at: new Date().toISOString(),
-        // }
-        // await createPost(forumPost)
+        // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)
+        // We should also consider deleteing Forum.router.ts
+        // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
+        // TODO: Should this be halting the response? Retries?
+        // TODO: Consider slicing the items list if it might get too big
+        const forum_link = await createPost(
+          buildCollectionForumPost(result.collection, result.items)
+        )
+        await Collection.update<CollectionAttributes>({ forum_link }, { id })
       } else {
         const dbItems = await Item.findOrderedByCollectionId(id)
         result = await this.service.publishDCLCollection(dbCollection, dbItems)

@@ -1439,6 +1439,8 @@ describe('Collection router', () => {
                   signedMessage,
                   collection_id: dbTPCollection.id,
                   third_party_id: dbTPCollection.third_party_id,
+                  created_at: expect.any(Date),
+                  updated_at: expect.any(Date),
                 })
               })
           })

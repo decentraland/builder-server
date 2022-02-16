@@ -45,11 +45,12 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
 
   static async findByCollectionId(collectionId: string) {
     return this.query<ItemCurationAttributes>(SQL`
-    SELECT ic.*
+    SELECT DISTINCT on (i.id) ic.*
       FROM ${raw(this.tableName)} ic
       INNER JOIN ${raw(
         Item.tableName
-      )} i ON i.id = ic.item_id AND i.collection_id = ${collectionId}`)
+      )} i ON i.id = ic.item_id AND i.collection_id = ${collectionId} 
+      ORDER BY i.id, ic.created_at DESC`)
   }
 
   static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {

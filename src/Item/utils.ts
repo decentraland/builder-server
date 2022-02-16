@@ -8,7 +8,7 @@ import {
 import { matchers } from '../common/matchers'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { peerAPI } from '../ethereum/api/peer'
 import { NonExistentItemError, UnpublishedItemError } from './Item.errors'
 import { Item } from './Item.model'
 import { FullItem, ItemAttributes } from './Item.types'
@@ -84,9 +84,10 @@ export function isTPItemURN(itemURN: string): boolean {
 }
 
 /**
- * Will return an item by merging the item present in the database and the one found in the graph.
- * If the graph version does not exist, it'll throw. This works for both standard and TP collections
- * Because the publication (graph version) is mandatory, this method will also throw if the item has no collection
+ * Will return an item by merging the item present in the database and the remote counterpart.
+ * For standard collections, the remote item will be fetched from thegraph, if it's not present it'll throw.
+ * For TP collections, the remote item is fetched from the Catalyst, if it's not present it'll throw
+ * Because the publication (graph/catalyst) is mandatory, this method will also throw if the item has no collection
  */
 export async function getMergedItem(id: string): Promise<FullItem> {
   const dbItem = await Item.findOne(id)
@@ -107,13 +108,13 @@ export async function getMergedItem(id: string): Promise<FullItem> {
       dbCollection.urn_suffix,
       dbItem.urn_suffix
     )
-    const remoteItem = await thirdPartyAPI.fetchItem(urn)
+    const [wearable] = await peerAPI.fetchWearables([urn])
 
-    if (!remoteItem) {
+    if (!wearable) {
       throw new UnpublishedItemError(id)
     }
 
-    fullItem = Bridge.mergeTPItem(dbItem, remoteItem)
+    fullItem = Bridge.mergeTPItem(dbItem, wearable)
   } else {
     const {
       collection: remoteCollection,

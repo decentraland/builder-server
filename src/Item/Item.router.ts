@@ -153,7 +153,7 @@ export class ItemRouter extends Router {
     }
 
     // TODO: We need to paginate this. To do it, we'll have to fetch remote items via the paginated dbItemIds
-    const [allItems, remoteItems, remoteTPItems] = await Promise.all([
+    const [allItems, remoteItems] = await Promise.all([
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
       thirdPartyAPI.fetchItems(),
@@ -163,7 +163,7 @@ export class ItemRouter extends Router {
 
     const [fullItems, fullTPItems] = await Promise.all([
       Bridge.consolidateItems(items, remoteItems),
-      Bridge.consolidateTPItems(tpItems, remoteTPItems),
+      Bridge.consolidateTPItems(tpItems),
     ])
 
     // TODO: sorting (we're not breaking pagination)
@@ -182,11 +182,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [
-      dbItems,
-      remoteItems,
-      { dbTPItems, remoteTPItems },
-    ] = await Promise.all([
+    const [dbItems, remoteItems, dbTPItems] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
       this.itemService.getTPItemsByManager(eth_address),
@@ -194,7 +190,7 @@ export class ItemRouter extends Router {
 
     const [items, tpItems] = await Promise.all([
       Bridge.consolidateItems(dbItems, remoteItems),
-      Bridge.consolidateTPItems(dbTPItems, remoteTPItems),
+      Bridge.consolidateTPItems(dbTPItems),
     ])
 
     // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.

@@ -42,6 +42,11 @@ describe('Collection service', () => {
           .mockReturnValueOnce(Date.now() + twoDaysInMilliseconds)
       })
 
+      afterAll(() => {
+        // Just in case something goes wrong with the test and the Date.now function never gets executed.
+        jest.restoreAllMocks()
+      })
+
       it('should return false', () => {
         expect(service.isLockActive(lock)).toBe(false)
       })

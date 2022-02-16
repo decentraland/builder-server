@@ -2,8 +2,9 @@ import { utils } from 'decentraland-commons'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { matchers } from '../common/matchers'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { CurationStatus } from '../Curation'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -119,8 +120,9 @@ export function decodeTPCollectionURN(
 }
 
 /**
- * Will return a collection by merging the collection present in the database and the one found in the graph.
- * If the graph version does not exist, it'll throw. This works for both standard and TP collections
+ * Will return a collection by merging the collection present in the database and the remote counterpart.
+ * For standard collections, the remote collection will be fetched from thegraph, if it's not present it'll throw.
+ * For TP collections, the remote collection is fetched from the Catalyst, if it's not present it'll throw
  */
 export async function getMergedCollection(
   id: string
@@ -134,16 +136,16 @@ export async function getMergedCollection(
   let mergedCollection: CollectionAttributes
 
   if (isTPCollection(dbCollection)) {
-    const lastItem = await thirdPartyAPI.fetchLastItem(
-      dbCollection.third_party_id,
-      dbCollection.urn_suffix
+    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
+      dbCollection.id,
+      CurationStatus.APPROVED
     )
 
-    if (!lastItem) {
+    if (!lastItemCuration) {
       throw new UnpublishedCollectionError(id)
     }
 
-    mergedCollection = Bridge.mergeTPCollection(dbCollection, lastItem)
+    mergedCollection = Bridge.mergeTPCollection(dbCollection, lastItemCuration)
   } else {
     const remoteCollection = await collectionAPI.fetchCollection(
       dbCollection.contract_address!

@@ -47,7 +47,7 @@ function toRawItem(item: FullItem) {
       [Link to editor](${getItemEditorUrl({ itemId: item.id })})`
 }
 
-// TODO: Maybe this should be provided as an additional argument. That way, if the front-end path changes, this will still work
+// TODO: Maybe the URL should be provided as an additional argument. That way, if the front-end path changes, this will still work
 function getItemEditorUrl(params: { collectionId?: string; itemId?: string }) {
   const queryString = []
 

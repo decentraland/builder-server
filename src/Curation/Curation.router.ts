@@ -245,7 +245,6 @@ export class CurationRouter extends Router {
         CurationType.COLLECTION
       )
     } catch (error) {
-      console.log(error)
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
           'Collection does not exist',

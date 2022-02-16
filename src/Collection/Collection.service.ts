@@ -11,7 +11,7 @@ import { Ownable } from '../Ownable'
 import { FullItem, Item, ItemAttributes } from '../Item'
 import { UnpublishedItemError } from '../Item/Item.errors'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
-import { SlotUsageCheque } from '../SlotUsageCheque'
+import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
@@ -131,12 +131,10 @@ export class CollectionService {
 
   /**
    * It should receive the list of items to be operated on so it can decide where it should create or update the curations for them accordingly
-   * It will also receive a signed message as part of the body and store it in the SlotUsageCheque
-   * (if it's updating the item or it's publishing it).
-   * It will publish a forum post designed for the TP collections.
+   * It will also receive a signed message and its signature, so it can check and store it in the SlotUsageCheque
    */
   public async publishTPCollection(
-    dbCollection: CollectionAttributes,
+    dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[],
     signedMessage: string,
     signature: string
@@ -193,17 +191,18 @@ export class CollectionService {
       )
     }
 
-    await SlotUsageCheque.create({
+    const now = new Date()
+    await SlotUsageCheque.create<SlotUsageChequeAttributes>({
       id: uuid(),
       signedMessage,
       collection_id: dbCollection.id,
       third_party_id: dbCollection.third_party_id,
+      created_at: now,
+      updated_at: now,
     })
 
     const promises = []
-    const now = new Date()
     for (const item of dbItems) {
-      // TODO: This could probably be abstracted. Check insertCuration on CurationRouter
       promises.push(
         ItemCuration.create<ItemCurationAttributes>({
           id: uuid(),
@@ -219,18 +218,17 @@ export class CollectionService {
 
     const collectionCuration = await CollectionCuration.findOne(collectionId)
     if (collectionCuration) {
-      CollectionCuration.update(
+      await CollectionCuration.update(
         { id: collectionCuration.id },
-        { updated_at: new Date() }
+        { updated_at: now }
       )
     } else {
-      // TODO: This could probably be abstracted. Check insertCuration on CurationRouter
-      CollectionCuration.create<CollectionCurationAttributes>({
+      await CollectionCuration.create<CollectionCurationAttributes>({
         id: uuid(),
         collection_id: collectionId,
         status: CurationStatus.PENDING,
-        created_at: new Date(),
-        updated_at: new Date(),
+        created_at: now,
+        updated_at: now,
       })
     }
 

@@ -8,8 +8,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
-import { getMergedCollection, isTPCollection } from '../Collection/utils'
-// import { getMergedItem } from '../Item/utils'
+import { isTPCollection } from '../Collection/utils'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
 import {
   NonExistentCollectionError,
@@ -240,17 +239,13 @@ export class CurationRouter extends Router {
       const collectionId = server.extractFromReq(req, 'id')
       const ethAddress = req.auth.ethAddress
 
-      // Check if the collection is valid by requesting it to the different origins.
-      // The method will throw if the collection is not properly published.
-      // TODO: We might want to extract the check logic into a public method.
-      await getMergedCollection(collectionId)
-
       return this.insertCuration(
         collectionId,
         ethAddress,
         CurationType.COLLECTION
       )
     } catch (error) {
+      console.log(error)
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
           'Collection does not exist',
@@ -276,12 +271,6 @@ export class CurationRouter extends Router {
 
     try {
       const itemId = server.extractFromReq(req, 'id')
-
-      // Check if the item is valid by requesting it to the different origins.
-      // The method will throw if the item is not properly published.
-      // TODO: We might want to extract the check logic into a public method.
-      // TODO: Add and test this logic
-      // await getMergedItem(itemId)
 
       return this.insertCuration(itemId, ethAddress, CurationType.ITEM)
     } catch (error) {

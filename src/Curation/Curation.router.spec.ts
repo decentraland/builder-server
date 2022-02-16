@@ -525,8 +525,6 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
-        service = mockServiceWithAccess(CollectionCuration, true)
-
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
 
         req = {
@@ -537,7 +535,7 @@ describe('when handling a request', () => {
 
       it('should reject with a not found message', async () => {
         await expect(router.insertCollectionCuration(req)).rejects.toThrowError(
-          'Collection does not exist'
+          "The collection doesn't exist."
         )
       })
     })
@@ -546,11 +544,10 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
-        service = mockServiceWithAccess(CollectionCuration, true)
-
         jest
           .spyOn(Collection, 'findOne')
           .mockResolvedValueOnce({ ...dbCollectionMock })
+
         jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
 
         req = {
@@ -561,7 +558,7 @@ describe('when handling a request', () => {
 
       it('should reject with collection not published message', async () => {
         await expect(router.insertCollectionCuration(req)).rejects.toThrowError(
-          'Collection is not published'
+          'The collection is not published.'
         )
       })
     })
@@ -689,8 +686,6 @@ describe('when handling a request', () => {
             updated_at: expect.any(Date),
           })
         })
-
-        // TODO: getMergedItem mocks and errors
       })
     })
   })

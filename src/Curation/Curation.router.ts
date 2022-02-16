@@ -280,6 +280,7 @@ export class CurationRouter extends Router {
       // Check if the item is valid by requesting it to the different origins.
       // The method will throw if the item is not properly published.
       // TODO: We might want to extract the check logic into a public method.
+      // TODO: Add and test this logic
       // await getMergedItem(itemId)
 
       return this.insertCuration(itemId, ethAddress, CurationType.ITEM)

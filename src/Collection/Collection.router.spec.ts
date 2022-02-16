@@ -1,4 +1,6 @@
 import supertest from 'supertest'
+import { ethers } from 'ethers'
+import { v4 as uuid } from 'uuid'
 import {
   createAuthHeaders,
   buildURL,
@@ -20,40 +22,46 @@ import {
   toResultCollection,
 } from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
-import { collectionAPI } from '../ethereum/api/collection'
-import { isCommitteeMember } from '../Committee'
-import { app } from '../server'
-import { CollectionFragment } from '../ethereum/api/fragments'
-import { Item } from '../Item/Item.model'
-import { hasPublicAccess } from './access'
-import { toDBCollection, toFullCollection } from './utils'
 import {
   convertItemDatesToISO,
   dbItemMock,
+  dbTPItemMock,
   itemFragmentMock,
 } from '../../spec/mocks/items'
-import { ItemAttributes } from '../Item'
-import { ItemFragment } from '../ethereum/api/fragments'
+import { itemCurationMock } from '../../spec/mocks/itemCuration'
+import { ItemFragment, CollectionFragment } from '../ethereum/api/fragments'
+import { collectionAPI } from '../ethereum/api/collection'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
+import { ItemCuration } from '../Curation/ItemCuration'
+import {
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from '../Curation/CollectionCuration'
+import { SlotUsageCheque } from '../SlotUsageCheque'
+import { CurationStatus } from '../Curation'
+import { isCommitteeMember } from '../Committee'
+import { app } from '../server'
+import { hasPublicAccess } from './access'
+import { toDBCollection, toFullCollection } from './utils'
+import { Item, ItemAttributes, ThirdPartyItemAttributes } from '../Item'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
   ThirdPartyCollectionAttributes,
   FullCollection,
 } from './Collection.types'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { ItemCuration } from '../Curation/ItemCuration'
-import { itemCurationMock } from '../../spec/mocks/itemCuration'
 
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
 jest.mock('../ethereum/api/thirdParty')
-jest.mock('../Committee')
 jest.mock('../utils/eth')
-jest.mock('../Item/Item.model')
 jest.mock('../Curation/ItemCuration')
+jest.mock('../Curation/CollectionCuration')
+jest.mock('../Committee')
+jest.mock('../Item/Item.model')
 jest.mock('./Collection.model')
 jest.mock('./access')
 
@@ -481,35 +489,6 @@ describe('Collection router', () => {
     describe('when the collection is a decentraland collection', () => {
       beforeEach(() => {
         urn = `urn:decentraland:${network}:collections-v2:${dbCollection.contract_address}`
-      })
-
-      describe('and the data supplied is undefined', () => {
-        beforeEach(() => {
-          collectionToUpsert = {
-            ...toFullCollection(dbCollection),
-            is_published: true,
-            is_approved: false,
-            urn,
-          }
-        })
-
-        it('should respond with a 409 and an error saying that the data should be valid', () => {
-          return server
-            .put(buildURL(url))
-            .set(createAuthHeaders('put', url))
-            .send({ collection: collectionToUpsert })
-            .expect(409)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                ok: false,
-                data: {
-                  id: dbCollection.id,
-                  eth_address: wallet.address,
-                },
-                error: 'Cannot upsert a collection without a valid data',
-              })
-            })
-        })
       })
 
       describe('and the collection to upsert has the is_published property', () => {
@@ -1243,22 +1222,374 @@ describe('Collection router', () => {
     })
   })
 
-  describe.only('when publishing a collection', () => {
-    beforeEach(() => {
-      url = `/collections/${dbCollection.id}/publish`
-    })
-
+  describe('when publishing a collection', () => {
     describe('and the collection is a TP collection', () => {
       beforeEach(() => {
+        url = `/collections/${dbTPCollection.id}/publish`
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbTPCollection)
         mockExistsMiddleware(Collection, dbTPCollection.id)
       })
 
-      it('', () => {})
+      describe('when sending an empty item ids array', () => {
+        beforeEach(() => {
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([])
+        })
+
+        it('should respond with a 400 and a message signaling the item ids should not be empty', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [],
+              signedMessage: 'message',
+              signature: 'signature',
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error: 'Tried to publish no TP items',
+              })
+            })
+        })
+      })
+
+      describe('when sending an invalid signed message and signature', () => {
+        beforeEach(() => {
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbTPItemMock])
+        })
+
+        it('should respond with a 400 and a message signaling the signature and message should be valid', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [dbTPItemMock.id],
+              signedMessage: 'invalid',
+              signature: 'signature',
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error:
+                  'Tried to publish TP items with an invalid signed message or signature',
+              })
+            })
+        })
+      })
+
+      describe('when the items do not belong to a collection', () => {
+        beforeEach(() => {
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([
+            { ...dbTPItemMock, collection_id: undefined },
+          ])
+          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+        })
+
+        it('should respond with a 400 and a message signaling that items must have a collection id', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [dbTPItemMock.id],
+              signedMessage: 'message',
+              signature: 'signature',
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error: 'Cannot publish items without a collection id',
+              })
+            })
+        })
+      })
+
+      describe('when the items do not share the same collection id', () => {
+        let items: ThirdPartyItemAttributes[]
+        let itemIds: string[]
+
+        beforeEach(() => {
+          items = [
+            { ...dbTPItemMock, id: uuid(), collection_id: '1' },
+            { ...dbTPItemMock, id: uuid(), collection_id: '1' },
+            { ...dbTPItemMock, id: uuid(), collection_id: '2' },
+            { ...dbTPItemMock, id: uuid(), collection_id: '3' },
+            { ...dbTPItemMock, id: uuid(), collection_id: '1' },
+          ]
+          itemIds = items.map((item) => item.id)
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
+          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+        })
+
+        it('should respond with a 400 and a message signaling that all item collections should be the same', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds,
+              signedMessage: 'message',
+              signature: 'signature',
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error:
+                  'Cannot publish items that belong to different collections',
+              })
+            })
+        })
+      })
+
+      describe('when the collection already has a pending ItemCuration', () => {
+        beforeEach(() => {
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbItemMock])
+          ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
+            itemCurationMock
+          )
+          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+        })
+
+        it('should respond with a 409 and a message signaling that you cannot publish items twice', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [dbItemMock.id],
+              signedMessage: 'message',
+              signature: 'signature',
+            })
+            .expect(409)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error:
+                  "The third party collection already has published items. It can't be updated.",
+              })
+            })
+        })
+      })
+
+      describe('when the supplied data is correct', () => {
+        let slotUsageChequeCreateSpy: jest.SpyInstance<
+          ReturnType<typeof SlotUsageCheque.create>
+        >
+        let itemCurationCreateSpy: jest.SpyInstance<
+          ReturnType<typeof ItemCuration.create>
+        >
+        let items: ThirdPartyItemAttributes[]
+        let itemIds: string[]
+
+        beforeEach(() => {
+          items = [
+            { ...dbTPItemMock, id: uuid() },
+            { ...dbTPItemMock, id: uuid() },
+            { ...dbTPItemMock, id: uuid() },
+          ]
+          itemIds = items.map((item) => item.id)
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
+          ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
+            undefined
+          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollectionMock,
+          ])
+
+          slotUsageChequeCreateSpy = jest
+            .spyOn(SlotUsageCheque, 'create')
+            .mockResolvedValueOnce({})
+          itemCurationCreateSpy = jest
+            .spyOn(ItemCuration, 'create')
+            .mockResolvedValue(itemCurationMock)
+
+          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+          jest
+            .spyOn(Bridge, 'consolidateTPItems')
+            .mockResolvedValueOnce(items as any)
+        })
+
+        describe('when the item collection does not have a virtual curation', () => {
+          beforeEach(() => {
+            ;(CollectionCuration.findOne as jest.Mock).mockResolvedValueOnce(
+              undefined
+            )
+            ;(CollectionCuration.create as jest.Mock).mockResolvedValueOnce({})
+          })
+
+          it('should create a SlotUsageCheque record with the request data', () => {
+            const signedMessage = 'a signed message'
+
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage,
+                signature: 'signature',
+              })
+              .expect(200)
+              .then(() => {
+                expect(slotUsageChequeCreateSpy).toHaveBeenCalledWith({
+                  id: expect.any(String),
+                  signedMessage,
+                  collection_id: dbTPCollection.id,
+                  third_party_id: dbTPCollection.third_party_id,
+                })
+              })
+          })
+
+          it('should create a pending ItemCuration for each item id supplied', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage: 'message',
+                signature: 'signature',
+              })
+              .expect(200)
+              .then(() => {
+                const itemCurationCalls = items.map((item) => [
+                  {
+                    id: expect.any(String),
+                    item_id: item.id,
+                    status: CurationStatus.PENDING,
+                    created_at: expect.any(Date),
+                    updated_at: expect.any(Date),
+                  },
+                ])
+                expect(itemCurationCreateSpy.mock.calls).toEqual(
+                  itemCurationCalls
+                )
+              })
+          })
+
+          it('should create the virtual collection curation', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage: 'message',
+                signature: 'signature',
+              })
+              .expect(200)
+              .then(() => {
+                expect(CollectionCuration.create).toHaveBeenCalledWith({
+                  id: expect.any(String),
+                  collection_id: dbTPCollection.id,
+                  status: CurationStatus.PENDING,
+                  created_at: expect.any(Date),
+                  updated_at: expect.any(Date),
+                })
+              })
+          })
+
+          it('should return the collection and items already consolidated', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage: 'message',
+                signature: 'signature',
+              })
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  data: {
+                    collection: {
+                      ...toFullCollection(dbTPCollection),
+                      is_published: true,
+                      reviewed_at: itemCurationMock.updated_at.toISOString(),
+                      created_at: itemCurationMock.created_at.toISOString(),
+                      updated_at: itemCurationMock.updated_at.toISOString(),
+                    },
+                    items: items.map((item) => ({
+                      ...item,
+                      created_at: item.created_at.toISOString(),
+                      updated_at: item.updated_at.toISOString(),
+                    })),
+                  },
+                  ok: true,
+                })
+              })
+          })
+        })
+
+        describe('when the item collection already has a virtual curation', () => {
+          let collectionCuration: CollectionCurationAttributes
+
+          beforeEach(() => {
+            collectionCuration = { id: uuid() } as CollectionCurationAttributes
+            ;(CollectionCuration.findOne as jest.Mock).mockResolvedValueOnce(
+              collectionCuration
+            )
+            ;(CollectionCuration.update as jest.Mock).mockResolvedValueOnce({})
+          })
+
+          it('should update the virtual collection curation updated at column', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage: 'message',
+                signature: 'signature',
+              })
+              .expect(200)
+              .then(() => {
+                expect(CollectionCuration.update).toHaveBeenCalledWith(
+                  { id: collectionCuration.id },
+                  { updated_at: expect.any(Date) }
+                )
+              })
+          })
+
+          it('should return the collection and items already consolidated', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds,
+                signedMessage: 'message',
+                signature: 'signature',
+              })
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  data: {
+                    collection: {
+                      ...toFullCollection(dbTPCollection),
+                      is_published: true,
+                      reviewed_at: itemCurationMock.updated_at.toISOString(),
+                      created_at: itemCurationMock.created_at.toISOString(),
+                      updated_at: itemCurationMock.updated_at.toISOString(),
+                    },
+                    items: items.map((item) => ({
+                      ...item,
+                      created_at: item.created_at.toISOString(),
+                      updated_at: item.updated_at.toISOString(),
+                    })),
+                  },
+                  ok: true,
+                })
+              })
+          })
+        })
+      })
     })
 
     describe('and the collection is a Decentraland collection', () => {
       beforeEach(() => {
+        url = `/collections/${dbTPCollection.id}/publish`
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
         mockExistsMiddleware(Collection, dbCollection.id)
       })

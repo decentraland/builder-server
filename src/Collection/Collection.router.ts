@@ -2,6 +2,7 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
+import { InvalidRequestError } from '../utils/errors'
 import {
   withModelAuthorization,
   withAuthentication,
@@ -257,7 +258,8 @@ export class CollectionRouter extends Router {
         result = await this.service.publishTPCollection(
           dbCollection,
           dbItems,
-          server.extractFromReq(req, 'signedMessage')
+          server.extractFromReq(req, 'signedMessage'),
+          server.extractFromReq(req, 'signature')
         )
 
         // TODO: Steal create forum post from front-end
@@ -279,13 +281,21 @@ export class CollectionRouter extends Router {
         items: result.items,
       }
     } catch (error) {
-      if (error instanceof UnpublishedCollectionError) {
+      if (error instanceof InvalidRequestError) {
+        throw new HTTPError(error.message, { id }, STATUS_CODES.badRequest)
+      } else if (error instanceof UnpublishedCollectionError) {
         throw new HTTPError(
           error.message,
           { id: error.id },
           STATUS_CODES.unauthorized
         )
       } else if (error instanceof UnpublishedItemError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof AlreadyPublishedCollectionError) {
         throw new HTTPError(
           error.message,
           { id: error.id },

@@ -1,3 +1,4 @@
+import { ethers } from 'ethers'
 import { v4 as uuid } from 'uuid'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
@@ -137,7 +138,8 @@ export class CollectionService {
   public async publishTPCollection(
     dbCollection: CollectionAttributes,
     dbItems: ItemAttributes[],
-    signedMessage: string
+    signedMessage: string,
+    signature: string
   ): Promise<{
     collection: CollectionAttributes
     items: FullItem[]
@@ -155,10 +157,11 @@ export class CollectionService {
       throw new InvalidRequestError('Tried to publish no TP items')
     }
 
-    // TODO: Check the signed message is valid?
-    if (!signedMessage) {
+    try {
+      ethers.utils.verifyMessage(signedMessage, signature) // Throws if invalid
+    } catch (error) {
       throw new InvalidRequestError(
-        'Tried to publish TP items without a valid signed message'
+        'Tried to publish TP items with an invalid signed message or signature'
       )
     }
 
@@ -198,6 +201,7 @@ export class CollectionService {
     })
 
     const promises = []
+    const now = new Date()
     for (const item of dbItems) {
       // TODO: This could probably be abstracted. Check insertCuration on CurationRouter
       promises.push(
@@ -205,8 +209,8 @@ export class CollectionService {
           id: uuid(),
           item_id: item.id,
           status: CurationStatus.PENDING,
-          created_at: new Date(),
-          updated_at: new Date(),
+          created_at: now,
+          updated_at: now,
         })
       )
     }

@@ -20,7 +20,6 @@ export type Wearable = {
   image: string
   thumbnail: string
   metrics: MetricsAttributes
-  contents: Record<string, string>
   data: WearableData
   createdAt: number
   updatedAt: number
@@ -94,15 +93,6 @@ export class PeerAPI {
   }
 
   private toWearable(peerWearable: PeerWearable): Wearable {
-    const contents: Record<string, string> = {}
-    for (let representation of peerWearable.data.representations) {
-      for (let content of representation.contents) {
-        contents[content.key] = this.getLastURLPart(content.url)
-      }
-    }
-
-    contents[THUMBNAIL_PATH] = this.getLastURLPart(peerWearable.thumbnail)
-
     return {
       ...peerWearable,
       data: {
@@ -114,12 +104,7 @@ export class PeerAPI {
           })),
         ],
       },
-      contents,
     }
-  }
-
-  private getLastURLPart(url = ''): string {
-    return url.split('/').pop() || ''
   }
 }
 

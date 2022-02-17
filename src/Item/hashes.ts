@@ -3,70 +3,72 @@ import {
   EntityMetadata,
   Hashing,
 } from 'dcl-catalyst-commons'
-import { omit } from 'decentraland-commons/dist/utils'
 import { CollectionAttributes } from '../Collection'
-import { isTPCollection } from '../Collection/utils'
-import { DCLCatalystItem, ItemAttributes, TPCatalystItem } from './Item.types'
+import {
+  StandardWearableEntityMetadata,
+  ItemAttributes,
+  TPWearableEntityMetadata,
+} from './Item.types'
 import { buildTPItemURN, getDecentralandItemURN, isTPItem } from './utils'
+import { isTPCollection } from '../Collection/utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
 
-function buildItemEntityMetadata(
+export function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
-): DCLCatalystItem | TPCatalystItem {
-  const isTPEntity = isTPCollection(collection) && isTPItem(item)
-
-  if (!collection.contract_address && !isTPEntity) {
+): StandardWearableEntityMetadata {
+  if (!collection.contract_address) {
     throw new Error(
       "The item's collection must be published to build its metadata"
     )
   }
 
-  // We strip the thumbnail from the representations contents as they're not being used by the Catalyst and just occupy extra space
-  const representations = item.data.representations.map((representation) => ({
-    ...representation,
-    contents: representation.contents.filter(
-      (fileName) => fileName !== THUMBNAIL_PATH
-    ),
-  }))
-
-  const itemMetadata: DCLCatalystItem = {
-    id: isTPEntity
-      ? buildTPItemURN(
-          collection.third_party_id!,
-          collection.urn_suffix!,
-          item.urn_suffix!
-        )
-      : getDecentralandItemURN(item, collection.contract_address!),
+  return {
+    id: getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,
     description: item.description,
     collectionAddress: collection.contract_address!,
-    rarity: item.rarity ?? undefined,
+    rarity: item.rarity!,
     i18n: [{ code: 'en', text: item.name }],
     data: {
       replaces: item.data.replaces,
       hides: item.data.hides,
       tags: item.data.tags,
       category: item.data.category,
-      representations,
+      representations: item.data.representations,
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
     metrics: item.metrics,
   }
+}
 
-  if (!item.rarity) {
-    delete itemMetadata.rarity
+function buildTPWearableEntityMetadata(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+): TPWearableEntityMetadata {
+  return {
+    id: buildTPItemURN(
+      collection.third_party_id!,
+      collection.urn_suffix!,
+      item.urn_suffix!
+    ),
+    name: item.name,
+    description: item.description,
+    i18n: [{ code: 'en', text: item.name }],
+    data: {
+      replaces: item.data.replaces,
+      hides: item.data.hides,
+      tags: item.data.tags,
+      category: item.data.category,
+      representations: item.data.representations,
+    },
+    image: IMAGE_PATH,
+    thumbnail: THUMBNAIL_PATH,
+    metrics: item.metrics,
   }
-
-  if (isTPEntity) {
-    // How is the metadata for a TP item built?
-    return omit(itemMetadata, ['collectionAddress'])
-  }
-
-  return itemMetadata
 }
 
 async function calculateContentHash(
@@ -96,6 +98,14 @@ export async function calculateItemContentHash(
     file,
     hash: item.contents[file],
   }))
-  const metadata = await buildItemEntityMetadata(item, collection)
+
+  let metadata: StandardWearableEntityMetadata | TPWearableEntityMetadata
+
+  if (isTPCollection(collection) && isTPItem(item)) {
+    metadata = await buildTPWearableEntityMetadata(item, collection)
+  } else {
+    metadata = await buildStandardWearableEntityMetadata(item, collection)
+  }
+
   return calculateContentHash(content, metadata)
 }

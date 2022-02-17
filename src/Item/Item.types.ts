@@ -58,7 +58,7 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   content_hash: string | null
 }
 
-type BaseCatalystItem = {
+type BaseWearableEntityMetadata = {
   id: string // uuid
   name: string
   thumbnail: string
@@ -70,8 +70,8 @@ type BaseCatalystItem = {
   image: string
 }
 
-export type TPCatalystItem = BaseCatalystItem
+export type TPWearableEntityMetadata = BaseWearableEntityMetadata
 
-export type DCLCatalystItem = BaseCatalystItem & {
+export type StandardWearableEntityMetadata = BaseWearableEntityMetadata & {
   collectionAddress: string
 }

@@ -8,8 +8,17 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { InvalidRequestError } from '../utils/errors'
 import { Ownable } from '../Ownable'
-import { Item, ItemAttributes, ThirdPartyItemAttributes } from '../Item'
-import { UnpublishedItemError } from '../Item/Item.errors'
+import {
+  Item,
+  ItemAttributes,
+  ThirdPartyItemAttributes,
+  ItemApprovalData,
+} from '../Item'
+import {
+  UnpublishedItemError,
+  InconsistentItemError,
+} from '../Item/Item.errors'
+import { buildTPItemURN } from '../Item/utils'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
 import {
@@ -367,6 +376,42 @@ export class CollectionService {
 
     // Should we do something with the salt and the contract address? There's no need to have them
     return new Collection(attributes).upsert()
+  }
+
+  public async getApprovalData(id: string): Promise<ItemApprovalData[]> {
+    const [collection, dbApprovalData] = await Promise.all([
+      this.getDBCollection(id),
+      Item.findDBApprovalDataByCollectionId(id),
+    ])
+
+    if (!isTPCollection(collection)) {
+      throw new WrongCollectionError('Collection is not Third Party', { id })
+    }
+
+    if (dbApprovalData.length === 0) {
+      throw new UnpublishedCollectionError(id)
+    }
+
+    const approvalData: ItemApprovalData[] = []
+    for (const { id, urn_suffix, content_hash } of dbApprovalData) {
+      if (!urn_suffix || !content_hash) {
+        throw new InconsistentItemError(
+          id,
+          'Item missing the urn_suffix or content_hash needed to approve it'
+        )
+      }
+
+      approvalData.push({
+        urn: buildTPItemURN(
+          collection.third_party_id,
+          collection.urn_suffix,
+          urn_suffix
+        ),
+        content_hash: content_hash!,
+      })
+    }
+
+    return approvalData
   }
 
   /**

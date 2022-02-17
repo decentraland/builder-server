@@ -40,7 +40,12 @@ import {
   CollectionCurationAttributes,
 } from '../Curation/CollectionCuration'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
-import { Item, ItemAttributes, ThirdPartyItemAttributes } from '../Item'
+import {
+  Item,
+  ItemAttributes,
+  ThirdPartyItemAttributes,
+  DBItemApprovalData,
+} from '../Item'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { SlotUsageCheque } from '../SlotUsageCheque'
 import { CurationStatus } from '../Curation'
@@ -1779,6 +1784,230 @@ describe('Collection router', () => {
           })
         })
       })
+    })
+  })
+
+  describe('when getting the collection approval data', () => {
+    let url: string
+
+    describe('and the collection is a TP collection', () => {
+      beforeEach(() => {
+        url = `/collections/${dbTPCollection.id}/approvalData`
+      })
+
+      describe('and the user is not a manager of the TP collection', () => {
+        beforeEach(() => {
+          mockCollectionAuthorizationMiddleware(
+            dbTPCollection.id,
+            wallet.address,
+            true,
+            false
+          )
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
+        })
+
+        it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  ethAddress: wallet.address,
+                  tableName: Collection.tableName,
+                },
+                error: `Unauthorized user ${wallet.address} for collections ${dbTPCollection.id}`,
+              })
+            })
+        })
+      })
+
+      describe('and collection does not exist', () => {
+        beforeEach(() => {
+          ;(Collection.count as jest.Mock).mockResolvedValueOnce(0)
+        })
+
+        it('should respond with a 404 and a message signaling that the collection does not exist', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(404)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbTPCollection.id,
+                  tableName: Collection.tableName,
+                },
+                error: `Couldn't find "${dbTPCollection.id}" on ${Collection.tableName}`,
+              })
+            })
+        })
+      })
+
+      describe('and the item approval data is empty', () => {
+        beforeEach(() => {
+          mockCollectionAuthorizationMiddleware(
+            dbTPCollection.id,
+            wallet.address,
+            true,
+            true
+          )
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
+          ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
+            []
+          )
+        })
+
+        it('should respond with a 401 and a message signaling that the collection is not published', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbTPCollection.id,
+                },
+                error: 'The collection is not published.',
+              })
+            })
+        })
+      })
+
+      describe('and the collection has approval data', () => {
+        let itemApprovalData: DBItemApprovalData[]
+
+        describe('when the approval data is missing properties', () => {
+          beforeEach(() => {
+            itemApprovalData = [
+              { id: uuid(), content_hash: 'Qm1abababa', urn_suffix: '1' },
+              { id: uuid(), content_hash: '', urn_suffix: '2' },
+              { id: uuid(), content_hash: 'Qm3rererer', urn_suffix: '' },
+            ]
+
+            mockCollectionAuthorizationMiddleware(
+              dbTPCollection.id,
+              wallet.address,
+              true,
+              true
+            )
+            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+              dbTPCollection
+            )
+            ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
+              itemApprovalData
+            )
+          })
+
+          it('should return an array with the data for pending curations', () => {
+            return server
+              .get(buildURL(url))
+              .set(createAuthHeaders('get', url))
+              .expect(500)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: false,
+                  data: {
+                    id: dbTPCollection.id,
+                    eth_address: wallet.address,
+                  },
+                  error:
+                    'Item missing the urn_suffix or content_hash needed to approve it',
+                })
+              })
+          })
+        })
+
+        describe('when the approval data and permissions are correct', () => {
+          beforeEach(() => {
+            itemApprovalData = [
+              { id: uuid(), content_hash: 'Qm1abababa', urn_suffix: '1' },
+              { id: uuid(), content_hash: 'Qm2bdbdbdb', urn_suffix: '2' },
+              { id: uuid(), content_hash: 'Qm3rererer', urn_suffix: '3' },
+            ]
+
+            mockCollectionAuthorizationMiddleware(
+              dbTPCollection.id,
+              wallet.address,
+              true,
+              true
+            )
+            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+              dbTPCollection
+            )
+            ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
+              itemApprovalData
+            )
+          })
+
+          it('should return an array with the data for pending curations', () => {
+            return server
+              .get(buildURL(url))
+              .set(createAuthHeaders('get', url))
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  ok: true,
+                  data: [
+                    {
+                      urn:
+                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:1',
+                      content_hash: 'Qm1abababa',
+                    },
+                    {
+                      urn:
+                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:2',
+                      content_hash: 'Qm2bdbdbdb',
+                    },
+                    {
+                      urn:
+                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:3',
+                      content_hash: 'Qm3rererer',
+                    },
+                  ],
+                })
+              })
+          })
+        })
+      })
+    })
+  })
+
+  describe('and the collection is not a TP collection', () => {
+    beforeEach(() => {
+      url = `/collections/${dbCollection.id}/approvalData`
+
+      mockCollectionAuthorizationMiddleware(
+        dbTPCollection.id,
+        wallet.address,
+        true,
+        true
+      )
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
+    })
+
+    it('should respond with a 409 and a message signaling that the collection is not third party', () => {
+      return server
+        .get(buildURL(url))
+        .set(createAuthHeaders('get', url))
+        .expect(409)
+        .then((response: any) => {
+          expect(response.body).toEqual({
+            ok: false,
+            data: {
+              id: dbTPCollection.id,
+            },
+            error: 'Collection is not Third Party',
+          })
+        })
     })
   })
 })

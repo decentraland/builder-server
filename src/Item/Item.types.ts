@@ -30,6 +30,7 @@ export type ItemAttributes = {
   eth_address: string
   collection_id: string | null
   blockchain_item_id: string | null
+  content_hash: string | null
   price: string | null
   beneficiary?: string | null
   rarity: ItemRarity | null
@@ -59,6 +60,12 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   total_supply: number
   content_hash: string | null
 }
+
+export type DBItemApprovalData = Pick<
+  ItemAttributes,
+  'id' | 'urn_suffix' | 'content_hash'
+>
+export type ItemApprovalData = Pick<FullItem, 'urn' | 'content_hash'>
 
 type BaseWearableEntityMetadata = Omit<
   Wearable,

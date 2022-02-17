@@ -674,7 +674,7 @@ describe('Item router', () => {
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
                   local_content_hash:
-                    'bafkreibvycle2nvoi2ss254gymthq3unznjcxippifiy7zygxqd3363xlu',
+                    'bafkreifstqrxylmy6dwtw64ieyrgzv2sxrhh7awzb52bwn66utuo7327ae',
                 }
                 const originalItemMock = { ...new Item() }
                 mockItem.mockImplementation((createdItem) => {
@@ -838,7 +838,7 @@ describe('Item router', () => {
                 collection_id: tpCollectionMock.id,
                 eth_address: wallet.address,
                 local_content_hash:
-                  'bafkreibvycle2nvoi2ss254gymthq3unznjcxippifiy7zygxqd3363xlu',
+                  'bafkreifstqrxylmy6dwtw64ieyrgzv2sxrhh7awzb52bwn66utuo7327ae',
               }
               resultingItem = {
                 ...toResultItem(
@@ -930,7 +930,7 @@ describe('Item router', () => {
                 collection_id: tpCollectionMock.id,
                 eth_address: wallet.address,
                 local_content_hash:
-                  'bafkreibvycle2nvoi2ss254gymthq3unznjcxippifiy7zygxqd3363xlu',
+                  'bafkreifstqrxylmy6dwtw64ieyrgzv2sxrhh7awzb52bwn66utuo7327ae',
               }
               mockThirdPartyURNExists(itemToUpsert.urn!, false)
               resultingItem = {

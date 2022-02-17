@@ -20,9 +20,9 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
   static async existsByCollectionId(collectionId: string): Promise<boolean> {
     const counts = await this.query<{ count: number }>(SQL`
     SELECT COUNT(*) as count
-      FROM ${raw(this.tableName)} c
-      JOIN ${raw(Item.tableName)} i ON i.id = c.item_id
-      WHERE i.collection_id = ${collectionId}`)
+      FROM ${raw(this.tableName)} item_curations
+      JOIN ${raw(Item.tableName)} items ON items.id = item_curations.item_id
+      WHERE items.collection_id = ${collectionId}`)
 
     return counts[0].count > 0
   }
@@ -33,10 +33,10 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
   ): Promise<ItemCurationAttributes | undefined> {
     const itemCurations = await this.query<ItemCurationAttributes>(SQL`
     SELECT *
-      FROM ${raw(this.tableName)} c
-      JOIN ${raw(Item.tableName)} i ON i.id = c.item_id
-      WHERE i.collection_id = ${collectionId}
-        AND i.status = ${curationStatus}
+      FROM ${raw(this.tableName)} item_curations
+      JOIN ${raw(Item.tableName)} items ON items.id = item_curations.item_id
+      WHERE items.collection_id = ${collectionId}
+        AND item_curations.status = ${curationStatus}
       ORDER BY created_at DESC
       LIMIT 1`)
 
@@ -45,11 +45,12 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
 
   static async findByCollectionId(collectionId: string) {
     return this.query<ItemCurationAttributes>(SQL`
-    SELECT ic.*
+    SELECT DISTINCT on (i.id) ic.*
       FROM ${raw(this.tableName)} ic
       INNER JOIN ${raw(
         Item.tableName
-      )} i ON i.id = ic.item_id AND i.collection_id = ${collectionId}`)
+      )} i ON i.id = ic.item_id AND i.collection_id = ${collectionId} 
+      ORDER BY i.id, ic.created_at DESC`)
   }
 
   static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {

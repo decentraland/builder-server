@@ -37,7 +37,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
       JOIN ${raw(Item.tableName)} items ON items.id = item_curations.item_id
       WHERE items.collection_id = ${collectionId}
         AND item_curations.status = ${curationStatus}
-      ORDER BY created_at DESC
+      ORDER BY item_curations.created_at DESC
       LIMIT 1`)
 
     return itemCurations[0]
@@ -45,12 +45,12 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
 
   static async findByCollectionId(collectionId: string) {
     return this.query<ItemCurationAttributes>(SQL`
-    SELECT DISTINCT on (i.id) ic.*
-      FROM ${raw(this.tableName)} ic
+    SELECT DISTINCT on (item.id) item_curation.*
+      FROM ${raw(this.tableName)} item_curation
       INNER JOIN ${raw(
         Item.tableName
-      )} i ON i.id = ic.item_id AND i.collection_id = ${collectionId} 
-      ORDER BY i.id, ic.created_at DESC`)
+      )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
+      ORDER BY item.id, item_curation.created_at DESC`)
   }
 
   static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {

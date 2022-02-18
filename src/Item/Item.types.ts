@@ -1,3 +1,4 @@
+import { Wearable } from '../ethereum/api/peer'
 import { MetricsAttributes } from '../Metrics'
 import { WearableData } from './wearable/types'
 
@@ -58,20 +59,14 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   content_hash: string | null
 }
 
-type BaseWearableEntityMetadata = {
-  id: string // uuid
-  name: string
-  thumbnail: string
-  description: string
-  metrics: MetricsAttributes
+type BaseWearableEntityMetadata = Omit<
+  Wearable,
+  'createdAt' | 'updatedAt' | 'collectionAddress' | 'rarity'
+> & {
   i18n: { code: string; text: string }[]
-  data: WearableData
-  image: string
 }
 
 export type TPWearableEntityMetadata = BaseWearableEntityMetadata
 
-export type StandardWearableEntityMetadata = BaseWearableEntityMetadata & {
-  collectionAddress: string
-  rarity: ItemRarity
-}
+export type StandardWearableEntityMetadata = BaseWearableEntityMetadata &
+  Pick<Wearable, 'collectionAddress' | 'rarity'>

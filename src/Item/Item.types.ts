@@ -63,7 +63,6 @@ type BaseWearableEntityMetadata = {
   name: string
   thumbnail: string
   description: string
-  rarity?: ItemRarity
   metrics: MetricsAttributes
   i18n: { code: string; text: string }[]
   data: WearableData
@@ -74,4 +73,5 @@ export type TPWearableEntityMetadata = BaseWearableEntityMetadata
 
 export type StandardWearableEntityMetadata = BaseWearableEntityMetadata & {
   collectionAddress: string
+  rarity: ItemRarity
 }

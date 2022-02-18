@@ -533,13 +533,12 @@ describe('Item router', () => {
               tpCollectionMock.urn_suffix,
               itemUrnSuffix
             )
-            const originalItemMock = { ...new Item() }
-            mockItem.mockImplementation((createdItem) => {
-              return {
-                ...originalItemMock,
-                upsert: jest.fn().mockResolvedValueOnce(createdItem),
-              } as any
-            })
+            mockItem.upsert.mockImplementation((createdItem) =>
+              Promise.resolve({
+                ...createdItem,
+                blockchain_item_id: null,
+              })
+            )
             mockItem.findOne.mockResolvedValueOnce({
               ...dbItem,
               collection_id: tpCollectionMock.id,
@@ -558,7 +557,6 @@ describe('Item router', () => {
                 collection_id: null,
                 eth_address: wallet.address,
               }
-
               mockThirdPartyItemCurationExists(dbItem.id, false)
               resultingItem = {
                 ...toResultItem(
@@ -676,13 +674,12 @@ describe('Item router', () => {
                   local_content_hash:
                     'bafkreifstqrxylmy6dwtw64ieyrgzv2sxrhh7awzb52bwn66utuo7327ae',
                 }
-                const originalItemMock = { ...new Item() }
-                mockItem.mockImplementation((createdItem) => {
-                  return {
-                    ...originalItemMock,
-                    upsert: jest.fn().mockResolvedValueOnce(createdItem),
-                  } as any
-                })
+                mockItem.upsert.mockImplementation((createdItem) =>
+                  Promise.resolve({
+                    ...createdItem,
+                    blockchain_item_id: null,
+                  })
+                )
                 mockThirdPartyItemCurationExists(itemToUpsert.id, false)
                 resultingItem = {
                   ...toResultItem(
@@ -825,13 +822,12 @@ describe('Item router', () => {
                 collection_id: dbItem.collection_id,
                 urn: dbItemURN,
               }
-              const originalItemMock = { ...new Item() }
-              mockItem.mockImplementation((createdItem) => {
-                return {
-                  ...originalItemMock,
-                  upsert: jest.fn().mockResolvedValueOnce(createdItem),
-                } as any
-              })
+              mockItem.upsert.mockImplementation((createdItem) =>
+                Promise.resolve({
+                  ...createdItem,
+                  blockchain_item_id: null,
+                })
+              )
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: itemUrnSuffix,
@@ -917,13 +913,12 @@ describe('Item router', () => {
             let resultingItem: ResultItem
 
             beforeEach(() => {
-              const originalItemMock = { ...new Item() }
-              mockItem.mockImplementation((createdItem) => {
-                return {
-                  ...originalItemMock,
-                  upsert: jest.fn().mockResolvedValueOnce(createdItem),
-                } as any
-              })
+              mockItem.upsert.mockImplementation((createdItem) =>
+                Promise.resolve({
+                  ...createdItem,
+                  blockchain_item_id: null,
+                })
+              )
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: itemUrnSuffix,
@@ -1292,14 +1287,12 @@ describe('Item router', () => {
             currentDate = new Date()
             jest.useFakeTimers()
             jest.setSystemTime(currentDate)
-            const originalItemMock = { ...new Item() }
-            mockItem.mockImplementation((createdItem) => {
-              return {
-                ...originalItemMock,
-                upsert: jest.fn().mockResolvedValueOnce(createdItem),
-              } as any
-            })
-
+            mockItem.upsert.mockImplementation((createdItem) =>
+              Promise.resolve({
+                ...createdItem,
+                blockchain_item_id: dbItem.blockchain_item_id,
+              })
+            )
             mockItem.findOne.mockResolvedValueOnce(dbItem)
           })
 
@@ -1329,18 +1322,44 @@ describe('Item router', () => {
         })
       })
 
-      describe('and all the conditions for success are given', () => {
+      describe('and the collection given for the item is not published', () => {
+        let currentDate: Date
+
         beforeEach(() => {
+          currentDate = new Date()
+          jest.useFakeTimers()
+          jest.setSystemTime(currentDate)
           mockCollection.findOne.mockResolvedValueOnce({
             ...collectionMock,
             collection_id: itemToUpsert.collection_id,
             eth_address: wallet.address,
-            contract_address: Wallet.createRandom().address,
+            contract_address: null,
           })
           mockItem.findOne.mockResolvedValueOnce(undefined)
           mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
           mockIsCollectionPublished(collectionMock.id, false)
-          mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+          mockItem.upsert.mockImplementation((createdItem) =>
+            Promise.resolve({
+              ...createdItem,
+              blockchain_item_id: null,
+            })
+          )
+          const updatedItem: ItemAttributes = {
+            ...dbItem,
+            collection_id: tpCollectionMock.id,
+            eth_address: wallet.address,
+            local_content_hash: null,
+            updated_at: currentDate,
+            created_at: currentDate,
+            blockchain_item_id: null,
+          }
+          resultingItem = {
+            ...toResultItem(updatedItem),
+          }
+        })
+
+        afterEach(() => {
+          jest.useRealTimers()
         })
 
         it('should respond with the upserted item', async () => {
@@ -1351,7 +1370,7 @@ describe('Item router', () => {
             .expect(STATUS_CODES.ok)
 
           expect(response.body).toEqual({
-            data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
+            data: resultingItem,
             ok: true,
           })
         })

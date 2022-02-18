@@ -41,6 +41,7 @@ export function toDBItem(item: FullItem): ItemAttributes {
     'in_catalyst',
     'total_supply',
     'content_hash',
+    'blockchain_item_id',
   ])
 }
 

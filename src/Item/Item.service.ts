@@ -436,7 +436,7 @@ export class ItemService {
 
     attributes.local_content_hash = contentHash
 
-    const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
+    const upsertedItem: ItemAttributes = await Item.upsert(attributes)
     return Bridge.toFullItem(upsertedItem, dbCollection)
   }
 
@@ -589,7 +589,7 @@ export class ItemService {
       ? await calculateItemContentHash(attributes, dbCollection)
       : null
 
-    const upsertedItem: ItemAttributes = await new Item(attributes).upsert()
+    const upsertedItem: ItemAttributes = await Item.upsert(attributes)
     return Bridge.toFullItem(upsertedItem, dbCollection)
   }
 }

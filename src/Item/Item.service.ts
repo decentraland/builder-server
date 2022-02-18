@@ -169,15 +169,18 @@ export class ItemService {
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[]
   ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
-    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
-      dbCollection.id,
-      CurationStatus.APPROVED
+    const collectionItemCurations = await ItemCuration.findByCollectionId(
+      dbCollection.id
     )
-    const collection = lastItemCuration
-      ? Bridge.mergeTPCollection(dbCollection, lastItemCuration)
-      : dbCollection
+    const collection =
+      collectionItemCurations.length > 0
+        ? Bridge.mergeTPCollection(dbCollection, collectionItemCurations[0])
+        : dbCollection
 
-    const items = await Bridge.consolidateTPItems(dbItems)
+    const items = await Bridge.consolidateTPItems(
+      dbItems,
+      collectionItemCurations
+    )
     return { collection, items }
   }
 
@@ -223,7 +226,7 @@ export class ItemService {
 
       const catalystItems = await peerAPI.fetchWearables([urn])
       if (catalystItems.length > 0) {
-        item = Bridge.mergeTPItem(dbItem, catalystItems[0])
+        item = Bridge.mergeTPItem(dbItem, collection, catalystItems[0])
       }
     }
 

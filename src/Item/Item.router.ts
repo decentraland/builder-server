@@ -37,6 +37,8 @@ import {
   UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
 } from './Item.errors'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { ItemCurationAttributes } from '../Curation/ItemCuration/ItemCuration.types'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -153,17 +155,18 @@ export class ItemRouter extends Router {
     }
 
     // TODO: We need to paginate this. To do it, we'll have to fetch remote items via the paginated dbItemIds
-    const [allItems, remoteItems] = await Promise.all([
+    const [allItems, remoteItems, , itemCurations] = await Promise.all([
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
-      thirdPartyAPI.fetchItems(),
+      thirdPartyAPI.fetchItems(), //TODO, UNUSED
+      ItemCuration.find<ItemCurationAttributes>(),
     ])
 
     const { items, tpItems } = this.itemService.splitItems(allItems)
 
     const [fullItems, fullTPItems] = await Promise.all([
       Bridge.consolidateItems(items, remoteItems),
-      Bridge.consolidateTPItems(tpItems),
+      Bridge.consolidateTPItems(tpItems, itemCurations),
     ])
 
     // TODO: sorting (we're not breaking pagination)
@@ -182,15 +185,16 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [dbItems, remoteItems, dbTPItems] = await Promise.all([
+    const [dbItems, remoteItems, dbTPItems, itemCurations] = await Promise.all([
       Item.find<ItemAttributes>({ eth_address }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
       this.itemService.getTPItemsByManager(eth_address),
+      ItemCuration.find<ItemCurationAttributes>(),
     ])
 
     const [items, tpItems] = await Promise.all([
       Bridge.consolidateItems(dbItems, remoteItems),
-      Bridge.consolidateTPItems(dbTPItems),
+      Bridge.consolidateTPItems(dbTPItems, itemCurations),
     ])
 
     // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.

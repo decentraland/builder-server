@@ -1,6 +1,10 @@
 import { constants } from 'ethers'
 import { utils } from 'decentraland-commons'
-import { CollectionAttributes, Collection } from '../../Collection'
+import {
+  CollectionAttributes,
+  Collection,
+  ThirdPartyCollectionAttributes,
+} from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
 import { fromUnixTimestamp } from '../../utils/parse'
 import { buildTPItemURN, decodeThirdPartyItemURN } from '../../Item/utils'
@@ -55,7 +59,8 @@ export class Bridge {
    * @param dbItems - Database TP items
    */
   static async consolidateTPItems(
-    dbItems: ItemAttributes[]
+    dbItems: ItemAttributes[],
+    itemCurations: ItemCurationAttributes[]
   ): Promise<FullItem[]> {
     const dbTPItemIds = dbItems.map((item) => item.collection_id!)
     const dbTPCollections = await Collection.findByIds(dbTPItemIds)
@@ -90,16 +95,21 @@ export class Bridge {
 
     for (const urn in itemsByURN) {
       const item = itemsByURN[urn]
+      const itemCuration = itemCurations.find((ic) => ic.item_id === item.id)
       let fullItem: FullItem
 
       const catalystItem = tpCatalystItems.find(
         (catalystItem) => catalystItem.id === urn
       )
 
-      if (catalystItem) {
-        fullItem = Bridge.mergeTPItem(item, catalystItem)
+      const collection = dbTPCollectionsIndex[item.collection_id!]
+      if (itemCuration || catalystItem) {
+        fullItem = Bridge.mergeTPItem(
+          item,
+          collection as ThirdPartyCollectionAttributes,
+          catalystItem
+        )
       } else {
-        const collection = dbTPCollectionsIndex[item.collection_id!]
         fullItem = Bridge.toFullItem(item, collection)
       }
 
@@ -115,10 +125,20 @@ export class Bridge {
    * @param dbItem - Database TP item
    * @param catalystItem - Catalyst item
    */
-  static mergeTPItem(dbItem: ItemAttributes, catalystItem: Wearable): FullItem {
+  static mergeTPItem(
+    dbItem: ItemAttributes,
+    dbCollection: ThirdPartyCollectionAttributes,
+    catalystItem?: Wearable
+  ): FullItem {
     const data = dbItem.data
     const category = data.category
-    const urn: string = catalystItem.id
+    const urn: string = catalystItem
+      ? catalystItem.id
+      : buildTPItemURN(
+          dbCollection.third_party_id,
+          dbCollection.urn_suffix,
+          dbItem.urn_suffix!
+        )
 
     return {
       ...Bridge.toFullItem(dbItem),
@@ -134,7 +154,7 @@ export class Bridge {
       in_catalyst: true,
       is_published: true,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
-      is_approved: true,
+      is_approved: !!catalystItem,
       // TODO: This will be resolved when we tackle #394
       content_hash: '',
       data: {

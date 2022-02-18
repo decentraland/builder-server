@@ -33,7 +33,7 @@ import { tpWearableMock, wearableMock } from '../../spec/mocks/peer'
 import { wallet } from '../../spec/mocks/wallet'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
-import { ItemCuration } from '../Curation/ItemCuration'
+import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
@@ -83,13 +83,16 @@ const server = supertest(app.getApp())
 
 describe('Item router', () => {
   let dbItem: ItemAttributes
+  let dbItemCuration: ItemCurationAttributes
   let dbTPItem: ThirdPartyItemAttributes
   let dbItemNotPublished: ItemAttributes
   let dbTPItemNotPublished: ThirdPartyItemAttributes
+  let dbTPItemPublished: ThirdPartyItemAttributes
   let resultingItem: ResultItem
   let resultingTPItem: ResultItem
   let resultItemNotPublished: ResultItem
   let resultTPItemNotPublished: ResultItem
+  let resultTPItemPublished: ResultItem
   let wearable: Wearable
   let tpWearable: Wearable
   let itemFragment: ItemFragment
@@ -118,10 +121,20 @@ describe('Item router', () => {
       beneficiary: '',
       urn_suffix: '',
     }
+    dbTPItemPublished = {
+      ...dbTPItem,
+      id: uuidv4(),
+      urn_suffix: '3',
+    }
+    dbItemCuration = { ...itemCurationMock, item_id: dbTPItemPublished.id }
     resultingItem = toResultItem(dbItem, itemFragment, wearable)
     resultingTPItem = toResultTPItem(dbTPItem, dbTPCollectionMock)
     resultItemNotPublished = asResultItem(dbItemNotPublished)
-    resultTPItemNotPublished = asResultItem(dbTPItemNotPublished)
+    resultTPItemNotPublished = asResultItem(dbTPItemNotPublished) // no itemCuration & no catalyst, should be regular Item
+    resultTPItemPublished = {
+      ...toResultTPItem(dbTPItemPublished, dbTPCollectionMock),
+      is_approved: false,
+    }
   })
 
   afterEach(() => {
@@ -233,7 +246,9 @@ describe('Item router', () => {
         dbTPItemMock,
         dbTPItemNotPublishedMock,
         dbItemNotPublished,
+        dbTPItemPublished,
       ])
+      ;(ItemCuration.find as jest.Mock).mockResolvedValueOnce([dbItemCuration])
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
         itemFragment,
       ])
@@ -271,6 +286,7 @@ describe('Item router', () => {
                   dbTPItemNotPublishedMock.urn_suffix!
                 ),
               },
+              resultTPItemPublished,
             ],
             ok: true,
           })
@@ -297,6 +313,7 @@ describe('Item router', () => {
       ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
         dbTPCollectionMock,
       ]) // for third parties
+      ;(ItemCuration.find as jest.Mock).mockResolvedValueOnce([dbItemCuration])
       mockItemConsolidation([dbItem], [wearable])
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
       url = `/${wallet.address}/items`
@@ -373,6 +390,7 @@ describe('Item router', () => {
       beforeEach(() => {
         ;(Item.find as jest.Mock).mockResolvedValueOnce([
           dbTPItem,
+          dbTPItemPublished,
           dbTPItemNotPublished,
         ])
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
@@ -381,9 +399,9 @@ describe('Item router', () => {
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbTPCollectionMock,
         ])
-        ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
-          itemCurationMock
-        )
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+          dbItemCuration,
+        ])
         mockItemConsolidation([dbItemMock], [tpWearable])
         url = `/collections/${dbCollectionMock.id}/items`
       })
@@ -395,7 +413,11 @@ describe('Item router', () => {
           .expect(200)
           .then((response: any) => {
             expect(response.body).toEqual({
-              data: [resultingTPItem, resultTPItemNotPublished],
+              data: [
+                resultingTPItem,
+                resultTPItemPublished,
+                resultTPItemNotPublished,
+              ],
               ok: true,
             })
           })

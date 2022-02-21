@@ -5,7 +5,6 @@ import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { CurationStatus } from '../Curation'
 import { Ownable } from '../Ownable'
 import { Item } from '../Item'
 import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
@@ -260,9 +259,8 @@ export class CollectionService {
   private async getTPCollection(
     dbCollection: ThirdPartyCollectionAttributes
   ): Promise<CollectionAttributes> {
-    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
-      dbCollection.id,
-      CurationStatus.APPROVED
+    const lastItemCuration = await ItemCuration.findLastByCollectionId(
+      dbCollection.id
     )
     return lastItemCuration
       ? Bridge.mergeTPCollection(dbCollection, lastItemCuration)

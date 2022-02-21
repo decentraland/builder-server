@@ -1,7 +1,7 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Collection } from '../../Collection'
 import { Item } from '../../Item'
-import { CurationStatus, CurationType } from '../Curation.types'
+import { CurationType } from '../Curation.types'
 import { ItemCurationAttributes } from './ItemCuration.types'
 
 export class ItemCuration extends Model<ItemCurationAttributes> {
@@ -27,22 +27,6 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return counts[0].count > 0
   }
 
-  static async findLastCreatedByCollectionIdAndStatus(
-    collectionId: string,
-    curationStatus: CurationStatus
-  ): Promise<ItemCurationAttributes | undefined> {
-    const itemCurations = await this.query<ItemCurationAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)} item_curations
-      JOIN ${raw(Item.tableName)} items ON items.id = item_curations.item_id
-      WHERE items.collection_id = ${collectionId}
-        AND item_curations.status = ${curationStatus}
-      ORDER BY item_curations.created_at DESC
-      LIMIT 1`)
-
-    return itemCurations[0]
-  }
-
   static async findByCollectionId(collectionId: string) {
     return this.query<ItemCurationAttributes>(SQL`
     SELECT DISTINCT on (item.id) item_curation.*
@@ -51,6 +35,13 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
         Item.tableName
       )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
       ORDER BY item.id, item_curation.created_at DESC`)
+  }
+
+  static async findLastByCollectionId(
+    collectionId: string
+  ): Promise<ItemCurationAttributes | undefined> {
+    const itemCurations = await this.findByCollectionId(collectionId)
+    return itemCurations[0]
   }
 
   static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {

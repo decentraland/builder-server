@@ -16,7 +16,6 @@ import {
   ItemCuration,
   ItemCurationAttributes,
 } from '../../Curation/ItemCuration'
-import { CurationStatus } from '../../Curation'
 
 export class Bridge {
   /**
@@ -35,9 +34,8 @@ export class Bridge {
       let fullCollection: CollectionAttributes = { ...dbCollection }
 
       if (isTPCollection(dbCollection)) {
-        const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
-          dbCollection.id,
-          CurationStatus.APPROVED
+        const lastItemCuration = await ItemCuration.findLastByCollectionId(
+          dbCollection.id
         )
         if (lastItemCuration) {
           fullCollection = Bridge.mergeTPCollection(

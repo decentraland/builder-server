@@ -838,7 +838,7 @@ describe('Collection router', () => {
       ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
         [{ id: dbTPCollection.third_party_id }]
       )
-      ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockReturnValueOnce(
+      ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
         itemCurationMock
       )
       mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)

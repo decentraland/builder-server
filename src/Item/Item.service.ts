@@ -5,7 +5,6 @@ import {
 } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
 import { isTPCollection } from '../Collection/utils'
-import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -216,9 +215,8 @@ export class ItemService {
         dbItem.urn_suffix!
       )
 
-      const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
-        collection.id,
-        CurationStatus.APPROVED
+      const lastItemCuration = await ItemCuration.findLastByCollectionId(
+        collection.id
       )
       collection = lastItemCuration
         ? Bridge.mergeTPCollection(collection, lastItemCuration)

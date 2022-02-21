@@ -52,9 +52,10 @@ export class Bridge {
 
   /**
    * Takes TP items found in the database and it'll fetch the catalyst item for each one to combine their data.
-   * If remote data is found the item will just be converted to FullItem and returned as-is.
+   * If neither catalyst item or item curation are found the item will just be converted to FullItem and returned as-is.
    * For more info on how a full item looks, see `Bridge.toFullItem`. For more info on the merge see `Bridge.mergeTPItem`
    * @param dbItems - Database TP items
+   * @param itemCurations - ItemCurationAttributes items
    */
   static async consolidateTPItems(
     dbItems: ItemAttributes[],
@@ -64,6 +65,7 @@ export class Bridge {
     const dbTPCollections = await Collection.findByIds(dbTPItemIds)
 
     const dbTPCollectionsIndex = this.indexById(dbTPCollections)
+    const itemCurationsIndex = this.indexBy(itemCurations, 'item_id')
 
     const itemsByURN: Record<string, ItemAttributes> = {}
 
@@ -93,7 +95,7 @@ export class Bridge {
 
     for (const urn in itemsByURN) {
       const item = itemsByURN[urn]
-      const itemCuration = itemCurations.find((ic) => ic.item_id === item.id)
+      const itemCuration = itemCurationsIndex[item.id]
       let fullItem: FullItem
 
       const catalystItem = tpCatalystItems.find(
@@ -121,6 +123,7 @@ export class Bridge {
    * Combines the catalyst data and the item's DB data *into* a FullItem.
    * The db item is first converted to a FullItem and then the appropiate data is merged into it
    * @param dbItem - Database TP item
+   * @param dbCollection - Database Collection item
    * @param catalystItem - Catalyst item
    */
   static mergeTPItem(
@@ -412,6 +415,19 @@ export class Bridge {
     return list.reduce((obj, result) => {
       if (result) {
         obj[result.id.toLowerCase()] = result
+      }
+      return obj
+    }, {} as Record<string, T>)
+  }
+
+  static indexBy<T extends Record<K, string>, K extends string>(
+    list: (T | undefined)[],
+    prop: K
+  ): Record<string, T> {
+    return list.reduce((obj, result) => {
+      if (result) {
+        const key = result[prop]
+        obj[key as string] = result
       }
       return obj
     }, {} as Record<string, T>)

@@ -4,7 +4,6 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Bridge } from '../ethereum/api/Bridge'
 import {
   withModelAuthorization,
@@ -20,6 +19,7 @@ import { Collection, CollectionService } from '../Collection'
 import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
+import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
@@ -37,8 +37,6 @@ import {
   UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
 } from './Item.errors'
-import { ItemCuration } from '../Curation/ItemCuration'
-import { ItemCurationAttributes } from '../Curation/ItemCuration/ItemCuration.types'
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
@@ -155,10 +153,9 @@ export class ItemRouter extends Router {
     }
 
     // TODO: We need to paginate this. To do it, we'll have to fetch remote items via the paginated dbItemIds
-    const [allItems, remoteItems, , itemCurations] = await Promise.all([
+    const [allItems, remoteItems, itemCurations] = await Promise.all([
       Item.find<ItemAttributes>(),
       collectionAPI.fetchItems(),
-      thirdPartyAPI.fetchItems(), //TODO, UNUSED
       ItemCuration.find<ItemCurationAttributes>(),
     ])
 

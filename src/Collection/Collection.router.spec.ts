@@ -1283,34 +1283,6 @@ describe('Collection router', () => {
         })
       })
 
-      describe('when the items do not belong to a collection', () => {
-        beforeEach(() => {
-          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([
-            { ...dbTPItemMock, collection_id: undefined },
-          ])
-          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
-        })
-
-        it('should respond with a 400 and a message signaling that items must have a collection id', () => {
-          return server
-            .post(buildURL(url))
-            .set(createAuthHeaders('post', url))
-            .send({
-              itemIds: [dbTPItemMock.id],
-              signedMessage: 'message',
-              signature: 'signature',
-            })
-            .expect(400)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                ok: false,
-                data: { id: dbTPCollection.id },
-                error: 'Cannot publish items without a collection id',
-              })
-            })
-        })
-      })
-
       describe('when the items do not share the same collection id', () => {
         let items: ThirdPartyItemAttributes[]
         let itemIds: string[]

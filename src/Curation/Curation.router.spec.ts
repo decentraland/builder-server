@@ -293,6 +293,10 @@ describe('when handling a request', () => {
       describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, false)
+
+          jest
+            .spyOn(CollectionCuration, 'updateByItemId')
+            .mockResolvedValueOnce({ rowCount: 1 })
         })
 
         it('should reject with an unauthorized message', async () => {
@@ -329,6 +333,10 @@ describe('when handling a request', () => {
       describe('when updating an item curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
+
+          jest
+            .spyOn(CollectionCuration, 'updateByItemId')
+            .mockResolvedValueOnce({ rowCount: 1 })
         })
 
         it('should reject with invalid schema message', async () => {
@@ -336,6 +344,34 @@ describe('when handling a request', () => {
             'Invalid schema'
           )
         })
+      })
+    })
+
+    describe('when the item curation does not have a valid collection curation', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.APPROVED,
+            },
+          },
+        } as any
+
+        service = mockServiceWithAccess(ItemCuration, true)
+
+        jest
+          .spyOn(CollectionCuration, 'updateByItemId')
+          .mockResolvedValueOnce({ rowCount: 0 })
+      })
+
+      it("should respond with a 404 and a message signaling that the collection curation can't be found", async () => {
+        await expect(router.updateItemCuration(req)).rejects.toThrow(
+          'Could not find a valid collection curation for the item'
+        )
       })
     })
 
@@ -371,6 +407,9 @@ describe('when handling a request', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
+          jest
+            .spyOn(CollectionCuration, 'updateByItemId')
+            .mockResolvedValueOnce({ rowCount: 1 })
         })
 
         it('should reject with curation not found message', async () => {
@@ -436,7 +475,8 @@ describe('when handling a request', () => {
       })
 
       describe('when updating an item curation', () => {
-        let updateSpy: jest.SpyInstance<Promise<ItemAttributes>>
+        let itemUpdateSpy: jest.SpyInstance<Promise<ItemAttributes>>
+        let collectionUpdateSpy: jest.SpyInstance<Promise<{ rowCount: number }>>
         let expectedCuration: ItemCurationAttributes
 
         beforeEach(() => {
@@ -449,7 +489,11 @@ describe('when handling a request', () => {
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
 
-          updateSpy = jest
+          collectionUpdateSpy = jest
+            .spyOn(CollectionCuration, 'updateByItemId')
+            .mockResolvedValueOnce({ rowCount: 1 })
+
+          itemUpdateSpy = jest
             .spyOn(ItemCuration, 'update')
             .mockResolvedValueOnce(expectedCuration)
         })
@@ -463,7 +507,7 @@ describe('when handling a request', () => {
         it('should call the update method with the right data', async () => {
           await router.updateItemCuration(req)
 
-          expect(updateSpy).toHaveBeenCalledWith(
+          expect(itemUpdateSpy).toHaveBeenCalledWith(
             {
               id: 'curationId',
               status: CurationStatus.REJECTED,
@@ -471,6 +515,12 @@ describe('when handling a request', () => {
             },
             { id: 'curationId' }
           )
+        })
+
+        it('should update the updated_at property of the collection curation', async () => {
+          await router.updateItemCuration(req)
+
+          expect(collectionUpdateSpy).toHaveBeenCalledWith(req.params.id)
         })
       })
     })

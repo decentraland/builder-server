@@ -163,13 +163,7 @@ export class CollectionService {
       )
     }
 
-    const collectionId = dbItems[0].collection_id
-    if (!collectionId) {
-      throw new InvalidRequestError(
-        'Cannot publish items without a collection id'
-      )
-    }
-
+    const collectionId = dbCollection.id
     const allTheSameCollection = dbItems.every(
       (item) => item.collection_id === collectionId
     )

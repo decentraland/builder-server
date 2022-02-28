@@ -7,6 +7,7 @@ import { CollectionCuration } from './CollectionCuration'
 import { CurationType } from './Curation.types'
 import { ItemCuration } from './ItemCuration'
 
+// TODO: This class SHOULD NOT make database queries. It's useful but it breakes the convention we have where only model know about queries
 export class CurationService<
   T extends typeof CollectionCuration | typeof ItemCuration
 > {

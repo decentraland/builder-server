@@ -20,9 +20,11 @@ import {
   patchCurationSchema,
 } from './Curation.types'
 import { CurationService } from './Curation.service'
-
+import {
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
-import { CollectionCurationAttributes } from './CollectionCuration'
 
 const validator = getValidator()
 
@@ -226,6 +228,16 @@ export class CurationRouter extends Router {
     const itemId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
+
+    const { rowCount } = await CollectionCuration.updateByItemId(itemId)
+    if (rowCount === 0) {
+      throw new HTTPError(
+        'Could not find a valid collection curation for the item',
+        { itemId },
+        STATUS_CODES.notFound
+      )
+    }
+
     return this.updateCuration(
       itemId,
       ethAddress,

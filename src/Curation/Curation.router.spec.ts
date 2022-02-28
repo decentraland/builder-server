@@ -681,7 +681,13 @@ describe('when handling a request', () => {
       })
 
       describe('when updating a collection curation', () => {
+        let expectedCuration: CollectionCurationAttributes
+
         beforeEach(() => {
+          expectedCuration = {
+            id: 'uuid-123123-123123',
+          } as CollectionCurationAttributes
+
           service = mockServiceWithAccess(CollectionCuration, true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
         })
@@ -689,9 +695,11 @@ describe('when handling a request', () => {
         it('should resolve with the inserted curation', async () => {
           const createSpy = jest
             .spyOn(CollectionCuration, 'create')
-            .mockResolvedValueOnce({} as any)
+            .mockResolvedValueOnce(expectedCuration)
 
-          expect(await router.insertCollectionCuration(req)).toEqual({})
+          expect(await router.insertCollectionCuration(req)).toEqual(
+            expectedCuration
+          )
 
           expect(createSpy).toHaveBeenCalledWith({
             id: expect.any(String),

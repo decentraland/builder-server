@@ -114,7 +114,7 @@ export async function getMergedItem(id: string): Promise<FullItem> {
       throw new UnpublishedItemError(id)
     }
 
-    fullItem = Bridge.mergeTPItem(dbItem, wearable)
+    fullItem = Bridge.mergeTPItem(dbItem, dbCollection, wearable)
   } else {
     const {
       collection: remoteCollection,

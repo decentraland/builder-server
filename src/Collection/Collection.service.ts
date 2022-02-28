@@ -132,6 +132,10 @@ export class CollectionService {
   /**
    * It should receive the list of items to be operated on so it can decide where it should create or update the curations for them accordingly
    * It will also receive a signed message and its signature, so it can check and store it in the SlotUsageCheque
+   * @param dbCollection - Database TP collection
+   * @param dbItems - Database TP items that belong to the collection
+   * @param signedMessage - The message we signed
+   * @param signature - The signature resulted from signing the message
    */
   public async publishTPCollection(
     dbCollection: ThirdPartyCollectionAttributes,

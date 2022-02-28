@@ -39,6 +39,8 @@ import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from '../Curation/CollectionCuration'
+import { MAX_FORUM_ITEMS } from '../Item/utils'
+import { Item, ItemAttributes, ThirdPartyItemAttributes } from '../Item'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { SlotUsageCheque } from '../SlotUsageCheque'
 import { CurationStatus } from '../Curation'
@@ -46,7 +48,6 @@ import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
 import { toDBCollection, toFullCollection } from './utils'
-import { Item, ItemAttributes, ThirdPartyItemAttributes } from '../Item'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -1548,7 +1549,10 @@ describe('Collection router', () => {
               .expect(200)
               .then(() => {
                 expect(createPost).toHaveBeenCalledWith(
-                  buildCollectionForumPost(dbTPCollection, items as any)
+                  buildCollectionForumPost(
+                    dbTPCollection,
+                    items.slice(MAX_FORUM_ITEMS) as any
+                  )
                 )
               })
           })

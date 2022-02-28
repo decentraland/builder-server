@@ -1,5 +1,4 @@
 import { env } from 'decentraland-commons'
-import { shorten } from '../utils/address'
 import { CollectionAttributes } from '../Collection'
 import { FullItem } from '../Item'
 import { ForumPost } from './Forum.types'
@@ -17,9 +16,7 @@ export function buildCollectionForumPost(
 ): ForumPost {
   // We only post in English
   return {
-    title: `Collection '${collection.name}' created by ${shorten(
-      collection.eth_address
-    )} is ready for review!`,
+    title: `Third Party collection ${collection.name} with URN: ${collection.third_party_id}`,
     raw: `# ${collection.name}
 
 	[View entire collection](${getItemEditorUrl({ collectionId: collection.id })})

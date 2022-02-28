@@ -14,6 +14,7 @@ import {
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { OwnableModel } from '../Ownable/Ownable.types'
+import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { UnpublishedItemError } from '../Item/Item.errors'
 import { FullItem, Item } from '../Item'
 import { isCommitteeMember } from '../Committee'
@@ -266,9 +267,11 @@ export class CollectionRouter extends Router {
         // We should also consider deleteing Forum.router.ts
         // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
         // TODO: Should this be halting the response? Retries?
-        // TODO: Consider slicing the items list if it might get too big
         const forum_link = await createPost(
-          buildCollectionForumPost(result.collection, result.items)
+          buildCollectionForumPost(
+            result.collection,
+            result.items.slice(MAX_FORUM_ITEMS)
+          )
         )
         await Collection.update<CollectionAttributes>({ forum_link }, { id })
       } else {

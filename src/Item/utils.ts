@@ -13,6 +13,8 @@ import { NonExistentItemError, UnpublishedItemError } from './Item.errors'
 import { Item } from './Item.model'
 import { FullItem, ItemAttributes } from './Item.types'
 
+export const MAX_FORUM_ITEMS = 20
+
 const tpItemURNRegex = new RegExp(
   `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot}):(${matchers.urnSlot})$`
 )

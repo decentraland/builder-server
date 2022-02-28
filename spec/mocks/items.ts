@@ -147,6 +147,7 @@ export const dbItemMock: ItemAttributes = {
   },
   created_at: new Date(),
   updated_at: new Date(),
+  local_content_hash: null,
 }
 
 export const dbTPItemMock: ThirdPartyItemAttributes = {
@@ -159,7 +160,7 @@ export const dbTPItemMock: ThirdPartyItemAttributes = {
 export const itemFragmentMock = {
   id: dbCollectionMock.contract_address + '-' + dbItemMock.blockchain_item_id,
   blockchainId: '0',
-  urn: `urn:decentraland:ropsten:collections-v2:${dbCollectionMock.contract_address}:${dbItemMock.blockchain_item_id}`,
+  urn: `urn:decentraland:mumbai:collections-v2:${dbCollectionMock.contract_address}:${dbItemMock.blockchain_item_id}`,
   totalSupply: '1',
   price: dbItemMock.price!.toString(),
   beneficiary: 'aBeneficiary',

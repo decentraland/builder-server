@@ -91,8 +91,6 @@ export class Bridge {
 
     const fullItems: FullItem[] = []
 
-    console.log('dbTPCollectionsIndex', dbTPCollectionsIndex)
-
     for (const urn in itemsByURN) {
       const item = itemsByURN[urn]
       const itemCuration = itemCurationsIndex[item.id]
@@ -402,8 +400,8 @@ export class Bridge {
         in_catalyst: false,
         is_approved: false,
         is_published: false,
-        total_supply: 0,
         content_hash: null,
+        total_supply: 0,
       },
       ['urn_suffix']
     )

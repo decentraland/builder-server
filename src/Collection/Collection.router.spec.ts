@@ -816,7 +816,7 @@ describe('Collection router', () => {
             data: [
               {
                 ...resultingCollectionAttributes,
-                urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
+                urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
               },
             ],
             ok: true,
@@ -855,7 +855,7 @@ describe('Collection router', () => {
             data: [
               {
                 ...resultingCollectionAttributes,
-                urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
+                urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
               },
               {
                 ...toResultCollection(dbTPCollection),
@@ -890,7 +890,7 @@ describe('Collection router', () => {
           expect(response.body).toEqual({
             data: {
               ...resultingCollectionAttributes,
-              urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
+              urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
             },
             ok: true,
           })

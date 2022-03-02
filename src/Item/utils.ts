@@ -43,6 +43,7 @@ export function toDBItem(item: FullItem): ItemAttributes {
     'in_catalyst',
     'total_supply',
     'content_hash',
+    'blockchain_item_id',
   ])
 }
 
@@ -116,7 +117,7 @@ export async function getMergedItem(id: string): Promise<FullItem> {
       throw new UnpublishedItemError(id)
     }
 
-    fullItem = Bridge.mergeTPItem(dbItem, wearable)
+    fullItem = Bridge.mergeTPItem(dbItem, dbCollection, wearable)
   } else {
     const {
       collection: remoteCollection,

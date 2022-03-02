@@ -7,9 +7,9 @@ const network = env.get('ETHEREUM_NETWORK') as Network
 function getChainIdFromNetwork(network: Network): ChainId {
   switch (network) {
     case Network.MAINNET:
-      return ChainId.ETHEREUM_MAINNET
+      return ChainId.MATIC_MAINNET
     case Network.ROPSTEN:
-      return ChainId.ETHEREUM_ROPSTEN
+      return ChainId.MATIC_MUMBAI
     default:
       throw new Error(
         `The network ${network} doesn't have a chain id to map to`

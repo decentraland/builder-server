@@ -4,7 +4,6 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { matchers } from '../common/matchers'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { CurationStatus } from '../Curation'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -136,9 +135,8 @@ export async function getMergedCollection(
   let mergedCollection: CollectionAttributes
 
   if (isTPCollection(dbCollection)) {
-    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
-      dbCollection.id,
-      CurationStatus.APPROVED
+    const lastItemCuration = await ItemCuration.findLastByCollectionId(
+      dbCollection.id
     )
 
     if (!lastItemCuration) {

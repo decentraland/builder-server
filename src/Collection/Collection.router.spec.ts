@@ -825,7 +825,7 @@ describe('Collection router', () => {
             data: [
               {
                 ...resultingCollectionAttributes,
-                urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
+                urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
               },
             ],
             ok: true,
@@ -847,7 +847,7 @@ describe('Collection router', () => {
       ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
         [{ id: dbTPCollection.third_party_id }]
       )
-      ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockReturnValueOnce(
+      ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
         itemCurationMock
       )
       mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
@@ -864,7 +864,7 @@ describe('Collection router', () => {
             data: [
               {
                 ...resultingCollectionAttributes,
-                urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
+                urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
               },
               {
                 ...toResultCollection(dbTPCollection),
@@ -899,7 +899,7 @@ describe('Collection router', () => {
           expect(response.body).toEqual({
             data: {
               ...resultingCollectionAttributes,
-              urn: `urn:decentraland:ropsten:collections-v2:${dbCollection.contract_address}`,
+              urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
             },
             ok: true,
           })

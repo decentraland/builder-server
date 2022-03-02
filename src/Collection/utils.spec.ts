@@ -117,7 +117,7 @@ describe('getMergedCollection', () => {
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
 
         jest
-          .spyOn(ItemCuration, 'findLastCreatedByCollectionIdAndStatus')
+          .spyOn(ItemCuration, 'findLastByCollectionId')
           .mockResolvedValueOnce(undefined)
       })
 
@@ -133,7 +133,7 @@ describe('getMergedCollection', () => {
         jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(collection)
 
         jest
-          .spyOn(ItemCuration, 'findLastCreatedByCollectionIdAndStatus')
+          .spyOn(ItemCuration, 'findLastByCollectionId')
           .mockResolvedValueOnce(itemCurationMock)
       })
 

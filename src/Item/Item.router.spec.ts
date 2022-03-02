@@ -12,6 +12,7 @@ import {
   mockIsThirdPartyManager,
   mockThirdPartyItemCurationExists,
   mockThirdPartyURNExists,
+  isoDateStringMatcher,
 } from '../../spec/utils'
 import {
   dbCollectionMock,
@@ -33,7 +34,7 @@ import { tpWearableMock, wearableMock } from '../../spec/mocks/peer'
 import { wallet } from '../../spec/mocks/wallet'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
-import { ItemCuration } from '../Curation/ItemCuration'
+import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
@@ -83,13 +84,16 @@ const server = supertest(app.getApp())
 
 describe('Item router', () => {
   let dbItem: ItemAttributes
+  let dbItemCuration: ItemCurationAttributes
   let dbTPItem: ThirdPartyItemAttributes
   let dbItemNotPublished: ItemAttributes
   let dbTPItemNotPublished: ThirdPartyItemAttributes
+  let dbTPItemPublished: ThirdPartyItemAttributes
   let resultingItem: ResultItem
   let resultingTPItem: ResultItem
   let resultItemNotPublished: ResultItem
   let resultTPItemNotPublished: ResultItem
+  let resultTPItemPublished: ResultItem
   let wearable: Wearable
   let tpWearable: Wearable
   let itemFragment: ItemFragment
@@ -118,10 +122,20 @@ describe('Item router', () => {
       beneficiary: '',
       urn_suffix: '',
     }
+    dbTPItemPublished = {
+      ...dbTPItem,
+      id: uuidv4(),
+      urn_suffix: '3',
+    }
+    dbItemCuration = { ...itemCurationMock, item_id: dbTPItemPublished.id }
     resultingItem = toResultItem(dbItem, itemFragment, wearable)
     resultingTPItem = toResultTPItem(dbTPItem, dbTPCollectionMock)
     resultItemNotPublished = asResultItem(dbItemNotPublished)
-    resultTPItemNotPublished = asResultItem(dbTPItemNotPublished)
+    resultTPItemNotPublished = asResultItem(dbTPItemNotPublished) // no itemCuration & no catalyst, should be regular Item
+    resultTPItemPublished = {
+      ...toResultTPItem(dbTPItemPublished, dbTPCollectionMock),
+      is_approved: false,
+    }
   })
 
   afterEach(() => {
@@ -233,7 +247,9 @@ describe('Item router', () => {
         dbTPItemMock,
         dbTPItemNotPublishedMock,
         dbItemNotPublished,
+        dbTPItemPublished,
       ])
+      ;(ItemCuration.find as jest.Mock).mockResolvedValueOnce([dbItemCuration])
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
         itemFragment,
       ])
@@ -271,6 +287,7 @@ describe('Item router', () => {
                   dbTPItemNotPublishedMock.urn_suffix!
                 ),
               },
+              resultTPItemPublished,
             ],
             ok: true,
           })
@@ -297,6 +314,7 @@ describe('Item router', () => {
       ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
         dbTPCollectionMock,
       ]) // for third parties
+      ;(ItemCuration.find as jest.Mock).mockResolvedValueOnce([dbItemCuration])
       mockItemConsolidation([dbItem], [wearable])
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
       url = `/${wallet.address}/items`
@@ -373,6 +391,7 @@ describe('Item router', () => {
       beforeEach(() => {
         ;(Item.find as jest.Mock).mockResolvedValueOnce([
           dbTPItem,
+          dbTPItemPublished,
           dbTPItemNotPublished,
         ])
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
@@ -381,9 +400,9 @@ describe('Item router', () => {
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbTPCollectionMock,
         ])
-        ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
-          itemCurationMock
-        )
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+          dbItemCuration,
+        ])
         mockItemConsolidation([dbItemMock], [tpWearable])
         url = `/collections/${dbCollectionMock.id}/items`
       })
@@ -395,7 +414,11 @@ describe('Item router', () => {
           .expect(200)
           .then((response: any) => {
             expect(response.body).toEqual({
-              data: [resultingTPItem, resultTPItemNotPublished],
+              data: [
+                resultingTPItem,
+                resultTPItemPublished,
+                resultTPItemNotPublished,
+              ],
               ok: true,
             })
           })
@@ -415,7 +438,6 @@ describe('Item router', () => {
 
     beforeEach(() => {
       url = `/items/${dbItem.id}`
-      itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
       collectionMock = { ...dbCollectionMock }
       tpCollectionMock = { ...dbTPCollectionMock }
     })
@@ -425,11 +447,15 @@ describe('Item router', () => {
 
       beforeEach(() => {
         dbItem = { ...dbItem, blockchain_item_id: null }
+        itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
       })
 
       describe('and the user upserting is not authorized to do so', () => {
         beforeEach(() => {
-          itemToUpsert = { ...itemToUpsert, collection_id: tpCollectionMock.id }
+          itemToUpsert = {
+            ...itemToUpsert,
+            collection_id: tpCollectionMock.id,
+          }
           mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
           mockCollection.findOne.mockResolvedValueOnce(tpCollectionMock)
           mockIsThirdPartyManager(wallet.address, false)
@@ -529,6 +555,12 @@ describe('Item router', () => {
               tpCollectionMock.urn_suffix,
               itemUrnSuffix
             )
+            mockItem.upsert.mockImplementation((createdItem) =>
+              Promise.resolve({
+                ...createdItem,
+                blockchain_item_id: null,
+              })
+            )
             mockItem.findOne.mockResolvedValueOnce({
               ...dbItem,
               collection_id: tpCollectionMock.id,
@@ -545,15 +577,18 @@ describe('Item router', () => {
                 ...dbItem,
                 urn_suffix: null,
                 collection_id: null,
+                eth_address: wallet.address,
               }
               mockThirdPartyItemCurationExists(dbItem.id, false)
-              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
-              resultingItem = toResultItem(
-                updatedItem,
-                undefined,
-                undefined,
-                tpCollectionMock
-              )
+              resultingItem = {
+                ...toResultItem(
+                  updatedItem,
+                  undefined,
+                  undefined,
+                  tpCollectionMock
+                ),
+                updated_at: expect.stringMatching(isoDateStringMatcher),
+              }
             })
 
             it('should respond with a 200, update the item and return the updated item', () => {
@@ -657,15 +692,26 @@ describe('Item router', () => {
                   ...dbItem,
                   urn_suffix: itemUrnSuffix,
                   collection_id: tpCollectionMock.id,
+                  eth_address: wallet.address,
+                  local_content_hash:
+                    'bafkreifstqrxylmy6dwtw64ieyrgzv2sxrhh7awzb52bwn66utuo7327ae',
                 }
-                mockThirdPartyItemCurationExists(itemToUpsert.id, false)
-                mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
-                resultingItem = toResultItem(
-                  updatedItem,
-                  undefined,
-                  undefined,
-                  tpCollectionMock
+                mockItem.upsert.mockImplementation((createdItem) =>
+                  Promise.resolve({
+                    ...createdItem,
+                    blockchain_item_id: null,
+                  })
                 )
+                mockThirdPartyItemCurationExists(itemToUpsert.id, false)
+                resultingItem = {
+                  ...toResultItem(
+                    updatedItem,
+                    undefined,
+                    undefined,
+                    tpCollectionMock
+                  ),
+                  updated_at: expect.stringMatching(isoDateStringMatcher),
+                }
               })
 
               it('should respond with a 200, update the item and return the updated item', () => {
@@ -798,19 +844,29 @@ describe('Item router', () => {
                 collection_id: dbItem.collection_id,
                 urn: dbItemURN,
               }
-
+              mockItem.upsert.mockImplementation((createdItem) =>
+                Promise.resolve({
+                  ...createdItem,
+                  blockchain_item_id: null,
+                })
+              )
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: itemUrnSuffix,
                 collection_id: tpCollectionMock.id,
+                eth_address: wallet.address,
+                local_content_hash:
+                  'bafkreifstqrxylmy6dwtw64ieyrgzv2sxrhh7awzb52bwn66utuo7327ae',
               }
-              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
-              resultingItem = toResultItem(
-                updatedItem,
-                undefined,
-                undefined,
-                tpCollectionMock
-              )
+              resultingItem = {
+                ...toResultItem(
+                  updatedItem,
+                  undefined,
+                  undefined,
+                  tpCollectionMock
+                ),
+                updated_at: expect.stringMatching(isoDateStringMatcher),
+              }
             })
 
             it('should respond with a 200, update the item and return the updated item', () => {
@@ -845,7 +901,7 @@ describe('Item router', () => {
               urn: buildTPItemURN(
                 tpCollectionMock.third_party_id,
                 tpCollectionMock.urn_suffix,
-                'some-item-urn-suffix'
+                itemUrnSuffix
               ),
             }
           })
@@ -879,19 +935,31 @@ describe('Item router', () => {
             let resultingItem: ResultItem
 
             beforeEach(() => {
+              mockItem.upsert.mockImplementation((createdItem) =>
+                Promise.resolve({
+                  ...createdItem,
+                  blockchain_item_id: null,
+                })
+              )
               const updatedItem = {
                 ...dbItem,
                 urn_suffix: itemUrnSuffix,
                 collection_id: tpCollectionMock.id,
+                eth_address: wallet.address,
+                local_content_hash:
+                  'bafkreifstqrxylmy6dwtw64ieyrgzv2sxrhh7awzb52bwn66utuo7327ae',
               }
               mockThirdPartyURNExists(itemToUpsert.urn!, false)
-              mockItem.prototype.upsert.mockResolvedValueOnce(updatedItem)
-              resultingItem = toResultItem(
-                updatedItem,
-                undefined,
-                undefined,
-                tpCollectionMock
-              )
+              resultingItem = {
+                ...toResultItem(
+                  updatedItem,
+                  undefined,
+                  undefined,
+                  tpCollectionMock
+                ),
+                updated_at: expect.stringMatching(isoDateStringMatcher),
+                created_at: expect.stringMatching(isoDateStringMatcher),
+              }
             })
 
             it('should respond with a 200, update the item and return the updated item', () => {
@@ -939,7 +1007,10 @@ describe('Item router', () => {
 
     describe('and the item is a DCL item', () => {
       beforeEach(() => {
-        itemToUpsert = { ...itemToUpsert, urn: null }
+        itemToUpsert = {
+          ...utils.omit(dbItem, ['created_at', 'updated_at']),
+          urn: null,
+        }
       })
 
       describe('and the item inserted has an invalid name', () => {
@@ -1011,7 +1082,7 @@ describe('Item router', () => {
         })
       })
 
-      describe('and the item is being inserted', () => {
+      describe("and the user doesn't have permission to insert or update an item", () => {
         beforeEach(() => {
           itemToUpsert = { ...itemToUpsert, collection_id: null }
           mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
@@ -1157,7 +1228,7 @@ describe('Item router', () => {
             ...collectionMock,
             collection_id: itemToUpsert.collection_id,
             eth_address: wallet.address,
-            contract_address: Wallet.createRandom().address,
+            contract_address: '0x3DC9C91cAB92E5806250E2f5cabe711ad79296ea',
           })
           mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
           mockIsCollectionPublished(collectionMock.id, true)
@@ -1230,20 +1301,87 @@ describe('Item router', () => {
             })
           })
         })
+
+        describe("and the item's metadata (not rarity nor collection) and content is being updated", () => {
+          let currentDate: Date
+
+          beforeEach(() => {
+            currentDate = new Date()
+            jest.useFakeTimers()
+            jest.setSystemTime(currentDate)
+            mockItem.upsert.mockImplementation((createdItem) =>
+              Promise.resolve({
+                ...createdItem,
+                blockchain_item_id: dbItem.blockchain_item_id,
+              })
+            )
+            mockItem.findOne.mockResolvedValueOnce(dbItem)
+          })
+
+          afterEach(() => {
+            jest.useRealTimers()
+          })
+
+          it('should respond with the updated item', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: itemToUpsert, name: 'aNewName' })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.ok)
+
+            expect(response.body).toEqual({
+              data: {
+                ...Bridge.toFullItem(dbItem),
+                local_content_hash:
+                  'bafkreiejcahiwp257urwn5u2wn5os3mcjhvid6eqhmok7tezzhvdm5njqy',
+                eth_address: wallet.address,
+                created_at: dbItem.created_at.toISOString(),
+                updated_at: currentDate.toISOString(),
+              },
+              ok: true,
+            })
+          })
+        })
       })
 
-      describe('and all the conditions for success are given', () => {
+      describe('and the collection given for the item is not published', () => {
+        let currentDate: Date
+
         beforeEach(() => {
+          currentDate = new Date()
+          jest.useFakeTimers()
+          jest.setSystemTime(currentDate)
           mockCollection.findOne.mockResolvedValueOnce({
             ...collectionMock,
             collection_id: itemToUpsert.collection_id,
             eth_address: wallet.address,
-            contract_address: Wallet.createRandom().address,
+            contract_address: null,
           })
           mockItem.findOne.mockResolvedValueOnce(undefined)
           mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
           mockIsCollectionPublished(collectionMock.id, false)
-          mockItem.prototype.upsert.mockResolvedValueOnce(dbItem)
+          mockItem.upsert.mockImplementation((createdItem) =>
+            Promise.resolve({
+              ...createdItem,
+              blockchain_item_id: null,
+            })
+          )
+          const updatedItem: ItemAttributes = {
+            ...dbItem,
+            collection_id: tpCollectionMock.id,
+            eth_address: wallet.address,
+            local_content_hash: null,
+            updated_at: currentDate,
+            created_at: currentDate,
+            blockchain_item_id: null,
+          }
+          resultingItem = {
+            ...toResultItem(updatedItem),
+          }
+        })
+
+        afterEach(() => {
+          jest.useRealTimers()
         })
 
         it('should respond with the upserted item', async () => {
@@ -1254,7 +1392,7 @@ describe('Item router', () => {
             .expect(STATUS_CODES.ok)
 
           expect(response.body).toEqual({
-            data: JSON.parse(JSON.stringify(Bridge.toFullItem(dbItem))),
+            data: resultingItem,
             ok: true,
           })
         })

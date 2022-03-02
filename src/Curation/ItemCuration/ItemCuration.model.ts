@@ -1,7 +1,7 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Collection } from '../../Collection'
 import { Item } from '../../Item'
-import { CurationStatus, CurationType } from '../Curation.types'
+import { CurationType } from '../Curation.types'
 import { ItemCurationAttributes } from './ItemCuration.types'
 
 export class ItemCuration extends Model<ItemCurationAttributes> {
@@ -20,47 +20,28 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
   static async existsByCollectionId(collectionId: string): Promise<boolean> {
     const counts = await this.query<{ count: number }>(SQL`
     SELECT COUNT(*) as count
-      FROM ${raw(this.tableName)} c
-      JOIN ${raw(Item.tableName)} i ON i.id = c.item_id
-      WHERE i.collection_id = ${collectionId}`)
+      FROM ${raw(this.tableName)} item_curations
+      JOIN ${raw(Item.tableName)} items ON items.id = item_curations.item_id
+      WHERE items.collection_id = ${collectionId}`)
 
     return counts[0].count > 0
   }
 
-  static async findLastCreatedByCollectionIdAndStatus(
-    collectionId: string,
-    curationStatus: CurationStatus
-  ): Promise<ItemCurationAttributes | undefined> {
-    const itemCurations = await this.query<ItemCurationAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)} c
-      JOIN ${raw(Item.tableName)} i ON i.id = c.item_id
-      WHERE i.collection_id = ${collectionId}
-        AND i.status = ${curationStatus}
-      ORDER BY created_at DESC
-      LIMIT 1`)
-
-    return itemCurations[0]
-  }
-
-  static async findDistinctByItemIdsAndStatus(
-    itemIds: string[],
-    curationStatus: CurationStatus
-  ) {
-    return this.query<ItemCurationAttributes>(SQL`
-    SELECT DISTINCT ON(item_id) *
-      FROM ${raw(this.tableName)}
-      WHERE item_id = ANY(${itemIds})
-        AND status = ${curationStatus}`)
-  }
-
   static async findByCollectionId(collectionId: string) {
     return this.query<ItemCurationAttributes>(SQL`
-    SELECT ic.*
-      FROM ${raw(this.tableName)} ic
+    SELECT DISTINCT on (item.id) item_curation.*
+      FROM ${raw(this.tableName)} item_curation
       INNER JOIN ${raw(
         Item.tableName
-      )} i ON i.id = ic.item_id AND i.collection_id = ${collectionId}`)
+      )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
+      ORDER BY item.id, item_curation.created_at DESC`)
+  }
+
+  static async findLastByCollectionId(
+    collectionId: string
+  ): Promise<ItemCurationAttributes | undefined> {
+    const itemCurations = await this.findByCollectionId(collectionId)
+    return itemCurations[0]
   }
 
   static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {

@@ -177,10 +177,7 @@ export class CollectionService {
       )
     }
 
-    const isPublished = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
-      collectionId,
-      CurationStatus.PENDING
-    )
+    const isPublished = await ItemCuration.findLastByCollectionId(collectionId)
     if (isPublished) {
       throw new AlreadyPublishedCollectionError(
         collectionId,
@@ -232,7 +229,7 @@ export class CollectionService {
 
     return {
       collection: Bridge.mergeTPCollection(dbCollection, lastItemCuration),
-      items: await Bridge.consolidateTPItems(dbItems),
+      items: await Bridge.consolidateTPItems(dbItems, itemCurations),
     }
   }
 
@@ -449,9 +446,8 @@ export class CollectionService {
   private async getTPCollection(
     dbCollection: ThirdPartyCollectionAttributes
   ): Promise<CollectionAttributes> {
-    const lastItemCuration = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
-      dbCollection.id,
-      CurationStatus.APPROVED
+    const lastItemCuration = await ItemCuration.findLastByCollectionId(
+      dbCollection.id
     )
     return lastItemCuration
       ? Bridge.mergeTPCollection(dbCollection, lastItemCuration)

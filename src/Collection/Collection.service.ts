@@ -189,7 +189,7 @@ export class CollectionService {
     const now = new Date()
     await SlotUsageCheque.create<SlotUsageChequeAttributes>({
       id: uuid(),
-      signedMessage,
+      signature,
       collection_id: dbCollection.id,
       third_party_id: dbCollection.third_party_id,
       created_at: now,

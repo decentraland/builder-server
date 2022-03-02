@@ -1325,7 +1325,7 @@ describe('Collection router', () => {
       describe('when the collection already has a pending ItemCuration', () => {
         beforeEach(() => {
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbItemMock])
-          ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
+          ;(ItemCuration.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
             itemCurationMock
           )
           jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
@@ -1372,7 +1372,7 @@ describe('Collection router', () => {
           itemIds = items.map((item) => item.id)
           forumLink = 'https://forum.com/some/forum/link'
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
-          ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
+          ;(ItemCuration.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
             undefined
           )
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([

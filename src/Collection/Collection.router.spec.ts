@@ -1396,6 +1396,7 @@ describe('Collection router', () => {
         describe('and the item collection does not have a virtual curation', () => {
           it('should create a SlotUsageCheque record with the request data', () => {
             const signedMessage = 'a signed message'
+            const signature = 'signature'
 
             return server
               .post(buildURL(url))
@@ -1403,13 +1404,13 @@ describe('Collection router', () => {
               .send({
                 itemIds,
                 signedMessage,
-                signature: 'signature',
+                signature,
               })
               .expect(200)
               .then(() => {
                 expect(slotUsageChequeCreateSpy).toHaveBeenCalledWith({
                   id: expect.any(String),
-                  signedMessage,
+                  signature,
                   collection_id: dbTPCollection.id,
                   third_party_id: dbTPCollection.third_party_id,
                   created_at: expect.any(Date),

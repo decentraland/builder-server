@@ -18,6 +18,7 @@ import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { UnpublishedItemError } from '../Item/Item.errors'
 import { FullItem, Item } from '../Item'
 import { isCommitteeMember } from '../Committee'
+import { ItemCurationAttributes } from '../Curation/ItemCuration/ItemCuration.types'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
@@ -245,13 +246,21 @@ export class CollectionRouter extends Router {
 
   publishCollection = async (
     req: AuthRequest
-  ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
+  ): Promise<{
+    collection: FullCollection
+    items: FullItem[]
+    itemCurations?: ItemCurationAttributes[]
+  }> => {
     const id = server.extractFromReq(req, 'id')
 
     try {
       const dbCollection = await this.service.getDBCollection(id)
 
-      let result: { collection: CollectionAttributes; items: FullItem[] }
+      let result: {
+        collection: CollectionAttributes
+        items: FullItem[]
+        itemCurations?: ItemCurationAttributes[]
+      }
 
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
@@ -282,6 +291,7 @@ export class CollectionRouter extends Router {
       return {
         collection: toFullCollection(result.collection),
         items: result.items,
+        itemCurations: result.itemCurations,
       }
     } catch (error) {
       if (error instanceof InvalidRequestError) {

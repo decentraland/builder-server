@@ -9,8 +9,8 @@ export class CollectionCuration extends Model<CollectionCurationAttributes> {
 
   static async updateByItemId(itemId: string): Promise<{ rowCount: number }> {
     const columns = await this.query(SQL`
-      UPDATE ${CollectionCuration.tableName} as collection_curations
-      SET updated_at = ${new Date()}
+      UPDATE ${raw(CollectionCuration.tableName)} as collection_curations
+      SET updated_at = now()
       FROM ${raw(Item.tableName)} as items
       WHERE collection_curations.collection_id = items.collection_id
         AND items.id = ${itemId}`)

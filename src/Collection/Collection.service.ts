@@ -147,7 +147,6 @@ export class CollectionService {
   ): Promise<{
     collection: CollectionAttributes
     items: FullItem[]
-    itemCurations: ItemCurationAttributes[]
   }> {
     // For DCL collections, once a published collection item changes, the PUSH CHANGES button appears
     // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
@@ -235,7 +234,6 @@ export class CollectionService {
     return {
       collection: Bridge.mergeTPCollection(dbCollection, lastItemCuration),
       items: await Bridge.consolidateTPItems(dbItems, itemCurations),
-      itemCurations,
     }
   }
 

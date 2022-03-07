@@ -7,7 +7,7 @@ const oldColumnName = 'signedMessage'
 
 const columns = {
   signature: { type: 'TEXT', notNull: true },
-  salt: { type: 'VARCHAR(32)', notNull: true },
+  salt: { type: 'VARCHAR(66)', notNull: true },
   qty: { type: 'INT', notNull: true },
 }
 

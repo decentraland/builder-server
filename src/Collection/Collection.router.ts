@@ -23,6 +23,7 @@ import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
+import { ItemCurationAttributes } from '../Curation/ItemCuration/ItemCuration.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
 import { hasTPCollectionURN, isTPCollection, toFullCollection } from './utils'
@@ -245,13 +246,21 @@ export class CollectionRouter extends Router {
 
   publishCollection = async (
     req: AuthRequest
-  ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
+  ): Promise<{
+    collection: FullCollection
+    items: FullItem[]
+    itemCurations?: ItemCurationAttributes[]
+  }> => {
     const id = server.extractFromReq(req, 'id')
 
     try {
       const dbCollection = await this.service.getDBCollection(id)
 
-      let result: { collection: CollectionAttributes; items: FullItem[] }
+      let result: {
+        collection: CollectionAttributes
+        items: FullItem[]
+        itemCurations?: ItemCurationAttributes[]
+      }
 
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
@@ -260,7 +269,9 @@ export class CollectionRouter extends Router {
           dbCollection,
           dbItems,
           server.extractFromReq(req, 'signedMessage'),
-          server.extractFromReq(req, 'signature')
+          server.extractFromReq(req, 'signature'),
+          server.extractFromReq(req, 'qty'),
+          server.extractFromReq(req, 'salt')
         )
 
         // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)
@@ -282,6 +293,7 @@ export class CollectionRouter extends Router {
       return {
         collection: toFullCollection(result.collection),
         items: result.items,
+        itemCurations: result.itemCurations,
       }
     } catch (error) {
       if (error instanceof InvalidRequestError) {

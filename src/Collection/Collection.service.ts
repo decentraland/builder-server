@@ -141,10 +141,13 @@ export class CollectionService {
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[],
     signedMessage: string,
-    signature: string
+    signature: string,
+    qty: number,
+    salt: string
   ): Promise<{
     collection: CollectionAttributes
     items: FullItem[]
+    itemCurations: ItemCurationAttributes[]
   }> {
     // For DCL collections, once a published collection item changes, the PUSH CHANGES button appears
     // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
@@ -190,6 +193,8 @@ export class CollectionService {
     await SlotUsageCheque.create<SlotUsageChequeAttributes>({
       id: uuid(),
       signature,
+      qty,
+      salt,
       collection_id: dbCollection.id,
       third_party_id: dbCollection.third_party_id,
       created_at: now,
@@ -230,6 +235,7 @@ export class CollectionService {
     return {
       collection: Bridge.mergeTPCollection(dbCollection, lastItemCuration),
       items: await Bridge.consolidateTPItems(dbItems, itemCurations),
+      itemCurations,
     }
   }
 

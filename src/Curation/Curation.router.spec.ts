@@ -449,8 +449,12 @@ describe('when handling a request', () => {
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
 
+          jest
+            .spyOn(service, 'updateStatusAndReturnById')
+            .mockResolvedValueOnce(expectedCuration)
+
           updateSpy = jest
-            .spyOn(CollectionCuration, 'update')
+            .spyOn(service, 'updateStatusAndReturnById')
             .mockResolvedValueOnce(expectedCuration)
         })
 
@@ -464,12 +468,8 @@ describe('when handling a request', () => {
           await router.updateCollectionCuration(req)
 
           expect(updateSpy).toHaveBeenCalledWith(
-            {
-              id: 'curationId',
-              status: CurationStatus.REJECTED,
-              updated_at: expect.any(String),
-            },
-            { id: 'curationId' }
+            'curationId',
+            CurationStatus.REJECTED
           )
         })
       })
@@ -486,6 +486,10 @@ describe('when handling a request', () => {
           } as ItemCurationAttributes
 
           jest
+            .spyOn(service, 'updateStatusAndReturnById')
+            .mockResolvedValueOnce(expectedCuration)
+
+          jest
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
 
@@ -494,7 +498,7 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce({ rowCount: 1 })
 
           itemUpdateSpy = jest
-            .spyOn(ItemCuration, 'update')
+            .spyOn(service, 'updateStatusAndReturnById')
             .mockResolvedValueOnce(expectedCuration)
         })
 
@@ -508,12 +512,8 @@ describe('when handling a request', () => {
           await router.updateItemCuration(req)
 
           expect(itemUpdateSpy).toHaveBeenCalledWith(
-            {
-              id: 'curationId',
-              status: CurationStatus.REJECTED,
-              updated_at: expect.any(String),
-            },
-            { id: 'curationId' }
+            'curationId',
+            CurationStatus.REJECTED
           )
         })
 

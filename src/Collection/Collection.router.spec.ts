@@ -1246,6 +1246,8 @@ describe('Collection router', () => {
               itemIds: [],
               signedMessage: 'message',
               signature: 'signature',
+              qty: 1,
+              salt: '0xsalt',
             })
             .expect(400)
             .then((response: any) => {
@@ -1271,6 +1273,8 @@ describe('Collection router', () => {
               itemIds: [dbTPItemMock.id],
               signedMessage: 'invalid',
               signature: 'signature',
+              qty: 1,
+              salt: '0xsalt',
             })
             .expect(400)
             .then((response: any) => {
@@ -1309,6 +1313,8 @@ describe('Collection router', () => {
               itemIds,
               signedMessage: 'message',
               signature: 'signature',
+              qty: 1,
+              salt: '0xsalt',
             })
             .expect(400)
             .then((response: any) => {
@@ -1339,6 +1345,8 @@ describe('Collection router', () => {
               itemIds: [dbItemMock.id],
               signedMessage: 'message',
               signature: 'signature',
+              qty: 1,
+              salt: '0xsalt',
             })
             .expect(409)
             .then((response: any) => {
@@ -1397,6 +1405,8 @@ describe('Collection router', () => {
           it('should create a SlotUsageCheque record with the request data', () => {
             const signedMessage = 'a signed message'
             const signature = 'signature'
+            const qty = 1
+            const salt = '0xsalt'
 
             return server
               .post(buildURL(url))
@@ -1405,6 +1415,8 @@ describe('Collection router', () => {
                 itemIds,
                 signedMessage,
                 signature,
+                qty,
+                salt,
               })
               .expect(200)
               .then(() => {
@@ -1415,6 +1427,8 @@ describe('Collection router', () => {
                   third_party_id: dbTPCollection.third_party_id,
                   created_at: expect.any(Date),
                   updated_at: expect.any(Date),
+                  qty,
+                  salt,
                 })
               })
           })
@@ -1427,6 +1441,8 @@ describe('Collection router', () => {
                 itemIds,
                 signedMessage: 'message',
                 signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
               })
               .expect(200)
               .then(() => {
@@ -1453,6 +1469,8 @@ describe('Collection router', () => {
                 itemIds,
                 signedMessage: 'message',
                 signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
               })
               .expect(200)
               .then(() => {
@@ -1486,6 +1504,8 @@ describe('Collection router', () => {
                 itemIds,
                 signedMessage: 'message',
                 signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
               })
               .expect(200)
               .then(() => {
@@ -1515,6 +1535,8 @@ describe('Collection router', () => {
                 itemIds,
                 signedMessage: 'message',
                 signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
               })
               .expect(200)
               .then((response: any) => {
@@ -1546,6 +1568,8 @@ describe('Collection router', () => {
                 itemIds,
                 signedMessage: 'message',
                 signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
               })
               .expect(200)
               .then(() => {
@@ -1566,6 +1590,8 @@ describe('Collection router', () => {
                 itemIds,
                 signedMessage: 'message',
                 signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
               })
               .expect(200)
               .then(() => {

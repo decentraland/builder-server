@@ -23,7 +23,6 @@ import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
-import { ItemCurationAttributes } from '../Curation/ItemCuration/ItemCuration.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
 import { hasTPCollectionURN, isTPCollection, toFullCollection } from './utils'
@@ -249,7 +248,6 @@ export class CollectionRouter extends Router {
   ): Promise<{
     collection: FullCollection
     items: FullItem[]
-    itemCurations?: ItemCurationAttributes[]
   }> => {
     const id = server.extractFromReq(req, 'id')
 
@@ -259,7 +257,6 @@ export class CollectionRouter extends Router {
       let result: {
         collection: CollectionAttributes
         items: FullItem[]
-        itemCurations?: ItemCurationAttributes[]
       }
 
       if (isTPCollection(dbCollection)) {
@@ -293,7 +290,6 @@ export class CollectionRouter extends Router {
       return {
         collection: toFullCollection(result.collection),
         items: result.items,
-        itemCurations: result.itemCurations,
       }
     } catch (error) {
       if (error instanceof InvalidRequestError) {

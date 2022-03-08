@@ -16,7 +16,7 @@ import {
 } from './Collection.errors'
 
 export const tpCollectionURNRegex = new RegExp(
-  `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot})$`
+  `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot})$`
 )
 
 export function getDecentralandCollectionURN(
@@ -66,16 +66,16 @@ export function toFullCollection(
 export function toDBCollection(
   collection: FullCollection
 ): CollectionAttributes {
-  const isTPW = hasTPCollectionURN(collection)
-  const decodedURN = isTPW
+  const isTP = hasTPCollectionURN(collection)
+  const decodedURN = isTP
     ? decodeTPCollectionURN(collection.urn!)
     : { urn_suffix: null, third_party_id: null }
 
   let urn_suffix = decodedURN.urn_suffix
   let third_party_id = decodedURN.third_party_id
-  let eth_address = isTPW ? '' : collection.eth_address
-  let contract_address = isTPW ? null : collection.contract_address
-  let salt = isTPW ? '' : collection.salt
+  let eth_address = isTP ? '' : collection.eth_address
+  let contract_address = isTP ? null : collection.contract_address
+  let salt = isTP ? '' : collection.salt
 
   return {
     ...utils.omit(collection, ['urn', 'lock']),

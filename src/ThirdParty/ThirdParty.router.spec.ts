@@ -108,7 +108,7 @@ describe('ThirdParty router', () => {
         maxSlots
       )
       ;(thirdPartyAPI.isManager as jest.Mock).mockResolvedValueOnce(true)
-      ;(ItemCuration.getItemCurationCountByThirdPartyId as jest.Mock).mockResolvedValueOnce(
+      ;(ItemCuration.getCountByThirdPartyId as jest.Mock).mockResolvedValueOnce(
         itemsInCuration
       )
       url = '/thirdParties/aThirdPartyId/slots'

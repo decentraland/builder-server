@@ -6,6 +6,13 @@ import { ItemAttributes } from './Item.types'
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
+  static findByIds(ids: string[]) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE id = ANY(${ids})`)
+  }
+
   static findByCollectionIds(collectionIds: string[]) {
     return this.query<ItemAttributes>(SQL`
       SELECT *

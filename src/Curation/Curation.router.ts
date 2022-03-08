@@ -8,9 +8,12 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
-import { getMergedCollection, isTPCollection } from '../Collection/utils'
-import { Item } from '../Item'
-import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import { isTPCollection } from '../Collection/utils'
+import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
+import {
+  NonExistentCollectionError,
+  UnpublishedCollectionError,
+} from '../Collection/Collection.errors'
 import {
   CurationStatus,
   CurationType,
@@ -18,18 +21,16 @@ import {
 } from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
-  NonExistentCollectionError,
-  UnpublishedCollectionError,
-} from '../Collection/Collection.errors'
-import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from './CollectionCuration'
+import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 
 const validator = getValidator()
 
-// TODO: Use CurationStatus everywhere
 export class CurationRouter extends Router {
+  public collectionService = new CollectionService()
+
   mount() {
     // TODO: we might need to rename all endpoints to their actual entities:
     //   - /collections/:id/curation -> /collectionCurations/:id
@@ -70,8 +71,6 @@ export class CurationRouter extends Router {
       withAuthentication,
       server.handleRequest(this.insertCollectionCuration)
     )
-
-    // TODO: '/collections/:id/itemCurations'
 
     this.router.get(
       '/items/:id/curation',
@@ -116,7 +115,7 @@ export class CurationRouter extends Router {
 
     const [dbCollections, dbTPCollections] = await Promise.all([
       Collection.findByContractAddresses(contractAddresses),
-      new CollectionService().getDbTPCollectionsByManager(ethAddress),
+      this.collectionService.getDbTPCollectionsByManager(ethAddress),
     ])
 
     const collectionIds = dbCollections
@@ -229,6 +228,16 @@ export class CurationRouter extends Router {
     const itemId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
+
+    const { rowCount } = await CollectionCuration.updateByItemId(itemId)
+    if (rowCount === 0) {
+      throw new HTTPError(
+        'Could not find a valid collection curation for the item',
+        { itemId },
+        STATUS_CODES.notFound
+      )
+    }
+
     return this.updateCuration(
       itemId,
       ethAddress,
@@ -241,9 +250,6 @@ export class CurationRouter extends Router {
     try {
       const collectionId = server.extractFromReq(req, 'id')
       const ethAddress = req.auth.ethAddress
-
-      // Check if the collection is valid by requesting it to the different origins
-      await getMergedCollection(collectionId)
 
       return this.insertCuration(
         collectionId,
@@ -272,27 +278,35 @@ export class CurationRouter extends Router {
   }
 
   insertItemCuration = async (req: AuthRequest) => {
-    const itemId = server.extractFromReq(req, 'id')
     const ethAddress = req.auth.ethAddress
-    const itemCuration = await this.insertCuration(
-      itemId,
-      ethAddress,
-      CurationType.ITEM
-    )
 
-    const collectionCuration = await CollectionCuration.findByItemId(itemId)
+    try {
+      const itemId = server.extractFromReq(req, 'id')
 
-    if (!collectionCuration) {
-      const item = await Item.findOne(itemId)
+      return this.insertCuration(itemId, ethAddress, CurationType.ITEM)
+    } catch (error) {
+      if (error instanceof NonExistentItemError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id: error.id, ethAddress },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof UnpublishedItemError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      }
 
-      await this.insertCuration(
-        item.collection_id,
-        ethAddress,
-        CurationType.COLLECTION
-      )
+      throw error
     }
-
-    return itemCuration
   }
 
   private updateCuration = async (

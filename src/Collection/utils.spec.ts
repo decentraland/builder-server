@@ -14,25 +14,25 @@ import { CollectionAttributes } from './Collection.types'
 import { Collection } from './Collection.model'
 import { getMergedCollection, decodeTPCollectionURN } from './utils'
 
-describe('when decoding the TPW collection URN', () => {
+describe('when decoding the TP collection URN', () => {
   const collectionNetwork = 'ropsten'
   const thirdPartyId = `urn:decentraland:${collectionNetwork}:collections-thirdparty:a-third-party-id`
   const collectionURNSuffix = 'a-urn-suffix'
   let fullUrn: string
 
-  describe('when the URN is not a valid TPW URN', () => {
+  describe('when the URN is not a valid TP URN', () => {
     beforeEach(() => {
       fullUrn = `an-invalid-urn`
     })
 
-    it('should throw indicating that the URN is not TPW compliant', () => {
+    it('should throw indicating that the URN is not TP compliant', () => {
       expect(() => decodeTPCollectionURN(fullUrn)).toThrow(
         'The given collection URN is not Third Party compliant'
       )
     })
   })
 
-  describe('when the URN is a valid TPW URN', () => {
+  describe('when the URN is a valid TP URN', () => {
     beforeEach(() => {
       fullUrn = `${thirdPartyId}:${collectionURNSuffix}`
     })

@@ -49,12 +49,12 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     curationStatus: CurationStatus
   ): Promise<ItemCurationAttributes | undefined> {
     const itemCurations = await this.query<ItemCurationAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)} c
-      JOIN ${raw(Item.tableName)} i ON i.id = c.item_id
-      WHERE i.collection_id = ${collectionId}
-        AND i.status = ${curationStatus}
-      ORDER BY created_at DESC
+    SELECT item_curations.*
+      FROM ${raw(this.tableName)} item_curations
+      JOIN ${raw(Item.tableName)} items ON items.id = item_curations.item_id
+      WHERE items.collection_id = ${collectionId}
+        AND items.status = ${curationStatus}
+      ORDER BY item_curations.created_at DESC
       LIMIT 1`)
 
     return itemCurations[0]

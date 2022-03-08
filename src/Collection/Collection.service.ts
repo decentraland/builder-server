@@ -393,11 +393,11 @@ export class CollectionService {
     }
 
     const approvalData: ItemApprovalData[] = []
-    for (const { id, urn_suffix, content_hash } of dbApprovalData) {
-      if (!urn_suffix || !content_hash) {
+    for (const { id, urn_suffix, local_content_hash } of dbApprovalData) {
+      if (!urn_suffix || !local_content_hash) {
         throw new InconsistentItemError(
           id,
-          'Item missing the urn_suffix or content_hash needed to approve it'
+          'Item missing the urn_suffix or local_content_hash needed to approve it'
         )
       }
 
@@ -407,7 +407,7 @@ export class CollectionService {
           collection.urn_suffix,
           urn_suffix
         ),
-        content_hash: content_hash!,
+        content_hash: local_content_hash,
       })
     }
 

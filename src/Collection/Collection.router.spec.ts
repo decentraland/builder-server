@@ -1888,9 +1888,17 @@ describe('Collection router', () => {
         describe('when the approval data is missing properties', () => {
           beforeEach(() => {
             itemApprovalData = [
-              { id: uuid(), content_hash: 'Qm1abababa', urn_suffix: '1' },
-              { id: uuid(), content_hash: '', urn_suffix: '2' },
-              { id: uuid(), content_hash: 'Qm3rererer', urn_suffix: '' },
+              {
+                id: uuid(),
+                local_content_hash: 'Qm1abababa',
+                urn_suffix: '1',
+              },
+              { id: uuid(), local_content_hash: '', urn_suffix: '2' },
+              {
+                id: uuid(),
+                local_content_hash: 'Qm3rererer',
+                urn_suffix: '',
+              },
             ]
 
             mockCollectionAuthorizationMiddleware(
@@ -1929,9 +1937,21 @@ describe('Collection router', () => {
         describe('when the approval data and permissions are correct', () => {
           beforeEach(() => {
             itemApprovalData = [
-              { id: uuid(), content_hash: 'Qm1abababa', urn_suffix: '1' },
-              { id: uuid(), content_hash: 'Qm2bdbdbdb', urn_suffix: '2' },
-              { id: uuid(), content_hash: 'Qm3rererer', urn_suffix: '3' },
+              {
+                id: uuid(),
+                local_content_hash: 'Qm1abababa',
+                urn_suffix: '1',
+              },
+              {
+                id: uuid(),
+                local_content_hash: 'Qm2bdbdbdb',
+                urn_suffix: '2',
+              },
+              {
+                id: uuid(),
+                local_content_hash: 'Qm3rererer',
+                urn_suffix: '3',
+              },
             ]
 
             mockCollectionAuthorizationMiddleware(

@@ -150,7 +150,7 @@ export class CollectionService {
     // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
     // Subsequent changes will not show the push changes button, as it's already under_review
 
-    // For TP items, creations always exist. PUSH CHANGES should appear if the item has an approved ItemCuration and has changes in the Catalyst
+    // For TP items, curations always exist. PUSH CHANGES should appear if the item has an approved ItemCuration and has changes in the Catalyst
     // That should fire /items/:id/curation for each item that changed
 
     // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items

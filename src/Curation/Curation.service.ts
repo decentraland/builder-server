@@ -72,7 +72,7 @@ export class CurationService<
   async updateStatusAndReturnById(id: string, status: CurationStatus) {
     const result = await this.getModel().query(SQL`
       UPDATE ${raw(this.getTableName())}
-      SET status = ${status}, updated_at = now()
+      SET status = ${status}, updated_at = ${new Date()}
       WHERE id = ${id}
       RETURNING *`)
     return result[0]

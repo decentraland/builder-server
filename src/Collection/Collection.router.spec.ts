@@ -1928,7 +1928,7 @@ describe('Collection router', () => {
                     eth_address: wallet.address,
                   },
                   error:
-                    'Item missing the urn_suffix or content_hash needed to approve it',
+                    'Item missing the urn_suffix or local_content_hash needed to approve it',
                 })
               })
           })

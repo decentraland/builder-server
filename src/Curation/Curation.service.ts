@@ -4,7 +4,7 @@ import { getMergedCollection } from '../Collection/utils'
 import { hasAccess as hasItemAccess } from '../Item/access'
 import { getMergedItem } from '../Item/utils'
 import { CollectionCuration } from './CollectionCuration'
-import { CurationType } from './Curation.types'
+import { CurationStatus, CurationType } from './Curation.types'
 import { ItemCuration } from './ItemCuration'
 
 // TODO: This class SHOULD NOT make database queries. It's useful but it breakes the convention we have where only model know about queries
@@ -66,6 +66,15 @@ export class CurationService<
         ORDER BY created_at DESC
         LIMIT 1`
     )
+    return result[0]
+  }
+
+  async updateStatusAndReturnById(id: string, status: CurationStatus) {
+    const result = await this.getModel().query(SQL`
+      UPDATE ${raw(this.getTableName())}
+      SET status = ${status}, updated_at = ${new Date()}
+      WHERE id = ${id}
+      RETURNING *`)
     return result[0]
   }
 

@@ -341,13 +341,9 @@ export class CurationRouter extends Router {
       )
     }
 
-    return curationService.getModel().update(
-      {
-        ...curation,
-        status: curationJSON.status,
-        updated_at: this.getISODate(),
-      },
-      { id: curation.id }
+    return await curationService.updateStatusAndReturnById(
+      curation.id,
+      curationJSON.status
     )
   }
 
@@ -388,8 +384,6 @@ export class CurationRouter extends Router {
 
     return curationService.getModel().create(attributes)
   }
-
-  private getISODate = () => new Date().toISOString()
 
   private validateAccessToCuration = async (
     service: CurationService<any>,

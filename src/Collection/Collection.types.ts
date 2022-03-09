@@ -1,3 +1,6 @@
+import { ItemCurationAttributes } from '../Curation/ItemCuration'
+import { FullItem } from '../Item'
+
 export type CollectionAttributes = {
   id: string // uuid
   /**
@@ -32,6 +35,12 @@ export type FullCollection = Omit<
   'urn_suffix' | 'third_party_id'
 > & {
   urn: string | null
+}
+
+export type PublishCollectionResponse<T> = {
+  collection: T
+  items: FullItem[]
+  itemCurations?: ItemCurationAttributes[]
 }
 
 export type PublishCheque = {

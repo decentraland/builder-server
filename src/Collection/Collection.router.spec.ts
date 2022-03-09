@@ -1572,6 +1572,11 @@ describe('Collection router', () => {
                       created_at: item.created_at.toISOString(),
                       updated_at: item.updated_at.toISOString(),
                     })),
+                    itemCurations: Array(3).fill({
+                      ...itemCurationMock,
+                      created_at: itemCurationMock.created_at.toISOString(),
+                      updated_at: itemCurationMock.updated_at.toISOString(),
+                    }),
                   },
                   ok: true,
                 })

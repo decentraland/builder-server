@@ -1331,7 +1331,7 @@ describe('Collection router', () => {
       describe('when the collection already has a pending ItemCuration', () => {
         beforeEach(() => {
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbItemMock])
-          ;(ItemCuration.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+          ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
             itemCurationMock
           )
           jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')

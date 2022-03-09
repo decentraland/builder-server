@@ -23,7 +23,7 @@ import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
-  Cheque,
+  PublishCheque,
   CollectionAttributes,
   FullCollection,
 } from './Collection.types'
@@ -254,12 +254,6 @@ export class CollectionRouter extends Router {
     items: FullItem[]
   }> => {
     const id = server.extractFromReq(req, 'id')
-    const {
-      signedMessage,
-      signature,
-      salt,
-      qty,
-    } = server.extractFromReq<Cheque>(req, 'cheque')
     try {
       const dbCollection = await this.service.getDBCollection(id)
 
@@ -271,6 +265,13 @@ export class CollectionRouter extends Router {
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
         const dbItems = await Item.findByIds(itemIds)
+        const {
+          signedMessage,
+          signature,
+          salt,
+          qty,
+        } = server.extractFromReq<PublishCheque>(req, 'cheque')
+
         result = await this.service.publishTPCollection(
           dbCollection,
           dbItems,

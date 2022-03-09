@@ -34,7 +34,7 @@ export type FullCollection = Omit<
   urn: string | null
 }
 
-export type Cheque = {
+export type PublishCheque = {
   signedMessage: string
   signature: string
   qty: number

@@ -1244,10 +1244,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds: [],
-              signedMessage: 'message',
-              signature: 'signature',
-              qty: 1,
-              salt: '0xsalt',
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(400)
             .then((response: any) => {
@@ -1271,10 +1273,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds: [dbTPItemMock.id],
-              signedMessage: 'invalid',
-              signature: 'signature',
-              qty: 1,
-              salt: '0xsalt',
+              cheque: {
+                signedMessage: 'invalid',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(400)
             .then((response: any) => {
@@ -1311,10 +1315,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds,
-              signedMessage: 'message',
-              signature: 'signature',
-              qty: 1,
-              salt: '0xsalt',
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(400)
             .then((response: any) => {
@@ -1343,10 +1349,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds: [dbItemMock.id],
-              signedMessage: 'message',
-              signature: 'signature',
-              qty: 1,
-              salt: '0xsalt',
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(409)
             .then((response: any) => {
@@ -1413,10 +1421,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage,
-                signature,
-                qty,
-                salt,
+                cheque: {
+                  signedMessage,
+                  signature,
+                  qty,
+                  salt,
+                },
               })
               .expect(200)
               .then(() => {
@@ -1439,10 +1449,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1467,10 +1479,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1502,10 +1516,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1533,10 +1549,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then((response: any) => {
@@ -1566,10 +1584,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1588,10 +1608,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {

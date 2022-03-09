@@ -79,13 +79,8 @@ const getItemQuery = () => gql`
 
 const isManagerQuery = () => gql`
   query isManager($thirdPartyId: String!, $managers: [String!]) {
-    thirdParties(
-      first: 1
-      where: { thirdParty: $thirdPartyId, searchCollectionId: $collectionId }
-      orderBy: reviewedAt
-      orderDirection: desc
-    ) {
-      ...thirdPartyItemFragment
+    thirdParties(first: 1, where: { id: $thirdPartyId }) {
+      id
     }
   }
   ${thirdPartyItemFragment()}

@@ -161,8 +161,7 @@ export class CollectionRouter extends Router {
     const eth_address = req.auth.ethAddress
 
     try {
-      const approvalData = await this.service.getApprovalData(id)
-      return approvalData
+      return await this.service.getApprovalData(id)
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(

@@ -65,7 +65,7 @@ export type DBItemApprovalData = Pick<
   ItemAttributes,
   'id' | 'urn_suffix' | 'local_content_hash'
 >
-export type ItemApprovalData = Pick<FullItem, 'urn' | 'content_hash'>
+export type ItemApprovalData = Pick<FullItem, 'urn'> & { content_hash: string }
 
 type BaseWearableEntityMetadata = Omit<
   Wearable,

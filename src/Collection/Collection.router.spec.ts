@@ -1915,7 +1915,7 @@ describe('Collection router', () => {
             )
           })
 
-          it('should return an array with the data for pending curations', () => {
+          it('should respond with a 500 saying that the item is missing some properties', () => {
             return server
               .get(buildURL(url))
               .set(createAuthHeaders('get', url))

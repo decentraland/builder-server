@@ -23,9 +23,10 @@ import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
+  PublishCollectionResponse,
+  PublishCheque,
   CollectionAttributes,
   FullCollection,
-  PublishCollectionResponse,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
@@ -251,7 +252,6 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PublishCollectionResponse<FullCollection>> => {
     const id = server.extractFromReq(req, 'id')
-
     try {
       const dbCollection = await this.service.getDBCollection(id)
 
@@ -265,8 +265,7 @@ export class CollectionRouter extends Router {
         result = await this.service.publishTPCollection(
           dbCollection,
           dbItems,
-          server.extractFromReq(req, 'signedMessage'),
-          server.extractFromReq(req, 'signature')
+          server.extractFromReq<PublishCheque>(req, 'cheque')
         )
 
         // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)

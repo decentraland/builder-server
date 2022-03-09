@@ -7,8 +7,8 @@ import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from './CollectionCuration'
-import { CurationType } from './Curation.types'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import { CurationType } from './Curation.types'
 
 // TODO: This class SHOULD NOT make database queries. It's useful but it breakes the convention we have where only model know about queries
 export class CurationService<

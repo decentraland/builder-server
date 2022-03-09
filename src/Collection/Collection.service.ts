@@ -22,6 +22,7 @@ import {
   CollectionAttributes,
   FullCollection,
   PublishCollectionResponse,
+  PublishCheque,
   ThirdPartyCollectionAttributes,
 } from './Collection.types'
 import { Collection } from './Collection.model'
@@ -141,8 +142,7 @@ export class CollectionService {
   public async publishTPCollection(
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ThirdPartyItemAttributes[],
-    signedMessage: string,
-    signature: string
+    cheque: PublishCheque
   ): Promise<PublishCollectionResponse<CollectionAttributes>> {
     // For DCL collections, once a published collection item changes, the PUSH CHANGES button appears
     // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
@@ -152,6 +152,8 @@ export class CollectionService {
     // That should fire /items/:id/curation for each item that changed
 
     // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items
+
+    const { signedMessage, signature, qty, salt } = cheque
 
     if (dbItems.length === 0) {
       throw new InvalidRequestError('Tried to publish no TP items')
@@ -190,7 +192,9 @@ export class CollectionService {
     const now = new Date()
     await SlotUsageCheque.create<SlotUsageChequeAttributes>({
       id: uuid(),
-      signedMessage,
+      signature,
+      qty,
+      salt,
       collection_id: dbCollection.id,
       third_party_id: dbCollection.third_party_id,
       created_at: now,

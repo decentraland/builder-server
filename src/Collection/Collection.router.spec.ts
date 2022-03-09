@@ -1244,8 +1244,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds: [],
-              signedMessage: 'message',
-              signature: 'signature',
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(400)
             .then((response: any) => {
@@ -1269,8 +1273,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds: [dbTPItemMock.id],
-              signedMessage: 'invalid',
-              signature: 'signature',
+              cheque: {
+                signedMessage: 'invalid',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(400)
             .then((response: any) => {
@@ -1307,8 +1315,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds,
-              signedMessage: 'message',
-              signature: 'signature',
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(400)
             .then((response: any) => {
@@ -1337,8 +1349,12 @@ describe('Collection router', () => {
             .set(createAuthHeaders('post', url))
             .send({
               itemIds: [dbItemMock.id],
-              signedMessage: 'message',
-              signature: 'signature',
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
             })
             .expect(409)
             .then((response: any) => {
@@ -1396,24 +1412,33 @@ describe('Collection router', () => {
         describe('and the item collection does not have a virtual curation', () => {
           it('should create a SlotUsageCheque record with the request data', () => {
             const signedMessage = 'a signed message'
+            const signature = 'signature'
+            const qty = 1
+            const salt = '0xsalt'
 
             return server
               .post(buildURL(url))
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage,
-                signature: 'signature',
+                cheque: {
+                  signedMessage,
+                  signature,
+                  qty,
+                  salt,
+                },
               })
               .expect(200)
               .then(() => {
                 expect(slotUsageChequeCreateSpy).toHaveBeenCalledWith({
                   id: expect.any(String),
-                  signedMessage,
+                  signature,
                   collection_id: dbTPCollection.id,
                   third_party_id: dbTPCollection.third_party_id,
                   created_at: expect.any(Date),
                   updated_at: expect.any(Date),
+                  qty,
+                  salt,
                 })
               })
           })
@@ -1424,8 +1449,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1451,8 +1480,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1484,8 +1517,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1513,8 +1550,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then((response: any) => {
@@ -1549,8 +1590,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {
@@ -1569,8 +1614,12 @@ describe('Collection router', () => {
               .set(createAuthHeaders('post', url))
               .send({
                 itemIds,
-                signedMessage: 'message',
-                signature: 'signature',
+                cheque: {
+                  signedMessage: 'message',
+                  signature: 'signature',
+                  qty: 1,
+                  salt: '0xsalt',
+                },
               })
               .expect(200)
               .then(() => {

@@ -79,7 +79,10 @@ const getItemQuery = () => gql`
 
 const isManagerQuery = () => gql`
   query isManager($thirdPartyId: String!, $managers: [String!]) {
-    thirdParties(first: 1, where: { id: $thirdPartyId }) {
+    thirdParties(
+      first: 1
+      where: { id: $thirdPartyId, managers_contains: $managers }
+    ) {
       id
     }
   }

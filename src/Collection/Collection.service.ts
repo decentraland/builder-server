@@ -130,8 +130,8 @@ export class CollectionService {
   }
 
   /**
-   * It should receive the list of items to be operated on so it can decide where it should create or update the curations for them accordingly
-   * It will also receive a signed message and its signature, so it can check and store it in the SlotUsageCheque
+   * Publishes a TP collection by storing the slots cheque and creating the curations for the items to be published.
+   * It creates or updates the virtual CollectionCuration for the items
    * @param dbCollection - Database TP collection
    * @param dbItems - Database TP items that belong to the collection
    * @param signedMessage - The message we signed
@@ -151,10 +151,10 @@ export class CollectionService {
     // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
     // Subsequent changes will not show the push changes button, as it's already under_review
 
-    // For TP items, creations always exist. PUSH CHANGES should appear if the item has an approved ItemCuration and has changes in the Catalyst
+    // For TP items, curations always exist. PUSH CHANGES should appear if the item has an approved ItemCuration and has changes in the Catalyst
     // That should fire /items/:id/curation for each item that changed
 
-    // What we should migrate over here is the creation of the virtual CollectionCuration, as there'll always be a publish before a PUSH CHANGES
+    // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items
 
     if (dbItems.length === 0) {
       throw new InvalidRequestError('Tried to publish no TP items')
@@ -178,7 +178,10 @@ export class CollectionService {
       )
     }
 
-    const isPublished = await ItemCuration.findLastByCollectionId(collectionId)
+    const isPublished = await ItemCuration.findLastCreatedByCollectionIdAndStatus(
+      collectionId,
+      CurationStatus.PENDING
+    )
     if (isPublished) {
       throw new AlreadyPublishedCollectionError(
         collectionId,

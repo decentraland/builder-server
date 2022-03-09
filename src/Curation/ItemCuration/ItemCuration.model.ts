@@ -1,7 +1,7 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Collection } from '../../Collection'
 import { Item } from '../../Item'
-import { CurationType } from '../Curation.types'
+import { CurationStatus, CurationType } from '../Curation.types'
 import { ItemCurationAttributes } from './ItemCuration.types'
 
 export class ItemCuration extends Model<ItemCurationAttributes> {
@@ -44,7 +44,23 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return itemCurations[0]
   }
 
-  static async getItemCurationCountByThirdPartyId(thirdPartyId: string) {
+  static async findLastCreatedByCollectionIdAndStatus(
+    collectionId: string,
+    curationStatus: CurationStatus
+  ): Promise<ItemCurationAttributes | undefined> {
+    const itemCurations = await this.query<ItemCurationAttributes>(SQL`
+    SELECT item_curations.*
+      FROM ${raw(this.tableName)} item_curations
+      JOIN ${raw(Item.tableName)} items ON items.id = item_curations.item_id
+      WHERE items.collection_id = ${collectionId}
+        AND items.status = ${curationStatus}
+      ORDER BY item_curations.created_at DESC
+      LIMIT 1`)
+
+    return itemCurations[0]
+  }
+
+  static async getCountByThirdPartyId(thirdPartyId: string) {
     const counts = await this.query<{ count: number }>(
       SQL`SELECT COUNT(DISTINCT item_curations.id) AS Count
         FROM ${raw(ItemCuration.tableName)} AS item_curations

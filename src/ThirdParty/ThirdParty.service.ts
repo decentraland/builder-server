@@ -8,7 +8,7 @@ export class ThirdPartyService {
   ): Promise<number> {
     const [maxItems, itemCurationsCount] = await Promise.all([
       thirdPartyAPI.fetchMaxItemsByThirdParty(thirdPartyId),
-      ItemCuration.getItemCurationCountByThirdPartyId(thirdPartyId),
+      ItemCuration.getCountByThirdPartyId(thirdPartyId),
     ])
     return maxItems - itemCurationsCount
   }

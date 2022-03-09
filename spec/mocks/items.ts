@@ -155,6 +155,7 @@ export const dbTPItemMock: ThirdPartyItemAttributes = {
   blockchain_item_id: null,
   collection_id: dbTPCollectionMock.id,
   urn_suffix: '1',
+  local_content_hash: 'aHash',
 }
 
 export const itemFragmentMock = {

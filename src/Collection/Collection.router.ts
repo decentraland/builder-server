@@ -2,6 +2,7 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
+import { InvalidRequestError } from '../utils/errors'
 import {
   withModelAuthorization,
   withAuthentication,
@@ -12,22 +13,30 @@ import {
 } from '../middleware'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { ItemFragment } from '../ethereum/api/fragments'
-import { FullItem, Item, ItemAttributes } from '../Item'
+import { OwnableModel } from '../Ownable/Ownable.types'
+import { MAX_FORUM_ITEMS } from '../Item/utils'
+import { UnpublishedItemError } from '../Item/Item.errors'
+import { Item } from '../Item'
 import { isCommitteeMember } from '../Committee'
+import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  PublishCollectionResponse,
+  PublishCheque,
+  CollectionAttributes,
+  FullCollection,
+} from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
-import { toFullCollection, hasTPCollectionURN } from './utils'
-import { OwnableModel } from '../Ownable/Ownable.types'
+import { hasTPCollectionURN, isTPCollection, toFullCollection } from './utils'
 import {
   AlreadyPublishedCollectionError,
   LockedCollectionError,
   NonExistentCollectionError,
   UnauthorizedCollectionEditError,
+  UnpublishedCollectionError,
   WrongCollectionError,
 } from './Collection.errors'
 
@@ -162,13 +171,13 @@ export class CollectionRouter extends Router {
       dbCollections,
       remoteCollections
     )
-    const consolidatedTPWCollections = await Bridge.consolidateTPCollections(
+    const consolidatedTPCollections = await Bridge.consolidateTPCollections(
       dbTPCollections
     )
 
     // Build the full collection
     return consolidatedCollections
-      .concat(consolidatedTPWCollections)
+      .concat(consolidatedTPCollections)
       .map(toFullCollection)
   }
 
@@ -198,7 +207,7 @@ export class CollectionRouter extends Router {
 
     const [
       consolidatedCollections,
-      consolidatedTPWCollections,
+      consolidatedTPCollections,
     ] = await Promise.all([
       Bridge.consolidateCollections(dbCollections, remoteCollections),
       Bridge.consolidateTPCollections(dbTPCollections),
@@ -206,7 +215,7 @@ export class CollectionRouter extends Router {
 
     // Build the full collection
     return consolidatedCollections
-      .concat(consolidatedTPWCollections)
+      .concat(consolidatedTPCollections)
       .map(toFullCollection)
   }
 
@@ -241,70 +250,68 @@ export class CollectionRouter extends Router {
 
   publishCollection = async (
     req: AuthRequest
-  ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
+  ): Promise<PublishCollectionResponse<FullCollection>> => {
     const id = server.extractFromReq(req, 'id')
+    try {
+      const dbCollection = await this.service.getDBCollection(id)
 
-    // We are using the withCollectionExists middleware so we can safely assert the collection exists
-    const [dbCollection, dbItems] = await Promise.all([
-      Collection.findOne<CollectionAttributes>(id),
-      Item.findOrderedByCollectionId(id),
-    ])
-    const remoteCollection = await collectionAPI.fetchCollection(
-      dbCollection!.contract_address!
-    )
+      let result: PublishCollectionResponse<CollectionAttributes>
 
-    if (!remoteCollection) {
-      // This might be a problem with the graph lagging but we delegate the retry logic on the client
-      throw new HTTPError(
-        'The collection is not published yet',
-        { id },
-        STATUS_CODES.unauthorized
-      )
-    }
+      if (isTPCollection(dbCollection)) {
+        const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
+        const dbItems = await Item.findByIds(itemIds)
 
-    const items: ItemAttributes[] = [...dbItems]
-    let remoteItems: ItemFragment[] = []
-
-    const isMissingBlockchainItemIds = dbItems.some(
-      (item) => item.blockchain_item_id == null
-    )
-
-    if (isMissingBlockchainItemIds) {
-      remoteItems = await collectionAPI.fetchItemsByContractAddress(
-        dbCollection!.contract_address!
-      )
-
-      const updates = []
-
-      for (const [index, item] of items.entries()) {
-        const remoteItem = remoteItems.find(
-          (remoteItem) => Number(remoteItem.blockchainId) === index
+        result = await this.service.publishTPCollection(
+          dbCollection,
+          dbItems,
+          server.extractFromReq<PublishCheque>(req, 'cheque')
         )
-        if (!remoteItem) {
-          throw new HTTPError(
-            "An item couldn't be matched with the one in the blockchain",
-            { itemId: item.id, collectionId: id },
-            STATUS_CODES.conflict
-          )
-        }
 
-        items[index].blockchain_item_id = remoteItem.blockchainId
-        updates.push(
-          Item.update(
-            { blockchain_item_id: remoteItem.blockchainId },
-            { id: item.id }
+        // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)
+        // We should also consider deleteing Forum.router.ts
+        // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
+        // TODO: Should this be halting the response? Retries?
+        const forum_link = await createPost(
+          buildCollectionForumPost(
+            result.collection,
+            result.items.slice(MAX_FORUM_ITEMS)
           )
+        )
+        await Collection.update<CollectionAttributes>({ forum_link }, { id })
+      } else {
+        const dbItems = await Item.findOrderedByCollectionId(id)
+        result = await this.service.publishDCLCollection(dbCollection, dbItems)
+      }
+
+      return {
+        collection: toFullCollection(result.collection),
+        items: result.items,
+        itemCurations: result.itemCurations,
+      }
+    } catch (error) {
+      if (error instanceof InvalidRequestError) {
+        throw new HTTPError(error.message, { id }, STATUS_CODES.badRequest)
+      } else if (error instanceof UnpublishedCollectionError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.unauthorized
+        )
+      } else if (error instanceof UnpublishedItemError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof AlreadyPublishedCollectionError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
         )
       }
 
-      await Promise.all(updates)
-    }
-
-    const collection = Bridge.mergeCollection(dbCollection!, remoteCollection)
-
-    return {
-      collection: toFullCollection(collection),
-      items: await Bridge.consolidateItems(items, remoteItems),
+      throw error
     }
   }
 
@@ -375,7 +382,7 @@ export class CollectionRouter extends Router {
 
     try {
       if (hasTPCollectionURN(collectionJSON)) {
-        upsertedCollection = await this.service.upsertTPWCollection(
+        upsertedCollection = await this.service.upsertTPCollection(
           id,
           eth_address,
           collectionJSON

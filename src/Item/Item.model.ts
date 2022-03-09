@@ -6,6 +6,13 @@ import { ItemAttributes } from './Item.types'
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
+  static findByIds(ids: string[]) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE id = ANY(${ids})`)
+  }
+
   static findByCollectionIds(collectionIds: string[]) {
     return this.query<ItemAttributes>(SQL`
       SELECT *
@@ -15,10 +22,12 @@ export class Item extends Model<ItemAttributes> {
 
   static findByThirdPartyIds(thirdPartyIds: string[]) {
     return this.query<ItemAttributes>(SQL`
-      SELECT *
-        FROM ${raw(this.tableName)} i 
-        JOIN ${raw(Collection.tableName)} c ON c.id = i.collection_id
-        WHERE c.third_party_id = ANY(${thirdPartyIds})`)
+      SELECT item.*
+        FROM ${raw(this.tableName)} item 
+        JOIN ${raw(
+          Collection.tableName
+        )} collection ON collection.id = item.collection_id
+        WHERE collection.third_party_id = ANY(${thirdPartyIds})`)
   }
 
   static findOrderedByCollectionId(

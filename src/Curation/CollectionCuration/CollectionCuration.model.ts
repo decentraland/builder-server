@@ -7,15 +7,14 @@ export class CollectionCuration extends Model<CollectionCurationAttributes> {
   static tableName = 'collection_curations'
   static type = CurationType.COLLECTION
 
-  static async findByItemId(
-    itemId: string
-  ): Promise<CollectionCurationAttributes | undefined> {
-    // prettier-ignore
-    const curations = await this.query<CollectionCurationAttributes>(SQL`
-      SELECT cc.*
-        FROM ${raw(this.tableName)} cc
-        INNER JOIN ${raw(Item.tableName)} i ON i.id = i.collection_id AND i.id = ${itemId}`)
+  static async updateByItemId(itemId: string): Promise<{ rowCount: number }> {
+    const columns = await this.query(SQL`
+      UPDATE ${raw(CollectionCuration.tableName)} as collection_curations
+      SET updated_at = ${new Date()}
+      FROM ${raw(Item.tableName)} as items
+      WHERE collection_curations.collection_id = items.collection_id
+        AND items.id = ${itemId}`)
 
-    return curations[0]
+    return columns.length > 0 ? columns[0].rowCount : 0
   }
 }

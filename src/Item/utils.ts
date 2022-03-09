@@ -13,8 +13,10 @@ import { NonExistentItemError, UnpublishedItemError } from './Item.errors'
 import { Item } from './Item.model'
 import { FullItem, ItemAttributes } from './Item.types'
 
+export const MAX_FORUM_ITEMS = 20
+
 const tpItemURNRegex = new RegExp(
-  `^(${matchers.baseURN}:${matchers.tpwIdentifier}):(${matchers.urnSlot}):(${matchers.urnSlot})$`
+  `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot}):(${matchers.urnSlot})$`
 )
 
 export function getDecentralandItemURN(
@@ -69,7 +71,7 @@ export function decodeThirdPartyItemURN(
 } {
   const matches = tpItemURNRegex.exec(itemURN)
   if (matches === null) {
-    throw new Error('The given item URN is not TPW compliant')
+    throw new Error('The given item URN is not TP compliant')
   }
 
   return {

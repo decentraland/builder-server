@@ -14,7 +14,11 @@ export const patchCurationSchema = Object.freeze({
   properties: {
     status: {
       type: 'string',
-      enum: [CurationStatus.APPROVED, CurationStatus.REJECTED],
+      enum: [
+        CurationStatus.PENDING,
+        CurationStatus.APPROVED,
+        CurationStatus.REJECTED,
+      ],
     },
   },
   additionalProperties: false,

@@ -205,13 +205,13 @@ export class CollectionRouter extends Router {
       this.service.getDbTPCollectionsByManager(eth_address),
     ])
 
-    const consolidatedCollections = await Bridge.consolidateCollections(
-      dbCollections,
-      remoteCollections
-    )
-    const consolidatedTPCollections = await Bridge.consolidateTPCollections(
-      dbTPCollections
-    )
+    const [
+      consolidatedCollections,
+      consolidatedTPCollections,
+    ] = await Promise.all([
+      Bridge.consolidateCollections(dbCollections, remoteCollections),
+      Bridge.consolidateTPCollections(dbTPCollections),
+    ])
 
     // Build the full collection
     return consolidatedCollections

@@ -16,14 +16,17 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { UnpublishedItemError } from '../Item/Item.errors'
-import { FullItem, Item } from '../Item'
+import { Item } from '../Item'
 import { isCommitteeMember } from '../Committee'
-import { ItemCurationAttributes } from '../Curation/ItemCuration/ItemCuration.types'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  CollectionAttributes,
+  FullCollection,
+  PublishCollectionResponse,
+} from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
 import { hasTPCollectionURN, isTPCollection, toFullCollection } from './utils'
@@ -246,21 +249,13 @@ export class CollectionRouter extends Router {
 
   publishCollection = async (
     req: AuthRequest
-  ): Promise<{
-    collection: FullCollection
-    items: FullItem[]
-    itemCurations?: ItemCurationAttributes[]
-  }> => {
+  ): Promise<PublishCollectionResponse<FullCollection>> => {
     const id = server.extractFromReq(req, 'id')
 
     try {
       const dbCollection = await this.service.getDBCollection(id)
 
-      let result: {
-        collection: CollectionAttributes
-        items: FullItem[]
-        itemCurations?: ItemCurationAttributes[]
-      }
+      let result: PublishCollectionResponse<CollectionAttributes>
 
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')

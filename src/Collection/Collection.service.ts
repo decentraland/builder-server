@@ -8,7 +8,7 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { InvalidRequestError } from '../utils/errors'
 import { Ownable } from '../Ownable'
-import { FullItem, Item, ItemAttributes } from '../Item'
+import { Item, ItemAttributes } from '../Item'
 import { UnpublishedItemError } from '../Item/Item.errors'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
@@ -21,6 +21,7 @@ import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
 import {
   CollectionAttributes,
   FullCollection,
+  PublishCollectionResponse,
   ThirdPartyCollectionAttributes,
 } from './Collection.types'
 import { Collection } from './Collection.model'
@@ -79,7 +80,7 @@ export class CollectionService {
   public async publishDCLCollection(
     dbCollection: CollectionAttributes,
     dbItems: ItemAttributes[]
-  ) {
+  ): Promise<PublishCollectionResponse<CollectionAttributes>> {
     const remoteCollection = await collectionAPI.fetchCollection(
       dbCollection!.contract_address!
     )
@@ -142,11 +143,7 @@ export class CollectionService {
     dbItems: ItemAttributes[],
     signedMessage: string,
     signature: string
-  ): Promise<{
-    collection: CollectionAttributes
-    items: FullItem[]
-    itemCurations: ItemCurationAttributes[]
-  }> {
+  ): Promise<PublishCollectionResponse<CollectionAttributes>> {
     // For DCL collections, once a published collection item changes, the PUSH CHANGES button appears
     // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
     // Subsequent changes will not show the push changes button, as it's already under_review

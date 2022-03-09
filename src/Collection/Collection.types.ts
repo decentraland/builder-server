@@ -33,3 +33,10 @@ export type FullCollection = Omit<
 > & {
   urn: string | null
 }
+
+export type PublishCheque = {
+  signedMessage: string
+  signature: string
+  qty: number
+  salt: string
+}

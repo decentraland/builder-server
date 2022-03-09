@@ -22,7 +22,11 @@ import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  PublishCheque,
+  CollectionAttributes,
+  FullCollection,
+} from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
 import { hasTPCollectionURN, isTPCollection, toFullCollection } from './utils'
@@ -245,22 +249,27 @@ export class CollectionRouter extends Router {
 
   publishCollection = async (
     req: AuthRequest
-  ): Promise<{ collection: FullCollection; items: FullItem[] }> => {
+  ): Promise<{
+    collection: FullCollection
+    items: FullItem[]
+  }> => {
     const id = server.extractFromReq(req, 'id')
-
     try {
       const dbCollection = await this.service.getDBCollection(id)
 
-      let result: { collection: CollectionAttributes; items: FullItem[] }
+      let result: {
+        collection: CollectionAttributes
+        items: FullItem[]
+      }
 
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
         const dbItems = await Item.findByIds(itemIds)
+
         result = await this.service.publishTPCollection(
           dbCollection,
           dbItems,
-          server.extractFromReq(req, 'signedMessage'),
-          server.extractFromReq(req, 'signature')
+          server.extractFromReq<PublishCheque>(req, 'cheque')
         )
 
         // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)

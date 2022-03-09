@@ -10,6 +10,7 @@ import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
 import { isTPCollection } from '../Collection/utils'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
+import { Item, ThirdPartyItemAttributes } from '../Item'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
@@ -341,10 +342,20 @@ export class CurationRouter extends Router {
       )
     }
 
-    return await curationService.updateStatusAndReturnById(
-      curation.id,
-      curationJSON.status
-    )
+    let fieldsToUpdate: Partial<
+      CollectionCurationAttributes & ItemCurationAttributes
+    > = {
+      status: curationJSON.status,
+    }
+
+    if (type === CurationType.ITEM) {
+      fieldsToUpdate = {
+        ...fieldsToUpdate,
+        content_hash: await this.getCurationItemContentHash(id),
+      }
+    }
+
+    return await curationService.updateById(curation.id, fieldsToUpdate)
   }
 
   private insertCuration = async (
@@ -380,9 +391,21 @@ export class CurationRouter extends Router {
     }
     if (type === CurationType.ITEM) {
       attributes.item_id = id
+      attributes.content_hash = await this.getCurationItemContentHash(id)
     }
 
     return curationService.getModel().create(attributes)
+  }
+
+  private getCurationItemContentHash = async (id: string) => {
+    const dbItem = await Item.findOne<ThirdPartyItemAttributes>(id)
+    if (!dbItem)
+      throw new HTTPError(
+        'There is no curation associated to that item',
+        { id },
+        STATUS_CODES.badRequest
+      )
+    return dbItem.local_content_hash
   }
 
   private validateAccessToCuration = async (

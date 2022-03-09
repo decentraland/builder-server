@@ -1365,9 +1365,9 @@ describe('Collection router', () => {
 
         beforeEach(() => {
           items = [
-            { ...dbTPItemMock, id: uuid() },
-            { ...dbTPItemMock, id: uuid() },
-            { ...dbTPItemMock, id: uuid() },
+            { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash1' },
+            { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash2' },
+            { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash3' },
           ]
           itemIds = items.map((item) => item.id)
           forumLink = 'https://forum.com/some/forum/link'
@@ -1436,6 +1436,7 @@ describe('Collection router', () => {
                     status: CurationStatus.PENDING,
                     created_at: expect.any(Date),
                     updated_at: expect.any(Date),
+                    content_hash: item.local_content_hash,
                   },
                 ])
                 expect(itemCurationCreateSpy.mock.calls).toEqual(

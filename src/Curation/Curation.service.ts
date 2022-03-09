@@ -3,9 +3,12 @@ import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { getMergedCollection } from '../Collection/utils'
 import { hasAccess as hasItemAccess } from '../Item/access'
 import { getMergedItem } from '../Item/utils'
-import { CollectionCuration } from './CollectionCuration'
-import { CurationStatus, CurationType } from './Curation.types'
-import { ItemCuration } from './ItemCuration'
+import {
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from './CollectionCuration'
+import { CurationType } from './Curation.types'
+import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 
 // TODO: This class SHOULD NOT make database queries. It's useful but it breakes the convention we have where only model know about queries
 export class CurationService<
@@ -69,12 +72,20 @@ export class CurationService<
     return result[0]
   }
 
-  async updateStatusAndReturnById(id: string, status: CurationStatus) {
+  async updateById(
+    id: string,
+    fields: Partial<CollectionCurationAttributes & ItemCurationAttributes>
+  ) {
+    const valuesToSet = Object.entries(fields)
+      .map(([key, value]) => `${key} = '${value}'`)
+      .join(', ')
+
     const result = await this.getModel().query(SQL`
       UPDATE ${raw(this.getTableName())}
-      SET status = ${status}, updated_at = ${new Date()}
+      SET ${raw(valuesToSet)}
       WHERE id = ${id}
-      RETURNING *`)
+      RETURNING *
+    `)
     return result[0]
   }
 

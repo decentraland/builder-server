@@ -8,7 +8,7 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { InvalidRequestError } from '../utils/errors'
 import { Ownable } from '../Ownable'
-import { Item, ItemAttributes } from '../Item'
+import { Item, ItemAttributes, ThirdPartyItemAttributes } from '../Item'
 import { UnpublishedItemError } from '../Item/Item.errors'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
@@ -140,7 +140,7 @@ export class CollectionService {
    */
   public async publishTPCollection(
     dbCollection: ThirdPartyCollectionAttributes,
-    dbItems: ItemAttributes[],
+    dbItems: ThirdPartyItemAttributes[],
     signedMessage: string,
     signature: string
   ): Promise<PublishCollectionResponse<CollectionAttributes>> {
@@ -206,6 +206,7 @@ export class CollectionService {
           status: CurationStatus.PENDING,
           created_at: now,
           updated_at: now,
+          content_hash: item.local_content_hash,
         })
       )
     }

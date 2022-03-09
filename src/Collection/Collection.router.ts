@@ -265,20 +265,11 @@ export class CollectionRouter extends Router {
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
         const dbItems = await Item.findByIds(itemIds)
-        const {
-          signedMessage,
-          signature,
-          salt,
-          qty,
-        } = server.extractFromReq<PublishCheque>(req, 'cheque')
 
         result = await this.service.publishTPCollection(
           dbCollection,
           dbItems,
-          signedMessage,
-          signature,
-          qty,
-          salt
+          server.extractFromReq<PublishCheque>(req, 'cheque')
         )
 
         // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)

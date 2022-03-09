@@ -21,6 +21,7 @@ import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
 import {
   CollectionAttributes,
   FullCollection,
+  PublishCheque,
   ThirdPartyCollectionAttributes,
 } from './Collection.types'
 import { Collection } from './Collection.model'
@@ -140,10 +141,7 @@ export class CollectionService {
   public async publishTPCollection(
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ItemAttributes[],
-    signedMessage: string,
-    signature: string,
-    qty: number,
-    salt: string
+    cheque: PublishCheque
   ): Promise<{
     collection: CollectionAttributes
     items: FullItem[]
@@ -156,6 +154,8 @@ export class CollectionService {
     // That should fire /items/:id/curation for each item that changed
 
     // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items
+
+    const { signedMessage, signature, qty, salt } = cheque
 
     if (dbItems.length === 0) {
       throw new InvalidRequestError('Tried to publish no TP items')

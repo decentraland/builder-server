@@ -1,4 +1,5 @@
 import { raw, SQL } from 'decentraland-server'
+import { database } from '../database/database'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { getMergedCollection } from '../Collection/utils'
 import { hasAccess as hasItemAccess } from '../Item/access'
@@ -76,17 +77,15 @@ export class CurationService<
     id: string,
     fields: Partial<CollectionCurationAttributes & ItemCurationAttributes>
   ) {
-    const assignmentFields = Object.keys(fields)
-      .map((column, index) => `"${column}" = $${index + 1}`)
-      .join(', ')
+    const assignmentFields = database.toAssignmentFields(fields, 1) // offset the id
 
     const result = await this.getModel().query(
       ` UPDATE ${this.getTableName()}
         SET ${assignmentFields}
-        WHERE id = $${Object.keys(fields).length + 1}
+        WHERE id = $1
         RETURNING *
       `,
-      [...Object.values(fields), id]
+      [id, ...Object.values(fields)]
     )
 
     return result[0]

@@ -356,7 +356,7 @@ export class CurationRouter extends Router {
       }
     }
 
-    return await curationService.updateById(curation.id, fieldsToUpdate)
+    return curationService.updateById(curation.id, fieldsToUpdate)
   }
 
   private insertCuration = async (

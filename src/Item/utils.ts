@@ -11,7 +11,11 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
 import { NonExistentItemError, UnpublishedItemError } from './Item.errors'
 import { Item } from './Item.model'
-import { FullItem, ItemAttributes } from './Item.types'
+import {
+  FullItem,
+  ItemAttributes,
+  ThirdPartyItemAttributes,
+} from './Item.types'
 
 export const MAX_FORUM_ITEMS = 20
 
@@ -57,7 +61,7 @@ export function buildTPItemURN(
 
 export function isTPItem(
   item: ItemAttributes
-): item is ItemAttributes & { urn_suffix: string; collection_id: string } {
+): item is ThirdPartyItemAttributes {
   return item.urn_suffix !== null && item.collection_id !== null
 }
 

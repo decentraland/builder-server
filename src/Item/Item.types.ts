@@ -45,6 +45,7 @@ export type ItemAttributes = {
 export type ThirdPartyItemAttributes = ItemAttributes & {
   urn_suffix: string
   collection_id: string
+  local_content_hash: string
 }
 
 export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {

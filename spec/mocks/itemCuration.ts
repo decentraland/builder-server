@@ -9,4 +9,5 @@ export const itemCurationMock: ItemCurationAttributes = {
   status: CurationStatus.APPROVED,
   created_at: new Date(),
   updated_at: new Date(),
+  content_hash: 'aHash',
 }

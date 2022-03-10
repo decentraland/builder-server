@@ -450,11 +450,11 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce({ id: 'curationId' } as any)
 
           jest
-            .spyOn(service, 'updateStatusAndReturnById')
+            .spyOn(service, 'updateById')
             .mockResolvedValueOnce(expectedCuration)
 
           updateSpy = jest
-            .spyOn(service, 'updateStatusAndReturnById')
+            .spyOn(service, 'updateById')
             .mockResolvedValueOnce(expectedCuration)
         })
 
@@ -467,10 +467,10 @@ describe('when handling a request', () => {
         it('should call the update method with the right data', async () => {
           await router.updateCollectionCuration(req)
 
-          expect(updateSpy).toHaveBeenCalledWith(
-            'curationId',
-            CurationStatus.REJECTED
-          )
+          expect(updateSpy).toHaveBeenCalledWith('curationId', {
+            status: CurationStatus.REJECTED,
+            updated_at: new Date(),
+          })
         })
       })
 
@@ -486,19 +486,24 @@ describe('when handling a request', () => {
           } as ItemCurationAttributes
 
           jest
-            .spyOn(service, 'updateStatusAndReturnById')
+            .spyOn(service, 'updateById')
             .mockResolvedValueOnce(expectedCuration)
 
           jest
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
 
+          jest.spyOn(Item, 'findOne').mockResolvedValueOnce({
+            id: 'itemId',
+            local_content_hash: 'hash1',
+          } as any)
+
           collectionUpdateSpy = jest
             .spyOn(CollectionCuration, 'updateByItemId')
             .mockResolvedValueOnce({ rowCount: 1 })
 
           itemUpdateSpy = jest
-            .spyOn(service, 'updateStatusAndReturnById')
+            .spyOn(service, 'updateById')
             .mockResolvedValueOnce(expectedCuration)
         })
 
@@ -511,10 +516,11 @@ describe('when handling a request', () => {
         it('should call the update method with the right data', async () => {
           await router.updateItemCuration(req)
 
-          expect(itemUpdateSpy).toHaveBeenCalledWith(
-            'curationId',
-            CurationStatus.REJECTED
-          )
+          expect(itemUpdateSpy).toHaveBeenCalledWith('curationId', {
+            status: CurationStatus.REJECTED,
+            content_hash: 'hash1',
+            updated_at: new Date(),
+          })
         })
 
         it('should update the updated_at property of the collection curation', async () => {
@@ -717,7 +723,7 @@ describe('when handling a request', () => {
         let collectionService: CurationService<any>
 
         beforeEach(() => {
-          item = { ...dbItemMock }
+          item = { ...dbItemMock, local_content_hash: 'hash1' }
           service = mockServiceWithAccess(ItemCuration, true)
           collectionService = mockServiceWithAccess(CollectionCuration, true)
 
@@ -742,6 +748,7 @@ describe('when handling a request', () => {
             status: CurationStatus.PENDING,
             created_at: expect.any(Date),
             updated_at: expect.any(Date),
+            content_hash: item.local_content_hash,
           })
         })
       })

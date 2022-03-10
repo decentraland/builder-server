@@ -1,11 +1,15 @@
 import { raw, SQL } from 'decentraland-server'
+import { database } from '../database/database'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { getMergedCollection } from '../Collection/utils'
 import { hasAccess as hasItemAccess } from '../Item/access'
 import { getMergedItem } from '../Item/utils'
-import { CollectionCuration } from './CollectionCuration'
-import { CurationStatus, CurationType } from './Curation.types'
-import { ItemCuration } from './ItemCuration'
+import {
+  CollectionCuration,
+  CollectionCurationAttributes,
+} from './CollectionCuration'
+import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import { CurationType } from './Curation.types'
 
 // TODO: This class SHOULD NOT make database queries. It's useful but it breakes the convention we have where only model know about queries
 export class CurationService<
@@ -69,12 +73,21 @@ export class CurationService<
     return result[0]
   }
 
-  async updateStatusAndReturnById(id: string, status: CurationStatus) {
-    const result = await this.getModel().query(SQL`
-      UPDATE ${raw(this.getTableName())}
-      SET status = ${status}, updated_at = ${new Date()}
-      WHERE id = ${id}
-      RETURNING *`)
+  async updateById(
+    id: string,
+    fields: Partial<CollectionCurationAttributes & ItemCurationAttributes>
+  ) {
+    const assignmentFields = database.toAssignmentFields(fields, 1) // offset the id
+
+    const result = await this.getModel().query(
+      ` UPDATE ${this.getTableName()}
+        SET ${assignmentFields}
+        WHERE id = $1
+        RETURNING *
+      `,
+      [id, ...Object.values(fields)]
+    )
+
     return result[0]
   }
 

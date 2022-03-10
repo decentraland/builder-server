@@ -16,7 +16,7 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { UnpublishedItemError } from '../Item/Item.errors'
-import { Item } from '../Item'
+import { Item, ThirdPartyItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
@@ -259,8 +259,9 @@ export class CollectionRouter extends Router {
 
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
-        const dbItems = await Item.findByIds(itemIds)
-
+        const dbItems = (await Item.findByIds(
+          itemIds
+        )) as ThirdPartyItemAttributes[]
         result = await this.service.publishTPCollection(
           dbCollection,
           dbItems,

@@ -223,6 +223,7 @@ export class CollectionService {
             id: uuid(),
             item_id: item.id,
             status: CurationStatus.PENDING,
+            content_hash: item.local_content_hash,
             created_at: now,
             updated_at: now,
           })
@@ -245,7 +246,6 @@ export class CollectionService {
           status: CurationStatus.PENDING,
           created_at: now,
           updated_at: now,
-          content_hash: item.local_content_hash,
         })
       }
     } catch (error) {

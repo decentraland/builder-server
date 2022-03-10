@@ -469,7 +469,7 @@ describe('when handling a request', () => {
 
           expect(updateSpy).toHaveBeenCalledWith('curationId', {
             status: CurationStatus.REJECTED,
-            updated_at: new Date(),
+            updated_at: expect.any(Date),
           })
         })
       })
@@ -519,7 +519,7 @@ describe('when handling a request', () => {
           expect(itemUpdateSpy).toHaveBeenCalledWith('curationId', {
             status: CurationStatus.REJECTED,
             content_hash: 'hash1',
-            updated_at: new Date(),
+            updated_at: expect.any(Date),
           })
         })
 

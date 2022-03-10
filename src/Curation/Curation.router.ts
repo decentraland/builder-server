@@ -351,7 +351,7 @@ export class CurationRouter extends Router {
     if (type === CurationType.ITEM) {
       fieldsToUpdate = {
         ...fieldsToUpdate,
-        content_hash: await this.getCurationItemContentHash(id),
+        content_hash: await this.getItemCurationContentHash(id),
       }
     }
 
@@ -391,13 +391,13 @@ export class CurationRouter extends Router {
     }
     if (type === CurationType.ITEM) {
       attributes.item_id = id
-      attributes.content_hash = await this.getCurationItemContentHash(id)
+      attributes.content_hash = await this.getItemCurationContentHash(id)
     }
 
     return curationService.getModel().create(attributes)
   }
 
-  private getCurationItemContentHash = async (id: string) => {
+  private getItemCurationContentHash = async (id: string) => {
     const dbItem = await Item.findOne<ThirdPartyItemAttributes>(id)
     if (!dbItem)
       throw new HTTPError(

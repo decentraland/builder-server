@@ -1374,6 +1374,84 @@ describe('Collection router', () => {
         })
       })
 
+      describe('and interating with the database fails', () => {
+        let slotUsageChequeDeleteSpy: jest.SpyInstance<
+          ReturnType<typeof SlotUsageCheque.delete>
+        >
+        let itemCurationDeleteSpy: jest.SpyInstance<
+          ReturnType<typeof ItemCuration.delete>
+        >
+
+        beforeEach(() => {
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbItemMock])
+          ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
+            undefined
+          )
+          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+
+          jest.spyOn(SlotUsageCheque, 'create').mockResolvedValueOnce({})
+
+          jest
+            .spyOn(ItemCuration, 'create')
+            .mockRejectedValueOnce(new Error('Database error'))
+
+          slotUsageChequeDeleteSpy = jest
+            .spyOn(SlotUsageCheque, 'delete')
+            .mockResolvedValue('')
+
+          itemCurationDeleteSpy = jest
+            .spyOn(ItemCuration, 'delete')
+            .mockResolvedValue('')
+        })
+
+        it('should respond with a 400 and a message signaling that the database errored out', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [dbItemMock.id],
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error: 'An error occurred trying to publish: Database error',
+              })
+            })
+        })
+
+        it('should rollback the created data by date', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [dbItemMock.id],
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
+            })
+            .expect(400)
+            .then(() => {
+              expect(slotUsageChequeDeleteSpy).toHaveBeenCalledWith({
+                created_at: expect.any(Date),
+              })
+              expect(itemCurationDeleteSpy).toHaveBeenCalledWith({
+                created_at: expect.any(Date),
+              })
+            })
+        })
+      })
+
       describe('when the supplied data is correct', () => {
         let itemCurationCreateSpy: jest.SpyInstance<
           ReturnType<typeof ItemCuration.create>
@@ -1399,6 +1477,7 @@ describe('Collection router', () => {
           ])
           ;(createPost as jest.Mock).mockResolvedValueOnce(forumLink)
           ;(SlotUsageCheque.create as jest.Mock).mockResolvedValueOnce({})
+
           itemCurationCreateSpy = jest
             .spyOn(ItemCuration, 'create')
             .mockResolvedValue(itemCurationMock)

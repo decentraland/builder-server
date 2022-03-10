@@ -183,7 +183,7 @@ export class ItemRouter extends Router {
     }
 
     const [dbItems, remoteItems, dbTPItems, itemCurations] = await Promise.all([
-      Item.find<ItemAttributes>({ eth_address, urn_suffix: null }),
+      Item.findNonThirdPartyItemsByOwner(eth_address),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
       this.itemService.getTPItemsByManager(eth_address),
       ItemCuration.find<ItemCurationAttributes>(),

@@ -63,4 +63,12 @@ export class Item extends Model<ItemAttributes> {
         INNER JOIN ${raw(Collection.tableName)} c ON i.collection_id = c.id
         WHERE ${where}`)
   }
+
+  static findNonThirdPartyItemsByOwner(owner: string) {
+    return this.query<ItemAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE eth_address = ${owner}
+        AND urn_suffix IS NULL`)
+  }
 }

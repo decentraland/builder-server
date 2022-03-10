@@ -76,16 +76,19 @@ export class CurationService<
     id: string,
     fields: Partial<CollectionCurationAttributes & ItemCurationAttributes>
   ) {
-    const valuesToSet = Object.entries(fields)
-      .map(([key, value]) => `${key} = '${value}'`)
+    const assignmentFields = Object.keys(fields)
+      .map((column, index) => `"${column}" = $${index + 1}`)
       .join(', ')
 
-    const result = await this.getModel().query(SQL`
-      UPDATE ${raw(this.getTableName())}
-      SET ${raw(valuesToSet)}
-      WHERE id = ${id}
-      RETURNING *
-    `)
+    const result = await this.getModel().query(
+      ` UPDATE ${this.getTableName()}
+        SET ${assignmentFields}
+        WHERE id = $${Object.keys(fields).length + 1}
+        RETURNING *
+      `,
+      [...Object.values(fields), id]
+    )
+
     return result[0]
   }
 

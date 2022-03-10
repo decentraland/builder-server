@@ -346,6 +346,7 @@ export class CurationRouter extends Router {
       CollectionCurationAttributes & ItemCurationAttributes
     > = {
       status: curationJSON.status,
+      updated_at: new Date(),
     }
 
     if (type === CurationType.ITEM) {

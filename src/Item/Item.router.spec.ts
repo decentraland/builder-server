@@ -297,7 +297,7 @@ describe('Item router', () => {
 
   describe('when getting all the items of an address', () => {
     beforeEach(() => {
-      ;(Item.find as jest.Mock).mockResolvedValueOnce([
+      ;(Item.findNonThirdPartyItemsByOwner as jest.Mock).mockResolvedValueOnce([
         dbItem,
         dbItemNotPublished,
       ])

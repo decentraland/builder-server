@@ -4,13 +4,6 @@ import { CollectionAttributes } from './Collection.types'
 export class Collection extends Model<CollectionAttributes> {
   static tableName = 'collections'
 
-  static findByContractAddresses(contractAddresses: string[]) {
-    return this.query<CollectionAttributes>(SQL`
-    SELECT *
-      FROM ${raw(this.tableName)}
-      WHERE contract_address = ANY(${contractAddresses})`)
-  }
-
   static findByIds(ids: string[]) {
     return this.query<CollectionAttributes>(SQL`
     SELECT *
@@ -23,6 +16,13 @@ export class Collection extends Model<CollectionAttributes> {
     SELECT *
       FROM ${raw(this.tableName)}
       WHERE third_party_id = ANY(${thirdPartyIds})`)
+  }
+
+  static findByContractAddresses(contractAddresses: string[]) {
+    return this.query<CollectionAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE contract_address = ANY(${contractAddresses})`)
   }
 
   static async isURNRepeated(

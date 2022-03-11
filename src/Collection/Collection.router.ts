@@ -15,8 +15,11 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
-import { UnpublishedItemError } from '../Item/Item.errors'
-import { Item, ThirdPartyItemAttributes } from '../Item'
+import {
+  UnpublishedItemError,
+  InconsistentItemError,
+} from '../Item/Item.errors'
+import { Item, ThirdPartyItemAttributes, ItemApprovalData } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
@@ -122,6 +125,14 @@ export class CollectionRouter extends Router {
       server.handleRequest(this.lockCollection)
     )
 
+    this.router.get(
+      '/collections/:id/approvalData',
+      withAuthentication,
+      withCollectionExists,
+      withCollectionAuthorization,
+      server.handleRequest(this.getApprovalData)
+    )
+
     /**
      * Upserts the collection
      * Important! Collection authorization is done inside the handler
@@ -143,6 +154,39 @@ export class CollectionRouter extends Router {
       withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
+  }
+
+  getApprovalData = async (req: AuthRequest): Promise<ItemApprovalData[]> => {
+    const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
+
+    try {
+      return await this.service.getApprovalData(id)
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          error.message,
+          { id, eth_address },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof WrongCollectionError) {
+        throw new HTTPError(error.message, error.data, STATUS_CODES.conflict)
+      } else if (error instanceof UnpublishedCollectionError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.unauthorized
+        )
+      } else if (error instanceof InconsistentItemError) {
+        throw new HTTPError(
+          error.message,
+          { id, eth_address },
+          STATUS_CODES.error
+        )
+      }
+
+      throw error
+    }
   }
 
   getCollections = async (req: AuthRequest): Promise<FullCollection[]> => {

@@ -1,7 +1,8 @@
 import { Model, SQL, raw } from 'decentraland-server'
 import { Collection } from '../Collection'
-
-import { ItemAttributes } from './Item.types'
+import { CurationStatus } from '../Curation'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { DBItemApprovalData, ItemAttributes } from './Item.types'
 
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
@@ -13,6 +14,17 @@ export class Item extends Model<ItemAttributes> {
         WHERE id = ANY(${ids})`)
   }
 
+  static findDBApprovalDataByCollectionId(collectionId: string) {
+    return this.query<DBItemApprovalData>(SQL`
+      SELECT items.id, items.urn_suffix, item_curations.local_content_hash
+        FROM ${raw(this.tableName)} items
+        JOIN ${raw(
+          ItemCuration.tableName
+        )} item_curations ON items.id = item_curations.item_id AND
+        WHERE items.collection_id = ${collectionId}
+          AND item_curations.status = ${CurationStatus.PENDING}`)
+  }
+
   static findByCollectionIds(collectionIds: string[]) {
     return this.query<ItemAttributes>(SQL`
       SELECT *
@@ -22,12 +34,12 @@ export class Item extends Model<ItemAttributes> {
 
   static findByThirdPartyIds(thirdPartyIds: string[]) {
     return this.query<ItemAttributes>(SQL`
-      SELECT item.*
-        FROM ${raw(this.tableName)} item 
+      SELECT items.*
+        FROM ${raw(this.tableName)} items 
         JOIN ${raw(
           Collection.tableName
-        )} collection ON collection.id = item.collection_id
-        WHERE collection.third_party_id = ANY(${thirdPartyIds})`)
+        )} collections ON collections.id = item.collection_id
+        WHERE collections.third_party_id = ANY(${thirdPartyIds})`)
   }
 
   static findOrderedByCollectionId(
@@ -53,14 +65,16 @@ export class Item extends Model<ItemAttributes> {
       const { blockchainId, collectionAddress } = entry
       const or = index > 0 ? SQL` OR ` : SQL``
       where.append(
-        SQL`${or} (i.blockchain_item_id = ${blockchainId} AND c.contract_address = ${collectionAddress})`
+        SQL`${or} (items.blockchain_item_id = ${blockchainId} AND collections.contract_address = ${collectionAddress})`
       )
     }
 
     return this.query<ItemAttributes>(SQL`
-      SELECT i.*
-        FROM ${raw(this.tableName)} i
-        INNER JOIN ${raw(Collection.tableName)} c ON i.collection_id = c.id
+      SELECT items.*
+        FROM ${raw(this.tableName)} items
+        INNER JOIN ${raw(
+          Collection.tableName
+        )} collections ON items.collection_id = collections.id
         WHERE ${where}`)
   }
 

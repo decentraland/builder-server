@@ -115,6 +115,7 @@ export const dbItemMock: ItemAttributes = {
   collection_id: dbCollectionMock.id,
   blockchain_item_id: '0',
   price: '',
+  content_hash: '',
   beneficiary: '',
   rarity: ItemRarity.COMMON,
   type: ItemType.WEARABLE,

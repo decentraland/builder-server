@@ -17,7 +17,6 @@ export function migrate(
   }
 
   const spawnArgs = [
-    '--no-check-order',
     '--database-url-var',
     'CONNECTION_STRING',
     '--migration-file-language',

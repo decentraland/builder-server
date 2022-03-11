@@ -34,12 +34,14 @@ export class Item extends Model<ItemAttributes> {
 
   static findByThirdPartyIds(thirdPartyIds: string[]) {
     return this.query<ItemAttributes>(SQL`
-      SELECT items.*
-        FROM ${raw(this.tableName)} items 
-        JOIN ${raw(
+      SELECT ${raw(this.tableName)}.*
+        FROM ${raw(this.tableName)}
+        JOIN ${raw(Collection.tableName)} ON collections.id = ${raw(
+      this.tableName
+    )}.collection_id
+        WHERE ${raw(
           Collection.tableName
-        )} collections ON collections.id = item.collection_id
-        WHERE collections.third_party_id = ANY(${thirdPartyIds})`)
+        )}.third_party_id = ANY(${thirdPartyIds})`)
   }
 
   static findOrderedByCollectionId(

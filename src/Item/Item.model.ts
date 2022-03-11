@@ -39,7 +39,7 @@ export class Item extends Model<ItemAttributes> {
     return this.query<ItemAttributes>(SQL`
       SELECT ${itemsTable}.*
         FROM ${itemsTable}
-        JOIN ${collectionsTable} ON collections.id = ${itemsTable}.collection_id
+        JOIN ${collectionsTable} ON ${collectionsTable}.id = ${itemsTable}.collection_id
         WHERE ${collectionsTable}.third_party_id = ANY(${thirdPartyIds})`)
   }
 

@@ -1,13 +1,77 @@
-// import { env } from 'decentraland-commons'
+import { server } from 'decentraland-server'
+import { Request } from 'express'
+import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { Router } from '../common/Router'
-
-// const OPEN_SEA_URL = env.get<string | undefined>('OPEN_SEA_URL')!
-// const OPEN_SEA_API_KEY = env.get<string | undefined>('OPEN_SEA_API_KEY')!
+import { NFTService } from './NFT.service'
 
 export class NFTRouter extends Router {
+  private readonly nftService = new NFTService()
+
   mount() {
-    this.router.get('/nfts', (_req, res) => {
-      res.send('howdy')
-    })
+    this.router.get('/nfts', server.handleRequest(this.getNFTs))
+  }
+
+  private getNFTs = async (req: Request) => {
+    let owner: string | undefined
+    let first: number | undefined
+    let skip: number | undefined
+
+    // Parse and validate query parameters
+    const { query } = req
+
+    if (query.owner) {
+      owner = query.owner.toString()
+    }
+
+    if (query.first) {
+      first = +query.first
+
+      if (Number.isNaN(first)) {
+        throw new HTTPError(
+          'first is not a number',
+          { first: query.first },
+          STATUS_CODES.badRequest
+        )
+      }
+
+      if (first < 0) {
+        throw new HTTPError(
+          'first must be a positive number',
+          { first: query.first },
+          STATUS_CODES.badRequest
+        )
+      }
+    }
+
+    if (query.skip) {
+      skip = +query.skip
+
+      if (Number.isNaN(skip)) {
+        throw new HTTPError(
+          'skip is not a number',
+          { skip: query.skip },
+          STATUS_CODES.badRequest
+        )
+      }
+
+      if (skip < 0) {
+        throw new HTTPError(
+          'skip must be a positive number',
+          { skip: query.skip },
+          STATUS_CODES.badRequest
+        )
+      }
+
+      if (!first) {
+        throw new HTTPError(
+          'skip requires first to be provided',
+          { first: query.skip },
+          STATUS_CODES.badRequest
+        )
+      }
+    }
+
+    // Get nfts from service
+    return this.nftService.getNFTs({ owner, first, skip })
   }
 }

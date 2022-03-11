@@ -35,10 +35,10 @@ export class Item extends Model<ItemAttributes> {
   static findByThirdPartyIds(thirdPartyIds: string[]) {
     return this.query<ItemAttributes>(SQL`
       SELECT items.*
-        FROM ${raw(this.tableName)} items 
+        FROM ${raw(this.tableName)} items
         JOIN ${raw(
           Collection.tableName
-        )} collections ON collections.id = item.collection_id
+        )} collections ON collections.id = items.collection_id
         WHERE collections.third_party_id = ANY(${thirdPartyIds})`)
   }
 

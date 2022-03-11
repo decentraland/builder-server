@@ -33,15 +33,14 @@ export class Item extends Model<ItemAttributes> {
   }
 
   static findByThirdPartyIds(thirdPartyIds: string[]) {
+    const itemsTable = raw(this.tableName)
+    const collectionsTable = raw(Collection.tableName)
+
     return this.query<ItemAttributes>(SQL`
-      SELECT ${raw(this.tableName)}.*
-        FROM ${raw(this.tableName)}
-        JOIN ${raw(Collection.tableName)} ON collections.id = ${raw(
-      this.tableName
-    )}.collection_id
-        WHERE ${raw(
-          Collection.tableName
-        )}.third_party_id = ANY(${thirdPartyIds})`)
+      SELECT ${itemsTable}.*
+        FROM ${itemsTable}
+        JOIN ${collectionsTable} ON collections.id = ${itemsTable}.collection_id
+        WHERE ${collectionsTable}.third_party_id = ANY(${thirdPartyIds})`)
   }
 
   static findOrderedByCollectionId(

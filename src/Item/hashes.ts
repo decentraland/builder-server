@@ -20,6 +20,14 @@ export function buildStandardWearableEntityMetadata(
   collection: CollectionAttributes
 ): StandardWearableEntityMetadata {
   if (!collection.contract_address || !item.blockchain_item_id!) {
+    console.log({
+      contract_address: collection.contract_address,
+      blockchain_item_id: item.blockchain_item_id,
+    })
+    console.log({
+      collection,
+      item,
+    })
     throw new Error(
       "The item's collection must be published to build its metadata"
     )
@@ -71,11 +79,34 @@ function buildTPWearableEntityMetadata(
   }
 }
 
-async function calculateContentHash(
-  content: EntityContentItemReference[],
-  metadata: EntityMetadata
-) {
-  // The stringify procedure doesn't ensure that the keys will always have the same order when printed.
+function getItemContent(item: ItemAttributes): EntityContentItemReference[] {
+  return Object.keys(item.contents).map((file) => ({
+    file,
+    hash: item.contents[file],
+  }))
+}
+
+function getItemMetadata(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+): EntityMetadata {
+  let metadata: StandardWearableEntityMetadata | TPWearableEntityMetadata
+
+  if (isTPCollection(collection) && isTPItem(item)) {
+    metadata = buildTPWearableEntityMetadata(item, collection)
+  } else {
+    metadata = buildStandardWearableEntityMetadata(item, collection)
+  }
+  return metadata
+}
+
+export function toBuffer(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+): Buffer {
+  const content = getItemContent(item)
+  const metadata = getItemMetadata(item, collection)
+
   const data = JSON.stringify({
     content: content
       .sort((a: EntityContentItemReference, b: EntityContentItemReference) => {
@@ -86,26 +117,12 @@ async function calculateContentHash(
       .map((entry) => ({ key: entry.file, hash: entry.hash })),
     metadata,
   })
-  const buffer = Buffer.from(data)
-  return Hashing.calculateIPFSHash(buffer)
+  return Buffer.from(data)
 }
 
-export async function calculateItemContentHash(
+export function calculateItemContentHash(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): Promise<string> {
-  const content = Object.keys(item.contents).map((file) => ({
-    file,
-    hash: item.contents[file],
-  }))
-
-  let metadata: StandardWearableEntityMetadata | TPWearableEntityMetadata
-
-  if (isTPCollection(collection) && isTPItem(item)) {
-    metadata = await buildTPWearableEntityMetadata(item, collection)
-  } else {
-    metadata = await buildStandardWearableEntityMetadata(item, collection)
-  }
-
-  return calculateContentHash(content, metadata)
+  return Hashing.calculateIPFSHash(toBuffer(item, collection))
 }

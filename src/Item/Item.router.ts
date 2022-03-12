@@ -166,7 +166,8 @@ export class ItemRouter extends Router {
       Bridge.consolidateTPItems(tpItems, itemCurations),
     ])
 
-    // TODO: sorting (we're not breaking pagination)
+    // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.
+    //       We'll need to add it after concatenating, cause if we don't it will have a different order each time
     return fullItems.concat(fullTPItems)
   }
 

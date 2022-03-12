@@ -83,6 +83,18 @@ export class Item extends Model<ItemAttributes> {
       SELECT *
         FROM ${raw(this.tableName)}
         WHERE eth_address = ${owner}
-        AND urn_suffix IS NULL`)
+          AND urn_suffix IS NULL`)
+  }
+
+  static findWithMissingLocalContentHash() {
+    return this.query<ItemAttributes>(SQL`
+      SELECT items.*
+      FROM ${raw(Item.tableName)} items
+      JOIN ${raw(
+        Collection.tableName
+      )} collections ON collections.id = items.collection_id
+      WHERE items.local_content_hash IS NULL
+        AND items.blockchain_item_id IS NOT NULL
+        AND collections.contract_address IS NOT NULL`)
   }
 }

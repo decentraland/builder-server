@@ -211,6 +211,7 @@ export class CollectionRouter extends Router {
       this.service.getDbTPCollections(),
     ])
 
+    // TODO: this is wrong. Missing something like ItemService's splitItems
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
       remoteCollections

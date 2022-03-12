@@ -1,4 +1,5 @@
 import { Model, raw, SQL } from 'decentraland-server'
+import { Item } from '../Item'
 import { CollectionAttributes } from './Collection.types'
 
 export class Collection extends Model<CollectionAttributes> {
@@ -16,6 +17,15 @@ export class Collection extends Model<CollectionAttributes> {
     SELECT *
       FROM ${raw(this.tableName)}
       WHERE third_party_id = ANY(${thirdPartyIds})`)
+  }
+
+  static findByItemIds(ids: string[]) {
+    return this.query<CollectionAttributes>(SQL`
+      SELECT collections.*
+        FROM ${raw(this.tableName)} collections
+        JOIN ${raw(
+          Item.tableName
+        )} items ON items.collection_id = collections.id AND items.id = ANY(${ids})`)
   }
 
   static findByContractAddresses(contractAddresses: string[]) {

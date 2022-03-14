@@ -5,6 +5,11 @@ export type GetNFTsParams = {
   cursor?: string
 }
 
+export type GetNFTParams = {
+  contractAddress: string
+  tokenId: string
+}
+
 export type NFT = {
   tokenId: string
   name: string

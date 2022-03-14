@@ -3,12 +3,17 @@ import { Request } from 'express'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { Router } from '../common/Router'
 import { NFTService } from './NFT.service'
+import { GetNFTsResponse, NFT } from './NFT.types'
 
 export class NFTRouter extends Router {
   private readonly nftService = new NFTService()
 
   mount() {
     this.router.get('/nfts', server.handleRequest(this.getNFTs))
+    this.router.get(
+      '/nfts/:contractAddress/:tokenId',
+      server.handleRequest(this.getNFT)
+    )
   }
 
   private getNFTs = async (req: Request) => {
@@ -80,7 +85,47 @@ export class NFTRouter extends Router {
       cursor = query.cursor.toString()
     }
 
-    // Get nfts from service
-    return this.nftService.getNFTs({ owner, first, skip, cursor })
+    let nfts: GetNFTsResponse
+
+    // Get NFTs from service
+    try {
+      nfts = await this.nftService.getNFTs({ owner, first, skip, cursor })
+    } catch (e) {
+      throw new HTTPError(
+        'Failed to fetch NFTs from external sources',
+        {},
+        STATUS_CODES.error
+      )
+    }
+
+    return nfts
+  }
+
+  private getNFT = async (req: Request) => {
+    const { contractAddress, tokenId } = req.params
+
+    let nft: NFT | undefined
+
+    // Get NFT from service
+    try {
+      nft = await this.nftService.getNFT({ contractAddress, tokenId })
+    } catch (e) {
+      throw new HTTPError(
+        'Failed to fetch NFT from external sources',
+        { contractAddress, tokenId },
+        STATUS_CODES.error
+      )
+    }
+
+    // Map to a 404 error if undefined is returned by the service
+    if (!nft) {
+      throw new HTTPError(
+        'NFT not found',
+        { contractAddress, tokenId },
+        STATUS_CODES.notFound
+      )
+    }
+
+    return nft
   }
 }

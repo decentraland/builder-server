@@ -5,7 +5,9 @@ import { Bridge } from '../src/ethereum/api/Bridge'
 import { Item } from '../src/Item'
 import { toBuffer } from '../src/Item/hashes'
 
-export async function main() {
+export async function setMissingContentHash() {
+  await db.connect()
+
   const items = await Item.findWithMissingLocalContentHash()
   const itemIds = items.map((item) => item.id)
 
@@ -22,14 +24,13 @@ export async function main() {
 
   for (const [index, item] of items.entries()) {
     const collection = collectionIndex[item.collection_id!]
-    const contentHash = await Hashing.calculateBufferHash(
-      toBuffer(item, collection)
-    )
 
-    console.log(`Updating item ${item.id} with hash ${contentHash}`)
-    batch.push(
+    const buffer = toBuffer(item, collection)
+    const promise = Hashing.calculateBufferHash(buffer).then((contentHash) =>
       Item.update({ local_content_hash: contentHash }, { id: item.id })
     )
+
+    batch.push(promise)
 
     if (batch.length === batchSize) {
       console.log(
@@ -41,13 +42,13 @@ export async function main() {
   }
 
   if (batch.length > 0) {
+    console.log(`Running batch ${totalBatches}/${totalBatches}`)
     await Promise.all(batch)
   }
 }
 
 if (require.main === module) {
-  db.connect()
-    .then(main)
+  setMissingContentHash()
     .then(() => {
       console.log('All done!')
       process.exit()

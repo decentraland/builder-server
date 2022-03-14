@@ -2,6 +2,7 @@ export type GetNFTsParams = {
   owner?: string
   first?: number
   skip?: number
+  cursor?: string
 }
 
 export type NFT = {
@@ -12,4 +13,10 @@ export type NFT = {
     name: string
     address: string
   }
+}
+
+export type GetNFTsResponse = {
+  next: string | null
+  previous: string | null
+  nfts: NFT[]
 }

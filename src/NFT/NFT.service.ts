@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
-import { GetNFTsParams, NFT } from './NFT.types'
+import { GetNFTsParams, GetNFTsResponse } from './NFT.types'
 
 const OPEN_SEA_URL = (() => {
   const value = env.get<string | undefined>('OPEN_SEA_URL')
@@ -19,9 +19,12 @@ const OPEN_SEA_API_KEY = (() => {
 })()
 
 export class NFTService {
-  public getNFTs = async (args: GetNFTsParams = {}): Promise<NFT[]> => {
-    const { owner, first, skip } = args
-
+  public getNFTs = async ({
+    owner,
+    first,
+    skip,
+    cursor,
+  }: GetNFTsParams = {}): Promise<GetNFTsResponse> => {
     // Build query params for request
     const params: string[] = []
 
@@ -37,6 +40,10 @@ export class NFTService {
       params.push(`offset=${(skip / first) | 0}`)
     }
 
+    if (cursor) {
+      params.push(`cursor=${cursor}`)
+    }
+
     // Build url
     let url = `${OPEN_SEA_URL}/assets`
 
@@ -50,7 +57,12 @@ export class NFTService {
     })
 
     if (!response.ok) {
-      return []
+      // TODO: handle error
+      return {
+        next: null,
+        previous: null,
+        nfts: [],
+      }
     }
 
     const json = await response.json()
@@ -68,6 +80,10 @@ export class NFTService {
       },
     }))
 
-    return nfts
+    return {
+      next: json.next,
+      previous: json.previous,
+      nfts,
+    }
   }
 }

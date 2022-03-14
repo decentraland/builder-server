@@ -15,14 +15,17 @@ export class NFTRouter extends Router {
     let owner: string | undefined
     let first: number | undefined
     let skip: number | undefined
+    let cursor: string | undefined
 
     // Parse and validate query parameters
     const { query } = req
 
+    // Owner param
     if (query.owner) {
       owner = query.owner.toString()
     }
 
+    // First param
     if (query.first) {
       first = +query.first
 
@@ -43,6 +46,7 @@ export class NFTRouter extends Router {
       }
     }
 
+    // Skip param
     if (query.skip) {
       skip = +query.skip
 
@@ -71,7 +75,12 @@ export class NFTRouter extends Router {
       }
     }
 
+    // Cursor param
+    if (query.cursor) {
+      cursor = query.cursor.toString()
+    }
+
     // Get nfts from service
-    return this.nftService.getNFTs({ owner, first, skip })
+    return this.nftService.getNFTs({ owner, first, skip, cursor })
   }
 }

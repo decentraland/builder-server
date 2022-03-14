@@ -19,9 +19,9 @@ const OPEN_SEA_API_KEY = (() => {
 })()
 
 export class NFTService {
-  public getNFTs = async ({ owner, first, skip }: GetNFTsParams = {}): Promise<
-    NFT[]
-  > => {
+  public getNFTs = async (args: GetNFTsParams = {}): Promise<NFT[]> => {
+    const { owner, first, skip } = args
+
     // Build query params for request
     const params: string[] = []
 
@@ -34,8 +34,7 @@ export class NFTService {
     }
 
     if (skip && first) {
-      const cursor = (first / skip) | 0
-      params.push(`cursor=${cursor}`)
+      params.push(`offset=${(skip / first) | 0}`)
     }
 
     // Build url

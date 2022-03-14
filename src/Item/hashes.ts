@@ -20,14 +20,6 @@ export function buildStandardWearableEntityMetadata(
   collection: CollectionAttributes
 ): StandardWearableEntityMetadata {
   if (!collection.contract_address || !item.blockchain_item_id!) {
-    console.log({
-      contract_address: collection.contract_address,
-      blockchain_item_id: item.blockchain_item_id,
-    })
-    console.log({
-      collection,
-      item,
-    })
     throw new Error(
       "The item's collection must be published to build its metadata"
     )

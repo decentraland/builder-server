@@ -2,8 +2,21 @@ import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
 import { GetNFTsParams, NFT } from './NFT.types'
 
-const OPEN_SEA_URL = env.get<string | undefined>('OPEN_SEA_URL')!
-const OPEN_SEA_API_KEY = env.get<string | undefined>('OPEN_SEA_API_KEY')!
+const OPEN_SEA_URL = (() => {
+  const value = env.get<string | undefined>('OPEN_SEA_URL')
+  if (!value) {
+    throw new Error('OPEN_SEA_URL not defined')
+  }
+  return value
+})()
+
+const OPEN_SEA_API_KEY = (() => {
+  const value = env.get<string | undefined>('OPEN_SEA_API_KEY')
+  if (!value) {
+    throw new Error('OPEN_SEA_API_KEY not defined')
+  }
+  return value
+})()
 
 export class NFTService {
   public getNFTs = async ({ owner, first, skip }: GetNFTsParams = {}): Promise<

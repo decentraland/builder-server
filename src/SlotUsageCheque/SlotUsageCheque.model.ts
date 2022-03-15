@@ -14,7 +14,7 @@ export class SlotUsageCheque extends Model<SlotUsageChequeAttributes> {
       FROM ${raw(this.tableName)} slot_usage_cheque
       INNER JOIN ${raw(
         Collection.tableName
-      )} collection ON collection.id = slot_usage_cheque.collection_id AND collection.collection_id = ${collectionId} 
+      )} collection ON collection.id = slot_usage_cheque.collection_id AND collection.id = ${collectionId} 
       ORDER BY slot_usage_cheque.created_at DESC
       LIMIT 1`)
 

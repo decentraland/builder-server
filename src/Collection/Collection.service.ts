@@ -18,7 +18,6 @@ import {
   UnpublishedItemError,
   InconsistentItemError,
 } from '../Item/Item.errors'
-import { buildTPItemURN } from '../Item/utils'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
 import {
@@ -392,26 +391,15 @@ export class CollectionService {
       throw new UnpublishedCollectionError(id)
     }
 
-    const approvalData: ItemApprovalData[] = []
-    for (const { id, urn_suffix, local_content_hash } of dbApprovalData) {
-      if (!urn_suffix || !local_content_hash) {
+    return dbApprovalData.map((data) => {
+      if (!data.local_content_hash) {
         throw new InconsistentItemError(
-          id,
-          'Item missing the urn_suffix or local_content_hash needed to approve it'
+          data.id,
+          'Item missing the local_content_hash needed to approve it'
         )
       }
-
-      approvalData.push({
-        urn: buildTPItemURN(
-          collection.third_party_id,
-          collection.urn_suffix,
-          urn_suffix
-        ),
-        content_hash: local_content_hash,
-      })
-    }
-
-    return approvalData
+      return data.local_content_hash
+    })
   }
 
   /**

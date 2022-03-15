@@ -1891,13 +1891,11 @@ describe('Collection router', () => {
               {
                 id: uuid(),
                 local_content_hash: 'Qm1abababa',
-                urn_suffix: '1',
               },
-              { id: uuid(), local_content_hash: '', urn_suffix: '2' },
+              { id: uuid(), local_content_hash: '' },
               {
                 id: uuid(),
                 local_content_hash: 'Qm3rererer',
-                urn_suffix: '',
               },
             ]
 
@@ -1928,7 +1926,7 @@ describe('Collection router', () => {
                     eth_address: wallet.address,
                   },
                   error:
-                    'Item missing the urn_suffix or local_content_hash needed to approve it',
+                    'Item missing the local_content_hash needed to approve it',
                 })
               })
           })
@@ -1940,17 +1938,14 @@ describe('Collection router', () => {
               {
                 id: uuid(),
                 local_content_hash: 'Qm1abababa',
-                urn_suffix: '1',
               },
               {
                 id: uuid(),
                 local_content_hash: 'Qm2bdbdbdb',
-                urn_suffix: '2',
               },
               {
                 id: uuid(),
                 local_content_hash: 'Qm3rererer',
-                urn_suffix: '3',
               },
             ]
 
@@ -1976,23 +1971,7 @@ describe('Collection router', () => {
               .then((response: any) => {
                 expect(response.body).toEqual({
                   ok: true,
-                  data: [
-                    {
-                      urn:
-                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:1',
-                      content_hash: 'Qm1abababa',
-                    },
-                    {
-                      urn:
-                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:2',
-                      content_hash: 'Qm2bdbdbdb',
-                    },
-                    {
-                      urn:
-                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:3',
-                      content_hash: 'Qm3rererer',
-                    },
-                  ],
+                  data: ['Qm1abababa', 'Qm2bdbdbdb', 'Qm3rererer'],
                 })
               })
           })

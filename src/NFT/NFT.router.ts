@@ -1,5 +1,6 @@
 import { server } from 'decentraland-server'
 import { Request } from 'express'
+import Ajv from 'ajv'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { Router } from '../common/Router'
 import { NFTService } from './NFT.service'
@@ -25,64 +26,43 @@ export class NFTRouter extends Router {
     // Parse and validate query parameters
     const { query } = req
 
-    // Owner param
-    if (query.owner) {
-      owner = query.owner.toString()
-    }
+    const ajv = new Ajv({ coerceTypes: true })
 
-    // First param
-    if (query.first) {
-      first = +query.first
+    const isValid = ajv.validate(
+      {
+        type: 'object',
+        properties: {
+          owner: {
+            type: 'string',
+            pattern: '^0x[a-fA-F0-9]{40}$',
+          },
+          first: {
+            type: 'number',
+            minimum: 1,
+          },
+          skip: {
+            type: 'number',
+            minimum: 0,
+          },
+          cursor: {
+            type: 'string',
+          },
+        },
+        dependencies: {
+          skip: ['first'],
+        },
+      },
+      query
+    )
 
-      if (Number.isNaN(first)) {
-        throw new HTTPError(
-          'first is not a number',
-          { first: query.first },
-          STATUS_CODES.badRequest
-        )
-      }
+    if (!isValid) {
+      const error = ajv.errors![0]
 
-      if (first < 0) {
-        throw new HTTPError(
-          'first must be a positive number',
-          { first: query.first },
-          STATUS_CODES.badRequest
-        )
-      }
-    }
-
-    // Skip param
-    if (query.skip) {
-      skip = +query.skip
-
-      if (Number.isNaN(skip)) {
-        throw new HTTPError(
-          'skip is not a number',
-          { skip: query.skip },
-          STATUS_CODES.badRequest
-        )
-      }
-
-      if (skip < 0) {
-        throw new HTTPError(
-          'skip must be a positive number',
-          { skip: query.skip },
-          STATUS_CODES.badRequest
-        )
-      }
-
-      if (!first) {
-        throw new HTTPError(
-          'skip requires first to be provided',
-          { first: query.skip },
-          STATUS_CODES.badRequest
-        )
-      }
-    }
-
-    // Cursor param
-    if (query.cursor) {
-      cursor = query.cursor.toString()
+      throw new HTTPError(
+        error.message!,
+        { dataPath: error.dataPath },
+        STATUS_CODES.badRequest
+      )
     }
 
     let nfts: GetNFTsResponse

@@ -21,7 +21,7 @@ export class NFTService {
     this.OPEN_SEA_URL = osURL
     this.OPEN_SEA_API_KEY = osApiKey
   }
-  
+
   /**
    * Obtain a list of NFT filtered by the provided arguments
    * @param args - Arguments used to filter the result

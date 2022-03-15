@@ -19,6 +19,15 @@ const OPEN_SEA_API_KEY = (() => {
 })()
 
 export class NFTService {
+  /**
+   * Obtain a list of NFT filtered by the provided arguments
+   * @param args - Arguments used to filter the result
+   * @param args.owner - NFTs owned by the provided address
+   * @param args.first - Amount of elements to receive
+   * @param args.skip - Amount of elements to skip from the result
+   * @param args.cursor - Used to obtain the next or the previous list of results
+   * @returns An object with the previous and next cursors (if available) and a list of nfts
+   */
   public getNFTs = async ({
     owner,
     first,
@@ -74,6 +83,13 @@ export class NFTService {
     }
   }
 
+  /**
+   * Get a single NFT
+   * @param args - Arguments required to fetch said NFT 
+   * @param args.contractAddress - The contract address of the NFT
+   * @param args.tokenId - The token id of the NFT
+   * @returns An NFT or undefined if it could not be found with the provided data
+   */
   public getNFT = async ({
     contractAddress,
     tokenId,

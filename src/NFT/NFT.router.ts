@@ -82,7 +82,38 @@ export class NFTRouter extends Router {
   }
 
   private getNFT = async (req: Request) => {
-    const { contractAddress, tokenId } = req.params
+    const { params } = req
+
+    const ajv = new Ajv()
+
+    const isValid = ajv.validate(
+      {
+        type: 'object',
+        properties: {
+          contractAddress: {
+            type: 'string',
+            pattern: '^0x[a-fA-F0-9]{40}$',
+          },
+          tokenId: {
+            type: 'string',
+          },
+        },
+        required: ['contractAddress', 'tokenId'],
+      },
+      params
+    )
+
+    if (!isValid) {
+      const error = ajv.errors![0]
+
+      throw new HTTPError(
+        error.message!,
+        { dataPath: error.dataPath },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    const { contractAddress, tokenId } = params
 
     let nft: NFT | undefined
 

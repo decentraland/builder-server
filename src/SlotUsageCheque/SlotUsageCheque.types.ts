@@ -8,3 +8,9 @@ export type SlotUsageChequeAttributes = {
   updated_at: Date
   created_at: Date
 }
+
+export type Cheque = Pick<
+  SlotUsageChequeAttributes,
+  'signature' | 'qty' | 'salt'
+>
+export type PublishCheque = Cheque & { signedMessage: string }

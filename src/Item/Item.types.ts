@@ -1,5 +1,6 @@
 import { Wearable } from '../ethereum/api/peer'
 import { MetricsAttributes } from '../Metrics'
+import { Cheque } from '../SlotUsageCheque'
 import { WearableData } from './wearable/types'
 
 export enum ItemType {
@@ -66,11 +67,7 @@ export type DBItemApprovalData = Pick<
   'id' | 'local_content_hash'
 >
 export type ItemApprovalData = {
-  cheque: {
-    qty: number
-    salt: string
-    signature: string
-  }
+  cheque: Cheque
   content_hashes: string[]
 }
 

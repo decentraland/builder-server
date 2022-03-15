@@ -19,7 +19,11 @@ import {
   InconsistentItemError,
 } from '../Item/Item.errors'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
-import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
+import {
+  SlotUsageCheque,
+  SlotUsageChequeAttributes,
+  PublishCheque,
+} from '../SlotUsageCheque'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
@@ -30,7 +34,6 @@ import {
   CollectionAttributes,
   FullCollection,
   PublishCollectionResponse,
-  PublishCheque,
   ThirdPartyCollectionAttributes,
 } from './Collection.types'
 import { Collection } from './Collection.model'

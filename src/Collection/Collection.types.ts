@@ -42,10 +42,3 @@ export type PublishCollectionResponse<T> = {
   items: FullItem[]
   itemCurations?: ItemCurationAttributes[]
 }
-
-export type PublishCheque = {
-  signedMessage: string
-  signature: string
-  qty: number
-  salt: string
-}

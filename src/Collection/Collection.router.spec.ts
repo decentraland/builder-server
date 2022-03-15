@@ -1375,9 +1375,6 @@ describe('Collection router', () => {
       })
 
       describe('when the supplied data is correct', () => {
-        // let slotUsageChequeCreateSpy: jest.SpyInstance<
-        //   ReturnType<typeof SlotUsageCheque.create>
-        // >
         let itemCurationCreateSpy: jest.SpyInstance<
           ReturnType<typeof ItemCuration.create>
         >

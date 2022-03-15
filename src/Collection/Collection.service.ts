@@ -386,7 +386,6 @@ export class CollectionService {
       Item.findDBApprovalDataByCollectionId(id),
       SlotUsageCheque.findLastByCollectionId(id),
     ])
-    console.log('dbApprovalData: ', dbApprovalData)
 
     if (!isTPCollection(collection)) {
       throw new WrongCollectionError('Collection is not Third Party', { id })

@@ -18,9 +18,12 @@ import {
   UnpublishedItemError,
   InconsistentItemError,
 } from '../Item/Item.errors'
-import { buildTPItemURN } from '../Item/utils'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
-import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
+import {
+  SlotUsageCheque,
+  SlotUsageChequeAttributes,
+  PublishCheque,
+} from '../SlotUsageCheque'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
@@ -31,7 +34,6 @@ import {
   CollectionAttributes,
   FullCollection,
   PublishCollectionResponse,
-  PublishCheque,
   ThirdPartyCollectionAttributes,
 } from './Collection.types'
 import { Collection } from './Collection.model'
@@ -378,40 +380,41 @@ export class CollectionService {
     return new Collection(attributes).upsert()
   }
 
-  public async getApprovalData(id: string): Promise<ItemApprovalData[]> {
-    const [collection, dbApprovalData] = await Promise.all([
+  public async getApprovalData(id: string): Promise<ItemApprovalData> {
+    const [collection, dbApprovalData, slotUsageCheque] = await Promise.all([
       this.getDBCollection(id),
       Item.findDBApprovalDataByCollectionId(id),
+      SlotUsageCheque.findLastByCollectionId(id),
     ])
 
     if (!isTPCollection(collection)) {
       throw new WrongCollectionError('Collection is not Third Party', { id })
     }
 
-    if (dbApprovalData.length === 0) {
+    if (dbApprovalData.length === 0 || !slotUsageCheque) {
       throw new UnpublishedCollectionError(id)
     }
 
-    const approvalData: ItemApprovalData[] = []
-    for (const { id, urn_suffix, local_content_hash } of dbApprovalData) {
-      if (!urn_suffix || !local_content_hash) {
+    const { qty, salt, signature } = slotUsageCheque
+
+    const content_hashes = dbApprovalData.map((data) => {
+      if (!data.content_hash) {
         throw new InconsistentItemError(
-          id,
-          'Item missing the urn_suffix or local_content_hash needed to approve it'
+          data.id,
+          'Item missing the content_hash needed to approve it'
         )
       }
+      return data.content_hash
+    })
 
-      approvalData.push({
-        urn: buildTPItemURN(
-          collection.third_party_id,
-          collection.urn_suffix,
-          urn_suffix
-        ),
-        content_hash: local_content_hash,
-      })
+    return {
+      cheque: {
+        qty,
+        salt,
+        signature,
+      },
+      content_hashes,
     }
-
-    return approvalData
   }
 
   /**

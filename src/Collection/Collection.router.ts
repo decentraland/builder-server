@@ -23,11 +23,11 @@ import { Item, ThirdPartyItemAttributes, ItemApprovalData } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
+import { PublishCheque } from '../SlotUsageCheque'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
   PublishCollectionResponse,
-  PublishCheque,
   CollectionAttributes,
   FullCollection,
 } from './Collection.types'
@@ -156,7 +156,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  getApprovalData = async (req: AuthRequest): Promise<ItemApprovalData[]> => {
+  getApprovalData = async (req: AuthRequest): Promise<ItemApprovalData> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 

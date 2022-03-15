@@ -47,7 +47,7 @@ import {
   DBItemApprovalData,
 } from '../Item'
 import { buildCollectionForumPost, createPost } from '../Forum'
-import { SlotUsageCheque } from '../SlotUsageCheque'
+import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
 import { CurationStatus } from '../Curation'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
@@ -66,6 +66,7 @@ jest.mock('../ethereum/api/peer')
 jest.mock('../ethereum/api/thirdParty')
 jest.mock('../utils/eth')
 jest.mock('../Forum/client')
+jest.mock('../SlotUsageCheque')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Curation/CollectionCuration')
 jest.mock('../Committee')
@@ -1374,9 +1375,6 @@ describe('Collection router', () => {
       })
 
       describe('when the supplied data is correct', () => {
-        let slotUsageChequeCreateSpy: jest.SpyInstance<
-          ReturnType<typeof SlotUsageCheque.create>
-        >
         let itemCurationCreateSpy: jest.SpyInstance<
           ReturnType<typeof ItemCuration.create>
         >
@@ -1400,10 +1398,7 @@ describe('Collection router', () => {
             dbTPCollectionMock,
           ])
           ;(createPost as jest.Mock).mockResolvedValueOnce(forumLink)
-
-          slotUsageChequeCreateSpy = jest
-            .spyOn(SlotUsageCheque, 'create')
-            .mockResolvedValueOnce({})
+          ;(SlotUsageCheque.create as jest.Mock).mockResolvedValueOnce({})
           itemCurationCreateSpy = jest
             .spyOn(ItemCuration, 'create')
             .mockResolvedValue(itemCurationMock)
@@ -1435,7 +1430,7 @@ describe('Collection router', () => {
               })
               .expect(200)
               .then(() => {
-                expect(slotUsageChequeCreateSpy).toHaveBeenCalledWith({
+                expect(SlotUsageCheque.create).toHaveBeenCalledWith({
                   id: expect.any(String),
                   signature,
                   collection_id: dbTPCollection.id,
@@ -1863,6 +1858,45 @@ describe('Collection router', () => {
           ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
             []
           )
+          ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+            {}
+          )
+        })
+
+        it('should respond with a 401 and a message signaling that the collection is not published', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(401)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {
+                  id: dbTPCollection.id,
+                },
+                error: 'The collection is not published.',
+              })
+            })
+        })
+      })
+
+      describe('and the slot usage cheque is missing', () => {
+        beforeEach(() => {
+          mockCollectionAuthorizationMiddleware(
+            dbTPCollection.id,
+            wallet.address,
+            true,
+            true
+          )
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
+          ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
+            [{}]
+          )
+          ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+            undefined
+          )
         })
 
         it('should respond with a 401 and a message signaling that the collection is not published', () => {
@@ -1890,14 +1924,12 @@ describe('Collection router', () => {
             itemApprovalData = [
               {
                 id: uuid(),
-                local_content_hash: 'Qm1abababa',
-                urn_suffix: '1',
+                content_hash: 'Qm1abababa',
               },
-              { id: uuid(), local_content_hash: '', urn_suffix: '2' },
+              { id: uuid(), content_hash: '' },
               {
                 id: uuid(),
-                local_content_hash: 'Qm3rererer',
-                urn_suffix: '',
+                content_hash: 'Qm3rererer',
               },
             ]
 
@@ -1912,6 +1944,9 @@ describe('Collection router', () => {
             )
             ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
               itemApprovalData
+            )
+            ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+              {}
             )
           })
 
@@ -1927,32 +1962,36 @@ describe('Collection router', () => {
                     id: dbTPCollection.id,
                     eth_address: wallet.address,
                   },
-                  error:
-                    'Item missing the urn_suffix or local_content_hash needed to approve it',
+                  error: 'Item missing the content_hash needed to approve it',
                 })
               })
           })
         })
 
         describe('when the approval data and permissions are correct', () => {
+          let slotUsageCheque: SlotUsageChequeAttributes
+
           beforeEach(() => {
             itemApprovalData = [
               {
                 id: uuid(),
-                local_content_hash: 'Qm1abababa',
-                urn_suffix: '1',
+                content_hash: 'Qm1abababa',
               },
               {
                 id: uuid(),
-                local_content_hash: 'Qm2bdbdbdb',
-                urn_suffix: '2',
+                content_hash: 'Qm2bdbdbdb',
               },
               {
                 id: uuid(),
-                local_content_hash: 'Qm3rererer',
-                urn_suffix: '3',
+                content_hash: 'Qm3rererer',
               },
             ]
+
+            slotUsageCheque = {
+              qty: 2,
+              salt: 'salt',
+              signature: 'signature',
+            } as SlotUsageChequeAttributes
 
             mockCollectionAuthorizationMiddleware(
               dbTPCollection.id,
@@ -1966,6 +2005,9 @@ describe('Collection router', () => {
             ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
               itemApprovalData
             )
+            ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+              slotUsageCheque
+            )
           })
 
           it('should return an array with the data for pending curations', () => {
@@ -1976,23 +2018,14 @@ describe('Collection router', () => {
               .then((response: any) => {
                 expect(response.body).toEqual({
                   ok: true,
-                  data: [
-                    {
-                      urn:
-                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:1',
-                      content_hash: 'Qm1abababa',
+                  data: {
+                    cheque: {
+                      qty: slotUsageCheque.qty,
+                      salt: slotUsageCheque.salt,
+                      signature: slotUsageCheque.signature,
                     },
-                    {
-                      urn:
-                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:2',
-                      content_hash: 'Qm2bdbdbdb',
-                    },
-                    {
-                      urn:
-                        'urn:decentraland:mumbai:collections-thirdparty:third-party-id:collection-id:3',
-                      content_hash: 'Qm3rererer',
-                    },
-                  ],
+                    content_hashes: ['Qm1abababa', 'Qm2bdbdbdb', 'Qm3rererer'],
+                  },
                 })
               })
           })
@@ -2012,6 +2045,9 @@ describe('Collection router', () => {
         true
       )
       ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
+      ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+        {}
+      )
     })
 
     it('should respond with a 409 and a message signaling that the collection is not third party', () => {

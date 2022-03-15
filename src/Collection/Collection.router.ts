@@ -156,7 +156,7 @@ export class CollectionRouter extends Router {
     )
   }
 
-  getApprovalData = async (req: AuthRequest): Promise<ItemApprovalData[]> => {
+  getApprovalData = async (req: AuthRequest): Promise<ItemApprovalData> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 

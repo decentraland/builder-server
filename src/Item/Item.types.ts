@@ -65,7 +65,14 @@ export type DBItemApprovalData = Pick<
   ItemAttributes,
   'id' | 'local_content_hash'
 >
-export type ItemApprovalData = string // content_hash
+export type ItemApprovalData = {
+  cheque: {
+    qty: number
+    salt: string
+    signature: string
+  }
+  content_hashes: string[]
+}
 
 type BaseWearableEntityMetadata = Omit<
   Wearable,

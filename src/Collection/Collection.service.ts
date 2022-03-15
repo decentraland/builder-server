@@ -377,21 +377,24 @@ export class CollectionService {
     return new Collection(attributes).upsert()
   }
 
-  public async getApprovalData(id: string): Promise<ItemApprovalData[]> {
-    const [collection, dbApprovalData] = await Promise.all([
+  public async getApprovalData(id: string): Promise<ItemApprovalData> {
+    const [collection, dbApprovalData, slotUsageCheque] = await Promise.all([
       this.getDBCollection(id),
       Item.findDBApprovalDataByCollectionId(id),
+      SlotUsageCheque.findLastByCollectionId(id),
     ])
 
     if (!isTPCollection(collection)) {
       throw new WrongCollectionError('Collection is not Third Party', { id })
     }
 
-    if (dbApprovalData.length === 0) {
+    if (dbApprovalData.length === 0 || !slotUsageCheque) {
       throw new UnpublishedCollectionError(id)
     }
 
-    return dbApprovalData.map((data) => {
+    const { qty, salt, signature } = slotUsageCheque
+
+    const content_hashes = dbApprovalData.map((data) => {
       if (!data.local_content_hash) {
         throw new InconsistentItemError(
           data.id,
@@ -400,6 +403,15 @@ export class CollectionService {
       }
       return data.local_content_hash
     })
+
+    return {
+      cheque: {
+        qty,
+        salt,
+        signature,
+      },
+      content_hashes,
+    }
   }
 
   /**

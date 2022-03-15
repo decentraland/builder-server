@@ -1,15 +1,3 @@
-export type GetNFTsParams = {
-  owner?: string
-  first?: number
-  skip?: number
-  cursor?: string
-}
-
-export type GetNFTParams = {
-  contractAddress: string
-  tokenId: string
-}
-
 export type NFT = {
   tokenId: string
   name: string
@@ -20,8 +8,20 @@ export type NFT = {
   }
 }
 
+export type GetNFTsParams = {
+  owner?: string
+  first?: number
+  skip?: number
+  cursor?: string
+}
+
 export type GetNFTsResponse = {
   next: string | null
   previous: string | null
   nfts: NFT[]
+}
+
+export type GetNFTParams = {
+  contractAddress: string
+  tokenId: string
 }

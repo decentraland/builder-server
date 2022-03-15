@@ -62,22 +62,10 @@ export class NFTService {
 
     const json = await response.json()
 
-    const openSeaAssets: any[] = json.assets
+    const externalNFTs: any[] = json.assets
 
     // Map OpenSea assets into our NFT object
-    const nfts = openSeaAssets.map((nft) => {
-      const contract = {
-        name: nft.asset_contract.name,
-        address: nft.asset_contract.address,
-      }
-
-      return {
-        tokenId: nft.token_id,
-        name: nft.name,
-        thumbnail: nft.image_thumbnail_url,
-        contract,
-      }
-    })
+    const nfts = externalNFTs.map(this.mapExternalNFT)
 
     return {
       next: json.next,
@@ -104,8 +92,22 @@ export class NFTService {
       return undefined
     }
 
-    const json = await response.json()
+    const externalNFT = await response.json()
 
-    return json
+    return this.mapExternalNFT(externalNFT)
+  }
+
+  private mapExternalNFT = (nft: any): NFT => {
+    const contract = {
+      name: nft.asset_contract.name,
+      address: nft.asset_contract.address,
+    }
+
+    return {
+      tokenId: nft.token_id,
+      name: nft.name,
+      thumbnail: nft.image_thumbnail_url,
+      contract,
+    }
   }
 }

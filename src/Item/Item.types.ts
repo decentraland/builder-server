@@ -62,10 +62,8 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   content_hash: string | null
 }
 
-export type DBItemApprovalData = Pick<
-  ItemAttributes,
-  'id' | 'local_content_hash'
->
+export type DBItemApprovalData = Pick<ItemAttributes, 'id' | 'content_hash'>
+
 export type ItemApprovalData = {
   cheque: Cheque
   content_hashes: string[]

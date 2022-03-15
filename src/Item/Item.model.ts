@@ -16,7 +16,7 @@ export class Item extends Model<ItemAttributes> {
 
   static findDBApprovalDataByCollectionId(collectionId: string) {
     return this.query<DBItemApprovalData>(SQL`
-      SELECT items.id, item_curations.local_content_hash
+      SELECT items.id, item_curations.content_hash
         FROM ${raw(this.tableName)} items
         JOIN ${raw(
           ItemCuration.tableName

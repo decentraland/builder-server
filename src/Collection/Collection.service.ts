@@ -398,13 +398,13 @@ export class CollectionService {
     const { qty, salt, signature } = slotUsageCheque
 
     const content_hashes = dbApprovalData.map((data) => {
-      if (!data.local_content_hash) {
+      if (!data.content_hash) {
         throw new InconsistentItemError(
           data.id,
-          'Item missing the local_content_hash needed to approve it'
+          'Item missing the content_hash needed to approve it'
         )
       }
-      return data.local_content_hash
+      return data.content_hash
     })
 
     return {

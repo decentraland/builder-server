@@ -1924,12 +1924,12 @@ describe('Collection router', () => {
             itemApprovalData = [
               {
                 id: uuid(),
-                local_content_hash: 'Qm1abababa',
+                content_hash: 'Qm1abababa',
               },
-              { id: uuid(), local_content_hash: '' },
+              { id: uuid(), content_hash: '' },
               {
                 id: uuid(),
-                local_content_hash: 'Qm3rererer',
+                content_hash: 'Qm3rererer',
               },
             ]
 
@@ -1962,8 +1962,7 @@ describe('Collection router', () => {
                     id: dbTPCollection.id,
                     eth_address: wallet.address,
                   },
-                  error:
-                    'Item missing the local_content_hash needed to approve it',
+                  error: 'Item missing the content_hash needed to approve it',
                 })
               })
           })
@@ -1976,15 +1975,15 @@ describe('Collection router', () => {
             itemApprovalData = [
               {
                 id: uuid(),
-                local_content_hash: 'Qm1abababa',
+                content_hash: 'Qm1abababa',
               },
               {
                 id: uuid(),
-                local_content_hash: 'Qm2bdbdbdb',
+                content_hash: 'Qm2bdbdbdb',
               },
               {
                 id: uuid(),
-                local_content_hash: 'Qm3rererer',
+                content_hash: 'Qm3rererer',
               },
             ]
 

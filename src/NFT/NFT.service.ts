@@ -2,23 +2,26 @@ import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
 import { GetNFTParams, GetNFTsParams, GetNFTsResponse, NFT } from './NFT.types'
 
-const OPEN_SEA_URL = (() => {
-  const value = env.get<string | undefined>('OPEN_SEA_URL')
-  if (!value) {
-    throw new Error('OPEN_SEA_URL not defined')
-  }
-  return value
-})()
-
-const OPEN_SEA_API_KEY = (() => {
-  const value = env.get<string | undefined>('OPEN_SEA_API_KEY')
-  if (!value) {
-    throw new Error('OPEN_SEA_API_KEY not defined')
-  }
-  return value
-})()
-
 export class NFTService {
+  private readonly OPEN_SEA_URL: string
+  private readonly OPEN_SEA_API_KEY: string
+
+  constructor() {
+    const osURL = env.get<string | undefined>('OPEN_SEA_URL')
+    const osApiKey = env.get<string | undefined>('OPEN_SEA_API_KEY')
+
+    if (!osURL) {
+      throw new Error('OPEN_SEA_URL not defined')
+    }
+
+    if (!osApiKey) {
+      throw new Error('OPEN_SEA_API_KEY not defined')
+    }
+
+    this.OPEN_SEA_URL = osURL
+    this.OPEN_SEA_API_KEY = osApiKey
+  }
+  
   /**
    * Obtain a list of NFT filtered by the provided arguments
    * @param args - Arguments used to filter the result
@@ -54,7 +57,7 @@ export class NFTService {
     }
 
     // Build url
-    let url = `${OPEN_SEA_URL}/assets`
+    let url = `${this.OPEN_SEA_URL}/assets`
 
     if (params.length > 0) {
       url = `${url}?${params.join('&')}`
@@ -62,7 +65,10 @@ export class NFTService {
 
     // Fetch nfts
     const response = await fetch(url, {
-      headers: { Accept: 'application/json', 'X-API-KEY': OPEN_SEA_API_KEY },
+      headers: {
+        Accept: 'application/json',
+        'X-API-KEY': this.OPEN_SEA_API_KEY,
+      },
     })
 
     if (!response.ok) {
@@ -85,7 +91,7 @@ export class NFTService {
 
   /**
    * Get a single NFT
-   * @param args - Arguments required to fetch said NFT 
+   * @param args - Arguments required to fetch said NFT
    * @param args.contractAddress - The contract address of the NFT
    * @param args.tokenId - The token id of the NFT
    * @returns An NFT or undefined if it could not be found with the provided data
@@ -95,13 +101,16 @@ export class NFTService {
     tokenId,
   }: GetNFTParams): Promise<NFT | undefined> => {
     // Build url
-    let url = `${OPEN_SEA_URL}/asset/${contractAddress}/${tokenId}/`
+    let url = `${this.OPEN_SEA_URL}/asset/${contractAddress}/${tokenId}/`
 
     console.log(url)
 
     // Fetch nft
     const response = await fetch(url, {
-      headers: { Accept: 'application/json', 'X-API-KEY': OPEN_SEA_API_KEY },
+      headers: {
+        Accept: 'application/json',
+        'X-API-KEY': this.OPEN_SEA_API_KEY,
+      },
     })
 
     if (!response.ok) {

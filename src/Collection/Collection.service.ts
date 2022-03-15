@@ -201,33 +201,37 @@ export class CollectionService {
     }
 
     const now = new Date()
+    let itemCurationIds: string[] = []
     let itemCurations: ItemCurationAttributes[] = []
     let lastItemCuration: ItemCurationAttributes
+    let newSlotUsageCheque: SlotUsageChequeAttributes = {
+      id: uuid(),
+      signature,
+      qty,
+      salt,
+      collection_id: dbCollection.id,
+      third_party_id: dbCollection.third_party_id,
+      created_at: now,
+      updated_at: now,
+    }
 
     try {
-      await SlotUsageCheque.create<SlotUsageChequeAttributes>({
-        id: uuid(),
-        signature,
-        qty,
-        salt,
-        collection_id: dbCollection.id,
-        third_party_id: dbCollection.third_party_id,
-        created_at: now,
-        updated_at: now,
-      })
+      await SlotUsageCheque.create<SlotUsageChequeAttributes>(
+        newSlotUsageCheque
+      )
 
       const promises = []
       for (const item of dbItems) {
-        promises.push(
-          ItemCuration.create<ItemCurationAttributes>({
-            id: uuid(),
-            item_id: item.id,
-            status: CurationStatus.PENDING,
-            content_hash: item.local_content_hash,
-            created_at: now,
-            updated_at: now,
-          })
-        )
+        const itemCuration: ItemCurationAttributes = {
+          id: uuid(),
+          item_id: item.id,
+          status: CurationStatus.PENDING,
+          content_hash: item.local_content_hash,
+          created_at: now,
+          updated_at: now,
+        }
+        itemCurationIds.push(itemCuration.id)
+        promises.push(ItemCuration.create<ItemCurationAttributes>(itemCuration))
       }
 
       itemCurations = await Promise.all(promises)
@@ -251,8 +255,8 @@ export class CollectionService {
     } catch (error) {
       // Rollback the cheque and all item curations just created in case any database interaction fails
       await Promise.all([
-        SlotUsageCheque.delete({ created_at: now }),
-        ItemCuration.delete({ created_at: now }),
+        SlotUsageCheque.delete({ id: newSlotUsageCheque.id }),
+        ItemCuration.deleteByIds(itemCurationIds),
       ])
 
       throw new InvalidRequestError(

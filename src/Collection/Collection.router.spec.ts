@@ -1375,9 +1375,6 @@ describe('Collection router', () => {
       })
 
       describe('and interating with the database fails', () => {
-        let slotUsageChequeDeleteSpy: jest.SpyInstance<
-          ReturnType<typeof SlotUsageCheque.delete>
-        >
         let itemCurationDeleteSpy: jest.SpyInstance<
           ReturnType<typeof ItemCuration.delete>
         >
@@ -1390,18 +1387,15 @@ describe('Collection router', () => {
           jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
 
           jest.spyOn(SlotUsageCheque, 'create').mockResolvedValueOnce({})
+          jest.spyOn(SlotUsageCheque, 'delete').mockResolvedValueOnce('')
 
           jest
             .spyOn(ItemCuration, 'create')
             .mockRejectedValueOnce(new Error('Database error'))
 
-          slotUsageChequeDeleteSpy = jest
-            .spyOn(SlotUsageCheque, 'delete')
-            .mockResolvedValue('')
-
           itemCurationDeleteSpy = jest
-            .spyOn(ItemCuration, 'delete')
-            .mockResolvedValue('')
+            .spyOn(ItemCuration, 'deleteByIds')
+            .mockResolvedValue([])
         })
 
         it('should respond with a 400 and a message signaling that the database errored out', () => {
@@ -1442,12 +1436,12 @@ describe('Collection router', () => {
             })
             .expect(400)
             .then(() => {
-              expect(slotUsageChequeDeleteSpy).toHaveBeenCalledWith({
-                created_at: expect.any(Date),
+              expect(SlotUsageCheque.delete).toHaveBeenCalledWith({
+                id: expect.any(String),
               })
-              expect(itemCurationDeleteSpy).toHaveBeenCalledWith({
-                created_at: expect.any(Date),
-              })
+              expect(itemCurationDeleteSpy).toHaveBeenCalledWith([
+                expect.any(String),
+              ])
             })
         })
       })

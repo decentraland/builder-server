@@ -18,11 +18,6 @@ export class NFTRouter extends Router {
   }
 
   private getNFTs = async (req: Request) => {
-    let owner: string | undefined
-    let first: number | undefined
-    let skip: number | undefined
-    let cursor: string | undefined
-
     // Parse and validate query parameters
     const { query } = req
 
@@ -69,7 +64,12 @@ export class NFTRouter extends Router {
 
     // Get NFTs from service
     try {
-      nfts = await this.nftService.getNFTs({ owner, first, skip, cursor })
+      nfts = await this.nftService.getNFTs({
+        owner: query.owner?.toString(),
+        first: query.first ? +query.first : undefined,
+        skip: query.skip ? +query.skip : undefined,
+        cursor: query.cursor?.toString(),
+      })
     } catch (e) {
       throw new HTTPError(
         'Failed to fetch NFTs from external sources',

@@ -386,6 +386,7 @@ export class CollectionService {
       Item.findDBApprovalDataByCollectionId(id),
       SlotUsageCheque.findLastByCollectionId(id),
     ])
+    console.log('dbApprovalData: ', dbApprovalData)
 
     if (!isTPCollection(collection)) {
       throw new WrongCollectionError('Collection is not Third Party', { id })
@@ -397,15 +398,16 @@ export class CollectionService {
 
     const { qty, salt, signature } = slotUsageCheque
 
-    const content_hashes = dbApprovalData.map((data) => {
+    const content_hashes = dbApprovalData.reduce((acc, data) => {
       if (!data.content_hash) {
         throw new InconsistentItemError(
           data.id,
           'Item missing the content_hash needed to approve it'
         )
       }
-      return data.content_hash
-    })
+      acc[data.id] = data.content_hash
+      return acc
+    }, {} as Record<string, string>)
 
     return {
       cheque: {

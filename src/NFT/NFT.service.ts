@@ -37,7 +37,7 @@ export class NFTService {
     }
 
     if (skip && first) {
-      params.push(`offset=${(skip / first) | 0}`)
+      params.push(`offset=${skip}`)
     }
 
     if (cursor) {

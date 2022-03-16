@@ -244,14 +244,35 @@ describe('when getting a single nft', () => {
 
   it('should return an nft', async () => {
     const nft: NFT = {
-      name: 'name',
-      thumbnail: 'thumbnail',
-      tokenId: 'tokenId',
+      backgroundColor: 'background_color',
       contract: {
-        address: 'address',
+        description: 'description',
+        externalLink: 'external_link',
+        imageUrl: 'image_url',
         name: 'name',
+        symbol: 'symbol',
       },
-    } as NFT
+      externalLink: 'external_link',
+      imageUrl: 'image_url',
+      lastSale: {
+        eventType: 'event_type',
+        paymentToken: {
+          symbol: 'symbol',
+        },
+        quantity: 'quantity',
+        totalPrice: 'total_price',
+      },
+      name: 'name',
+      owner: 'owner',
+      tokenId: 'token_id',
+      traits: [
+        {
+          displayType: 'display_type',
+          type: 'trait_type',
+          value: 'value',
+        },
+      ],
+    }
 
     mockNFTService.prototype.getNFT.mockResolvedValueOnce(nft)
 

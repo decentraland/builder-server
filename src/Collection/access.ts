@@ -25,7 +25,7 @@ export async function hasAccess(
     isCommitteeMember(eth_address),
     isTPCollection(collection)
       ? thirdPartyAPI.isManager(collection.third_party_id, eth_address)
-      : collection.is_published && isManager(eth_address, collection),
+      : !!collection.is_published && isManager(eth_address, collection),
   ])
 
   return isOwner || isCommittee || hasManagerAccess

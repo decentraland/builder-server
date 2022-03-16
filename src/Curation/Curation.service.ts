@@ -97,14 +97,14 @@ export class CurationService<
     if (!collection) {
       throw new NonExistentCollectionError()
     }
+    const mergedCollection = await getMergedCollection(collection)
 
     switch (this.type) {
       case CurationType.COLLECTION: {
-        const mergedCollection = await getMergedCollection(collection)
         return hasCollectionAccess(ethAddress, mergedCollection)
       }
       case CurationType.ITEM: {
-        return hasItemAccess(ethAddress, id, collection)
+        return hasItemAccess(ethAddress, id, mergedCollection)
       }
       default:
         throw new Error(`Invalid type ${this.type}`)

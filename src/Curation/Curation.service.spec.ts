@@ -8,17 +8,14 @@ import { ItemCuration } from './ItemCuration'
 
 jest.mock('../Committee')
 jest.mock('../Collection/Collection.model')
+jest.mock('../Collection/utils')
 
 const isOwnedBySpy = jest.spyOn(Ownable.prototype, 'isOwnedBy')
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockFindCollectionOwningItem = Collection.findCollectionOwningItem as jest.Mock
-let mockGetMergedCollection: jest.Mock
+const mockGetMergedCollection = getMergedCollection as jest.Mock
 
 describe('when getting the access to an element', () => {
-  beforeEach(() => {
-    mockGetMergedCollection = getMergedCollection as jest.Mock
-  })
-
   describe('when checking a collection', () => {
     let service: CurationService<typeof CollectionCuration>
     let collection: CollectionAttributes
@@ -34,6 +31,7 @@ describe('when getting the access to an element', () => {
       collection = { id: 'aCollectionId' } as CollectionAttributes
       publishedCollection = {
         ...collection,
+        is_published: true,
         managers: ['address'],
       } as CollectionAttributes
 
@@ -71,6 +69,7 @@ describe('when getting the access to an element', () => {
 
     describe('when the address is a manager of the collection', () => {
       beforeEach(() => {
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
         mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
@@ -86,6 +85,7 @@ describe('when getting the access to an element', () => {
           ...publishedCollection,
           managers: ['another address'],
         }
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
         mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
@@ -99,6 +99,7 @@ describe('when getting the access to an element', () => {
   describe('when checking an item', () => {
     let service: CurationService<typeof ItemCuration>
     let collection: CollectionAttributes
+    let publishedCollection: CollectionAttributes
 
     const testHasAccessToItemToBe = (hasAccess: boolean) =>
       expect(service.hasAccess('itemId', 'address')).resolves.toBe(hasAccess)
@@ -108,6 +109,10 @@ describe('when getting the access to an element', () => {
       collection = {
         id: 'some-id',
         managers: ['address'],
+      } as CollectionAttributes
+      publishedCollection = {
+        ...collection,
+        is_published: true,
       } as CollectionAttributes
 
       mockIsCommitteeMember.mockResolvedValue(false)
@@ -121,10 +126,8 @@ describe('when getting the access to an element', () => {
     describe('when the address belongs to the committee', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(true)
-        mockFindCollectionOwningItem.mockResolvedValueOnce({
-          ...collection,
-          managers: ['address'],
-        })
+        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
       it('should resolve to true', () => {
@@ -134,7 +137,9 @@ describe('when getting the access to an element', () => {
 
     describe('when the item belongs to the address', () => {
       beforeEach(() => {
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
         mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
         isOwnedBySpy.mockResolvedValueOnce(true)
       })
 
@@ -145,7 +150,9 @@ describe('when getting the access to an element', () => {
 
     describe('when the address is a manager of the collection', () => {
       beforeEach(() => {
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
         mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
       it('should resolve to true', () => {
@@ -155,8 +162,13 @@ describe('when getting the access to an element', () => {
 
     describe('when the none of the managers of a collection match with the provided address', () => {
       beforeEach(() => {
-        collection = { ...collection, managers: ['another address'] }
+        publishedCollection = {
+          ...publishedCollection,
+          managers: ['another address'],
+        }
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
         mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
       it('should resolve to false', () => {

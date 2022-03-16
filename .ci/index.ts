@@ -141,6 +141,14 @@ export = async function main() {
             ? 'http://not-working-url'
             : 'https://api.thegraph.com/subgraphs/name/decentraland/tpr-matic-mumbai',
       },
+      {
+        name: 'OPEN_SEA_URL',
+        value: 'https://api.opensea.io/api/v1',
+      },
+      {
+        name: 'OPEN_SEA_API_KEY',
+        value: config.requireSecret('OPEN_SEA_API_KEY'),
+      },
     ],
     hostname,
     {

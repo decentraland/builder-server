@@ -31,6 +31,8 @@ jobs:
           PEER_URL: https://peer.decentraland.zone
           ETHEREUM_NETWORK: ropsten
           THIRD_PARTY_GRAPH_URL: 'http://thid-party-url'
+          OPEN_SEA_URL: OPEN_SEA_URL
+          OPEN_SEA_API_KEY: OPEN_SEA_API_KEY
       - name: Report Coverage
         uses: coverallsapp/github-action@master
         with:

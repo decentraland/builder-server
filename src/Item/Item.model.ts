@@ -25,11 +25,6 @@ export class Item extends Model<ItemAttributes> {
       )} item_curations ON items.id = item_curations.item_id
       WHERE 
         items.collection_id = ${collectionId}
-        AND 
-          item_curations.status = ANY(${[
-            CurationStatus.PENDING,
-            CurationStatus.APPROVED,
-          ]})
       ORDER BY items.id, item_curations.updated_at DESC
     `)
   }

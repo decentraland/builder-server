@@ -11,43 +11,45 @@ const mockEnv = env as jest.Mocked<typeof env>
 const mockUrl = 'https://some-url.com/v1'
 const mockApiKey = 'https://some-url.com/v1'
 
+let service: NFTService
+let requestInit: RequestInit
+let mockExternalNFT: any
+
 beforeEach(() => {
   mockEnv.get.mockReturnValueOnce(mockUrl)
   mockEnv.get.mockReturnValueOnce(mockApiKey)
+
+  service = new NFTService()
+
+  requestInit = {
+    headers: {
+      Accept: 'application/json',
+      'X-API-KEY': mockApiKey,
+    },
+  }
+
+  mockExternalNFT = {
+    asset_contract: {
+      name: 'name',
+      address: 'address',
+    },
+    token_id: 'token_id',
+    name: 'name',
+    image_thumbnail_url: 'image_thumbnail_url',
+  }
 
   jest.clearAllMocks()
 })
 
 describe('when getting a list of nfts', () => {
-  let service: NFTService
-  let requestInit: RequestInit
-
   beforeEach(() => {
-    service = new NFTService()
-    requestInit = {
-      headers: {
-        Accept: 'application/json',
-        'X-API-KEY': mockApiKey,
-      },
-    }
-
     mockFetch.mockResolvedValueOnce({
       ok: true,
       json: () =>
         Promise.resolve({
           next: 'next',
           previous: 'previous',
-          assets: [
-            {
-              asset_contract: {
-                name: 'name',
-                address: 'address',
-              },
-              token_id: 'token_id',
-              name: 'name',
-              image_thumbnail_url: 'image_thumbnail_url',
-            },
-          ],
+          assets: [mockExternalNFT],
         }),
     } as Response)
   })
@@ -150,6 +152,58 @@ describe('when getting a list of nfts', () => {
           },
         },
       ],
+    })
+  })
+})
+
+describe('when getting an nft', () => {
+  beforeEach(() => {
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve(mockExternalNFT),
+    } as Response)
+  })
+
+  describe('when the response is not ok', () => {
+    it('should return undefined', async () => {
+      mockFetch.mockReset()
+      mockFetch.mockResolvedValueOnce({ ok: false } as Response)
+
+      await expect(
+        service.getNFT({
+          contractAddress: 'contractAddress',
+          tokenId: 'tokenId',
+        })
+      ).resolves.toBeUndefined()
+    })
+  })
+
+  it('should make a request with contractAddress and tokenId in the url', async () => {
+    await service.getNFT({
+      contractAddress: 'contractAddress',
+      tokenId: 'tokenId',
+    })
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      `${mockUrl}/asset/contractAddress/tokenId/`,
+      requestInit
+    )
+  })
+
+  it('should return an nft', async () => {
+    const nft = await service.getNFT({
+      contractAddress: 'contractAddress',
+      tokenId: 'tokenId',
+    })
+
+    expect(nft).toEqual({
+      tokenId: 'token_id',
+      name: 'name',
+      thumbnail: 'image_thumbnail_url',
+      contract: {
+        name: 'name',
+        address: 'address',
+      },
     })
   })
 })

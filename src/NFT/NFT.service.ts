@@ -103,8 +103,6 @@ export class NFTService {
     // Build url
     let url = `${this.OPEN_SEA_URL}/asset/${contractAddress}/${tokenId}/`
 
-    console.log(url)
-
     // Fetch nft
     const response = await fetch(url, {
       headers: {

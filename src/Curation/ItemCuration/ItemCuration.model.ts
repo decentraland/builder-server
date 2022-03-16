@@ -60,7 +60,13 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return itemCurations[0]
   }
 
-  static async getCountByThirdPartyId(thirdPartyId: string) {
+  static async deleteByIds(ids: string[]) {
+    return this.query(SQL`
+      DELETE FROM ${raw(this.tableName)}
+        WHERE id = ANY(${ids})`)
+  }
+
+  static async countByThirdPartyId(thirdPartyId: string) {
     const counts = await this.query<{ count: number }>(
       SQL`SELECT COUNT(DISTINCT item_curations.id) AS Count
         FROM ${raw(ItemCuration.tableName)} AS item_curations

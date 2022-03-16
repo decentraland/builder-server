@@ -201,47 +201,69 @@ export class CollectionService {
     }
 
     const now = new Date()
-    await SlotUsageCheque.create<SlotUsageChequeAttributes>({
-      id: uuid(),
-      signature,
-      qty,
-      salt,
-      collection_id: dbCollection.id,
-      third_party_id: dbCollection.third_party_id,
-      created_at: now,
-      updated_at: now,
-    })
+    let itemCurationIds: string[] = []
+    let itemCurations: ItemCurationAttributes[] = []
+    let lastItemCuration: ItemCurationAttributes
+    let newSlotUsageCheque: SlotUsageChequeAttributes | undefined
 
-    const promises = []
-    for (const item of dbItems) {
-      promises.push(
-        ItemCuration.create<ItemCurationAttributes>({
+    try {
+      newSlotUsageCheque = await SlotUsageCheque.create<SlotUsageChequeAttributes>(
+        {
+          id: uuid(),
+          signature,
+          qty,
+          salt,
+          collection_id: dbCollection.id,
+          third_party_id: dbCollection.third_party_id,
+          created_at: now,
+          updated_at: now,
+        }
+      )
+
+      const promises = []
+      for (const item of dbItems) {
+        const itemCuration: ItemCurationAttributes = {
           id: uuid(),
           item_id: item.id,
           status: CurationStatus.PENDING,
+          content_hash: item.local_content_hash,
           created_at: now,
           updated_at: now,
-          content_hash: item.local_content_hash,
-        })
-      )
-    }
-    const itemCurations = await Promise.all(promises)
-    const [lastItemCuration] = itemCurations.slice(-1)
+        }
+        itemCurationIds.push(itemCuration.id)
+        promises.push(ItemCuration.create<ItemCurationAttributes>(itemCuration))
+      }
 
-    const collectionCuration = await CollectionCuration.findOne(collectionId)
-    if (collectionCuration) {
-      await CollectionCuration.update(
-        { id: collectionCuration.id },
-        { updated_at: now }
+      itemCurations = await Promise.all(promises)
+      lastItemCuration = itemCurations.slice(-1)[0]
+
+      const collectionCuration = await CollectionCuration.findOne(collectionId)
+      if (collectionCuration) {
+        await CollectionCuration.update(
+          { id: collectionCuration.id },
+          { updated_at: now }
+        )
+      } else {
+        await CollectionCuration.create<CollectionCurationAttributes>({
+          id: uuid(),
+          collection_id: collectionId,
+          status: CurationStatus.PENDING,
+          created_at: now,
+          updated_at: now,
+        })
+      }
+    } catch (error) {
+      // Rollback the cheque and all item curations just created in case any database interaction fails
+      await Promise.all([
+        newSlotUsageCheque
+          ? SlotUsageCheque.delete({ id: newSlotUsageCheque.id })
+          : null,
+        ItemCuration.deleteByIds(itemCurationIds),
+      ])
+
+      throw new InvalidRequestError(
+        `An error occurred trying to publish: ${(error as Error).message}`
       )
-    } else {
-      await CollectionCuration.create<CollectionCurationAttributes>({
-        id: uuid(),
-        collection_id: collectionId,
-        status: CurationStatus.PENDING,
-        created_at: now,
-        updated_at: now,
-      })
     }
 
     return {

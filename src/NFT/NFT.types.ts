@@ -4,7 +4,14 @@ export type NFT = {
   backgroundColor: string
   name: string
   externalLink: string
-  owner: string
+  owner: {
+    user: {
+      username: string
+    }
+    profileImageUrl: string
+    address: string
+    config: string
+  }
   contract: {
     name: string
     symbol: string

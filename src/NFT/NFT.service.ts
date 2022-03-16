@@ -132,6 +132,13 @@ export class NFTService {
       }
     }
 
+    const owner: NFT['owner'] = {
+      address: nft.owner.address,
+      config: nft.owner.config,
+      profileImageUrl: nft.owner.profile_image_url,
+      user: nft.owner.user,
+    }
+
     const traits: NFT['traits'] = (nft.traits as any[]).map((trait) => ({
       displayType: trait.display_type,
       type: trait.trait_type,
@@ -152,7 +159,7 @@ export class NFTService {
       backgroundColor: nft.background_color,
       name: nft.name,
       externalLink: nft.external_link,
-      owner: nft.owner,
+      owner,
       traits,
       lastSale,
       contract,

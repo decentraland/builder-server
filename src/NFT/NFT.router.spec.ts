@@ -263,7 +263,14 @@ describe('when getting a single nft', () => {
         totalPrice: 'total_price',
       },
       name: 'name',
-      owner: 'owner',
+      owner: {
+        address: 'address',
+        config: 'config',
+        profileImageUrl: 'profile_image_url',
+        user: {
+          username: 'username',
+        },
+      },
       tokenId: 'token_id',
       traits: [
         {

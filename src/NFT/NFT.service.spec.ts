@@ -1,6 +1,7 @@
 import { env } from 'decentraland-commons'
 import fetch, { Response } from 'node-fetch'
 import { NFTService } from './NFT.service'
+import { NFT } from './NFT.types'
 
 jest.mock('node-fetch')
 jest.mock('decentraland-commons')
@@ -14,6 +15,7 @@ const mockApiKey = 'https://some-url.com/v1'
 let service: NFTService
 let requestInit: RequestInit
 let mockExternalNFT: any
+let mockMappedExternalNFT: NFT
 
 beforeEach(() => {
   mockEnv.get.mockReturnValueOnce(mockUrl)
@@ -34,7 +36,14 @@ beforeEach(() => {
     background_color: 'background_color',
     name: 'name',
     external_link: 'external_link',
-    owner: 'owner',
+    owner: {
+      address: 'address',
+      config: 'config',
+      profile_image_url: 'profile_image_url',
+      user: {
+        username: 'username',
+      },
+    },
     traits: [
       {
         display_type: 'display_type',
@@ -57,6 +66,44 @@ beforeEach(() => {
       name: 'name',
       symbol: 'symbol',
     },
+  }
+
+  mockMappedExternalNFT = {
+    backgroundColor: 'background_color',
+    contract: {
+      description: 'description',
+      externalLink: 'external_link',
+      imageUrl: 'image_url',
+      name: 'name',
+      symbol: 'symbol',
+    },
+    externalLink: 'external_link',
+    imageUrl: 'image_url',
+    lastSale: {
+      eventType: 'event_type',
+      paymentToken: {
+        symbol: 'symbol',
+      },
+      quantity: 'quantity',
+      totalPrice: 'total_price',
+    },
+    name: 'name',
+    owner: {
+      address: 'address',
+      config: 'config',
+      profileImageUrl: 'profile_image_url',
+      user: {
+        username: 'username',
+      },
+    },
+    tokenId: 'token_id',
+    traits: [
+      {
+        displayType: 'display_type',
+        type: 'trait_type',
+        value: 'value',
+      },
+    ],
   }
 
   jest.clearAllMocks()
@@ -161,38 +208,7 @@ describe('when getting a list of nfts', () => {
 
     expect(data).toEqual({
       next: 'next',
-      nfts: [
-        {
-          backgroundColor: 'background_color',
-          contract: {
-            description: 'description',
-            externalLink: 'external_link',
-            imageUrl: 'image_url',
-            name: 'name',
-            symbol: 'symbol',
-          },
-          externalLink: 'external_link',
-          imageUrl: 'image_url',
-          lastSale: {
-            eventType: 'event_type',
-            paymentToken: {
-              symbol: 'symbol',
-            },
-            quantity: 'quantity',
-            totalPrice: 'total_price',
-          },
-          name: 'name',
-          owner: 'owner',
-          tokenId: 'token_id',
-          traits: [
-            {
-              displayType: 'display_type',
-              type: 'trait_type',
-              value: 'value',
-            },
-          ],
-        },
-      ],
+      nfts: [mockMappedExternalNFT],
       previous: 'previous',
     })
   })
@@ -238,35 +254,6 @@ describe('when getting an nft', () => {
       tokenId: 'tokenId',
     })
 
-    expect(nft).toEqual({
-      backgroundColor: 'background_color',
-      contract: {
-        description: 'description',
-        externalLink: 'external_link',
-        imageUrl: 'image_url',
-        name: 'name',
-        symbol: 'symbol',
-      },
-      externalLink: 'external_link',
-      imageUrl: 'image_url',
-      lastSale: {
-        eventType: 'event_type',
-        paymentToken: {
-          symbol: 'symbol',
-        },
-        quantity: 'quantity',
-        totalPrice: 'total_price',
-      },
-      name: 'name',
-      owner: 'owner',
-      tokenId: 'token_id',
-      traits: [
-        {
-          displayType: 'display_type',
-          type: 'trait_type',
-          value: 'value',
-        },
-      ],
-    })
+    expect(nft).toEqual(mockMappedExternalNFT)
   })
 })

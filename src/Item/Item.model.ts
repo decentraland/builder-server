@@ -1,6 +1,5 @@
 import { Model, SQL, raw } from 'decentraland-server'
 import { Collection } from '../Collection'
-import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { DBItemApprovalData, ItemAttributes } from './Item.types'
 

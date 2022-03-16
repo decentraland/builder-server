@@ -2,8 +2,8 @@ import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Collection } from './Collection.model'
 import { CollectionAttributes } from './Collection.types'
 import { isCommitteeMember } from '../Committee'
+import { isTPCollection } from '../utils/urn'
 import { Ownable } from '../Ownable'
-import { isTPCollection } from './utils'
 
 export async function hasPublicAccess(
   eth_address: string,
@@ -25,7 +25,7 @@ export async function hasAccess(
     isCommitteeMember(eth_address),
     isTPCollection(collection)
       ? thirdPartyAPI.isManager(collection.third_party_id, eth_address)
-      : isManager(eth_address, collection),
+      : collection.is_published && isManager(eth_address, collection),
   ])
 
   return isOwner || isCommittee || hasManagerAccess

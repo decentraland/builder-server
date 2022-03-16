@@ -8,13 +8,13 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
-import { isTPCollection } from '../Collection/utils'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
 import { Item, ThirdPartyItemAttributes } from '../Item'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
+import { isTPCollection } from '../utils/urn'
 import {
   CurationStatus,
   CurationType,
@@ -239,12 +239,30 @@ export class CurationRouter extends Router {
       )
     }
 
-    return this.updateCuration(
-      itemId,
-      ethAddress,
-      curationJSON,
-      CurationType.ITEM
-    )
+    try {
+      return this.updateCuration(
+        itemId,
+        ethAddress,
+        curationJSON,
+        CurationType.ITEM
+      )
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id: error.id, ethAddress },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof HTTPError) {
+        throw error
+      } else {
+        throw new HTTPError(
+          (error as Error).message,
+          { itemId, ethAddress },
+          STATUS_CODES.error
+        )
+      }
+    }
   }
 
   insertCollectionCuration = async (req: AuthRequest) => {
@@ -317,11 +335,8 @@ export class CurationRouter extends Router {
     type: CurationType
   ) => {
     const curationService = CurationService.byType(type)
-
     await this.validateAccessToCuration(curationService, ethAddress, id)
-
     const validate = validator.compile(patchCurationSchema)
-
     validate(curationJSON)
 
     if (validate.errors) {

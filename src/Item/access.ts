@@ -1,12 +1,18 @@
 import { CollectionAttributes } from '../Collection'
 import { isManager as isCollectionManager } from '../Collection/access'
-import { isTPCollection } from '../Collection/utils'
 import { isCommitteeMember } from '../Committee'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Ownable } from '../Ownable'
+import { isTPCollection } from '../utils/urn'
 import { Item } from './Item.model'
 import { FullItem } from './Item.types'
 
+/**
+ * Checks if an item is accessible publicly.
+ * @param eth_address - The address of the user to check access against.
+ * @param item - The item that we're checking access to.
+ * @param collection - The collection (if exists) of the item to check access to.
+ */
 export async function hasPublicAccess(
   eth_address: string,
   item: FullItem,
@@ -16,16 +22,23 @@ export async function hasPublicAccess(
     return true
   }
 
-  return hasAccess(eth_address, item, collection)
+  return hasAccess(eth_address, item.id, collection)
 }
 
+/**
+ * Checks if an item is accessible.
+ * If the collection is published, the method will check if the address is a manager of the collection.
+ * @param eth_address - The address of the user to check access against.
+ * @param item - The item that we're checking access to.
+ * @param collection - The collection (if exists) of the item to check access to.
+ */
 export async function hasAccess(
   eth_address: string,
-  item: FullItem,
+  itemId: string,
   collection?: CollectionAttributes
 ): Promise<boolean> {
   const [isOwner, isCommittee] = await Promise.all([
-    new Ownable(Item).isOwnedBy(item.id, eth_address),
+    new Ownable(Item).isOwnedBy(itemId, eth_address),
     isCommitteeMember(eth_address),
   ])
 
@@ -37,7 +50,8 @@ export async function hasAccess(
         eth_address
       )
     } else {
-      isManager = isCollectionManager(eth_address, collection)
+      isManager =
+        collection.is_published && isCollectionManager(eth_address, collection)
     }
   }
 

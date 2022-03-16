@@ -4,7 +4,6 @@ import {
   ThirdPartyCollectionAttributes,
 } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
-import { isTPCollection } from '../Collection/utils'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -12,6 +11,11 @@ import { peerAPI } from '../ethereum/api/peer'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Ownable } from '../Ownable'
 import { buildModelDates } from '../utils/dates'
+import {
+  decodeThirdPartyItemURN,
+  getDecentralandItemURN,
+  isTPCollection,
+} from '../utils/urn'
 import { calculateItemContentHash } from './hashes'
 import {
   CollectionForItemLockedError,
@@ -31,13 +35,7 @@ import {
   ItemAttributes,
   ThirdPartyItemAttributes,
 } from './Item.types'
-import {
-  buildTPItemURN,
-  getDecentralandItemURN,
-  decodeThirdPartyItemURN,
-  isTPItem,
-  toDBItem,
-} from './utils'
+import { buildTPItemURN, isTPItem, toDBItem } from './utils'
 
 export class ItemService {
   private collectionService = new CollectionService()

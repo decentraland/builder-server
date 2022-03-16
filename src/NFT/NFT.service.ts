@@ -31,12 +31,12 @@ export class NFTService {
    * @param args.cursor - Used to obtain the next or the previous list of results
    * @returns An object with the previous and next cursors (if available) and a list of nfts
    */
-  public getNFTs = async ({
+  public async getNFTs({
     owner,
     first,
     skip,
     cursor,
-  }: GetNFTsParams = {}): Promise<GetNFTsResponse> => {
+  }: GetNFTsParams = {}): Promise<GetNFTsResponse> {
     // Build query params for request
     const params: string[] = []
 
@@ -96,10 +96,10 @@ export class NFTService {
    * @param args.tokenId - The token id of the NFT
    * @returns An NFT or undefined if it could not be found with the provided data
    */
-  public getNFT = async ({
+  public async getNFT({
     contractAddress,
     tokenId,
-  }: GetNFTParams): Promise<NFT | undefined> => {
+  }: GetNFTParams): Promise<NFT | undefined> {
     // Build url
     let url = `${this.OPEN_SEA_URL}/asset/${contractAddress}/${tokenId}/`
 
@@ -120,7 +120,7 @@ export class NFTService {
     return this.mapExternalNFT(externalNFT)
   }
 
-  private mapExternalNFT = (nft: any): NFT => {
+  private mapExternalNFT(nft: any): NFT {
     const contract = {
       name: nft.asset_contract.name,
       address: nft.asset_contract.address,

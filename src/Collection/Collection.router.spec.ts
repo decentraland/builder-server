@@ -1375,27 +1375,43 @@ describe('Collection router', () => {
       })
 
       describe('and interating with the database fails', () => {
-        let itemCurationDeleteSpy: jest.SpyInstance<
-          ReturnType<typeof ItemCuration.delete>
-        >
+        let dbItems: ItemAttributes[]
+        let dbItemIds: string[]
+        let createdItemCurationIds: string[]
+        let slotUsageCheque: SlotUsageChequeAttributes
 
         beforeEach(() => {
-          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbItemMock])
+          dbItems = [
+            { ...dbItemMock, id: uuid() },
+            { ...dbItemMock, id: uuid() },
+          ]
+          dbItemIds = dbItems.map((item) => item.id)
+          slotUsageCheque = { id: uuid() } as SlotUsageChequeAttributes
+          createdItemCurationIds = []
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(dbItems)
           ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
             undefined
           )
+          ;(ItemCuration.create as jest.Mock).mockImplementationOnce(
+            (attributes) => {
+              createdItemCurationIds.push(attributes.id)
+              return Promise.resolve(attributes)
+            }
+          )
+          ;(ItemCuration.create as jest.Mock).mockImplementationOnce(
+            (attributes) => {
+              createdItemCurationIds.push(attributes.id)
+              return Promise.reject(new Error('Database error'))
+            }
+          )
+          ;(ItemCuration.deleteByIds as jest.Mock).mockResolvedValueOnce([])
+
           jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
 
-          jest.spyOn(SlotUsageCheque, 'create').mockResolvedValueOnce({})
-          jest.spyOn(SlotUsageCheque, 'delete').mockResolvedValueOnce('')
-
           jest
-            .spyOn(ItemCuration, 'create')
-            .mockRejectedValueOnce(new Error('Database error'))
-
-          itemCurationDeleteSpy = jest
-            .spyOn(ItemCuration, 'deleteByIds')
-            .mockResolvedValue([])
+            .spyOn(SlotUsageCheque, 'create')
+            .mockResolvedValueOnce(slotUsageCheque)
+          jest.spyOn(SlotUsageCheque, 'delete').mockResolvedValueOnce('')
         })
 
         it('should respond with a 400 and a message signaling that the database errored out', () => {
@@ -1403,7 +1419,7 @@ describe('Collection router', () => {
             .post(buildURL(url))
             .set(createAuthHeaders('post', url))
             .send({
-              itemIds: [dbItemMock.id],
+              itemIds: dbItemIds,
               cheque: {
                 signedMessage: 'message',
                 signature: 'signature',
@@ -1421,7 +1437,7 @@ describe('Collection router', () => {
             })
         })
 
-        it('should rollback the created data by date', () => {
+        it('should rollback the created data', () => {
           return server
             .post(buildURL(url))
             .set(createAuthHeaders('post', url))
@@ -1437,19 +1453,16 @@ describe('Collection router', () => {
             .expect(400)
             .then(() => {
               expect(SlotUsageCheque.delete).toHaveBeenCalledWith({
-                id: expect.any(String),
+                id: slotUsageCheque.id,
               })
-              expect(itemCurationDeleteSpy).toHaveBeenCalledWith([
-                expect.any(String),
-              ])
+              expect(ItemCuration.deleteByIds).toHaveBeenCalledWith(
+                createdItemCurationIds
+              )
             })
         })
       })
 
       describe('when the supplied data is correct', () => {
-        let itemCurationCreateSpy: jest.SpyInstance<
-          ReturnType<typeof ItemCuration.create>
-        >
         let items: ThirdPartyItemAttributes[]
         let itemIds: string[]
         let forumLink: string
@@ -1466,15 +1479,14 @@ describe('Collection router', () => {
           ;(ItemCuration.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
             undefined
           )
+          ;(ItemCuration.create as jest.Mock).mockResolvedValue(
+            itemCurationMock
+          )
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
             dbTPCollectionMock,
           ])
           ;(createPost as jest.Mock).mockResolvedValueOnce(forumLink)
           ;(SlotUsageCheque.create as jest.Mock).mockResolvedValueOnce({})
-
-          itemCurationCreateSpy = jest
-            .spyOn(ItemCuration, 'create')
-            .mockResolvedValue(itemCurationMock)
 
           jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
           jest
@@ -1541,7 +1553,7 @@ describe('Collection router', () => {
                     content_hash: item.local_content_hash,
                   },
                 ])
-                expect(itemCurationCreateSpy.mock.calls).toEqual(
+                expect((ItemCuration.create as jest.Mock).mock.calls).toEqual(
                   itemCurationCalls
                 )
               })

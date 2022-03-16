@@ -204,20 +204,20 @@ export class CollectionService {
     let itemCurationIds: string[] = []
     let itemCurations: ItemCurationAttributes[] = []
     let lastItemCuration: ItemCurationAttributes
-    let newSlotUsageCheque: SlotUsageChequeAttributes = {
-      id: uuid(),
-      signature,
-      qty,
-      salt,
-      collection_id: dbCollection.id,
-      third_party_id: dbCollection.third_party_id,
-      created_at: now,
-      updated_at: now,
-    }
+    let newSlotUsageCheque: SlotUsageChequeAttributes | undefined
 
     try {
-      await SlotUsageCheque.create<SlotUsageChequeAttributes>(
-        newSlotUsageCheque
+      newSlotUsageCheque = await SlotUsageCheque.create<SlotUsageChequeAttributes>(
+        {
+          id: uuid(),
+          signature,
+          qty,
+          salt,
+          collection_id: dbCollection.id,
+          third_party_id: dbCollection.third_party_id,
+          created_at: now,
+          updated_at: now,
+        }
       )
 
       const promises = []
@@ -255,7 +255,9 @@ export class CollectionService {
     } catch (error) {
       // Rollback the cheque and all item curations just created in case any database interaction fails
       await Promise.all([
-        SlotUsageCheque.delete({ id: newSlotUsageCheque.id }),
+        newSlotUsageCheque
+          ? SlotUsageCheque.delete({ id: newSlotUsageCheque.id })
+          : null,
         ItemCuration.deleteByIds(itemCurationIds),
       ])
 

@@ -12,19 +12,7 @@ const server = supertest(app.getApp())
 
 const mockAddress = '0x6D7227d6F36FC997D53B4646132b3B55D751cc7c'
 
-afterEach(() => {
-  jest.clearAllMocks()
-})
-
 describe('when getting nfts', () => {
-  beforeEach(() => {
-    mockNFTService.prototype.getNFTs.mockResolvedValueOnce({
-      next: 'next',
-      previous: 'previous',
-      nfts: [],
-    })
-  })
-
   describe('when owner query param does not have a valid etherum address pattern', () => {
     it('should fail with a bad request error', async () => {
       const response = await server
@@ -139,7 +127,6 @@ describe('when getting nfts', () => {
 
   describe('when the nft service rejects', () => {
     it('should fail with a server error', async () => {
-      mockNFTService.prototype.getNFTs.mockReset()
       mockNFTService.prototype.getNFTs.mockRejectedValueOnce('Rejected!')
 
       const response = await server.get('/v1/nfts').expect(STATUS_CODES.error)
@@ -153,6 +140,12 @@ describe('when getting nfts', () => {
   })
 
   it('should return a list of nfts with next and previous cursor data', async () => {
+    mockNFTService.prototype.getNFTs.mockResolvedValueOnce({
+      next: 'next',
+      previous: 'previous',
+      nfts: [],
+    })
+
     const response = await server.get('/v1/nfts').expect(STATUS_CODES.ok)
 
     expect(mockNFTService.prototype.getNFTs).toHaveBeenCalledWith({})
@@ -169,6 +162,12 @@ describe('when getting nfts', () => {
 
   describe('when all query params are provided', () => {
     it('should call the nft service with them', async () => {
+      mockNFTService.prototype.getNFTs.mockResolvedValueOnce({
+        next: 'next',
+        previous: 'previous',
+        nfts: [],
+      })
+
       await server
         .get(`/v1/nfts?owner=${mockAddress}&first=10&skip=10&cursor=cursor`)
         .expect(STATUS_CODES.ok)
@@ -227,6 +226,11 @@ describe('when getting a single nft', () => {
         .get(`/v1/nfts/${mockAddress}/123`)
         .expect(STATUS_CODES.notFound)
 
+      expect(mockNFTService.prototype.getNFT).toHaveBeenCalledWith({
+        contractAddress: mockAddress,
+        tokenId: '123',
+      })
+
       expect(response.body).toEqual({
         data: {
           contractAddress: mockAddress,
@@ -254,6 +258,11 @@ describe('when getting a single nft', () => {
     const response = await server
       .get(`/v1/nfts/${mockAddress}/123`)
       .expect(STATUS_CODES.ok)
+
+    expect(mockNFTService.prototype.getNFT).toHaveBeenCalledWith({
+      contractAddress: mockAddress,
+      tokenId: '123',
+    })
 
     expect(response.body).toEqual({
       data: nft,

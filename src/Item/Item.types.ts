@@ -1,4 +1,5 @@
 import { Wearable } from '../ethereum/api/peer'
+import { ItemCurationAttributes } from '../Curation/ItemCuration'
 import { MetricsAttributes } from '../Metrics'
 import { Cheque } from '../SlotUsageCheque'
 import { WearableData } from './wearable/types'
@@ -66,7 +67,10 @@ export type DBItemApprovalData = Pick<ItemAttributes, 'id' | 'content_hash'>
 
 export type ItemApprovalData = {
   cheque: Cheque
-  content_hashes: string[]
+  content_hashes: Record<
+    ItemAttributes['id'],
+    ItemCurationAttributes['content_hash']
+  >
 }
 
 type BaseWearableEntityMetadata = Omit<

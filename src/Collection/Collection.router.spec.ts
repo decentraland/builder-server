@@ -2024,7 +2024,11 @@ describe('Collection router', () => {
                       salt: slotUsageCheque.salt,
                       signature: slotUsageCheque.signature,
                     },
-                    content_hashes: ['Qm1abababa', 'Qm2bdbdbdb', 'Qm3rererer'],
+                    content_hashes: {
+                      [itemApprovalData[0].id]: 'Qm1abababa',
+                      [itemApprovalData[1].id]: 'Qm2bdbdbdb',
+                      [itemApprovalData[2].id]: 'Qm3rererer',
+                    },
                   },
                 })
               })

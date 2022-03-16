@@ -20,7 +20,7 @@ export class Item extends Model<ItemAttributes> {
         FROM ${raw(this.tableName)} items
         JOIN ${raw(
           ItemCuration.tableName
-        )} item_curations ON items.id = item_curations.item_id AND
+        )} item_curations ON items.id = item_curations.item_id
         WHERE items.collection_id = ${collectionId}
           AND item_curations.status = ${CurationStatus.PENDING}`)
   }

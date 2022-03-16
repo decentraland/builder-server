@@ -121,15 +121,40 @@ export class NFTService {
   }
 
   private mapExternalNFT(nft: any): NFT {
-    const contract = {
+    let lastSale: NFT['lastSale'] = null
+
+    if (nft.last_sale) {
+      lastSale = {
+        eventType: nft.last_sale.event_type,
+        paymentToken: { symbol: nft.last_sale.payment_token.symbol },
+        quantity: nft.last_sale.quantity,
+        totalPrice: nft.last_sale.total_price,
+      }
+    }
+
+    const traits: NFT['traits'] = (nft.traits as any[]).map((trait) => ({
+      displayType: trait.display_type,
+      type: trait.trait_type,
+      value: trait.value,
+    }))
+
+    const contract: NFT['contract'] = {
+      description: nft.asset_contract.description,
+      externalLink: nft.asset_contract.external_link,
+      imageUrl: nft.asset_contract.image_url,
       name: nft.asset_contract.name,
-      address: nft.asset_contract.address,
+      symbol: nft.asset_contract.symbol,
     }
 
     return {
       tokenId: nft.token_id,
+      imageUrl: nft.image_url,
+      backgroundColor: nft.background_color,
       name: nft.name,
-      thumbnail: nft.image_thumbnail_url,
+      externalLink: nft.external_link,
+      owner: nft.owner,
+      traits,
+      lastSale,
       contract,
     }
   }

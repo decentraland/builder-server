@@ -1,11 +1,30 @@
 export type NFT = {
   tokenId: string
+  imageUrl: string
+  backgroundColor: string
   name: string
-  thumbnail: string
+  externalLink: string
+  owner: string
   contract: {
     name: string
-    address: string
+    symbol: string
+    imageUrl: string
+    description: string
+    externalLink: string
   }
+  traits: {
+    type: string
+    value: string | number
+    displayType: string
+  }[]
+  lastSale: {
+    eventType: string
+    totalPrice: string
+    quantity: string
+    paymentToken: {
+      symbol: string
+    }
+  } | null
 }
 
 export type GetNFTsParams = {

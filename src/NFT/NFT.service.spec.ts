@@ -29,13 +29,34 @@ beforeEach(() => {
   }
 
   mockExternalNFT = {
-    asset_contract: {
-      name: 'name',
-      address: 'address',
-    },
     token_id: 'token_id',
+    image_url: 'image_url',
+    background_color: 'background_color',
     name: 'name',
-    image_thumbnail_url: 'image_thumbnail_url',
+    external_link: 'external_link',
+    owner: 'owner',
+    traits: [
+      {
+        display_type: 'display_type',
+        trait_type: 'trait_type',
+        value: 'value',
+      },
+    ],
+    last_sale: {
+      event_type: 'event_type',
+      payment_token: {
+        symbol: 'symbol',
+      },
+      quantity: 'quantity',
+      total_price: 'total_price',
+    },
+    asset_contract: {
+      description: 'description',
+      external_link: 'external_link',
+      image_url: 'image_url',
+      name: 'name',
+      symbol: 'symbol',
+    },
   }
 
   jest.clearAllMocks()
@@ -140,18 +161,39 @@ describe('when getting a list of nfts', () => {
 
     expect(data).toEqual({
       next: 'next',
-      previous: 'previous',
       nfts: [
         {
-          tokenId: 'token_id',
-          name: 'name',
-          thumbnail: 'image_thumbnail_url',
+          backgroundColor: 'background_color',
           contract: {
+            description: 'description',
+            externalLink: 'external_link',
+            imageUrl: 'image_url',
             name: 'name',
-            address: 'address',
+            symbol: 'symbol',
           },
+          externalLink: 'external_link',
+          imageUrl: 'image_url',
+          lastSale: {
+            eventType: 'event_type',
+            paymentToken: {
+              symbol: 'symbol',
+            },
+            quantity: 'quantity',
+            totalPrice: 'total_price',
+          },
+          name: 'name',
+          owner: 'owner',
+          tokenId: 'token_id',
+          traits: [
+            {
+              displayType: 'display_type',
+              type: 'trait_type',
+              value: 'value',
+            },
+          ],
         },
       ],
+      previous: 'previous',
     })
   })
 })
@@ -197,13 +239,34 @@ describe('when getting an nft', () => {
     })
 
     expect(nft).toEqual({
-      tokenId: 'token_id',
-      name: 'name',
-      thumbnail: 'image_thumbnail_url',
+      backgroundColor: 'background_color',
       contract: {
+        description: 'description',
+        externalLink: 'external_link',
+        imageUrl: 'image_url',
         name: 'name',
-        address: 'address',
+        symbol: 'symbol',
       },
+      externalLink: 'external_link',
+      imageUrl: 'image_url',
+      lastSale: {
+        eventType: 'event_type',
+        paymentToken: {
+          symbol: 'symbol',
+        },
+        quantity: 'quantity',
+        totalPrice: 'total_price',
+      },
+      name: 'name',
+      owner: 'owner',
+      tokenId: 'token_id',
+      traits: [
+        {
+          displayType: 'display_type',
+          type: 'trait_type',
+          value: 'value',
+        },
+      ],
     })
   })
 })

@@ -183,7 +183,7 @@ describe('when owner query param does not have a valid ethereum address pattern'
 })
 
 describe('when getting a single nft', () => {
-  describe('when contractAddress path param does not have a valid etherum address pattern', () => {
+  describe('when contractAddress path param does not have a valid ethereum address pattern', () => {
     it('should fail with a bad request error', async () => {
       const response = await server
         .get('/v1/nfts/asd/123')

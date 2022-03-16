@@ -16,13 +16,22 @@ export class Item extends Model<ItemAttributes> {
 
   static findDBApprovalDataByCollectionId(collectionId: string) {
     return this.query<DBItemApprovalData>(SQL`
-      SELECT items.id, item_curations.content_hash
-        FROM ${raw(this.tableName)} items
-        JOIN ${raw(
-          ItemCuration.tableName
-        )} item_curations ON items.id = item_curations.item_id
-        WHERE items.collection_id = ${collectionId}
-          AND item_curations.status = ${CurationStatus.PENDING}`)
+      SELECT 
+        DISTINCT ON (items.id) items.id,
+        item_curations.content_hash
+      FROM ${raw(this.tableName)} items
+      JOIN ${raw(
+        ItemCuration.tableName
+      )} item_curations ON items.id = item_curations.item_id
+      WHERE 
+        items.collection_id = ${collectionId}
+        AND 
+          item_curations.status = ANY(${[
+            CurationStatus.PENDING,
+            CurationStatus.APPROVED,
+          ]})
+      ORDER BY items.id, item_curations.updated_at DESC
+    `)
   }
 
   static findByCollectionIds(collectionIds: string[]) {

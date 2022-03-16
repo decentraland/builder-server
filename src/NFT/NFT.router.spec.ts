@@ -13,7 +13,7 @@ const server = supertest(app.getApp())
 const mockAddress = '0x6D7227d6F36FC997D53B4646132b3B55D751cc7c'
 
 describe('when getting nfts', () => {
-  describe('when owner query param does not have a valid etherum address pattern', () => {
+describe('when owner query param does not have a valid ethereum address pattern', () => {
     it('should fail with a bad request error', async () => {
       const response = await server
         .get('/v1/nfts?owner=invalid-owner')

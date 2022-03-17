@@ -591,7 +591,7 @@ describe('when handling a request', () => {
 
       it('should reject with a not found message', async () => {
         await expect(router.insertCollectionCuration(req)).rejects.toThrowError(
-          "The collection doesn't exist."
+          'Not found'
         )
       })
     })
@@ -612,9 +612,9 @@ describe('when handling a request', () => {
         } as any
       })
 
-      it('should reject with collection not published message', async () => {
+      it('should reject with a unpublished collection message', async () => {
         await expect(router.insertCollectionCuration(req)).rejects.toThrowError(
-          'The collection is not published.'
+          'Unpublished collection'
         )
       })
     })

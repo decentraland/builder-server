@@ -91,7 +91,11 @@ describe('when getting access for a collection', () => {
       beforeEach(() => {
         isOwnedBySpy.mockResolvedValueOnce(false)
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        collection = { ...collection, managers: [wallet.address] }
+        collection = {
+          ...collection,
+          managers: [wallet.address],
+          is_published: true,
+        }
       })
 
       it('should return true', async () => {

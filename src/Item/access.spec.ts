@@ -5,6 +5,7 @@ import {
   dbCollectionMock,
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
+import { CollectionAttributes } from '../Collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { isManager as isCollectionManager } from '../Collection/access'
 import { Ownable } from '../Ownable'
@@ -36,9 +37,11 @@ describe('when getting the public access for an item', () => {
 
 describe('when getting access for an item', () => {
   let item: FullItem
+  let collection: CollectionAttributes
 
   beforeEach(() => {
     item = Bridge.toFullItem(dbItemMock)
+    collection = { ...dbCollectionMock, is_published: true }
   })
 
   afterEach(() => {
@@ -52,7 +55,7 @@ describe('when getting access for an item', () => {
     })
 
     it('should return false', async () => {
-      expect(await hasAccess(wallet.address, item)).toBe(false)
+      expect(await hasAccess(wallet.address, item.id)).toBe(false)
     })
   })
 
@@ -63,7 +66,7 @@ describe('when getting access for an item', () => {
     })
 
     it('should return true', async () => {
-      expect(await hasAccess(wallet.address, item)).toBe(true)
+      expect(await hasAccess(wallet.address, item.id)).toBe(true)
     })
   })
 
@@ -74,7 +77,7 @@ describe('when getting access for an item', () => {
     })
 
     it('should return true', async () => {
-      expect(await hasAccess(wallet.address, item)).toBe(true)
+      expect(await hasAccess(wallet.address, item.id)).toBe(true)
     })
   })
 
@@ -88,7 +91,7 @@ describe('when getting access for an item', () => {
         })
 
         it('should return false', async () => {
-          expect(await hasAccess(wallet.address, item, dbCollectionMock)).toBe(
+          expect(await hasAccess(wallet.address, item.id, collection)).toBe(
             false
           )
         })
@@ -102,7 +105,7 @@ describe('when getting access for an item', () => {
         })
 
         it('should return true', async () => {
-          expect(await hasAccess(wallet.address, item, dbCollectionMock)).toBe(
+          expect(await hasAccess(wallet.address, item.id, collection)).toBe(
             true
           )
         })
@@ -119,7 +122,7 @@ describe('when getting access for an item', () => {
 
         it('should return false', async () => {
           expect(
-            await hasAccess(wallet.address, item, dbTPCollectionMock)
+            await hasAccess(wallet.address, item.id, dbTPCollectionMock)
           ).toBe(false)
         })
       })
@@ -133,7 +136,7 @@ describe('when getting access for an item', () => {
 
         it('should return true', async () => {
           expect(
-            await hasAccess(wallet.address, item, dbTPCollectionMock)
+            await hasAccess(wallet.address, item.id, dbTPCollectionMock)
           ).toBe(true)
         })
       })

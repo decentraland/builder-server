@@ -1,12 +1,12 @@
 import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
 import { CollectionAttributes } from '../Collection'
-import { isTPCollection } from '../Collection/utils'
+import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import {
   StandardWearableEntityMetadata,
   ItemAttributes,
   TPWearableEntityMetadata,
 } from './Item.types'
-import { buildTPItemURN, getDecentralandItemURN, isTPItem } from './utils'
+import { buildTPItemURN, isTPItem } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'

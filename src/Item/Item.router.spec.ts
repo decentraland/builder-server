@@ -135,6 +135,7 @@ describe('Item router', () => {
     resultTPItemPublished = {
       ...toResultTPItem(dbTPItemPublished, dbTPCollectionMock),
       is_approved: false,
+      in_catalyst: false,
     }
   })
 

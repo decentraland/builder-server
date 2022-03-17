@@ -17,8 +17,8 @@ import {
 import { toUnixTimestamp } from '../../src/utils/parse'
 import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
-import { isTPCollection } from '../../src/Collection/utils'
 import { WearableBodyShape } from '../../src/Item/wearable/types'
+import { isTPCollection } from '../../src/utils/urn'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {

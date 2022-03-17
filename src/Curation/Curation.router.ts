@@ -8,13 +8,13 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
-import { isTPCollection } from '../Collection/utils'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
 import { Item, ThirdPartyItemAttributes } from '../Item'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
+import { isTPCollection } from '../utils/urn'
 import {
   CurationStatus,
   CurationType,
@@ -317,11 +317,8 @@ export class CurationRouter extends Router {
     type: CurationType
   ) => {
     const curationService = CurationService.byType(type)
-
     await this.validateAccessToCuration(curationService, ethAddress, id)
-
     const validate = validator.compile(patchCurationSchema)
-
     validate(curationJSON)
 
     if (validate.errors) {
@@ -414,7 +411,26 @@ export class CurationRouter extends Router {
     id: string,
     ethAddress: string
   ) => {
-    const hasAccess = await service.hasAccess(ethAddress, id)
+    let hasAccess: boolean
+    try {
+      hasAccess = await service.hasAccess(ethAddress, id)
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id: error.id, ethAddress },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof UnpublishedCollectionError) {
+        throw new HTTPError(
+          'Unpublished collection',
+          { id: error.id, ethAddress },
+          STATUS_CODES.conflict
+        )
+      }
+      throw error
+    }
+
     if (!hasAccess) {
       throw new HTTPError(
         'Unauthorized',

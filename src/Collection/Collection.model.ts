@@ -1,4 +1,5 @@
 import { Model, raw, SQL } from 'decentraland-server'
+import { Item } from '../Item/Item.model'
 import { CollectionAttributes } from './Collection.types'
 
 export class Collection extends Model<CollectionAttributes> {
@@ -23,6 +24,18 @@ export class Collection extends Model<CollectionAttributes> {
       SELECT *
         FROM ${raw(this.tableName)}
         WHERE contract_address = ANY(${contractAddresses})`)
+  }
+
+  static async findByItemId(
+    itemId: string
+  ): Promise<CollectionAttributes | undefined> {
+    const collections = await this.query<CollectionAttributes>(SQL`
+    SELECT collections.*
+      FROM ${raw(this.tableName)} collections
+      JOIN ${raw(Item.tableName)} items ON collections.id = items.collection_id
+      WHERE items.id = ${itemId}`)
+
+    return collections[0]
   }
 
   static async isURNRepeated(

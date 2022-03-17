@@ -1,9 +1,10 @@
 import { raw, SQL } from 'decentraland-server'
 import { database } from '../database/database'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
-import { getMergedCollection } from '../Collection/utils'
 import { hasAccess as hasItemAccess } from '../Item/access'
-import { getMergedItem } from '../Item/utils'
+import { NonExistentCollectionError } from '../Collection/Collection.errors'
+import { Collection } from '../Collection'
+import { getMergedCollection } from '../Collection/utils'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
@@ -43,7 +44,7 @@ export class CurationService<
   }
 
   async getLatest() {
-    const columnName = this.getForeingColumnName()
+    const columnName = this.getForeignColumnName()
     return this.getModel().query(
       SQL`SELECT DISTINCT ON (${raw(columnName)}) *
         FROM ${raw(this.getTableName())} AS t1
@@ -52,7 +53,7 @@ export class CurationService<
   }
 
   async getLatestByIds(ids: string[]) {
-    const columnName = this.getForeingColumnName()
+    const columnName = this.getForeignColumnName()
     return this.getModel().query(
       SQL`SELECT DISTINCT ON (${raw(columnName)}) *
         FROM ${raw(this.getTableName())} AS t1
@@ -62,7 +63,7 @@ export class CurationService<
   }
 
   async getLatestById(id: string) {
-    const columnName = this.getForeingColumnName()
+    const columnName = this.getForeignColumnName()
     const result = await this.getModel().query(
       SQL`SELECT *
         FROM ${raw(this.getTableName())}
@@ -92,15 +93,18 @@ export class CurationService<
   }
 
   async hasAccess(id: string, ethAddress: string) {
+    const collection = await Collection.findByItemId(id)
+    if (!collection) {
+      throw new NonExistentCollectionError()
+    }
+    const mergedCollection = await getMergedCollection(collection)
+
     switch (this.type) {
       case CurationType.COLLECTION: {
-        const collection = await getMergedCollection(id)
-        return collection && hasCollectionAccess(ethAddress, collection)
+        return hasCollectionAccess(ethAddress, mergedCollection)
       }
       case CurationType.ITEM: {
-        const item = await getMergedItem(id)
-        const collection = await getMergedCollection(item.collection_id!) // the item WILL have an id here, otherwise getMergedItem throws
-        return hasItemAccess(ethAddress, item, collection)
+        return hasItemAccess(ethAddress, id, mergedCollection)
       }
       default:
         throw new Error(`Invalid type ${this.type}`)
@@ -113,7 +117,7 @@ export class CurationService<
   }
 
   private getLatestCreatedAtQuery() {
-    const columnName = this.getForeingColumnName()
+    const columnName = this.getForeignColumnName()
     return SQL`created_at = (
       SELECT MAX(created_at) FROM ${raw(this.getTableName())} AS t2
       WHERE t1.${raw(columnName)} = t2.${raw(columnName)}
@@ -124,7 +128,7 @@ export class CurationService<
     return this.CurationModel.tableName
   }
 
-  private getForeingColumnName(): 'collection_id' | 'item_id' {
+  private getForeignColumnName(): 'collection_id' | 'item_id' {
     switch (this.type) {
       case CurationType.COLLECTION:
         return 'collection_id'

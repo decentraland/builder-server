@@ -1,42 +1,16 @@
 import { utils } from 'decentraland-commons'
-import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { matchers } from '../common/matchers'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { Collection } from './Collection.model'
+import { CollectionAttributes, FullCollection } from './Collection.types'
+import { UnpublishedCollectionError } from './Collection.errors'
 import {
-  CollectionAttributes,
-  ThirdPartyCollectionAttributes,
-  FullCollection,
-} from './Collection.types'
-import {
-  NonExistentCollectionError,
-  UnpublishedCollectionError,
-} from './Collection.errors'
-
-export const tpCollectionURNRegex = new RegExp(
-  `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot})$`
-)
-
-export function getDecentralandCollectionURN(
-  collectionAddress: string
-): string {
-  return `urn:decentraland:${getCurrentNetworkURNProtocol()}:collections-v2:${collectionAddress}`
-}
-
-export function getThirdPartyCollectionURN(
-  third_party_id: string,
-  urn_suffix: string
-) {
-  return `${third_party_id}:${urn_suffix}`
-}
-
-export function isTPCollection(
-  collection: CollectionAttributes
-): collection is ThirdPartyCollectionAttributes {
-  return !!collection.third_party_id && !!collection.urn_suffix
-}
+  decodeTPCollectionURN,
+  getDecentralandCollectionURN,
+  getThirdPartyCollectionURN,
+  hasTPCollectionURN,
+  isTPCollection,
+} from '../utils/urn'
 
 /**
  * Converts a collection retrieved from the DB into a "FullCollection".
@@ -88,50 +62,13 @@ export function toDBCollection(
 }
 
 /**
- * Checks if an URN belongs to a Decentraland Collection or to a
- * Third Party Collection.
- *
- * @param urn - The URN to be checked.
- */
-export function hasTPCollectionURN(collection: FullCollection) {
-  return collection.urn && tpCollectionURNRegex.test(collection.urn)
-}
-
-/**
- * Decodes or transform a TPC URN into an object with the relevant
- * properties that can be extracted from it..
- *
- * @param urn - The URN to be decoded.
- */
-export function decodeTPCollectionURN(
-  urn: string
-): { third_party_id: string; network: string; urn_suffix: string } {
-  const matches = tpCollectionURNRegex.exec(urn)
-  if (matches === null) {
-    throw new Error('The given collection URN is not Third Party compliant')
-  }
-
-  return {
-    third_party_id: matches[1],
-    network: matches[2],
-    urn_suffix: matches[3],
-  }
-}
-
-/**
  * Will return a collection by merging the collection present in the database and the remote counterpart.
  * For standard collections, the remote collection will be fetched from thegraph, if it's not present it'll throw.
  * For TP collections, the remote collection is fetched from the Catalyst, if it's not present it'll throw
  */
 export async function getMergedCollection(
-  id: string
+  dbCollection: CollectionAttributes
 ): Promise<CollectionAttributes> {
-  const dbCollection = await Collection.findOne<CollectionAttributes>(id)
-
-  if (!dbCollection) {
-    throw new NonExistentCollectionError(id)
-  }
-
   let mergedCollection: CollectionAttributes
 
   if (isTPCollection(dbCollection)) {
@@ -140,7 +77,7 @@ export async function getMergedCollection(
     )
 
     if (!lastItemCuration) {
-      throw new UnpublishedCollectionError(id)
+      throw new UnpublishedCollectionError(dbCollection.id)
     }
 
     mergedCollection = Bridge.mergeTPCollection(dbCollection, lastItemCuration)
@@ -150,7 +87,7 @@ export async function getMergedCollection(
     )
 
     if (!remoteCollection) {
-      throw new UnpublishedCollectionError(id)
+      throw new UnpublishedCollectionError(dbCollection.id)
     }
 
     mergedCollection = Bridge.mergeCollection(dbCollection, remoteCollection)

@@ -29,7 +29,8 @@ import {
   CollectionCurationAttributes,
 } from '../Curation/CollectionCuration'
 import { CurationStatus } from '../Curation'
-import { decodeTPCollectionURN, isTPCollection, toDBCollection } from './utils'
+import { decodeTPCollectionURN, isTPCollection } from '../utils/urn'
+import { toDBCollection } from './utils'
 import {
   CollectionAttributes,
   FullCollection,

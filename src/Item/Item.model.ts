@@ -1,5 +1,5 @@
 import { Model, SQL, raw } from 'decentraland-server'
-import { Collection } from '../Collection'
+import { Collection } from '../Collection/Collection.model'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { DBItemApprovalData, ItemAttributes } from './Item.types'
 

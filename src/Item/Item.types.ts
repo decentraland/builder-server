@@ -18,6 +18,8 @@ export enum ItemRarity {
   COMMON = 'common',
 }
 
+export type ItemContents = Record<string, string>
+
 export type ItemAttributes = {
   id: string // uuid
   /**
@@ -40,7 +42,7 @@ export type ItemAttributes = {
   type: ItemType
   data: WearableData
   metrics: MetricsAttributes
-  contents: Record<string, string>
+  contents: ItemContents
   created_at: Date
   updated_at: Date
 }
@@ -80,7 +82,9 @@ type BaseWearableEntityMetadata = Omit<
   i18n: { code: string; text: string }[]
 }
 
-export type TPWearableEntityMetadata = BaseWearableEntityMetadata
+export type TPWearableEntityMetadata = BaseWearableEntityMetadata & {
+  content: ItemContents
+}
 
 export type StandardWearableEntityMetadata = BaseWearableEntityMetadata &
   Pick<Wearable, 'collectionAddress' | 'rarity'>

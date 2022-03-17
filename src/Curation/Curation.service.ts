@@ -93,7 +93,7 @@ export class CurationService<
   }
 
   async hasAccess(id: string, ethAddress: string) {
-    const collection = await Collection.findCollectionOwningItem(id)
+    const collection = await Collection.findByItemId(id)
     if (!collection) {
       throw new NonExistentCollectionError()
     }

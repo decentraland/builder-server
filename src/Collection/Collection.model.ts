@@ -26,7 +26,7 @@ export class Collection extends Model<CollectionAttributes> {
         WHERE contract_address = ANY(${contractAddresses})`)
   }
 
-  static async findCollectionOwningItem(
+  static async findByItemId(
     itemId: string
   ): Promise<CollectionAttributes | undefined> {
     const collections = await this.query<CollectionAttributes>(SQL`

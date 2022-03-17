@@ -12,7 +12,7 @@ jest.mock('../Collection/utils')
 
 const isOwnedBySpy = jest.spyOn(Ownable.prototype, 'isOwnedBy')
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
-const mockFindCollectionOwningItem = Collection.findCollectionOwningItem as jest.Mock
+const mockFindCollectionByItemId = Collection.findByItemId as jest.Mock
 const mockGetMergedCollection = getMergedCollection as jest.Mock
 
 describe('when getting the access to an element', () => {
@@ -46,7 +46,7 @@ describe('when getting the access to an element', () => {
     describe('when the address belongs to the committee', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(true)
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
@@ -57,7 +57,7 @@ describe('when getting the access to an element', () => {
 
     describe('when the collection belongs to the address', () => {
       beforeEach(() => {
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
         isOwnedBySpy.mockResolvedValueOnce(true)
       })
@@ -70,7 +70,7 @@ describe('when getting the access to an element', () => {
     describe('when the address is a manager of the collection', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
@@ -86,7 +86,7 @@ describe('when getting the access to an element', () => {
           managers: ['another address'],
         }
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
@@ -126,7 +126,7 @@ describe('when getting the access to an element', () => {
     describe('when the address belongs to the committee', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(true)
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
@@ -138,7 +138,7 @@ describe('when getting the access to an element', () => {
     describe('when the item belongs to the address', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
         isOwnedBySpy.mockResolvedValueOnce(true)
       })
@@ -151,7 +151,7 @@ describe('when getting the access to an element', () => {
     describe('when the address is a manager of the collection', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
@@ -167,7 +167,7 @@ describe('when getting the access to an element', () => {
           managers: ['another address'],
         }
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        mockFindCollectionOwningItem.mockResolvedValueOnce(collection)
+        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 

@@ -1292,7 +1292,39 @@ describe('Collection router', () => {
                 ok: false,
                 data: { id: dbTPCollection.id },
                 error:
-                  'Tried to publish TP items with an invalid signed message or signature',
+                  'Tried to publish TP items with an invalid signed message or signature. Error: signature missing v and recoveryParam (argument="signature", value="signature", code=INVALID_ARGUMENT, version=bytes/5.0.4)',
+              })
+            })
+        })
+      })
+
+      describe('when the message signer differs from the sender of the request', () => {
+        beforeEach(() => {
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbTPItemMock])
+
+          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0xadsfsfs')
+        })
+
+        it('should respond with a 400 and a message signaling the signature and message should be valid', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [dbTPItemMock.id],
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error:
+                  'Tried to publish TP items with an invalid signed message or signature. Error: Address missmatch',
               })
             })
         })
@@ -1312,7 +1344,9 @@ describe('Collection router', () => {
           ]
           itemIds = items.map((item) => item.id)
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
-          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+          jest
+            .spyOn(ethers.utils, 'verifyMessage')
+            .mockReturnValue(wallet.address)
         })
 
         it('should respond with a 400 and a message signaling that all item collections should be the same', () => {
@@ -1346,7 +1380,9 @@ describe('Collection router', () => {
           ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
             itemCurationMock
           )
-          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+          jest
+            .spyOn(ethers.utils, 'verifyMessage')
+            .mockReturnValue(wallet.address)
         })
 
         it('should respond with a 409 and a message signaling that you cannot publish items twice', () => {
@@ -1406,7 +1442,9 @@ describe('Collection router', () => {
           )
           ;(ItemCuration.deleteByIds as jest.Mock).mockResolvedValueOnce([])
 
-          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+          jest
+            .spyOn(ethers.utils, 'verifyMessage')
+            .mockReturnValue(wallet.address)
 
           jest
             .spyOn(SlotUsageCheque, 'create')
@@ -1488,7 +1526,9 @@ describe('Collection router', () => {
           ;(createPost as jest.Mock).mockResolvedValueOnce(forumLink)
           ;(SlotUsageCheque.create as jest.Mock).mockResolvedValueOnce({})
 
-          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0x')
+          jest
+            .spyOn(ethers.utils, 'verifyMessage')
+            .mockReturnValue(wallet.address)
           jest
             .spyOn(Bridge, 'consolidateTPItems')
             .mockResolvedValueOnce(items as any)

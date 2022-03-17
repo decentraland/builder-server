@@ -50,6 +50,8 @@ export async function hasAccess(
         eth_address
       )
     } else {
+      // The function isManager only works for collections that were merged with a remote collection.
+      // The is_published property exists only in merged collections.
       isManager =
         collection.is_published && isCollectionManager(eth_address, collection)
     }

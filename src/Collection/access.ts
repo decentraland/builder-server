@@ -25,7 +25,9 @@ export async function hasAccess(
     isCommitteeMember(eth_address),
     isTPCollection(collection)
       ? thirdPartyAPI.isManager(collection.third_party_id, eth_address)
-      : !!collection.is_published && isManager(eth_address, collection),
+      : // The function isManager only works for collections that were merged with a remote collection.
+        // The is_published property exists only in merged collections.
+        !!collection.is_published && isManager(eth_address, collection),
   ])
 
   return isOwner || isCommittee || hasManagerAccess

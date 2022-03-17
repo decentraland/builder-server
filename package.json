@@ -30,7 +30,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.3.9",
-    "@dcl/hashing": "^1.0.0",
+    "@dcl/hashing": "^1.1.0",
     "@dcl/schemas": "^1.8.0",
     "@ethersproject/solidity": "^5.0.9",
     "@types/escape-html": "0.0.20",

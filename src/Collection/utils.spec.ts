@@ -6,13 +6,11 @@ import {
 import { itemCurationMock } from '../../spec/mocks/itemCuration'
 import { collectionAPI } from '../ethereum/api/collection'
 import { ItemCuration } from '../Curation/ItemCuration'
-import {
-  NonExistentCollectionError,
-  UnpublishedCollectionError,
-} from './Collection.errors'
+import { decodeTPCollectionURN } from '../utils/urn'
+import { UnpublishedCollectionError } from './Collection.errors'
 import { CollectionAttributes } from './Collection.types'
 import { Collection } from './Collection.model'
-import { getMergedCollection, decodeTPCollectionURN } from './utils'
+import { getMergedCollection } from './utils'
 
 describe('when decoding the TP collection URN', () => {
   const collectionNetwork = 'ropsten'
@@ -52,18 +50,6 @@ describe('when decoding the TP collection URN', () => {
 describe('getMergedCollection', () => {
   let collection: CollectionAttributes
 
-  describe('when the db collection can not be found', () => {
-    beforeEach(() => {
-      jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
-    })
-
-    it('should throw a non existent collection error', async () => {
-      return expect(getMergedCollection('id')).rejects.toEqual(
-        new NonExistentCollectionError('id')
-      )
-    })
-  })
-
   describe('when the collection is a dcl collection', () => {
     beforeEach(() => {
       collection = {
@@ -78,7 +64,7 @@ describe('getMergedCollection', () => {
       })
 
       it('should throw an unpublished collection error', async () => {
-        return expect(getMergedCollection(collection.id)).rejects.toEqual(
+        return expect(getMergedCollection(collection)).rejects.toEqual(
           new UnpublishedCollectionError(collection.id)
         )
       })
@@ -94,7 +80,7 @@ describe('getMergedCollection', () => {
       })
 
       it('should resolve with the merged collection', async () => {
-        const result = await getMergedCollection('collectionId')
+        const result = await getMergedCollection(collection)
 
         expect(result).toStrictEqual({
           ...collection,
@@ -122,7 +108,7 @@ describe('getMergedCollection', () => {
       })
 
       it('should throw an unpublished error', async () => {
-        return expect(getMergedCollection(collection.id)).rejects.toEqual(
+        return expect(getMergedCollection(collection)).rejects.toEqual(
           new UnpublishedCollectionError(collection.id)
         )
       })
@@ -138,7 +124,7 @@ describe('getMergedCollection', () => {
       })
 
       it('should resolve with the merged collection', async () => {
-        const result = await getMergedCollection('collectionId')
+        const result = await getMergedCollection(collection)
 
         expect(result).toStrictEqual({
           ...collection,

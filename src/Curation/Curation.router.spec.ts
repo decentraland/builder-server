@@ -25,7 +25,7 @@ jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
 
-const mockIsComiteeMember = isCommitteeMember as jest.Mock
+const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 
 describe('when handling a request', () => {
   let router: CurationRouter
@@ -65,7 +65,7 @@ describe('when handling a request', () => {
       } as any
     })
 
-    describe('if the address does not have access to the collection', () => {
+    describe('when the address does not have access to the collection', () => {
       beforeEach(() => {
         mockServiceWithAccess(CollectionCuration, false)
       })
@@ -77,7 +77,7 @@ describe('when handling a request', () => {
       })
     })
 
-    describe('if the collection id does not belong to a TP collection', () => {
+    describe('when the collection id does not belong to a TP collection', () => {
       beforeEach(() => {
         mockServiceWithAccess(CollectionCuration, true)
 
@@ -93,7 +93,7 @@ describe('when handling a request', () => {
       })
     })
 
-    describe('if it is fetching items form a managed TP collection', () => {
+    describe('when it is fetching items from a managed TP collection', () => {
       let fetchItemsByCollectionSpy: jest.SpyInstance<
         ReturnType<typeof thirdPartyAPI['fetchItemsByCollection']>
       >
@@ -143,10 +143,10 @@ describe('when handling a request', () => {
   describe('when trying to obtain a list of collection curations', () => {
     let service: CurationService<any>
 
-    describe('when the caller belongs to the commitee', () => {
+    describe('when the caller belongs to the committee', () => {
       beforeEach(() => {
         service = mockService(CollectionCuration)
-        mockIsComiteeMember.mockResolvedValueOnce(true)
+        mockIsCommitteeMember.mockResolvedValueOnce(true)
       })
 
       it('should resolve with the collections provided by Curation.getLatest', async () => {
@@ -164,10 +164,10 @@ describe('when handling a request', () => {
       })
     })
 
-    describe('when the caller does not belong to the commitee', () => {
+    describe('when the caller does not belong to the committee', () => {
       beforeEach(() => {
         service = mockService(CollectionCuration)
-        mockIsComiteeMember.mockResolvedValueOnce(false)
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
       })
 
       it('should resolve with the collections provided by Curation.getLatestByIds', async () => {
@@ -581,7 +581,7 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
-        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
+        jest.spyOn(Collection, 'findByItemId').mockResolvedValueOnce(undefined)
 
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -591,7 +591,7 @@ describe('when handling a request', () => {
 
       it('should reject with a not found message', async () => {
         await expect(router.insertCollectionCuration(req)).rejects.toThrowError(
-          "The collection doesn't exist."
+          'Not found'
         )
       })
     })
@@ -601,7 +601,7 @@ describe('when handling a request', () => {
 
       beforeEach(() => {
         jest
-          .spyOn(Collection, 'findOne')
+          .spyOn(Collection, 'findByItemId')
           .mockResolvedValueOnce({ ...dbCollectionMock })
 
         jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
@@ -612,9 +612,9 @@ describe('when handling a request', () => {
         } as any
       })
 
-      it('should reject with collection not published message', async () => {
+      it('should reject with a unpublished collection message', async () => {
         await expect(router.insertCollectionCuration(req)).rejects.toThrowError(
-          'The collection is not published.'
+          'Unpublished collection'
         )
       })
     })
@@ -624,7 +624,7 @@ describe('when handling a request', () => {
 
       beforeEach(() => {
         jest
-          .spyOn(Collection, 'findOne')
+          .spyOn(Collection, 'findByItemId')
           .mockResolvedValueOnce({ ...dbCollectionMock })
         jest
           .spyOn(collectionAPI, 'fetchCollection')
@@ -674,7 +674,7 @@ describe('when handling a request', () => {
 
       beforeEach(() => {
         jest
-          .spyOn(Collection, 'findOne')
+          .spyOn(Collection, 'findByItemId')
           .mockResolvedValueOnce({ ...dbCollectionMock })
         jest
           .spyOn(collectionAPI, 'fetchCollection')

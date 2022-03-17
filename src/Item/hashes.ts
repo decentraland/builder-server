@@ -4,13 +4,13 @@ import {
   Hashing,
 } from 'dcl-catalyst-commons'
 import { CollectionAttributes } from '../Collection'
+import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import {
   StandardWearableEntityMetadata,
   ItemAttributes,
   TPWearableEntityMetadata,
 } from './Item.types'
-import { buildTPItemURN, getDecentralandItemURN, isTPItem } from './utils'
-import { isTPCollection } from '../Collection/utils'
+import { buildTPItemURN, isTPItem } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'

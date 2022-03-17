@@ -48,7 +48,7 @@ export class UnpublishedCollectionError extends Error {
 }
 
 export class NonExistentCollectionError extends Error {
-  constructor(public id: string) {
+  constructor(public id?: string) {
     super("The collection doesn't exist.")
   }
 }

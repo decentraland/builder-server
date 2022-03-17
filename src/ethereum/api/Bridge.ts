@@ -7,15 +7,15 @@ import {
 } from '../../Collection'
 import { ItemAttributes, Item, FullItem } from '../../Item'
 import { fromUnixTimestamp } from '../../utils/parse'
-import { buildTPItemURN, decodeThirdPartyItemURN } from '../../Item/utils'
-import { ItemFragment, CollectionFragment } from './fragments'
-import { collectionAPI } from './collection'
-import { peerAPI, Wearable } from './peer'
-import { isTPCollection } from '../../Collection/utils'
+import { buildTPItemURN } from '../../Item/utils'
+import { decodeThirdPartyItemURN, isTPCollection } from '../../utils/urn'
 import {
   ItemCuration,
   ItemCurationAttributes,
 } from '../../Curation/ItemCuration'
+import { ItemFragment, CollectionFragment } from './fragments'
+import { collectionAPI } from './collection'
+import { peerAPI, Wearable } from './peer'
 
 export class Bridge {
   /**
@@ -150,7 +150,7 @@ export class Bridge {
       // blockchain_item_id is not in the Catalyst, so we're using the token id from the URN
       blockchain_item_id: decodeThirdPartyItemURN(urn).item_urn_suffix,
       urn,
-      in_catalyst: true,
+      in_catalyst: !!catalystItem,
       is_published: true,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,

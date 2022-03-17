@@ -24,6 +24,7 @@ import { isCommitteeMember } from '../Committee'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { PublishCheque } from '../SlotUsageCheque'
+import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
@@ -33,7 +34,7 @@ import {
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
-import { hasTPCollectionURN, isTPCollection, toFullCollection } from './utils'
+import { toFullCollection } from './utils'
 import {
   AlreadyPublishedCollectionError,
   LockedCollectionError,

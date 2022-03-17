@@ -239,30 +239,12 @@ export class CurationRouter extends Router {
       )
     }
 
-    try {
-      return this.updateCuration(
-        itemId,
-        ethAddress,
-        curationJSON,
-        CurationType.ITEM
-      )
-    } catch (error) {
-      if (error instanceof NonExistentCollectionError) {
-        throw new HTTPError(
-          'Not found',
-          { id: error.id, ethAddress },
-          STATUS_CODES.notFound
-        )
-      } else if (error instanceof HTTPError) {
-        throw error
-      } else {
-        throw new HTTPError(
-          (error as Error).message,
-          { itemId, ethAddress },
-          STATUS_CODES.error
-        )
-      }
-    }
+    return this.updateCuration(
+      itemId,
+      ethAddress,
+      curationJSON,
+      CurationType.ITEM
+    )
   }
 
   insertCollectionCuration = async (req: AuthRequest) => {
@@ -429,7 +411,26 @@ export class CurationRouter extends Router {
     id: string,
     ethAddress: string
   ) => {
-    const hasAccess = await service.hasAccess(ethAddress, id)
+    let hasAccess: boolean
+    try {
+      hasAccess = await service.hasAccess(ethAddress, id)
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { id: error.id, ethAddress },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof UnpublishedCollectionError) {
+        throw new HTTPError(
+          'Unpublished collection',
+          { id: error.id, ethAddress },
+          STATUS_CODES.conflict
+        )
+      }
+      throw error
+    }
+
     if (!hasAccess) {
       throw new HTTPError(
         'Unauthorized',

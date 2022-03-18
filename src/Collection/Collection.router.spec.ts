@@ -1268,6 +1268,42 @@ describe('Collection router', () => {
         })
       })
 
+      describe('when sending cheque with an amount of slots different than the amount items published', () => {
+        let items: ItemAttributes[]
+
+        beforeEach(() => {
+          items = [
+            { ...dbTPItemMock, id: 'c241ef7c-4466-41b0-bf94-be1b8c331fdb' },
+            { ...dbTPItemMock, id: 'anotherId' },
+          ]
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
+        })
+
+        it('should respond with a 400 and a message signaling the item ids should not be empty', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: items.map((item) => item.id),
+              cheque: {
+                signedMessage: 'message',
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbTPCollection.id },
+                error:
+                  'The check quantity is different from the amount of published items',
+              })
+            })
+        })
+      })
+
       describe('when sending an invalid signed message and signature', () => {
         beforeEach(() => {
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbTPItemMock])
@@ -1358,7 +1394,7 @@ describe('Collection router', () => {
               cheque: {
                 signedMessage: 'message',
                 signature: 'signature',
-                qty: 1,
+                qty: items.length,
                 salt: '0xsalt',
               },
             })
@@ -1410,7 +1446,7 @@ describe('Collection router', () => {
         })
       })
 
-      describe('and interating with the database fails', () => {
+      describe('and interacting with the database fails', () => {
         let dbItems: ItemAttributes[]
         let dbItemIds: string[]
         let createdItemCurationIds: string[]
@@ -1461,7 +1497,7 @@ describe('Collection router', () => {
               cheque: {
                 signedMessage: 'message',
                 signature: 'signature',
-                qty: 1,
+                qty: dbItemIds.length,
                 salt: '0xsalt',
               },
             })
@@ -1480,11 +1516,11 @@ describe('Collection router', () => {
             .post(buildURL(url))
             .set(createAuthHeaders('post', url))
             .send({
-              itemIds: [dbItemMock.id],
+              itemIds: dbItemIds,
               cheque: {
                 signedMessage: 'message',
                 signature: 'signature',
-                qty: 1,
+                qty: dbItemIds.length,
                 salt: '0xsalt',
               },
             })
@@ -1538,7 +1574,7 @@ describe('Collection router', () => {
           it('should create a SlotUsageCheque record with the request data', () => {
             const signedMessage = 'a signed message'
             const signature = 'signature'
-            const qty = 1
+            const qty = itemIds.length
             const salt = '0xsalt'
 
             return server
@@ -1577,7 +1613,7 @@ describe('Collection router', () => {
                 cheque: {
                   signedMessage: 'message',
                   signature: 'signature',
-                  qty: 1,
+                  qty: itemIds.length,
                   salt: '0xsalt',
                 },
               })
@@ -1608,7 +1644,7 @@ describe('Collection router', () => {
                 cheque: {
                   signedMessage: 'message',
                   signature: 'signature',
-                  qty: 1,
+                  qty: itemIds.length,
                   salt: '0xsalt',
                 },
               })
@@ -1645,7 +1681,7 @@ describe('Collection router', () => {
                 cheque: {
                   signedMessage: 'message',
                   signature: 'signature',
-                  qty: 1,
+                  qty: itemIds.length,
                   salt: '0xsalt',
                 },
               })
@@ -1678,7 +1714,7 @@ describe('Collection router', () => {
                 cheque: {
                   signedMessage: 'message',
                   signature: 'signature',
-                  qty: 1,
+                  qty: itemIds.length,
                   salt: '0xsalt',
                 },
               })
@@ -1718,7 +1754,7 @@ describe('Collection router', () => {
                 cheque: {
                   signedMessage: 'message',
                   signature: 'signature',
-                  qty: 1,
+                  qty: itemIds.length,
                   salt: '0xsalt',
                 },
               })
@@ -1742,7 +1778,7 @@ describe('Collection router', () => {
                 cheque: {
                   signedMessage: 'message',
                   signature: 'signature',
-                  qty: 1,
+                  qty: itemIds.length,
                   salt: '0xsalt',
                 },
               })

@@ -53,11 +53,39 @@ beforeEach(() => {
     image_url: 'image_url',
     last_sale: {
       event_type: 'event_type',
-      payment_token: {
-        symbol: 'symbol',
-      },
-      quantity: 'quantity',
+      event_timestamp: 'event_timestamp',
       total_price: 'total_price',
+      quantity: 'quantity',
+      payment_token: {
+        id: 100,
+        symbol: 'symbol',
+        address: 'address',
+        image_url: 'image_url',
+        name: 'name',
+        decimals: 18,
+        eth_price: 'eth_price',
+        usd_price: 'usd_price',
+      },
+      transaction: {
+        id: 100,
+        from_account: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        to_account: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        transaction_hash: 'transaction_hash',
+      },
     },
     name: 'name',
     orders: [
@@ -72,7 +100,14 @@ beforeEach(() => {
         },
         current_price: 'current_price',
         payment_token_contract: {
+          id: 100,
           symbol: 'symbol',
+          address: 'address',
+          image_url: 'image_url',
+          name: 'name',
+          decimals: 18,
+          eth_price: 'eth_price',
+          usd_price: 'usd_price',
         },
       },
     ],
@@ -96,7 +131,14 @@ beforeEach(() => {
         },
         current_price: 'current_price',
         payment_token_contract: {
+          id: 100,
           symbol: 'symbol',
+          address: 'address',
+          image_url: 'image_url',
+          name: 'name',
+          decimals: 18,
+          eth_price: 'eth_price',
+          usd_price: 'usd_price',
         },
       },
     ],

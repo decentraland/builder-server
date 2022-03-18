@@ -7,11 +7,12 @@ import {
   NFT,
   NFTAccount,
   NFTContract,
-  NFTLastSale,
+  NFTSale,
   NFTOrder,
   NFTOwnership,
   NFTToken,
   NFTTrait,
+  NFTTransaction,
 } from './NFT.types'
 
 export class NFTService {
@@ -141,7 +142,14 @@ export class NFTService {
     })
 
     const mapToken = (token: any): NFTToken => ({
+      id: token.id,
       symbol: token.symbol,
+      address: token.address,
+      imageUrl: token.image_url,
+      name: token.name,
+      decimals: token.decimals,
+      ethPrice: token.eth_price,
+      usdPrice: token.usd_price,
     })
 
     const mapContract = (contract: any): NFTContract => ({
@@ -163,11 +171,20 @@ export class NFTService {
       displayType: trait.display_type,
     })
 
-    const mapLastSale = (lastSale: any): NFTLastSale => ({
-      eventType: lastSale.event_type,
-      totalPrice: lastSale.total_price,
-      quantity: lastSale.quantity,
-      paymentToken: mapToken(lastSale.payment_token),
+    const mapTransaction = (transaction: any): NFTTransaction => ({
+      id: transaction.id,
+      fromAccount: mapAccount(transaction.from_account),
+      toAccount: mapAccount(transaction.to_account),
+      transactionHash: transaction.transaction_hash,
+    })
+
+    const mapSale = (sale: any): NFTSale => ({
+      eventType: sale.event_type,
+      eventTimestamp: sale.event_timestamp,
+      totalPrice: sale.total_price,
+      quantity: sale.quantity,
+      paymentToken: mapToken(sale.payment_token),
+      transaction: mapTransaction(sale.transaction),
     })
 
     const mapOrder = (order: any): NFTOrder => ({
@@ -194,7 +211,7 @@ export class NFTService {
       owner: mapAccount(ext.owner),
       contract: mapContract(ext.asset_contract),
       traits: (ext.traits as any[]).map(mapTrait),
-      lastSale: ext.last_sale ? mapLastSale(ext.last_sale) : null,
+      lastSale: ext.last_sale ? mapSale(ext.last_sale) : null,
       sellOrders: ext.sell_orders
         ? (ext.sell_orders as any[]).map(mapOrder)
         : null,

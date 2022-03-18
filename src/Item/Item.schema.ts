@@ -32,7 +32,7 @@ export const itemSchema = Object.freeze({
     created_at: { type: 'string' },
     updated_at: { type: 'string' },
     type: { enum: Object.values(ItemType) },
-    data: { type: 'object', oneOf: [wearableSchema, emoteSchema] },
+    data: { type: 'object', anyOf: [wearableSchema, emoteSchema] },
     metrics: metricsSchema,
     contents: {
       type: 'object',

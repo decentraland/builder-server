@@ -3,7 +3,7 @@ import { database } from '../database/database'
 import { hasAccess as hasCollectionAccess } from '../Collection/access'
 import { hasAccess as hasItemAccess } from '../Item/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
-import { Collection } from '../Collection'
+import { Collection, CollectionAttributes } from '../Collection'
 import { getMergedCollection } from '../Collection/utils'
 import {
   CollectionCuration,
@@ -93,7 +93,7 @@ export class CurationService<
   }
 
   async hasAccess(id: string, ethAddress: string) {
-    const collection = await Collection.findByItemId(id)
+    const collection = await Collection.findOne<CollectionAttributes>({ id })
     if (!collection) {
       throw new NonExistentCollectionError()
     }

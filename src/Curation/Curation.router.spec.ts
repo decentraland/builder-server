@@ -581,7 +581,7 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
-        jest.spyOn(Collection, 'findByItemId').mockResolvedValueOnce(undefined)
+        jest.spyOn(Collection, 'findOne').mockResolvedValueOnce(undefined)
 
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -601,7 +601,7 @@ describe('when handling a request', () => {
 
       beforeEach(() => {
         jest
-          .spyOn(Collection, 'findByItemId')
+          .spyOn(Collection, 'findOne')
           .mockResolvedValueOnce({ ...dbCollectionMock })
 
         jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
@@ -624,7 +624,7 @@ describe('when handling a request', () => {
 
       beforeEach(() => {
         jest
-          .spyOn(Collection, 'findByItemId')
+          .spyOn(Collection, 'findOne')
           .mockResolvedValueOnce({ ...dbCollectionMock })
         jest
           .spyOn(collectionAPI, 'fetchCollection')
@@ -674,7 +674,7 @@ describe('when handling a request', () => {
 
       beforeEach(() => {
         jest
-          .spyOn(Collection, 'findByItemId')
+          .spyOn(Collection, 'findOne')
           .mockResolvedValueOnce({ ...dbCollectionMock })
         jest
           .spyOn(collectionAPI, 'fetchCollection')

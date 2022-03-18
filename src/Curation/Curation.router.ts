@@ -408,12 +408,12 @@ export class CurationRouter extends Router {
 
   private validateAccessToCuration = async (
     service: CurationService<any>,
-    id: string,
-    ethAddress: string
+    ethAddress: string,
+    id: string
   ) => {
     let hasAccess: boolean
     try {
-      hasAccess = await service.hasAccess(ethAddress, id)
+      hasAccess = await service.hasAccess(id, ethAddress)
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(

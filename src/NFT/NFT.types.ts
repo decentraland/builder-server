@@ -1,3 +1,4 @@
+// NFT Entity
 export type NFT = {
   tokenId: string
   backgroundColor: string | null
@@ -9,24 +10,9 @@ export type NFT = {
   description: string | null
   externalLink: string | null
   owner: NFTAccount
-  contract: {
-    name: string
-    symbol: string
-    imageUrl: string | null
-    description: string
-    externalLink: string | null
-  }
-  traits: {
-    type: string
-    value: string | number
-    displayType: string | null
-  }[]
-  lastSale: {
-    eventType: string
-    totalPrice: string
-    quantity: string
-    paymentToken: NFTToken
-  } | null
+  contract: NFTContract
+  traits: NFTTrait[]
+  lastSale: NFTLastSale | null
   sellOrders: NFTOrder[] | null
   orders: NFTOrder[] | null
   topOwnerships: NFTOwnership[] | null
@@ -39,14 +25,31 @@ type NFTAccount = {
   config: string
 }
 
+type NFTContract = {
+  name: string
+  symbol: string
+  imageUrl: string | null
+  description: string
+  externalLink: string | null
+}
+
+type NFTTrait = {
+  type: string
+  value: string | number
+  displayType: string | null
+}
+
+type NFTLastSale = {
+  eventType: string
+  totalPrice: string
+  quantity: string
+  paymentToken: NFTToken
+}
+
 type NFTOrder = {
   maker: NFTAccount
   currentPrice: string
   paymentTokenContract: NFTToken
-}
-
-type NFTToken = {
-  symbol: string
 }
 
 type NFTOwnership = {
@@ -54,6 +57,11 @@ type NFTOwnership = {
   quantity: string
 }
 
+type NFTToken = {
+  symbol: string
+}
+
+// Service types
 export type GetNFTsParams = {
   owner?: string
   first?: number

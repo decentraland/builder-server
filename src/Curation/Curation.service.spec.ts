@@ -12,6 +12,7 @@ jest.mock('../Collection/utils')
 
 const isOwnedBySpy = jest.spyOn(Ownable.prototype, 'isOwnedBy')
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
+const mockFindOneCollection = Collection.findOne as jest.Mock
 const mockFindCollectionByItemId = Collection.findByItemId as jest.Mock
 const mockGetMergedCollection = getMergedCollection as jest.Mock
 
@@ -46,7 +47,7 @@ describe('when getting the access to an element', () => {
     describe('when the address belongs to the committee', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(true)
-        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
+        mockFindOneCollection.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
@@ -57,7 +58,7 @@ describe('when getting the access to an element', () => {
 
     describe('when the collection belongs to the address', () => {
       beforeEach(() => {
-        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
+        mockFindOneCollection.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
         isOwnedBySpy.mockResolvedValueOnce(true)
       })
@@ -70,7 +71,7 @@ describe('when getting the access to an element', () => {
     describe('when the address is a manager of the collection', () => {
       beforeEach(() => {
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
+        mockFindOneCollection.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 
@@ -86,7 +87,7 @@ describe('when getting the access to an element', () => {
           managers: ['another address'],
         }
         mockIsCommitteeMember.mockResolvedValueOnce(false)
-        mockFindCollectionByItemId.mockResolvedValueOnce(collection)
+        mockFindOneCollection.mockResolvedValueOnce(collection)
         mockGetMergedCollection.mockResolvedValueOnce(publishedCollection)
       })
 

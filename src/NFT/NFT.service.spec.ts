@@ -2,6 +2,7 @@ import { env } from 'decentraland-commons'
 import fetch, { Response } from 'node-fetch'
 import { NFTService } from './NFT.service'
 import { NFT } from './NFT.types'
+import { getMockNFT } from './utils'
 
 jest.mock('node-fetch')
 jest.mock('decentraland-commons')
@@ -31,19 +32,130 @@ beforeEach(() => {
   }
 
   mockExternalNFT = {
-    token_id: 'token_id',
-    image_url: 'image_url',
     background_color: 'background_color',
-    name: 'name',
+    asset_contract: {
+      address: 'address',
+      created_date: 'created_date',
+      name: 'name',
+      nft_version: 'nft_version',
+      schema_name: 'schema_name',
+      symbol: 'symbol',
+      total_supply: 'total_supply',
+      description: 'description',
+      external_link: 'external_link',
+      image_url: 'image_url',
+    },
+    description: 'description',
     external_link: 'external_link',
+    image_original_url: 'image_original_url',
+    image_preview_url: 'image_preview_url',
+    image_thumbnail_url: 'image_thumbnail_url',
+    image_url: 'image_url',
+    last_sale: {
+      event_type: 'event_type',
+      event_timestamp: 'event_timestamp',
+      total_price: 'total_price',
+      quantity: 'quantity',
+      payment_token: {
+        id: 100,
+        symbol: 'symbol',
+        address: 'address',
+        image_url: 'image_url',
+        name: 'name',
+        decimals: 18,
+        eth_price: 'eth_price',
+        usd_price: 'usd_price',
+      },
+      transaction: {
+        id: 100,
+        from_account: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        to_account: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        transaction_hash: 'transaction_hash',
+      },
+    },
+    name: 'name',
+    orders: [
+      {
+        maker: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        current_price: 'current_price',
+        payment_token_contract: {
+          id: 100,
+          symbol: 'symbol',
+          address: 'address',
+          image_url: 'image_url',
+          name: 'name',
+          decimals: 18,
+          eth_price: 'eth_price',
+          usd_price: 'usd_price',
+        },
+      },
+    ],
     owner: {
       address: 'address',
       config: 'config',
-      profile_image_url: 'profile_image_url',
+      profile_img_url: 'profile_img_url',
       user: {
         username: 'username',
       },
     },
+    sell_orders: [
+      {
+        maker: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        current_price: 'current_price',
+        payment_token_contract: {
+          id: 100,
+          symbol: 'symbol',
+          address: 'address',
+          image_url: 'image_url',
+          name: 'name',
+          decimals: 18,
+          eth_price: 'eth_price',
+          usd_price: 'usd_price',
+        },
+      },
+    ],
+    token_id: 'token_id',
+    top_ownerships: [
+      {
+        owner: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        quantity: 'quantity',
+      },
+    ],
     traits: [
       {
         display_type: 'display_type',
@@ -51,60 +163,9 @@ beforeEach(() => {
         value: 'value',
       },
     ],
-    last_sale: {
-      event_type: 'event_type',
-      payment_token: {
-        symbol: 'symbol',
-      },
-      quantity: 'quantity',
-      total_price: 'total_price',
-    },
-    asset_contract: {
-      description: 'description',
-      external_link: 'external_link',
-      image_url: 'image_url',
-      name: 'name',
-      symbol: 'symbol',
-    },
   }
 
-  mockMappedExternalNFT = {
-    backgroundColor: 'background_color',
-    contract: {
-      description: 'description',
-      externalLink: 'external_link',
-      imageUrl: 'image_url',
-      name: 'name',
-      symbol: 'symbol',
-    },
-    externalLink: 'external_link',
-    imageUrl: 'image_url',
-    lastSale: {
-      eventType: 'event_type',
-      paymentToken: {
-        symbol: 'symbol',
-      },
-      quantity: 'quantity',
-      totalPrice: 'total_price',
-    },
-    name: 'name',
-    owner: {
-      address: 'address',
-      config: 'config',
-      profileImageUrl: 'profile_image_url',
-      user: {
-        username: 'username',
-      },
-    },
-    tokenId: 'token_id',
-    traits: [
-      {
-        displayType: 'display_type',
-        type: 'trait_type',
-        value: 'value',
-      },
-    ],
-  }
+  mockMappedExternalNFT = getMockNFT()
 
   jest.clearAllMocks()
 })

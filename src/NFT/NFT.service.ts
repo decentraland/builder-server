@@ -1,6 +1,19 @@
 import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
-import { GetNFTParams, GetNFTsParams, GetNFTsResponse, NFT } from './NFT.types'
+import {
+  GetNFTParams,
+  GetNFTsParams,
+  GetNFTsResponse,
+  NFT,
+  NFTAccount,
+  NFTContract,
+  NFTSale,
+  NFTOrder,
+  NFTOwnership,
+  NFTToken,
+  NFTTrait,
+  NFTTransaction,
+} from './NFT.types'
 
 export class NFTService {
   private readonly OPEN_SEA_URL: string
@@ -120,49 +133,92 @@ export class NFTService {
     return this.mapExternalNFT(externalNFT)
   }
 
-  private mapExternalNFT(nft: any): NFT {
-    let lastSale: NFT['lastSale'] = null
+  private mapExternalNFT(ext: any): NFT {
+    const mapAccount = (account: any): NFTAccount => ({
+      user: account.user ? { username: account.user.username } : null,
+      profileImageUrl: account.profile_img_url,
+      address: account.address,
+      config: account.config,
+    })
 
-    if (nft.last_sale) {
-      lastSale = {
-        eventType: nft.last_sale.event_type,
-        paymentToken: { symbol: nft.last_sale.payment_token.symbol },
-        quantity: nft.last_sale.quantity,
-        totalPrice: nft.last_sale.total_price,
-      }
-    }
+    const mapToken = (token: any): NFTToken => ({
+      id: token.id,
+      symbol: token.symbol,
+      address: token.address,
+      imageUrl: token.image_url,
+      name: token.name,
+      decimals: token.decimals,
+      ethPrice: token.eth_price,
+      usdPrice: token.usd_price,
+    })
 
-    const owner: NFT['owner'] = {
-      address: nft.owner.address,
-      config: nft.owner.config,
-      profileImageUrl: nft.owner.profile_image_url,
-      user: nft.owner.user,
-    }
+    const mapContract = (contract: any): NFTContract => ({
+      address: contract.address,
+      createdDate: contract.created_date,
+      name: contract.name,
+      nftVersion: contract.nft_version,
+      schemaName: contract.schema_name,
+      symbol: contract.symbol,
+      totalSupply: contract.total_supply,
+      description: contract.description,
+      externalLink: contract.external_link,
+      imageUrl: contract.image_url,
+    })
 
-    const traits: NFT['traits'] = (nft.traits as any[]).map((trait) => ({
-      displayType: trait.display_type,
+    const mapTrait = (trait: any): NFTTrait => ({
       type: trait.trait_type,
       value: trait.value,
-    }))
+      displayType: trait.display_type,
+    })
 
-    const contract: NFT['contract'] = {
-      description: nft.asset_contract.description,
-      externalLink: nft.asset_contract.external_link,
-      imageUrl: nft.asset_contract.image_url,
-      name: nft.asset_contract.name,
-      symbol: nft.asset_contract.symbol,
-    }
+    const mapTransaction = (transaction: any): NFTTransaction => ({
+      id: transaction.id,
+      fromAccount: mapAccount(transaction.from_account),
+      toAccount: mapAccount(transaction.to_account),
+      transactionHash: transaction.transaction_hash,
+    })
+
+    const mapSale = (sale: any): NFTSale => ({
+      eventType: sale.event_type,
+      eventTimestamp: sale.event_timestamp,
+      totalPrice: sale.total_price,
+      quantity: sale.quantity,
+      paymentToken: mapToken(sale.payment_token),
+      transaction: mapTransaction(sale.transaction),
+    })
+
+    const mapOrder = (order: any): NFTOrder => ({
+      maker: mapAccount(order.maker),
+      currentPrice: order.current_price,
+      paymentTokenContract: mapToken(order.payment_token_contract),
+    })
+
+    const mapOwnership = (ownership: any): NFTOwnership => ({
+      owner: mapAccount(ownership.owner),
+      quantity: ownership.quantity,
+    })
 
     return {
-      tokenId: nft.token_id,
-      imageUrl: nft.image_url,
-      backgroundColor: nft.background_color,
-      name: nft.name,
-      externalLink: nft.external_link,
-      owner,
-      traits,
-      lastSale,
-      contract,
+      tokenId: ext.token_id,
+      backgroundColor: ext.background_color,
+      imageUrl: ext.image_url,
+      imagePreviewUrl: ext.image_preview_url,
+      imageThumbnailUrl: ext.image_thumbnail_url,
+      imageOriginalUrl: ext.image_original_url,
+      name: ext.name,
+      description: ext.description,
+      externalLink: ext.external_link,
+      owner: mapAccount(ext.owner),
+      contract: mapContract(ext.asset_contract),
+      traits: (ext.traits as any[]).map(mapTrait),
+      lastSale: ext.last_sale ? mapSale(ext.last_sale) : null,
+      sellOrders: ext.sell_orders
+        ? (ext.sell_orders as any[]).map(mapOrder)
+        : null,
+      orders: ext.orders ? (ext.orders as any[]).map(mapOrder) : null,
+      topOwnerships: ext.top_ownerships
+        ? (ext.top_ownerships as any[]).map(mapOwnership)
+        : null,
     }
   }
 }

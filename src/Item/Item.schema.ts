@@ -1,5 +1,6 @@
 import { matchers } from '../common/matchers'
 import { metricsSchema } from '../Metrics/Metrics.schema'
+import { emoteSchema } from './emote/types'
 import { FullItem, ItemRarity, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
 
@@ -31,7 +32,7 @@ export const itemSchema = Object.freeze({
     created_at: { type: 'string' },
     updated_at: { type: 'string' },
     type: { enum: Object.values(ItemType) },
-    data: { type: 'object', oneOf: [wearableSchema] },
+    data: { type: 'object', oneOf: [wearableSchema, emoteSchema] },
     metrics: metricsSchema,
     contents: {
       type: 'object',

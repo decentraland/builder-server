@@ -31,26 +31,20 @@ beforeEach(() => {
   }
 
   mockExternalNFT = {
-    token_id: 'token_id',
-    image_url: 'image_url',
     background_color: 'background_color',
-    name: 'name',
-    external_link: 'external_link',
-    owner: {
-      address: 'address',
-      config: 'config',
-      profile_image_url: 'profile_image_url',
-      user: {
-        username: 'username',
-      },
+    asset_contract: {
+      description: 'description',
+      external_link: 'external_link',
+      image_url: 'image_url',
+      name: 'name',
+      symbol: 'symbol',
     },
-    traits: [
-      {
-        display_type: 'display_type',
-        trait_type: 'trait_type',
-        value: 'value',
-      },
-    ],
+    description: 'description',
+    external_link: 'external_link',
+    image_original_url: 'image_original_url',
+    image_preview_url: 'image_preview_url',
+    image_thumbnail_url: 'image_thumbnail_url',
+    image_url: 'image_url',
     last_sale: {
       event_type: 'event_type',
       payment_token: {
@@ -59,13 +53,68 @@ beforeEach(() => {
       quantity: 'quantity',
       total_price: 'total_price',
     },
-    asset_contract: {
-      description: 'description',
-      external_link: 'external_link',
-      image_url: 'image_url',
-      name: 'name',
-      symbol: 'symbol',
+    name: 'name',
+    orders: [
+      {
+        maker: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        current_price: 'current_price',
+        payment_token_contract: {
+          symbol: 'symbol',
+        },
+      },
+    ],
+    owner: {
+      address: 'address',
+      config: 'config',
+      profile_img_url: 'profile_img_url',
+      user: {
+        username: 'username',
+      },
     },
+    sell_orders: [
+      {
+        maker: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        current_price: 'current_price',
+        payment_token_contract: {
+          symbol: 'symbol',
+        },
+      },
+    ],
+    token_id: 'token_id',
+    top_ownerships: [
+      {
+        owner: {
+          address: 'address',
+          config: 'config',
+          profile_img_url: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        quantity: 'quantity',
+      },
+    ],
+    traits: [
+      {
+        display_type: 'display_type',
+        trait_type: 'trait_type',
+        value: 'value',
+      },
+    ],
   }
 
   mockMappedExternalNFT = {
@@ -77,7 +126,11 @@ beforeEach(() => {
       name: 'name',
       symbol: 'symbol',
     },
+    description: 'description',
     externalLink: 'external_link',
+    imageOriginalUrl: 'image_original_url',
+    imagePreviewUrl: 'image_preview_url',
+    imageThumbnailUrl: 'image_thumbnail_url',
     imageUrl: 'image_url',
     lastSale: {
       eventType: 'event_type',
@@ -88,15 +141,60 @@ beforeEach(() => {
       totalPrice: 'total_price',
     },
     name: 'name',
+    orders: [
+      {
+        maker: {
+          address: 'address',
+          config: 'config',
+          profileImageUrl: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        currentPrice: 'current_price',
+        paymentTokenContract: {
+          symbol: 'symbol',
+        },
+      },
+    ],
     owner: {
       address: 'address',
       config: 'config',
-      profileImageUrl: 'profile_image_url',
+      profileImageUrl: 'profile_img_url',
       user: {
         username: 'username',
       },
     },
+    sellOrders: [
+      {
+        maker: {
+          address: 'address',
+          config: 'config',
+          profileImageUrl: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        currentPrice: 'current_price',
+        paymentTokenContract: {
+          symbol: 'symbol',
+        },
+      },
+    ],
     tokenId: 'token_id',
+    topOwnerships: [
+      {
+        owner: {
+          address: 'address',
+          config: 'config',
+          profileImageUrl: 'profile_img_url',
+          user: {
+            username: 'username',
+          },
+        },
+        quantity: 'quantity',
+      },
+    ],
     traits: [
       {
         displayType: 'display_type',

@@ -117,8 +117,6 @@ export class NFTService {
 
     const externalNFT = await response.json()
 
-    console.log(externalNFT)
-
     return this.mapExternalNFT(externalNFT)
   }
 
@@ -181,7 +179,7 @@ export class NFTService {
       traits: (ext.traits as any[]).map(mapTrait),
       lastSale: ext.last_sale ? mapLastSale(ext.last_sale) : null,
       sellOrders: ext.sell_orders
-        ? (ext.sell_order as any[]).map(mapOrder)
+        ? (ext.sell_orders as any[]).map(mapOrder)
         : null,
       orders: ext.orders ? (ext.orders as any[]).map(mapOrder) : null,
       topOwnerships: ext.top_ownerships

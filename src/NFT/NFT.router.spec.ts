@@ -252,7 +252,11 @@ describe('when getting a single nft', () => {
         name: 'name',
         symbol: 'symbol',
       },
+      description: 'description',
       externalLink: 'external_link',
+      imageOriginalUrl: 'image_original_url',
+      imagePreviewUrl: 'image_preview_url',
+      imageThumbnailUrl: 'image_thumbnail_url',
       imageUrl: 'image_url',
       lastSale: {
         eventType: 'event_type',
@@ -263,15 +267,60 @@ describe('when getting a single nft', () => {
         totalPrice: 'total_price',
       },
       name: 'name',
+      orders: [
+        {
+          maker: {
+            address: 'address',
+            config: 'config',
+            profileImageUrl: 'profile_img_url',
+            user: {
+              username: 'username',
+            },
+          },
+          currentPrice: 'current_price',
+          paymentTokenContract: {
+            symbol: 'symbol',
+          },
+        },
+      ],
       owner: {
         address: 'address',
         config: 'config',
-        profileImageUrl: 'profile_image_url',
+        profileImageUrl: 'profile_img_url',
         user: {
           username: 'username',
         },
       },
+      sellOrders: [
+        {
+          maker: {
+            address: 'address',
+            config: 'config',
+            profileImageUrl: 'profile_img_url',
+            user: {
+              username: 'username',
+            },
+          },
+          currentPrice: 'current_price',
+          paymentTokenContract: {
+            symbol: 'symbol',
+          },
+        },
+      ],
       tokenId: 'token_id',
+      topOwnerships: [
+        {
+          owner: {
+            address: 'address',
+            config: 'config',
+            profileImageUrl: 'profile_img_url',
+            user: {
+              username: 'username',
+            },
+          },
+          quantity: 'quantity',
+        },
+      ],
       traits: [
         {
           displayType: 'display_type',

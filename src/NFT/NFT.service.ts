@@ -1,6 +1,18 @@
 import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
-import { GetNFTParams, GetNFTsParams, GetNFTsResponse, NFT } from './NFT.types'
+import {
+  GetNFTParams,
+  GetNFTsParams,
+  GetNFTsResponse,
+  NFT,
+  NFTAccount,
+  NFTContract,
+  NFTLastSale,
+  NFTOrder,
+  NFTOwnership,
+  NFTToken,
+  NFTTrait,
+} from './NFT.types'
 
 export class NFTService {
   private readonly OPEN_SEA_URL: string
@@ -121,45 +133,50 @@ export class NFTService {
   }
 
   private mapExternalNFT(ext: any): NFT {
-    const mapAccount = (account: any) => ({
+    const mapAccount = (account: any): NFTAccount => ({
       user: account.user ? { username: account.user.username } : null,
       profileImageUrl: account.profile_img_url,
       address: account.address,
       config: account.config,
     })
 
-    const mapToken = (token: any) => ({
+    const mapToken = (token: any): NFTToken => ({
       symbol: token.symbol,
     })
 
-    const mapContract = (contract: any) => ({
+    const mapContract = (contract: any): NFTContract => ({
+      address: contract.address,
+      createdDate: contract.created_date,
       name: contract.name,
+      nftVersion: contract.nft_version,
+      schemaName: contract.schema_name,
       symbol: contract.symbol,
-      imageUrl: contract.image_url,
+      totalSupply: contract.total_supply,
       description: contract.description,
       externalLink: contract.external_link,
+      imageUrl: contract.image_url,
     })
 
-    const mapTrait = (trait: any) => ({
+    const mapTrait = (trait: any): NFTTrait => ({
       type: trait.trait_type,
       value: trait.value,
       displayType: trait.display_type,
     })
 
-    const mapLastSale = (lastSale: any) => ({
+    const mapLastSale = (lastSale: any): NFTLastSale => ({
       eventType: lastSale.event_type,
       totalPrice: lastSale.total_price,
       quantity: lastSale.quantity,
       paymentToken: mapToken(lastSale.payment_token),
     })
 
-    const mapOrder = (order: any) => ({
+    const mapOrder = (order: any): NFTOrder => ({
       maker: mapAccount(order.maker),
       currentPrice: order.current_price,
       paymentTokenContract: mapToken(order.payment_token_contract),
     })
 
-    const mapOwnership = (ownership: any) => ({
+    const mapOwnership = (ownership: any): NFTOwnership => ({
       owner: mapAccount(ownership.owner),
       quantity: ownership.quantity,
     })

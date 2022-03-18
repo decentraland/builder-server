@@ -3,6 +3,7 @@ import { STATUS_CODES } from '../common/HTTPError'
 import { app } from '../server'
 import { NFTService } from './NFT.service'
 import { NFT } from './NFT.types'
+import { getMockNFT } from './utils'
 
 jest.mock('./NFT.service')
 
@@ -243,92 +244,7 @@ describe('when getting a single nft', () => {
   })
 
   it('should return an nft', async () => {
-    const nft: NFT = {
-      backgroundColor: 'background_color',
-      contract: {
-        description: 'description',
-        externalLink: 'external_link',
-        imageUrl: 'image_url',
-        name: 'name',
-        symbol: 'symbol',
-      },
-      description: 'description',
-      externalLink: 'external_link',
-      imageOriginalUrl: 'image_original_url',
-      imagePreviewUrl: 'image_preview_url',
-      imageThumbnailUrl: 'image_thumbnail_url',
-      imageUrl: 'image_url',
-      lastSale: {
-        eventType: 'event_type',
-        paymentToken: {
-          symbol: 'symbol',
-        },
-        quantity: 'quantity',
-        totalPrice: 'total_price',
-      },
-      name: 'name',
-      orders: [
-        {
-          maker: {
-            address: 'address',
-            config: 'config',
-            profileImageUrl: 'profile_img_url',
-            user: {
-              username: 'username',
-            },
-          },
-          currentPrice: 'current_price',
-          paymentTokenContract: {
-            symbol: 'symbol',
-          },
-        },
-      ],
-      owner: {
-        address: 'address',
-        config: 'config',
-        profileImageUrl: 'profile_img_url',
-        user: {
-          username: 'username',
-        },
-      },
-      sellOrders: [
-        {
-          maker: {
-            address: 'address',
-            config: 'config',
-            profileImageUrl: 'profile_img_url',
-            user: {
-              username: 'username',
-            },
-          },
-          currentPrice: 'current_price',
-          paymentTokenContract: {
-            symbol: 'symbol',
-          },
-        },
-      ],
-      tokenId: 'token_id',
-      topOwnerships: [
-        {
-          owner: {
-            address: 'address',
-            config: 'config',
-            profileImageUrl: 'profile_img_url',
-            user: {
-              username: 'username',
-            },
-          },
-          quantity: 'quantity',
-        },
-      ],
-      traits: [
-        {
-          displayType: 'display_type',
-          type: 'trait_type',
-          value: 'value',
-        },
-      ],
-    }
+    const nft: NFT = getMockNFT()
 
     mockNFTService.prototype.getNFT.mockResolvedValueOnce(nft)
 

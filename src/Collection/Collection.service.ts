@@ -154,6 +154,7 @@ export class CollectionService {
   public async publishTPCollection(
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ThirdPartyItemAttributes[],
+    signerAddress: string,
     cheque: PublishCheque
   ): Promise<PublishCollectionResponse<CollectionAttributes>> {
     // For DCL collections, once a published collection item changes, the PUSH CHANGES button appears
@@ -172,10 +173,16 @@ export class CollectionService {
     }
 
     try {
-      ethers.utils.verifyMessage(signedMessage, signature) // Throws if invalid
+      const address = ethers.utils.verifyMessage(signedMessage, signature) // Throws if invalid
+
+      if (signerAddress.toLowerCase() !== address.toLowerCase()) {
+        throw new Error('Address missmatch')
+      }
     } catch (error) {
       throw new InvalidRequestError(
-        'Tried to publish TP items with an invalid signed message or signature'
+        `Tried to publish TP items with an invalid signed message or signature. Error: ${
+          (error as Error).message
+        }`
       )
     }
 

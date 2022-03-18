@@ -297,6 +297,8 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PublishCollectionResponse<FullCollection>> => {
     const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
+
     try {
       const dbCollection = await this.service.getDBCollection(id)
 
@@ -307,9 +309,11 @@ export class CollectionRouter extends Router {
         const dbItems = (await Item.findByIds(
           itemIds
         )) as ThirdPartyItemAttributes[]
+
         result = await this.service.publishTPCollection(
           dbCollection,
           dbItems,
+          eth_address,
           server.extractFromReq<PublishCheque>(req, 'cheque')
         )
 

@@ -171,6 +171,12 @@ export class CollectionService {
       throw new InvalidRequestError('Tried to publish no TP items')
     }
 
+    if (qty !== dbItems.length) {
+      throw new InvalidRequestError(
+        'The check quantity is different from the amount of published items'
+      )
+    }
+
     try {
       ethers.utils.verifyMessage(signedMessage, signature) // Throws if invalid
     } catch (error) {

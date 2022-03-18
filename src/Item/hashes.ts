@@ -1,8 +1,4 @@
-import {
-  EntityContentItemReference,
-  EntityMetadata,
-  Hashing,
-} from 'dcl-catalyst-commons'
+import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
 import { CollectionAttributes } from '../Collection'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import {
@@ -68,44 +64,39 @@ function buildTPWearableEntityMetadata(
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
     metrics: item.metrics,
+    content: item.contents,
   }
-}
-
-async function calculateContentHash(
-  content: EntityContentItemReference[],
-  metadata: EntityMetadata
-) {
-  // The stringify procedure doesn't ensure that the keys will always have the same order when printed.
-  const data = JSON.stringify({
-    content: content
-      .sort((a: EntityContentItemReference, b: EntityContentItemReference) => {
-        if (a.hash > b.hash) return 1
-        else if (a.hash < b.hash) return -1
-        else return a.file > b.file ? 1 : -1
-      })
-      .map((entry) => ({ key: entry.file, hash: entry.hash })),
-    metadata,
-  })
-  const buffer = Buffer.from(data)
-  return Hashing.calculateIPFSHash(buffer)
 }
 
 export async function calculateItemContentHash(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): Promise<string> {
+  if (isTPCollection(collection) && isTPItem(item)) {
+    return calculateTPItemContentHash(item, collection)
+  }
+
+  return calculateStandardItemContentHash(item, collection)
+}
+
+async function calculateTPItemContentHash(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+): Promise<string> {
+  const metadata = await buildTPWearableEntityMetadata(item, collection)
+  return keccak256Hash(metadata, Object.keys(metadata))
+}
+
+async function calculateStandardItemContentHash(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+): Promise<string> {
+  const metadata = await buildStandardWearableEntityMetadata(item, collection)
   const content = Object.keys(item.contents).map((file) => ({
     file,
     hash: item.contents[file],
   }))
+  const { hash } = await calculateMultipleHashesADR32(content, metadata)
 
-  let metadata: StandardWearableEntityMetadata | TPWearableEntityMetadata
-
-  if (isTPCollection(collection) && isTPItem(item)) {
-    metadata = await buildTPWearableEntityMetadata(item, collection)
-  } else {
-    metadata = await buildStandardWearableEntityMetadata(item, collection)
-  }
-
-  return calculateContentHash(content, metadata)
+  return hash
 }

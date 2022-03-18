@@ -30,7 +30,8 @@
   },
   "dependencies": {
     "@apollo/client": "^3.3.9",
-    "@dcl/schemas": "^1.8.0",
+    "@dcl/hashing": "^1.1.0",
+    "@dcl/schemas": "^3.10.0",
     "@ethersproject/solidity": "^5.0.9",
     "@types/escape-html": "0.0.20",
     "@types/express": "^4.17.11",
@@ -49,7 +50,6 @@
     "aws-sdk": "^2.841.0",
     "cors": "^2.8.5",
     "dcl-catalyst-client": "^4.0.6",
-    "dcl-catalyst-commons": "^7.3.0",
     "dcl-ops-lib": "^1.0.6",
     "decentraland-commons": "^5.1.0",
     "decentraland-server": "^3.0.0",

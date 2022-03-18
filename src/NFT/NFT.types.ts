@@ -1,37 +1,57 @@
 export type NFT = {
   tokenId: string
+  backgroundColor: string | null
   imageUrl: string
-  backgroundColor: string
-  name: string
-  externalLink: string
-  owner: {
-    user: {
-      username: string
-    }
-    profileImageUrl: string
-    address: string
-    config: string
-  }
+  imagePreviewUrl: string
+  imageThumbnailUrl: string
+  imageOriginalUrl: string | null
+  name: string | null
+  description: string | null
+  externalLink: string | null
+  owner: NFTAccount
   contract: {
     name: string
     symbol: string
-    imageUrl: string
+    imageUrl: string | null
     description: string
-    externalLink: string
+    externalLink: string | null
   }
   traits: {
     type: string
     value: string | number
-    displayType: string
+    displayType: string | null
   }[]
   lastSale: {
     eventType: string
     totalPrice: string
     quantity: string
-    paymentToken: {
-      symbol: string
-    }
+    paymentToken: NFTToken
   } | null
+  sellOrders: NFTOrder[] | null
+  orders: NFTOrder[] | null
+  topOwnerships: NFTOwnership[] | null
+}
+
+type NFTAccount = {
+  user: { username: string } | null
+  profileImageUrl: string
+  address: string
+  config: string
+}
+
+type NFTOrder = {
+  maker: NFTAccount
+  currentPrice: string
+  paymentTokenContract: NFTToken
+}
+
+type NFTToken = {
+  symbol: string
+}
+
+type NFTOwnership = {
+  owner: NFTAccount
+  quantity: string
 }
 
 export type GetNFTsParams = {

@@ -117,52 +117,76 @@ export class NFTService {
 
     const externalNFT = await response.json()
 
+    console.log(externalNFT)
+
     return this.mapExternalNFT(externalNFT)
   }
 
-  private mapExternalNFT(nft: any): NFT {
-    let lastSale: NFT['lastSale'] = null
+  private mapExternalNFT(ext: any): NFT {
+    const mapAccount = (account: any) => ({
+      user: account.user ? { username: account.user.username } : null,
+      profileImageUrl: account.profile_img_url,
+      address: account.address,
+      config: account.config,
+    })
 
-    if (nft.last_sale) {
-      lastSale = {
-        eventType: nft.last_sale.event_type,
-        paymentToken: { symbol: nft.last_sale.payment_token.symbol },
-        quantity: nft.last_sale.quantity,
-        totalPrice: nft.last_sale.total_price,
-      }
-    }
+    const mapToken = (token: any) => ({
+      symbol: token.symbol,
+    })
 
-    const owner: NFT['owner'] = {
-      address: nft.owner.address,
-      config: nft.owner.config,
-      profileImageUrl: nft.owner.profile_image_url,
-      user: nft.owner.user,
-    }
+    const mapContract = (contract: any) => ({
+      name: contract.name,
+      symbol: contract.symbol,
+      imageUrl: contract.image_url,
+      description: contract.description,
+      externalLink: contract.external_link,
+    })
 
-    const traits: NFT['traits'] = (nft.traits as any[]).map((trait) => ({
-      displayType: trait.display_type,
+    const mapTrait = (trait: any) => ({
       type: trait.trait_type,
       value: trait.value,
-    }))
+      displayType: trait.display_type,
+    })
 
-    const contract: NFT['contract'] = {
-      description: nft.asset_contract.description,
-      externalLink: nft.asset_contract.external_link,
-      imageUrl: nft.asset_contract.image_url,
-      name: nft.asset_contract.name,
-      symbol: nft.asset_contract.symbol,
-    }
+    const mapLastSale = (lastSale: any) => ({
+      eventType: lastSale.event_type,
+      totalPrice: lastSale.total_price,
+      quantity: lastSale.quantity,
+      paymentToken: mapToken(lastSale.payment_token),
+    })
+
+    const mapOrder = (order: any) => ({
+      maker: mapAccount(order.maker),
+      currentPrice: order.current_price,
+      paymentTokenContract: mapToken(order.payment_token_contract),
+    })
+
+    const mapOwnership = (ownership: any) => ({
+      owner: mapAccount(ownership.owner),
+      quantity: ownership.quantity,
+    })
 
     return {
-      tokenId: nft.token_id,
-      imageUrl: nft.image_url,
-      backgroundColor: nft.background_color,
-      name: nft.name,
-      externalLink: nft.external_link,
-      owner,
-      traits,
-      lastSale,
-      contract,
+      tokenId: ext.token_id,
+      backgroundColor: ext.background_color,
+      imageUrl: ext.image_url,
+      imagePreviewUrl: ext.image_preview_url,
+      imageThumbnailUrl: ext.image_thumbnail_url,
+      imageOriginalUrl: ext.image_original_url,
+      name: ext.name,
+      description: ext.description,
+      externalLink: ext.external_link,
+      owner: mapAccount(ext.owner),
+      contract: mapContract(ext.asset_contract),
+      traits: (ext.traits as any[]).map(mapTrait),
+      lastSale: ext.last_sale ? mapLastSale(ext.last_sale) : null,
+      sellOrders: ext.sell_orders
+        ? (ext.sell_order as any[]).map(mapOrder)
+        : null,
+      orders: ext.orders ? (ext.orders as any[]).map(mapOrder) : null,
+      topOwnerships: ext.top_ownerships
+        ? (ext.top_ownerships as any[]).map(mapOwnership)
+        : null,
     }
   }
 }

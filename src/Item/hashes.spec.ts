@@ -60,9 +60,7 @@ describe('when calculating the hashes of a standard item', () => {
   it("should return the hash of the item's entity", () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
-    ).resolves.toEqual(
-      'bafkreihtcjnfcahy3nomnhxiuyjyzj2fxzy3eab7ctmxl237nf2vsoqkmu'
-    )
+    ).resolves.toEqual('QmehW1ccHcvdKp8NNhrr6PdxEDHGYa9j6xmu9Bojg8jcjN')
   })
 })
 

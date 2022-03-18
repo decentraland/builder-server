@@ -1334,7 +1334,7 @@ describe('Item router', () => {
               data: {
                 ...Bridge.toFullItem(dbItem),
                 local_content_hash:
-                  'bafkreiejcahiwp257urwn5u2wn5os3mcjhvid6eqhmok7tezzhvdm5njqy',
+                  'QmXZgmKEUkoaq4rM5n24KA9FmNUCRyuAAjvDfVpgLWCLhb',
                 eth_address: wallet.address,
                 created_at: dbItem.created_at.toISOString(),
                 updated_at: currentDate.toISOString(),

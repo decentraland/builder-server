@@ -1,4 +1,7 @@
-import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
+import {
+  calculateMultipleHashesADR32LegacyQmHash,
+  keccak256Hash,
+} from '@dcl/hashing'
 import { CollectionAttributes } from '../Collection'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import {
@@ -96,7 +99,10 @@ async function calculateStandardItemContentHash(
     file,
     hash: item.contents[file],
   }))
-  const { hash } = await calculateMultipleHashesADR32(content, metadata)
+  const { hash } = await calculateMultipleHashesADR32LegacyQmHash(
+    content,
+    metadata
+  )
 
   return hash
 }

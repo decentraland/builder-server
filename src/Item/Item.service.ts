@@ -360,7 +360,6 @@ export class ItemService {
     dbCollection: CollectionAttributes | undefined,
     eth_address: string
   ): Promise<FullItem> {
-    let contentHash = null
     const canUpsert = await new Ownable(Item).canUpsert(item.id, eth_address)
     if (!canUpsert) {
       throw new UnauthorizedToUpsertError(item.id, eth_address)
@@ -420,9 +419,6 @@ export class ItemService {
             ItemAction.RARITY_UPDATE
           )
         }
-
-        // Compute the content hash of the item to later store it in the DB
-        contentHash = await calculateItemContentHash(dbItem, dbCollection!)
       } else if (this.collectionService.isLockActive(dbCollection.lock)) {
         throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
       }
@@ -433,7 +429,13 @@ export class ItemService {
       eth_address,
     })
 
-    attributes.local_content_hash = contentHash
+    attributes.blockchain_item_id = dbItem ? dbItem.blockchain_item_id : null
+
+    // Compute the content hash of the item to later store it in the DB
+    attributes.local_content_hash =
+      attributes?.blockchain_item_id && dbCollection?.contract_address
+        ? await calculateItemContentHash(attributes, dbCollection!)
+        : null
 
     const upsertedItem: ItemAttributes = await Item.upsert(attributes)
     return Bridge.toFullItem(upsertedItem, dbCollection)

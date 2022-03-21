@@ -6,6 +6,7 @@ import { WearableData } from './wearable/types'
 
 export enum ItemType {
   WEARABLE = 'wearable',
+  EMOTE = 'emote',
 }
 
 export enum ItemRarity {

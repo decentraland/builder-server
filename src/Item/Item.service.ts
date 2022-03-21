@@ -9,6 +9,7 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { Ownable } from '../Ownable'
 import { buildModelDates } from '../utils/dates'
 import {
@@ -433,8 +434,8 @@ export class ItemService {
 
     // Compute the content hash of the item to later store it in the DB
     attributes.local_content_hash =
-      attributes?.blockchain_item_id && dbCollection?.contract_address
-        ? await calculateItemContentHash(attributes, dbCollection!)
+      dbCollection && isStandardItemPublished(attributes, dbCollection)
+        ? await calculateItemContentHash(attributes, dbCollection)
         : null
 
     const upsertedItem: ItemAttributes = await Item.upsert(attributes)

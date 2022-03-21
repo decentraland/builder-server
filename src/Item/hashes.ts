@@ -3,6 +3,7 @@ import {
   keccak256Hash,
 } from '@dcl/hashing'
 import { CollectionAttributes } from '../Collection'
+import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import {
   StandardWearableEntityMetadata,
@@ -18,7 +19,7 @@ export function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): StandardWearableEntityMetadata {
-  if (!collection.contract_address || !item.blockchain_item_id!) {
+  if (!isStandardItemPublished(item, collection)) {
     throw new Error(
       "The item's collection must be published to build its metadata"
     )

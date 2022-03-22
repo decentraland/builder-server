@@ -1,4 +1,3 @@
-import { ethers } from 'ethers'
 import { v4 as uuid } from 'uuid'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
@@ -22,7 +21,7 @@ import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import {
   SlotUsageCheque,
   SlotUsageChequeAttributes,
-  PublishCheque,
+  Cheque,
 } from '../SlotUsageCheque'
 import {
   CollectionCuration,
@@ -30,7 +29,7 @@ import {
 } from '../Curation/CollectionCuration'
 import { CurationStatus } from '../Curation'
 import { decodeTPCollectionURN, isTPCollection } from '../utils/urn'
-import { toDBCollection } from './utils'
+import { getAddressFromSignature, toDBCollection } from './utils'
 import {
   CollectionAttributes,
   FullCollection,
@@ -148,14 +147,14 @@ export class CollectionService {
    * It creates or updates the virtual CollectionCuration for the items
    * @param dbCollection - Database TP collection
    * @param dbItems - Database TP items that belong to the collection
-   * @param signedMessage - The message we signed
-   * @param signature - The signature resulted from signing the message
+   * @param signerAddress - The address that signed the message
+   * @param cheque - The cheque object containing the data signed
    */
   public async publishTPCollection(
     dbCollection: ThirdPartyCollectionAttributes,
     dbItems: ThirdPartyItemAttributes[],
     signerAddress: string,
-    cheque: PublishCheque
+    cheque: Cheque
   ): Promise<PublishCollectionResponse<CollectionAttributes>> {
     // For DCL collections, once a published collection item changes, the PUSH CHANGES button appears
     // That will fire a /collections/${collectionId}/curation which will create a new CollectionCuration
@@ -166,7 +165,7 @@ export class CollectionService {
 
     // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items
 
-    const { signedMessage, signature, qty, salt } = cheque
+    const { signature, qty, salt } = cheque
 
     if (dbItems.length === 0) {
       throw new InvalidRequestError('Tried to publish no TP items')
@@ -179,7 +178,10 @@ export class CollectionService {
     }
 
     try {
-      const address = ethers.utils.verifyMessage(signedMessage, signature) // Throws if invalid
+      const address = await getAddressFromSignature(
+        cheque,
+        dbCollection.third_party_id
+      )
 
       if (signerAddress.toLowerCase() !== address.toLowerCase()) {
         throw new Error('Address missmatch')

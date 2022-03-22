@@ -1,7 +1,16 @@
-import { utils } from 'decentraland-commons'
+import { ethers } from 'ethers'
+import { env, utils } from 'decentraland-commons'
+import {
+  ContractData,
+  getContract,
+  ContractName,
+} from 'decentraland-transactions'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
+import { Network } from '../ethereum'
+import { getChainIdFromNetwork } from '../ethereum/utils'
 import { ItemCuration } from '../Curation/ItemCuration'
+import { Cheque } from '../SlotUsageCheque'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { UnpublishedCollectionError } from './Collection.errors'
 import {
@@ -94,4 +103,42 @@ export async function getMergedCollection(
   }
 
   return mergedCollection
+}
+
+export async function getAddressFromSignature(
+  cheque: Cheque,
+  thirdPartyId: string
+) {
+  const { signature, qty, salt } = cheque
+  const chainId = getChainIdFromNetwork(env.get('ETHEREUM_NETWORK') as Network)
+  const thirdPartyContract: ContractData = await getContract(
+    ContractName.ThirdPartyRegistry,
+    chainId
+  )
+  const domain = {
+    name: thirdPartyContract.name,
+    verifyingContract: thirdPartyContract.address,
+    version: thirdPartyContract.version,
+    salt: ethers.utils.hexZeroPad(ethers.utils.hexlify(chainId), 32),
+  }
+  const domainTypes = {
+    ConsumeSlots: [
+      { name: 'thirdPartyId', type: 'string' },
+      { name: 'qty', type: 'uint256' },
+      { name: 'salt', type: 'bytes32' },
+    ],
+  }
+  const dataSigned = {
+    thirdPartyId,
+    qty,
+    salt,
+  }
+  const address = ethers.utils.verifyTypedData(
+    domain,
+    domainTypes,
+    dataSigned,
+    signature
+  )
+
+  return address
 }

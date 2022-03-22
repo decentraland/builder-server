@@ -4,7 +4,7 @@ import { Network } from './types'
 
 const network = env.get('ETHEREUM_NETWORK') as Network
 
-function getChainIdFromNetwork(network: Network): ChainId {
+export function getChainIdFromNetwork(network: Network): ChainId {
   switch (network) {
     case Network.MAINNET:
       return ChainId.MATIC_MAINNET

@@ -23,7 +23,7 @@ import { Item, ThirdPartyItemAttributes, ItemApprovalData } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import { buildCollectionForumPost, createPost } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
-import { PublishCheque } from '../SlotUsageCheque'
+import { Cheque } from '../SlotUsageCheque'
 import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -314,7 +314,7 @@ export class CollectionRouter extends Router {
           dbCollection,
           dbItems,
           eth_address,
-          server.extractFromReq<PublishCheque>(req, 'cheque')
+          server.extractFromReq<Cheque>(req, 'cheque')
         )
 
         // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)

@@ -5,17 +5,19 @@ import {
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
+import { EmoteCategory, EmoteData } from './emote/types'
 import {
   StandardWearableEntityMetadata,
   ItemAttributes,
   TPWearableEntityMetadata,
+  ItemType,
 } from './Item.types'
 import { buildTPItemURN, isTPItem } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
 
-export function buildStandardWearableEntityMetadata(
+function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): StandardWearableEntityMetadata {
@@ -25,7 +27,7 @@ export function buildStandardWearableEntityMetadata(
     )
   }
 
-  return {
+  const entity: StandardWearableEntityMetadata = {
     id: getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,
     description: item.description,
@@ -43,6 +45,14 @@ export function buildStandardWearableEntityMetadata(
     thumbnail: THUMBNAIL_PATH,
     metrics: item.metrics,
   }
+
+  if (item.type === ItemType.EMOTE) {
+    entity.emoteDataV0 = {
+      loop: (item.data as EmoteData).category === EmoteCategory.LOOP,
+    }
+  }
+
+  return entity
 }
 
 function buildTPWearableEntityMetadata(

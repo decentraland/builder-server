@@ -81,6 +81,7 @@ type BaseWearableEntityMetadata = Omit<
   'createdAt' | 'updatedAt' | 'collectionAddress' | 'rarity'
 > & {
   i18n: { code: string; text: string }[]
+  emoteDataV0?: { loop: boolean }
 }
 
 export type TPWearableEntityMetadata = BaseWearableEntityMetadata & {

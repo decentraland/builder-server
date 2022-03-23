@@ -1,4 +1,7 @@
-import { AuthLinkType, AuthIdentity } from 'dcl-crypto'
+import { Wallet as EthersWallet } from 'ethers'
+import { Bytes } from '@ethersproject/bytes'
+import { Signer } from '@ethersproject/abstract-signer'
+import { Authenticator, AuthLinkType, AuthIdentity } from 'dcl-crypto'
 
 export type Wallet = {
   address: string
@@ -32,4 +35,39 @@ export const wallet: Wallet = {
       },
     ],
   },
+}
+
+// Taken from https://github.com/decentraland/builder-client/blob/00ab26cdbd350ce5f5a46da09358c3662c4c6741/src/test-utils/crypto.ts#L1
+export const fakePrivateKey =
+  '8da4ef21b864d2cc526dbdb2a120bd2874c36c9d0a1fb7f8c63d7f7a8b41de8f'
+
+// Taken from https://github.com/decentraland/builder-client/blob/8f38031e2d5fe119764ebf46ff8c1a20260764ff/src/client/identity.ts#L11.
+// TODO: Unify this somewhere so we don't have it repeated
+/**
+ * Creates an identity to later be used in the IAuthentication implementation.
+ * @param signer - Any Ethereum signer (RPC or Wallet signer).
+ * @param expiration - TTL in seconds of the identity.
+ */
+export async function createIdentity(
+  wallet: EthersWallet,
+  signer: Signer,
+  expiration: number
+): Promise<AuthIdentity> {
+  const address = await signer.getAddress()
+
+  // const wallet = EthersWallet.createRandom()
+  const payload = {
+    address: wallet.address,
+    privateKey: wallet.privateKey,
+    publicKey: wallet.publicKey,
+  }
+
+  const identity = await Authenticator.initializeAuthChain(
+    address,
+    payload,
+    expiration,
+    (message: string | Bytes) => signer.signMessage(message)
+  )
+
+  return identity
 }

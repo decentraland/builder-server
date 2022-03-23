@@ -124,9 +124,9 @@ export const receiptsFragment = () => gql`
 
 export type ReceiptFragment = {
   id: string
-  hash: string
   qty: string
   signer: string
+  createdAt: string
 }
 
 export type TierFragment = {

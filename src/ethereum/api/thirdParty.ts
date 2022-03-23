@@ -99,9 +99,9 @@ const getTiersQuery = () => gql`
   ${tiersFragment()}
 `
 
-const getReceiptByHashQuery = () => gql`
-  query getReceiptByHash($hash: String!) {
-    receipts(first: 1, where: { hash: $hash }) {
+const getReceiptByIdQuery = () => gql`
+  query getReceiptById($hash: String!) {
+    receipts(first: 1, where: { id: $hash }) {
       ...receiptsFragment
     }
   }
@@ -149,11 +149,13 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
   }
 
-  fetchReceipt = async (hash: string): Promise<ReceiptFragment | undefined> => {
+  fetchReceiptById = async (
+    hash: string
+  ): Promise<ReceiptFragment | undefined> => {
     const {
       data: { receipts },
     } = await this.query<{ receipts: ReceiptFragment[] }>({
-      query: getReceiptByHashQuery(),
+      query: getReceiptByIdQuery(),
       variables: { hash },
     })
 

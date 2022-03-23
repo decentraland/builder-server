@@ -1,4 +1,7 @@
-import { ethers } from 'ethers'
+import { ethers, utils as ethersUtils } from 'ethers'
+import { _TypedDataEncoder } from '@ethersproject/hash'
+import { TypedDataDomain, TypedDataField } from '@ethersproject/abstract-signer'
+import { SignatureLike } from '@ethersproject/bytes'
 import { env, utils } from 'decentraland-commons'
 import {
   ContractData,
@@ -105,10 +108,15 @@ export async function getMergedCollection(
   return mergedCollection
 }
 
-export async function getAddressFromSignature(
+async function buildChequeSignatureData(
   cheque: Cheque,
   thirdPartyId: string
-) {
+): Promise<{
+  domain: TypedDataDomain
+  types: Record<string, Array<TypedDataField>>
+  values: Record<string, any>
+  signature: SignatureLike
+}> {
   const { signature, qty, salt } = cheque
   const chainId = getChainIdFromNetwork(env.get('ETHEREUM_NETWORK') as Network)
   const thirdPartyContract: ContractData = await getContract(
@@ -121,24 +129,86 @@ export async function getAddressFromSignature(
     version: thirdPartyContract.version,
     salt: ethers.utils.hexZeroPad(ethers.utils.hexlify(chainId), 32),
   }
-  const domainTypes = {
+  const types = {
     ConsumeSlots: [
       { name: 'thirdPartyId', type: 'string' },
       { name: 'qty', type: 'uint256' },
       { name: 'salt', type: 'bytes32' },
     ],
   }
-  const dataSigned = {
+  const values = {
     thirdPartyId,
     qty,
     salt,
   }
-  const address = ethers.utils.verifyTypedData(
+
+  return {
     domain,
-    domainTypes,
-    dataSigned,
-    signature
+    types,
+    values,
+    signature,
+  }
+}
+
+export async function getChequeMessageHash(
+  cheque: Cheque,
+  thirdPartyId: string
+) {
+  const chequeSignatureData = await buildChequeSignatureData(
+    cheque,
+    thirdPartyId
+  )
+  const dataHash = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', 'bytes32', 'uint256', 'bytes32'],
+      [
+        ethers.utils.keccak256(
+          'ConsumeSlots(string thirdPartyId,uint256 qty,bytes32 salt)'
+        ),
+        ethers.utils.keccak256(thirdPartyId),
+        chequeSignatureData.values.qty,
+        chequeSignatureData.values.salt,
+      ]
+    )
   )
 
-  return address
+  const domainHash = ethers.utils.keccak256(
+    ethers.utils.defaultAbiCoder.encode(
+      ['bytes32', 'bytes32', 'bytes32', 'address', 'bytes32'],
+      [
+        ethers.utils.keccak256(
+          'EIP712Domain(string name,string version,address verifyingContract,bytes32 salt)'
+        ),
+        ethers.utils.keccak256(chequeSignatureData.domain.name!),
+        ethers.utils.keccak256(chequeSignatureData.domain.version!),
+        chequeSignatureData.domain.verifyingContract!,
+        // Check if the padding is the same
+        chequeSignatureData.domain.salt!,
+      ]
+    )
+  )
+
+  // Is this hash the same?
+  // return ethers.utils.soliditySha3('\x19\x01', domainHash, dataHash)
+  return ethers.utils.solidityKeccak256(
+    ['bytes32', 'bytes32', 'bytes32'],
+    ['\x19\x01', domainHash, dataHash]
+  )
+}
+
+export async function getAddressFromSignature(
+  cheque: Cheque,
+  thirdPartyId: string
+) {
+  const chequeSignatureData = await buildChequeSignatureData(
+    cheque,
+    thirdPartyId
+  )
+
+  return ethers.utils.verifyTypedData(
+    chequeSignatureData.domain,
+    chequeSignatureData.types,
+    chequeSignatureData.values,
+    chequeSignatureData.signature
+  )
 }

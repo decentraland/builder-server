@@ -33,7 +33,11 @@ import {
 } from '../Curation/CollectionCuration'
 import { CurationStatus } from '../Curation'
 import { decodeTPCollectionURN, isTPCollection } from '../utils/urn'
-import { getAddressFromSignature, toDBCollection } from './utils'
+import {
+  getAddressFromSignature,
+  getChequeMessageHash,
+  toDBCollection,
+} from './utils'
 import {
   CollectionAttributes,
   FullCollection,
@@ -437,15 +441,14 @@ export class CollectionService {
       throw new UnpublishedCollectionError(id)
     }
 
-    const remoteCheque: ReceiptFragment = {
-      id: 'someId',
-      hash: 'someHash',
-      qty: '34',
-      signer: '0x00',
-    }
-    // const remoteCheque = await fetchReceipt()
-    const slotUsageCheckHash = 'anotherHash'
+    const slotUsageCheckHash = await getChequeMessageHash(
+      slotUsageCheque,
+      slotUsageCheque.third_party_id
+    )
 
+    const remoteCheque = await thirdPartyAPI.fetchReceiptById(
+      slotUsageCheckHash
+    )
     const { qty, salt, signature } = slotUsageCheque
 
     const content_hashes = dbApprovalData.reduce((acc, data) => {
@@ -466,7 +469,7 @@ export class CollectionService {
         signature,
       },
       content_hashes,
-      chequeWasConsumed: remoteCheque.hash === slotUsageCheckHash,
+      chequeWasConsumed: remoteCheque?.id === slotUsageCheckHash,
     }
   }
 

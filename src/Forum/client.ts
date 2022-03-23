@@ -4,6 +4,7 @@ import { CreateResponse, ForumPost } from './Forum.types'
 
 const FORUM_URL = env.get('FORUM_URL', '')
 const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
+const FORUM_API_USERNAME = env.get('FORUM_API_USERNAME', '')
 const FORUM_CATEGORY = env.get('FORUM_CATEGORY')
 
 export async function createPost(
@@ -42,6 +43,7 @@ export async function getPost(id: number): Promise<ForumPost> {
   const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
     headers: {
       'Api-Key': FORUM_API_KEY,
+      'Api-Username': FORUM_API_USERNAME,
       'Content-Type': 'application/json',
     },
   })
@@ -54,6 +56,7 @@ export async function updatePost(id: number, rawPost: ForumPost['raw']) {
   const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
     headers: {
       'Api-Key': FORUM_API_KEY,
+      'Api-Username': FORUM_API_USERNAME,
       'Content-Type': 'application/json',
     },
     method: 'PUT',

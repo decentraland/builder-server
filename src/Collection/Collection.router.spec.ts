@@ -1353,7 +1353,7 @@ describe('Collection router', () => {
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
           jest
             .spyOn(ethers.utils, 'verifyTypedData')
-            .mockImplementationOnce(() => wallet.address)
+            .mockReturnValue(wallet.address)
         })
         afterEach(() => {
           jest.restoreAllMocks() // to reset the verifyTypedData mock from above
@@ -1391,7 +1391,7 @@ describe('Collection router', () => {
           )
           jest
             .spyOn(ethers.utils, 'verifyTypedData')
-            .mockImplementationOnce(() => wallet.address)
+            .mockReturnValue(wallet.address)
         })
         afterEach(() => {
           jest.restoreAllMocks() // to reset the verifyTypedData mock from above
@@ -1460,7 +1460,7 @@ describe('Collection router', () => {
 
           jest
             .spyOn(ethers.utils, 'verifyTypedData')
-            .mockImplementationOnce(() => wallet.address)
+            .mockReturnValue(wallet.address)
         })
 
         afterEach(() => {

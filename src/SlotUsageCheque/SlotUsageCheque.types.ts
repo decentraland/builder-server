@@ -13,4 +13,3 @@ export type Cheque = Pick<
   SlotUsageChequeAttributes,
   'signature' | 'qty' | 'salt'
 >
-export type PublishCheque = Cheque & { signedMessage: string }

@@ -2,7 +2,11 @@ import { ethers } from 'ethers'
 import { v4 as uuid } from 'uuid'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { ItemFragment, ThirdPartyFragment } from '../ethereum/api/fragments'
+import {
+  ItemFragment,
+  ReceiptFragment,
+  ThirdPartyFragment,
+} from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
@@ -431,6 +435,15 @@ export class CollectionService {
       throw new UnpublishedCollectionError(id)
     }
 
+    const remoteCheque: ReceiptFragment = {
+      id: 'someId',
+      hash: 'someHash',
+      qty: '34',
+      signer: '0x00',
+    }
+    // const remoteCheque = await fetchReceipt()
+    const slotUsageCheckHash = 'anotherHash'
+
     const { qty, salt, signature } = slotUsageCheque
 
     const content_hashes = dbApprovalData.reduce((acc, data) => {
@@ -451,6 +464,7 @@ export class CollectionService {
         signature,
       },
       content_hashes,
+      chequeWasConsumed: remoteCheque.hash === slotUsageCheckHash,
     }
   }
 

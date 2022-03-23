@@ -74,6 +74,7 @@ export type ItemApprovalData = {
     ItemAttributes['id'],
     ItemCurationAttributes['content_hash']
   >
+  chequeWasConsumed: boolean
 }
 
 type BaseWearableEntityMetadata = Omit<

@@ -362,10 +362,16 @@ export class CurationRouter extends Router {
     type: CurationType
   ) => {
     const curationService = CurationService.byType(type)
-
     await this.validateAccessToCuration(curationService, ethAddress, id)
-
     const curation = await curationService.getLatestById(id)
+
+    if (!curation && type === CurationType.ITEM) {
+      throw new HTTPError(
+        "Item curations can't be created for items that weren't curated before",
+        { id },
+        STATUS_CODES.badRequest
+      )
+    }
 
     if (curation && curation.status === CurationStatus.PENDING) {
       throw new HTTPError(

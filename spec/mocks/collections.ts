@@ -24,6 +24,7 @@ export const dbCollectionMock: CollectionAttributes = {
   minters: [],
   managers: [],
   forum_link: null,
+  forum_id: null,
   lock: null,
   urn_suffix: null,
   third_party_id: null,

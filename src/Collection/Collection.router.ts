@@ -21,7 +21,13 @@ import {
 } from '../Item/Item.errors'
 import { Item, ThirdPartyItemAttributes, ItemApprovalData } from '../Item'
 import { isCommitteeMember } from '../Committee'
-import { buildCollectionForumPost, createPost } from '../Forum'
+import {
+  buildCollectionForumPost,
+  buildCollectionForumUpdateReply,
+  createPost,
+  getPost,
+  updatePost,
+} from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Cheque } from '../SlotUsageCheque'
 import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
@@ -321,13 +327,28 @@ export class CollectionRouter extends Router {
         // We should also consider deleteing Forum.router.ts
         // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
         // TODO: Should this be halting the response? Retries?
-        const forum_link = await createPost(
-          buildCollectionForumPost(
-            result.collection,
-            result.items.slice(MAX_FORUM_ITEMS)
+
+        if (dbCollection.forum_id) {
+          const postData = await getPost(dbCollection.forum_id)
+          await updatePost(
+            dbCollection.forum_id,
+            buildCollectionForumUpdateReply(
+              postData.raw,
+              result.items.slice(0, MAX_FORUM_ITEMS)
+            )
           )
-        )
-        await Collection.update<CollectionAttributes>({ forum_link }, { id })
+        } else {
+          const { id: postId, link } = await createPost(
+            buildCollectionForumPost(
+              result.collection,
+              result.items.slice(0, MAX_FORUM_ITEMS)
+            )
+          )
+          await Collection.update<CollectionAttributes>(
+            { forum_link: link, forum_id: postId },
+            { id }
+          )
+        }
       } else {
         const dbItems = await Item.findOrderedByCollectionId(id)
         result = await this.service.publishDCLCollection(dbCollection, dbItems)

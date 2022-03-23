@@ -6,7 +6,9 @@ const FORUM_URL = env.get('FORUM_URL', '')
 const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
 const FORUM_CATEGORY = env.get('FORUM_CATEGORY')
 
-export async function createPost(post: ForumPost): Promise<string> {
+export async function createPost(
+  post: ForumPost
+): Promise<{ id: number; link: string }> {
   const forumPost = {
     ...post,
     title: sanitizeTitle(post.title),
@@ -32,8 +34,41 @@ export async function createPost(post: ForumPost): Promise<string> {
     )
   }
 
-  const { topic_id, topic_slug } = result
-  return `${FORUM_URL}/t/${topic_slug}/${topic_id}`
+  const { id, topic_id, topic_slug } = result
+  return { id, link: `${FORUM_URL}/t/${topic_slug}/${topic_id}` }
+}
+
+export async function getPost(id: number): Promise<ForumPost> {
+  const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
+    headers: {
+      'Api-Key': FORUM_API_KEY,
+      'Content-Type': 'application/json',
+    },
+  })
+
+  const result: ForumPost = await response.json()
+  return result
+}
+
+export async function updatePost(id: number, rawPost: ForumPost['raw']) {
+  const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
+    headers: {
+      'Api-Key': FORUM_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    method: 'PUT',
+    body: JSON.stringify({ raw: rawPost }),
+  })
+
+  const result: CreateResponse = await response.json()
+
+  if (result.errors !== undefined) {
+    throw new Error(
+      `Error updating the post ${JSON.stringify(id)}: ${result.errors.join(
+        ', '
+      )}`
+    )
+  }
 }
 
 function sanitizeTitle(title: string) {

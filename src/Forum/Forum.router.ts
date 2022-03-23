@@ -46,10 +46,13 @@ export class ForumRouter extends Router {
     }
 
     try {
-      const forum_link = await createPost(forumPost)
-      await Collection.update<CollectionAttributes>({ forum_link }, { id })
+      const { id, link } = await createPost(forumPost)
+      await Collection.update<CollectionAttributes>(
+        { forum_id: id, forum_link: link },
+        { id }
+      )
 
-      return forum_link
+      return link
     } catch (error) {
       throw new HTTPError(
         'Error creating forum post',

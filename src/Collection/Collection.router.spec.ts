@@ -21,7 +21,7 @@ import {
   dbTPCollectionMock,
   toResultCollection,
 } from '../../spec/mocks/collections'
-import { wallet } from '../../spec/mocks/wallet'
+import { createIdentity, fakePrivateKey, wallet } from '../../spec/mocks/wallet'
 import {
   convertItemDatesToISO,
   dbItemMock,
@@ -47,7 +47,11 @@ import {
   DBItemApprovalData,
 } from '../Item'
 import { buildCollectionForumPost, createPost } from '../Forum'
-import { SlotUsageCheque, SlotUsageChequeAttributes } from '../SlotUsageCheque'
+import {
+  Cheque,
+  SlotUsageCheque,
+  SlotUsageChequeAttributes,
+} from '../SlotUsageCheque'
 import { CurationStatus } from '../Curation'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
@@ -1251,7 +1255,6 @@ describe('Collection router', () => {
             .send({
               itemIds: [],
               cheque: {
-                signedMessage: 'message',
                 signature: 'signature',
                 qty: 1,
                 salt: '0xsalt',
@@ -1286,7 +1289,6 @@ describe('Collection router', () => {
             .send({
               itemIds: items.map((item) => item.id),
               cheque: {
-                signedMessage: 'message',
                 signature: 'signature',
                 qty: 1,
                 salt: '0xsalt',
@@ -1304,54 +1306,23 @@ describe('Collection router', () => {
         })
       })
 
-      describe('when sending an invalid signed message and signature', () => {
+      describe('when sending an invalid signature', () => {
         beforeEach(() => {
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbTPItemMock])
         })
 
-        it('should respond with a 400 and a message signaling the signature and message should be valid', () => {
+        it('should respond with a 400 and a message signaling an address missmatch in the signature and sender', () => {
           return server
             .post(buildURL(url))
             .set(createAuthHeaders('post', url))
             .send({
               itemIds: [dbTPItemMock.id],
               cheque: {
-                signedMessage: 'invalid',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
-              },
-            })
-            .expect(400)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                ok: false,
-                data: { id: dbTPCollection.id },
-                error:
-                  'Tried to publish TP items with an invalid signed message or signature. Error: signature missing v and recoveryParam (argument="signature", value="signature", code=INVALID_ARGUMENT, version=bytes/5.0.4)',
-              })
-            })
-        })
-      })
-
-      describe('when the message signer differs from the sender of the request', () => {
-        beforeEach(() => {
-          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbTPItemMock])
-
-          jest.spyOn(ethers.utils, 'verifyMessage').mockReturnValue('0xadsfsfs')
-        })
-
-        it('should respond with a 400 and a message signaling the signature and message should be valid', () => {
-          return server
-            .post(buildURL(url))
-            .set(createAuthHeaders('post', url))
-            .send({
-              itemIds: [dbTPItemMock.id],
-              cheque: {
-                signedMessage: 'message',
-                signature: 'signature',
-                qty: 1,
-                salt: '0xsalt',
+                signature:
+                  '0x692d14c3d04572ef9b8fe6694ea1d796159b8b2839d9ce0553042d45dcf17da475a750823f3a552f349f6b82802f37506a022c8ea3791c6d2966223134011a5c1b',
+                qty: 1, // this is the field that is wrong
+                salt:
+                  '0x866023072516cda998ccd2b696fbbed3912fa5ecea8b474af6e40dadc5352ce4',
               },
             })
             .expect(400)
@@ -1381,8 +1352,11 @@ describe('Collection router', () => {
           itemIds = items.map((item) => item.id)
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
           jest
-            .spyOn(ethers.utils, 'verifyMessage')
-            .mockReturnValue(wallet.address)
+            .spyOn(ethers.utils, 'verifyTypedData')
+            .mockImplementationOnce(() => wallet.address)
+        })
+        afterEach(() => {
+          jest.restoreAllMocks() // to reset the verifyTypedData mock from above
         })
 
         it('should respond with a 400 and a message signaling that all item collections should be the same', () => {
@@ -1392,7 +1366,6 @@ describe('Collection router', () => {
             .send({
               itemIds,
               cheque: {
-                signedMessage: 'message',
                 signature: 'signature',
                 qty: items.length,
                 salt: '0xsalt',
@@ -1417,8 +1390,11 @@ describe('Collection router', () => {
             itemCurationMock
           )
           jest
-            .spyOn(ethers.utils, 'verifyMessage')
-            .mockReturnValue(wallet.address)
+            .spyOn(ethers.utils, 'verifyTypedData')
+            .mockImplementationOnce(() => wallet.address)
+        })
+        afterEach(() => {
+          jest.restoreAllMocks() // to reset the verifyTypedData mock from above
         })
 
         it('should respond with a 409 and a message signaling that you cannot publish items twice', () => {
@@ -1428,7 +1404,6 @@ describe('Collection router', () => {
             .send({
               itemIds: [dbItemMock.id],
               cheque: {
-                signedMessage: 'message',
                 signature: 'signature',
                 qty: 1,
                 salt: '0xsalt',
@@ -1479,13 +1454,17 @@ describe('Collection router', () => {
           ;(ItemCuration.deleteByIds as jest.Mock).mockResolvedValueOnce([])
 
           jest
-            .spyOn(ethers.utils, 'verifyMessage')
-            .mockReturnValue(wallet.address)
-
-          jest
             .spyOn(SlotUsageCheque, 'create')
             .mockResolvedValueOnce(slotUsageCheque)
           jest.spyOn(SlotUsageCheque, 'delete').mockResolvedValueOnce('')
+
+          jest
+            .spyOn(ethers.utils, 'verifyTypedData')
+            .mockImplementationOnce(() => wallet.address)
+        })
+
+        afterEach(() => {
+          jest.restoreAllMocks() // to reset the verifyTypedData mock from above
         })
 
         it('should respond with a 400 and a message signaling that the database errored out', () => {
@@ -1495,7 +1474,6 @@ describe('Collection router', () => {
             .send({
               itemIds: dbItemIds,
               cheque: {
-                signedMessage: 'message',
                 signature: 'signature',
                 qty: dbItemIds.length,
                 salt: '0xsalt',
@@ -1518,7 +1496,6 @@ describe('Collection router', () => {
             .send({
               itemIds: dbItemIds,
               cheque: {
-                signedMessage: 'message',
                 signature: 'signature',
                 qty: dbItemIds.length,
                 salt: '0xsalt',
@@ -1536,12 +1513,28 @@ describe('Collection router', () => {
         })
       })
 
-      describe('when the supplied data is correct', () => {
+      describe('when the supplied data and signature are correct', () => {
         let items: ThirdPartyItemAttributes[]
         let itemIds: string[]
         let forumLink: string
+        let authHeaders: Record<string, string>
+        let mockedWallet
+        let cheque: Cheque
 
-        beforeEach(() => {
+        beforeEach(async () => {
+          mockedWallet = new ethers.Wallet(fakePrivateKey)
+          cheque = {
+            signature:
+              '0x393140034cb84d3a71d7dff062cbe0b4b8add8a6a1a66c0157508648ed9e290369c1ab613fd52836dfc08838b094ccd58db0700b24018d0f7bf36ed238811a8e1b', // signatured generated using the wallet from fakePrivateKey
+            qty: 3,
+            salt:
+              '0x866023072516cda998ccd2b696fbbed3912fa5ecea8b474af6e40dadc5352ce4',
+          }
+          authHeaders = createAuthHeaders(
+            'post',
+            url,
+            await createIdentity(mockedWallet, mockedWallet, 1)
+          )
           items = [
             { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash1' },
             { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash2' },
@@ -1561,10 +1554,6 @@ describe('Collection router', () => {
           ])
           ;(createPost as jest.Mock).mockResolvedValueOnce(forumLink)
           ;(SlotUsageCheque.create as jest.Mock).mockResolvedValueOnce({})
-
-          jest
-            .spyOn(ethers.utils, 'verifyMessage')
-            .mockReturnValue(wallet.address)
           jest
             .spyOn(Bridge, 'consolidateTPItems')
             .mockResolvedValueOnce(items as any)
@@ -1572,34 +1561,24 @@ describe('Collection router', () => {
 
         describe('and the item collection does not have a virtual curation', () => {
           it('should create a SlotUsageCheque record with the request data', () => {
-            const signedMessage = 'a signed message'
-            const signature = 'signature'
-            const qty = itemIds.length
-            const salt = '0xsalt'
-
             return server
               .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
+              .set(authHeaders)
               .send({
                 itemIds,
-                cheque: {
-                  signedMessage,
-                  signature,
-                  qty,
-                  salt,
-                },
+                cheque,
               })
               .expect(200)
               .then(() => {
                 expect(SlotUsageCheque.create).toHaveBeenCalledWith({
                   id: expect.any(String),
-                  signature,
+                  signature: cheque.signature,
                   collection_id: dbTPCollection.id,
                   third_party_id: dbTPCollection.third_party_id,
                   created_at: expect.any(Date),
                   updated_at: expect.any(Date),
-                  qty,
-                  salt,
+                  qty: cheque.qty,
+                  salt: cheque.salt,
                 })
               })
           })
@@ -1607,15 +1586,10 @@ describe('Collection router', () => {
           it('should create a pending ItemCuration for each item id supplied', () => {
             return server
               .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
+              .set(authHeaders)
               .send({
                 itemIds,
-                cheque: {
-                  signedMessage: 'message',
-                  signature: 'signature',
-                  qty: itemIds.length,
-                  salt: '0xsalt',
-                },
+                cheque,
               })
               .expect(200)
               .then(() => {
@@ -1638,15 +1612,10 @@ describe('Collection router', () => {
           it('should create the virtual collection curation', () => {
             return server
               .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
+              .set(authHeaders)
               .send({
                 itemIds,
-                cheque: {
-                  signedMessage: 'message',
-                  signature: 'signature',
-                  qty: itemIds.length,
-                  salt: '0xsalt',
-                },
+                cheque,
               })
               .expect(200)
               .then(() => {
@@ -1675,15 +1644,10 @@ describe('Collection router', () => {
           it('should update the virtual collection curation updated at column', () => {
             return server
               .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
+              .set(authHeaders)
               .send({
                 itemIds,
-                cheque: {
-                  signedMessage: 'message',
-                  signature: 'signature',
-                  qty: itemIds.length,
-                  salt: '0xsalt',
-                },
+                cheque,
               })
               .expect(200)
               .then(() => {
@@ -1708,15 +1672,10 @@ describe('Collection router', () => {
           it('should return the collection and items already consolidated', () => {
             return server
               .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
+              .set(authHeaders)
               .send({
                 itemIds,
-                cheque: {
-                  signedMessage: 'message',
-                  signature: 'signature',
-                  qty: itemIds.length,
-                  salt: '0xsalt',
-                },
+                cheque,
               })
               .expect(200)
               .then((response: any) => {
@@ -1748,15 +1707,10 @@ describe('Collection router', () => {
           it('should create a forum post with the response data', () => {
             return server
               .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
+              .set(authHeaders)
               .send({
                 itemIds,
-                cheque: {
-                  signedMessage: 'message',
-                  signature: 'signature',
-                  qty: itemIds.length,
-                  salt: '0xsalt',
-                },
+                cheque,
               })
               .expect(200)
               .then(() => {
@@ -1772,15 +1726,10 @@ describe('Collection router', () => {
           it('should update the collection forum_link property with the post creation', () => {
             return server
               .post(buildURL(url))
-              .set(createAuthHeaders('post', url))
+              .set(authHeaders)
               .send({
                 itemIds,
-                cheque: {
-                  signedMessage: 'message',
-                  signature: 'signature',
-                  qty: itemIds.length,
-                  salt: '0xsalt',
-                },
+                cheque,
               })
               .expect(200)
               .then(() => {

@@ -10,7 +10,7 @@ import { decodeTPCollectionURN } from '../utils/urn'
 import { UnpublishedCollectionError } from './Collection.errors'
 import { CollectionAttributes } from './Collection.types'
 import { Collection } from './Collection.model'
-import { getMergedCollection } from './utils'
+import { getChequeMessageHash, getMergedCollection } from './utils'
 
 describe('when decoding the TP collection URN', () => {
   const collectionNetwork = 'ropsten'
@@ -135,5 +135,11 @@ describe('getMergedCollection', () => {
         })
       })
     })
+  })
+})
+
+describe('when getting the cheque hash', () => {
+  it('', () => {
+    getChequeMessageHash()
   })
 })

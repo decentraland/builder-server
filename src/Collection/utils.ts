@@ -1,4 +1,4 @@
-import { ethers, utils as ethersUtils } from 'ethers'
+import { ethers } from 'ethers'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 import { TypedDataDomain, TypedDataField } from '@ethersproject/abstract-signer'
 import { SignatureLike } from '@ethersproject/bytes'
@@ -13,9 +13,6 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { Network } from '../ethereum'
 import { getChainIdFromNetwork } from '../ethereum/utils'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { Cheque } from '../SlotUsageCheque'
-import { CollectionAttributes, FullCollection } from './Collection.types'
-import { UnpublishedCollectionError } from './Collection.errors'
 import {
   decodeTPCollectionURN,
   getDecentralandCollectionURN,
@@ -23,6 +20,9 @@ import {
   hasTPCollectionURN,
   isTPCollection,
 } from '../utils/urn'
+import { Cheque } from '../SlotUsageCheque'
+import { CollectionAttributes, FullCollection } from './Collection.types'
+import { UnpublishedCollectionError } from './Collection.errors'
 
 /**
  * Converts a collection retrieved from the DB into a "FullCollection".
@@ -154,18 +154,22 @@ export async function getChequeMessageHash(
   cheque: Cheque,
   thirdPartyId: string
 ) {
+  const textEncoder = new TextEncoder()
   const chequeSignatureData = await buildChequeSignatureData(
     cheque,
     thirdPartyId
   )
+
   const dataHash = ethers.utils.keccak256(
     ethers.utils.defaultAbiCoder.encode(
       ['bytes32', 'bytes32', 'uint256', 'bytes32'],
       [
         ethers.utils.keccak256(
-          'ConsumeSlots(string thirdPartyId,uint256 qty,bytes32 salt)'
+          textEncoder.encode(
+            'ConsumeSlots(string thirdPartyId,uint256 qty,bytes32 salt)'
+          )
         ),
-        ethers.utils.keccak256(thirdPartyId),
+        ethers.utils.keccak256(textEncoder.encode(thirdPartyId)),
         chequeSignatureData.values.qty,
         chequeSignatureData.values.salt,
       ]
@@ -177,10 +181,16 @@ export async function getChequeMessageHash(
       ['bytes32', 'bytes32', 'bytes32', 'address', 'bytes32'],
       [
         ethers.utils.keccak256(
-          'EIP712Domain(string name,string version,address verifyingContract,bytes32 salt)'
+          textEncoder.encode(
+            'EIP712Domain(string name,string version,address verifyingContract,bytes32 salt)'
+          )
         ),
-        ethers.utils.keccak256(chequeSignatureData.domain.name!),
-        ethers.utils.keccak256(chequeSignatureData.domain.version!),
+        ethers.utils.keccak256(
+          textEncoder.encode(chequeSignatureData.domain.name!)
+        ),
+        ethers.utils.keccak256(
+          textEncoder.encode(chequeSignatureData.domain.version!)
+        ),
         chequeSignatureData.domain.verifyingContract!,
         // Check if the padding is the same
         chequeSignatureData.domain.salt!,
@@ -188,11 +198,10 @@ export async function getChequeMessageHash(
     )
   )
 
-  // Is this hash the same?
-  // return ethers.utils.soliditySha3('\x19\x01', domainHash, dataHash)
+  const eip191Header = ethers.utils.arrayify('0x1901')
   return ethers.utils.solidityKeccak256(
-    ['bytes32', 'bytes32', 'bytes32'],
-    ['\x19\x01', domainHash, dataHash]
+    ['bytes', 'bytes32', 'bytes32'],
+    [eip191Header, domainHash, dataHash]
   )
 }
 

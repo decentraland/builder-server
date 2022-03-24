@@ -1,11 +1,7 @@
 import { v4 as uuid } from 'uuid'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import {
-  ItemFragment,
-  ReceiptFragment,
-  ThirdPartyFragment,
-} from '../ethereum/api/fragments'
+import { ItemFragment, ThirdPartyFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
@@ -449,6 +445,7 @@ export class CollectionService {
     const remoteCheque = await thirdPartyAPI.fetchReceiptById(
       slotUsageCheckHash
     )
+
     const { qty, salt, signature } = slotUsageCheque
 
     const content_hashes = dbApprovalData.reduce((acc, data) => {

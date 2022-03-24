@@ -8,6 +8,7 @@ import {
   tiersFragment,
   TierFragment,
   ReceiptFragment,
+  receiptsFragment,
 } from './fragments'
 import {
   BaseGraphAPI,
@@ -105,6 +106,7 @@ const getReceiptByIdQuery = () => gql`
       ...receiptsFragment
     }
   }
+  ${receiptsFragment()}
 `
 
 export class ThirdPartyAPI extends BaseGraphAPI {

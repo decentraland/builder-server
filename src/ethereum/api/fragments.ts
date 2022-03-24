@@ -116,7 +116,6 @@ export const tiersFragment = () => gql`
 export const receiptsFragment = () => gql`
   fragment receiptsFragment on Receipt {
     id
-    hash
     qty
     signer
   }

@@ -596,7 +596,7 @@ export class ItemService {
       // Update the Item Curation content_hash
       await ItemCuration.update(
         { content_hash: attributes.local_content_hash },
-        { item_id: item.id }
+        { item_id: attributes.id }
       )
     }
     return Bridge.toFullItem(upsertedItem, dbCollection)

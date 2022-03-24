@@ -437,15 +437,6 @@ export class CollectionService {
       throw new UnpublishedCollectionError(id)
     }
 
-    const slotUsageCheckHash = await getChequeMessageHash(
-      slotUsageCheque,
-      slotUsageCheque.third_party_id
-    )
-
-    const remoteCheque = await thirdPartyAPI.fetchReceiptById(
-      slotUsageCheckHash
-    )
-
     const { qty, salt, signature } = slotUsageCheque
 
     const content_hashes = dbApprovalData.reduce((acc, data) => {
@@ -458,6 +449,15 @@ export class CollectionService {
       acc[data.id] = data.content_hash
       return acc
     }, {} as Record<string, string>)
+
+    const slotUsageCheckHash = await getChequeMessageHash(
+      slotUsageCheque,
+      slotUsageCheque.third_party_id
+    )
+
+    const remoteCheque = await thirdPartyAPI.fetchReceiptById(
+      slotUsageCheckHash
+    )
 
     return {
       cheque: {

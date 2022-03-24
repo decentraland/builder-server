@@ -38,6 +38,7 @@ export const wallet: Wallet = {
 }
 
 // Taken from https://github.com/decentraland/builder-client/blob/00ab26cdbd350ce5f5a46da09358c3662c4c6741/src/test-utils/crypto.ts#L1
+// Wallet address: 0x63FaC9201494f0bd17B9892B9fae4d52fe3BD377
 export const fakePrivateKey =
   '8da4ef21b864d2cc526dbdb2a120bd2874c36c9d0a1fb7f8c63d7f7a8b41de8f'
 
@@ -55,7 +56,6 @@ export async function createIdentity(
 ): Promise<AuthIdentity> {
   const address = await signer.getAddress()
 
-  // const wallet = EthersWallet.createRandom()
   const payload = {
     address: wallet.address,
     privateKey: wallet.privateKey,

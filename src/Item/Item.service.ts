@@ -4,6 +4,7 @@ import {
   ThirdPartyCollectionAttributes,
 } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
+import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -596,7 +597,7 @@ export class ItemService {
       // Update the Item Curation content_hash
       await ItemCuration.update(
         { content_hash: attributes.local_content_hash },
-        { item_id: attributes.id }
+        { item_id: attributes.id, status: CurationStatus.PENDING }
       )
     }
     return Bridge.toFullItem(upsertedItem, dbCollection)

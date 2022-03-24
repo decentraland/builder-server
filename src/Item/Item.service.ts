@@ -592,6 +592,13 @@ export class ItemService {
       : null
 
     const upsertedItem: ItemAttributes = await Item.upsert(attributes)
+    if (dbItem && attributes.local_content_hash) {
+      // Update the Item Curation content_hash
+      await ItemCuration.update(
+        { content_hash: attributes.local_content_hash },
+        { item_id: item.id }
+      )
+    }
     return Bridge.toFullItem(upsertedItem, dbCollection)
   }
 }

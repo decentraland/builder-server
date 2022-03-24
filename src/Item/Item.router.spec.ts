@@ -35,6 +35,7 @@ import { wallet } from '../../spec/mocks/wallet'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
+import { CurationStatus } from '../Curation'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
@@ -55,7 +56,6 @@ import {
   ItemRarity,
   ThirdPartyItemAttributes,
 } from './Item.types'
-import { CurationStatus } from '../Curation'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')

@@ -35,6 +35,7 @@ import { wallet } from '../../spec/mocks/wallet'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
+import { CurationStatus } from '../Curation'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI, Wearable } from '../ethereum/api/peer'
@@ -896,7 +897,7 @@ describe('Item router', () => {
                       content_hash:
                         'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
                     },
-                    { item_id: dbTPItem.id }
+                    { item_id: dbTPItem.id, status: CurationStatus.PENDING }
                   )
                 })
             })

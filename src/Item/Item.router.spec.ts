@@ -55,6 +55,7 @@ import {
   ItemRarity,
   ThirdPartyItemAttributes,
 } from './Item.types'
+import { CurationStatus } from '../Curation'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
@@ -896,7 +897,7 @@ describe('Item router', () => {
                       content_hash:
                         'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
                     },
-                    { item_id: dbTPItem.id }
+                    { item_id: dbTPItem.id, status: CurationStatus.PENDING }
                   )
                 })
             })

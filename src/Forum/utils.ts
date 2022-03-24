@@ -34,8 +34,8 @@ export function buildCollectionForumUpdateReply(
   // We only post in English
   return `
   ${oldPost}
-
-  ## New wearables updated at ${new Date().toLocaleDateString()}
+  \n\n
+## New wearables updated at ${new Date().toLocaleDateString()}
   ${newItems.map(toRawItem).join('\n\n')}
   `
 }

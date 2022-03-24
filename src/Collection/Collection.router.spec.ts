@@ -756,7 +756,7 @@ describe('Collection router', () => {
           mockIsCollectionPublished(dbCollection.id, false)
         })
 
-        it.skip('should upsert the collection and respond with a 200 and the upserted collection', () => {
+        it('should upsert the collection and respond with a 200 and the upserted collection', () => {
           return server
             .put(buildURL(url))
             .set(createAuthHeaders('put', url))

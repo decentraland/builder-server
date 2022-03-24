@@ -741,12 +741,10 @@ describe('when handling a request', () => {
       describe('when updating an item', () => {
         let item: ItemAttributes
         let createItemCurationSpy: jest.SpyInstance
-        let collectionService: CurationService<any>
 
         beforeEach(() => {
           item = { ...dbItemMock, local_content_hash: 'hash1' }
           service = mockServiceWithAccess(ItemCuration, true)
-          collectionService = mockServiceWithAccess(CollectionCuration, true)
 
           jest
             .spyOn(service, 'getLatestById')

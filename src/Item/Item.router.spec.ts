@@ -883,6 +883,23 @@ describe('Item router', () => {
                   })
                 })
             })
+
+            it('should update the item curation with the new content_hash', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(200)
+                .then(() => {
+                  expect(ItemCuration.update).toHaveBeenCalledWith(
+                    {
+                      content_hash:
+                        'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                    },
+                    { item_id: dbTPItem.id }
+                  )
+                })
+            })
           })
         })
       })

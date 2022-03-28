@@ -20,6 +20,7 @@ export const collectionSchema = Object.freeze({
       items: { type: 'string' },
     },
     forum_link: { type: ['string', 'null'] },
+    forum_id: { type: ['integer', 'null'] },
     reviewed_at: { type: ['string', 'null'] },
     created_at: { type: 'string' },
     updated_at: { type: 'string' },

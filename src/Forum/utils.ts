@@ -19,12 +19,25 @@ export function buildCollectionForumPost(
     title: `Third Party collection ${collection.name} with URN: ${collection.third_party_id}`,
     raw: `# ${collection.name}
 
-	[View entire collection](${getItemEditorUrl({ collectionId: collection.id })})
+  [View entire collection](${getItemEditorUrl({ collectionId: collection.id })})
 
-	## Wearables
+  ## Wearables
 
-	${items.map(toRawItem).join('\n\n')}`,
+  ${items.map(toRawItem).join('\n\n')}`,
   }
+}
+
+export function buildCollectionForumUpdateReply(
+  oldPost: ForumPost['raw'],
+  newItems: FullItem[]
+): ForumPost['raw'] {
+  // We only post in English
+  return `
+  ${oldPost}
+  \n\n
+## New wearables updated at ${new Date().toLocaleDateString()}
+  ${newItems.map(toRawItem).join('\n\n')}
+  `
 }
 
 function toRawItem(item: FullItem) {

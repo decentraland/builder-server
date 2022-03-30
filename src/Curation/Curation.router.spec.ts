@@ -636,7 +636,7 @@ describe('when handling a request', () => {
         } as any
       })
 
-      describe('when updating a collection curation', () => {
+      describe("and it's a collection curation", () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
 
@@ -652,7 +652,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('when updating an item curation', () => {
+      describe("and it's an item curation", () => {
         beforeEach(() => {
           service = mockServiceWithAccess(ItemCuration, true)
 
@@ -666,6 +666,27 @@ describe('when handling a request', () => {
             'There is already an ongoing review request'
           )
         })
+      })
+    })
+
+    describe("when the item doesn't have a previous finished curation", () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        service = mockServiceWithAccess(ItemCuration, true)
+
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+        } as any
+
+        jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
+      })
+
+      it('should reject with an ongoing review message', async () => {
+        await expect(router.insertItemCuration(req)).rejects.toThrowError(
+          "Item curations can't be created for items that weren't curated before"
+        )
       })
     })
 
@@ -720,18 +741,14 @@ describe('when handling a request', () => {
       describe('when updating an item', () => {
         let item: ItemAttributes
         let createItemCurationSpy: jest.SpyInstance
-        let collectionService: CurationService<any>
 
         beforeEach(() => {
           item = { ...dbItemMock, local_content_hash: 'hash1' }
           service = mockServiceWithAccess(ItemCuration, true)
-          collectionService = mockServiceWithAccess(CollectionCuration, true)
 
-          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
           jest
-            .spyOn(collectionService, 'getLatestById')
-            .mockResolvedValueOnce(undefined)
-
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ status: CurationStatus.APPROVED } as any)
           jest.spyOn(Item, 'findOne').mockResolvedValueOnce(item)
 
           createItemCurationSpy = jest

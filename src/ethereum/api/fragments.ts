@@ -113,6 +113,21 @@ export const tiersFragment = () => gql`
   }
 `
 
+export const receiptsFragment = () => gql`
+  fragment receiptsFragment on Receipt {
+    id
+    qty
+    signer
+  }
+`
+
+export type ReceiptFragment = {
+  id: string
+  qty: string
+  signer: string
+  createdAt: string
+}
+
 export type TierFragment = {
   id: string
   value: string

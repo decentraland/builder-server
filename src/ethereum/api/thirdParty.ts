@@ -7,6 +7,8 @@ import {
   thirdPartyItemFragment,
   tiersFragment,
   TierFragment,
+  ReceiptFragment,
+  receiptsFragment,
 } from './fragments'
 import {
   BaseGraphAPI,
@@ -98,6 +100,15 @@ const getTiersQuery = () => gql`
   ${tiersFragment()}
 `
 
+const getReceiptByIdQuery = () => gql`
+  query getReceiptById($hash: String!) {
+    receipts(first: 1, where: { id: $hash }) {
+      ...receiptsFragment
+    }
+  }
+  ${receiptsFragment()}
+`
+
 export class ThirdPartyAPI extends BaseGraphAPI {
   fetchThirdParties = async (): Promise<ThirdPartyFragment[]> => {
     return this.paginate(['thirdParties'], {
@@ -138,6 +149,19 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       query: getItemsByCollectionQuery(),
       variables: { thirdPartyId, collectionId },
     })
+  }
+
+  fetchReceiptById = async (
+    hash: string
+  ): Promise<ReceiptFragment | undefined> => {
+    const {
+      data: { receipts },
+    } = await this.query<{ receipts: ReceiptFragment[] }>({
+      query: getReceiptByIdQuery(),
+      variables: { hash },
+    })
+
+    return receipts[0]
   }
 
   fetchMaxItemsByThirdParty = async (thirdPartyId: string): Promise<number> => {

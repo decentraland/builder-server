@@ -29,7 +29,12 @@ import {
   itemFragmentMock,
 } from '../../spec/mocks/items'
 import { itemCurationMock } from '../../spec/mocks/itemCuration'
-import { ItemFragment, CollectionFragment } from '../ethereum/api/fragments'
+import { mockedCheque } from '../../spec/mocks/cheque'
+import {
+  ItemFragment,
+  CollectionFragment,
+  ReceiptFragment,
+} from '../ethereum/api/fragments'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Bridge } from '../ethereum/api/Bridge'
@@ -84,6 +89,8 @@ jest.mock('../Committee')
 jest.mock('../Item/Item.model')
 jest.mock('./Collection.model')
 jest.mock('./access')
+
+const thirdPartyAPIMock = thirdPartyAPI as jest.Mocked<typeof thirdPartyAPI>
 
 describe('Collection router', () => {
   let dbCollection: CollectionAttributes
@@ -1548,13 +1555,7 @@ describe('Collection router', () => {
 
         beforeEach(async () => {
           mockedWallet = new ethers.Wallet(fakePrivateKey)
-          cheque = {
-            signature:
-              '0x393140034cb84d3a71d7dff062cbe0b4b8add8a6a1a66c0157508648ed9e290369c1ab613fd52836dfc08838b094ccd58db0700b24018d0f7bf36ed238811a8e1b', // signatured generated using the wallet from fakePrivateKey
-            qty: 3,
-            salt:
-              '0x866023072516cda998ccd2b696fbbed3912fa5ecea8b474af6e40dadc5352ce4',
-          }
+          cheque = { ...mockedCheque }
           authHeaders = createAuthHeaders(
             'post',
             url,
@@ -2136,6 +2137,7 @@ describe('Collection router', () => {
             ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
               {}
             )
+            thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce(undefined)
           })
 
           it('should respond with a 500 saying that the item is missing some properties', () => {
@@ -2176,9 +2178,8 @@ describe('Collection router', () => {
             ]
 
             slotUsageCheque = {
-              qty: 2,
-              salt: 'salt',
-              signature: 'signature',
+              ...mockedCheque,
+              third_party_id: dbTPCollection.third_party_id,
             } as SlotUsageChequeAttributes
 
             mockCollectionAuthorizationMiddleware(
@@ -2198,28 +2199,71 @@ describe('Collection router', () => {
             )
           })
 
-          it('should return an array with the data for pending curations', () => {
-            return server
-              .get(buildURL(url))
-              .set(createAuthHeaders('get', url))
-              .expect(200)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  ok: true,
-                  data: {
-                    cheque: {
-                      qty: slotUsageCheque.qty,
-                      salt: slotUsageCheque.salt,
-                      signature: slotUsageCheque.signature,
+          describe("and the cheque doesn't exist in the blockcahin", () => {
+            beforeEach(() => {
+              thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce(
+                undefined
+              )
+            })
+
+            it('should return an array with the data for pending curations, indicating that the cheque was not used', () => {
+              return server
+                .get(buildURL(url))
+                .set(createAuthHeaders('get', url))
+                .expect(200)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    ok: true,
+                    data: {
+                      cheque: {
+                        qty: slotUsageCheque.qty,
+                        salt: slotUsageCheque.salt,
+                        signature: slotUsageCheque.signature,
+                      },
+                      content_hashes: {
+                        [itemApprovalData[0].id]: 'Qm1abababa',
+                        [itemApprovalData[1].id]: 'Qm2bdbdbdb',
+                        [itemApprovalData[2].id]: 'Qm3rererer',
+                      },
+                      chequeWasConsumed: false,
                     },
-                    content_hashes: {
-                      [itemApprovalData[0].id]: 'Qm1abababa',
-                      [itemApprovalData[1].id]: 'Qm2bdbdbdb',
-                      [itemApprovalData[2].id]: 'Qm3rererer',
-                    },
-                  },
+                  })
                 })
-              })
+            })
+          })
+
+          describe('and the cheque exists in the blockchain', () => {
+            beforeEach(() => {
+              thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce({
+                id:
+                  '0x7954b5d263d7d1298c98fa330de6a0d94952bb5f6694cab0dde144239d56dce1',
+              } as ReceiptFragment)
+            })
+
+            it('should return an array with the data for pending curations, indicating that the cheque was used', () => {
+              return server
+                .get(buildURL(url))
+                .set(createAuthHeaders('get', url))
+                .expect(200)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    ok: true,
+                    data: {
+                      cheque: {
+                        qty: slotUsageCheque.qty,
+                        salt: slotUsageCheque.salt,
+                        signature: slotUsageCheque.signature,
+                      },
+                      content_hashes: {
+                        [itemApprovalData[0].id]: 'Qm1abababa',
+                        [itemApprovalData[1].id]: 'Qm2bdbdbdb',
+                        [itemApprovalData[2].id]: 'Qm3rererer',
+                      },
+                      chequeWasConsumed: true,
+                    },
+                  })
+                })
+            })
           })
         })
       })

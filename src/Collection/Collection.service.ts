@@ -29,7 +29,11 @@ import {
 } from '../Curation/CollectionCuration'
 import { CurationStatus } from '../Curation'
 import { decodeTPCollectionURN, isTPCollection } from '../utils/urn'
-import { getAddressFromSignature, toDBCollection } from './utils'
+import {
+  getAddressFromSignature,
+  getChequeMessageHash,
+  toDBCollection,
+} from './utils'
 import {
   CollectionAttributes,
   FullCollection,
@@ -446,6 +450,15 @@ export class CollectionService {
       return acc
     }, {} as Record<string, string>)
 
+    const slotUsageCheckHash = await getChequeMessageHash(
+      slotUsageCheque,
+      slotUsageCheque.third_party_id
+    )
+
+    const remoteCheque = await thirdPartyAPI.fetchReceiptById(
+      slotUsageCheckHash
+    )
+
     return {
       cheque: {
         qty,
@@ -453,6 +466,7 @@ export class CollectionService {
         signature,
       },
       content_hashes,
+      chequeWasConsumed: remoteCheque?.id === slotUsageCheckHash,
     }
   }
 

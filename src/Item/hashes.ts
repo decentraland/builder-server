@@ -8,8 +8,6 @@ import {
   WearableRepresentation,
   ThirdPartyWearable,
   StandardWearable,
-  Rarity,
-  I18N,
 } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'

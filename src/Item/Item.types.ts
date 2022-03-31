@@ -1,4 +1,3 @@
-import { Wearable } from '../ethereum/api/peer'
 import { ItemCurationAttributes } from '../Curation/ItemCuration'
 import { MetricsAttributes } from '../Metrics'
 import { Cheque } from '../SlotUsageCheque'
@@ -35,7 +34,6 @@ export type ItemAttributes = {
   eth_address: string
   collection_id: string | null
   blockchain_item_id: string | null
-  content_hash: string | null
   local_content_hash: string | null
   price: string | null
   beneficiary?: string | null
@@ -64,9 +62,11 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   in_catalyst: boolean
   total_supply: number
   content_hash: string | null
+  catalyst_content_hash: string | null
 }
 
-export type DBItemApprovalData = Pick<ItemAttributes, 'id' | 'content_hash'>
+export type DBItemApprovalData = Pick<ItemAttributes, 'id'> &
+  Pick<FullItem, 'content_hash'>
 
 export type ItemApprovalData = {
   cheque: Cheque
@@ -76,18 +76,3 @@ export type ItemApprovalData = {
   >
   chequeWasConsumed: boolean
 }
-
-type BaseWearableEntityMetadata = Omit<
-  Wearable,
-  'createdAt' | 'updatedAt' | 'collectionAddress' | 'rarity'
-> & {
-  i18n: { code: string; text: string }[]
-  emoteDataV0?: { loop: boolean }
-}
-
-export type TPWearableEntityMetadata = BaseWearableEntityMetadata & {
-  content: ItemContents
-}
-
-export type StandardWearableEntityMetadata = BaseWearableEntityMetadata &
-  Pick<Wearable, 'collectionAddress' | 'rarity'>

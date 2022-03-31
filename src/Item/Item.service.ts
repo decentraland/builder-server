@@ -1,3 +1,4 @@
+import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
 import {
   Collection,
   CollectionAttributes,
@@ -221,7 +222,9 @@ export class ItemService {
         ? Bridge.mergeTPCollection(collection, lastItemCuration)
         : collection
 
-      const catalystItems = await peerAPI.fetchWearables([urn])
+      const catalystItems = await peerAPI.fetchWearables<ThirdPartyWearable>([
+        urn,
+      ])
       if (catalystItems.length > 0) {
         item = Bridge.mergeTPItem(dbItem, collection, catalystItems[0])
       }
@@ -260,7 +263,9 @@ export class ItemService {
         collection = Bridge.mergeCollection(dbCollection, remoteCollection)
 
         if (remoteItem) {
-          const [catalystItem] = await peerAPI.fetchWearables([remoteItem.urn])
+          const [catalystItem] = await peerAPI.fetchWearables<StandardWearable>(
+            [remoteItem.urn]
+          )
           item = Bridge.mergeItem(
             dbItem,
             remoteItem,
@@ -548,7 +553,9 @@ export class ItemService {
           )
 
           // Check if the new URN is not already in use
-          const [wearable] = await peerAPI.fetchWearables([itemURN])
+          const [wearable] = await peerAPI.fetchWearables<ThirdPartyWearable>([
+            itemURN,
+          ])
           if (wearable) {
             throw new ThirdPartyItemAlreadyPublishedError(
               item.id,
@@ -573,7 +580,9 @@ export class ItemService {
       )
 
       // Check if the chosen URN is already in use
-      const [wearable] = await peerAPI.fetchWearables([itemURN])
+      const [wearable] = await peerAPI.fetchWearables<ThirdPartyWearable>([
+        itemURN,
+      ])
       if (wearable) {
         throw new ThirdPartyItemAlreadyPublishedError(
           item.id,

@@ -1,50 +1,26 @@
 import fetch from 'isomorphic-fetch'
+import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
 import { ILoggerComponent } from '@well-known-components/interfaces'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { env } from 'decentraland-commons'
 import { LambdasClient } from 'dcl-catalyst-client'
 import { AuthLink } from 'dcl-crypto'
-import { WearableData, WearableRepresentation } from '../../Item/wearable/types'
-import { ItemRarity } from '../../Item'
-import { MetricsAttributes } from '../../Metrics'
 import { logExecutionTime } from '../../utils/logging'
 
 export const THUMBNAIL_PATH = 'thumbnail.png'
-
-export type Wearable = {
-  id: string
-  name: string
-  description: string
-  collectionAddress: string
-  rarity: ItemRarity
-  image: string
-  thumbnail: string
-  metrics: MetricsAttributes
-  data: WearableData
-  createdAt: number
-  updatedAt: number
-}
-
-export type PeerRepresentation = Omit<WearableRepresentation, 'contents'> & {
-  contents: { key: string; url: string }[]
-}
-export type PeerData = Omit<WearableData, 'representations'> & {
-  representations: PeerRepresentation[]
-}
-
-export type PeerWearable = Omit<Wearable, 'data'> & {
-  data: PeerData
-}
 
 export type ValidateSignatureResponse = {
   valid: boolean
   ownerAddress: string
   error?: string
 }
+
 export type SignatureBody = {
   authChain: AuthLink[]
   timestamp: string
 }
+
+export type CatalystItem = StandardWearable | ThirdPartyWearable
 
 export const PEER_URL = env.get('PEER_URL', '')
 
@@ -80,31 +56,17 @@ export class PeerAPI {
     return result
   }
 
-  async fetchWearables(urns: string[]): Promise<Wearable[]> {
-    const wearables: PeerWearable[] = await logExecutionTime(
+  async fetchWearables<X extends CatalystItem>(urns: string[]): Promise<X[]> {
+    return logExecutionTime(
       () =>
         urns.length > 0
-          ? this.lambdasClient.fetchWearables({ wearableIds: urns })
+          ? (this.lambdasClient.fetchWearables({
+              wearableIds: urns,
+            }) as Promise<X[]>)
           : [],
       this.logger,
       'Wearables Fetch'
     )
-    return wearables.map((wearable) => this.toWearable(wearable))
-  }
-
-  private toWearable(peerWearable: PeerWearable): Wearable {
-    return {
-      ...peerWearable,
-      data: {
-        ...peerWearable.data,
-        representations: [
-          ...peerWearable.data.representations.map((representation) => ({
-            ...representation,
-            contents: representation.contents.map((content) => content.key),
-          })),
-        ],
-      },
-    }
   }
 }
 

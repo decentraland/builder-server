@@ -1,3 +1,4 @@
+import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
@@ -38,7 +39,7 @@ import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { CurationStatus } from '../Curation'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
-import { peerAPI, Wearable } from '../ethereum/api/peer'
+import { CatalystItem, peerAPI } from '../ethereum/api/peer'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { STATUS_CODES } from '../common/HTTPError'
 import { Bridge } from '../ethereum/api/Bridge'
@@ -69,7 +70,7 @@ jest.mock('./Item.model')
 
 function mockItemConsolidation(
   itemsAttributes: ItemAttributes[],
-  wearables: Wearable[]
+  wearables: CatalystItem[]
 ) {
   ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
     itemsAttributes
@@ -95,8 +96,8 @@ describe('Item router', () => {
   let resultItemNotPublished: ResultItem
   let resultTPItemNotPublished: ResultItem
   let resultTPItemPublished: ResultItem
-  let wearable: Wearable
-  let tpWearable: Wearable
+  let wearable: StandardWearable
+  let tpWearable: ThirdPartyWearable
   let itemFragment: ItemFragment
   let url: string
 
@@ -110,7 +111,6 @@ describe('Item router', () => {
     tpWearable = {
       ...tpWearableMock,
       id: thirdPartyItemFragmentMock.urn,
-      collectionAddress: '',
     }
     dbItemNotPublished = {
       ...dbItem,
@@ -130,7 +130,7 @@ describe('Item router', () => {
     }
     dbItemCuration = { ...itemCurationMock, item_id: dbTPItemPublished.id }
     resultingItem = toResultItem(dbItem, itemFragment, wearable)
-    resultingTPItem = toResultTPItem(dbTPItem, dbTPCollectionMock)
+    resultingTPItem = toResultTPItem(dbTPItem, dbTPCollectionMock, tpWearable)
     resultItemNotPublished = asResultItem(dbItemNotPublished)
     resultTPItemNotPublished = asResultItem(dbTPItemNotPublished) // no itemCuration & no catalyst, should be regular Item
     resultTPItemPublished = {
@@ -254,9 +254,6 @@ describe('Item router', () => {
       ;(ItemCuration.find as jest.Mock).mockResolvedValueOnce([dbItemCuration])
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
         itemFragment,
-      ])
-      ;(thirdPartyAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
-        thirdPartyItemFragmentMock,
       ])
       ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
         dbTPCollectionMock,

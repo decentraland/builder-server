@@ -29,7 +29,7 @@ export class ForumRouter extends Router {
   }
 
   async post(req: AuthRequest) {
-    const id: string = server.extractFromReq(req, 'id')
+    const collectionId: string = server.extractFromReq(req, 'id')
     const forumPostJSON: any = server.extractFromReq(req, 'forumPost')
 
     const validate = validator.compile(forumPostSchema)
@@ -40,16 +40,16 @@ export class ForumRouter extends Router {
     }
     const forumPost: ForumPost = forumPostJSON as ForumPost
 
-    const collection = await Collection.findOne(id)
+    const collection = await Collection.findOne(collectionId)
     if (collection.forum_link) {
-      throw new HTTPError('Forum post already exists', { id })
+      throw new HTTPError('Forum post already exists', { id: collectionId })
     }
 
     try {
       const { id, link } = await createPost(forumPost)
       await Collection.update<CollectionAttributes>(
         { forum_id: id, forum_link: link },
-        { id }
+        { id: collectionId }
       )
 
       return link

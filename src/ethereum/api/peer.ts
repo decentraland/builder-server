@@ -56,13 +56,13 @@ export class PeerAPI {
     return result
   }
 
-  async fetchWearables<X extends CatalystItem>(urns: string[]): Promise<X[]> {
+  async fetchWearables<T extends CatalystItem>(urns: string[]): Promise<T[]> {
     return logExecutionTime(
       () =>
         urns.length > 0
           ? (this.lambdasClient.fetchWearables({
               wearableIds: urns,
-            }) as Promise<X[]>)
+            }) as Promise<T[]>)
           : [],
       this.logger,
       'Wearables Fetch'

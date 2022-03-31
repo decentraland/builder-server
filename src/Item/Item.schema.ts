@@ -1,8 +1,20 @@
 import { matchers } from '../common/matchers'
 import { metricsSchema } from '../Metrics/Metrics.schema'
 import { emoteSchema } from './emote/types'
-import { FullItem, ItemRarity, ItemType } from './Item.types'
+import { FullItem, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
+
+// TODO: This item rarities should be replaced with the rarities from @dcl/schemas when it has
+// the capability of getting all of the rarities.
+enum ItemRarity {
+  UNIQUE = 'unique',
+  MYTHIC = 'mythic',
+  LEGENDARY = 'legendary',
+  EPIC = 'epic',
+  RARE = 'rare',
+  UNCOMMON = 'uncommon',
+  COMMON = 'common',
+}
 
 // The schema is placed into this file to avoid a circular dependency.
 export const itemSchema = Object.freeze({

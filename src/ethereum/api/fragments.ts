@@ -1,5 +1,5 @@
+import { Rarity } from '@dcl/schemas'
 import gql from 'graphql-tag'
-import { ItemRarity } from '../../Item'
 import { WearableCategory } from '../../Item/wearable/types'
 
 export const itemFragment = () => gql`
@@ -235,6 +235,6 @@ export type WearableFragment = {
   name: string
   description: string
   category: WearableCategory
-  rarity: ItemRarity
+  rarity: Rarity
   bodyShapes: string[]
 }

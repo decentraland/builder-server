@@ -36,8 +36,8 @@ function buildStandardWearableEntityMetadata(
     name: item.name,
     description: item.description,
     collectionAddress: collection.contract_address!,
-    rarity: (item.rarity! as unknown) as Rarity,
-    i18n: [{ code: 'en', text: item.name }] as I18N[],
+    rarity: item.rarity!,
+    i18n: [{ code: Locale.EN, text: item.name }],
     data: {
       replaces: item.data.replaces as WearableCategory[],
       hides: item.data.hides as WearableCategory[],

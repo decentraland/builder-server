@@ -4,7 +4,7 @@ import {
   dbCollectionMock,
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
-import { dbItemMock, thirdPartyItemFragmentMock } from '../../spec/mocks/items'
+import { dbItemMock } from '../../spec/mocks/items'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { collectionAPI } from '../ethereum/api/collection'
 import { toUnixTimestamp } from '../utils/parse'

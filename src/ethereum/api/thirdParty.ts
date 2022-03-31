@@ -3,8 +3,6 @@ import { env } from 'decentraland-commons'
 import {
   thirdPartyFragment,
   ThirdPartyFragment,
-  ThirdPartyItemFragment,
-  thirdPartyItemFragment,
   tiersFragment,
   TierFragment,
   ReceiptFragment,
@@ -36,45 +34,10 @@ const getThirdPartiesByManagerQuery = () => gql`
   ${thirdPartyFragment()}
 `
 
-const getItemsQuery = () => gql`
-  query getItems {
-    items {
-      ...thirdPartyItemFragment
-    }
-  }
-  ${thirdPartyItemFragment()}
-`
-
-const getItemsByThirdPartyIdsQuery = () => gql`
-  query getItemsByThirdPartyIds(${PAGINATION_VARIABLES}, $thirdPartiesIds: [String!]) {
-    items(${PAGINATION_ARGUMENTS}, where: { thirdParty_in: $thirdPartiesIds }) {
-      ...thirdPartyItemFragment
-    }
-  }
-  ${thirdPartyItemFragment()}
-`
-
 const getThirdPartyMaxItems = () => gql`
   query getThirdPartyAvailableSlots($thirdPartyId: String!) {
     thirdParties(where: { id: $thirdPartyId }) {
       maxItems
-    }
-  }
-`
-
-const getItemsByCollectionQuery = () => gql`
-  query getItemsByCollection(${PAGINATION_VARIABLES}, $thirdPartiesId: String!, $collectionId: String!) {
-    items(${PAGINATION_ARGUMENTS}, where: { thirdParty: $thirdPartiesId, searchCollectionId: $collectionId }) {
-      ...thirdPartyItemFragment
-    }
-  }
-  ${thirdPartyFragment()}
-`
-
-const getItemQuery = () => gql`
-  query getThirdPartyItem($urn: String) {
-    items(first: 1, where: { urn: $urn }) {
-      ...thirdPartyItemFragment
     }
   }
 `
@@ -88,7 +51,6 @@ const isManagerQuery = () => gql`
       id
     }
   }
-  ${thirdPartyItemFragment()}
 `
 
 const getTiersQuery = () => gql`
@@ -132,25 +94,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
     })
   }
 
-  fetchItemsByThirdParties = async (
-    thirdPartyIds: string[]
-  ): Promise<ThirdPartyItemFragment[]> => {
-    return this.paginate(['items'], {
-      query: getItemsByThirdPartyIdsQuery(),
-      variables: { thirdPartyIds },
-    })
-  }
-
-  fetchItemsByCollection = async (
-    thirdPartyId: string,
-    collectionId: string
-  ): Promise<ThirdPartyItemFragment[]> => {
-    return this.paginate(['items'], {
-      query: getItemsByCollectionQuery(),
-      variables: { thirdPartyId, collectionId },
-    })
-  }
-
   fetchReceiptById = async (
     hash: string
   ): Promise<ReceiptFragment | undefined> => {
@@ -174,27 +117,6 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       variables: { thirdPartyId },
     })
     return Number(thirdParties[0].maxItems)
-  }
-
-  fetchItems = async (): Promise<ThirdPartyItemFragment[]> => {
-    return this.paginate(['items'], {
-      query: getItemsQuery(),
-    })
-  }
-
-  fetchItem = async (
-    urn: string
-  ): Promise<ThirdPartyItemFragment | undefined> => {
-    const {
-      data: { items = [] },
-    } = await this.query<{
-      items: ThirdPartyItemFragment[]
-    }>({
-      query: getItemQuery(),
-      variables: { urn },
-    })
-
-    return items[0]
   }
 
   isManager = async (

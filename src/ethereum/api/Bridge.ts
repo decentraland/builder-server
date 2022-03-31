@@ -1,3 +1,4 @@
+import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
 import { constants } from 'ethers'
 import { utils } from 'decentraland-commons'
 import {
@@ -15,7 +16,7 @@ import {
 } from '../../Curation/ItemCuration'
 import { ItemFragment, CollectionFragment } from './fragments'
 import { collectionAPI } from './collection'
-import { peerAPI, Wearable } from './peer'
+import { CatalystItem, peerAPI } from './peer'
 
 export class Bridge {
   /**
@@ -85,7 +86,7 @@ export class Bridge {
       itemsByURN[urn] = item
     }
 
-    const tpCatalystItems = await peerAPI.fetchWearables(
+    const tpCatalystItems = await peerAPI.fetchWearables<ThirdPartyWearable>(
       Object.keys(itemsByURN)
     )
 
@@ -127,7 +128,7 @@ export class Bridge {
   static mergeTPItem(
     dbItem: ItemAttributes,
     dbCollection: ThirdPartyCollectionAttributes,
-    catalystItem?: Wearable
+    catalystItem?: ThirdPartyWearable
   ): FullItem {
     const data = dbItem.data
     const category = data.category
@@ -154,8 +155,10 @@ export class Bridge {
       is_published: true,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,
-      // TODO: This will be resolved when we tackle #394
-      content_hash: '',
+      content_hash: null,
+      catalyst_content_hash: catalystItem
+        ? catalystItem.merkleProof.entityHash
+        : null,
       data: {
         ...data,
         category,
@@ -246,7 +249,9 @@ export class Bridge {
 
     const [dbResults, catalystItems] = await Promise.all([
       Collection.findByIds(collectionIds),
-      peerAPI.fetchWearables(remoteItems.map((item) => item.urn)),
+      peerAPI.fetchWearables<StandardWearable>(
+        remoteItems.map((item) => item.urn)
+      ),
     ])
 
     // Reduce it to a map for fast lookup
@@ -342,7 +347,7 @@ export class Bridge {
     dbItem: ItemAttributes,
     remoteItem: ItemFragment,
     remoteCollection: CollectionFragment,
-    catalystItem?: Wearable
+    catalystItem?: CatalystItem
   ): FullItem {
     const { wearable } = remoteItem.metadata
 
@@ -373,6 +378,7 @@ export class Bridge {
       blockchain_item_id: remoteItem.blockchainId,
       total_supply: Number(remoteItem.totalSupply),
       content_hash: remoteItem.contentHash || null,
+      catalyst_content_hash: null,
       data: {
         ...data,
         category,
@@ -401,6 +407,7 @@ export class Bridge {
         is_approved: false,
         is_published: false,
         content_hash: null,
+        catalyst_content_hash: null,
         total_supply: 0,
       },
       ['urn_suffix']

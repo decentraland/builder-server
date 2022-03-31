@@ -1,6 +1,6 @@
 import { constants } from 'ethers'
+import { Rarity, ThirdPartyWearable } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
-import { Wearable } from '../../src/ethereum/api/peer'
 import {
   ItemFragment,
   ThirdPartyItemFragment,
@@ -10,7 +10,6 @@ import { Bridge } from '../../src/ethereum/api/Bridge'
 import {
   FullItem,
   ItemAttributes,
-  ItemRarity,
   ItemType,
   ThirdPartyItemAttributes,
 } from '../../src/Item/Item.types'
@@ -19,6 +18,7 @@ import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
 import { WearableBodyShape } from '../../src/Item/wearable/types'
 import { isTPCollection } from '../../src/utils/urn'
+import { CatalystItem } from '../../src/ethereum/api/peer'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
@@ -29,7 +29,7 @@ export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
 export function toResultItem(
   itemAttributes: ItemAttributes,
   itemFragment?: ItemFragment,
-  catalystItem?: Wearable,
+  catalystItem?: CatalystItem,
   dbCollection?: CollectionAttributes
 ): ResultItem {
   const hasURN =
@@ -55,6 +55,7 @@ export function toResultItem(
       ? Number(itemFragment?.totalSupply)
       : 0,
     content_hash: itemFragment?.contentHash || null,
+    catalyst_content_hash: null,
   }
   delete (resultItem as Omit<typeof resultItem, 'urn_suffix'> & {
     urn_suffix: unknown
@@ -73,7 +74,8 @@ export function asResultItem(item: ItemAttributes): ResultItem {
 
 export function toResultTPItem(
   itemAttributes: ItemAttributes,
-  dbCollection?: CollectionAttributes
+  dbCollection?: CollectionAttributes,
+  catalystItem?: ThirdPartyWearable
 ): ResultItem {
   const hasURN =
     itemAttributes.urn_suffix && dbCollection && isTPCollection(dbCollection)
@@ -96,7 +98,10 @@ export function toResultTPItem(
     total_supply: 0,
     price: '0',
     beneficiary: constants.AddressZero,
-    content_hash: '',
+    content_hash: null,
+    catalyst_content_hash: catalystItem
+      ? catalystItem?.merkleProof.entityHash
+      : null,
   }
   delete (resultItem as Omit<typeof resultItem, 'urn_suffix'> & {
     urn_suffix: unknown
@@ -115,9 +120,8 @@ export const dbItemMock: ItemAttributes = {
   collection_id: dbCollectionMock.id,
   blockchain_item_id: '0',
   price: '',
-  content_hash: '',
   beneficiary: '',
-  rarity: ItemRarity.COMMON,
+  rarity: Rarity.COMMON,
   type: ItemType.WEARABLE,
   data: {
     representations: [

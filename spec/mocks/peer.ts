@@ -1,4 +1,11 @@
-import { ItemRarity } from '../../src/Item'
+import {
+  Rarity,
+  ThirdPartyWearable,
+  StandardWearable,
+  WearableCategory,
+  WearableRepresentation,
+  I18N,
+} from '@dcl/schemas'
 import { dbCollectionMock } from './collections'
 import {
   dbItemMock,
@@ -6,28 +13,41 @@ import {
   thirdPartyItemFragmentMock,
 } from './items'
 
-export const wearableMock = {
+export const wearableMock: StandardWearable = {
   id: itemFragmentMock.urn,
   name: dbItemMock.name,
   description: dbItemMock.description,
   collectionAddress: dbCollectionMock.contract_address!,
-  rarity: ItemRarity.COMMON,
+  rarity: Rarity.COMMON,
+  i18n: [{ code: 'en', text: dbItemMock.name }] as I18N[],
   image: '',
   thumbnail: '',
   metrics: dbItemMock.metrics,
-  contents: {},
   data: {
-    representations: [],
-    replaces: [],
-    hides: [],
+    category: WearableCategory.HAT,
+    representations: [] as WearableRepresentation[],
+    replaces: [] as WearableCategory[],
+    hides: [] as WearableCategory[],
     tags: [],
   },
-  createdAt: dbItemMock.created_at.getTime(),
-  updatedAt: dbItemMock.updated_at.getTime(),
 }
 
-export const tpWearableMock = {
+export const tpWearableMock: ThirdPartyWearable = {
   ...wearableMock,
   id: thirdPartyItemFragmentMock.urn,
-  collectionAddress: '',
+  merkleProof: {
+    proof: [],
+    index: 0,
+    hashingKeys: [
+      'id',
+      'name',
+      'description',
+      'data',
+      'image',
+      'thumbnail',
+      'metrics',
+      'contents',
+    ],
+    entityHash: 'someHash',
+  },
 }

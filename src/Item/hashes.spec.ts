@@ -1,4 +1,4 @@
-import { Rarity } from '@dcl/schemas'
+import { Rarity, WearableCategory } from '@dcl/schemas'
 import { dbItemMock, dbTPItemMock } from '../../spec/mocks/items'
 import {
   dbCollectionMock,
@@ -6,7 +6,7 @@ import {
 } from '../../spec/mocks/collections'
 import { THUMBNAIL_PATH } from '../ethereum/api/peer'
 import { CollectionAttributes } from '../Collection'
-import { WearableBodyShape, WearableCategory } from './wearable/types'
+import { WearableBodyShape } from './wearable/types'
 import { EmoteCategory } from './emote/types'
 import { ItemAttributes, ItemType } from './Item.types'
 import { calculateItemContentHash } from './hashes'

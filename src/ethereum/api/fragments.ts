@@ -1,6 +1,5 @@
-import { Rarity } from '@dcl/schemas'
+import { Rarity, WearableCategory } from '@dcl/schemas'
 import gql from 'graphql-tag'
-import { WearableCategory } from '../../Item/wearable/types'
 
 export const itemFragment = () => gql`
   fragment itemFragment on Item {

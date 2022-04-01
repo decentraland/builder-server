@@ -1,6 +1,6 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Collection } from '../../Collection'
-import { Item } from '../../Item'
+import { Item, PaginationAttributes } from '../../Item'
 import { CurationStatus, CurationType } from '../Curation.types'
 import { ItemCurationAttributes } from './ItemCuration.types'
 
@@ -27,14 +27,40 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return counts[0].count > 0
   }
 
-  static async findByCollectionId(collectionId: string) {
-    return this.query<ItemCurationAttributes>(SQL`
-    SELECT DISTINCT on (item.id) item_curation.*
-      FROM ${raw(this.tableName)} item_curation
-      INNER JOIN ${raw(
-        Item.tableName
-      )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
-      ORDER BY item.id, item_curation.created_at DESC`)
+  static async findByCollectionAndItemsId(
+    collectionId: string,
+    itemIds: string[],
+    limit: number = 10000,
+    offset: number = 0
+  ) {
+    return this.query<ItemCurationAttributes & PaginationAttributes>(SQL`
+      SELECT DISTINCT on (item.id) item_curation.*, count(*) OVER() AS total_count
+        FROM ${raw(this.tableName)} item_curation
+        INNER JOIN ${raw(
+          Item.tableName
+        )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
+        WHERE item.id = ANY(${itemIds})
+        ORDER BY item.id, item_curation.created_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+    `)
+  }
+
+  static async findByCollectionId(
+    collectionId: string,
+    limit: number = 10000,
+    offset: number = 0
+  ) {
+    return this.query<ItemCurationAttributes & PaginationAttributes>(SQL`
+      SELECT DISTINCT on (item.id) item_curation.*, count(*) OVER() AS total_count
+        FROM ${raw(this.tableName)} item_curation
+        INNER JOIN ${raw(
+          Item.tableName
+        )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
+        ORDER BY item.id, item_curation.created_at DESC
+        LIMIT ${limit}
+        OFFSET ${offset}
+  `)
   }
 
   static async findLastByCollectionId(

@@ -1,7 +1,12 @@
 import { Model, SQL, raw } from 'decentraland-server'
 import { Collection } from '../Collection/Collection.model'
+import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { DBItemApprovalData, ItemAttributes } from './Item.types'
+import {
+  DBItemApprovalData,
+  ItemAttributes,
+  PaginationAttributes,
+} from './Item.types'
 
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
@@ -26,23 +31,6 @@ export class Item extends Model<ItemAttributes> {
         items.collection_id = ${collectionId}
       ORDER BY items.id, item_curations.updated_at DESC
     `)
-  }
-
-  static findByCollectionIds(collectionIds: string[]) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT *
-        FROM ${raw(this.tableName)}
-        WHERE collection_id = ANY(${collectionIds})`)
-  }
-
-  static findByThirdPartyIds(thirdPartyIds: string[]) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT items.*
-        FROM ${raw(this.tableName)} items
-        JOIN ${raw(
-          Collection.tableName
-        )} collections ON collections.id = items.collection_id
-        WHERE collections.third_party_id = ANY(${thirdPartyIds})`)
   }
 
   static findOrderedByCollectionId(
@@ -81,11 +69,59 @@ export class Item extends Model<ItemAttributes> {
         WHERE ${where}`)
   }
 
-  static findNonThirdPartyItemsByOwner(owner: string) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT *
+  // PAGINATED QUERIES
+
+  static findStandardAndTPItems(
+    thirdPartyIds: string[],
+    owner: string,
+    limit: number = 10000,
+    offset: number = 0
+  ) {
+    return this.query<ItemAttributes & PaginationAttributes>(SQL`
+      SELECT items.*, count(*) OVER() AS total_count
+        FROM ${raw(this.tableName)} items
+        JOIN ${raw(
+          Collection.tableName
+        )} collections ON collections.id = items.collection_id
+        WHERE 
+          collections.third_party_id = ANY(${thirdPartyIds})
+        OR
+          (items.eth_address = ${owner} AND items.urn_suffix IS NULL)
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `)
+  }
+
+  static async findByCollectionIds(
+    collectionIds: string[],
+    limit: number = 10000,
+    offset: number = 0
+  ) {
+    return await this.query<ItemAttributes & PaginationAttributes>(SQL`
+      SELECT *, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)}
-        WHERE eth_address = ${owner}
-        AND urn_suffix IS NULL`)
+        WHERE collection_id = ANY(${collectionIds})
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `)
+  }
+
+  static async findByCollectionIdAndPendingToApprove(
+    collectionId: string,
+    limit: number = 10000,
+    offset: number = 0
+  ) {
+    return await this.query<ItemAttributes & PaginationAttributes>(SQL`
+      SELECT items.*, count(*) OVER() AS total_count
+        FROM ${raw(this.tableName)} items
+        JOIN ${raw(
+          ItemCuration.tableName
+        )} item_curations ON items.id = item_curations.item_id
+        WHERE items.collection_id = ${collectionId} AND item_curations.status = ${
+      CurationStatus.PENDING
+    }
+        LIMIT ${limit}
+        OFFSET ${offset}
+    `)
   }
 }

@@ -36,6 +36,7 @@ import { Item } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
+  PaginationAttributes,
   ThirdPartyItemAttributes,
 } from './Item.types'
 import { buildTPItemURN, isTPItem, toDBItem } from './utils'
@@ -120,38 +121,66 @@ export class ItemService {
   }
 
   public async getCollectionItems(
-    collectionId: string
-  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
-    const [dbCollection, dbItems] = await Promise.all([
-      this.collectionService.getDBCollection(collectionId),
-      Item.find<ItemAttributes>({ collection_id: collectionId }),
-    ])
+    collectionId: string,
+    filters: {
+      status?: CurationStatus
+      limit?: number
+      offset?: number
+    }
+  ): Promise<{
+    collection: CollectionAttributes
+    items: FullItem[]
+    totalItems: number
+  }> {
+    const { status, limit, offset } = filters
+    const dbCollection = await this.collectionService.getDBCollection(
+      collectionId
+    )
+    const isTP = isTPCollection(dbCollection)
+    const dbItems =
+      status && isTP
+        ? await Item.findByCollectionIdAndPendingToApprove(
+            collectionId,
+            limit,
+            offset
+          )
+        : await Item.findByCollectionIds([collectionId], limit, offset)
 
-    return isTPCollection(dbCollection)
-      ? this.getTPCollectionItems(dbCollection, dbItems)
-      : this.getDCLCollectionItems(dbCollection, dbItems)
+    const { collection, items } = isTPCollection(dbCollection)
+      ? await this.getTPCollectionItems(dbCollection, dbItems)
+      : await this.getDCLCollectionItems(dbCollection, dbItems)
+
+    return {
+      collection,
+      items,
+      totalItems: Number(dbItems[0]?.total_count ?? 0),
+    }
   }
 
-  public async getTPItemsByManager(manager: string): Promise<ItemAttributes[]> {
-    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+  public async getStandardAndTPItems(
+    address: string,
+    limit?: number,
+    offset?: number
+  ): Promise<(ItemAttributes & PaginationAttributes)[]> {
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
     if (thirdParties.length <= 0) {
       return []
     }
 
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
-    return Item.findByThirdPartyIds(thirdPartyIds)
+    return Item.findStandardAndTPItems(thirdPartyIds, address, limit, offset)
   }
 
   /**
    * Takes a list of items and returns an object containing two sets, one of standard items and the other of TP items
    * @param allItems - Items to split, can be any combination of item types
    */
-  public splitItems(
-    allItems: ItemAttributes[]
-  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
+  public splitItems<T extends ItemAttributes[]>(
+    allItems: T
+  ): { items: ItemAttributes[]; tpItems: ThirdPartyItemAttributes[] } {
     const items: ItemAttributes[] = []
-    const tpItems: ItemAttributes[] = []
+    const tpItems: ThirdPartyItemAttributes[] = []
 
     for (const item of allItems) {
       if (isTPItem(item)) {

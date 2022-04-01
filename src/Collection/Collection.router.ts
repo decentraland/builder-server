@@ -213,7 +213,7 @@ export class CollectionRouter extends Router {
       remoteCollections,
       dbTPCollections,
     ] = await Promise.all([
-      Collection.find<CollectionAttributes>(),
+      Collection.findAll(),
       collectionAPI.fetchCollections(),
       this.service.getDbTPCollections(),
     ])
@@ -251,7 +251,7 @@ export class CollectionRouter extends Router {
       remoteCollections,
       dbTPCollections,
     ] = await Promise.all([
-      Collection.find<CollectionAttributes>({ eth_address }),
+      Collection.findByAllByAddress(eth_address),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
       this.service.getDbTPCollectionsByManager(eth_address),
     ])

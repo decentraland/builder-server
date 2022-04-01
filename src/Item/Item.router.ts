@@ -20,8 +20,14 @@ import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
+import {
+  generatePaginatedResponse,
+  getOffset,
+  getPaginationParams,
+} from '../utils/pagination'
+import { CurationStatus } from '../Curation'
 import { Item } from './Item.model'
-import { ItemAttributes } from './Item.types'
+import { ItemAttributes, PaginatedResponse } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasPublicAccess } from './access'
@@ -170,7 +176,10 @@ export class ItemRouter extends Router {
     return fullItems.concat(fullTPItems)
   }
 
-  getAddressItems = async (req: AuthRequest): Promise<FullItem[]> => {
+  getAddressItems = async (
+    req: AuthRequest
+  ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
+    const { page, limit } = getPaginationParams(req)
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -182,21 +191,33 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [dbItems, remoteItems, dbTPItems, itemCurations] = await Promise.all([
-      Item.findNonThirdPartyItemsByOwner(eth_address),
+    const [allItems, remoteItems, itemCurations] = await Promise.all([
+      this.itemService.getStandardAndTPItems(
+        eth_address,
+        limit,
+        getOffset(page, limit)
+      ),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
-      this.itemService.getTPItemsByManager(eth_address),
       ItemCuration.find<ItemCurationAttributes>(),
     ])
+
+    const { items: dbItems, tpItems: dbTPItems } = this.itemService.splitItems(
+      allItems
+    )
 
     const [items, tpItems] = await Promise.all([
       Bridge.consolidateItems(dbItems, remoteItems),
       Bridge.consolidateTPItems(dbTPItems, itemCurations),
     ])
 
+    const totalItems = allItems[0]?.total_count
+    const concatenated = items.concat(tpItems)
+
     // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.
-    //       We'll need to add it after concatenating, cause if we don't it will have a different order each time
-    return items.concat(tpItems)
+    // We'll need to add it after concatenating, cause if we don't it will have a different order each time
+    return page && limit
+      ? generatePaginatedResponse(concatenated, totalItems, limit, page)
+      : concatenated
   }
 
   getItem = async (req: AuthRequest): Promise<FullItem> => {
@@ -234,14 +255,27 @@ export class ItemRouter extends Router {
     }
   }
 
-  getCollectionItems = async (req: AuthRequest): Promise<FullItem[]> => {
+  getCollectionItems = async (
+    req: AuthRequest
+  ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
     const id = server.extractFromReq(req, 'id')
+    let status
+    try {
+      status = server.extractFromReq(req, 'status')
+    } catch (error) {}
+    const { page, limit } = getPaginationParams(req)
     const eth_address = req.auth.ethAddress
 
     try {
-      const { collection, items } = await this.itemService.getCollectionItems(
-        id
-      )
+      const {
+        collection,
+        items,
+        totalItems,
+      } = await this.itemService.getCollectionItems(id, {
+        limit,
+        offset: getOffset(page, limit),
+        status: status as CurationStatus,
+      })
 
       if (!(await hasCollectionAccess(eth_address, collection))) {
         throw new HTTPError(
@@ -251,7 +285,9 @@ export class ItemRouter extends Router {
         )
       }
 
-      return items
+      return page && limit
+        ? generatePaginatedResponse(items, totalItems, limit, page)
+        : items
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(

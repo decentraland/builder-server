@@ -2,6 +2,7 @@ import { Model, SQL, raw } from 'decentraland-server'
 import { Collection } from '../Collection/Collection.model'
 import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
+import { DEFAULT_LIMIT } from '../utils/pagination'
 import {
   DBItemApprovalData,
   ItemAttributes,
@@ -74,7 +75,7 @@ export class Item extends Model<ItemAttributes> {
   static findStandardAndTPItems(
     thirdPartyIds: string[],
     owner: string,
-    limit: number = 10000,
+    limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return this.query<ItemAttributes & PaginationAttributes>(SQL`
@@ -94,7 +95,7 @@ export class Item extends Model<ItemAttributes> {
 
   static async findByCollectionIds(
     collectionIds: string[],
-    limit: number = 10000,
+    limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return await this.query<ItemAttributes & PaginationAttributes>(SQL`
@@ -108,7 +109,7 @@ export class Item extends Model<ItemAttributes> {
 
   static async findByCollectionIdAndPendingToApprove(
     collectionId: string,
-    limit: number = 10000,
+    limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return await this.query<ItemAttributes & PaginationAttributes>(SQL`

@@ -1,6 +1,7 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Collection } from '../../Collection'
 import { Item, PaginationAttributes } from '../../Item'
+import { DEFAULT_LIMIT } from '../../utils/pagination'
 import { CurationStatus, CurationType } from '../Curation.types'
 import { ItemCurationAttributes } from './ItemCuration.types'
 
@@ -30,7 +31,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
   static async findByCollectionAndItemsId(
     collectionId: string,
     itemIds: string[],
-    limit: number = 10000,
+    limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return this.query<ItemCurationAttributes & PaginationAttributes>(SQL`
@@ -48,7 +49,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
 
   static async findByCollectionId(
     collectionId: string,
-    limit: number = 10000,
+    limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return this.query<ItemCurationAttributes & PaginationAttributes>(SQL`

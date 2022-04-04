@@ -6,7 +6,6 @@ import {
   WearableRepresentation,
   I18N,
 } from '@dcl/schemas'
-import { ItemRarity } from '../../src/Item'
 import { dbCollectionMock } from './collections'
 import { dbItemMock, itemFragmentMock } from './items'
 
@@ -15,7 +14,7 @@ export const wearableMock: StandardWearable = {
   name: dbItemMock.name,
   description: dbItemMock.description,
   collectionAddress: dbCollectionMock.contract_address!,
-  rarity: (ItemRarity.COMMON as unknown) as Rarity,
+  rarity: Rarity.COMMON,
   i18n: [{ code: 'en', text: dbItemMock.name }] as I18N[],
   image: '',
   thumbnail: '',

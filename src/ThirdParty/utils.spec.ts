@@ -12,6 +12,7 @@ describe('toThirdParty', () => {
     beforeEach(() => {
       fragment = {
         id: 'some:id',
+        root: 'aRoot',
         managers: ['0x1', '0x2'],
         maxItems: '1',
         totalItems: '1',
@@ -30,6 +31,7 @@ describe('toThirdParty', () => {
 
       const thirdParty: ThirdParty = {
         id: fragment.id,
+        root: fragment.root,
         managers: fragment.managers,
         maxItems: fragment.maxItems,
         totalItems: fragment.totalItems,
@@ -46,6 +48,7 @@ describe('toThirdParty', () => {
     beforeEach(() => {
       fragment = {
         id: 'some:other:id',
+        root: 'aRoot',
         managers: ['0x2'],
         maxItems: '2',
         totalItems: '1',
@@ -59,6 +62,7 @@ describe('toThirdParty', () => {
     it('should add empty strings as name and description', () => {
       const thirdParty: ThirdParty = {
         id: fragment.id,
+        root: fragment.root,
         managers: fragment.managers,
         maxItems: fragment.maxItems,
         totalItems: fragment.totalItems,

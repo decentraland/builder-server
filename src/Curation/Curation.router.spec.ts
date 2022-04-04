@@ -2,12 +2,10 @@ import { ExpressApp } from '../common/ExpressApp'
 import {
   collectionFragmentMock,
   dbCollectionMock,
-  dbTPCollectionMock,
 } from '../../spec/mocks/collections'
 import { dbItemMock } from '../../spec/mocks/items'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { collectionAPI } from '../ethereum/api/collection'
-import { toUnixTimestamp } from '../utils/parse'
 import { Collection } from '../Collection'
 import { Item, ItemAttributes } from '../Item'
 import { isCommitteeMember } from '../Committee'
@@ -90,52 +88,6 @@ describe('when handling a request', () => {
         await expect(
           router.getCollectionCurationItemStats(req)
         ).rejects.toThrowError('Collection is not a third party collection')
-      })
-    })
-
-    describe('when it is fetching items from a managed TP collection', () => {
-      let fetchItemsByCollectionSpy: jest.SpyInstance<
-        ReturnType<typeof thirdPartyAPI['fetchItemsByCollection']>
-      >
-
-      beforeEach(() => {
-        mockServiceWithAccess(CollectionCuration, true)
-
-        jest
-          .spyOn(Collection, 'findOne')
-          .mockResolvedValueOnce(dbTPCollectionMock)
-
-        fetchItemsByCollectionSpy = fetchItemsByCollectionSpy = jest
-          .spyOn(thirdPartyAPI, 'fetchItemsByCollection')
-          .mockResolvedValueOnce([
-            { ...thirdPartyItemFragmentMock }, // approved
-            { ...thirdPartyItemFragmentMock }, // approved
-            {
-              ...thirdPartyItemFragmentMock,
-              isApproved: false,
-              reviewedAt: toUnixTimestamp(new Date()),
-            }, // rejected
-            { ...thirdPartyItemFragmentMock, isApproved: false }, // under review
-            { ...thirdPartyItemFragmentMock, isApproved: false }, // under review
-          ])
-      })
-
-      it('should fetch the items for the collection id and its third party id', async () => {
-        await router.getCollectionCurationItemStats(req)
-        expect(fetchItemsByCollectionSpy).toHaveBeenCalledWith(
-          dbTPCollectionMock.third_party_id,
-          req.params.id
-        )
-      })
-
-      it('should use the fetched items to count and return an object with the values', async () => {
-        const stats = await router.getCollectionCurationItemStats(req)
-        expect(stats).toEqual({
-          total: 5,
-          approved: 2,
-          rejected: 1,
-          needsReview: 2,
-        })
       })
     })
   })

@@ -1,22 +1,4 @@
-export enum WearableCategory {
-  EYEBROWS = 'eyebrows',
-  EYES = 'eyes',
-  FACIAL_HAIR = 'facial_hair',
-  HAIR = 'hair',
-  MOUTH = 'mouth',
-  UPPER_BODY = 'upper_body',
-  LOWER_BODY = 'lower_body',
-  FEET = 'feet',
-  EARRING = 'earring',
-  EYEWEAR = 'eyewear',
-  HAT = 'hat',
-  HEAD = 'head',
-  HELMET = 'helmet',
-  MASK = 'mask',
-  TIARA = 'tiara',
-  TOP_HEAD = 'top_head',
-  SKIN = 'skin',
-}
+import { WearableCategory } from '@dcl/schemas'
 
 export enum WearableBodyShape {
   MALE = 'urn:decentraland:off-chain:base-avatars:BaseMale',
@@ -42,7 +24,7 @@ export type WearableData = {
 export const wearableSchema = Object.freeze({
   type: 'object',
   properties: {
-    category: { enum: Object.values(WearableCategory) },
+    category: WearableCategory.schema,
     representations: {
       type: 'array',
       items: {
@@ -60,11 +42,11 @@ export const wearableSchema = Object.freeze({
           },
           overrideReplaces: {
             type: 'array',
-            items: { enum: Object.values(WearableCategory) },
+            items: WearableCategory.schema,
           },
           overrideHides: {
             type: 'array',
-            items: { enum: Object.values(WearableCategory) },
+            items: WearableCategory.schema,
           },
         },
         additionalProperties: false,
@@ -80,11 +62,11 @@ export const wearableSchema = Object.freeze({
     },
     replaces: {
       type: 'array',
-      items: { enum: Object.values(WearableCategory) },
+      items: WearableCategory.schema,
     },
     hides: {
       type: 'array',
-      items: { enum: Object.values(WearableCategory) },
+      items: WearableCategory.schema,
     },
     tags: {
       type: 'array',

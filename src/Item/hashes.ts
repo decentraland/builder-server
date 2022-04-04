@@ -2,15 +2,7 @@ import {
   calculateMultipleHashesADR32LegacyQmHash,
   keccak256Hash,
 } from '@dcl/hashing'
-import {
-  Locale,
-  WearableCategory,
-  WearableRepresentation,
-  ThirdPartyWearable,
-  StandardWearable,
-  Rarity,
-  I18N,
-} from '@dcl/schemas'
+import { Locale, ThirdPartyWearable, StandardWearable } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
@@ -36,14 +28,14 @@ function buildStandardWearableEntityMetadata(
     name: item.name,
     description: item.description,
     collectionAddress: collection.contract_address!,
-    rarity: (item.rarity! as unknown) as Rarity,
-    i18n: [{ code: 'en', text: item.name }] as I18N[],
+    rarity: item.rarity!,
+    i18n: [{ code: Locale.EN, text: item.name }],
     data: {
-      replaces: item.data.replaces as WearableCategory[],
-      hides: item.data.hides as WearableCategory[],
+      replaces: item.data.replaces,
+      hides: item.data.hides,
       tags: item.data.tags,
-      category: item.data.category as WearableCategory,
-      representations: item.data.representations as WearableRepresentation[],
+      category: item.data.category!,
+      representations: item.data.representations,
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
@@ -73,11 +65,11 @@ function buildTPWearableEntityMetadata(
     description: item.description,
     i18n: [{ code: Locale.EN, text: item.name }],
     data: {
-      replaces: item.data.replaces as WearableCategory[],
-      hides: item.data.hides as WearableCategory[],
+      replaces: item.data.replaces,
+      hides: item.data.hides,
       tags: item.data.tags,
-      category: item.data.category as WearableCategory,
-      representations: item.data.representations as WearableRepresentation[],
+      category: item.data.category!,
+      representations: item.data.representations,
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,

@@ -1,6 +1,5 @@
+import { Rarity, WearableCategory } from '@dcl/schemas'
 import gql from 'graphql-tag'
-import { ItemRarity } from '../../Item'
-import { WearableCategory } from '../../Item/wearable/types'
 
 export const itemFragment = () => gql`
   fragment itemFragment on Item {
@@ -52,6 +51,7 @@ export const collectionFragment = () => gql`
 export const thirdPartyFragment = () => gql`
   fragment thirdPartyFragment on ThirdParty {
     id
+    root
     managers
     maxItems
     totalItems
@@ -140,6 +140,7 @@ export type CollectionFragment = {
 
 export type ThirdPartyFragment = {
   id: string
+  root: string
   managers: string[]
   maxItems: string
   totalItems: string
@@ -181,6 +182,6 @@ export type WearableFragment = {
   name: string
   description: string
   category: WearableCategory
-  rarity: ItemRarity
+  rarity: Rarity
   bodyShapes: string[]
 }

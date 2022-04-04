@@ -1,4 +1,4 @@
-import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { Rarity, StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
@@ -53,7 +53,6 @@ import { Item } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
-  ItemRarity,
   ThirdPartyItemAttributes,
 } from './Item.types'
 
@@ -1298,7 +1297,7 @@ describe('Item router', () => {
           it('should fail with can not update items rarity message', async () => {
             const response = await server
               .put(buildURL(url))
-              .send({ item: { ...itemToUpsert, rarity: ItemRarity.EPIC } })
+              .send({ item: { ...itemToUpsert, rarity: Rarity.EPIC } })
               .set(createAuthHeaders('put', url))
               .expect(STATUS_CODES.conflict)
 

@@ -1,3 +1,4 @@
+import { Rarity } from '@dcl/schemas'
 import { ItemCurationAttributes } from '../Curation/ItemCuration'
 import { MetricsAttributes } from '../Metrics'
 import { Cheque } from '../SlotUsageCheque'
@@ -6,16 +7,6 @@ import { WearableData } from './wearable/types'
 export enum ItemType {
   WEARABLE = 'wearable',
   EMOTE = 'emote',
-}
-
-export enum ItemRarity {
-  UNIQUE = 'unique',
-  MYTHIC = 'mythic',
-  LEGENDARY = 'legendary',
-  EPIC = 'epic',
-  RARE = 'rare',
-  UNCOMMON = 'uncommon',
-  COMMON = 'common',
 }
 
 export type ItemContents = Record<string, string>
@@ -37,7 +28,7 @@ export type ItemAttributes = {
   local_content_hash: string | null
   price: string | null
   beneficiary?: string | null
-  rarity: ItemRarity | null
+  rarity: Rarity
   type: ItemType
   data: WearableData
   metrics: MetricsAttributes

@@ -1,3 +1,4 @@
+import { Rarity, WearableCategory } from '@dcl/schemas'
 import { dbItemMock, dbTPItemMock } from '../../spec/mocks/items'
 import {
   dbCollectionMock,
@@ -5,9 +6,9 @@ import {
 } from '../../spec/mocks/collections'
 import { THUMBNAIL_PATH } from '../ethereum/api/peer'
 import { CollectionAttributes } from '../Collection'
-import { WearableBodyShape, WearableCategory } from './wearable/types'
+import { WearableBodyShape } from './wearable/types'
 import { EmoteCategory } from './emote/types'
-import { ItemAttributes, ItemRarity, ItemType } from './Item.types'
+import { ItemAttributes, ItemType } from './Item.types'
 import { calculateItemContentHash } from './hashes'
 
 describe('when calculating the hashes of a standard wearable item', () => {
@@ -20,7 +21,7 @@ describe('when calculating the hashes of a standard wearable item', () => {
       blockchain_item_id: '0',
       name: 'F 3LAU Hat Blue',
       description: '',
-      rarity: ItemRarity.UNIQUE,
+      rarity: Rarity.UNIQUE,
       contents: {
         'thumbnail.png': 'QmeSfHFqSk73esyE5ZsW4yRqWsr5eJ8vXLx7v7L2dsXTmM',
         'male/F_3LAU_Hat_Blue.glb':
@@ -76,7 +77,7 @@ describe('when calculating the hashes of a standard emote item', () => {
       blockchain_item_id: '0',
       name: 'F 3LAU Hat Blue',
       description: '',
-      rarity: ItemRarity.UNIQUE,
+      rarity: Rarity.UNIQUE,
       contents: {
         'thumbnail.png': 'QmeSfHFqSk73esyE5ZsW4yRqWsr5eJ8vXLx7v7L2dsXTmM',
         'male/F_3LAU_Hat_Blue.glb':

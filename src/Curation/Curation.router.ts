@@ -5,7 +5,6 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, AuthRequest } from '../middleware'
 import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
@@ -146,32 +145,14 @@ export class CurationRouter extends Router {
       )
     }
 
-    // TODO: This request could be huge. The method should work, as it's fetching page after page of items but this endpoint should probably be paginated.
-    const publishedItems = await thirdPartyAPI.fetchItemsByCollection(
-      collection.third_party_id,
-      collectionId
-    )
-
-    const total = publishedItems.length
-    let approved = 0
-    let rejected = 0
-    let needsReview = 0
-
-    for (const item of publishedItems) {
-      if (item.isApproved) {
-        approved += 1
-      } else if (item.createdAt === item.reviewedAt) {
-        needsReview += 1
-      } else {
-        rejected += 1
-      }
-    }
+    // This endpoint will return 0 on any stats until we implement it
+    // for the current TP implementation.
 
     return {
-      total,
-      approved,
-      rejected,
-      needsReview,
+      total: 0,
+      approved: 0,
+      rejected: 0,
+      needsReview: 0,
     }
   }
 

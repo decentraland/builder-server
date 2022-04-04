@@ -1,12 +1,13 @@
 import { constants } from 'ethers'
-import { ThirdPartyWearable } from '@dcl/schemas'
+import { Rarity, ThirdPartyWearable } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
-import { ItemFragment } from '../../src/ethereum/api/fragments'
+import {
+  ItemFragment
+} from '../../src/ethereum/api/fragments'
 import { Bridge } from '../../src/ethereum/api/Bridge'
 import {
   FullItem,
   ItemAttributes,
-  ItemRarity,
   ItemType,
   ThirdPartyItemAttributes,
 } from '../../src/Item/Item.types'
@@ -118,7 +119,7 @@ export const dbItemMock: ItemAttributes = {
   blockchain_item_id: '0',
   price: '',
   beneficiary: '',
-  rarity: ItemRarity.COMMON,
+  rarity: Rarity.COMMON,
   type: ItemType.WEARABLE,
   data: {
     representations: [

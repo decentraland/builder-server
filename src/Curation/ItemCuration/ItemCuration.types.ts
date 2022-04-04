@@ -8,3 +8,7 @@ export type ItemCurationAttributes = {
   created_at: Date
   updated_at: Date
 }
+
+export type ItemCurationWithTotalCount = ItemCurationAttributes & {
+  total_count: number
+}

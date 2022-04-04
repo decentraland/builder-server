@@ -18,7 +18,7 @@ import { isTPCollection } from '../utils/urn'
 import {
   generatePaginatedResponse,
   getPaginationParams,
-} from '../utils/pagination'
+} from '../Pagination/utils'
 import {
   CurationStatus,
   CurationType,
@@ -195,10 +195,18 @@ export class CurationRouter extends Router {
 
   getCollectionItemCurations = async (req: AuthRequest) => {
     const collectionId = server.extractFromReq(req, 'id')
-    let itemIds
+    let itemIds: string[] | undefined
     try {
       itemIds = server.extractFromReq(req, 'itemIds')
     } catch (error) {}
+
+    if (itemIds && !Array.isArray(itemIds)) {
+      throw new HTTPError(
+        'Invalid itemIds parameter provided.',
+        { itemIds },
+        STATUS_CODES.badRequest
+      )
+    }
 
     const { page, limit } = getPaginationParams(req)
     const ethAddress = req.auth.ethAddress
@@ -211,9 +219,9 @@ export class CurationRouter extends Router {
     )
 
     const curations = itemIds
-      ? await ItemCuration.findByCollectionAndItemsId(
+      ? await ItemCuration.findByCollectionAndItemIds(
           collectionId,
-          itemIds.split(','),
+          itemIds,
           page,
           limit
         )

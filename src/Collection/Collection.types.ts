@@ -26,6 +26,10 @@ export type CollectionAttributes = {
   updated_at: Date
 }
 
+export type CollectionWithItemCount = CollectionAttributes & {
+  item_count: number
+}
+
 export type ThirdPartyCollectionAttributes = CollectionAttributes & {
   third_party_id: string
   urn_suffix: string

@@ -37,6 +37,8 @@ export type ItemAttributes = {
   updated_at: Date
 }
 
+export type ItemWithTotalCount = ItemAttributes & { total_count: number }
+
 export type ThirdPartyItemAttributes = ItemAttributes & {
   urn_suffix: string
   collection_id: string
@@ -66,16 +68,4 @@ export type ItemApprovalData = {
     ItemCurationAttributes['content_hash']
   >
   chequeWasConsumed: boolean
-}
-
-export type PaginationAttributes = {
-  total_count: number
-}
-
-export type PaginatedResponse<T> = {
-  results: T[]
-  total: number
-  page: number
-  pages: number
-  limit: number
 }

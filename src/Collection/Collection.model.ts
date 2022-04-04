@@ -1,12 +1,12 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Item } from '../Item/Item.model'
-import { CollectionAttributes } from './Collection.types'
+import { CollectionAttributes, CollectionWithItemCount } from './Collection.types'
 
 export class Collection extends Model<CollectionAttributes> {
   static tableName = 'collections'
 
   static findAll() {
-    return this.query<CollectionAttributes & { item_count: number }>(SQL`
+    return this.query<CollectionWithItemCount>(SQL`
       SELECT *, (SELECT COUNT(*) FROM ${raw(
         Item.tableName
       )} WHERE items.collection_id = collections.id) as item_count
@@ -15,7 +15,7 @@ export class Collection extends Model<CollectionAttributes> {
   }
 
   static findByAllByAddress(address: string) {
-    return this.query<CollectionAttributes & { item_count: number }>(SQL`
+    return this.query<CollectionWithItemCount>(SQL`
       SELECT *, (SELECT COUNT(*) FROM ${raw(
         Item.tableName
       )} WHERE items.collection_id = collections.id) as item_count
@@ -25,7 +25,7 @@ export class Collection extends Model<CollectionAttributes> {
   }
 
   static findByIds(ids: string[]) {
-    return this.query<CollectionAttributes & { item_count: number }>(SQL`
+    return this.query<CollectionWithItemCount>(SQL`
     SELECT *, (SELECT COUNT(*) FROM ${raw(
       Item.tableName
     )} WHERE items.collection_id = collections.id) as item_count

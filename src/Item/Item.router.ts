@@ -20,14 +20,15 @@ import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
+import { PaginatedResponse } from '../Pagination'
 import {
   generatePaginatedResponse,
   getOffset,
   getPaginationParams,
-} from '../utils/pagination'
+} from '../Pagination/utils'
 import { CurationStatus } from '../Curation'
 import { Item } from './Item.model'
-import { ItemAttributes, PaginatedResponse } from './Item.types'
+import { ItemAttributes } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasPublicAccess } from './access'
@@ -192,10 +193,10 @@ export class ItemRouter extends Router {
     }
 
     const [allItems, remoteItems, itemCurations] = await Promise.all([
-      this.itemService.getStandardAndTPItems(
+      this.itemService.findAllItemsForAddress(
         eth_address,
         limit,
-        getOffset(page, limit)
+        page && limit ? getOffset(page, limit) : undefined
       ),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
       ItemCuration.find<ItemCurationAttributes>(),
@@ -259,10 +260,18 @@ export class ItemRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
     const id = server.extractFromReq(req, 'id')
-    let status
+    let status: CurationStatus | undefined
     try {
       status = server.extractFromReq(req, 'status')
     } catch (error) {}
+
+    if (status && !Object.values(CurationStatus).includes(status)) {
+      throw new HTTPError(
+        'Invalid Status provided',
+        { id, status },
+        STATUS_CODES.badRequest
+      )
+    }
     const { page, limit } = getPaginationParams(req)
     const eth_address = req.auth.ethAddress
 
@@ -273,8 +282,8 @@ export class ItemRouter extends Router {
         totalItems,
       } = await this.itemService.getCollectionItems(id, {
         limit,
-        offset: getOffset(page, limit),
-        status: status as CurationStatus,
+        offset: page && limit ? getOffset(page, limit) : undefined,
+        status,
       })
 
       if (!(await hasCollectionAccess(eth_address, collection))) {

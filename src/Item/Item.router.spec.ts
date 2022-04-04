@@ -296,7 +296,7 @@ describe('Item router', () => {
 
   describe('when getting all the items of an address', () => {
     beforeEach(() => {
-      ;(Item.findStandardAndTPItems as jest.Mock).mockResolvedValueOnce([
+      ;(Item.findAllItemsByAddress as jest.Mock).mockResolvedValueOnce([
         dbItem,
         dbItemNotPublished,
         dbTPItem,
@@ -342,7 +342,7 @@ describe('Item router', () => {
               ],
               ok: true,
             })
-            expect(Item.findStandardAndTPItems).toHaveBeenCalledWith(
+            expect(Item.findAllItemsByAddress).toHaveBeenCalledWith(
               [thirdPartyFragmentMock.id],
               wallet.address,
               undefined,
@@ -357,7 +357,7 @@ describe('Item router', () => {
       let page: number
       let limit: number
       beforeEach(() => {
-        ;(page = 1), (limit = 0)
+        ;(page = 1), (limit = 1)
         baseUrl = `/${wallet.address}/items`
         url = `${baseUrl}?limit=${limit}&page=${page}`
       })
@@ -367,11 +367,11 @@ describe('Item router', () => {
           .set(createAuthHeaders('get', baseUrl))
           .expect(200)
           .then(() => {
-            expect(Item.findStandardAndTPItems).toHaveBeenCalledWith(
+            expect(Item.findAllItemsByAddress).toHaveBeenCalledWith(
               [thirdPartyFragmentMock.id],
               wallet.address,
               limit,
-              page
+              page - 1 // it's the offset
             )
           })
       })
@@ -439,7 +439,7 @@ describe('Item router', () => {
           baseUrl = `/collections/${dbCollectionMock.id}/items`
           url = `${baseUrl}?limit=${limit}&page=${page}`
         })
-        fit('should call the find method with the pagination params', () => {
+        it('should call the find method with the pagination params', () => {
           return server
             .get(buildURL(url))
             .set(createAuthHeaders('get', baseUrl))

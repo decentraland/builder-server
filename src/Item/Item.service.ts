@@ -36,7 +36,7 @@ import { Item } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
-  PaginationAttributes,
+  ItemWithTotalCount,
   ThirdPartyItemAttributes,
 } from './Item.types'
 import { buildTPItemURN, isTPItem, toDBItem } from './utils'
@@ -139,8 +139,9 @@ export class ItemService {
     const isTP = isTPCollection(dbCollection)
     const dbItems =
       status && isTP
-        ? await Item.findByCollectionIdAndPendingToApprove(
+        ? await Item.findByCollectionIdAndStatus(
             collectionId,
+            CurationStatus.PENDING,
             limit,
             offset
           )
@@ -157,11 +158,11 @@ export class ItemService {
     }
   }
 
-  public async getStandardAndTPItems(
+  public async findAllItemsForAddress(
     address: string,
     limit?: number,
     offset?: number
-  ): Promise<(ItemAttributes & PaginationAttributes)[]> {
+  ): Promise<ItemWithTotalCount[]> {
     const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
     if (thirdParties.length <= 0) {
       return []
@@ -169,7 +170,7 @@ export class ItemService {
 
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
-    return Item.findStandardAndTPItems(thirdPartyIds, address, limit, offset)
+    return Item.findAllItemsByAddress(thirdPartyIds, address, limit, offset)
   }
 
   /**

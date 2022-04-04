@@ -1,9 +1,12 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Collection } from '../../Collection'
-import { Item, PaginationAttributes } from '../../Item'
-import { DEFAULT_LIMIT } from '../../utils/pagination'
+import { Item } from '../../Item'
+import { DEFAULT_LIMIT } from '../../Pagination/utils'
 import { CurationStatus, CurationType } from '../Curation.types'
-import { ItemCurationAttributes } from './ItemCuration.types'
+import {
+  ItemCurationAttributes,
+  ItemCurationWithTotalCount,
+} from './ItemCuration.types'
 
 export class ItemCuration extends Model<ItemCurationAttributes> {
   static tableName = 'item_curations'
@@ -28,13 +31,13 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return counts[0].count > 0
   }
 
-  static async findByCollectionAndItemsId(
+  static async findByCollectionAndItemIds(
     collectionId: string,
     itemIds: string[],
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return this.query<ItemCurationAttributes & PaginationAttributes>(SQL`
+    return this.query<ItemCurationWithTotalCount>(SQL`
       SELECT DISTINCT on (item.id) item_curation.*, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)} item_curation
         INNER JOIN ${raw(
@@ -52,7 +55,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return this.query<ItemCurationAttributes & PaginationAttributes>(SQL`
+    return this.query<ItemCurationWithTotalCount>(SQL`
       SELECT DISTINCT on (item.id) item_curation.*, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)} item_curation
         INNER JOIN ${raw(

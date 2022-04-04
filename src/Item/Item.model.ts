@@ -2,11 +2,11 @@ import { Model, SQL, raw } from 'decentraland-server'
 import { Collection } from '../Collection/Collection.model'
 import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { DEFAULT_LIMIT } from '../utils/pagination'
+import { DEFAULT_LIMIT } from '../Pagination/utils'
 import {
   DBItemApprovalData,
   ItemAttributes,
-  PaginationAttributes,
+  ItemWithTotalCount,
 } from './Item.types'
 
 export class Item extends Model<ItemAttributes> {
@@ -72,13 +72,13 @@ export class Item extends Model<ItemAttributes> {
 
   // PAGINATED QUERIES
 
-  static findStandardAndTPItems(
+  static findAllItemsByAddress(
     thirdPartyIds: string[],
-    owner: string,
+    address: string,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return this.query<ItemAttributes & PaginationAttributes>(SQL`
+    return this.query<ItemWithTotalCount>(SQL`
       SELECT items.*, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)} items
         JOIN ${raw(
@@ -87,7 +87,7 @@ export class Item extends Model<ItemAttributes> {
         WHERE 
           collections.third_party_id = ANY(${thirdPartyIds})
         OR
-          (items.eth_address = ${owner} AND items.urn_suffix IS NULL)
+          (items.eth_address = ${address} AND items.urn_suffix IS NULL)
         LIMIT ${limit}
         OFFSET ${offset}
       `)
@@ -98,7 +98,7 @@ export class Item extends Model<ItemAttributes> {
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return await this.query<ItemAttributes & PaginationAttributes>(SQL`
+    return await this.query<ItemWithTotalCount>(SQL`
       SELECT *, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)}
         WHERE collection_id = ANY(${collectionIds})
@@ -107,20 +107,19 @@ export class Item extends Model<ItemAttributes> {
       `)
   }
 
-  static async findByCollectionIdAndPendingToApprove(
+  static async findByCollectionIdAndStatus(
     collectionId: string,
+    status: CurationStatus,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return await this.query<ItemAttributes & PaginationAttributes>(SQL`
+    return await this.query<ItemWithTotalCount>(SQL`
       SELECT items.*, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)} items
         JOIN ${raw(
           ItemCuration.tableName
         )} item_curations ON items.id = item_curations.item_id
-        WHERE items.collection_id = ${collectionId} AND item_curations.status = ${
-      CurationStatus.PENDING
-    }
+        WHERE items.collection_id = ${collectionId} AND item_curations.status = ${status}
         LIMIT ${limit}
         OFFSET ${offset}
     `)

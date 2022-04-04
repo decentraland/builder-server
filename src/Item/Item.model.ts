@@ -98,13 +98,9 @@ export class Item extends Model<ItemAttributes> {
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return await this.query<ItemWithTotalCount>(SQL`
-      SELECT *, count(*) OVER() AS total_count
-        FROM ${raw(this.tableName)}
-        WHERE collection_id = ANY(${collectionIds})
-        LIMIT ${limit}
-        OFFSET ${offset}
-      `)
+    return await this.query<ItemWithTotalCount>(
+      ItemQueries.selectByCollectionIds(collectionIds, undefined, limit, offset)
+    )
   }
 
   static async findByCollectionIdAndStatus(
@@ -113,15 +109,32 @@ export class Item extends Model<ItemAttributes> {
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return await this.query<ItemWithTotalCount>(SQL`
-      SELECT items.*, count(*) OVER() AS total_count
-        FROM ${raw(this.tableName)} items
-        JOIN ${raw(
-          ItemCuration.tableName
-        )} item_curations ON items.id = item_curations.item_id
-        WHERE items.collection_id = ${collectionId} AND item_curations.status = ${status}
-        LIMIT ${limit}
-        OFFSET ${offset}
-    `)
+    return await this.query<ItemWithTotalCount>(
+      ItemQueries.selectByCollectionIds([collectionId], status, limit, offset)
+    )
   }
 }
+
+export const ItemQueries = Object.freeze({
+  selectByCollectionIds: (
+    collectionIds: string[],
+    status?: CurationStatus,
+    limit: number = DEFAULT_LIMIT,
+    offset: number = 0
+  ) =>
+    SQL`
+      SELECT items.*, count(*) OVER() AS total_count
+        FROM ${raw(Item.tableName)} items
+        ${
+          status
+            ? `JOIN ${raw(
+                ItemCuration.tableName
+              )} item_curations ON items.id = item_curations.item_id`
+            : SQL``
+        }
+        WHERE items.collection_id = ANY(${collectionIds})
+          AND ${status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`}
+        LIMIT ${limit}
+        OFFSET ${offset}
+    `,
+})

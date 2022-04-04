@@ -57,6 +57,7 @@ export const collectionFragmentMock: CollectionFragment = {
 
 export const thirdPartyFragmentMock: ThirdPartyFragment = {
   id: dbTPCollectionMock.third_party_id,
+  root: 'aRoot',
   managers: [wallet.address],
   maxItems: '10',
   totalItems: '1',

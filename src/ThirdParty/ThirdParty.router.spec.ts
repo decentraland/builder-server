@@ -25,9 +25,17 @@ describe('ThirdParty router', () => {
       thirdParty: { name: 'a name', description: 'a description' },
     }
     fragments = [
-      { id: '1', managers: ['0x1'], maxItems: '3', totalItems: '2', metadata },
+      {
+        id: '1',
+        root: 'aRoot',
+        managers: ['0x1'],
+        maxItems: '3',
+        totalItems: '2',
+        metadata,
+      },
       {
         id: '2',
+        root: 'anotherRoot',
         managers: ['0x2', '0x3'],
         maxItems: '2',
         totalItems: '1',
@@ -37,7 +45,11 @@ describe('ThirdParty router', () => {
     thirdParties = fragments.map(toThirdParty)
   })
 
-  describe('when retreiving all third party records', () => {
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  describe('when retrieving all third party records', () => {
     let url: string
 
     beforeEach(() => {
@@ -45,10 +57,6 @@ describe('ThirdParty router', () => {
         fragments
       )
       url = '/thirdParties'
-    })
-
-    afterEach(() => {
-      jest.restoreAllMocks()
     })
 
     it('should respond with a third party array', () => {
@@ -96,7 +104,7 @@ describe('ThirdParty router', () => {
     })
   })
 
-  describe('when retreiving the available slots for a third party', () => {
+  describe('when retrieving the available slots for a third party', () => {
     let url: string
     let maxSlots: number
     let itemsInCuration: number
@@ -125,6 +133,56 @@ describe('ThirdParty router', () => {
             ok: true,
           })
         })
+    })
+  })
+
+  describe('when retrieving a third party', () => {
+    let url: string
+    let thirdPartyId: string
+
+    beforeEach(() => {
+      thirdPartyId = 'aThirdPartyId'
+      url = `/thirdParties/${thirdPartyId}`
+    })
+
+    describe('and the third party does not exist', () => {
+      beforeEach(() => {
+        ;(thirdPartyAPI.fetchThirdParty as jest.Mock).mockResolvedValueOnce(
+          undefined
+        )
+      })
+
+      it("should respond with a 404 signaling that the third party doesn't exist", () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(404)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: 'aThirdPartyId' },
+              ok: false,
+              error: "The Third Party doesn't exists.",
+            })
+          })
+      })
+    })
+
+    describe('and the third party exists', () => {
+      beforeEach(() => {
+        ;(thirdPartyAPI.fetchThirdParty as jest.Mock).mockResolvedValueOnce(
+          fragments[0]
+        )
+      })
+
+      it('should respond with the requested third party', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({ data: thirdParties[0], ok: true })
+          })
+      })
     })
   })
 })

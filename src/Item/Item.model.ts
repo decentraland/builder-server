@@ -127,7 +127,7 @@ export const ItemQueries = Object.freeze({
         FROM ${raw(Item.tableName)} items
         ${
           status
-            ? `JOIN ${raw(
+            ? SQL`JOIN ${raw(
                 ItemCuration.tableName
               )} item_curations ON items.id = item_curations.item_id`
             : SQL``

@@ -1295,9 +1295,9 @@ describe('Collection router', () => {
         let tpCurationsAmonut: number
 
         beforeEach(() => {
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           items = [
             { ...dbTPItemMock, id: 'c241ef7c-4466-41b0-bf94-be1b8c331fdb' },
             { ...dbTPItemMock, id: 'anotherId' },

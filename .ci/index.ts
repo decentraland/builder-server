@@ -113,6 +113,10 @@ export = async function main() {
         value: config.requireSecret('FORUM_API_KEY'),
       },
       {
+        name: 'FORUM_API_USERNAME',
+        value: 'collections',
+      },
+      {
         name: 'FORUM_URL',
         value: 'https://forum.decentraland.org',
       },

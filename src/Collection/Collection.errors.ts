@@ -52,3 +52,9 @@ export class NonExistentCollectionError extends Error {
     super("The collection doesn't exist.")
   }
 }
+
+export class InsufficientSlotsError extends Error {
+  constructor(public id?: string) {
+    super('The amount of items to publish exceeds the available slots.')
+  }
+}

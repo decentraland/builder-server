@@ -19,7 +19,7 @@ import {
   UnpublishedItemError,
   InconsistentItemError,
 } from '../Item/Item.errors'
-import { Item, ThirdPartyItemAttributes, ItemApprovalData } from '../Item'
+import { Item, ItemApprovalData } from '../Item'
 import { isCommitteeMember } from '../Committee'
 import {
   buildCollectionForumPost,
@@ -43,6 +43,7 @@ import { hasPublicAccess } from './access'
 import { toFullCollection } from './utils'
 import {
   AlreadyPublishedCollectionError,
+  InsufficientSlotsError,
   LockedCollectionError,
   NonExistentCollectionError,
   UnauthorizedCollectionEditError,
@@ -312,13 +313,10 @@ export class CollectionRouter extends Router {
 
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
-        const dbItems = (await Item.findByIds(
-          itemIds
-        )) as ThirdPartyItemAttributes[]
 
         result = await this.service.publishTPCollection(
+          itemIds,
           dbCollection,
-          dbItems,
           eth_address,
           server.extractFromReq<Cheque>(req, 'cheque')
         )
@@ -375,6 +373,12 @@ export class CollectionRouter extends Router {
           STATUS_CODES.conflict
         )
       } else if (error instanceof AlreadyPublishedCollectionError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof InsufficientSlotsError) {
         throw new HTTPError(
           error.message,
           { id: error.id },

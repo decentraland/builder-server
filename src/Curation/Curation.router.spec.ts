@@ -231,10 +231,8 @@ describe('when handling a request', () => {
   })
 
   describe('when trying to obtain a list of item curations', () => {
-    let service: CurationService<any>
     beforeEach(() => {
       mockServiceWithAccess(ItemCuration, true)
-      service = mockService(ItemCuration)
     })
 
     describe('when itemIds param is not provided', () => {

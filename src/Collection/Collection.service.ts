@@ -6,6 +6,7 @@ import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { InvalidRequestError } from '../utils/errors'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { Ownable } from '../Ownable'
 import {
   Item,
@@ -50,9 +51,11 @@ import {
   UnauthorizedCollectionEditError,
   WrongCollectionError,
   UnpublishedCollectionError,
+  InsufficientSlotsError,
 } from './Collection.errors'
 
 export class CollectionService {
+  public tpService = new ThirdPartyService()
   /**
    * Main Methods
    */
@@ -155,8 +158,8 @@ export class CollectionService {
    * @param cheque - The cheque object containing the data signed
    */
   public async publishTPCollection(
+    itemIds: string[],
     dbCollection: ThirdPartyCollectionAttributes,
-    dbItems: ThirdPartyItemAttributes[],
     signerAddress: string,
     cheque: Cheque
   ): Promise<PublishCollectionResponse<CollectionAttributes>> {
@@ -169,7 +172,18 @@ export class CollectionService {
 
     // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items
 
+    const availableSlots = await this.tpService.getThirdPartyAvailableSlots(
+      dbCollection.third_party_id
+    )
+    if (itemIds.length > availableSlots) {
+      throw new InsufficientSlotsError(dbCollection.id)
+    }
+
     const { signature, qty, salt } = cheque
+
+    const dbItems = (await Item.findByIds(
+      itemIds
+    )) as ThirdPartyItemAttributes[]
 
     if (dbItems.length === 0) {
       throw new InvalidRequestError('Tried to publish no TP items')

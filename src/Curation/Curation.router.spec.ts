@@ -232,50 +232,45 @@ describe('when handling a request', () => {
   })
 
   describe('when trying to obtain a list of item curations', () => {
+    let itemIds: string[]
+    let itemCuration: ItemCurationAttributes
+    let req: AuthRequest
+
     beforeEach(() => {
       mockServiceWithAccess(ItemCuration, true)
+      itemIds = ['1', '2', '3']
+      itemCuration = { ...itemCurationMock }
     })
 
     describe('when itemIds param is not provided', () => {
       beforeEach(() => {
-        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
-          []
-        )
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+          itemCuration,
+        ])
+        req = ({
+          params: { id: 'collectionId' },
+          auth: { ethAddress: 'ethAddress' },
+        } as unknown) as AuthRequest
       })
 
       it('should resolve with the collections provided by ItemCuration.findByCollectionId', async () => {
-        const findByCollectionIdSpy = jest
-          .spyOn(ItemCuration, 'findByCollectionId')
-          .mockResolvedValueOnce([])
-
-        const req = {
-          params: { id: 'collectionId' },
-          auth: { ethAddress: 'ethAddress' },
-        } as any
-
-        await router.getCollectionItemCurations(req)
-
-        expect(findByCollectionIdSpy).toHaveBeenCalled()
+        const itemCurations = await router.getCollectionItemCurations(req)
+        expect(itemCurations).toStrictEqual([itemCuration])
       })
     })
 
     describe('when itemIds param is provided', () => {
-      let itemIds: string[]
-      let itemCuration: ItemCurationAttributes
       beforeEach(() => {
-        itemIds = ['1', '2', '3']
-        itemCuration = { ...itemCurationMock }
         ;(ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
           [itemCuration]
         )
+        req = ({
+          params: { id: 'collectionId', itemIds },
+          auth: { ethAddress: 'ethAddress' },
+        } as unknown) as AuthRequest
       })
 
       it('should resolve with the collections provided by ItemCuration.findByCollectionAndItemIds', async () => {
-        const req = {
-          params: { id: 'collectionId', itemIds },
-          auth: { ethAddress: 'ethAddress' },
-        } as any
-
         const itemCurations = await router.getCollectionItemCurations(req)
         expect(itemCurations).toStrictEqual([itemCuration])
       })

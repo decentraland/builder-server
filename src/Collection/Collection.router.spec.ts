@@ -1324,13 +1324,13 @@ describe('Collection router', () => {
                 salt: '0xsalt',
               },
             })
-            .expect(400)
+            .expect(409)
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: false,
                 data: {},
                 error:
-                  'The amount of items to publish exceeds the available slots',
+                  'The amount of items to publish exceeds the available slots.',
               })
             })
         })

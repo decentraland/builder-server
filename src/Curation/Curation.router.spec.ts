@@ -4,6 +4,7 @@ import {
   dbCollectionMock,
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
+import { itemCurationMock } from '../../spec/mocks/itemCuration'
 import { dbItemMock, thirdPartyItemFragmentMock } from '../../spec/mocks/items'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -24,6 +25,7 @@ import { CurationStatus } from './Curation.types'
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
+jest.mock('../Curation/ItemCuration')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 
@@ -225,6 +227,52 @@ describe('when handling a request', () => {
           'tpCollectionId1',
           'tpCollectionId2',
         ])
+      })
+    })
+  })
+
+  describe('when trying to obtain a list of item curations', () => {
+    let itemIds: string[]
+    let itemCuration: ItemCurationAttributes
+    let req: AuthRequest
+
+    beforeEach(() => {
+      mockServiceWithAccess(ItemCuration, true)
+      itemIds = ['1', '2', '3']
+      itemCuration = { ...itemCurationMock }
+    })
+
+    describe('when itemIds param is not provided', () => {
+      beforeEach(() => {
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+          itemCuration,
+        ])
+        req = ({
+          params: { id: 'collectionId' },
+          auth: { ethAddress: 'ethAddress' },
+        } as unknown) as AuthRequest
+      })
+
+      it('should resolve with the collections provided by ItemCuration.findByCollectionId', async () => {
+        const itemCurations = await router.getCollectionItemCurations(req)
+        expect(itemCurations).toStrictEqual([itemCuration])
+      })
+    })
+
+    describe('when itemIds param is provided', () => {
+      beforeEach(() => {
+        ;(ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
+          [itemCuration]
+        )
+        req = ({
+          params: { id: 'collectionId', itemIds },
+          auth: { ethAddress: 'ethAddress' },
+        } as unknown) as AuthRequest
+      })
+
+      it('should resolve with the collections provided by ItemCuration.findByCollectionAndItemIds', async () => {
+        const itemCurations = await router.getCollectionItemCurations(req)
+        expect(itemCurations).toStrictEqual([itemCuration])
       })
     })
   })

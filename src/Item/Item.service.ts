@@ -1,4 +1,5 @@
 import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
   CollectionAttributes,
@@ -120,38 +121,72 @@ export class ItemService {
   }
 
   public async getCollectionItems(
-    collectionId: string
-  ): Promise<{ collection: CollectionAttributes; items: FullItem[] }> {
-    const [dbCollection, dbItems] = await Promise.all([
-      this.collectionService.getDBCollection(collectionId),
-      Item.find<ItemAttributes>({ collection_id: collectionId }),
-    ])
+    collectionId: string,
+    filters: {
+      status?: CurationStatus
+      limit?: number
+      offset?: number
+    }
+  ): Promise<{
+    collection: CollectionAttributes
+    items: FullItem[]
+    totalItems: number
+  }> {
+    const { status, limit, offset } = filters
+    const dbCollection = await this.collectionService.getDBCollection(
+      collectionId
+    )
+    const isTP = isTPCollection(dbCollection)
+    const dbItemsWithCount =
+      status && isTP
+        ? await Item.findByCollectionIdAndStatus(
+            collectionId,
+            CurationStatus.PENDING,
+            limit,
+            offset
+          )
+        : await Item.findByCollectionIds([collectionId], limit, offset)
 
-    return isTPCollection(dbCollection)
-      ? this.getTPCollectionItems(dbCollection, dbItems)
-      : this.getDCLCollectionItems(dbCollection, dbItems)
+    const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
+    const dbItems = dbItemsWithCount.map((dbItemWithCount) =>
+      omit<ItemAttributes>(dbItemWithCount, ['total_count'])
+    )
+
+    const { collection, items } = isTPCollection(dbCollection)
+      ? await this.getTPCollectionItems(dbCollection, dbItems)
+      : await this.getDCLCollectionItems(dbCollection, dbItems)
+
+    return {
+      collection,
+      items,
+      totalItems,
+    }
   }
 
-  public async getTPItemsByManager(manager: string): Promise<ItemAttributes[]> {
-    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+  public async findAllItemsForAddress(
+    address: string,
+    limit?: number,
+    offset?: number
+  ): Promise<(ItemAttributes & { total_count: number })[]> {
+    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
     if (thirdParties.length <= 0) {
       return []
     }
 
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
-    return Item.findByThirdPartyIds(thirdPartyIds)
+    return Item.findAllItemsByAddress(thirdPartyIds, address, limit, offset)
   }
 
   /**
    * Takes a list of items and returns an object containing two sets, one of standard items and the other of TP items
    * @param allItems - Items to split, can be any combination of item types
    */
-  public splitItems(
-    allItems: ItemAttributes[]
-  ): { items: ItemAttributes[]; tpItems: ItemAttributes[] } {
+  public splitItems<T extends ItemAttributes[]>(
+    allItems: T
+  ): { items: ItemAttributes[]; tpItems: ThirdPartyItemAttributes[] } {
     const items: ItemAttributes[] = []
-    const tpItems: ItemAttributes[] = []
+    const tpItems: ThirdPartyItemAttributes[] = []
 
     for (const item of allItems) {
       if (isTPItem(item)) {

@@ -2,26 +2,55 @@ import { Model, raw, SQL } from 'decentraland-server'
 import { Item } from '../Item/Item.model'
 import { CollectionAttributes } from './Collection.types'
 
+type CollectionWithItemCount = CollectionAttributes & {
+  item_count: number
+}
+
 export class Collection extends Model<CollectionAttributes> {
   static tableName = 'collections'
 
+  static findAll() {
+    return this.query<CollectionWithItemCount>(SQL`
+      SELECT *, (SELECT COUNT(*) FROM ${raw(
+        Item.tableName
+      )} WHERE items.collection_id = collections.id) as item_count
+        FROM ${raw(this.tableName)}
+      `)
+  }
+
+  static findByAllByAddress(address: string) {
+    return this.query<CollectionWithItemCount>(SQL`
+      SELECT *, (SELECT COUNT(*) FROM ${raw(
+        Item.tableName
+      )} WHERE items.collection_id = collections.id) as item_count
+        FROM ${raw(this.tableName)}
+        WHERE eth_address = ${address}
+      `)
+  }
+
   static findByIds(ids: string[]) {
-    return this.query<CollectionAttributes>(SQL`
-    SELECT *
+    return this.query<CollectionWithItemCount>(SQL`
+    SELECT *, (SELECT COUNT(*) FROM ${raw(
+      Item.tableName
+    )} WHERE items.collection_id = collections.id) as item_count
       FROM ${raw(this.tableName)}
       WHERE id = ANY(${ids})`)
   }
 
   static findByThirdPartyIds(thirdPartyIds: string[]) {
     return this.query<CollectionAttributes>(SQL`
-    SELECT *
+    SELECT *, (SELECT COUNT(*) FROM ${raw(
+      Item.tableName
+    )} WHERE items.collection_id = collections.id) as item_count
       FROM ${raw(this.tableName)}
       WHERE third_party_id = ANY(${thirdPartyIds})`)
   }
 
   static findByContractAddresses(contractAddresses: string[]) {
     return this.query<CollectionAttributes>(SQL`
-      SELECT *
+      SELECT *, (SELECT COUNT(*) FROM ${raw(
+        Item.tableName
+      )} WHERE items.collection_id = collections.id) as item_count
         FROM ${raw(this.tableName)}
         WHERE contract_address = ANY(${contractAddresses})`)
   }

@@ -1,7 +1,11 @@
 import { Model, SQL, raw } from 'decentraland-server'
 import { Collection } from '../Collection/Collection.model'
+import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
+import { DEFAULT_LIMIT } from '../Pagination/utils'
 import { DBItemApprovalData, ItemAttributes } from './Item.types'
+
+type ItemWithTotalCount = ItemAttributes & { total_count: number }
 
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
@@ -26,23 +30,6 @@ export class Item extends Model<ItemAttributes> {
         items.collection_id = ${collectionId}
       ORDER BY items.id, item_curations.updated_at DESC
     `)
-  }
-
-  static findByCollectionIds(collectionIds: string[]) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT *
-        FROM ${raw(this.tableName)}
-        WHERE collection_id = ANY(${collectionIds})`)
-  }
-
-  static findByThirdPartyIds(thirdPartyIds: string[]) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT items.*
-        FROM ${raw(this.tableName)} items
-        JOIN ${raw(
-          Collection.tableName
-        )} collections ON collections.id = items.collection_id
-        WHERE collections.third_party_id = ANY(${thirdPartyIds})`)
   }
 
   static findOrderedByCollectionId(
@@ -81,11 +68,71 @@ export class Item extends Model<ItemAttributes> {
         WHERE ${where}`)
   }
 
-  static findNonThirdPartyItemsByOwner(owner: string) {
-    return this.query<ItemAttributes>(SQL`
-      SELECT *
-        FROM ${raw(this.tableName)}
-        WHERE eth_address = ${owner}
-        AND urn_suffix IS NULL`)
+  // PAGINATED QUERIES
+
+  static findAllItemsByAddress(
+    thirdPartyIds: string[],
+    address: string,
+    limit: number = DEFAULT_LIMIT,
+    offset: number = 0
+  ) {
+    return this.query<ItemWithTotalCount>(SQL`
+      SELECT items.*, count(*) OVER() AS total_count
+        FROM ${raw(this.tableName)} items
+        JOIN ${raw(
+          Collection.tableName
+        )} collections ON collections.id = items.collection_id
+        WHERE 
+          collections.third_party_id = ANY(${thirdPartyIds})
+        OR
+          (items.eth_address = ${address} AND items.urn_suffix IS NULL)
+        LIMIT ${limit}
+        OFFSET ${offset}
+      `)
+  }
+
+  static async findByCollectionIds(
+    collectionIds: string[],
+    limit: number = DEFAULT_LIMIT,
+    offset: number = 0
+  ) {
+    return await this.query<ItemWithTotalCount>(
+      ItemQueries.selectByCollectionIds(collectionIds, undefined, limit, offset)
+    )
+  }
+
+  static async findByCollectionIdAndStatus(
+    collectionId: string,
+    status: CurationStatus,
+    limit: number = DEFAULT_LIMIT,
+    offset: number = 0
+  ) {
+    return await this.query<ItemWithTotalCount>(
+      ItemQueries.selectByCollectionIds([collectionId], status, limit, offset)
+    )
   }
 }
+
+export const ItemQueries = Object.freeze({
+  selectByCollectionIds: (
+    collectionIds: string[],
+    status?: CurationStatus,
+    limit: number = DEFAULT_LIMIT,
+    offset: number = 0
+  ) =>
+    SQL`
+      SELECT items.*, count(*) OVER() AS total_count
+        FROM ${raw(Item.tableName)} items
+        ${
+          status
+            ? SQL`JOIN ${raw(
+                ItemCuration.tableName
+              )} item_curations ON items.id = item_curations.item_id`
+            : SQL``
+        }
+        WHERE items.collection_id = ANY(${collectionIds})
+          AND ${status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`}
+        LIMIT ${limit}
+        OFFSET ${offset}
+    `,
+})

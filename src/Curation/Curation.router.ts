@@ -191,6 +191,19 @@ export class CurationRouter extends Router {
 
   getCollectionItemCurations = async (req: AuthRequest) => {
     const collectionId = server.extractFromReq(req, 'id')
+    let itemIds: string[] | undefined
+    try {
+      itemIds = server.extractFromReq(req, 'itemIds')
+    } catch (error) {}
+
+    if (itemIds && !Array.isArray(itemIds)) {
+      throw new HTTPError(
+        'Invalid itemIds parameter provided.',
+        { itemIds },
+        STATUS_CODES.badRequest
+      )
+    }
+
     const ethAddress = req.auth.ethAddress
     const curationService = CurationService.byType(CurationType.COLLECTION)
 
@@ -200,7 +213,11 @@ export class CurationRouter extends Router {
       collectionId
     )
 
-    return ItemCuration.findByCollectionId(collectionId)
+    const curations = itemIds
+      ? await ItemCuration.findByCollectionAndItemIds(collectionId, itemIds)
+      : await ItemCuration.findByCollectionId(collectionId)
+
+    return curations
   }
 
   getItemCuration = async (req: AuthRequest) => {

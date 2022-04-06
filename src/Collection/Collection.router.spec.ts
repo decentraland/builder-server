@@ -828,7 +828,7 @@ describe('Collection router', () => {
   describe('when retrieving all the collections', () => {
     beforeEach(() => {
       ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
-      ;(Collection.find as jest.Mock)
+      ;(Collection.findAll as jest.Mock)
         .mockResolvedValueOnce([dbCollection])
         .mockResolvedValueOnce([])
       ;(Collection.findByContractAddresses as jest.Mock).mockResolvedValueOnce(
@@ -860,7 +860,9 @@ describe('Collection router', () => {
 
   describe('when retrieving the collections of an address', () => {
     beforeEach(() => {
-      ;(Collection.find as jest.Mock).mockReturnValueOnce([dbCollection])
+      ;(Collection.findByAllByAddress as jest.Mock).mockReturnValueOnce([
+        dbCollection,
+      ])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
         dbTPCollection,
@@ -909,7 +911,7 @@ describe('Collection router', () => {
     beforeEach(() => {
       mockExistsMiddleware(Collection, dbCollection.id)
       ;(hasPublicAccess as jest.Mock).mockResolvedValueOnce(true)
-      ;(Collection.findOne as jest.Mock).mockReturnValueOnce(dbCollection)
+      ;(Collection.findByIds as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(collectionAPI.fetchCollection as jest.Mock).mockReturnValueOnce(null)
       url = `/collections/${dbCollection.id}`
     })
@@ -927,7 +929,7 @@ describe('Collection router', () => {
             },
             ok: true,
           })
-          expect(Collection.findOne).toHaveBeenCalledWith(dbCollection.id)
+          expect(Collection.findByIds).toHaveBeenCalledWith([dbCollection.id])
         })
     })
   })
@@ -943,9 +945,9 @@ describe('Collection router', () => {
       jest.spyOn(Date, 'now').mockReturnValueOnce(now)
       mockExistsMiddleware(Collection, dbCollection.id)
       mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
-      ;(Collection.findOne as jest.MockedFunction<
+      ;(Collection.findByIds as jest.MockedFunction<
         typeof Collection.findOne
-      >).mockResolvedValueOnce(dbCollection)
+      >).mockResolvedValueOnce([dbCollection])
       url = `/collections/${dbCollection.id}/lock`
     })
 
@@ -982,9 +984,9 @@ describe('Collection router', () => {
         ;(Collection.count as jest.MockedFunction<
           typeof Collection.count
         >).mockResolvedValueOnce(1)
-        ;(Collection.findOne as jest.MockedFunction<
+        ;(Collection.findByIds as jest.MockedFunction<
           typeof Collection.findOne
-        >).mockResolvedValueOnce(dbCollection)
+        >).mockResolvedValueOnce([dbCollection])
       })
 
       it('should fail with an error if the update throws', () => {
@@ -1052,9 +1054,9 @@ describe('Collection router', () => {
             wallet.address,
             true
           )
-          ;(Collection.findOne as jest.MockedFunction<
+          ;(Collection.findByIds as jest.MockedFunction<
             typeof Collection.findOne
-          >).mockResolvedValueOnce(dbTPCollection)
+          >).mockResolvedValueOnce([dbTPCollection])
         })
 
         describe('and it has third party items already published', () => {
@@ -1152,9 +1154,9 @@ describe('Collection router', () => {
       beforeEach(() => {
         mockExistsMiddleware(Collection, dbCollection.id)
         mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
-        ;(Collection.findOne as jest.MockedFunction<
+        ;(Collection.findByIds as jest.MockedFunction<
           typeof Collection.findOne
-        >).mockResolvedValueOnce(dbCollection)
+        >).mockResolvedValueOnce([dbCollection])
       })
 
       describe('and it is already published', () => {
@@ -1259,9 +1261,9 @@ describe('Collection router', () => {
       describe('when sending an empty item ids array', () => {
         beforeEach(() => {
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([])
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
         })
 
         it('should respond with a 400 and a message signaling the item ids should not be empty', () => {
@@ -1293,9 +1295,9 @@ describe('Collection router', () => {
         let tpCurationsAmonut: number
 
         beforeEach(() => {
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           items = [
             { ...dbTPItemMock, id: 'c241ef7c-4466-41b0-bf94-be1b8c331fdb' },
             { ...dbTPItemMock, id: 'anotherId' },
@@ -1340,9 +1342,9 @@ describe('Collection router', () => {
         let items: ItemAttributes[]
 
         beforeEach(() => {
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           items = [
             { ...dbTPItemMock, id: 'c241ef7c-4466-41b0-bf94-be1b8c331fdb' },
             { ...dbTPItemMock, id: 'anotherId' },
@@ -1376,9 +1378,9 @@ describe('Collection router', () => {
 
       describe('when sending an invalid signature', () => {
         beforeEach(() => {
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbTPItemMock])
         })
 
@@ -1413,9 +1415,9 @@ describe('Collection router', () => {
         let itemIds: string[]
 
         beforeEach(() => {
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           items = [
             { ...dbTPItemMock, id: uuid(), collection_id: '1' },
             { ...dbTPItemMock, id: uuid(), collection_id: '1' },
@@ -1459,9 +1461,9 @@ describe('Collection router', () => {
 
       describe('when the collection already has a pending ItemCuration', () => {
         beforeEach(() => {
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbItemMock])
           ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
             itemCurationMock
@@ -1505,9 +1507,9 @@ describe('Collection router', () => {
         let slotUsageCheque: SlotUsageChequeAttributes
 
         beforeEach(() => {
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           dbItems = [
             { ...dbItemMock, id: uuid() },
             { ...dbItemMock, id: uuid() },
@@ -1627,9 +1629,6 @@ describe('Collection router', () => {
           ;(ItemCuration.create as jest.Mock).mockResolvedValue(
             itemCurationMock
           )
-          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
-            dbTPCollectionMock,
-          ])
           ;(createPost as jest.Mock).mockResolvedValueOnce({
             id: forumId,
             link: forumLink,
@@ -1650,9 +1649,9 @@ describe('Collection router', () => {
 
         describe('and the item collection does not have a virtual curation', () => {
           beforeEach(() => {
-            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-              dbTPCollection
-            )
+            ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+              dbTPCollection,
+            ])
           })
           it('should create a SlotUsageCheque record with the request data', () => {
             return server
@@ -1728,9 +1727,9 @@ describe('Collection router', () => {
           let collectionCuration: CollectionCurationAttributes
 
           beforeEach(() => {
-            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-              dbTPCollection
-            )
+            ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+              dbTPCollection,
+            ])
             collectionCuration = { id: uuid() } as CollectionCurationAttributes
             ;(CollectionCuration.findOne as jest.Mock).mockResolvedValueOnce(
               collectionCuration
@@ -1774,9 +1773,9 @@ describe('Collection router', () => {
 
           describe('and the collection is being published for the first time', () => {
             beforeEach(() => {
-              ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-                dbTPCollection
-              )
+              ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+                dbTPCollection,
+              ])
             })
             it('should create a forum post with the response data', () => {
               return server
@@ -1852,10 +1851,12 @@ describe('Collection router', () => {
             let forumId: number
             beforeEach(() => {
               forumId = 1
-              ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
-                ...dbTPCollection,
-                forum_id: forumId,
-              })
+              ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+                {
+                  ...dbTPCollection,
+                  forum_id: forumId,
+                },
+              ])
             })
             it('should update the forum post with the response data', () => {
               return server
@@ -1884,7 +1885,9 @@ describe('Collection router', () => {
     describe('and the collection is a Decentraland collection', () => {
       beforeEach(() => {
         url = `/collections/${dbTPCollection.id}/publish`
-        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollection,
+        ])
         mockExistsMiddleware(Collection, dbCollection.id)
       })
 
@@ -1974,7 +1977,7 @@ describe('Collection router', () => {
             >).mockResolvedValueOnce([dbItemMock, anotherDBItem])
             ;(Collection.findByIds as jest.MockedFunction<
               typeof Collection.findByIds
-            >).mockResolvedValueOnce([dbCollection])
+            >).mockResolvedValueOnce([{ ...dbCollection, item_count: 1 }])
             ;(peerAPI.fetchWearables as jest.MockedFunction<
               typeof peerAPI.fetchWearables
             >).mockResolvedValueOnce([])
@@ -2046,9 +2049,9 @@ describe('Collection router', () => {
             true,
             false
           )
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
         })
 
         it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
@@ -2100,9 +2103,9 @@ describe('Collection router', () => {
             true,
             true
           )
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
             []
           )
@@ -2136,9 +2139,9 @@ describe('Collection router', () => {
             true,
             true
           )
-          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-            dbTPCollection
-          )
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbTPCollection,
+          ])
           ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
             [{}]
           )
@@ -2187,9 +2190,9 @@ describe('Collection router', () => {
               true,
               true
             )
-            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-              dbTPCollection
-            )
+            ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+              dbTPCollection,
+            ])
             ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
               itemApprovalData
             )
@@ -2247,9 +2250,9 @@ describe('Collection router', () => {
               true,
               true
             )
-            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-              dbTPCollection
-            )
+            ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+              dbTPCollection,
+            ])
             ;(Item.findDBApprovalDataByCollectionId as jest.Mock).mockResolvedValueOnce(
               itemApprovalData
             )
@@ -2339,7 +2342,7 @@ describe('Collection router', () => {
         true,
         true
       )
-      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
+      ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([dbCollection])
       ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
         {}
       )

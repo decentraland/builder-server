@@ -542,12 +542,12 @@ export class CollectionService {
   public async getDBCollection(
     collectionId: string
   ): Promise<CollectionAttributes> {
-    const collection = await Collection.findOne(collectionId)
-    if (!collection) {
+    const collections = await Collection.findByIds([collectionId])
+    if (!collections.length) {
       throw new NonExistentCollectionError(collectionId)
     }
 
-    return collection
+    return collections[0]
   }
 
   /**

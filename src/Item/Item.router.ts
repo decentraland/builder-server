@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
+import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -20,6 +21,13 @@ import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
+import { PaginatedResponse } from '../Pagination'
+import {
+  generatePaginatedResponse,
+  getOffset,
+  getPaginationParams,
+} from '../Pagination/utils'
+import { CurationStatus } from '../Curation'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
@@ -170,7 +178,10 @@ export class ItemRouter extends Router {
     return fullItems.concat(fullTPItems)
   }
 
-  getAddressItems = async (req: AuthRequest): Promise<FullItem[]> => {
+  getAddressItems = async (
+    req: AuthRequest
+  ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
+    const { page, limit } = getPaginationParams(req)
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -182,21 +193,36 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [dbItems, remoteItems, dbTPItems, itemCurations] = await Promise.all([
-      Item.findNonThirdPartyItemsByOwner(eth_address),
+    const [allItemsWithCount, remoteItems, itemCurations] = await Promise.all([
+      this.itemService.findAllItemsForAddress(
+        eth_address,
+        limit,
+        page && limit ? getOffset(page, limit) : undefined
+      ),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
-      this.itemService.getTPItemsByManager(eth_address),
       ItemCuration.find<ItemCurationAttributes>(),
     ])
+
+    const totalItems = Number(allItemsWithCount[0]?.total_count)
+    const allItems = allItemsWithCount.map((itemWithCount) =>
+      omit<ItemAttributes>(itemWithCount, ['total_count'])
+    )
+    const { items: dbItems, tpItems: dbTPItems } = this.itemService.splitItems(
+      allItems
+    )
 
     const [items, tpItems] = await Promise.all([
       Bridge.consolidateItems(dbItems, remoteItems),
       Bridge.consolidateTPItems(dbTPItems, itemCurations),
     ])
 
+    const concatenated = items.concat(tpItems)
+
     // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.
-    //       We'll need to add it after concatenating, cause if we don't it will have a different order each time
-    return items.concat(tpItems)
+    // We'll need to add it after concatenating, cause if we don't it will have a different order each time
+    return page && limit
+      ? generatePaginatedResponse(concatenated, totalItems, limit, page)
+      : concatenated
   }
 
   getItem = async (req: AuthRequest): Promise<FullItem> => {
@@ -234,14 +260,35 @@ export class ItemRouter extends Router {
     }
   }
 
-  getCollectionItems = async (req: AuthRequest): Promise<FullItem[]> => {
+  getCollectionItems = async (
+    req: AuthRequest
+  ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
     const id = server.extractFromReq(req, 'id')
+    let status: CurationStatus | undefined
+    try {
+      status = server.extractFromReq(req, 'status')
+    } catch (error) {}
+
+    if (status && !Object.values(CurationStatus).includes(status)) {
+      throw new HTTPError(
+        'Invalid Status provided',
+        { id, status },
+        STATUS_CODES.badRequest
+      )
+    }
+    const { page, limit } = getPaginationParams(req)
     const eth_address = req.auth.ethAddress
 
     try {
-      const { collection, items } = await this.itemService.getCollectionItems(
-        id
-      )
+      const {
+        collection,
+        items,
+        totalItems,
+      } = await this.itemService.getCollectionItems(id, {
+        limit,
+        offset: page && limit ? getOffset(page, limit) : undefined,
+        status,
+      })
 
       if (!(await hasCollectionAccess(eth_address, collection))) {
         throw new HTTPError(
@@ -251,7 +298,9 @@ export class ItemRouter extends Router {
         )
       }
 
-      return items
+      return page && limit
+        ? generatePaginatedResponse(items, totalItems, limit, page)
+        : items
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(

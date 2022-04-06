@@ -211,7 +211,7 @@ export class ItemRouter extends Router {
       Bridge.consolidateTPItems(dbTPItems, itemCurations),
     ])
 
-    const totalItems = allItems[0]?.total_count
+    const totalItems = Number(allItems[0]?.total_count)
     const concatenated = items.concat(tpItems)
 
     // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.

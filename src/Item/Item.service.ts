@@ -36,7 +36,6 @@ import { Item } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
-  ItemWithTotalCount,
   ThirdPartyItemAttributes,
 } from './Item.types'
 import { buildTPItemURN, isTPItem, toDBItem } from './utils'
@@ -162,7 +161,7 @@ export class ItemService {
     address: string,
     limit?: number,
     offset?: number
-  ): Promise<ItemWithTotalCount[]> {
+  ) {
     const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
     if (thirdParties.length <= 0) {
       return []

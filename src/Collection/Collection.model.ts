@@ -1,6 +1,10 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Item } from '../Item/Item.model'
-import { CollectionAttributes, CollectionWithItemCount } from './Collection.types'
+import { CollectionAttributes } from './Collection.types'
+
+type CollectionWithItemCount = CollectionAttributes & {
+  item_count: number
+}
 
 export class Collection extends Model<CollectionAttributes> {
   static tableName = 'collections'

@@ -3,11 +3,9 @@ import { Collection } from '../Collection/Collection.model'
 import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { DEFAULT_LIMIT } from '../Pagination/utils'
-import {
-  DBItemApprovalData,
-  ItemAttributes,
-  ItemWithTotalCount,
-} from './Item.types'
+import { DBItemApprovalData, ItemAttributes } from './Item.types'
+
+type ItemWithTotalCount = ItemAttributes & { total_count: number }
 
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'

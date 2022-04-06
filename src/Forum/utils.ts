@@ -9,6 +9,7 @@ import { ForumPost } from './Forum.types'
 
 const BUILDER_URL = env.get('BUILDER_URL', '')
 const BUILDER_SERVER_URL = env.get('BUILDER_SERVER_URL', '')
+const API_VERSION = env.get('API_VERSION', 'v1')
 
 export function buildCollectionForumPost(
   collection: CollectionAttributes,
@@ -76,5 +77,9 @@ function getThumbnailURL(item: FullItem) {
 }
 
 function getContentsStorageUrl(hash: string = '') {
-  return `${BUILDER_SERVER_URL}/storage/contents/${hash}`
+  console.log(
+    'URL',
+    `${BUILDER_SERVER_URL}/${API_VERSION}/storage/contents/${hash}`
+  )
+  return `${BUILDER_SERVER_URL}/${API_VERSION}/storage/contents/${hash}`
 }

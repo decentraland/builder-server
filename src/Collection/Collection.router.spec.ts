@@ -1328,7 +1328,7 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: false,
-                data: {},
+                data: { id: dbTPCollection.id },
                 error:
                   'The amount of items to publish exceeds the available slots.',
               })

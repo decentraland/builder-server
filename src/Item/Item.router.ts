@@ -1,6 +1,7 @@
 import { Request, Response } from 'express'
 import { utils } from 'decentraland-commons'
 import { server } from 'decentraland-server'
+import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -192,7 +193,7 @@ export class ItemRouter extends Router {
       )
     }
 
-    const [allItems, remoteItems, itemCurations] = await Promise.all([
+    const [allItemsWithCount, remoteItems, itemCurations] = await Promise.all([
       this.itemService.findAllItemsForAddress(
         eth_address,
         limit,
@@ -202,6 +203,10 @@ export class ItemRouter extends Router {
       ItemCuration.find<ItemCurationAttributes>(),
     ])
 
+    const totalItems = Number(allItemsWithCount[0]?.total_count)
+    const allItems = allItemsWithCount.map((itemWithCount) =>
+      omit<ItemAttributes>(itemWithCount, ['total_count'])
+    )
     const { items: dbItems, tpItems: dbTPItems } = this.itemService.splitItems(
       allItems
     )
@@ -211,7 +216,6 @@ export class ItemRouter extends Router {
       Bridge.consolidateTPItems(dbTPItems, itemCurations),
     ])
 
-    const totalItems = Number(allItems[0]?.total_count)
     const concatenated = items.concat(tpItems)
 
     // TODO: list.concat(list2) will not break pagination (when we add it), but it will break any order we have beforehand.

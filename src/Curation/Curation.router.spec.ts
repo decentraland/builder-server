@@ -24,6 +24,7 @@ import { CurationStatus } from './Curation.types'
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
+jest.mock('../Curation/ItemCuration')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 
@@ -225,6 +226,65 @@ describe('when handling a request', () => {
           'tpCollectionId1',
           'tpCollectionId2',
         ])
+      })
+    })
+  })
+
+  describe('when trying to obtain a list of item curations', () => {
+    let service: CurationService<any>
+    beforeEach(() => {
+      mockServiceWithAccess(ItemCuration, true)
+      service = mockService(ItemCuration)
+    })
+
+    describe('when itemIds param is not provided', () => {
+      beforeEach(() => {
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+      })
+
+      it('should resolve with the collections provided by ItemCuration.findByCollectionId', async () => {
+        const findByCollectionIdSpy = jest
+          .spyOn(ItemCuration, 'findByCollectionId')
+          .mockResolvedValueOnce([])
+
+        const req = {
+          params: { id: 'collectionId' },
+          auth: { ethAddress: 'ethAddress' },
+        } as any
+
+        await router.getCollectionItemCurations(req)
+
+        expect(findByCollectionIdSpy).toHaveBeenCalled()
+      })
+    })
+
+    describe('when itemIds param is provided', () => {
+      let itemIds: string[]
+      beforeEach(() => {
+        itemIds = ['1', '2', '3']
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+      })
+
+      it('should resolve with the collections provided by ItemCuration.findByCollectionAndItemIds', async () => {
+        const findByCollectionAndItemIdsSpy = jest
+          .spyOn(ItemCuration, 'findByCollectionAndItemIds')
+          .mockResolvedValueOnce([])
+
+        const req = {
+          params: { id: 'collectionId', itemIds },
+          auth: { ethAddress: 'ethAddress' },
+        } as any
+
+        await router.getCollectionItemCurations(req)
+
+        expect(findByCollectionAndItemIdsSpy).toHaveBeenCalledWith(
+          'collectionId',
+          itemIds
+        )
       })
     })
   })

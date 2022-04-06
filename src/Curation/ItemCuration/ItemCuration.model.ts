@@ -1,7 +1,6 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { Collection } from '../../Collection'
 import { Item } from '../../Item'
-import { DEFAULT_LIMIT } from '../../Pagination/utils'
 import { CurationStatus, CurationType } from '../Curation.types'
 import {
   ItemCurationAttributes,
@@ -33,37 +32,27 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
 
   static async findByCollectionAndItemIds(
     collectionId: string,
-    itemIds: string[],
-    limit: number = DEFAULT_LIMIT,
-    offset: number = 0
+    itemIds: string[]
   ) {
     return this.query<ItemCurationWithTotalCount>(SQL`
-      SELECT DISTINCT on (item.id) item_curation.*, count(*) OVER() AS total_count
+      SELECT DISTINCT on (item.id) item_curation.*
         FROM ${raw(this.tableName)} item_curation
         INNER JOIN ${raw(
           Item.tableName
         )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
         WHERE item.id = ANY(${itemIds})
         ORDER BY item.id, item_curation.created_at DESC
-        LIMIT ${limit}
-        OFFSET ${offset}
     `)
   }
 
-  static async findByCollectionId(
-    collectionId: string,
-    limit: number = DEFAULT_LIMIT,
-    offset: number = 0
-  ) {
+  static async findByCollectionId(collectionId: string) {
     return this.query<ItemCurationWithTotalCount>(SQL`
-      SELECT DISTINCT on (item.id) item_curation.*, count(*) OVER() AS total_count
+      SELECT DISTINCT on (item.id) item_curation.*
         FROM ${raw(this.tableName)} item_curation
         INNER JOIN ${raw(
           Item.tableName
         )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
         ORDER BY item.id, item_curation.created_at DESC
-        LIMIT ${limit}
-        OFFSET ${offset}
   `)
   }
 

@@ -16,10 +16,6 @@ import {
 } from '../Collection/Collection.errors'
 import { isTPCollection } from '../utils/urn'
 import {
-  generatePaginatedResponse,
-  getPaginationParams,
-} from '../Pagination/utils'
-import {
   CurationStatus,
   CurationType,
   patchCurationSchema,
@@ -208,7 +204,6 @@ export class CurationRouter extends Router {
       )
     }
 
-    const { page, limit } = getPaginationParams(req)
     const ethAddress = req.auth.ethAddress
     const curationService = CurationService.byType(CurationType.COLLECTION)
 
@@ -219,17 +214,10 @@ export class CurationRouter extends Router {
     )
 
     const curations = itemIds
-      ? await ItemCuration.findByCollectionAndItemIds(
-          collectionId,
-          itemIds,
-          page,
-          limit
-        )
-      : await ItemCuration.findByCollectionId(collectionId, page, limit)
-    const totalCurations = curations[0]?.total_count
-    return page && limit
-      ? generatePaginatedResponse(curations, totalCurations, limit, page)
-      : curations
+      ? await ItemCuration.findByCollectionAndItemIds(collectionId, itemIds)
+      : await ItemCuration.findByCollectionId(collectionId)
+
+    return curations
   }
 
   getItemCuration = async (req: AuthRequest) => {

@@ -1,4 +1,5 @@
 import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
   CollectionAttributes,
@@ -136,7 +137,7 @@ export class ItemService {
       collectionId
     )
     const isTP = isTPCollection(dbCollection)
-    const dbItems =
+    const dbItemsWithCount =
       status && isTP
         ? await Item.findByCollectionIdAndStatus(
             collectionId,
@@ -146,6 +147,11 @@ export class ItemService {
           )
         : await Item.findByCollectionIds([collectionId], limit, offset)
 
+    const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
+    const dbItems = dbItemsWithCount.map((dbItemWithCount) =>
+      omit<ItemAttributes>(dbItemWithCount, ['total_count'])
+    )
+
     const { collection, items } = isTPCollection(dbCollection)
       ? await this.getTPCollectionItems(dbCollection, dbItems)
       : await this.getDCLCollectionItems(dbCollection, dbItems)
@@ -153,7 +159,7 @@ export class ItemService {
     return {
       collection,
       items,
-      totalItems: Number(dbItems[0]?.total_count ?? 0),
+      totalItems,
     }
   }
 
@@ -161,7 +167,7 @@ export class ItemService {
     address: string,
     limit?: number,
     offset?: number
-  ) {
+  ): Promise<(ItemAttributes & { total_count: number })[]> {
     const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
     if (thirdParties.length <= 0) {
       return []

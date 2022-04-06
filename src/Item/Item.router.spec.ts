@@ -295,12 +295,15 @@ describe('Item router', () => {
   })
 
   describe('when getting all the items of an address', () => {
+    let allAddressItems: ItemAttributes[]
     beforeEach(() => {
-      ;(Item.findAllItemsByAddress as jest.Mock).mockResolvedValueOnce([
-        dbItem,
-        dbItemNotPublished,
-        dbTPItem,
-      ])
+      allAddressItems = [dbItem, dbItemNotPublished, dbTPItem]
+      ;(Item.findAllItemsByAddress as jest.Mock).mockResolvedValueOnce(
+        allAddressItems.map((item) => ({
+          ...item,
+          total_count: allAddressItems.length,
+        }))
+      )
       ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
         [thirdPartyFragmentMock]
       )
@@ -318,7 +321,7 @@ describe('Item router', () => {
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
     })
 
-    describe('and there pagination params are not passed', () => {
+    describe('and the pagination params are not passed', () => {
       beforeEach(() => {
         url = `/${wallet.address}/items`
       })
@@ -366,7 +369,27 @@ describe('Item router', () => {
           .get(buildURL(url))
           .set(createAuthHeaders('get', baseUrl))
           .expect(200)
-          .then(() => {
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                total: allAddressItems.length,
+                pages: allAddressItems.length,
+                page,
+                limit,
+                results: [
+                  {
+                    ...resultingItem,
+                    beneficiary: itemFragment.beneficiary,
+                    collection_id: dbItem.collection_id,
+                    blockchain_item_id: dbItem.blockchain_item_id,
+                    urn: itemFragmentMock.urn,
+                  },
+                  resultItemNotPublished,
+                  resultingTPItem,
+                ],
+              },
+              ok: true,
+            })
             expect(Item.findAllItemsByAddress).toHaveBeenCalledWith(
               [thirdPartyFragmentMock.id],
               wallet.address,
@@ -380,11 +403,15 @@ describe('Item router', () => {
 
   describe('when getting all the items of a collection', () => {
     describe('and the collection is a DCL collection', () => {
+      let itemsForCollection: ItemAttributes[]
       beforeEach(() => {
-        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
-          dbItemMock,
-          dbItemNotPublished,
-        ])
+        itemsForCollection = [dbItemMock, dbItemNotPublished]
+        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce(
+          itemsForCollection.map((item) => ({
+            ...item,
+            total_count: itemsForCollection.length,
+          }))
+        )
         ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
           { collection: itemFragment.collection, items: [itemFragment] }
         )
@@ -395,7 +422,6 @@ describe('Item router', () => {
           dbCollectionMock,
         ])
         mockItemConsolidation([dbItemMock], [wearable])
-        // url = `/collections/${dbCollectionMock.id}/items`
       })
 
       describe('and there pagination params are not passed', () => {
@@ -444,7 +470,26 @@ describe('Item router', () => {
             .get(buildURL(url))
             .set(createAuthHeaders('get', baseUrl))
             .expect(200)
-            .then(() => {
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  pages: itemsForCollection.length,
+                  total: itemsForCollection.length,
+                  limit,
+                  page,
+                  results: [
+                    {
+                      ...resultingItem,
+                      beneficiary: itemFragment.beneficiary,
+                      collection_id: dbItem.collection_id,
+                      blockchain_item_id: dbItem.blockchain_item_id,
+                      urn: itemFragmentMock.urn,
+                    },
+                    resultItemNotPublished,
+                  ],
+                },
+                ok: true,
+              })
               expect(Item.findByCollectionIds).toHaveBeenCalledWith(
                 [dbCollectionMock.id],
                 limit,

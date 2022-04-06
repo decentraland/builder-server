@@ -7,11 +7,7 @@ import {
   I18N,
 } from '@dcl/schemas'
 import { dbCollectionMock } from './collections'
-import {
-  dbItemMock,
-  itemFragmentMock,
-  thirdPartyItemFragmentMock,
-} from './items'
+import { dbItemMock, itemFragmentMock } from './items'
 
 export const wearableMock: StandardWearable = {
   id: itemFragmentMock.urn,
@@ -34,7 +30,7 @@ export const wearableMock: StandardWearable = {
 
 export const tpWearableMock: ThirdPartyWearable = {
   ...wearableMock,
-  id: thirdPartyItemFragmentMock.urn,
+  id: dbCollectionMock.contract_address + '-' + dbItemMock.blockchain_item_id,
   merkleProof: {
     proof: [],
     index: 0,

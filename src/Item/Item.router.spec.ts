@@ -24,7 +24,6 @@ import {
   dbItemMock,
   dbTPItemMock,
   itemFragmentMock,
-  thirdPartyItemFragmentMock,
   ResultItem,
   toResultItem,
   toResultTPItem,
@@ -109,7 +108,6 @@ describe('Item router', () => {
     }
     tpWearable = {
       ...tpWearableMock,
-      id: thirdPartyItemFragmentMock.urn,
     }
     dbItemNotPublished = {
       ...dbItem,
@@ -302,9 +300,6 @@ describe('Item router', () => {
       ;(Item.findByThirdPartyIds as jest.Mock).mockResolvedValueOnce([dbTPItem])
       ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
         [thirdPartyFragmentMock]
-      )
-      ;(thirdPartyAPI.fetchItemsByThirdParties as jest.Mock).mockResolvedValueOnce(
-        [thirdPartyItemFragmentMock]
       )
       ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(
         [itemFragment]

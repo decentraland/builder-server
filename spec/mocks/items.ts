@@ -2,9 +2,7 @@ import { constants } from 'ethers'
 import { Rarity, ThirdPartyWearable } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
 import {
-  ItemFragment,
-  ThirdPartyItemFragment,
-  ThirdPartyItemMetadataType,
+  ItemFragment
 } from '../../src/ethereum/api/fragments'
 import { Bridge } from '../../src/ethereum/api/Bridge'
 import {
@@ -186,32 +184,6 @@ export const itemFragmentMock = {
   },
   metadata: {},
   contentHash: '',
-}
-
-export const thirdPartyItemFragmentMock: ThirdPartyItemFragment = {
-  urn: buildTPItemURN(
-    dbTPCollectionMock.third_party_id,
-    dbTPCollectionMock.urn_suffix,
-    dbTPItemMock.urn_suffix
-  ),
-  blockchainItemId: '1',
-  contentHash: '',
-  isApproved: true,
-  metadata: {
-    type: ThirdPartyItemMetadataType.third_party_v1,
-    itemWearable: {
-      name: 'Fragment Name',
-      description: null,
-      category: null,
-      bodyShapes: null,
-    },
-  },
-  thirdParty: {
-    id: dbTPCollectionMock.third_party_id,
-  },
-  reviewedAt: toUnixTimestamp(dbTPCollectionMock.reviewed_at!),
-  updatedAt: toUnixTimestamp(dbTPCollectionMock.updated_at),
-  createdAt: toUnixTimestamp(dbTPCollectionMock.created_at),
 }
 
 export function convertItemDatesToISO<T extends ItemAttributes | FullItem>(

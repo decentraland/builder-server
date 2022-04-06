@@ -65,29 +65,6 @@ export const thirdPartyFragment = () => gql`
   }
 `
 
-export const thirdPartyItemFragment = () => gql`
-  fragment thirdPartyItemFragment on Item {
-    urn
-    blockchainItemId
-    contentHash
-    isApproved
-    reviewedAt
-    updatedAt
-    createdAt
-    metadata {
-      itemWearable {
-        name
-        description
-        category
-        bodyShapes
-      }
-    }
-    thirdParty {
-      id
-    }
-  }
-`
-
 export const accountFragment = () => gql`
   fragment accountFragment on Account {
     id
@@ -170,35 +147,9 @@ export type ThirdPartyFragment = {
   metadata: ThirdPartyMetadata
 }
 
-type ThirdPartyItemWearableMetadata = {
-  name: string | null
-  description: string | null
-  category: WearableCategory | null
-  bodyShapes: BodyShape[] | null
-}
-
-export type ThirdPartyItemFragment = {
-  urn: string
-  blockchainItemId: string
-  contentHash: string
-  isApproved: boolean
-  reviewedAt: string
-  updatedAt: string
-  createdAt: string
-  metadata: ThirdPartyItemMetadata
-  thirdParty: {
-    id: string
-  }
-}
-
 export type ThirdPartyMetadata = {
   type: ThirdPartyMetadataType
   thirdParty: { name: string; description: string } | null
-}
-
-type ThirdPartyItemMetadata = {
-  type: ThirdPartyItemMetadataType | undefined
-  itemWearable: ThirdPartyItemWearableMetadata
 }
 
 export enum ThirdPartyMetadataType {
@@ -208,11 +159,6 @@ export enum ThirdPartyMetadataType {
 export enum ThirdPartyItemMetadataType {
   third_party_v1 = 'third_party_v1',
   item_wearable_v1 = 'item_wearable_v1',
-}
-
-enum BodyShape {
-  BaseMale,
-  BaseFemale,
 }
 
 export type AccountFragment = {

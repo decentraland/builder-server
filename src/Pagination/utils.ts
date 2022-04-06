@@ -4,8 +4,8 @@ export const DEFAULT_LIMIT = 10000 // let's use the default as the max as well
 
 export const getPaginationParams = (req: Request) => {
   const { limit, page } = req.query
-  const parsedLimit = Number(limit)
-  const parsedPage = Number(page)
+  const parsedLimit = parseInt(limit as string, 10)
+  const parsedPage = parseInt(page as string, 10)
   return {
     limit:
       limit && !isNaN(parsedLimit) && parsedLimit < DEFAULT_LIMIT

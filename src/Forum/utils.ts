@@ -77,9 +77,5 @@ function getThumbnailURL(item: FullItem) {
 }
 
 function getContentsStorageUrl(hash: string = '') {
-  console.log(
-    'URL',
-    `${BUILDER_SERVER_URL}/${API_VERSION}/storage/contents/${hash}`
-  )
   return `${BUILDER_SERVER_URL}/${API_VERSION}/storage/contents/${hash}`
 }

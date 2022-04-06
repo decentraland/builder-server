@@ -4,6 +4,7 @@ import {
   dbCollectionMock,
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
+import { itemCurationMock } from '../../spec/mocks/itemCuration'
 import { dbItemMock, thirdPartyItemFragmentMock } from '../../spec/mocks/items'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -260,29 +261,23 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is provided', () => {
       let itemIds: string[]
+      let itemCuration: ItemCurationAttributes
       beforeEach(() => {
         itemIds = ['1', '2', '3']
-        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
-          []
+        itemCuration = { ...itemCurationMock }
+        ;(ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
+          [itemCuration]
         )
       })
 
       it('should resolve with the collections provided by ItemCuration.findByCollectionAndItemIds', async () => {
-        const findByCollectionAndItemIdsSpy = jest
-          .spyOn(ItemCuration, 'findByCollectionAndItemIds')
-          .mockResolvedValueOnce([])
-
         const req = {
           params: { id: 'collectionId', itemIds },
           auth: { ethAddress: 'ethAddress' },
         } as any
 
-        await router.getCollectionItemCurations(req)
-
-        expect(findByCollectionAndItemIdsSpy).toHaveBeenCalledWith(
-          'collectionId',
-          itemIds
-        )
+        const itemCurations = await router.getCollectionItemCurations(req)
+        expect(itemCurations).toStrictEqual([itemCuration])
       })
     })
   })

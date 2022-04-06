@@ -30,6 +30,7 @@ import {
 } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Cheque } from '../SlotUsageCheque'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -54,6 +55,7 @@ const validator = getValidator()
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
+  public tpService = new ThirdPartyService()
 
   private modelAuthorizationCheck = (
     _: OwnableModel,
@@ -312,6 +314,16 @@ export class CollectionRouter extends Router {
 
       if (isTPCollection(dbCollection)) {
         const itemIds = server.extractFromReq<string[]>(req, 'itemIds')
+        const availableSlots = await this.tpService.getThirdPartyAvailableSlots(
+          dbCollection.third_party_id
+        )
+        if (itemIds.length > availableSlots) {
+          throw new HTTPError(
+            'The amount of items to publish exceeds the available slots',
+            null,
+            STATUS_CODES.badRequest
+          )
+        }
         const dbItems = (await Item.findByIds(
           itemIds
         )) as ThirdPartyItemAttributes[]

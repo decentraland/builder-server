@@ -1287,6 +1287,55 @@ describe('Collection router', () => {
         })
       })
 
+      describe('when sending more items than the available slots in the tp registry', () => {
+        let items: ItemAttributes[]
+        let tpRegistryMaxItems: number
+        let tpCurationsAmonut: number
+
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
+          items = [
+            { ...dbTPItemMock, id: 'c241ef7c-4466-41b0-bf94-be1b8c331fdb' },
+            { ...dbTPItemMock, id: 'anotherId' },
+            { ...dbTPItemMock, id: 'yetAnotherId' },
+          ]
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
+          tpRegistryMaxItems = 4
+          tpCurationsAmonut = 2 // so there are only 2 available slots
+          thirdPartyAPIMock.fetchMaxItemsByThirdParty.mockResolvedValueOnce(
+            tpRegistryMaxItems
+          )
+          ;(ItemCuration.countByThirdPartyId as jest.Mock).mockResolvedValueOnce(
+            tpCurationsAmonut
+          )
+        })
+
+        it('should respond with a 400 and a message signaling the amount of items to publish exceeds the available slots', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: items.map((item) => item.id),
+              cheque: {
+                signature: 'signature',
+                qty: 1,
+                salt: '0xsalt',
+              },
+            })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: {},
+                error:
+                  'The amount of items to publish exceeds the available slots',
+              })
+            })
+        })
+      })
+
       describe('when sending cheque with an amount of slots different than the amount items published', () => {
         let items: ItemAttributes[]
 
@@ -1552,6 +1601,8 @@ describe('Collection router', () => {
         let authHeaders: Record<string, string>
         let mockedWallet
         let cheque: Cheque
+        let tpRegistryMaxItems: number
+        let tpCurationsAmonut: number
 
         beforeEach(async () => {
           mockedWallet = new ethers.Wallet(fakePrivateKey)
@@ -1587,6 +1638,14 @@ describe('Collection router', () => {
           jest
             .spyOn(Bridge, 'consolidateTPItems')
             .mockResolvedValueOnce(items as any)
+          tpRegistryMaxItems = 5
+          tpCurationsAmonut = 2 // so there are only 3 available slots and 3 items being published
+          thirdPartyAPIMock.fetchMaxItemsByThirdParty.mockResolvedValueOnce(
+            tpRegistryMaxItems
+          )
+          ;(ItemCuration.countByThirdPartyId as jest.Mock).mockResolvedValueOnce(
+            tpCurationsAmonut
+          )
         })
 
         describe('and the item collection does not have a virtual curation', () => {

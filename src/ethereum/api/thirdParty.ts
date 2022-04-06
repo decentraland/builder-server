@@ -26,6 +26,14 @@ const getThirdPartiesQuery = () => gql`
   }
   ${thirdPartyFragment()}
 `
+const getThirdPartyQuery = () => gql`
+  query getThirdParty($id: String!) {
+    thirdParties(first: 1, where: { isApproved: true, id: $id }) {
+      ...thirdPartyFragment
+    }
+  }
+  ${thirdPartyFragment()}
+`
 
 const getThirdPartiesByManagerQuery = () => gql`
   query getThirdPartiesByManager(${PAGINATION_VARIABLES}, $managers: [String!]) {
@@ -115,6 +123,19 @@ export class ThirdPartyAPI extends BaseGraphAPI {
       query: getThirdPartiesQuery(),
       variables: {},
     })
+  }
+
+  fetchThirdParty = async (
+    thirdPartyId: string
+  ): Promise<ThirdPartyFragment | undefined> => {
+    const {
+      data: { thirdParties },
+    } = await this.query<{ thirdParties: ThirdPartyFragment[] }>({
+      query: getThirdPartyQuery(),
+      variables: { id: thirdPartyId },
+    })
+
+    return thirdParties[0]
   }
 
   fetchThirdPartiesByManager = async (

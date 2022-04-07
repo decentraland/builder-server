@@ -133,11 +133,13 @@ export class CollectionRouter extends Router {
       server.handleRequest(this.lockCollection)
     )
 
+    /**
+     * Gets the data necessary to approve a TP Collection and generate its merkle tree
+     */
     this.router.get(
       '/collections/:id/approvalData',
       withAuthentication,
       withCollectionExists,
-      withCollectionAuthorization,
       server.handleRequest(this.getApprovalData)
     )
 
@@ -167,6 +169,15 @@ export class CollectionRouter extends Router {
   getApprovalData = async (req: AuthRequest): Promise<ItemApprovalData> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
+
+    const canRequestApprovalData = await isCommitteeMember(eth_address)
+    if (!canRequestApprovalData) {
+      throw new HTTPError(
+        'Unauthorized',
+        { eth_address },
+        STATUS_CODES.unauthorized
+      )
+    }
 
     try {
       return await this.service.getApprovalData(id)

@@ -11,7 +11,7 @@ export const itemSchema = Object.freeze({
   properties: {
     id: { type: 'string', format: 'uuid' },
     urn: { type: ['string', 'null'], pattern: matchers.urn },
-    name: { type: 'string', maxLength: 42, pattern: '^[^:]*$' },
+    name: { type: 'string', maxLength: 32, pattern: '^[^:]*$' },
     description: {
       type: ['string', 'null'],
       maxLength: 64,

@@ -2041,14 +2041,9 @@ describe('Collection router', () => {
         url = `/collections/${dbTPCollection.id}/approvalData`
       })
 
-      describe('and the user is not a manager of the TP collection', () => {
+      describe('and the user is not a commitee member', () => {
         beforeEach(() => {
-          mockCollectionAuthorizationMiddleware(
-            dbTPCollection.id,
-            wallet.address,
-            true,
-            false
-          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(false)
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
             dbTPCollection,
           ])
@@ -2063,10 +2058,9 @@ describe('Collection router', () => {
               expect(response.body).toEqual({
                 ok: false,
                 data: {
-                  ethAddress: wallet.address,
-                  tableName: Collection.tableName,
+                  eth_address: wallet.address,
                 },
-                error: `Unauthorized user ${wallet.address} for collections ${dbTPCollection.id}`,
+                error: 'Unauthorized',
               })
             })
         })
@@ -2097,12 +2091,7 @@ describe('Collection router', () => {
 
       describe('and the item approval data is empty', () => {
         beforeEach(() => {
-          mockCollectionAuthorizationMiddleware(
-            dbTPCollection.id,
-            wallet.address,
-            true,
-            true
-          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
             dbTPCollection,
           ])
@@ -2133,12 +2122,7 @@ describe('Collection router', () => {
 
       describe('and the slot usage cheque is missing', () => {
         beforeEach(() => {
-          mockCollectionAuthorizationMiddleware(
-            dbTPCollection.id,
-            wallet.address,
-            true,
-            true
-          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
             dbTPCollection,
           ])
@@ -2183,13 +2167,7 @@ describe('Collection router', () => {
                 content_hash: 'Qm3rererer',
               },
             ]
-
-            mockCollectionAuthorizationMiddleware(
-              dbTPCollection.id,
-              wallet.address,
-              true,
-              true
-            )
+            ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
             ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
               dbTPCollection,
             ])
@@ -2243,13 +2221,7 @@ describe('Collection router', () => {
               ...mockedCheque,
               third_party_id: dbTPCollection.third_party_id,
             } as SlotUsageChequeAttributes
-
-            mockCollectionAuthorizationMiddleware(
-              dbTPCollection.id,
-              wallet.address,
-              true,
-              true
-            )
+            ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
             ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
               dbTPCollection,
             ])
@@ -2335,13 +2307,7 @@ describe('Collection router', () => {
   describe('and the collection is not a TP collection', () => {
     beforeEach(() => {
       url = `/collections/${dbCollection.id}/approvalData`
-
-      mockCollectionAuthorizationMiddleware(
-        dbTPCollection.id,
-        wallet.address,
-        true,
-        true
-      )
+      ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
       ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([dbCollection])
       ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
         {}

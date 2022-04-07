@@ -87,7 +87,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
 
   static async countByThirdPartyId(thirdPartyId: string) {
     const counts = await this.query<{ count: number }>(
-      SQL`SELECT COUNT(DISTINCT item_curations.id) AS Count
+      SQL`SELECT COUNT(DISTINCT items.id) AS Count
         FROM ${raw(ItemCuration.tableName)} AS item_curations
         JOIN ${raw(Item.tableName)} AS items ON items.id=item_curations.item_id
         JOIN ${raw(

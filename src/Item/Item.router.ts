@@ -183,6 +183,10 @@ export class ItemRouter extends Router {
   ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
     const { page, limit } = getPaginationParams(req)
     const eth_address = server.extractFromReq(req, 'address')
+    let collectionId: string | undefined
+    try {
+      collectionId = server.extractFromReq(req, 'collectionId')
+    } catch (error) {}
     const auth_address = req.auth.ethAddress
 
     if (eth_address !== auth_address) {
@@ -194,11 +198,11 @@ export class ItemRouter extends Router {
     }
 
     const [allItemsWithCount, remoteItems, itemCurations] = await Promise.all([
-      this.itemService.findAllItemsForAddress(
-        eth_address,
+      this.itemService.findItemsForAddress(eth_address, {
+        collectionId,
         limit,
-        page && limit ? getOffset(page, limit) : undefined
-      ),
+        offset: page && limit ? getOffset(page, limit) : undefined,
+      }),
       collectionAPI.fetchItemsByAuthorizedUser(eth_address),
       ItemCuration.find<ItemCurationAttributes>(),
     ])
@@ -207,12 +211,18 @@ export class ItemRouter extends Router {
     const allItems = allItemsWithCount.map((itemWithCount) =>
       omit<ItemAttributes>(itemWithCount, ['total_count'])
     )
+    const collectionIds = allItems.map((item) => item.collection_id)
     const { items: dbItems, tpItems: dbTPItems } = this.itemService.splitItems(
       allItems
     )
 
     const [items, tpItems] = await Promise.all([
-      Bridge.consolidateItems(dbItems, remoteItems),
+      Bridge.consolidateItems(
+        dbItems,
+        remoteItems.filter((remoteItem) =>
+          collectionIds.includes(remoteItem.collection.id)
+        )
+      ),
       Bridge.consolidateTPItems(dbTPItems, itemCurations),
     ])
 

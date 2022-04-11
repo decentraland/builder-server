@@ -346,10 +346,13 @@ describe('Item router', () => {
               ok: true,
             })
             expect(Item.findAllItemsByAddress).toHaveBeenCalledWith(
-              [thirdPartyFragmentMock.id],
               wallet.address,
-              undefined,
-              undefined
+              [thirdPartyFragmentMock.id],
+              {
+                page: undefined,
+                limit: undefined,
+                collecitonId: undefined,
+              }
             )
           })
       })
@@ -391,10 +394,13 @@ describe('Item router', () => {
               ok: true,
             })
             expect(Item.findAllItemsByAddress).toHaveBeenCalledWith(
-              [thirdPartyFragmentMock.id],
               wallet.address,
-              limit,
-              page - 1 // it's the offset
+              [thirdPartyFragmentMock.id],
+              {
+                limit,
+                offset: page - 1, // it's the offset
+                collectionId: undefined,
+              }
             )
           })
       })

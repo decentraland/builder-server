@@ -298,7 +298,7 @@ describe('Item router', () => {
     let allAddressItems: ItemAttributes[]
     beforeEach(() => {
       allAddressItems = [dbItem, dbItemNotPublished, dbTPItem]
-      ;(Item.findAllItemsByAddress as jest.Mock).mockResolvedValueOnce(
+      ;(Item.findItemsByAddress as jest.Mock).mockResolvedValueOnce(
         allAddressItems.map((item) => ({
           ...item,
           total_count: allAddressItems.length,
@@ -345,7 +345,7 @@ describe('Item router', () => {
               ],
               ok: true,
             })
-            expect(Item.findAllItemsByAddress).toHaveBeenCalledWith(
+            expect(Item.findItemsByAddress).toHaveBeenCalledWith(
               wallet.address,
               [thirdPartyFragmentMock.id],
               {
@@ -358,14 +358,15 @@ describe('Item router', () => {
       })
     })
 
-    describe('and pagination params are passed', () => {
+    describe('and pagination & collectionId params are passed', () => {
       let baseUrl: string
       let page: number
       let limit: number
+      let collectionId: string
       beforeEach(() => {
-        ;(page = 1), (limit = 1)
+        ;(page = 1), (limit = 1), (collectionId = 'null')
         baseUrl = `/${wallet.address}/items`
-        url = `${baseUrl}?limit=${limit}&page=${page}`
+        url = `${baseUrl}?limit=${limit}&page=${page}&collectionId=${collectionId}`
       })
       it('should call the find method with the pagination params', () => {
         return server
@@ -393,13 +394,13 @@ describe('Item router', () => {
               },
               ok: true,
             })
-            expect(Item.findAllItemsByAddress).toHaveBeenCalledWith(
+            expect(Item.findItemsByAddress).toHaveBeenCalledWith(
               wallet.address,
               [thirdPartyFragmentMock.id],
               {
                 limit,
                 offset: page - 1, // it's the offset
-                collectionId: undefined,
+                collectionId,
               }
             )
           })

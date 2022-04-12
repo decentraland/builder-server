@@ -178,7 +178,7 @@ export class ItemService {
 
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
-    return Item.findAllItemsByAddress(address, thirdPartyIds, params)
+    return Item.findItemsByAddress(address, thirdPartyIds, params)
   }
 
   /**

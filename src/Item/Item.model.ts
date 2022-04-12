@@ -70,7 +70,7 @@ export class Item extends Model<ItemAttributes> {
 
   // PAGINATED QUERIES
 
-  static findAllItemsByAddress(
+  static findItemsByAddress(
     address: string,
     thirdPartyIds: string[],
     parmas: {

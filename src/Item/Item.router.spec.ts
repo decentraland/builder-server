@@ -716,7 +716,7 @@ describe('Item router', () => {
                 .expect(200)
                 .then((response: any) => {
                   expect(response.body).toEqual({
-                    data: resultingItem,
+                    data: { item: resultingItem },
                     ok: true,
                   })
                 })
@@ -841,7 +841,7 @@ describe('Item router', () => {
                   .expect(200)
                   .then((response: any) => {
                     expect(response.body).toEqual({
-                      data: resultingItem,
+                      data: { item: resultingItem },
                       ok: true,
                     })
                   })
@@ -998,7 +998,7 @@ describe('Item router', () => {
                 .expect(200)
                 .then((response: any) => {
                   expect(response.body).toEqual({
-                    data: resultingItem,
+                    data: { item: resultingItem },
                     ok: true,
                   })
                 })
@@ -1011,13 +1011,12 @@ describe('Item router', () => {
                 .set(createAuthHeaders('put', url))
                 .expect(200)
                 .then(() => {
-                  expect(ItemCuration.update).toHaveBeenCalledWith(
-                    {
-                      content_hash:
-                        'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
-                    },
-                    { item_id: dbTPItem.id, status: CurationStatus.PENDING }
-                  )
+                  expect(
+                    ItemCuration.updateByItemIdAndStatus
+                  ).toHaveBeenCalledWith(dbTPItem.id, CurationStatus.PENDING, {
+                    content_hash:
+                      'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                  })
                 })
             })
           })
@@ -1110,7 +1109,7 @@ describe('Item router', () => {
                 .expect(200)
                 .then((response: any) => {
                   expect(response.body).toEqual({
-                    data: resultingItem,
+                    data: { item: resultingItem },
                     ok: true,
                   })
                 })
@@ -1481,12 +1480,14 @@ describe('Item router', () => {
 
             expect(response.body).toEqual({
               data: {
-                ...Bridge.toFullItem(dbItem),
-                local_content_hash:
-                  'QmXZgmKEUkoaq4rM5n24KA9FmNUCRyuAAjvDfVpgLWCLhb',
-                eth_address: wallet.address,
-                created_at: dbItem.created_at.toISOString(),
-                updated_at: currentDate.toISOString(),
+                item: {
+                  ...Bridge.toFullItem(dbItem),
+                  local_content_hash:
+                    'QmXZgmKEUkoaq4rM5n24KA9FmNUCRyuAAjvDfVpgLWCLhb',
+                  eth_address: wallet.address,
+                  created_at: dbItem.created_at.toISOString(),
+                  updated_at: currentDate.toISOString(),
+                },
               },
               ok: true,
             })
@@ -1544,7 +1545,7 @@ describe('Item router', () => {
             .expect(STATUS_CODES.ok)
 
           expect(response.body).toEqual({
-            data: resultingItem,
+            data: { item: resultingItem },
             ok: true,
           })
         })

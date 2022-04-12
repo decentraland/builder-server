@@ -1,4 +1,5 @@
 import { Model, raw, SQL } from 'decentraland-server'
+import { database } from '../../database/database'
 import { Collection } from '../../Collection'
 import { Item } from '../../Item'
 import { CurationStatus, CurationType } from '../Curation.types'
@@ -83,6 +84,23 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     return this.query(SQL`
       DELETE FROM ${raw(this.tableName)}
         WHERE id = ANY(${ids})`)
+  }
+
+  static async updateByItemIdAndStatus(
+    itemId: string,
+    status: CurationStatus,
+    fields: Partial<ItemCurationAttributes>
+  ) {
+    const assignmentFields = database.toAssignmentFields(fields, 2) // offset the id
+    const result = await this.query(
+      ` UPDATE ${this.tableName}
+        SET ${assignmentFields}
+        WHERE item_id = $1 AND status = $2
+        RETURNING *
+      `,
+      [itemId, status, ...Object.values(fields)]
+    )
+    return result[0]
   }
 
   static async countByThirdPartyId(thirdPartyId: string) {

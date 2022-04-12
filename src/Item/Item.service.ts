@@ -7,7 +7,7 @@ import {
 } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
 import { CurationStatus } from '../Curation'
-import { ItemCuration } from '../Curation/ItemCuration'
+import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
@@ -53,7 +53,7 @@ export class ItemService {
   public async upsertItem(
     item: FullItem,
     eth_address: string
-  ): Promise<FullItem> {
+  ): Promise<{ item: FullItem; curation?: ItemCurationAttributes }> {
     let dbCollection: CollectionAttributes | undefined = undefined
     const dbItem = await Item.findOne<ItemAttributes>(item.id)
     if (dbItem) {
@@ -73,9 +73,17 @@ export class ItemService {
     // An item is a third party item if it's current collection or the collection
     // that is going to be inserted into is a third party collection.
     if (dbCollection && isTPCollection(dbCollection)) {
-      return this.upsertThirdPartyItem(item, dbItem, dbCollection, eth_address)
+      const { item: upsertedItem, curation } = await this.upsertThirdPartyItem(
+        item,
+        dbItem,
+        dbCollection,
+        eth_address
+      )
+      return { item: upsertedItem, curation }
     } else {
-      return this.upsertDCLItem(item, dbItem, dbCollection, eth_address)
+      return {
+        item: await this.upsertDCLItem(item, dbItem, dbCollection, eth_address),
+      }
     }
   }
 
@@ -502,7 +510,7 @@ export class ItemService {
     dbItem: ItemAttributes | undefined,
     dbCollection: CollectionAttributes,
     eth_address: string
-  ): Promise<FullItem> {
+  ): Promise<{ item: FullItem; curation?: ItemCurationAttributes }> {
     // Check if the collection being used in this update or insert process is accessible by the user
     if (dbCollection) {
       if (
@@ -637,13 +645,15 @@ export class ItemService {
       : null
 
     const upsertedItem: ItemAttributes = await Item.upsert(attributes)
+    let curation: ItemCurationAttributes | undefined
     if (dbItem && attributes.local_content_hash) {
       // Update the Item Curation content_hash
-      await ItemCuration.update(
-        { content_hash: attributes.local_content_hash },
-        { item_id: attributes.id, status: CurationStatus.PENDING }
+      curation = await ItemCuration.updateByItemIdAndStatus(
+        attributes.id,
+        CurationStatus.PENDING,
+        { content_hash: attributes.local_content_hash }
       )
     }
-    return Bridge.toFullItem(upsertedItem, dbCollection)
+    return { item: Bridge.toFullItem(upsertedItem, dbCollection), curation }
   }
 }

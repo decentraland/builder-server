@@ -314,7 +314,9 @@ export class ItemRouter extends Router {
     }
   }
 
-  upsertItem = async (req: AuthRequest): Promise<FullItem> => {
+  upsertItem = async (
+    req: AuthRequest
+  ): Promise<{ item: FullItem; curation?: ItemCurationAttributes }> => {
     const id = server.extractFromReq(req, 'id')
     const itemJSON: FullItem = server.extractFromReq(req, 'item')
 
@@ -341,11 +343,11 @@ export class ItemRouter extends Router {
 
     const eth_address = req.auth.ethAddress.toLowerCase()
     try {
-      const upsertedItem = await this.itemService.upsertItem(
-        itemJSON,
-        eth_address
-      )
-      return upsertedItem
+      const {
+        item: upsertedItem,
+        curation,
+      } = await this.itemService.upsertItem(itemJSON, eth_address)
+      return { item: upsertedItem, curation }
     } catch (error) {
       if (error instanceof UnauthorizedToUpsertError) {
         throw new HTTPError(

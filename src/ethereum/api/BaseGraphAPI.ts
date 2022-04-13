@@ -12,15 +12,11 @@ export const MAX_RESULTS = 1000
 export const PAGINATION_VARIABLES = `
   $first: Int = ${MAX_RESULTS}
   $skip: Int = 0
-  $orderBy: String
-  $orderDirection: String
 `
 
 export const PAGINATION_ARGUMENTS = `
   first: $first
   skip: $skip
-  orderBy: $orderBy
-  orderDirection: $orderDirection
 `
 
 export class BaseGraphAPI {

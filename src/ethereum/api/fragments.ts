@@ -54,7 +54,6 @@ export const thirdPartyFragment = () => gql`
     root
     managers
     maxItems
-    totalItems
     metadata {
       type
       thirdParty {

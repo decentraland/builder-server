@@ -211,7 +211,7 @@ export class ItemRouter extends Router {
     const allItems = allItemsWithCount.map((itemWithCount) =>
       omit<ItemAttributes>(itemWithCount, ['total_count'])
     )
-    const collectionIds = allItems.map((item) => item.collection_id)
+    const dbBlockchainItemIds = allItems.map((item) => item.blockchain_item_id)
     const { items: dbItems, tpItems: dbTPItems } = this.itemService.splitItems(
       allItems
     )
@@ -220,7 +220,7 @@ export class ItemRouter extends Router {
       Bridge.consolidateItems(
         dbItems,
         remoteItems.filter((remoteItem) =>
-          collectionIds.includes(remoteItem.collection.id)
+          dbBlockchainItemIds.includes(remoteItem.blockchainId)
         )
       ),
       Bridge.consolidateTPItems(dbTPItems, itemCurations),

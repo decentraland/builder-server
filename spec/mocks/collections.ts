@@ -60,7 +60,6 @@ export const thirdPartyFragmentMock: ThirdPartyFragment = {
   root: 'aRoot',
   managers: [wallet.address],
   maxItems: '10',
-  totalItems: '1',
   metadata: {
     type: ThirdPartyMetadataType.THIRD_PARTY_V1,
     thirdParty: null,

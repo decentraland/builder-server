@@ -30,7 +30,6 @@ describe('ThirdParty router', () => {
         root: 'aRoot',
         managers: ['0x1'],
         maxItems: '3',
-        totalItems: '2',
         metadata,
       },
       {
@@ -38,7 +37,6 @@ describe('ThirdParty router', () => {
         root: 'anotherRoot',
         managers: ['0x2', '0x3'],
         maxItems: '2',
-        totalItems: '1',
         metadata,
       },
     ]

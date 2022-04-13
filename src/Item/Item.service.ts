@@ -172,7 +172,7 @@ export class ItemService {
     }
   ): Promise<(ItemAttributes & { total_count: number })[]> {
     const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
-    const thirdPartyIds = thirdParties.map((thirdParty: any) => thirdParty.id)
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
     return Item.findItemsByAddress(address, thirdPartyIds, params)
   }

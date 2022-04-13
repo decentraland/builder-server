@@ -166,7 +166,6 @@ export type ThirdPartyFragment = {
   root: string
   managers: string[]
   maxItems: string
-  totalItems: string
   metadata: ThirdPartyMetadata
 }
 

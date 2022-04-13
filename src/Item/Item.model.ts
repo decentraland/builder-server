@@ -70,25 +70,38 @@ export class Item extends Model<ItemAttributes> {
 
   // PAGINATED QUERIES
 
-  static findAllItemsByAddress(
-    thirdPartyIds: string[],
+  static findItemsByAddress(
     address: string,
-    limit: number = DEFAULT_LIMIT,
-    offset: number = 0
+    thirdPartyIds: string[],
+    parmas: {
+      collectionId?: string
+      limit?: number
+      offset?: number
+    }
   ) {
+    const { collectionId, limit, offset } = parmas
     return this.query<ItemWithTotalCount>(SQL`
       SELECT items.*, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)} items
-        JOIN ${raw(
+        LEFT JOIN ${raw(
           Collection.tableName
         )} collections ON collections.id = items.collection_id
-        WHERE 
-          collections.third_party_id = ANY(${thirdPartyIds})
-        OR
-          (items.eth_address = ${address} AND items.urn_suffix IS NULL)
+        WHERE
+          (
+            collections.third_party_id = ANY(${thirdPartyIds})
+          OR
+            (items.eth_address = ${address} AND items.urn_suffix IS NULL)
+          )
+        ${
+          collectionId
+            ? SQL`AND items.collection_id ${
+                collectionId === 'null' ? SQL`is NULL` : SQL`= ${collectionId}`
+              }`
+            : SQL``
+        }
         LIMIT ${limit}
         OFFSET ${offset}
-      `)
+    `)
   }
 
   static async findByCollectionIds(

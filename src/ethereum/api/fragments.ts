@@ -149,6 +149,7 @@ export type ItemFragment = {
 }
 
 export type CollectionFragment = {
+  /** Collection address */
   id: string
   creator: string
   owner: string

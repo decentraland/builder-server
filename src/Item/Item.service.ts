@@ -163,10 +163,13 @@ export class ItemService {
     }
   }
 
-  public async findAllItemsForAddress(
+  public async findItemsForAddress(
     address: string,
-    limit?: number,
-    offset?: number
+    params: {
+      collectionId?: string
+      limit?: number
+      offset?: number
+    }
   ): Promise<(ItemAttributes & { total_count: number })[]> {
     const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
     if (thirdParties.length <= 0) {
@@ -175,7 +178,7 @@ export class ItemService {
 
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
-    return Item.findAllItemsByAddress(thirdPartyIds, address, limit, offset)
+    return Item.findItemsByAddress(address, thirdPartyIds, params)
   }
 
   /**

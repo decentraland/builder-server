@@ -54,7 +54,6 @@ export const thirdPartyFragment = () => gql`
     root
     managers
     maxItems
-    totalItems
     metadata {
       type
       thirdParty {
@@ -167,7 +166,6 @@ export type ThirdPartyFragment = {
   root: string
   managers: string[]
   maxItems: string
-  totalItems: string
   metadata: ThirdPartyMetadata
 }
 

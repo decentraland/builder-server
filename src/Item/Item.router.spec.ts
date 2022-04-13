@@ -297,22 +297,6 @@ describe('Item router', () => {
   describe('when getting all the items of an address', () => {
     let allAddressItems: ItemAttributes[]
     beforeEach(() => {
-      allAddressItems = [dbItem, dbItemNotPublished, dbTPItem]
-      ;(Item.findItemsByAddress as jest.Mock).mockResolvedValueOnce(
-        allAddressItems.map((item) => ({
-          ...item,
-          total_count: allAddressItems.length,
-        }))
-      )
-      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
-        [thirdPartyFragmentMock]
-      )
-      ;(thirdPartyAPI.fetchItemsByThirdParties as jest.Mock).mockResolvedValueOnce(
-        [thirdPartyItemFragmentMock]
-      )
-      ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(
-        [itemFragment]
-      )
       ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
         dbTPCollectionMock,
       ]) // for third parties
@@ -321,66 +305,88 @@ describe('Item router', () => {
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
     })
 
-    describe('and the pagination params are not passed', () => {
+    describe('and the user is not a manger of any third party', () => {
       beforeEach(() => {
         url = `/${wallet.address}/items`
+        allAddressItems = [dbItem, dbItemNotPublished]
+        ;(Item.findItemsByAddress as jest.Mock).mockResolvedValueOnce(
+          allAddressItems.map((item) => ({
+            ...item,
+            total_count: allAddressItems.length,
+          }))
+        )
+        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+        ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(
+          [itemFragment]
+        )
       })
-      it('should return all the items of an address that are published with URN and the ones that are not without it', () => {
-        return server
-          .get(buildURL(url))
-          .set(createAuthHeaders('get', url))
-          .expect(200)
-          .then((response: any) => {
-            expect(response.body).toEqual({
-              data: [
+
+      describe('and the pagination params are not passed', () => {
+        it('should return only the items that are owned by the user', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  {
+                    ...resultingItem,
+                    beneficiary: itemFragment.beneficiary,
+                    collection_id: dbItem.collection_id,
+                    blockchain_item_id: dbItem.blockchain_item_id,
+                    urn: itemFragmentMock.urn,
+                  },
+                  resultItemNotPublished,
+                ],
+                ok: true,
+              })
+
+              expect(Item.findItemsByAddress).toHaveBeenCalledWith(
+                wallet.address,
+                [],
                 {
-                  ...resultingItem,
-                  beneficiary: itemFragment.beneficiary,
-                  collection_id: dbItem.collection_id,
-                  blockchain_item_id: dbItem.blockchain_item_id,
-                  urn: itemFragmentMock.urn,
-                },
-                resultItemNotPublished,
-                resultingTPItem,
-              ],
-              ok: true,
+                  page: undefined,
+                  limit: undefined,
+                  collecitonId: undefined,
+                }
+              )
             })
-            expect(Item.findItemsByAddress).toHaveBeenCalledWith(
-              wallet.address,
-              [thirdPartyFragmentMock.id],
-              {
-                page: undefined,
-                limit: undefined,
-                collecitonId: undefined,
-              }
-            )
-          })
+        })
       })
     })
 
-    describe('and pagination & collectionId params are passed', () => {
-      let baseUrl: string
-      let page: number
-      let limit: number
-      let collectionId: string
+    describe('and the user is manager of a third party', () => {
       beforeEach(() => {
-        ;(page = 1), (limit = 1), (collectionId = 'null')
-        baseUrl = `/${wallet.address}/items`
-        url = `${baseUrl}?limit=${limit}&page=${page}&collectionId=${collectionId}`
+        allAddressItems = [dbItem, dbItemNotPublished, dbTPItem]
+        ;(Item.findItemsByAddress as jest.Mock).mockResolvedValueOnce(
+          allAddressItems.map((item) => ({
+            ...item,
+            total_count: allAddressItems.length,
+          }))
+        )
+        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
+          [thirdPartyFragmentMock]
+        )
+        ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(
+          [itemFragment]
+        )
       })
-      it('should call the find method with the pagination params', () => {
-        return server
-          .get(buildURL(url))
-          .set(createAuthHeaders('get', baseUrl))
-          .expect(200)
-          .then((response: any) => {
-            expect(response.body).toEqual({
-              data: {
-                total: allAddressItems.length,
-                pages: allAddressItems.length,
-                page,
-                limit,
-                results: [
+
+      describe('and the pagination params are not passed', () => {
+        beforeEach(() => {
+          url = `/${wallet.address}/items`
+        })
+        it('should return all the items of an address that are published with URN and the ones that are not without it', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
                   {
                     ...resultingItem,
                     beneficiary: itemFragment.beneficiary,
@@ -391,19 +397,70 @@ describe('Item router', () => {
                   resultItemNotPublished,
                   resultingTPItem,
                 ],
-              },
-              ok: true,
+                ok: true,
+              })
+              expect(Item.findItemsByAddress).toHaveBeenCalledWith(
+                wallet.address,
+                [thirdPartyFragmentMock.id],
+                {
+                  page: undefined,
+                  limit: undefined,
+                  collecitonId: undefined,
+                }
+              )
             })
-            expect(Item.findItemsByAddress).toHaveBeenCalledWith(
-              wallet.address,
-              [thirdPartyFragmentMock.id],
-              {
-                limit,
-                offset: page - 1, // it's the offset
-                collectionId,
-              }
-            )
-          })
+        })
+      })
+
+      describe('and pagination & collectionId params are passed', () => {
+        let baseUrl: string
+        let page: number
+        let limit: number
+        let collectionId: string
+
+        beforeEach(() => {
+          ;(page = 1), (limit = 1), (collectionId = 'null')
+          baseUrl = `/${wallet.address}/items`
+          url = `${baseUrl}?limit=${limit}&page=${page}&collectionId=${collectionId}`
+        })
+
+        it('should call the find method with the pagination params', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  total: allAddressItems.length,
+                  pages: allAddressItems.length,
+                  page,
+                  limit,
+                  results: [
+                    {
+                      ...resultingItem,
+                      beneficiary: itemFragment.beneficiary,
+                      collection_id: dbItem.collection_id,
+                      blockchain_item_id: dbItem.blockchain_item_id,
+                      urn: itemFragmentMock.urn,
+                    },
+                    resultItemNotPublished,
+                    resultingTPItem,
+                  ],
+                },
+                ok: true,
+              })
+              expect(Item.findItemsByAddress).toHaveBeenCalledWith(
+                wallet.address,
+                [thirdPartyFragmentMock.id],
+                {
+                  limit,
+                  offset: page - 1, // it's the offset
+                  collectionId,
+                }
+              )
+            })
+        })
       })
     })
   })

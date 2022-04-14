@@ -586,18 +586,8 @@ export class ItemService {
             dbCollection.urn_suffix!,
             decodedURN.item_urn_suffix
           )
-
           // Check if the new URN is not already in use
-          const [wearable] = await peerAPI.fetchWearables<ThirdPartyWearable>([
-            itemURN,
-          ])
-          if (wearable) {
-            throw new URNAlreadyInUseError(
-              item.id,
-              item.urn!,
-              ItemAction.UPSERT
-            )
-          }
+          await this.checkIfThirdPartyItemURNExists(item.id, itemURN)
         }
       }
     }
@@ -614,13 +604,7 @@ export class ItemService {
         decodedItemURN.item_urn_suffix
       )
 
-      // Check if the chosen URN is already in use
-      const [wearable] = await peerAPI.fetchWearables<ThirdPartyWearable>([
-        itemURN,
-      ])
-      if (wearable) {
-        throw new URNAlreadyInUseError(item.id, itemURN, ItemAction.INSERT)
-      }
+      await this.checkIfThirdPartyItemURNExists(item.id, itemURN)
     }
 
     const attributes = toDBItem({
@@ -641,5 +625,26 @@ export class ItemService {
       )
     }
     return Bridge.toFullItem(upsertedItem, dbCollection)
+  }
+
+  private async checkIfThirdPartyItemURNExists(
+    id: string,
+    urn: string,
+    action = ItemAction.UPSERT
+  ): Promise<void> {
+    const decodedItemURN = decodeThirdPartyItemURN(urn)
+    if (
+      await Item.isURNRepeated(
+        id,
+        decodedItemURN.third_party_id,
+        decodedItemURN.item_urn_suffix
+      )
+    ) {
+      throw new URNAlreadyInUseError(id, urn, action)
+    }
+    const [wearable] = await peerAPI.fetchWearables<ThirdPartyWearable>([urn])
+    if (wearable) {
+      throw new URNAlreadyInUseError(id, urn, ItemAction.INSERT)
+    }
   }
 }

@@ -28,6 +28,12 @@ export class ThirdPartyItemAlreadyPublishedError extends Error {
   }
 }
 
+export class URNAlreadyInUseError extends Error {
+  constructor(public id: string, public urn: string, action: ItemAction) {
+    super(`The selected URN is already being used. It can be ${action}.`)
+  }
+}
+
 export class DCLItemAlreadyPublishedError extends Error {
   constructor(
     public id: string,

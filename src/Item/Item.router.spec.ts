@@ -999,7 +999,7 @@ describe('Item router', () => {
                 mockThirdPartyURNExists(itemToUpsert.urn!, true)
               })
 
-              it('should fail with 409 and a message saying that the item is already published', () => {
+              it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
                 return server
                   .put(buildURL(url))
                   .send({ item: itemToUpsert })
@@ -1012,7 +1012,7 @@ describe('Item router', () => {
                         urn: itemToUpsert.urn!,
                       },
                       error:
-                        "The third party item is already published. It can't be inserted or updated.",
+                        'The selected URN is already being used. It can be inserted or updated.',
                       ok: false,
                     })
                   })
@@ -1128,7 +1128,7 @@ describe('Item router', () => {
                       urn: itemToUpsert.urn!,
                     },
                     error:
-                      "The third party item is already published. It can't be inserted or updated.",
+                      "The selected URN is already being used. It can be inserted.",
                     ok: false,
                   })
                 })

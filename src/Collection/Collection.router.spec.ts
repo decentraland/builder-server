@@ -279,9 +279,10 @@ describe('Collection router', () => {
                   ok: false,
                   data: {
                     id: dbTPCollection.id,
+                    urn: collectionToUpsert.urn,
                   },
                   error:
-                    "The third party collection already has published items. It can't be updated or inserted.",
+                    'The selected URN is already being used. It can be updated.',
                 })
               })
           })
@@ -445,7 +446,7 @@ describe('Collection router', () => {
             )
           })
 
-          it('should respond with a 409 and a message saying that the collection has already been published', () => {
+          it('should respond with a 409 and a message saying that the there is a collection with that urn already published', () => {
             return server
               .put(buildURL(url))
               .set(createAuthHeaders('put', url))
@@ -456,9 +457,10 @@ describe('Collection router', () => {
                   ok: false,
                   data: {
                     id: dbTPCollection.id,
+                    urn: collectionToUpsert.urn,
                   },
                   error:
-                    "The third party collection already has published items. It can't be updated or inserted.",
+                    'The selected URN is already being used. It can be updated or inserted.',
                 })
               })
           })

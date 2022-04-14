@@ -44,6 +44,7 @@ import {
   ThirdPartyItemAlreadyPublishedError,
   UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
+  URNAlreadyInUseError,
 } from './Item.errors'
 
 export class ItemRouter extends Router {
@@ -394,6 +395,12 @@ export class ItemRouter extends Router {
       } else if (error instanceof CollectionForItemLockedError) {
         throw new HTTPError(error.message, { id }, STATUS_CODES.locked)
       } else if (error instanceof ThirdPartyItemAlreadyPublishedError) {
+        throw new HTTPError(
+          error.message,
+          { id, urn: error.urn },
+          STATUS_CODES.conflict
+        )
+      } else if (error instanceof URNAlreadyInUseError) {
         throw new HTTPError(
           error.message,
           { id, urn: error.urn },

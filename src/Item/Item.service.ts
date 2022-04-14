@@ -32,6 +32,7 @@ import {
   UnauthorizedToUpsertError,
   UnauthorizedToChangeToCollectionError,
   InvalidItemURNError,
+  URNAlreadyInUseError,
 } from './Item.errors'
 import { Item } from './Item.model'
 import {
@@ -591,7 +592,7 @@ export class ItemService {
             itemURN,
           ])
           if (wearable) {
-            throw new ThirdPartyItemAlreadyPublishedError(
+            throw new URNAlreadyInUseError(
               item.id,
               item.urn!,
               ItemAction.UPSERT
@@ -618,11 +619,7 @@ export class ItemService {
         itemURN,
       ])
       if (wearable) {
-        throw new ThirdPartyItemAlreadyPublishedError(
-          item.id,
-          itemURN,
-          ItemAction.UPSERT
-        )
+        throw new URNAlreadyInUseError(item.id, itemURN, ItemAction.INSERT)
       }
     }
 

@@ -464,7 +464,7 @@ export class CollectionRouter extends Router {
       )
     }
 
-    let upsertedCollection: CollectionAttributes
+    let upsertedCollection: CollectionAttributes & { item_count: number }
 
     try {
       if (hasTPCollectionURN(collectionJSON)) {

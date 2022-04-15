@@ -101,4 +101,35 @@ export class Collection extends Model<CollectionAttributes> {
 
     return counts.length > 0 && counts[0].count <= 0
   }
+
+  static async upsertWithItemCount(
+    collection: CollectionAttributes
+  ): Promise<CollectionWithItemCount> {
+    const { id, ...attributes } = collection
+    const columnNames = ['id', ...Object.keys(attributes)]
+    const columnValues = [id, ...Object.values(attributes)]
+
+    const insertColumns = columnNames.map((name) => `"${name}"`)
+    const insertValues = columnNames.map((_, index) => `$${index + 1}`)
+
+    const updateFields = columnNames
+      .slice(1)
+      .map((name, index) => `${name} = $${index + 2}`)
+
+    const result = await this.query<CollectionWithItemCount>(
+      SQL`
+    INSERT INTO ${raw(this.tableName)} as collections (${raw(
+        insertColumns.join(', ')
+      )})
+      VALUES (${raw(insertValues.join(', '))})
+      ON CONFLICT (id)
+      DO UPDATE SET ${raw(updateFields.join(', '))}
+      RETURNING *, (SELECT COUNT(*) FROM ${raw(
+        Item.tableName
+      )} WHERE collections.id = items.collection_id) as item_count`,
+      columnValues
+    )
+
+    return result[0]
+  }
 }

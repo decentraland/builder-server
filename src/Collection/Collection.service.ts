@@ -312,7 +312,7 @@ export class CollectionService {
     eth_address: string,
     collectionJSON: FullCollection,
     data: string
-  ): Promise<CollectionAttributes> {
+  ): Promise<CollectionAttributes & { item_count: number }> {
     if (!data) {
       throw new WrongCollectionError(
         'Cannot upsert a collection without a valid data',
@@ -362,7 +362,7 @@ export class CollectionService {
       data
     )
 
-    return new Collection(attributes).upsert()
+    return Collection.upsertWithItemCount(attributes)
   }
 
   public async upsertTPCollection(
@@ -431,9 +431,9 @@ export class CollectionService {
     }
 
     const attributes = toDBCollection(collectionJSON)
-
     // Should we do something with the salt and the contract address? There's no need to have them
-    return new Collection(attributes).upsert()
+    // return new Collection(attributes).upsert()
+    return Collection.upsertWithItemCount(attributes)
   }
 
   public async getApprovalData(id: string): Promise<ItemApprovalData> {

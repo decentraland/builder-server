@@ -68,7 +68,7 @@ import { CurationStatus } from '../Curation'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
-import { toDBCollection, toFullCollection } from './utils'
+import { toFullCollection } from './utils'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,

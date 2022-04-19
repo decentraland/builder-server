@@ -1,4 +1,5 @@
 import { Model, raw, SQL } from 'decentraland-server'
+import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
 import { CollectionAttributes } from './Collection.types'
 
@@ -106,24 +107,16 @@ export class Collection extends Model<CollectionAttributes> {
     collection: CollectionAttributes
   ): Promise<CollectionWithItemCount> {
     const { id, ...attributes } = collection
-    const columnNames = ['id', ...Object.keys(attributes)]
     const columnValues = [id, ...Object.values(attributes)]
-
-    const insertColumns = columnNames.map((name) => `"${name}"`)
-    const insertValues = columnNames.map((_, index) => `$${index + 1}`)
-
-    const updateFields = columnNames
-      .slice(1)
-      .map((name, index) => `${name} = $${index + 2}`)
 
     const result = await this.query<CollectionWithItemCount>(
       SQL`
-    INSERT INTO ${raw(this.tableName)} as collections (${raw(
-        insertColumns.join(', ')
-      )})
-      VALUES (${raw(insertValues.join(', '))})
+    INSERT INTO ${raw(
+      this.tableName
+    )} as collections (${database.toColumnFields(collection)})
+      VALUES (${database.toValuePlaceholders(collection)})
       ON CONFLICT (id)
-      DO UPDATE SET ${raw(updateFields.join(', '))}
+      DO UPDATE SET ${database.toAssignmentFields(attributes, 1)}
       RETURNING *, (SELECT COUNT(*) FROM ${raw(
         Item.tableName
       )} WHERE collections.id = items.collection_id) as item_count`,

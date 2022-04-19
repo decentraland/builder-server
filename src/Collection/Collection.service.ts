@@ -431,8 +431,6 @@ export class CollectionService {
     }
 
     const attributes = toDBCollection(collectionJSON)
-    // Should we do something with the salt and the contract address? There's no need to have them
-    // return new Collection(attributes).upsert()
     return Collection.upsertWithItemCount(attributes)
   }
 

@@ -73,7 +73,7 @@ export class Item extends Model<ItemAttributes> {
     thirdPartyId: string,
     urnSuffix: string
   ): Promise<boolean> {
-    const counts = await this.query<{ count: number }>(SQL`
+    const counts = await this.query<{ count: string }>(SQL`
     SELECT COUNT(*) as count
       FROM ${raw(this.tableName)} items
       JOIN ${raw(
@@ -83,7 +83,7 @@ export class Item extends Model<ItemAttributes> {
         AND collections.third_party_id = ${thirdPartyId}
         AND items.urn_suffix = ${urnSuffix}`)
 
-    return counts[0].count > 0
+    return Number(counts[0].count) > 0
   }
 
   // PAGINATED QUERIES

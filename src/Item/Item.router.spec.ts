@@ -1012,7 +1012,7 @@ describe('Item router', () => {
                           urn: itemToUpsert.urn!,
                         },
                         error:
-                          'The selected URN is already being used. It can be inserted.',
+                          "The URN provided already belong to another item. The item can't be inserted or updated.",
                         ok: false,
                       })
                     })
@@ -1036,7 +1036,7 @@ describe('Item router', () => {
                           urn: itemToUpsert.urn!,
                         },
                         error:
-                          'The selected URN is already being used. It can be inserted or updated.',
+                          "The URN provided already belong to another item. The item can't be inserted or updated.",
                         ok: false,
                       })
                     })
@@ -1153,7 +1153,7 @@ describe('Item router', () => {
                       urn: itemToUpsert.urn!,
                     },
                     error:
-                      'The selected URN is already being used. It can be inserted.',
+                      "The URN provided already belong to another item. The item can't be inserted.",
                     ok: false,
                   })
                 })

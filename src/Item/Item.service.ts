@@ -604,7 +604,11 @@ export class ItemService {
         decodedItemURN.item_urn_suffix
       )
 
-      await this.checkIfThirdPartyItemURNExists(item.id, itemURN)
+      await this.checkIfThirdPartyItemURNExists(
+        item.id,
+        itemURN,
+        ItemAction.INSERT
+      )
     }
 
     const attributes = toDBItem({
@@ -644,7 +648,7 @@ export class ItemService {
     }
     const [wearable] = await peerAPI.fetchWearables<ThirdPartyWearable>([urn])
     if (wearable) {
-      throw new URNAlreadyInUseError(id, urn, ItemAction.INSERT)
+      throw new URNAlreadyInUseError(id, urn, action)
     }
   }
 }

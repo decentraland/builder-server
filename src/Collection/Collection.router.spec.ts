@@ -282,7 +282,7 @@ describe('Collection router', () => {
                     urn: collectionToUpsert.urn,
                   },
                   error:
-                    'The selected URN is already being used. It can be updated.',
+                    "The URN provided already belongs to a collection. The collection can't be updated.",
                 })
               })
           })
@@ -460,7 +460,7 @@ describe('Collection router', () => {
                     urn: collectionToUpsert.urn,
                   },
                   error:
-                    'The selected URN is already being used. It can be updated or inserted.',
+                    "The URN provided already belongs to a collection. The collection can't be updated or inserted.",
                 })
               })
           })

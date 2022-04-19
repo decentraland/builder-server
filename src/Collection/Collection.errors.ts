@@ -31,7 +31,9 @@ export class AlreadyPublishedCollectionError extends Error {
 
 export class URNAlreadyInUseError extends Error {
   constructor(public id: string, public urn: string, action: CollectionAction) {
-    super(`The selected URN is already being used. It can be ${action}.`)
+    super(
+      `The URN provided already belongs to a collection. The collection can't be ${action}.`
+    )
   }
 }
 

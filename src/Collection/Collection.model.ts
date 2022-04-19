@@ -110,16 +110,15 @@ export class Collection extends Model<CollectionAttributes> {
     const columnValues = [id, ...Object.values(attributes)]
 
     const result = await this.query<CollectionWithItemCount>(
-      SQL`
-    INSERT INTO ${raw(
-      this.tableName
-    )} as collections (${database.toColumnFields(collection)})
+      `INSERT INTO ${this.tableName} as collections (${database.toColumnFields(
+        collection
+      )})
       VALUES (${database.toValuePlaceholders(collection)})
       ON CONFLICT (id)
       DO UPDATE SET ${database.toAssignmentFields(attributes, 1)}
-      RETURNING *, (SELECT COUNT(*) FROM ${raw(
+      RETURNING *, (SELECT COUNT(*) FROM ${
         Item.tableName
-      )} WHERE collections.id = items.collection_id) as item_count`,
+      } WHERE collections.id = items.collection_id) as item_count`,
       columnValues
     )
 

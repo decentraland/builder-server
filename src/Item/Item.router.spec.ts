@@ -629,6 +629,7 @@ describe('Item router', () => {
 
       describe('and the user upserting is not authorized to do so', () => {
         beforeEach(() => {
+          url = `/items/${dbItem.id}`
           itemToUpsert = {
             ...itemToUpsert,
             collection_id: tpCollectionMock.id,
@@ -658,6 +659,7 @@ describe('Item router', () => {
 
       describe("and the item's urn is not valid", () => {
         beforeEach(() => {
+          url = `/items/${dbItem.id}`
           itemToUpsert = { ...itemToUpsert, urn: 'some-invalid-urn' }
         })
 
@@ -684,6 +686,7 @@ describe('Item router', () => {
 
       describe("and the item contains a representation with file names that aren't included in the contents", () => {
         beforeEach(() => {
+          url = `/items/${dbItem.id}`
           itemToUpsert = {
             ...itemToUpsert,
             data: {
@@ -727,6 +730,7 @@ describe('Item router', () => {
           let dbItemURN: string
 
           beforeEach(() => {
+            url = `/items/${dbItem.id}`
             itemToUpsert = { ...itemToUpsert, collection_id: null }
             dbItem = { ...dbItem, collection_id: tpCollectionMock.id }
             dbItemURN = buildTPItemURN(
@@ -815,6 +819,7 @@ describe('Item router', () => {
 
         describe('and the update moves the item into the collection', () => {
           beforeEach(() => {
+            url = `/items/${dbItem.id}`
             mockItem.findOne.mockResolvedValueOnce({
               ...dbItem,
               collection_id: null,
@@ -955,105 +960,181 @@ describe('Item router', () => {
             ])
           })
 
-          describe('and the URN changes', () => {
+          describe('and it is updating the item by id', () => {
             beforeEach(() => {
-              itemToUpsert = {
-                ...itemToUpsert,
-                collection_id: dbItem.collection_id,
-                urn: buildTPItemURN(
-                  tpCollectionMock.third_party_id,
-                  tpCollectionMock.urn_suffix,
-                  'some-other-item-urn-suffix'
-                ),
-              }
+              url = `/items/${dbItem.id}`
             })
-
-            describe('and the item is already published', () => {
+            describe('and the URN changes', () => {
               beforeEach(() => {
-                mockThirdPartyItemCurationExists(dbItem.id, true)
+                itemToUpsert = {
+                  ...itemToUpsert,
+                  collection_id: dbItem.collection_id,
+                  urn: buildTPItemURN(
+                    tpCollectionMock.third_party_id,
+                    tpCollectionMock.urn_suffix,
+                    'some-other-item-urn-suffix'
+                  ),
+                }
               })
 
-              it('should fail with 409 and a message saying that the item is already published', () => {
+              describe('and the item is already published', () => {
+                beforeEach(() => {
+                  mockThirdPartyItemCurationExists(dbItem.id, true)
+                })
+
+                it('should fail with 409 and a message saying that the item is already published', () => {
+                  return server
+                    .put(buildURL(url))
+                    .send({ item: itemToUpsert })
+                    .set(createAuthHeaders('put', url))
+                    .expect(409)
+                    .then((response: any) => {
+                      expect(response.body).toEqual({
+                        data: {
+                          id: itemToUpsert.id,
+                          urn: dbItemURN,
+                        },
+                        error:
+                          "The third party item is already published. It can't be inserted or updated.",
+                        ok: false,
+                      })
+                    })
+                })
+              })
+
+              describe('and the item is not published but the new URN is already in use', () => {
+                describe('if the URN is in the catalyst', () => {
+                  beforeEach(() => {
+                    mockThirdPartyItemCurationExists(dbItem.id, false)
+                    mockThirdPartyURNExists(itemToUpsert.urn!, true)
+                  })
+                  it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
+                    return server
+                      .put(buildURL(url))
+                      .send({ item: itemToUpsert })
+                      .set(createAuthHeaders('put', url))
+                      .expect(409)
+                      .then((response: any) => {
+                        expect(response.body).toEqual({
+                          data: {
+                            id: itemToUpsert.id,
+                            urn: itemToUpsert.urn!,
+                          },
+                          error:
+                            "The URN provided already belong to another item. The item can't be inserted or updated.",
+                          ok: false,
+                        })
+                      })
+                  })
+                })
+
+                describe('if there is a db item with the same third_party_id & urn_suffix', () => {
+                  beforeEach(() => {
+                    mockItem.isURNRepeated.mockResolvedValueOnce(true)
+                  })
+                  it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
+                    return server
+                      .put(buildURL(url))
+                      .send({ item: itemToUpsert })
+                      .set(createAuthHeaders('put', url))
+                      .expect(409)
+                      .then((response: any) => {
+                        expect(response.body).toEqual({
+                          data: {
+                            id: itemToUpsert.id,
+                            urn: itemToUpsert.urn!,
+                          },
+                          error:
+                            "The URN provided already belong to another item. The item can't be inserted or updated.",
+                          ok: false,
+                        })
+                      })
+                  })
+                })
+              })
+            })
+
+            describe("and the URN doesn't change", () => {
+              let resultingItem: ResultItem
+
+              beforeEach(() => {
+                itemToUpsert = {
+                  ...itemToUpsert,
+                  collection_id: dbItem.collection_id,
+                  urn: dbItemURN,
+                }
+                mockItem.upsert.mockImplementation((createdItem) =>
+                  Promise.resolve({
+                    ...createdItem,
+                    blockchain_item_id: null,
+                  })
+                )
+                const updatedItem = {
+                  ...dbItem,
+                  urn_suffix: itemUrnSuffix,
+                  collection_id: tpCollectionMock.id,
+                  eth_address: wallet.address,
+                  local_content_hash:
+                    'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                }
+                resultingItem = {
+                  ...toResultItem(
+                    updatedItem,
+                    undefined,
+                    undefined,
+                    tpCollectionMock
+                  ),
+                  updated_at: expect.stringMatching(isoDateStringMatcher),
+                }
+              })
+
+              it('should respond with a 200, update the item and return the updated item', () => {
                 return server
                   .put(buildURL(url))
                   .send({ item: itemToUpsert })
                   .set(createAuthHeaders('put', url))
-                  .expect(409)
+                  .expect(200)
                   .then((response: any) => {
                     expect(response.body).toEqual({
-                      data: {
-                        id: itemToUpsert.id,
-                        urn: dbItemURN,
-                      },
-                      error:
-                        "The third party item is already published. It can't be inserted or updated.",
-                      ok: false,
+                      data: resultingItem,
+                      ok: true,
                     })
                   })
               })
-            })
 
-            describe('and the item is not published but the new URN is already in use', () => {
-              describe('if the URN is in the catalyst', () => {
-                beforeEach(() => {
-                  mockThirdPartyItemCurationExists(dbItem.id, false)
-                  mockThirdPartyURNExists(itemToUpsert.urn!, true)
-                })
-                it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
-                  return server
-                    .put(buildURL(url))
-                    .send({ item: itemToUpsert })
-                    .set(createAuthHeaders('put', url))
-                    .expect(409)
-                    .then((response: any) => {
-                      expect(response.body).toEqual({
-                        data: {
-                          id: itemToUpsert.id,
-                          urn: itemToUpsert.urn!,
-                        },
-                        error:
-                          "The URN provided already belong to another item. The item can't be inserted or updated.",
-                        ok: false,
-                      })
-                    })
-                })
-              })
-
-              describe('if there is a db item with the same third_party_id & urn_suffix', () => {
-                beforeEach(() => {
-                  mockItem.isURNRepeated.mockResolvedValueOnce(true)
-                })
-                it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
-                  return server
-                    .put(buildURL(url))
-                    .send({ item: itemToUpsert })
-                    .set(createAuthHeaders('put', url))
-                    .expect(409)
-                    .then((response: any) => {
-                      expect(response.body).toEqual({
-                        data: {
-                          id: itemToUpsert.id,
-                          urn: itemToUpsert.urn!,
-                        },
-                        error:
-                          "The URN provided already belong to another item. The item can't be inserted or updated.",
-                        ok: false,
-                      })
-                    })
-                })
+              it('should update the item curation with the new content_hash', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(200)
+                  .then(() => {
+                    expect(ItemCuration.update).toHaveBeenCalledWith(
+                      {
+                        content_hash:
+                          'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                      },
+                      { item_id: dbTPItem.id, status: CurationStatus.PENDING }
+                    )
+                  })
               })
             })
           })
 
-          describe("and the URN doesn't change", () => {
-            let resultingItem: ResultItem
-
+          describe('and it is updating the item by URN', () => {
+            let urn: string
             beforeEach(() => {
-              itemToUpsert = {
-                ...itemToUpsert,
-                collection_id: dbItem.collection_id,
-                urn: dbItemURN,
-              }
+              urn = buildTPItemURN(
+                tpCollectionMock.third_party_id,
+                tpCollectionMock.urn_suffix,
+                itemUrnSuffix
+              )
+              url = `/items/${urn}`
+              mockItem.findByURNSuffix.mockResolvedValueOnce({
+                ...dbItem,
+                collection_id: tpCollectionMock.id,
+                urn_suffix: itemUrnSuffix,
+              })
               mockItem.upsert.mockImplementation((createdItem) =>
                 Promise.resolve({
                   ...createdItem,
@@ -1079,10 +1160,38 @@ describe('Item router', () => {
               }
             })
 
-            it('should respond with a 200, update the item and return the updated item', () => {
+            it('it should respond with a 400 when the urn in the url does not match the one in the body', () => {
               return server
                 .put(buildURL(url))
                 .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(400)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    error: 'The body and URL item id or urn do not match',
+                    data: {
+                      urlId: urn,
+                    },
+                    ok: false,
+                  })
+                })
+            })
+
+            it('should not check if the URN is repeated when upserting by URN', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: { ...itemToUpsert, urn } })
+                .set(createAuthHeaders('put', url))
+                .expect(200)
+                .then(() => {
+                  expect(Item.isURNRepeated).not.toHaveBeenCalled()
+                })
+            })
+
+            it('should respond with a 200, update the item and return the updated item', () => {
+              return server
+                .put(buildURL(url))
+                .send({ item: { ...itemToUpsert, urn } })
                 .set(createAuthHeaders('put', url))
                 .expect(200)
                 .then((response: any) => {
@@ -1090,23 +1199,6 @@ describe('Item router', () => {
                     data: resultingItem,
                     ok: true,
                   })
-                })
-            })
-
-            it('should update the item curation with the new content_hash', () => {
-              return server
-                .put(buildURL(url))
-                .send({ item: itemToUpsert })
-                .set(createAuthHeaders('put', url))
-                .expect(200)
-                .then(() => {
-                  expect(ItemCuration.update).toHaveBeenCalledWith(
-                    {
-                      content_hash:
-                        'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
-                    },
-                    { item_id: dbTPItem.id, status: CurationStatus.PENDING }
-                  )
                 })
             })
           })
@@ -1305,7 +1397,7 @@ describe('Item router', () => {
 
           expect(response.body).toEqual({
             data: { bodyId: mockUUID, urlId: dbItem.id },
-            error: 'The body and URL item ids do not match',
+            error: 'The body and URL item id or urn do not match',
             ok: false,
           })
         })

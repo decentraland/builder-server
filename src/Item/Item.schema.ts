@@ -42,8 +42,9 @@ export const itemSchema = Object.freeze({
     content_hash: { type: ['string', 'null'] },
   },
   additionalProperties: false,
+  anyOf: [{ required: ['id'] }, { required: ['urn'] }],
   required: [
-    'id',
+    // 'id',
     'name',
     'description',
     'eth_address',

@@ -86,6 +86,24 @@ export class Item extends Model<ItemAttributes> {
     return Number(counts[0].count) > 0
   }
 
+  static async findByURNSuffix(
+    thirdPartyId: string,
+    urnSuffix: string
+  ): Promise<ItemAttributes> {
+    const results = await this.query<ItemAttributes>(SQL`
+      SELECT items.*
+        FROM ${raw(this.tableName)} items
+        JOIN ${raw(
+          Collection.tableName
+        )} collections ON items.collection_id = collections.id
+        WHERE 
+          collections.third_party_id = ${thirdPartyId}
+        AND 
+          items.urn_suffix = ${urnSuffix}
+    `)
+    return results[0]
+  }
+
   // PAGINATED QUERIES
 
   static findItemsByAddress(

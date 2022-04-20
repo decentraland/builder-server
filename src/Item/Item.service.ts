@@ -33,6 +33,7 @@ import {
   UnauthorizedToChangeToCollectionError,
   InvalidItemURNError,
   URNAlreadyInUseError,
+  ThirdPartyItemInsertByURNError,
 } from './Item.errors'
 import { Item } from './Item.model'
 import {
@@ -64,6 +65,11 @@ export class ItemService {
           decodedItemURN.item_urn_suffix
         )
       : await Item.findOne<ItemAttributes>(item.id)
+
+    // Inserting by URN is not allowed
+    if (!item.id && item.urn && !dbItem) {
+      throw new ThirdPartyItemInsertByURNError(item.urn)
+    }
 
     if (dbItem) {
       // Moving items between collections is forbidden

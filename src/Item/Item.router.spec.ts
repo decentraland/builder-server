@@ -56,6 +56,7 @@ import {
   ItemAttributes,
   ThirdPartyItemAttributes,
 } from './Item.types'
+import { omit } from 'decentraland-commons/dist/utils'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
@@ -1130,11 +1131,6 @@ describe('Item router', () => {
                 itemUrnSuffix
               )
               url = `/items/${urn}`
-              mockItem.findByURNSuffix.mockResolvedValueOnce({
-                ...dbItem,
-                collection_id: tpCollectionMock.id,
-                urn_suffix: itemUrnSuffix,
-              })
               mockItem.upsert.mockImplementation((createdItem) =>
                 Promise.resolve({
                   ...createdItem,
@@ -1214,113 +1210,143 @@ describe('Item router', () => {
           mockIsThirdPartyManager(wallet.address, true)
         })
 
-        describe('and the item to insert has an URN', () => {
+        describe('and the item is being inserted by URN as param in the URI', () => {
+          let urn: string
           beforeEach(() => {
-            itemToUpsert = {
-              ...itemToUpsert,
-              collection_id: tpCollectionMock.id,
-              urn: buildTPItemURN(
-                tpCollectionMock.third_party_id,
-                tpCollectionMock.urn_suffix,
-                itemUrnSuffix
-              ),
-            }
+            mockItem.findByURNSuffix.mockResolvedValueOnce(undefined)
+            url = `/items/${urn}`
+            urn = buildTPItemURN(
+              tpCollectionMock.third_party_id,
+              tpCollectionMock.urn_suffix,
+              itemUrnSuffix
+            )
           })
 
-          describe('and the URN is already in use', () => {
+          it('should throw an error if the item does not exist', () => {
+            return server
+              .put(buildURL(`/items/${urn}`))
+              .send({ item: { ...omit<Item>(itemToUpsert, ['id']), urn } })
+              .set(createAuthHeaders('put', `/items/${urn}`))
+              .expect(404)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  error: 'The third party item can not be created by URN.',
+                  data: {
+                    urn,
+                  },
+                  ok: false,
+                })
+              })
+          })
+        })
+
+        describe('and the item is being inserted by URN as param in the URI', () => {
+          describe('and the item to insert has an URN', () => {
             beforeEach(() => {
-              mockThirdPartyURNExists(itemToUpsert.urn!, true)
+              itemToUpsert = {
+                ...itemToUpsert,
+                collection_id: tpCollectionMock.id,
+                urn: buildTPItemURN(
+                  tpCollectionMock.third_party_id,
+                  tpCollectionMock.urn_suffix,
+                  itemUrnSuffix
+                ),
+              }
+            })
+            describe('and the URN is already in use', () => {
+              beforeEach(() => {
+                mockThirdPartyURNExists(itemToUpsert.urn!, true)
+              })
+
+              it('should fail with 409 and a message saying that the item is already published', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(409)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: {
+                        id: itemToUpsert.id,
+                        urn: itemToUpsert.urn!,
+                      },
+                      error:
+                        "The URN provided already belong to another item. The item can't be inserted.",
+                      ok: false,
+                    })
+                  })
+              })
+            })
+            describe('and the URN is not in use', () => {
+              let resultingItem: ResultItem
+
+              beforeEach(() => {
+                mockItem.upsert.mockImplementation((createdItem) =>
+                  Promise.resolve({
+                    ...createdItem,
+                    blockchain_item_id: null,
+                  })
+                )
+                const updatedItem = {
+                  ...dbItem,
+                  urn_suffix: itemUrnSuffix,
+                  collection_id: tpCollectionMock.id,
+                  eth_address: wallet.address,
+                  local_content_hash:
+                    'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                }
+                mockThirdPartyURNExists(itemToUpsert.urn!, false)
+                resultingItem = {
+                  ...toResultItem(
+                    updatedItem,
+                    undefined,
+                    undefined,
+                    tpCollectionMock
+                  ),
+                  updated_at: expect.stringMatching(isoDateStringMatcher),
+                  created_at: expect.stringMatching(isoDateStringMatcher),
+                }
+              })
+
+              it('should respond with a 200, update the item and return the updated item', () => {
+                return server
+                  .put(buildURL(url))
+                  .send({ item: itemToUpsert })
+                  .set(createAuthHeaders('put', url))
+                  .expect(200)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      data: resultingItem,
+                      ok: true,
+                    })
+                  })
+              })
+            })
+          })
+
+          describe("and the item doesn't have an URN", () => {
+            beforeEach(() => {
+              itemToUpsert = {
+                ...itemToUpsert,
+                collection_id: tpCollectionMock.id,
+                urn: null,
+              }
             })
 
-            it('should fail with 409 and a message saying that the item is already published', () => {
+            it('should respond with a 400, signaling that the URN is not valid', () => {
               return server
                 .put(buildURL(url))
                 .send({ item: itemToUpsert })
                 .set(createAuthHeaders('put', url))
-                .expect(409)
+                .expect(400)
                 .then((response: any) => {
                   expect(response.body).toEqual({
-                    data: {
-                      id: itemToUpsert.id,
-                      urn: itemToUpsert.urn!,
-                    },
-                    error:
-                      "The URN provided already belong to another item. The item can't be inserted.",
+                    error: 'The item URN is invalid.',
+                    data: {},
                     ok: false,
                   })
                 })
             })
-          })
-
-          describe('and the URN is not in use', () => {
-            let resultingItem: ResultItem
-
-            beforeEach(() => {
-              mockItem.upsert.mockImplementation((createdItem) =>
-                Promise.resolve({
-                  ...createdItem,
-                  blockchain_item_id: null,
-                })
-              )
-              const updatedItem = {
-                ...dbItem,
-                urn_suffix: itemUrnSuffix,
-                collection_id: tpCollectionMock.id,
-                eth_address: wallet.address,
-                local_content_hash:
-                  'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
-              }
-              mockThirdPartyURNExists(itemToUpsert.urn!, false)
-              resultingItem = {
-                ...toResultItem(
-                  updatedItem,
-                  undefined,
-                  undefined,
-                  tpCollectionMock
-                ),
-                updated_at: expect.stringMatching(isoDateStringMatcher),
-                created_at: expect.stringMatching(isoDateStringMatcher),
-              }
-            })
-
-            it('should respond with a 200, update the item and return the updated item', () => {
-              return server
-                .put(buildURL(url))
-                .send({ item: itemToUpsert })
-                .set(createAuthHeaders('put', url))
-                .expect(200)
-                .then((response: any) => {
-                  expect(response.body).toEqual({
-                    data: resultingItem,
-                    ok: true,
-                  })
-                })
-            })
-          })
-        })
-
-        describe("and the item doesn't have an URN", () => {
-          beforeEach(() => {
-            itemToUpsert = {
-              ...itemToUpsert,
-              collection_id: tpCollectionMock.id,
-              urn: null,
-            }
-          })
-
-          it('should respond with a 400, signaling that the URN is not valid', () => {
-            return server
-              .put(buildURL(url))
-              .send({ item: itemToUpsert })
-              .set(createAuthHeaders('put', url))
-              .expect(400)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  error: 'The item URN is invalid.',
-                  data: {},
-                  ok: false,
-                })
-              })
           })
         })
       })

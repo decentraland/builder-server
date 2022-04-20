@@ -43,6 +43,7 @@ import {
   ItemCantBeMovedFromCollectionError,
   NonExistentItemError,
   ThirdPartyItemAlreadyPublishedError,
+  ThirdPartyItemInsertByURNError,
   UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
   URNAlreadyInUseError,
@@ -365,7 +366,13 @@ export class ItemRouter extends Router {
       )
       return upsertedItem
     } catch (error) {
-      if (error instanceof UnauthorizedToUpsertError) {
+      if (error instanceof ThirdPartyItemInsertByURNError) {
+        throw new HTTPError(
+          error.message,
+          { urn: error.urn },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof UnauthorizedToUpsertError) {
         throw new HTTPError(
           error.message,
           { id: error.id, eth_address: error.eth_address },

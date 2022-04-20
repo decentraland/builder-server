@@ -28,6 +28,12 @@ export class ThirdPartyItemAlreadyPublishedError extends Error {
   }
 }
 
+export class ThirdPartyItemInsertByURNError extends Error {
+  constructor(public urn: string) {
+    super('The third party item can not be created by URN.')
+  }
+}
+
 export class URNAlreadyInUseError extends Error {
   constructor(public id: string, public urn: string, action: ItemAction) {
     super(

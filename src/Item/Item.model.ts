@@ -89,7 +89,7 @@ export class Item extends Model<ItemAttributes> {
   static async findByURNSuffix(
     thirdPartyId: string,
     urnSuffix: string
-  ): Promise<ItemAttributes> {
+  ): Promise<ItemAttributes | undefined> {
     const results = await this.query<ItemAttributes>(SQL`
       SELECT items.*
         FROM ${raw(this.tableName)} items

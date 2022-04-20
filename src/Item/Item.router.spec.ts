@@ -994,28 +994,53 @@ describe('Item router', () => {
             })
 
             describe('and the item is not published but the new URN is already in use', () => {
-              beforeEach(() => {
-                mockThirdPartyItemCurationExists(dbItem.id, false)
-                mockThirdPartyURNExists(itemToUpsert.urn!, true)
+              describe('if the URN is in the catalyst', () => {
+                beforeEach(() => {
+                  mockThirdPartyItemCurationExists(dbItem.id, false)
+                  mockThirdPartyURNExists(itemToUpsert.urn!, true)
+                })
+                it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
+                  return server
+                    .put(buildURL(url))
+                    .send({ item: itemToUpsert })
+                    .set(createAuthHeaders('put', url))
+                    .expect(409)
+                    .then((response: any) => {
+                      expect(response.body).toEqual({
+                        data: {
+                          id: itemToUpsert.id,
+                          urn: itemToUpsert.urn!,
+                        },
+                        error:
+                          "The URN provided already belong to another item. The item can't be inserted or updated.",
+                        ok: false,
+                      })
+                    })
+                })
               })
 
-              it('should fail with 409 and a message saying that the item is already published', () => {
-                return server
-                  .put(buildURL(url))
-                  .send({ item: itemToUpsert })
-                  .set(createAuthHeaders('put', url))
-                  .expect(409)
-                  .then((response: any) => {
-                    expect(response.body).toEqual({
-                      data: {
-                        id: itemToUpsert.id,
-                        urn: itemToUpsert.urn!,
-                      },
-                      error:
-                        "The third party item is already published. It can't be inserted or updated.",
-                      ok: false,
+              describe('if there is a db item with the same third_party_id & urn_suffix', () => {
+                beforeEach(() => {
+                  mockItem.isURNRepeated.mockResolvedValueOnce(true)
+                })
+                it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
+                  return server
+                    .put(buildURL(url))
+                    .send({ item: itemToUpsert })
+                    .set(createAuthHeaders('put', url))
+                    .expect(409)
+                    .then((response: any) => {
+                      expect(response.body).toEqual({
+                        data: {
+                          id: itemToUpsert.id,
+                          urn: itemToUpsert.urn!,
+                        },
+                        error:
+                          "The URN provided already belong to another item. The item can't be inserted or updated.",
+                        ok: false,
+                      })
                     })
-                  })
+                })
               })
             })
           })
@@ -1128,7 +1153,7 @@ describe('Item router', () => {
                       urn: itemToUpsert.urn!,
                     },
                     error:
-                      "The third party item is already published. It can't be inserted or updated.",
+                      "The URN provided already belong to another item. The item can't be inserted.",
                     ok: false,
                   })
                 })

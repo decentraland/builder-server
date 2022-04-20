@@ -48,6 +48,7 @@ import {
   NonExistentCollectionError,
   UnauthorizedCollectionEditError,
   UnpublishedCollectionError,
+  URNAlreadyInUseError,
   WrongCollectionError,
 } from './Collection.errors'
 
@@ -487,6 +488,12 @@ export class CollectionRouter extends Router {
           error.message,
           { id: error.id },
           STATUS_CODES.locked
+        )
+      } else if (error instanceof URNAlreadyInUseError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id, urn: error.urn },
+          STATUS_CODES.conflict
         )
       } else if (error instanceof AlreadyPublishedCollectionError) {
         throw new HTTPError(

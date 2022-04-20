@@ -68,6 +68,24 @@ export class Item extends Model<ItemAttributes> {
         WHERE ${where}`)
   }
 
+  static async isURNRepeated(
+    id: string,
+    thirdPartyId: string,
+    urnSuffix: string
+  ): Promise<boolean> {
+    const counts = await this.query<{ count: string }>(SQL`
+    SELECT COUNT(*) as count
+      FROM ${raw(this.tableName)} items
+      JOIN ${raw(
+        Collection.tableName
+      )} collections ON items.collection_id = collections.id
+      WHERE items.id != ${id}
+        AND collections.third_party_id = ${thirdPartyId}
+        AND items.urn_suffix = ${urnSuffix}`)
+
+    return Number(counts[0].count) > 0
+  }
+
   // PAGINATED QUERIES
 
   static findItemsByAddress(

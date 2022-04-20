@@ -28,6 +28,14 @@ export class ThirdPartyItemAlreadyPublishedError extends Error {
   }
 }
 
+export class URNAlreadyInUseError extends Error {
+  constructor(public id: string, public urn: string, action: ItemAction) {
+    super(
+      `The URN provided already belong to another item. The item can't be ${action}.`
+    )
+  }
+}
+
 export class DCLItemAlreadyPublishedError extends Error {
   constructor(
     public id: string,

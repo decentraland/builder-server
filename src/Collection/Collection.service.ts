@@ -52,6 +52,7 @@ import {
   WrongCollectionError,
   UnpublishedCollectionError,
   InsufficientSlotsError,
+  URNAlreadyInUseError,
 } from './Collection.errors'
 
 export class CollectionService {
@@ -409,8 +410,10 @@ export class CollectionService {
         // Check if the new URN for the collection already exists
         await this.checkIfThirdPartyCollectionURNExists(
           id,
+          collectionJSON.urn,
           collection.third_party_id!,
-          urn_suffix
+          urn_suffix,
+          CollectionAction.UPDATE
         )
       }
       if (this.isLockActive(collection.lock)) {
@@ -425,8 +428,10 @@ export class CollectionService {
       // Check if the URN for the new collection already exists
       await this.checkIfThirdPartyCollectionURNExists(
         id,
+        collectionJSON.urn,
         third_party_id,
-        urn_suffix
+        urn_suffix,
+        CollectionAction.UPSERT
       )
     }
 
@@ -607,16 +612,13 @@ export class CollectionService {
 
   private async checkIfThirdPartyCollectionURNExists(
     id: string,
+    urn: string,
     third_party_id: string,
     urn_suffix: string,
     action = CollectionAction.UPSERT
   ): Promise<void> {
     if (await Collection.isURNRepeated(id, third_party_id, urn_suffix)) {
-      throw new AlreadyPublishedCollectionError(
-        id,
-        CollectionType.THIRD_PARTY,
-        action
-      )
+      throw new URNAlreadyInUseError(id, urn, action)
     }
   }
 }

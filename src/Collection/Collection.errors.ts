@@ -29,6 +29,14 @@ export class AlreadyPublishedCollectionError extends Error {
   }
 }
 
+export class URNAlreadyInUseError extends Error {
+  constructor(public id: string, public urn: string, action: CollectionAction) {
+    super(
+      `The URN provided already belongs to a collection. The collection can't be ${action}.`
+    )
+  }
+}
+
 export class WrongCollectionError extends Error {
   constructor(m: string, public data: Record<string, any>) {
     super(m)

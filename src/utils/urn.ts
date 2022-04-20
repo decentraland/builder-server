@@ -7,47 +7,6 @@ import { matchers } from '../common/matchers'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { ItemAttributes } from '../Item/Item.types'
 
-/**
- * urn:decentraland:
- *   (?<protocol>
- *     mainnet|
- *     ropsten|
- *     matic|
- *     mumbai|
- *     off-chain
- *   ):
- *   (
- *     (?<type>
- *       base-avatars|
- *       collections-v2|
- *       collections-thirdparty
- *     ):
- *     (?<suffix>
- *       ((?<=base-avatars:)BaseMale|BaseFemale)|
- *       ((?<=collections-v2)0x[a-fA-F0-9]{40})|
- *       ((?<=collections-thirdparty:)
- *          (?<thirdPartyName>[^:|\\s]+)
- *          (:(?<thirdPartyCollectionId>[^:|\\s]+))?
- *          (:(?<thirdPartyTokenId>[^:|\\s]+))?
- *       )
- *     )
- *   )
- */
-const baseMatcher = 'urn:decentraland'
-const protocolMatcher = '(?<protocol>mainnet|ropsten|matic|mumbai|off-chain)'
-const typeMatcher =
-  '(?<type>base-avatars|collections-v2|collections-thirdparty)'
-
-const baseAvatarsSuffixMatcher = '((?<=base-avatars:)BaseMale|BaseFemale)'
-const collectionsSuffixMatcher =
-  '((?<=collections-v2:)(?<collectionAddress>0x[a-fA-F0-9]{40}))(:(?<tokenId>[^:|\\s]+))?'
-const thirdPartySuffixMatcher =
-  '((?<=collections-thirdparty:)(?<thirdPartyName>[^:|\\s]+)(:(?<thirdPartyCollectionId>[^:|\\s]+))?(:(?<thirdPartyTokenId>[^:|\\s]+))?)'
-
-const urnRegExp = new RegExp(
-  `${baseMatcher}:${protocolMatcher}:${typeMatcher}:(?<suffix>${baseAvatarsSuffixMatcher}|${collectionsSuffixMatcher}|${thirdPartySuffixMatcher})`
-)
-
 const tpItemURNRegex = new RegExp(
   `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot}):(${matchers.urnSlot})$`
 )
@@ -84,10 +43,6 @@ export function decodeThirdPartyItemURN(
     collection_urn_suffix: matches[3],
     item_urn_suffix: matches[4],
   }
-}
-
-export function isValidURN(itemURN: string): boolean {
-  return urnRegExp.test(itemURN)
 }
 
 export function isTPItemURN(itemURN: string): boolean {

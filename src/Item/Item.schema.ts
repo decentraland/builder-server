@@ -44,7 +44,6 @@ export const itemSchema = Object.freeze({
   additionalProperties: false,
   anyOf: [{ required: ['id'] }, { required: ['urn'] }],
   required: [
-    // 'id',
     'name',
     'description',
     'eth_address',

@@ -22,7 +22,7 @@ import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { PaginatedResponse } from '../Pagination'
-import { isValidURN } from '../utils/urn'
+import { isTPItemURN } from '../utils/urn'
 import {
   generatePaginatedResponse,
   getOffset,
@@ -329,7 +329,7 @@ export class ItemRouter extends Router {
   upsertItem = async (req: AuthRequest): Promise<FullItem> => {
     const idOrURN = server.extractFromReq(req, 'idOrURN')
     let id, urn
-    if (isValidURN(idOrURN)) {
+    if (isTPItemURN(idOrURN)) {
       urn = idOrURN
     } else {
       id = idOrURN

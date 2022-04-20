@@ -626,7 +626,7 @@ export class ItemService {
     const attributes = toDBItem({
       ...item,
       eth_address,
-      ...(dbItem ? { id: dbItem.id } : {}), // if the FE does not send the
+      ...(dbItem ? { id: dbItem.id } : {}), // if it is not receiving the id in the body but the item exists
     })
 
     attributes.local_content_hash = !isMovingItemOutOfACollection

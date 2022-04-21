@@ -3,6 +3,7 @@ import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
 import { utils } from 'decentraland-commons'
+import { omit } from 'decentraland-commons/dist/utils'
 import {
   createAuthHeaders,
   buildURL,
@@ -56,7 +57,6 @@ import {
   ItemAttributes,
   ThirdPartyItemAttributes,
 } from './Item.types'
-import { omit } from 'decentraland-commons/dist/utils'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')

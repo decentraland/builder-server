@@ -68,7 +68,7 @@ import { CurationStatus } from '../Curation'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
-import { toDBCollection, toFullCollection } from './utils'
+import { toFullCollection } from './utils'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -189,9 +189,7 @@ describe('Collection router', () => {
 
       describe("and the upserted collection wasn't a third party collection before", () => {
         beforeEach(() => {
-          ;(thirdPartyAPI.isManager as jest.MockedFunction<
-            typeof thirdPartyAPI.isManager
-          >).mockResolvedValueOnce(true)
+          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
             urn_suffix: null,
@@ -225,9 +223,7 @@ describe('Collection router', () => {
             urn_suffix: 'old-urn-suffix',
             third_party_id,
           }
-          ;(thirdPartyAPI.isManager as jest.MockedFunction<
-            typeof thirdPartyAPI.isManager
-          >).mockResolvedValueOnce(true)
+          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )
@@ -293,19 +289,18 @@ describe('Collection router', () => {
         beforeEach(() => {
           const currentDate = Date.now()
           mockAuthenticationSignatureValidationDate()
-          ;(thirdPartyAPI.isManager as jest.MockedFunction<
-            typeof thirdPartyAPI.isManager
-          >).mockResolvedValueOnce(true)
+          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
             lock: new Date(currentDate),
           })
-          ;(Collection.prototype.upsert as jest.MockedFunction<
-            typeof Collection.prototype.upsert
+          ;(Collection.upsertWithItemCount as jest.MockedFunction<
+            typeof Collection.upsertWithItemCount
           >).mockResolvedValueOnce({
             ...dbTPCollection,
             lock: new Date(currentDate),
+            item_count: 0,
           })
         })
 
@@ -333,9 +328,7 @@ describe('Collection router', () => {
 
       describe('and the collection exists and the user is not a manager of the third party registry', () => {
         beforeEach(() => {
-          ;(thirdPartyAPI.isManager as jest.MockedFunction<
-            typeof thirdPartyAPI.isManager
-          >).mockResolvedValueOnce(false)
+          thirdPartyAPIMock.isManager.mockResolvedValueOnce(false)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )
@@ -361,26 +354,18 @@ describe('Collection router', () => {
       })
 
       describe('and the collection exists and is not locked', () => {
-        let upsertMock: jest.Mock
-        let newCollectionAttributes: CollectionAttributes
-
         beforeEach(() => {
-          upsertMock = jest.fn()
-          ;(thirdPartyAPI.isManager as jest.MockedFunction<
-            typeof thirdPartyAPI.isManager
-          >).mockResolvedValueOnce(true)
+          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )
-          ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
-            (attributes) => {
-              newCollectionAttributes = attributes
-              upsertMock.mockResolvedValueOnce(attributes)
-              return {
-                upsert: upsertMock,
-              }
-            }
-          )
+          ;(Collection.upsertWithItemCount as jest.MockedFunction<
+            typeof Collection.upsertWithItemCount
+          >).mockImplementationOnce(async (attributes) => ({
+            ...attributes,
+            item_count: 0,
+            lock: null,
+          }))
         })
 
         it('should upsert the collection and respond with the upserted collection', () => {
@@ -392,12 +377,12 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: true,
-                data: toFullCollection(newCollectionAttributes),
+                data: {
+                  ...convertCollectionDatesToISO(collectionToUpsert),
+                  item_count: 0,
+                  contract_address: null,
+                },
               })
-
-              expect(newCollectionAttributes).toEqual(
-                convertCollectionDatesToISO(toDBCollection(collectionToUpsert))
-              )
             })
         })
       })
@@ -409,9 +394,7 @@ describe('Collection router', () => {
 
         describe('and the user is not a manager of the third party registry given in the URN', () => {
           beforeEach(() => {
-            ;(thirdPartyAPI.isManager as jest.MockedFunction<
-              typeof thirdPartyAPI.isManager
-            >).mockResolvedValueOnce(false)
+            thirdPartyAPIMock.isManager.mockResolvedValueOnce(false)
           })
 
           it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
@@ -435,9 +418,7 @@ describe('Collection router', () => {
 
         describe('and there are items already published with the collection id', () => {
           beforeEach(() => {
-            ;(thirdPartyAPI.isManager as jest.MockedFunction<
-              typeof thirdPartyAPI.isManager
-            >).mockResolvedValueOnce(true)
+            thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
             mockThirdPartyCollectionURNExists(
               collectionToUpsert.id,
               third_party_id,
@@ -467,29 +448,21 @@ describe('Collection router', () => {
         })
 
         describe("and there aren't any items published with the collection id", () => {
-          let upsertMock: jest.Mock
-          let newCollectionAttributes: CollectionAttributes
-
           beforeEach(() => {
-            ;(thirdPartyAPI.isManager as jest.MockedFunction<
-              typeof thirdPartyAPI.isManager
-            >).mockResolvedValueOnce(true)
-            upsertMock = jest.fn()
+            thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
             mockThirdPartyCollectionURNExists(
               collectionToUpsert.id,
               third_party_id,
               urn_suffix,
               false
             )
-            ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
-              (attributes) => {
-                newCollectionAttributes = attributes
-                upsertMock.mockResolvedValueOnce(attributes)
-                return {
-                  upsert: upsertMock,
-                }
-              }
-            )
+            ;(Collection.upsertWithItemCount as jest.MockedFunction<
+              typeof Collection.upsertWithItemCount
+            >).mockImplementationOnce(async (attributes) => ({
+              ...attributes,
+              item_count: 0,
+              lock: null,
+            }))
           })
 
           it('should respond with a 200, the inserted collection and have upserted the collection with the sent collection', () => {
@@ -501,14 +474,11 @@ describe('Collection router', () => {
               .then((response: any) => {
                 expect(response.body).toEqual({
                   ok: true,
-                  data: toFullCollection(newCollectionAttributes),
+                  data: convertCollectionDatesToISO({
+                    ...collectionToUpsert,
+                    item_count: 0,
+                  }),
                 })
-
-                expect(newCollectionAttributes).toEqual(
-                  convertCollectionDatesToISO(
-                    toDBCollection(collectionToUpsert)
-                  )
-                )
               })
           })
         })
@@ -731,10 +701,7 @@ describe('Collection router', () => {
       })
 
       describe('and the collection is upserted', () => {
-        let newCollectionAttributes: CollectionAttributes
-        let upsertMock: jest.Mock
         beforeEach(() => {
-          upsertMock = jest.fn()
           collectionToUpsert = {
             ...toFullCollection(dbCollection),
             urn,
@@ -748,15 +715,13 @@ describe('Collection router', () => {
           ;(Collection.findOne as jest.MockedFunction<
             typeof Collection.findOne
           >).mockResolvedValueOnce(dbCollection)
-          ;((Collection as unknown) as jest.Mock).mockImplementationOnce(
-            (attributes) => {
-              newCollectionAttributes = { ...attributes, forum_id: null }
-              upsertMock.mockResolvedValueOnce(attributes)
-              return {
-                upsert: upsertMock,
-              }
-            }
-          )
+          ;(Collection.upsertWithItemCount as jest.MockedFunction<
+            typeof Collection.upsertWithItemCount
+          >).mockImplementationOnce(async (attributes) => ({
+            ...attributes,
+            item_count: 0,
+            lock: null,
+          }))
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbCollection,
@@ -777,15 +742,18 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: true,
-                data: toFullCollection(newCollectionAttributes),
-              })
-
-              expect(newCollectionAttributes).toEqual({
-                ...convertCollectionDatesToISO(
-                  toDBCollection(collectionToUpsert)
-                ),
-                contract_address: expect.any(String),
-                salt: expect.any(String),
+                data: convertCollectionDatesToISO({
+                  ...collectionToUpsert,
+                  item_count: 0,
+                  salt: expect.stringMatching(/0[xX][0-9a-fA-F]{64}/),
+                  contract_address: expect.stringMatching(
+                    /0[xX][0-9a-fA-F]{40}/
+                  ),
+                  eth_address: wallet.address,
+                  urn: expect.stringMatching(
+                    /urn:decentraland:mumbai:collections-v2:0[xX][0-9a-fA-F]{40}/
+                  ),
+                }),
               })
             })
         })
@@ -810,15 +778,17 @@ describe('Collection router', () => {
               .then((response: any) => {
                 expect(response.body).toEqual({
                   ok: true,
-                  data: toFullCollection(newCollectionAttributes),
-                })
-
-                expect(newCollectionAttributes).toEqual({
-                  ...convertCollectionDatesToISO(
-                    toDBCollection(collectionToUpsert)
-                  ),
-                  contract_address: expect.any(String),
-                  salt: expect.any(String),
+                  data: convertCollectionDatesToISO({
+                    ...collectionToUpsert,
+                    item_count: 0,
+                    salt: expect.stringMatching(/0[xX][0-9a-fA-F]{64}/),
+                    contract_address: expect.stringMatching(
+                      /0[xX][0-9a-fA-F]{40}/
+                    ),
+                    urn: expect.stringMatching(
+                      /urn:decentraland:mumbai:collections-v2:0[xX][0-9a-fA-F]{40}/
+                    ),
+                  }),
                 })
               })
           })
@@ -837,7 +807,7 @@ describe('Collection router', () => {
         []
       )
       ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
-      ;(thirdPartyAPI.fetchThirdParties as jest.Mock).mockReturnValueOnce([])
+      thirdPartyAPIMock.fetchThirdParties.mockResolvedValueOnce([])
       url = `/collections`
     })
 

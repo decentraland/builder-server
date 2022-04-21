@@ -1211,36 +1211,34 @@ describe('Item router', () => {
         })
 
         describe('and the item is being inserted by URN as param in the URI', () => {
-          let urn: string
-          beforeEach(() => {
-            mockItem.findByURNSuffix.mockResolvedValueOnce(undefined)
-            url = `/items/${urn}`
-            urn = buildTPItemURN(
-              tpCollectionMock.third_party_id,
-              tpCollectionMock.urn_suffix,
-              itemUrnSuffix
-            )
-          })
-
-          it('should throw an error if the item does not exist', () => {
-            return server
-              .put(buildURL(`/items/${urn}`))
-              .send({ item: { ...omit<Item>(itemToUpsert, ['id']), urn } })
-              .set(createAuthHeaders('put', `/items/${urn}`))
-              .expect(404)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  error: 'The third party item can not be created by URN.',
-                  data: {
-                    urn,
-                  },
-                  ok: false,
+          describe('and the item does not exist', () => {
+            let urn: string
+            beforeEach(() => {
+              mockItem.findByURNSuffix.mockResolvedValueOnce(undefined)
+              url = `/items/${urn}`
+              urn = buildTPItemURN(
+                tpCollectionMock.third_party_id,
+                tpCollectionMock.urn_suffix,
+                itemUrnSuffix
+              )
+            })
+            it('should throw a not found error', () => {
+              return server
+                .put(buildURL(`/items/${urn}`))
+                .send({ item: { ...omit<Item>(itemToUpsert, ['id']), urn } })
+                .set(createAuthHeaders('put', `/items/${urn}`))
+                .expect(404)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    error: 'The third party item can not be created by URN.',
+                    data: {
+                      urn,
+                    },
+                    ok: false,
+                  })
                 })
-              })
+            })
           })
-        })
-
-        describe('and the item is being inserted by URN as param in the URI', () => {
           describe('and the item to insert has an URN', () => {
             beforeEach(() => {
               itemToUpsert = {

@@ -36,7 +36,7 @@ export const dbCollectionMock: CollectionAttributes = {
 export const dbTPCollectionMock: ThirdPartyCollectionAttributes = {
   ...dbCollectionMock,
   eth_address: '',
-  contract_address: '',
+  contract_address: null,
   urn_suffix: 'collection-id',
   third_party_id:
     'urn:decentraland:mumbai:collections-thirdparty:third-party-id',

@@ -33,6 +33,7 @@ import {
   UnauthorizedToChangeToCollectionError,
   InvalidItemURNError,
   URNAlreadyInUseError,
+  ThirdPartyItemInsertByURNError,
 } from './Item.errors'
 import { Item } from './Item.model'
 import {
@@ -56,7 +57,20 @@ export class ItemService {
     eth_address: string
   ): Promise<FullItem> {
     let dbCollection: CollectionAttributes | undefined = undefined
-    const dbItem = await Item.findOne<ItemAttributes>(item.id)
+    const decodedItemURN =
+      !item.id && item.urn ? decodeThirdPartyItemURN(item.urn) : null
+    const dbItem = decodedItemURN
+      ? await Item.findByURNSuffix(
+          decodedItemURN.third_party_id,
+          decodedItemURN.item_urn_suffix
+        )
+      : await Item.findOne<ItemAttributes>(item.id)
+
+    // Inserting by URN is not allowed
+    if (!item.id && item.urn && !dbItem) {
+      throw new ThirdPartyItemInsertByURNError(item.urn)
+    }
+
     if (dbItem) {
       // Moving items between collections is forbidden
       this.checkItemIsMovedToAnotherCollection(item, dbItem)
@@ -587,7 +601,10 @@ export class ItemService {
             decodedURN.item_urn_suffix
           )
           // Check if the new URN is not already in use
-          await this.checkIfThirdPartyItemURNExists(item.id, itemURN)
+          // If the item is being upserted by id, check if the URN is not already in use
+          if (item.id) {
+            await this.checkIfThirdPartyItemURNExists(item.id, itemURN)
+          }
         }
       }
     }
@@ -604,6 +621,7 @@ export class ItemService {
         decodedItemURN.item_urn_suffix
       )
 
+      // If the item is being inserted, check if the URN is not already in use
       await this.checkIfThirdPartyItemURNExists(
         item.id,
         itemURN,
@@ -614,6 +632,7 @@ export class ItemService {
     const attributes = toDBItem({
       ...item,
       eth_address,
+      ...(dbItem ? { id: dbItem.id } : {}), // if it is not receiving the id in the body but the item exists
     })
 
     attributes.local_content_hash = !isMovingItemOutOfACollection

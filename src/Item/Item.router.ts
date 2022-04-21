@@ -22,6 +22,7 @@ import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { PaginatedResponse } from '../Pagination'
+import { isTPItemURN } from '../utils/urn'
 import {
   generatePaginatedResponse,
   getOffset,
@@ -42,6 +43,7 @@ import {
   ItemCantBeMovedFromCollectionError,
   NonExistentItemError,
   ThirdPartyItemAlreadyPublishedError,
+  ThirdPartyItemInsertByURNError,
   UnauthorizedToChangeToCollectionError,
   UnauthorizedToUpsertError,
   URNAlreadyInUseError,
@@ -120,7 +122,7 @@ export class ItemRouter extends Router {
      * Important! Item authorization is done inside the handler
      */
     this.router.put(
-      '/items/:id',
+      '/items/:idOrURN',
       withAuthentication,
       withSchemaValidation(upsertItemSchema),
       server.handleRequest(this.upsertItem)
@@ -326,15 +328,21 @@ export class ItemRouter extends Router {
   }
 
   upsertItem = async (req: AuthRequest): Promise<FullItem> => {
-    const id = server.extractFromReq(req, 'id')
+    const idOrURN = server.extractFromReq(req, 'idOrURN')
+    let id, urn
+    if (isTPItemURN(idOrURN)) {
+      urn = idOrURN
+    } else {
+      id = idOrURN
+    }
     const itemJSON: FullItem = server.extractFromReq(req, 'item')
 
-    if (id !== itemJSON.id) {
+    if ((id && id !== itemJSON.id) || (urn && urn !== itemJSON.urn)) {
       throw new HTTPError(
-        'The body and URL item ids do not match',
+        'The body and URL item id or urn do not match',
         {
-          urlId: id,
-          bodyId: itemJSON.id,
+          urlId: urn ?? id,
+          bodyId: urn ? itemJSON.urn : itemJSON.id,
         },
         STATUS_CODES.badRequest
       )
@@ -344,7 +352,7 @@ export class ItemRouter extends Router {
       throw new HTTPError(
         "Representation files must be part of the item's content",
         {
-          id,
+          id: id || urn,
         },
         STATUS_CODES.badRequest
       )
@@ -358,7 +366,13 @@ export class ItemRouter extends Router {
       )
       return upsertedItem
     } catch (error) {
-      if (error instanceof UnauthorizedToUpsertError) {
+      if (error instanceof ThirdPartyItemInsertByURNError) {
+        throw new HTTPError(
+          error.message,
+          { urn: error.urn },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof UnauthorizedToUpsertError) {
         throw new HTTPError(
           error.message,
           { id: error.id, eth_address: error.eth_address },

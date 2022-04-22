@@ -94,8 +94,8 @@ export = async function main() {
             : 'https://peer.decentraland.zone',
       },
       {
-        name: 'ETHEREUM_NETWORK',
-        value: env === 'prd' || env === 'stg' ? 'mainnet' : 'ropsten',
+        name: 'CHAIN_NAME',
+        value: env === 'prd' || env === 'stg' ? 'Ethereum Mainnet' : 'Ropsten',
       },
       {
         name: 'COLLECTIONS_GRAPH_URL',

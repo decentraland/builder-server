@@ -2,7 +2,7 @@ import { ethers } from 'ethers'
 import { _TypedDataEncoder } from '@ethersproject/hash'
 import { TypedDataDomain, TypedDataField } from '@ethersproject/abstract-signer'
 import { SignatureLike } from '@ethersproject/bytes'
-import { env, utils } from 'decentraland-commons'
+import { utils } from 'decentraland-commons'
 import {
   ContractData,
   getContract,
@@ -10,8 +10,7 @@ import {
 } from 'decentraland-transactions'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
-import { Network } from '../ethereum'
-import { getChainIdFromNetwork } from '../ethereum/utils'
+import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
 import { ItemCuration } from '../Curation/ItemCuration'
 import {
   decodeTPCollectionURN,
@@ -118,8 +117,8 @@ async function buildChequeSignatureData(
   signature: SignatureLike
 }> {
   const { signature, qty, salt } = cheque
-  const chainId = getChainIdFromNetwork(env.get('ETHEREUM_NETWORK') as Network)
-  const thirdPartyContract: ContractData = await getContract(
+  const chainId = getMappedChainIdForCurrentChainName()
+  const thirdPartyContract: ContractData = getContract(
     ContractName.ThirdPartyRegistry,
     chainId
   )

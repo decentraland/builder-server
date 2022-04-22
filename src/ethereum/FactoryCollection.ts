@@ -1,12 +1,10 @@
-import { env } from 'decentraland-commons'
-
 import { keccak256 } from '@ethersproject/solidity'
 import {
   FACTORY_COLLECTION_ADDRESS,
   FACTORY_COLLECTION_CODE_HASH,
   FORWARDER_CONTRACT_ADDRESS,
-  Network,
 } from './types'
+import { CHAIN_NAME } from './utils'
 
 export class FactoryCollection {
   getSalt(seed: string = '') {
@@ -14,26 +12,24 @@ export class FactoryCollection {
   }
 
   getContractAddress(salt: string, data: string): string {
-    const network = env.get('ETHEREUM_NETWORK') as Network
-
-    const address = FACTORY_COLLECTION_ADDRESS[network]
+    const address = FACTORY_COLLECTION_ADDRESS[CHAIN_NAME]
     if (!address) {
       throw new Error(
-        `Could not find a factory collection address for network ${network}`
+        `Could not find a factory collection address for chain name ${CHAIN_NAME}`
       )
     }
 
-    const codeHash = FACTORY_COLLECTION_CODE_HASH[network]
+    const codeHash = FACTORY_COLLECTION_CODE_HASH[CHAIN_NAME]
     if (!codeHash) {
       throw new Error(
-        `Could not find a factory collection hash for network ${network}`
+        `Could not find a factory collection hash for chain name ${CHAIN_NAME}`
       )
     }
 
-    const forwarderAddress = FORWARDER_CONTRACT_ADDRESS[network]
+    const forwarderAddress = FORWARDER_CONTRACT_ADDRESS[CHAIN_NAME]
     if (!forwarderAddress) {
       throw new Error(
-        `Could not find a forwarder contract address for network ${network}`
+        `Could not find a forwarder contract address for chain name ${CHAIN_NAME}`
       )
     }
 

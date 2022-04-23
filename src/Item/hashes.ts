@@ -1,7 +1,4 @@
-import {
-  calculateMultipleHashesADR32LegacyQmHash,
-  keccak256Hash,
-} from '@dcl/hashing'
+import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
 import { Locale, ThirdPartyWearable, StandardWearable } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
@@ -106,10 +103,7 @@ async function calculateStandardItemContentHash(
     file,
     hash: item.contents[file],
   }))
-  const { hash } = await calculateMultipleHashesADR32LegacyQmHash(
-    content,
-    metadata
-  )
+  const { hash } = await calculateMultipleHashesADR32(content, metadata)
 
   return hash
 }

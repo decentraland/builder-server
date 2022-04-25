@@ -1,22 +1,21 @@
 import { env } from 'decentraland-commons'
-import { ChainId, getURNProtocol } from '@dcl/schemas'
-import { Network } from './types'
+import { ChainId, ChainName, getURNProtocol } from '@dcl/schemas'
 
-const network = env.get('ETHEREUM_NETWORK') as Network
+export const CHAIN_NAME = env.get('CHAIN_NAME') as ChainName
 
-export function getChainIdFromNetwork(network: Network): ChainId {
-  switch (network) {
-    case Network.MAINNET:
+export function getMappedChainIdForCurrentChainName(): ChainId {
+  switch (CHAIN_NAME) {
+    case ChainName.ETHEREUM_MAINNET:
       return ChainId.MATIC_MAINNET
-    case Network.ROPSTEN:
+    case ChainName.ETHEREUM_ROPSTEN:
       return ChainId.MATIC_MUMBAI
     default:
       throw new Error(
-        `The network ${network} doesn't have a chain id to map to`
+        `The chain name ${CHAIN_NAME} doesn't have a chain id to map to`
       )
   }
 }
 
 export function getCurrentNetworkURNProtocol(): string {
-  return getURNProtocol(getChainIdFromNetwork(network))
+  return getURNProtocol(getMappedChainIdForCurrentChainName())
 }

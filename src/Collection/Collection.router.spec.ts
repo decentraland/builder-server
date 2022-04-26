@@ -1690,6 +1690,7 @@ describe('Collection router', () => {
                   status: CurationStatus.PENDING,
                   created_at: expect.any(Date),
                   updated_at: expect.any(Date),
+                  assignee: null,
                 })
               })
           })

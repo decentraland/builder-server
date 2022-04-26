@@ -20,7 +20,8 @@ export const patchCurationSchema = Object.freeze({
         CurationStatus.REJECTED,
       ],
     },
+    assignee: { type: ['string', 'null'] },
   },
   additionalProperties: false,
-  required: ['status'],
+  anyOf: [{ required: ['assignee'] }, { required: ['status'] }],
 })

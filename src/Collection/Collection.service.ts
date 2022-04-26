@@ -285,6 +285,7 @@ export class CollectionService {
           status: CurationStatus.PENDING,
           created_at: now,
           updated_at: now,
+          assignee: null,
         })
       }
     } catch (error) {

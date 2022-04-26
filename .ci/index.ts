@@ -155,7 +155,7 @@ export = async function main() {
       },
       {
         name: 'COLLECTION_FACTORY_VERSION',
-        value: '2',
+        value: env === 'prd' || env === 'stg' ? '2' : '3',
       },
     ],
     hostname,

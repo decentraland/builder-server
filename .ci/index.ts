@@ -153,6 +153,10 @@ export = async function main() {
         name: 'OPEN_SEA_API_KEY',
         value: config.requireSecret('OPEN_SEA_API_KEY'),
       },
+      {
+        name: 'COLLECTION_FACTORY_VERSION',
+        value: '2',
+      },
     ],
     hostname,
     {

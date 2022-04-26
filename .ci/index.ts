@@ -142,7 +142,7 @@ export = async function main() {
         name: 'THIRD_PARTY_GRAPH_URL',
         value:
           env === 'prd' || env === 'stg'
-            ? 'http://not-working-url'
+            ? 'https://api.thegraph.com/subgraphs/name/decentraland/tpr-matic-mainnet'
             : 'https://api.thegraph.com/subgraphs/name/decentraland/tpr-matic-mumbai',
       },
       {

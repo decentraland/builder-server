@@ -267,12 +267,17 @@ export class CurationRouter extends Router {
   insertCollectionCuration = async (req: AuthRequest) => {
     try {
       const collectionId = server.extractFromReq(req, 'id')
+      let curationJSON: Partial<CollectionCurationAttributes> | undefined
+      try {
+        curationJSON = server.extractFromReq(req, 'curation')
+      } catch (error) {}
       const ethAddress = req.auth.ethAddress
 
       return this.insertCuration(
         collectionId,
         ethAddress,
-        CurationType.COLLECTION
+        CurationType.COLLECTION,
+        curationJSON
       )
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
@@ -359,7 +364,10 @@ export class CurationRouter extends Router {
     let fieldsToUpdate: Partial<
       CollectionCurationAttributes & ItemCurationAttributes
     > = {
-      status: curationJSON.status,
+      ...(curationJSON.assignee
+        ? { assignee: curationJSON.assignee.toLowerCase() }
+        : {}),
+      ...(curationJSON.status ? { status: curationJSON.status } : {}),
       updated_at: new Date(),
     }
 
@@ -376,7 +384,8 @@ export class CurationRouter extends Router {
   private insertCuration = async (
     id: string,
     ethAddress: string,
-    type: CurationType
+    type: CurationType,
+    curationJSON?: Partial<CollectionCurationAttributes>
   ) => {
     const curationService = CurationService.byType(type)
     await this.validateAccessToCuration(curationService, ethAddress, id)
@@ -409,6 +418,9 @@ export class CurationRouter extends Router {
 
     if (type === CurationType.COLLECTION) {
       attributes.collection_id = id
+      if (curationJSON?.assignee) {
+        attributes.assignee = curationJSON.assignee.toLowerCase()
+      }
     }
     if (type === CurationType.ITEM) {
       attributes.item_id = id

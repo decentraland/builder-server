@@ -29,6 +29,8 @@ jest.mock('../Curation/ItemCuration')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 
+const mockAddress = '0x6D7227d6F36FC997D53B4646132b3B55D751cc7c'
+
 describe('when handling a request', () => {
   let router: CurationRouter
 
@@ -470,54 +472,144 @@ describe('when handling a request', () => {
 
     describe('when everything is fine', () => {
       let req: AuthRequest
-
-      beforeEach(() => {
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-          body: {
-            curation: {
-              status: CurationStatus.REJECTED,
-            },
-          },
-        } as any
-      })
-
       describe('when updating a collection curation', () => {
         let updateSpy: jest.SpyInstance<Promise<ItemAttributes>>
         let expectedCuration: CollectionCurationAttributes
 
-        beforeEach(() => {
-          service = mockServiceWithAccess(CollectionCuration, true)
-          expectedCuration = {
-            id: 'uuid-123123-123123',
-          } as CollectionCurationAttributes
+        describe('and it only updates the status', () => {
+          beforeEach(() => {
+            req = {
+              auth: { ethAddress: 'ethAddress' },
+              params: { id: 'some id' },
+              body: {
+                curation: {
+                  status: CurationStatus.REJECTED,
+                },
+              },
+            } as any
+            service = mockServiceWithAccess(CollectionCuration, true)
+            expectedCuration = {
+              id: 'uuid-123123-123123',
+            } as CollectionCurationAttributes
 
-          jest
-            .spyOn(service, 'getLatestById')
-            .mockResolvedValueOnce({ id: 'curationId' } as any)
+            jest
+              .spyOn(service, 'getLatestById')
+              .mockResolvedValueOnce({ id: 'curationId' } as any)
 
-          jest
-            .spyOn(service, 'updateById')
-            .mockResolvedValueOnce(expectedCuration)
+            jest
+              .spyOn(service, 'updateById')
+              .mockResolvedValueOnce(expectedCuration)
 
-          updateSpy = jest
-            .spyOn(service, 'updateById')
-            .mockResolvedValueOnce(expectedCuration)
+            updateSpy = jest
+              .spyOn(service, 'updateById')
+              .mockResolvedValueOnce(expectedCuration)
+          })
+
+          it('should resolve with the updated curation', async () => {
+            await expect(
+              router.updateCollectionCuration(req)
+            ).resolves.toStrictEqual(expectedCuration)
+          })
+
+          it('should call the update method with the right data', async () => {
+            await router.updateCollectionCuration(req)
+
+            expect(updateSpy).toHaveBeenCalledWith('curationId', {
+              status: CurationStatus.REJECTED,
+              updated_at: expect.any(Date),
+            })
+          })
         })
 
-        it('should resolve with the updated curation', async () => {
-          await expect(
-            router.updateCollectionCuration(req)
-          ).resolves.toStrictEqual(expectedCuration)
+        describe('and it only updates the assignee', () => {
+          let assignee: string
+          beforeEach(() => {
+            assignee = mockAddress
+            req = {
+              auth: { ethAddress: 'ethAddress' },
+              params: { id: 'some id' },
+              body: {
+                curation: {
+                  assignee,
+                },
+              },
+            } as any
+            service = mockServiceWithAccess(CollectionCuration, true)
+            expectedCuration = {
+              id: 'uuid-123123-123123',
+            } as CollectionCurationAttributes
+
+            jest
+              .spyOn(service, 'getLatestById')
+              .mockResolvedValueOnce({ id: 'curationId' } as any)
+
+            jest
+              .spyOn(service, 'updateById')
+              .mockResolvedValueOnce(expectedCuration)
+
+            updateSpy = jest
+              .spyOn(service, 'updateById')
+              .mockResolvedValueOnce(expectedCuration)
+          })
+
+          it('should resolve with the updated curation', async () => {
+            await expect(
+              router.updateCollectionCuration(req)
+            ).resolves.toStrictEqual(expectedCuration)
+          })
+
+          it('should call the update method with the right data', async () => {
+            await router.updateCollectionCuration(req)
+
+            expect(updateSpy).toHaveBeenCalledWith('curationId', {
+              assignee: assignee.toLowerCase(),
+              updated_at: expect.any(Date),
+            })
+          })
         })
+        describe('and it updates both the status & assignee', () => {
+          let assignee: string
+          beforeEach(() => {
+            assignee = mockAddress
+            req = {
+              auth: { ethAddress: 'ethAddress' },
+              params: { id: 'some id' },
+              body: {
+                curation: { status: CurationStatus.REJECTED, assignee },
+              },
+            } as any
+            service = mockServiceWithAccess(CollectionCuration, true)
+            expectedCuration = {
+              id: 'uuid-123123-123123',
+            } as CollectionCurationAttributes
 
-        it('should call the update method with the right data', async () => {
-          await router.updateCollectionCuration(req)
+            jest
+              .spyOn(service, 'getLatestById')
+              .mockResolvedValueOnce({ id: 'curationId' } as any)
 
-          expect(updateSpy).toHaveBeenCalledWith('curationId', {
-            status: CurationStatus.REJECTED,
-            updated_at: expect.any(Date),
+            jest
+              .spyOn(service, 'updateById')
+              .mockResolvedValueOnce(expectedCuration)
+
+            updateSpy = jest
+              .spyOn(service, 'updateById')
+              .mockResolvedValueOnce(expectedCuration)
+          })
+
+          it('should resolve with the updated curation', async () => {
+            await expect(
+              router.updateCollectionCuration(req)
+            ).resolves.toStrictEqual(expectedCuration)
+          })
+
+          it('should call the update method with the right data', async () => {
+            await router.updateCollectionCuration(req)
+
+            expect(updateSpy).toHaveBeenCalledWith('curationId', {
+              status: CurationStatus.REJECTED,
+              assignee: assignee.toLowerCase(),
+              updated_at: expect.any(Date),
+            })
           })
         })
       })
@@ -528,6 +620,15 @@ describe('when handling a request', () => {
         let expectedCuration: ItemCurationAttributes
 
         beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: {
+              curation: {
+                status: CurationStatus.REJECTED,
+              },
+            },
+          } as any
           service = mockServiceWithAccess(ItemCuration, true)
           expectedCuration = {
             id: 'uuid-123123-123123',
@@ -739,9 +840,11 @@ describe('when handling a request', () => {
     })
 
     describe('when everything is fine', () => {
+      let assignee: string
       let req: AuthRequest
 
       beforeEach(() => {
+        assignee = mockAddress
         jest
           .spyOn(Collection, 'findOne')
           .mockResolvedValueOnce({ ...dbCollectionMock })
@@ -752,6 +855,11 @@ describe('when handling a request', () => {
         req = {
           auth: { ethAddress: 'ethAddress' },
           params: { id: 'some id' },
+          body: {
+            curation: {
+              assignee,
+            },
+          },
         } as any
       })
 
@@ -782,6 +890,7 @@ describe('when handling a request', () => {
             status: CurationStatus.PENDING,
             created_at: expect.any(Date),
             updated_at: expect.any(Date),
+            assignee: assignee.toLowerCase(),
           })
         })
       })

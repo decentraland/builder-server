@@ -37,7 +37,7 @@ const getThirdPartyQuery = () => gql`
 
 const getThirdPartiesByManagerQuery = () => gql`
   query getThirdPartiesByManager(${PAGINATION_VARIABLES}, $managers: [String!]) {
-    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: $managers, isApproved: true }) {
+    thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains: $managers }) {
       ...thirdPartyFragment
     }
   }

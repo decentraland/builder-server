@@ -56,6 +56,10 @@ export function getFactoryCollectionCodeHash() {
   const chainId = getMappedChainIdForCurrentChainName()
 
   if (COLLECTION_FACTORY_VERSION === '3') {
+    if (chainId === ChainId.MATIC_MAINNET) {
+      throw new Error('Not yet supported on Matic Mainnet')
+    }
+
     return v3CodeHashes[chainId]
   }
 

@@ -2,23 +2,27 @@ import { env } from 'decentraland-commons'
 import { ChainId, ChainName, getURNProtocol } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
 
-export const CHAIN_NAME = env.get('CHAIN_NAME') as ChainName
+function getChainName() {
+  return env.get('CHAIN_NAME') as ChainName
+}
 
-const COLLECTION_FACTORY_VERSION = env.get<string | undefined>(
-  'COLLECTION_FACTORY_VERSION'
-)
+function getCollectionFactoryVersion() {
+  return env.get<string | undefined>('COLLECTION_FACTORY_VERSION')
+}
 
 export function getMappedChainIdForCurrentChainName():
   | ChainId.MATIC_MAINNET
   | ChainId.MATIC_MUMBAI {
-  switch (CHAIN_NAME) {
+  const chainName = getChainName()
+
+  switch (chainName) {
     case ChainName.ETHEREUM_MAINNET:
       return ChainId.MATIC_MAINNET
     case ChainName.ETHEREUM_ROPSTEN:
       return ChainId.MATIC_MUMBAI
     default:
       throw new Error(
-        `The chain name ${CHAIN_NAME} doesn't have a chain id to map to`
+        `The chain name ${chainName} doesn't have a chain id to map to`
       )
   }
 }
@@ -29,7 +33,7 @@ export function getCurrentNetworkURNProtocol(): string {
 
 export function getFactoryCollectionAddress() {
   const contractName =
-    COLLECTION_FACTORY_VERSION === '3'
+    getCollectionFactoryVersion() === '3'
       ? ContractName.CollectionFactoryV3
       : ContractName.CollectionFactory
 
@@ -55,7 +59,7 @@ export function getFactoryCollectionCodeHash() {
 
   const chainId = getMappedChainIdForCurrentChainName()
 
-  if (COLLECTION_FACTORY_VERSION === '3') {
+  if (getCollectionFactoryVersion() === '3') {
     if (chainId === ChainId.MATIC_MAINNET) {
       throw new Error('Not yet supported on Matic Mainnet')
     }

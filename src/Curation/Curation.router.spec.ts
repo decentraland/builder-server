@@ -21,13 +21,16 @@ import {
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { CurationService } from './Curation.service'
 import { CurationStatus } from './Curation.types'
+import { createAssigneeEventPost, ForumNewPost } from '../Forum'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
 jest.mock('../Curation/ItemCuration')
+jest.mock('../Forum')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
+const mockCreateAssigneeEventPost = createAssigneeEventPost as jest.Mock
 
 const mockAddress = '0x6D7227d6F36FC997D53B4646132b3B55D751cc7c'
 
@@ -925,6 +928,48 @@ describe('when handling a request', () => {
             content_hash: item.local_content_hash,
           })
         })
+      })
+    })
+  })
+
+  describe('when trying to insert a new forum post notifying a new curation assignee', () => {
+    describe('and when the caller is not a committee member', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+        } as any
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
+      })
+
+      it('should reject with an unauthorized message', async () => {
+        await expect(
+          router.createCurationNewAssigneePost(req)
+        ).rejects.toThrowError('Unauthorized')
+      })
+    })
+
+    describe('and when the caller is a committee member', () => {
+      let req: AuthRequest
+      let forumPost: ForumNewPost
+
+      beforeEach(() => {
+        mockCreateAssigneeEventPost.mockResolvedValue({})
+        forumPost = { raw: '', topic_id: '1' }
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id', forumPost },
+        } as any
+        mockIsCommitteeMember.mockResolvedValueOnce(true)
+      })
+
+      it('should call the forum api with the forum post received', async () => {
+        await expect(
+          router.createCurationNewAssigneePost(req)
+        ).resolves.not.toThrow()
+        expect(createAssigneeEventPost).toHaveBeenCalledWith(forumPost)
       })
     })
   })

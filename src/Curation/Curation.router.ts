@@ -15,6 +15,8 @@ import {
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
 import { isTPCollection } from '../utils/urn'
+import { createAssigneeEventPost } from '../Forum'
+import { ForumNewPost } from '../Forum'
 import {
   CurationStatus,
   CurationType,
@@ -71,6 +73,12 @@ export class CurationRouter extends Router {
       '/collections/:id/curation',
       withAuthentication,
       server.handleRequest(this.insertCollectionCuration)
+    )
+
+    this.router.post(
+      '/collections/:id/curation/post',
+      withAuthentication,
+      server.handleRequest(this.createCurationNewAssigneePost)
     )
 
     this.router.get(
@@ -332,6 +340,21 @@ export class CurationRouter extends Router {
     }
   }
 
+  createCurationNewAssigneePost = async (req: AuthRequest) => {
+    const id = server.extractFromReq(req, 'id')
+    const ethAddress = req.auth.ethAddress
+
+    if (!(await isCommitteeMember(ethAddress))) {
+      throw new HTTPError(
+        'Unauthorized',
+        { id, ethAddress },
+        STATUS_CODES.unauthorized
+      )
+    }
+    const forumPostJSON: ForumNewPost = server.extractFromReq(req, 'forumPost')
+    await createAssigneeEventPost(forumPostJSON)
+  }
+
   private updateCuration = async (
     id: string,
     ethAddress: string,
@@ -364,8 +387,12 @@ export class CurationRouter extends Router {
     let fieldsToUpdate: Partial<
       CollectionCurationAttributes & ItemCurationAttributes
     > = {
-      ...(curationJSON.assignee
-        ? { assignee: curationJSON.assignee.toLowerCase() }
+      ...(curationJSON.assignee !== undefined
+        ? {
+            assignee: curationJSON.assignee
+              ? curationJSON.assignee.toLowerCase()
+              : null,
+          }
         : {}),
       ...(curationJSON.status ? { status: curationJSON.status } : {}),
       updated_at: new Date(),

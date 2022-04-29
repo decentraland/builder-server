@@ -1,6 +1,6 @@
 import fetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
-import { CreateResponse, ForumPost } from './Forum.types'
+import { CreateResponse, ForumNewPost, ForumPost } from './Forum.types'
 
 const FORUM_URL = env.get('FORUM_URL', '')
 const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
@@ -12,7 +12,7 @@ export async function createPost(
 ): Promise<{ id: number; link: string }> {
   const forumPost = {
     ...post,
-    title: sanitizeTitle(post.title),
+    title: sanitizeTitle(post.title!),
     category: FORUM_CATEGORY,
   }
 
@@ -37,6 +37,30 @@ export async function createPost(
 
   const { id, topic_id, topic_slug } = result
   return { id, link: `${FORUM_URL}/t/${topic_slug}/${topic_id}` }
+}
+
+export async function createAssigneeEventPost(
+  forumPost: ForumNewPost
+): Promise<void> {
+  console.log('in here')
+  const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
+    headers: {
+      'Api-Key': FORUM_API_KEY,
+      'Content-Type': 'application/json',
+    },
+    method: 'POST',
+    body: JSON.stringify(forumPost),
+  })
+
+  const result: CreateResponse = await response.json()
+
+  if (result.errors !== undefined) {
+    throw new Error(
+      `Error creating the post ${JSON.stringify(
+        forumPost
+      )}: ${result.errors.join(', ')}`
+    )
+  }
 }
 
 export async function getPost(id: number): Promise<ForumPost> {

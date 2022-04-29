@@ -7,6 +7,11 @@ export type ForumPost = {
   created_at?: string
 }
 
+export type ForumNewPost = Omit<ForumPost, 'topic_id' | 'title'> & {
+  title?: string // for new posts on a topic, the title is not mandatory
+  topic_id: string
+}
+
 export type CreateSuccess = {
   id: number
   name: string

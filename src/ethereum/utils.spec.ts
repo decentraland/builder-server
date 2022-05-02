@@ -60,7 +60,7 @@ describe('when obtaining the codehash', () => {
   })
 
   describe('when CHAIN_NAME === "Ethereum Mainnet" && COLLECTION_FACTORY_VERSION === "3"', () => {
-    it('should return the codehash for the factory v2 in matic mainnet', async () => {
+    it('should throw an error complaining that the collection factory v3 is not supported in that network', async () => {
       mockEnv.get
         .mockReturnValueOnce(ChainName.ETHEREUM_MAINNET)
         .mockReturnValueOnce('3')
@@ -72,7 +72,7 @@ describe('when obtaining the codehash', () => {
   })
 
   describe('when CHAIN_NAME === "Ropsten" && COLLECTION_FACTORY_VERSION === "3"', () => {
-    it('should return the codehash for the factory v2 in matic mumbai', async () => {
+    it('should return the codehash for the factory v3 in matic mumbai', async () => {
       mockEnv.get
         .mockReturnValueOnce(ChainName.ETHEREUM_ROPSTEN)
         .mockReturnValueOnce('3')

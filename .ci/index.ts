@@ -158,8 +158,8 @@ export = async function main() {
         value: env === 'prd' || env === 'stg' ? '2' : '3',
       },
       {
-        name: 'RARITIES_WITH_ORACLE',
-        value: 'false',
+        name: 'FF_RARITIES_WITH_ORACLE',
+        value: '0',
       },
     ],
     hostname,

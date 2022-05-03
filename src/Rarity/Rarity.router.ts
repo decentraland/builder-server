@@ -4,13 +4,11 @@ import { Router } from '../common/Router'
 import { collectionAPI } from '../ethereum/api/collection'
 import { ContractName, getContract } from 'decentraland-transactions'
 import { env } from 'decentraland-commons'
-import { getChainIdFromNetwork } from '../ethereum/utils'
-import { Network } from '../ethereum'
+import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
 import { ethers } from 'ethers'
 import { RarityFragment } from '../ethereum/api/fragments'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 
-const ethereumNetwork = env.get('ETHEREUM_NETWORK') as Network
 const maticRpcUrl = env.get<string>('MATIC_RPC_URL')
 
 export class RarityRouter extends Router {
@@ -67,7 +65,7 @@ export class RarityRouter extends Router {
   private getRarityFromBlockchain = async (
     name: string
   ): Promise<RarityFragment> => {
-    const chainId = getChainIdFromNetwork(ethereumNetwork)
+    const chainId = getMappedChainIdForCurrentChainName()
 
     const raritiesWithOracle = getContract(
       ContractName.RaritiesWithOracle,

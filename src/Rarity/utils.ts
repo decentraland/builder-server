@@ -1,9 +1,7 @@
 import { env } from 'decentraland-commons'
 
 export function isUsingRaritiesWithOracle(): boolean {
-  const raritiesWithOracle = env.get<string | undefined>('FF_RARITIES_WITH_ORACLE')
-
-  return raritiesWithOracle === '1'
+  return env.get<string | undefined>('FF_RARITIES_WITH_ORACLE') === '1'
 }
 
 export function getMaticRpcUrl(): string {

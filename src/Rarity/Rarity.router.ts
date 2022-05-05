@@ -2,12 +2,9 @@ import { server } from 'decentraland-server'
 import { Request } from 'express'
 import { Router } from '../common/Router'
 import { collectionAPI } from '../ethereum/api/collection'
-import { ContractName, getContract } from 'decentraland-transactions'
-import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
-import { ethers } from 'ethers'
 import { RarityFragment } from '../ethereum/api/fragments'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { isUsingRaritiesWithOracle, getMaticRpcUrl } from './utils'
+import { isUsingRaritiesWithOracle, getRarityFromBlockchain } from './utils'
 
 export class RarityRouter extends Router {
   mount() {
@@ -78,27 +75,16 @@ export class RarityRouter extends Router {
   private getRarityFromBlockchain = async (
     name: string
   ): Promise<RarityFragment> => {
-    const chainId = getMappedChainIdForCurrentChainName()
-
-    const raritiesWithOracle = getContract(
-      ContractName.RaritiesWithOracle,
-      chainId
-    )
-
-    const provider = new ethers.providers.JsonRpcProvider(getMaticRpcUrl())
-
-    const contract = new ethers.Contract(
-      raritiesWithOracle.address,
-      raritiesWithOracle.abi,
-      provider
-    )
-
     let rarity: any
 
     try {
-      rarity = await contract.getRarityByName(name)
+      rarity = await getRarityFromBlockchain(name)
     } catch (e) {
-      throw new HTTPError('Rarity not found', { name }, STATUS_CODES.notFound)
+      throw new HTTPError(
+        'Could not fetch rarity from blockchain',
+        { name },
+        STATUS_CODES.notFound
+      )
     }
 
     return {

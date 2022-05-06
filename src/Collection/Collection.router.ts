@@ -233,12 +233,8 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [
-      allCollectionsWithCount,
-      remoteCollections,
-      dbTPCollections,
-    ] = await Promise.all([
-      Collection.findAll({
+    const [allCollectionsWithCount, remoteCollections] = await Promise.all([
+      this.service.getCollections({
         q: q as string,
         assignee: assignee as string,
         status: status as CurationStatusFilter,
@@ -248,7 +244,6 @@ export class CollectionRouter extends Router {
         limit,
       }),
       collectionAPI.fetchCollections(),
-      this.service.getDbTPCollections(),
     ])
 
     const totalCollections =
@@ -258,32 +253,19 @@ export class CollectionRouter extends Router {
       omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
     )
 
-    const dbBlockchainContractAddresses = dbCollections.map(
-      (collection) => collection.contract_address
-    )
-    const consolidatedCollections = await Bridge.consolidateCollections(
-      dbCollections,
-      remoteCollections.filter((remoteCollection) =>
-        dbBlockchainContractAddresses.includes(remoteCollection.id)
-      )
-    )
-    const consolidatedTPCollections = await Bridge.consolidateTPCollections(
-      dbTPCollections
-    )
-
-    // Build the full collection
-    const concatenated = consolidatedCollections
-      .concat(consolidatedTPCollections)
-      .map(toFullCollection)
+    const consolidated = (
+      await Bridge.consolidateAllCollections(dbCollections, remoteCollections)
+    ).map(toFullCollection)
 
     return page && limit
-      ? generatePaginatedResponse(concatenated, totalCollections, limit, page)
-      : concatenated
+      ? generatePaginatedResponse(consolidated, totalCollections, limit, page)
+      : consolidated
   }
 
   getAddressCollections = async (
     req: AuthRequest
-  ): Promise<FullCollection[]> => {
+  ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
+    const { page, limit } = getPaginationParams(req)
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -295,28 +277,31 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [
-      dbCollections,
-      remoteCollections,
-      dbTPCollections,
-    ] = await Promise.all([
-      Collection.findByAllByAddress(eth_address),
+    const [allCollectionsWithCount, remoteCollections] = await Promise.all([
+      this.service.getCollections(
+        {
+          offset: page && limit ? getOffset(page, limit) : undefined,
+          limit,
+          address: eth_address,
+        },
+        eth_address
+      ),
       collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
-      this.service.getDbTPCollectionsByManager(eth_address),
     ])
 
-    const [
-      consolidatedCollections,
-      consolidatedTPCollections,
-    ] = await Promise.all([
-      Bridge.consolidateCollections(dbCollections, remoteCollections),
-      Bridge.consolidateTPCollections(dbTPCollections),
-    ])
+    const totalCollections =
+      Number(allCollectionsWithCount[0]?.collection_count) || 0
 
-    // Build the full collection
-    return consolidatedCollections
-      .concat(consolidatedTPCollections)
-      .map(toFullCollection)
+    const consolidated = (
+      await Bridge.consolidateAllCollections(
+        allCollectionsWithCount,
+        remoteCollections
+      )
+    ).map(toFullCollection)
+
+    return page && limit
+      ? generatePaginatedResponse(consolidated, totalCollections, limit, page)
+      : consolidated
   }
 
   getCollection = async (req: AuthRequest): Promise<FullCollection> => {

@@ -849,7 +849,8 @@ describe('Collection router', () => {
               sort: undefined,
               status: undefined,
               limit,
-              offset: page - 1, // it's the offset
+              offset: page - 1, // it's the offset,
+              thirdPartyIds: [],
             })
           })
       })
@@ -909,6 +910,7 @@ describe('Collection router', () => {
               isPublished: true,
               offset: page - 1, // it's the offset
               limit,
+              thirdPartyIds: [],
             })
           })
       })
@@ -943,8 +945,9 @@ describe('Collection router', () => {
 
   describe('when retrieving the collections of an address', () => {
     beforeEach(() => {
-      ;(Collection.findByAllByAddress as jest.Mock).mockReturnValueOnce([
+      ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
         dbCollection,
+        dbTPCollection,
       ])
       ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
       ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([

@@ -10,18 +10,20 @@ type CollectionWithItemCount = CollectionAttributes & {
   item_count: number
 }
 
-type CollectionWithCounts = CollectionWithItemCount & {
+export type CollectionWithCounts = CollectionWithItemCount & {
   collection_count: number
 }
 
-type FindCollectionParams = {
+export type FindCollectionParams = {
   limit?: number
   offset?: number
   q?: string
+  address?: string
+  thirdPartyIds?: string[]
   assignee?: string
   status?: CurationStatusFilter
   sort?: CurationStatusSort
-  isPublished: boolean
+  isPublished?: boolean
 }
 
 export class Collection extends Model<CollectionAttributes> {
@@ -59,13 +61,23 @@ export class Collection extends Model<CollectionAttributes> {
     q,
     assignee,
     status,
-  }: Pick<FindCollectionParams, 'q' | 'assignee' | 'status'>) {
-    if (!q && !assignee && !status) {
+    address,
+    thirdPartyIds,
+  }: Pick<
+    FindCollectionParams,
+    'q' | 'assignee' | 'status' | 'address' | 'thirdPartyIds'
+  >) {
+    if (!q && !assignee && !status && !address && !thirdPartyIds?.length) {
       return SQL``
     }
     const conditions = [
       q ? SQL`collections.name LIKE '%' || ${q} || '%'` : undefined,
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
+      address
+        ? thirdPartyIds?.length
+          ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}))`
+          : SQL`collections.eth_address = ${address}`
+        : undefined,
       status
         ? [
             CurationStatusFilter.PENDING,
@@ -81,6 +93,10 @@ export class Collection extends Model<CollectionAttributes> {
         : undefined,
     ].filter(Boolean)
 
+    if (!conditions.length) {
+      return SQL``
+    }
+
     const result = SQL`WHERE `
     conditions.forEach((condition, index) => {
       if (condition) {
@@ -94,7 +110,7 @@ export class Collection extends Model<CollectionAttributes> {
     return result
   }
 
-  static getPublishedJoinStatement(isPublished: boolean) {
+  static getPublishedJoinStatement(isPublished = false) {
     return isPublished
       ? SQL`JOIN ${raw(
           Item.tableName
@@ -105,11 +121,9 @@ export class Collection extends Model<CollectionAttributes> {
   static findAll({
     limit = DEFAULT_LIMIT,
     offset = 0,
-    q,
-    assignee,
-    status,
     sort,
     isPublished,
+    ...whereFilters
   }: FindCollectionParams) {
     const query = SQL`
       SELECT collections.*, COUNT(*) OVER() as collection_count, (SELECT COUNT(*) FROM ${raw(
@@ -120,7 +134,7 @@ export class Collection extends Model<CollectionAttributes> {
           CollectionCuration.tableName
         )} collection_curations ON collection_curations.collection_id = collections.id`}
         ${SQL`${this.getPublishedJoinStatement(isPublished)}`}
-        ${SQL`${this.getFindAllWhereStatement({ q, assignee, status })}`}
+        ${SQL`${this.getFindAllWhereStatement(whereFilters)}`}
         ${SQL`${this.getOrderByStatement(sort)}`}
         LIMIT ${limit}
         OFFSET ${offset}  

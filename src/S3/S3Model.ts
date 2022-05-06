@@ -6,6 +6,8 @@ import {
   uploadFile,
   ACLValues,
   copyFile,
+  getBucket,
+  getAccessKey,
 } from './s3'
 import { S3Type } from './types'
 
@@ -16,6 +18,14 @@ export class S3Model {
   constructor(id: string, type: S3Type) {
     this.id = id
     this.type = type
+  }
+
+  getBucket() {
+    return getBucket()
+  }
+
+  getAccessKey() {
+    return getAccessKey()
   }
 
   async readFileBody(filename: string) {

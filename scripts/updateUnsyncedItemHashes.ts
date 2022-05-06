@@ -36,6 +36,9 @@ export async function run() {
 
   console.log('DB: Connected!')
 
+  console.log('Connected to bucket:', s3.getBucket())
+  console.log('Access key:', s3.getAccessKey())
+
   try {
     // Objective get all published items that are
     // de-synced with the catalyst (or that are not in the catalyst)
@@ -146,9 +149,8 @@ function needsMigration(item: FullItem) {
 }
 
 async function migrateItem(item: FullItem) {
-  const files: Record<string, Buffer> = {}
-
   console.log('Downloading files...')
+  const files: Record<string, Buffer> = {}
   const filePromises: Promise<any>[] = []
   for (const path in item.contents) {
     const hash = item.contents[path]
@@ -156,6 +158,8 @@ async function migrateItem(item: FullItem) {
       if (file && file.Body) {
         const buffer = file.Body
         files[path] = buffer as Buffer
+      } else {
+        console.error('File not found or body is undefined', file)
       }
     })
     filePromises.push(promise)
@@ -167,9 +171,12 @@ async function migrateItem(item: FullItem) {
   const newContent: Record<string, string> = {}
   const hashPromises: Promise<any>[] = []
   for (const path in item.contents) {
-    const promise = hashV1(files[path]).then(
-      (hash) => (newContent[path] = hash)
-    )
+    const file = files[path]
+    if (!file) {
+      console.error('file not found for path', path)
+      throw new Error('File not found')
+    }
+    const promise = hashV1(file).then((hash) => (newContent[path] = hash))
     hashPromises.push(promise)
   }
   await Promise.all(hashPromises)
@@ -225,7 +232,9 @@ async function migrateStandardItem(
   attributes.blockchain_item_id = item ? item.blockchain_item_id : null
   // Compute the content hash of the item to later store it in the DB
   attributes.local_content_hash =
-    collection && isStandardItemPublished(attributes, collection)
+    item.local_content_hash &&
+    collection &&
+    isStandardItemPublished(attributes, collection)
       ? await calculateItemContentHash(attributes, collection)
       : null
   return Item.upsert(attributes)

@@ -53,6 +53,14 @@ if (STORAGE_URL) {
 
 export const s3 = new AWS.S3(config)
 
+export function getBucket() {
+  return BUCKET_NAME
+}
+
+export function getAccessKey() {
+  return ACCESS_KEY
+}
+
 export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
   const params = {
     Bucket: BUCKET_NAME,

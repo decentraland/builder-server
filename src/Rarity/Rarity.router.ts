@@ -5,71 +5,77 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { RarityFragment } from '../ethereum/api/fragments'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { isUsingRaritiesWithOracle, getRarityFromBlockchain } from './utils'
+import { Currency, Rarity } from './types'
 
 export class RarityRouter extends Router {
   mount() {
     // Returns the available rarities.
     this.router.get('/rarities', server.handleRequest(this.getRarities))
 
-    if (isUsingRaritiesWithOracle()) {
-      // Returns a single rarity according to the rarity name provided.
-      this.router.get('/rarities/:name', server.handleRequest(this.getRarity))
-    }
+    // Returns a single rarity according to the rarity name provided.
+    this.router.get('/rarities/:name', server.handleRequest(this.getRarity))
   }
 
-  getRarities = async (req: Request) => {
+  getRarities = async (req: Request): Promise<Rarity[]> => {
+    const rarities = await collectionAPI.fetchRarities()
+
     // If the server is still using the old rarities contract.
     // Return rarities as they have been always returned
     if (!isUsingRaritiesWithOracle()) {
-      return collectionAPI.fetchRarities()
+      return rarities.map((rarity) => ({ ...rarity, currency: Currency.MANA }))
     }
 
-    const inUSD = req.query.inUSD === 'true'
-
-    const rarities = await collectionAPI.fetchRarities()
+    const inUSD = req.query.currency === Currency.USD
 
     // If the prices were requested in USD, just return the data from the graph.
     if (inUSD) {
-      return rarities
+      return rarities.map((rarity) => ({ ...rarity, currency: Currency.USD }))
     }
 
     // If not, query the blockchain to obtain the converted rarity prices in MANA
     // from USD.
     const blockchainRarities = await Promise.all(
-      rarities.map((r) => this.getRarityFromBlockchain(r.id))
+      rarities.map((rarity) => this.getRarityFromBlockchain(rarity.id))
     )
 
     const blockchainRaritiesMap = new Map(
-      blockchainRarities.map((r) => [r.id, r])
+      blockchainRarities.map((rarity) => [rarity.id, rarity])
     )
 
-    return rarities.map((r) => ({
-      ...r,
-      price: blockchainRaritiesMap.get(r.id)!.price,
+    return rarities.map((rarity) => ({
+      ...rarity,
+      price: blockchainRaritiesMap.get(rarity.id)!.price,
+      currency: Currency.MANA,
     }))
   }
 
-  getRarity = async (req: Request): Promise<RarityFragment> => {
+  getRarity = async (req: Request): Promise<Rarity> => {
+    if (!isUsingRaritiesWithOracle()) {
+      throw new HTTPError(`Cannot GET ${req.path}`, {}, STATUS_CODES.notFound)
+    }
+
     const name = req.params.name
 
-    const inUSD = req.query.inUSD === 'true'
+    const inUSD = req.query.currency === Currency.USD
 
     // If price is requested in USD, get rarities from the graph and return the data as is from
     // the rarity with the given name.
     if (inUSD) {
       const rarities = await collectionAPI.fetchRarities()
 
-      const rarity = rarities.find((r) => r.id === name)
+      const rarity = rarities.find((r) => r.name === name)
 
       if (!rarity) {
         throw new HTTPError('Rarity not found', { name }, STATUS_CODES.notFound)
       }
 
-      return rarity
+      return { ...rarity, currency: Currency.USD }
     }
 
     // If not, get the price converted in MANA from the blockchain for that given rarity.
-    return this.getRarityFromBlockchain(name)
+    const rarity = await this.getRarityFromBlockchain(name)
+
+    return { ...rarity, currency: Currency.MANA }
   }
 
   private getRarityFromBlockchain = async (

@@ -3,6 +3,7 @@ import { buildURL } from '../../spec/utils'
 import { collectionAPI } from '../ethereum/api/collection'
 import { RarityFragment } from '../ethereum/api/fragments'
 import { app } from '../server'
+import { Currency, Rarity } from './types'
 import { getRarityFromBlockchain, isUsingRaritiesWithOracle } from './utils'
 
 jest.mock('../ethereum/api/collection')
@@ -82,7 +83,7 @@ describe('when fetching all rarities', () => {
 
       expect(body).toEqual({
         ok: true,
-        data: rarities,
+        data: rarities.map<Rarity>((r) => ({ ...r, currency: Currency.MANA })),
       })
     })
   })
@@ -92,20 +93,23 @@ describe('when fetching all rarities', () => {
       mockIsUsingRaritiesWithOracle.mockReturnValueOnce(true)
     })
 
-    describe('when the inUSD query param is true', () => {
+    describe('when the currency query param is USD', () => {
       it('should return a list of rarities obtained from the collectionAPI', async () => {
         const { body } = await server
-          .get(buildURL('/rarities', { inUSD: 'true' }))
+          .get(buildURL('/rarities', { currency: Currency.USD }))
           .expect(200)
 
         expect(body).toEqual({
           ok: true,
-          data: rarities,
+          data: rarities.map<Rarity>((r) => ({
+            ...r,
+            currency: Currency.USD,
+          })),
         })
       })
     })
 
-    describe('when the inUSD query param is false', () => {
+    describe('when the currency query param is MANA', () => {
       it('should return a list of rarities with the price converted to MANA from USD', async () => {
         for (const r of rarities) {
           mockGetRarityFromBlockchain.mockResolvedValueOnce({
@@ -115,7 +119,7 @@ describe('when fetching all rarities', () => {
         }
 
         const { body } = await server
-          .get(buildURL('/rarities', { inUSD: 'false' }))
+          .get(buildURL('/rarities', { currency: Currency.MANA }))
           .expect(200)
 
         expect(body).toEqual({
@@ -123,6 +127,7 @@ describe('when fetching all rarities', () => {
           data: rarities.map((r) => ({
             ...r,
             price: '4000000000000000000',
+            currency: Currency.MANA,
           })),
         })
       })
@@ -134,7 +139,7 @@ describe('when fetching all rarities', () => {
           )
 
           const { body } = await server
-            .get(buildURL('/rarities', { inUSD: 'false' }))
+            .get(buildURL('/rarities', { currency: Currency.MANA }))
             .expect(404)
 
           expect(body).toEqual({
@@ -157,9 +162,75 @@ describe('when fetching a single rarity by name', () => {
     })
 
     it('should fail with an endpoint not found', async () => {
-      await server.get(buildURL('/rarities/common')).expect(404)
+      const { body } = await server
+        .get(buildURL('/rarities/common'))
+        .expect(404)
+
+      expect(body).toEqual({
+        data: {},
+        error: 'Cannot GET /rarities/common',
+        ok: false,
+      })
     })
   })
 
-  // TODO: Tests for when rarities feature flag is enabled
+  describe('when rarities with oracle feature flag is enabled', () => {
+    beforeEach(() => {
+      mockIsUsingRaritiesWithOracle.mockReturnValueOnce(true)
+    })
+
+    describe('when the currency query param is MANA', () => {
+      it('should return the rarity with its price in MANA', async () => {
+        mockGetRarityFromBlockchain.mockResolvedValueOnce({
+          ...rarities[0],
+          price: '4000000000000000000',
+        })
+
+        const { body } = await server
+          .get(buildURL('/rarities/common', { currency: Currency.MANA }))
+          .expect(200)
+
+        expect(body).toEqual({
+          ok: true,
+          data: {
+            ...rarities[0],
+            price: '4000000000000000000',
+            currency: Currency.MANA,
+          },
+        })
+      })
+    })
+
+    describe('when the currency query param is USD', () => {
+      it('should return the rarity with its price in USD', async () => {
+        const { body } = await server
+          .get(buildURL('/rarities/common', { currency: Currency.USD }))
+          .expect(200)
+
+        expect(body).toEqual({
+          ok: true,
+          data: {
+            ...rarities[0],
+            currency: Currency.USD,
+          },
+        })
+      })
+
+      describe('when the name provided is invalid', () => {
+        it('should return the rarity with its price in USD', async () => {
+          const { body } = await server
+            .get(buildURL('/rarities/invalid', { currency: Currency.USD }))
+            .expect(404)
+
+          expect(body).toEqual({
+            ok: false,
+            error: 'Rarity not found',
+            data: {
+              name: 'invalid',
+            },
+          })
+        })
+      })
+    })
+  })
 })

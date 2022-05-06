@@ -239,7 +239,19 @@ async function migrateTPItem(item: FullItem, collection: CollectionAttributes) {
     collection
   )
 
-  return Item.upsert(attributes)
+  const newFullItem = await Item.upsert(attributes)
+
+  const itemCuration = await ItemCuration.findLastByCollectionId(
+    newFullItem.collection_id!
+  )
+  if (itemCuration && newFullItem.local_content_hash) {
+    console.log('Update curation for item=', item.urn)
+    const newItemCuration: ItemCurationAttributes = {
+      ...itemCuration,
+      content_hash: newFullItem.local_content_hash,
+    }
+    await ItemCuration.upsert(newItemCuration)
+  }
 }
 
 /***************************************************************************************

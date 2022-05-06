@@ -62,7 +62,9 @@ describe('when calculating the hashes of a standard wearable item', () => {
   it("should return the hash of the item's entity", () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
-    ).resolves.toEqual('QmehW1ccHcvdKp8NNhrr6PdxEDHGYa9j6xmu9Bojg8jcjN')
+    ).resolves.toEqual(
+      'bafkreihtcjnfcahy3nomnhxiuyjyzj2fxzy3eab7ctmxl237nf2vsoqkmu'
+    )
   })
 })
 
@@ -114,7 +116,9 @@ describe('when calculating the hashes of a standard emote item', () => {
   it("should return the hash of the item's entity", () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
-    ).resolves.toEqual('QmPWgMRRqWMTgFY1nThCPvUi7PTeiR8v3ibCWqhwypYHnF')
+    ).resolves.toEqual(
+      'bafkreiarnvngt5woehoequocda3o3jmyhq7zkiyafqg4vdrkfvaszaslza'
+    )
   })
 })
 

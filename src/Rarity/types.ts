@@ -1,4 +1,4 @@
-  import { RarityFragment } from '../ethereum/api/fragments'
+import { RarityFragment } from '../ethereum/api/fragments'
 
 export enum Currency {
   MANA = 'MANA',

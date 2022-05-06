@@ -29,7 +29,9 @@ export class PeerAPI {
   logger: ILoggerComponent.ILogger
 
   constructor() {
-    this.lambdasClient = new LambdasClient(`${PEER_URL}/lambdas`)
+    this.lambdasClient = new LambdasClient({
+      lambdasUrl: `${PEER_URL}/lambdas`,
+    })
     this.logger = createConsoleLogComponent().getLogger('PeerAPI')
   }
 

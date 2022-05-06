@@ -5,6 +5,7 @@ import {
   deleteFolder,
   uploadFile,
   ACLValues,
+  copyFile,
 } from './s3'
 import { S3Type } from './types'
 
@@ -42,6 +43,12 @@ export class S3Model {
     const key = this.getFileKey(filename)
     const buffer = typeof data === 'string' ? Buffer.from(data) : data
     return uploadFile(key, buffer, acl)
+  }
+
+  async copyFile(source: string, target: string, acl: ACLValues) {
+    const sourceKey = this.getFileKey(source)
+    const targetKey = this.getFileKey(target)
+    return copyFile(sourceKey, targetKey, acl)
   }
 
   async checkFile(filename: string) {

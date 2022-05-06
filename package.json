@@ -16,7 +16,8 @@
     "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js",
     "test": "jest",
     "test:watch": "npm run test -- --watch",
-    "test:coverage": "npm run test -- --coverage --config jest.config.ci.js"
+    "test:coverage": "npm run test -- --coverage --config jest.config.ci.js",
+    "update-unsynced-hashes": "ts-node ./scripts/updateUnsyncedItemHashes.ts"
   },
   "keywords": [
     "decentraland"
@@ -31,7 +32,7 @@
   "dependencies": {
     "@apollo/client": "^3.3.9",
     "@dcl/hashing": "^1.1.0",
-    "@dcl/schemas": "^4.2.0",
+    "@dcl/schemas": "^4.8.0",
     "@ethersproject/solidity": "^5.0.9",
     "@types/escape-html": "0.0.20",
     "@types/express": "^4.17.11",
@@ -49,7 +50,7 @@
     "ajv-formats": "^1.5.1",
     "aws-sdk": "^2.841.0",
     "cors": "^2.8.5",
-    "dcl-catalyst-client": "^4.0.6",
+    "dcl-catalyst-client": "^11.3.0",
     "dcl-ops-lib": "^1.0.6",
     "decentraland-commons": "^5.1.0",
     "decentraland-server": "^3.0.0",
@@ -81,6 +82,7 @@
     "@types/jest": "^27.0.1",
     "@types/node": "^14.14.28",
     "@types/supertest": "^2.0.11",
+    "dcl-catalyst-commons": "^8.2.0",
     "dcl-crypto": "^2.3.0",
     "dcl-tslint-config-standard": "^1.1.0",
     "jest": "^27.2.0",

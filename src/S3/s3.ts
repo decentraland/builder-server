@@ -62,6 +62,19 @@ export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
   return utils.promisify<AWS.S3.GetObjectOutput>(s3.getObject.bind(s3))(params)
 }
 
+export function copyFile(source: string, target: string, acl: ACLValues) {
+  const params: AWS.S3.CopyObjectRequest = {
+    Bucket: BUCKET_NAME,
+    CopySource: `/${BUCKET_NAME}/${source}`,
+    Key: target,
+    ACL: acl,
+  }
+  log.info(`Copying file "${source}" into "${target}"`)
+  return utils.promisify<AWS.S3.CopyObjectOutput>(s3.copyObject.bind(s3))(
+    params
+  )
+}
+
 export async function listFiles(
   key: string,
   continuationToken?: string,

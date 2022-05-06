@@ -1,4 +1,5 @@
 import { server } from 'decentraland-server'
+import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -30,6 +31,13 @@ import {
 } from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Cheque } from '../SlotUsageCheque'
+import { PaginatedResponse } from '../Pagination'
+import {
+  generatePaginatedResponse,
+  getOffset,
+  getPaginationParams,
+} from '../Pagination/utils'
+import { CurationStatusFilter, CurationStatusSort } from '../Curation'
 import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -209,7 +217,11 @@ export class CollectionRouter extends Router {
     }
   }
 
-  getCollections = async (req: AuthRequest): Promise<FullCollection[]> => {
+  getCollections = async (
+    req: AuthRequest
+  ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
+    const { page, limit } = getPaginationParams(req)
+    const { assignee, status, sort, q, is_published } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -222,27 +234,51 @@ export class CollectionRouter extends Router {
     }
 
     const [
-      dbCollections,
+      allCollectionsWithCount,
       remoteCollections,
       dbTPCollections,
     ] = await Promise.all([
-      Collection.findAll(),
+      Collection.findAll({
+        q: q as string,
+        assignee: assignee as string,
+        status: status as CurationStatusFilter,
+        sort: sort as CurationStatusSort,
+        isPublished: is_published === 'true',
+        offset: page && limit ? getOffset(page, limit) : undefined,
+        limit,
+      }),
       collectionAPI.fetchCollections(),
       this.service.getDbTPCollections(),
     ])
 
+    const totalCollections =
+      Number(allCollectionsWithCount[0]?.collection_count) || 0
+
+    const dbCollections = allCollectionsWithCount.map((collectionWithCount) =>
+      omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
+    )
+
+    const dbBlockchainContractAddresses = dbCollections.map(
+      (collection) => collection.contract_address
+    )
     const consolidatedCollections = await Bridge.consolidateCollections(
       dbCollections,
-      remoteCollections
+      remoteCollections.filter((remoteCollection) =>
+        dbBlockchainContractAddresses.includes(remoteCollection.id)
+      )
     )
     const consolidatedTPCollections = await Bridge.consolidateTPCollections(
       dbTPCollections
     )
 
     // Build the full collection
-    return consolidatedCollections
+    const concatenated = consolidatedCollections
       .concat(consolidatedTPCollections)
       .map(toFullCollection)
+
+    return page && limit
+      ? generatePaginatedResponse(concatenated, totalCollections, limit, page)
+      : concatenated
   }
 
   getAddressCollections = async (

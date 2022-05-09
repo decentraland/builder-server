@@ -157,6 +157,10 @@ export = async function main() {
         name: 'COLLECTION_FACTORY_VERSION',
         value: env === 'prd' || env === 'stg' ? '2' : '3',
       },
+      {
+        name: 'FF_RARITIES_WITH_ORACLE',
+        value: '0',
+      },
     ],
     hostname,
     {

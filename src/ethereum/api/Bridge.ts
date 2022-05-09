@@ -32,24 +32,6 @@ export class Bridge {
   ): Promise<CollectionAttributes[]> {
     const collections: CollectionAttributes[] = []
 
-    // const dbCollectionsByRemotes = await Collection.findByContractAddresses(
-    //   remoteCollections.map((collection) => collection.id)
-    // )
-    // const contractsAddresses = remoteCollections.map(
-    //   (collection) => collection.id
-    // )
-    // const dbCollectionsByRemotes = dbCollections.filter(
-    //   (collection) =>
-    //     collection.contract_address &&
-    //     contractsAddresses.includes(collection.contract_address)
-    // )
-
-    // // Filter collections already found on the database to avoid duplicates
-    // const allDbCollections = this.distinctById<CollectionAttributes>([
-    //   ...dbCollections,
-    //   ...dbCollectionsByRemotes,
-    // ])
-
     for (const dbCollection of dbCollections) {
       if (isTPCollection(dbCollection)) {
         collections.push(await this.consolidateTPCollection(dbCollection))

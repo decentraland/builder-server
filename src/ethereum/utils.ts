@@ -45,7 +45,8 @@ export function getFactoryCollectionAddress() {
 
 export function getFactoryCollectionCodeHash() {
   const v3CodeHashes = {
-    [ChainId.MATIC_MAINNET]: '',
+    [ChainId.MATIC_MAINNET]:
+      '0x5a1d707e8f0be7be88213a8216231468689b96dcd4abed0931276f4886a87beb',
     [ChainId.MATIC_MUMBAI]:
       '0x7917e9ddbe5e0fd8de84efee3e8089ca7878af7a6aa1a62b4d0b6160821d4de8',
   }

@@ -60,15 +60,9 @@ export function getFactoryCollectionCodeHash() {
 
   const chainId = getMappedChainIdForCurrentChainName()
 
-  if (getCollectionFactoryVersion() === '3') {
-    if (chainId === ChainId.MATIC_MAINNET) {
-      throw new Error('Not yet supported on Matic Mainnet')
-    }
-
-    return v3CodeHashes[chainId]
-  }
-
-  return v2CodeHashes[chainId]
+  return getCollectionFactoryVersion() === '3'
+    ? v3CodeHashes[chainId]
+    : v2CodeHashes[chainId]
 }
 
 export function getForwarderAddress() {

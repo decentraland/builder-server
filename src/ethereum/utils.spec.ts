@@ -60,13 +60,13 @@ describe('when obtaining the codehash', () => {
   })
 
   describe('when CHAIN_NAME === "Ethereum Mainnet" && COLLECTION_FACTORY_VERSION === "3"', () => {
-    it('should throw an error complaining that the collection factory v3 is not supported in that network', async () => {
+    it('should return the codehash for the factory v3 in matic mainnet', async () => {
       mockEnv.get
         .mockReturnValueOnce(ChainName.ETHEREUM_MAINNET)
         .mockReturnValueOnce('3')
 
-      expect(() => getFactoryCollectionCodeHash()).toThrow(
-        'Not yet supported on Matic Mainnet'
+      expect(getFactoryCollectionCodeHash()).toBe(
+        '0x5a1d707e8f0be7be88213a8216231468689b96dcd4abed0931276f4886a87beb'
       )
     })
   })

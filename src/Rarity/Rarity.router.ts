@@ -44,9 +44,10 @@ export class RarityRouter extends Router {
 
       return {
         ...graphRarity,
-        price: blockchainRarity.price,
-        originalPrice: graphRarity.price,
-        originalCurrency: Currency.USD,
+        prices: {
+          [Currency.MANA]: blockchainRarity.price,
+          [Currency.USD]: graphRarity.price,
+        },
       }
     })
   }
@@ -70,9 +71,10 @@ export class RarityRouter extends Router {
 
     return {
       ...graphRarity,
-      price: blockchainRarity.price,
-      originalPrice: graphRarity.price,
-      originalCurrency: Currency.USD,
+      prices: {
+        [Currency.MANA]: blockchainRarity.price,
+        [Currency.USD]: graphRarity.price,
+      },
     }
   }
 

@@ -19,6 +19,9 @@ const mockGetRarityFromBlockchain = getRarityFromBlockchain as jest.MockedFuncti
 
 const server = supertest(app.getApp())
 
+const priceUsd = '10000000000000000000'
+const priceMana = '4000000000000000000'
+
 let rarities: RarityFragment[]
 
 beforeEach(() => {
@@ -28,43 +31,43 @@ beforeEach(() => {
     {
       id: 'common',
       name: 'common',
-      price: '10000000000000000000',
+      price: priceUsd,
       maxSupply: '100000',
     },
     {
       id: 'epic',
       name: 'epic',
-      price: '10000000000000000000',
+      price: priceUsd,
       maxSupply: '1000',
     },
     {
       id: 'legendary',
       name: 'legendary',
-      price: '10000000000000000000',
+      price: priceUsd,
       maxSupply: '100',
     },
     {
       id: 'mythic',
       name: 'mythic',
-      price: '10000000000000000000',
+      price: priceUsd,
       maxSupply: '10',
     },
     {
       id: 'rare',
       name: 'rare',
-      price: '10000000000000000000',
+      price: priceUsd,
       maxSupply: '5000',
     },
     {
       id: 'uncommon',
       name: 'uncommon',
-      price: '10000000000000000000',
+      price: priceUsd,
       maxSupply: '10000',
     },
     {
       id: 'unique',
       name: 'unique',
-      price: '10000000000000000000',
+      price: priceUsd,
       maxSupply: '1',
     },
   ]
@@ -97,7 +100,7 @@ describe('when fetching all rarities', () => {
       for (const r of rarities) {
         mockGetRarityFromBlockchain.mockResolvedValueOnce({
           ...r,
-          price: '4000000000000000000',
+          price: priceMana,
         })
       }
 
@@ -107,9 +110,10 @@ describe('when fetching all rarities', () => {
         ok: true,
         data: rarities.map((r) => ({
           ...r,
-          price: '4000000000000000000',
-          originalPrice: '10000000000000000000',
-          originalCurrency: Currency.USD,
+          prices: {
+            [Currency.MANA]: priceMana,
+            [Currency.USD]: priceUsd,
+          },
         })),
       })
     })
@@ -161,7 +165,7 @@ describe('when fetching a single rarity by name', () => {
     it('should return the rarity with its price converted from USD to MANA', async () => {
       mockGetRarityFromBlockchain.mockResolvedValueOnce({
         ...rarities[0],
-        price: '4000000000000000000',
+        price: priceMana,
       })
 
       const { body } = await server
@@ -172,9 +176,10 @@ describe('when fetching a single rarity by name', () => {
         ok: true,
         data: {
           ...rarities[0],
-          price: '4000000000000000000',
-          originalPrice: '10000000000000000000',
-          originalCurrency: Currency.USD,
+          prices: {
+            [Currency.MANA]: priceMana,
+            [Currency.USD]: priceUsd,
+          },
         },
       })
     })

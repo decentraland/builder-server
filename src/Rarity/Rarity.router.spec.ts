@@ -3,7 +3,7 @@ import { buildURL } from '../../spec/utils'
 import { collectionAPI } from '../ethereum/api/collection'
 import { RarityFragment } from '../ethereum/api/fragments'
 import { app } from '../server'
-import { Currency, Rarity } from './types'
+import { Currency } from './types'
 import { getRarityFromBlockchain, isUsingRaritiesWithOracle } from './utils'
 
 jest.mock('../ethereum/api/collection')

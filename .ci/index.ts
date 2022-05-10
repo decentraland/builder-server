@@ -159,7 +159,7 @@ export = async function main() {
       },
       {
         name: 'FF_RARITIES_WITH_ORACLE',
-        value: '0',
+        value: env === 'prd' || env === 'stg' ? '0' : '1',
       },
     ],
     hostname,

@@ -119,21 +119,23 @@ export class Item extends Model<ItemAttributes> {
     return this.query<ItemWithTotalCount>(SQL`
       SELECT items.*, count(*) OVER() AS total_count
         FROM ${raw(this.tableName)} items
-        LEFT JOIN ${raw(
-          Collection.tableName
-        )} collections ON collections.id = items.collection_id
-        WHERE
-          (
-            collections.third_party_id = ANY(${thirdPartyIds})
-          OR
-            (items.eth_address = ${address} AND items.urn_suffix IS NULL)
-          )
         ${
-          collectionId
-            ? SQL`AND items.collection_id ${
-                collectionId === 'null' ? SQL`is NULL` : SQL`= ${collectionId}`
-              }`
-            : SQL``
+          collectionId !== 'null'
+            ? SQL`LEFT JOIN ${raw(
+                Collection.tableName
+              )} collections ON collections.id = items.collection_id
+              WHERE
+              (
+                collections.third_party_id = ANY(${thirdPartyIds})
+                  OR
+                (items.eth_address = ${address} AND items.urn_suffix IS NULL)
+              )
+                ${
+                  collectionId
+                    ? SQL`AND items.collection_id = ${collectionId}`
+                    : SQL``
+                }`
+            : SQL`WHERE items.collection_id is NULL`
         }
         LIMIT ${limit}
         OFFSET ${offset}

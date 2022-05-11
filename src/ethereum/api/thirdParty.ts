@@ -20,7 +20,7 @@ export const THIRD_PARTY_URL = env.get('THIRD_PARTY_GRAPH_URL', '')
 
 const getThirdPartiesQuery = () => gql`
   query getThirdParties(${PAGINATION_VARIABLES}) {
-    thirdParties(${PAGINATION_ARGUMENTS}, where: { isApproved: true }) {
+    thirdParties(${PAGINATION_ARGUMENTS}) {
       ...thirdPartyFragment
     }
   }
@@ -28,7 +28,7 @@ const getThirdPartiesQuery = () => gql`
 `
 const getThirdPartyQuery = () => gql`
   query getThirdParty($id: String!) {
-    thirdParties(first: 1, where: { isApproved: true, id: $id }) {
+    thirdParties(first: 1, where: { id: $id }) {
       ...thirdPartyFragment
     }
   }

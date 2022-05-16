@@ -20,35 +20,68 @@ import { CatalystItem, peerAPI } from './peer'
 
 export class Bridge {
   /**
-   * Takes TP collections found in the database and combines each one with the data from the last published item it has.
-   * To get the published information, it'll check the last curation made to an item each collection has, as each curation is updated *after* being uploaded to the Catalyst.
-   * If no published item is found or a non-TP collection is supplied, it'll be returned as-is.
-   * For more info on what data is merged, see `Bridge.mergeTPCollection`
-   * @param dbCollections - TP collections from the database
+   * Takes collections found in the database and combines each one with the data from the remote published (blockchain) collection counterpart
+   * If no published collection is found, it'll be returned as-is.
+   * For more info on what data is updated from the published item, see `Bridge.mergeCollection`
+   * @param dbCollections - DB standard collections
+   * @param remoteCollections - Blockchain standard collections
    */
-  static async consolidateTPCollections(
-    dbCollections: CollectionAttributes[]
+  static async consolidateAllCollections(
+    dbCollections: CollectionAttributes[],
+    remoteCollections: CollectionFragment[]
   ): Promise<CollectionAttributes[]> {
     const collections: CollectionAttributes[] = []
 
     for (const dbCollection of dbCollections) {
-      let fullCollection: CollectionAttributes = { ...dbCollection }
-
       if (isTPCollection(dbCollection)) {
-        const lastItemCuration = await ItemCuration.findLastByCollectionId(
-          dbCollection.id
-        )
-        if (lastItemCuration) {
-          fullCollection = Bridge.mergeTPCollection(
-            dbCollection,
-            lastItemCuration
+        collections.push(await this.consolidateTPCollection(dbCollection))
+      } else {
+        let remoteCollection: CollectionFragment | undefined
+        if (dbCollection.contract_address !== null) {
+          const contractAddress = dbCollection.contract_address.toLowerCase()
+
+          remoteCollection = remoteCollections.find(
+            (remoteCollection) =>
+              remoteCollection.id.toLowerCase() === contractAddress
           )
         }
-      }
 
-      collections.push(fullCollection)
+        const collection = remoteCollection
+          ? Bridge.mergeCollection(dbCollection, remoteCollection)
+          : dbCollection
+
+        collections.push(collection)
+      }
     }
+
     return collections
+  }
+
+  /**
+   * Takes a TP collection found in the database and combines it with the data from the last published item it has.
+   * To get the published information, it'll check the last curation made to an item each collection has, as each curation is updated *after* being uploaded to the Catalyst.
+   * If no published item is found or a non-TP collection is supplied, it'll be returned as-is.
+   * For more info on what data is merged, see `Bridge.mergeTPCollection`
+   * @param dbCollection - TP collection from the database
+   */
+  static async consolidateTPCollection(
+    dbTPCollection: CollectionAttributes
+  ): Promise<CollectionAttributes> {
+    let fullCollection: CollectionAttributes = { ...dbTPCollection }
+
+    if (isTPCollection(dbTPCollection)) {
+      const lastItemCuration = await ItemCuration.findLastByCollectionId(
+        dbTPCollection.id
+      )
+      if (lastItemCuration) {
+        fullCollection = Bridge.mergeTPCollection(
+          dbTPCollection,
+          lastItemCuration
+        )
+      }
+    }
+
+    return fullCollection
   }
 
   /**

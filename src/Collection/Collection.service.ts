@@ -41,7 +41,11 @@ import {
   PublishCollectionResponse,
   ThirdPartyCollectionAttributes,
 } from './Collection.types'
-import { Collection } from './Collection.model'
+import {
+  Collection,
+  CollectionWithCounts,
+  FindCollectionParams,
+} from './Collection.model'
 import {
   CollectionAction,
   AlreadyPublishedCollectionError,
@@ -529,6 +533,17 @@ export class CollectionService {
     }
 
     return false
+  }
+
+  public async getCollections(
+    params: FindCollectionParams,
+    manager?: string
+  ): Promise<CollectionWithCounts[]> {
+    const thirdParties = manager
+      ? await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+      : await thirdPartyAPI.fetchThirdParties()
+    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
+    return Collection.findAll({ ...params, thirdPartyIds })
   }
 
   public async getDbTPCollections(): Promise<CollectionAttributes[]> {

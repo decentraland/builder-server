@@ -154,10 +154,6 @@ export = async function main() {
         value: config.requireSecret('OPEN_SEA_API_KEY'),
       },
       {
-        name: 'COLLECTION_FACTORY_VERSION',
-        value: '3',
-      },
-      {
         name: 'FF_RARITIES_WITH_ORACLE',
         value: env === 'prd' || env === 'stg' ? '0' : '1',
       },

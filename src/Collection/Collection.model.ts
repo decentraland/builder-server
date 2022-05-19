@@ -91,7 +91,7 @@ export class Collection extends Model<CollectionAttributes> {
             CurationStatusFilter.PENDING,
             CurationStatusFilter.APPROVED,
           ].includes(status)
-          ? SQL`collection_curations.status = ${status}`
+          ? SQL`collection_curations.status = ${status} AND collections.contract_address = ANY(${remoteIds})`
           : status === CurationStatusFilter.REJECTED // Rejected not a single curation in approved
           ? SQL`collection_curations.status = ${status} AND collections.contract_address = ANY(${remoteIds})`
           : status === CurationStatusFilter.TO_REVIEW // To review: Not assigned && isApproved false from the contract
@@ -148,6 +148,23 @@ export class Collection extends Model<CollectionAttributes> {
       : SQL``
   }
 
+  /**
+   * Finds all the Collections that given parameters. It sorts and paginates the results.
+   * If the status is APPROVED, the remoteIds will be the ones with `isApproved` true.
+   * If the status is TO_REVIEW, UNDER_REVIEW or REJECTED, the remoteIds will be the ones with `isApproved` false.
+   * If status is not defined, the remoteIds will be the ones with `isApproved` false, so the ORDER BY can put them first.
+   *
+   * @param limit - limit param to paginate the query
+   * @param offset - offset param to paginate the query
+   * @param sort - the type of sorting to apply. MOST_RELEVANT will return the NOT approved first.
+   * @param isPublished - if true, will return only the published collections. If false, will return only the unpublished collections.
+   * @param q - the query to search for.
+   * @param assignee - the assignee to filter by.
+   * @param status - the status to filter by.
+   * @param address - the address to filter by.
+   * @param thirdPartyIds - the third party ids to filter by. If it's a committee member, the array will have all the ids.
+   * @param remoteIds - The remote ids to filter the query with
+   */
   static findAll({
     limit = DEFAULT_LIMIT,
     offset = 0,

@@ -233,6 +233,8 @@ export class CollectionRouter extends Router {
       )
     }
 
+    // If status is passed, the graph query will be filtered and those results will be included in a WHERE statement in the query later on
+    // If status is not passed, the query won't be filtered and all the collections will be retrieved
     const remoteCollections = await collectionAPI.fetchCollections(
       toRemoteWhereCondition({ status: status as CurationStatusFilter })
     )
@@ -247,7 +249,9 @@ export class CollectionRouter extends Router {
       limit,
       remoteIds: status
         ? remoteCollections.map((c) => c.id)
-        : remoteCollections.filter((r) => !r.isApproved).map((c) => c.id), // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort
+        : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.
+          // We filter at this level and not in the query because we need all the collections so they can be consolidated later on.
+          remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
     })
 
     const totalCollections =

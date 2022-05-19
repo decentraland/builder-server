@@ -236,16 +236,6 @@ export function toRemoteWhereCondition({
   status?: CurationStatusFilter
 }): CollectionQueryFilters {
   return {
-    isApproved: status
-      ? status === CurationStatusFilter.APPROVED
-        ? true
-        : [
-            CurationStatusFilter.TO_REVIEW,
-            CurationStatusFilter.UNDER_REVIEW,
-            CurationStatusFilter.REJECTED,
-          ].includes(status)
-        ? false
-        : undefined
-      : undefined,
+    isApproved: status ? status === CurationStatusFilter.APPROVED : undefined,
   }
 }

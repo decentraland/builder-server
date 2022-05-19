@@ -48,7 +48,7 @@ import {
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
-import { toFullCollection } from './utils'
+import { toFullCollection, toRemoteWhereCondition } from './utils'
 import {
   AlreadyPublishedCollectionError,
   InsufficientSlotsError,
@@ -233,18 +233,22 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [allCollectionsWithCount, remoteCollections] = await Promise.all([
-      this.service.getCollections({
-        q: q as string,
-        assignee: assignee as string,
-        status: status as CurationStatusFilter,
-        sort: sort as CurationStatusSort,
-        isPublished: is_published === 'true',
-        offset: page && limit ? getOffset(page, limit) : undefined,
-        limit,
-      }),
-      collectionAPI.fetchCollections(),
-    ])
+    const remoteCollections = await collectionAPI.fetchCollections(
+      toRemoteWhereCondition({ status: status as CurationStatusFilter })
+    )
+
+    const allCollectionsWithCount = await this.service.getCollections({
+      q: q as string,
+      assignee: assignee as string,
+      status: status as CurationStatusFilter,
+      sort: sort as CurationStatusSort,
+      isPublished: is_published ? is_published === 'true' : undefined,
+      offset: page && limit ? getOffset(page, limit) : undefined,
+      limit,
+      remoteIds: status
+        ? remoteCollections.map((c) => c.id)
+        : remoteCollections.filter((r) => !r.isApproved).map((c) => c.id), // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort
+    })
 
     const totalCollections =
       Number(allCollectionsWithCount[0]?.collection_count) || 0

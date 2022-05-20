@@ -844,13 +844,14 @@ describe('Collection router', () => {
             })
             expect(Collection.findAll).toHaveBeenCalledWith({
               assignee: undefined,
-              isPublished: false,
+              isPublished: undefined,
               q: undefined,
               sort: undefined,
               status: undefined,
               limit,
               offset: page - 1, // it's the offset,
               thirdPartyIds: [],
+              remoteIds: [],
             })
           })
       })
@@ -911,6 +912,7 @@ describe('Collection router', () => {
               offset: page - 1, // it's the offset
               limit,
               thirdPartyIds: [],
+              remoteIds: [],
             })
           })
       })

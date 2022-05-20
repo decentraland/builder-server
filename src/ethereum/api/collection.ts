@@ -19,6 +19,10 @@ import {
   PAGINATION_ARGUMENTS,
 } from './BaseGraphAPI'
 
+export type CollectionQueryFilters = {
+  isApproved?: boolean
+}
+
 const getCollectionByIdQuery = () => gql`
   query getCollectionById($id: String) {
     collections(where: { id: $id }) {
@@ -28,14 +32,22 @@ const getCollectionByIdQuery = () => gql`
   ${collectionFragment()}
 `
 
-const getCollectionsQuery = () => gql`
-  query getCollections(${PAGINATION_VARIABLES}) {
-    collections(${PAGINATION_ARGUMENTS}) {
-      ...collectionFragment
-    }
+const getCollectionsQuery = ({ isApproved }: CollectionQueryFilters) => {
+  const where: string[] = []
+
+  if (isApproved !== undefined) {
+    where.push(`isApproved : ${isApproved}`)
   }
-  ${collectionFragment()}
-`
+
+  return gql`
+    query getCollections(${PAGINATION_VARIABLES}) {
+      collections(${PAGINATION_ARGUMENTS}, where: { ${where.join('\n')} }) {
+        ...collectionFragment
+      }
+    }
+    ${collectionFragment()}
+  `
+}
 
 const getCollectionsByAuthorizedUserQuery = () => gql`
   query getCollectionsByCreator(${PAGINATION_VARIABLES}, $user: String, $users: [String!]) {
@@ -166,9 +178,9 @@ export class CollectionAPI extends BaseGraphAPI {
     return collections.length > 0 ? collections[0] : null
   }
 
-  fetchCollections = async (): Promise<CollectionFragment[]> => {
+  fetchCollections = async (filters: CollectionQueryFilters): Promise<CollectionFragment[]> => {
     return this.paginate(['collections'], {
-      query: getCollectionsQuery(),
+      query: getCollectionsQuery(filters),
     })
   }
 

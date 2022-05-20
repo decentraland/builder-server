@@ -48,7 +48,7 @@ import {
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
-import { toFullCollection } from './utils'
+import { toFullCollection, toRemoteWhereCondition } from './utils'
 import {
   AlreadyPublishedCollectionError,
   InsufficientSlotsError,
@@ -233,18 +233,26 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [allCollectionsWithCount, remoteCollections] = await Promise.all([
-      this.service.getCollections({
-        q: q as string,
-        assignee: assignee as string,
-        status: status as CurationStatusFilter,
-        sort: sort as CurationStatusSort,
-        isPublished: is_published === 'true',
-        offset: page && limit ? getOffset(page, limit) : undefined,
-        limit,
-      }),
-      collectionAPI.fetchCollections(),
-    ])
+    // If status is passed, the graph query will be filtered and those results will be included in a WHERE statement in the query later on
+    // If status is not passed, the query won't be filtered and all the collections will be retrieved
+    const remoteCollections = await collectionAPI.fetchCollections(
+      toRemoteWhereCondition({ status: status as CurationStatusFilter })
+    )
+
+    const allCollectionsWithCount = await this.service.getCollections({
+      q: q as string,
+      assignee: assignee as string,
+      status: status as CurationStatusFilter,
+      sort: sort as CurationStatusSort,
+      isPublished: is_published ? is_published === 'true' : undefined,
+      offset: page && limit ? getOffset(page, limit) : undefined,
+      limit,
+      remoteIds: status
+        ? remoteCollections.map((c) => c.id)
+        : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.
+          // We filter at this level and not in the query because we need all the collections so they can be consolidated later on.
+          remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
+    })
 
     const totalCollections =
       Number(allCollectionsWithCount[0]?.collection_count) || 0

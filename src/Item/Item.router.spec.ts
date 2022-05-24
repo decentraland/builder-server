@@ -173,6 +173,10 @@ describe('Item router', () => {
           .set(createAuthHeaders('get', url))
           .expect(200)
           .then((response: any) => {
+            expect(collectionAPI.fetchCollectionWithItem).toHaveBeenCalledWith(
+              dbCollectionMock.contract_address,
+              `${dbCollectionMock.contract_address}-${dbItem.blockchain_item_id}`
+            )
             expect(response.body).toEqual({
               data: {
                 ...resultingItem,

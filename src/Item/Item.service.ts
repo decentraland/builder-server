@@ -305,7 +305,7 @@ export class ItemService {
         item: remoteItem,
       } = await collectionAPI.fetchCollectionWithItem(
         dbCollection.contract_address!,
-        dbItem.blockchain_item_id
+        `${dbCollection.contract_address}-${dbItem.blockchain_item_id}`
       )
 
       if (remoteCollection) {

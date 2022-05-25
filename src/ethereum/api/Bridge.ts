@@ -6,6 +6,7 @@ import {
   Collection,
   ThirdPartyCollectionAttributes,
 } from '../../Collection'
+import { CurationStatus } from '../../Curation'
 import { ItemAttributes, Item, FullItem } from '../../Item'
 import { fromUnixTimestamp } from '../../utils/parse'
 import { buildTPItemURN } from '../../Item/utils'
@@ -362,6 +363,7 @@ export class Bridge {
     return {
       ...collection,
       is_published: true,
+      is_approved: lastItemCuration.status === CurationStatus.APPROVED,
       reviewed_at: lastItemCuration.updated_at,
       created_at: lastItemCuration.created_at,
       updated_at: lastItemCuration.updated_at,

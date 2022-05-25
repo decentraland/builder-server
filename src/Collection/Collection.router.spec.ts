@@ -961,37 +961,76 @@ describe('Collection router', () => {
       ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
         [{ id: dbTPCollection.third_party_id }]
       )
-      ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
-        itemCurationMock
-      )
+
       mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
       url = `/${wallet.address}/collections`
     })
 
-    it('should return the requested collections with the URN', () => {
-      return server
-        .get(buildURL(url))
-        .set(createAuthHeaders('get', url))
-        .expect(200)
-        .then((response: any) => {
-          expect(response.body).toEqual({
-            data: [
-              {
-                ...resultingCollectionAttributes,
-                urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
-              },
-              {
-                ...toResultCollection(dbTPCollection),
-                is_published: true,
-                urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
-                reviewed_at: itemCurationMock.updated_at.toISOString(),
-                created_at: itemCurationMock.created_at.toISOString(),
-                updated_at: itemCurationMock.updated_at.toISOString(),
-              },
-            ],
-            ok: true,
+    describe('and has a TP collection under review', () => {
+      beforeEach(() => {
+        ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
+          { ...itemCurationMock, status: CurationStatus.PENDING }
+        )
+      })
+      it('should return the requested collections with the URN and the published and approved status', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  ...resultingCollectionAttributes,
+                  urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                },
+                {
+                  ...toResultCollection(dbTPCollection),
+                  is_published: true,
+                  is_approved: false,
+                  urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
+                  reviewed_at: itemCurationMock.updated_at.toISOString(),
+                  created_at: itemCurationMock.created_at.toISOString(),
+                  updated_at: itemCurationMock.updated_at.toISOString(),
+                },
+              ],
+              ok: true,
+            })
           })
-        })
+      })
+    })
+    describe('and has a TP collection approved', () => {
+      beforeEach(() => {
+        ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
+          itemCurationMock
+        )
+      })
+      it('should return the requested collections with the URN and the published and approved status', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  ...resultingCollectionAttributes,
+                  urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                },
+                {
+                  ...toResultCollection(dbTPCollection),
+                  is_published: true,
+                  is_approved: true,
+                  urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
+                  reviewed_at: itemCurationMock.updated_at.toISOString(),
+                  created_at: itemCurationMock.created_at.toISOString(),
+                  updated_at: itemCurationMock.updated_at.toISOString(),
+                },
+              ],
+              ok: true,
+            })
+          })
+      })
     })
   })
 
@@ -1693,6 +1732,10 @@ describe('Collection router', () => {
         let cheque: Cheque
         let tpRegistryMaxItems: number
         let tpCurationsAmonut: number
+        let itemCuartionCreated = {
+          ...itemCurationMock,
+          status: CurationStatus.PENDING,
+        }
 
         beforeEach(async () => {
           mockedWallet = new ethers.Wallet(fakePrivateKey)
@@ -1715,7 +1758,7 @@ describe('Collection router', () => {
             undefined
           )
           ;(ItemCuration.create as jest.Mock).mockResolvedValue(
-            itemCurationMock
+            itemCuartionCreated
           )
           ;(createPost as jest.Mock).mockResolvedValueOnce({
             id: forumId,
@@ -1914,10 +1957,11 @@ describe('Collection router', () => {
                     data: {
                       collection: {
                         ...toFullCollection(dbTPCollection),
+                        is_approved: false,
                         is_published: true,
-                        reviewed_at: itemCurationMock.updated_at.toISOString(),
-                        created_at: itemCurationMock.created_at.toISOString(),
-                        updated_at: itemCurationMock.updated_at.toISOString(),
+                        reviewed_at: itemCuartionCreated.updated_at.toISOString(),
+                        created_at: itemCuartionCreated.created_at.toISOString(),
+                        updated_at: itemCuartionCreated.updated_at.toISOString(),
                       },
                       items: items.map((item) => ({
                         ...item,
@@ -1925,9 +1969,9 @@ describe('Collection router', () => {
                         updated_at: item.updated_at.toISOString(),
                       })),
                       itemCurations: Array(3).fill({
-                        ...itemCurationMock,
-                        created_at: itemCurationMock.created_at.toISOString(),
-                        updated_at: itemCurationMock.updated_at.toISOString(),
+                        ...itemCuartionCreated,
+                        created_at: itemCuartionCreated.created_at.toISOString(),
+                        updated_at: itemCuartionCreated.updated_at.toISOString(),
                       }),
                     },
                     ok: true,

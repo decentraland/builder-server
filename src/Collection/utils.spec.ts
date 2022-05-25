@@ -133,6 +133,7 @@ describe('getMergedCollection', () => {
           created_at: itemCurationMock.created_at,
           updated_at: itemCurationMock.updated_at,
           is_published: true,
+          is_approved: true,
         })
       })
     })

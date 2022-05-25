@@ -52,7 +52,7 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
         INNER JOIN ${raw(
           Item.tableName
         )} item ON item.id = item_curation.item_id AND item.collection_id = ${collectionId} 
-        ORDER BY item.id, item_curation.updated_at DESC
+        ORDER BY item.id, item_curation.created_at DESC
   `)
   }
 

@@ -66,4 +66,5 @@ export type ItemApprovalData = {
     ItemCurationAttributes['content_hash']
   >
   chequeWasConsumed: boolean
+  root: string | null
 }

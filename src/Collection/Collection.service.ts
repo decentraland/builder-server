@@ -29,6 +29,7 @@ import {
   CollectionCurationAttributes,
 } from '../Curation/CollectionCuration'
 import { CurationStatus } from '../Curation'
+import { isCommitteeMember } from '../Committee'
 import { decodeTPCollectionURN, isTPCollection } from '../utils/urn'
 import {
   getAddressFromSignature,
@@ -57,13 +58,33 @@ import {
   UnpublishedCollectionError,
   InsufficientSlotsError,
   URNAlreadyInUseError,
+  IsNotCommitteeMember,
 } from './Collection.errors'
 
 export class CollectionService {
-  public tpService = new ThirdPartyService()
+  private tpService = new ThirdPartyService()
+
   /**
    * Main Methods
    */
+
+  public async approveTPCollection(
+    id: string,
+    eth_address: string
+  ): Promise<void> {
+    const dbCollection = await this.getDBCollection(id)
+
+    if (!isTPCollection(dbCollection)) {
+      throw new WrongCollectionError('Collection is not Third Party', { id })
+    }
+
+    const isCallerCommitteeMember = await isCommitteeMember(eth_address)
+    if (!isCallerCommitteeMember) {
+      throw new IsNotCommitteeMember(eth_address)
+    }
+
+    await ItemCuration.approveAllItemsOfACollection(id)
+  }
 
   public async getCollection(id: string): Promise<CollectionAttributes> {
     const dbCollection = await this.getDBCollection(id)

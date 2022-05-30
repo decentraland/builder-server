@@ -66,3 +66,9 @@ export class InsufficientSlotsError extends Error {
     super('The amount of items to publish exceeds the available slots.')
   }
 }
+
+export class IsNotCommitteeMember extends Error {
+  constructor(public address: string) {
+    super('The address does not belong to a committee member.')
+  }
+}

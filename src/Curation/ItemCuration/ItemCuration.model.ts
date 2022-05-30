@@ -97,4 +97,18 @@ export class ItemCuration extends Model<ItemCurationAttributes> {
     )
     return counts[0].count
   }
+
+  static async approveAllItemsOfACollection(
+    collectionId: string
+  ): Promise<void> {
+    await this.query(
+      SQL`UPDATE ${raw(this.tableName)} as item_curations SET status = ${
+        CurationStatus.APPROVED
+      } FROM ${raw(Item.tableName)}, ${raw(
+        Collection.tableName
+      )} WHERE items.id = item_curations.item_id AND items.collection_id = collections.id AND collections.id = ${collectionId} AND item_curations.status = ${
+        CurationStatus.PENDING
+      }`
+    )
+  }
 }

@@ -52,6 +52,7 @@ import { toFullCollection, toRemoteWhereCondition } from './utils'
 import {
   AlreadyPublishedCollectionError,
   InsufficientSlotsError,
+  IsNotCommitteeMember,
   LockedCollectionError,
   NonExistentCollectionError,
   UnauthorizedCollectionEditError,
@@ -119,6 +120,16 @@ export class CollectionRouter extends Router {
       withAuthentication,
       withCollectionExists,
       server.handleRequest(this.publishCollection)
+    )
+
+    /**
+     * Handle the approval of a third party collection
+     */
+    this.router.post(
+      '/collections/:id/approve',
+      withAuthentication,
+      withCollectionExists,
+      server.handleRequest(this.approveThirdPartyCollection)
     )
 
     /**
@@ -570,5 +581,31 @@ export class CollectionRouter extends Router {
     }
 
     return true
+  }
+
+  approveThirdPartyCollection = async (req: AuthRequest): Promise<void> => {
+    const id = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
+    try {
+      await this.service.approveTPCollection(id, eth_address)
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof IsNotCommitteeMember) {
+        throw new HTTPError(
+          error.message,
+          { eth_address },
+          STATUS_CODES.unauthorized
+        )
+      } else if (error instanceof WrongCollectionError) {
+        throw new HTTPError(error.message, { id }, STATUS_CODES.conflict)
+      }
+
+      throw error
+    }
   }
 }

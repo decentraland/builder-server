@@ -2419,4 +2419,87 @@ describe('Collection router', () => {
         })
     })
   })
+
+  describe('when approving a collection', () => {
+    let url: string
+
+    describe('and the collection does not belong to a third party', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Collection, dbCollection.id)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollection,
+        ])
+        url = `/collections/${dbCollection.id}/approve`
+      })
+
+      it('should respond with a 409 signaling that the collection is not a third party collection', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(409)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: {
+                id: dbTPCollection.id,
+              },
+              error: 'Collection is not Third Party',
+            })
+          })
+      })
+    })
+
+    describe('and the address does not belong to a committee member', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Collection, dbTPCollection.id)
+        ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(false)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbTPCollection,
+        ])
+        url = `/collections/${dbCollection.id}/approve`
+      })
+
+      it('should respond with a 401 signaling that the address is unauthorized to perform the approval', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(401)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: {
+                eth_address: wallet.address,
+              },
+              error: 'The address does not belong to a committee member.',
+            })
+          })
+      })
+    })
+
+    describe('and the approval is successful', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Collection, dbTPCollection.id)
+        ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbTPCollection,
+        ])
+        ;(ItemCuration.approveAllItemsOfACollection as jest.Mock).mockResolvedValueOnce(
+          undefined
+        )
+        url = `/collections/${dbTPCollection.id}/approve`
+      })
+
+      it('should respond with a 200', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: true,
+            })
+          })
+      })
+    })
+  })
 })

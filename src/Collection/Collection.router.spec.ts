@@ -34,6 +34,7 @@ import {
   ItemFragment,
   CollectionFragment,
   ReceiptFragment,
+  ThirdPartyFragment,
 } from '../ethereum/api/fragments'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
@@ -2266,6 +2267,9 @@ describe('Collection router', () => {
             ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
               {}
             )
+            thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce({
+              root: 'aRootValue',
+            } as ThirdPartyFragment)
             thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce(undefined)
           })
 
@@ -2327,6 +2331,9 @@ describe('Collection router', () => {
               thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce(
                 undefined
               )
+              thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce({
+                root: 'aRootValue',
+              } as ThirdPartyFragment)
             })
 
             it('should return an array with the data for pending curations, indicating that the cheque was not used', () => {
@@ -2349,6 +2356,7 @@ describe('Collection router', () => {
                         [itemApprovalData[2].id]: 'Qm3rererer',
                       },
                       chequeWasConsumed: false,
+                      root: 'aRootValue',
                     },
                   })
                 })
@@ -2361,6 +2369,9 @@ describe('Collection router', () => {
                 id:
                   '0x7954b5d263d7d1298c98fa330de6a0d94952bb5f6694cab0dde144239d56dce1',
               } as ReceiptFragment)
+              thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce({
+                root: 'aRootValue',
+              } as ThirdPartyFragment)
             })
 
             it('should return an array with the data for pending curations, indicating that the cheque was used', () => {
@@ -2383,6 +2394,7 @@ describe('Collection router', () => {
                         [itemApprovalData[2].id]: 'Qm3rererer',
                       },
                       chequeWasConsumed: true,
+                      root: 'aRootValue',
                     },
                   })
                 })

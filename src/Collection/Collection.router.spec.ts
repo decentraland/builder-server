@@ -65,7 +65,7 @@ import {
   SlotUsageCheque,
   SlotUsageChequeAttributes,
 } from '../SlotUsageCheque'
-import { CurationStatus } from '../Curation'
+import { CurationStatus, CurationStatusSort } from '../Curation'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
@@ -975,6 +975,14 @@ describe('Collection router', () => {
         .set(createAuthHeaders('get', url))
         .expect(200)
         .then((response: any) => {
+          expect(Collection.findAll).toHaveBeenCalledWith({
+            address: wallet.address,
+            limit: undefined,
+            offset: undefined,
+            sort: CurationStatusSort.NEWEST,
+            thirdPartyIds: [dbTPCollection.third_party_id],
+            remoteIds: [],
+          })
           expect(response.body).toEqual({
             data: [
               {

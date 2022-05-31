@@ -285,17 +285,22 @@ export class CollectionRouter extends Router {
       )
     }
 
-    const [allCollectionsWithCount, remoteCollections] = await Promise.all([
-      this.service.getCollections(
-        {
-          offset: page && limit ? getOffset(page, limit) : undefined,
-          limit,
-          address: eth_address,
-        },
-        eth_address
-      ),
-      collectionAPI.fetchCollectionsByAuthorizedUser(eth_address),
-    ])
+    const authorizedRemoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
+      eth_address
+    )
+
+    const allCollectionsWithCount = await this.service.getCollections(
+      {
+        offset: page && limit ? getOffset(page, limit) : undefined,
+        limit,
+        address: eth_address,
+        sort: CurationStatusSort.NEWEST,
+        remoteIds: authorizedRemoteCollections.map(
+          (remoteCollection) => remoteCollection.id
+        ),
+      },
+      eth_address
+    )
 
     const totalCollections =
       Number(allCollectionsWithCount[0]?.collection_count) || 0
@@ -303,7 +308,7 @@ export class CollectionRouter extends Router {
     const consolidated = (
       await Bridge.consolidateAllCollections(
         allCollectionsWithCount,
-        remoteCollections
+        authorizedRemoteCollections
       )
     ).map(toFullCollection)
 

@@ -83,8 +83,8 @@ export class Collection extends Model<CollectionAttributes> {
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
       address
         ? thirdPartyIds?.length
-          ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}))`
-          : SQL`collections.eth_address = ${address}`
+          ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}) OR collections.contract_address = ANY(${remoteIds}))`
+          : SQL`(collections.eth_address = ${address} OR collections.contract_address = ANY(${remoteIds}))`
         : undefined,
       status
         ? [

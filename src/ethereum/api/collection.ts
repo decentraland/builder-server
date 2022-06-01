@@ -178,7 +178,9 @@ export class CollectionAPI extends BaseGraphAPI {
     return collections.length > 0 ? collections[0] : null
   }
 
-  fetchCollections = async (filters: CollectionQueryFilters): Promise<CollectionFragment[]> => {
+  fetchCollections = async (
+    filters: CollectionQueryFilters
+  ): Promise<CollectionFragment[]> => {
     return this.paginate(['collections'], {
       query: getCollectionsQuery(filters),
     })
@@ -201,10 +203,7 @@ export class CollectionAPI extends BaseGraphAPI {
     )
   }
 
-  fetchCollectionWithItem = async (
-    contractAddress: string,
-    tokenId: string
-  ) => {
+  fetchCollectionWithItem = async (contractAddress: string, itemId: string) => {
     const {
       data: { collections = [], items = [] },
     } = await this.query<{
@@ -212,7 +211,7 @@ export class CollectionAPI extends BaseGraphAPI {
       items: ItemFragment[]
     }>({
       query: getCollectionWithItemByIdsQuery(),
-      variables: { id: contractAddress.toLowerCase(), tokenId },
+      variables: { id: contractAddress.toLowerCase(), itemId },
     })
 
     return {

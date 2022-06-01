@@ -477,9 +477,10 @@ export class CollectionService {
       slotUsageCheque.third_party_id
     )
 
-    const remoteCheque = await thirdPartyAPI.fetchReceiptById(
-      slotUsageCheckHash
-    )
+    const [thirdParty, remoteCheque] = await Promise.all([
+      thirdPartyAPI.fetchThirdParty(collection.third_party_id),
+      thirdPartyAPI.fetchReceiptById(slotUsageCheckHash),
+    ])
 
     return {
       cheque: {
@@ -487,6 +488,7 @@ export class CollectionService {
         salt,
         signature,
       },
+      root: thirdParty?.root ?? null,
       content_hashes,
       chequeWasConsumed: remoteCheque?.id === slotUsageCheckHash,
     }

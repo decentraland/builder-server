@@ -258,12 +258,6 @@ export class ItemService {
     let collection = await Collection.findOne(dbItem.collection_id)
 
     if (collection && isTPCollection(collection)) {
-      const urn = buildTPItemURN(
-        collection.third_party_id,
-        collection.urn_suffix,
-        dbItem.urn_suffix!
-      )
-
       const lastItemCuration = await ItemCuration.findLastByCollectionId(
         collection.id
       )
@@ -271,11 +265,10 @@ export class ItemService {
         ? Bridge.mergeTPCollection(collection, lastItemCuration)
         : collection
 
-      const catalystItems = await peerAPI.fetchWearables<ThirdPartyWearable>([
-        urn,
-      ])
-      if (catalystItems.length > 0) {
-        item = Bridge.mergeTPItem(dbItem, collection, catalystItems[0])
+      if (lastItemCuration) {
+        item = (
+          await Bridge.consolidateTPItems([dbItem], [lastItemCuration])
+        )[0]
       }
     }
 

@@ -152,7 +152,7 @@ export class Item extends Model<ItemAttributes> {
 
   static async findByCollectionIdAndStatus(
     collectionId: string,
-    status?: CurationStatus,
+    status: CurationStatus,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {

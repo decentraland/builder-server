@@ -519,6 +519,7 @@ describe('Item router', () => {
               expect(Item.findByCollectionIds).toHaveBeenCalledWith(
                 [dbCollectionMock.id],
                 undefined,
+                undefined,
                 undefined
               )
             })
@@ -561,6 +562,7 @@ describe('Item router', () => {
               })
               expect(Item.findByCollectionIds).toHaveBeenCalledWith(
                 [dbCollectionMock.id],
+                undefined,
                 limit,
                 limit * (page - 1)
               )
@@ -571,7 +573,7 @@ describe('Item router', () => {
 
     describe('and the collection is a third party collection', () => {
       beforeEach(() => {
-        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
+        ;(Item.findByTPCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce([
           dbTPItem,
           dbTPItemPublished,
           dbTPItemNotPublished,

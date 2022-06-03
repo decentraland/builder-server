@@ -142,28 +142,34 @@ export class Item extends Model<ItemAttributes> {
 
   static async findByCollectionIds(
     collectionIds: string[],
+    status: CurationStatus | undefined,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return await this.query<ItemWithTotalCount>(
-      ItemQueries.selectByCollectionIds(collectionIds, undefined, limit, offset)
+      ItemQueries.selectByStandardCollectionIds(
+        collectionIds,
+        status,
+        limit,
+        offset
+      )
     )
   }
 
-  static async findByCollectionIdAndStatus(
+  static async findByTPCollectionIdAndStatus(
     collectionId: string,
-    status: CurationStatus,
+    status?: CurationStatus,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return await this.query<ItemWithTotalCount>(
-      ItemQueries.selectByCollectionIds([collectionId], status, limit, offset)
+      ItemQueries.selectByTPCollectionIds([collectionId], status, limit, offset)
     )
   }
 }
 
 export const ItemQueries = Object.freeze({
-  selectByCollectionIds: (
+  selectByTPCollectionIds: (
     collectionIds: string[],
     status?: CurationStatus,
     limit: number = DEFAULT_LIMIT,
@@ -181,6 +187,24 @@ export const ItemQueries = Object.freeze({
         }
         WHERE items.collection_id = ANY(${collectionIds})
           AND ${status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`}
+        LIMIT ${limit}
+        OFFSET ${offset}
+    `,
+  selectByStandardCollectionIds: (
+    collectionIds: string[],
+    status?: CurationStatus,
+    limit: number = DEFAULT_LIMIT,
+    offset: number = 0
+  ) =>
+    SQL`
+      SELECT items.*, count(*) OVER() AS total_count
+        FROM ${raw(Item.tableName)} items
+        WHERE items.collection_id = ANY(${collectionIds})
+          AND ${
+            status && status === CurationStatus.PENDING
+              ? SQL`items.blockchain_item_id IS NULL`
+              : SQL`1 = 1`
+          }
         LIMIT ${limit}
         OFFSET ${offset}
     `,

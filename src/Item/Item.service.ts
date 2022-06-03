@@ -152,15 +152,14 @@ export class ItemService {
       collectionId
     )
     const isTP = isTPCollection(dbCollection)
-    const dbItemsWithCount =
-      status && isTP
-        ? await Item.findByCollectionIdAndStatus(
-            collectionId,
-            CurationStatus.PENDING,
-            limit,
-            offset
-          )
-        : await Item.findByCollectionIds([collectionId], limit, offset)
+    const dbItemsWithCount = isTP
+      ? await Item.findByTPCollectionIdAndStatus(
+          collectionId,
+          status,
+          limit,
+          offset
+        )
+      : await Item.findByCollectionIds([collectionId], status, limit, offset)
 
     const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
     const dbItems = dbItemsWithCount.map((dbItemWithCount) =>

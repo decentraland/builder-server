@@ -187,6 +187,7 @@ export const ItemQueries = Object.freeze({
         }
         WHERE items.collection_id = ANY(${collectionIds})
           AND ${status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`}
+        ORDER BY items.created_at ASC
         LIMIT ${limit}
         OFFSET ${offset}
     `,
@@ -205,6 +206,7 @@ export const ItemQueries = Object.freeze({
               ? SQL`items.blockchain_item_id IS NULL`
               : SQL`1 = 1`
           }
+        ORDER BY items.created_at ASC
         LIMIT ${limit}
         OFFSET ${offset}
     `,

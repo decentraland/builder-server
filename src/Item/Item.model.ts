@@ -104,6 +104,22 @@ export class Item extends Model<ItemAttributes> {
     return results[0]
   }
 
+  static async hasPublishedItems(contractAddress: string) {
+    const results = await this.query<{ count: string }>(SQL`
+      SELECT COUNT(*) AS count
+        FROM ${raw(this.tableName)} items
+        JOIN ${raw(
+          Collection.tableName
+        )} collections ON items.collection_id = collections.id
+        WHERE 
+        collections.contract_address = ${contractAddress}
+        AND 
+          items.blockchain_item_id IS NOT NULL
+    `)
+
+    return Number(results[0].count) > 0
+  }
+
   // PAGINATED QUERIES
 
   static findItemsByAddress(

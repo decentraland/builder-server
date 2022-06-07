@@ -10,3 +10,5 @@ coverage
 !jest.config*.js
 
 .DS_Store
+.env.migration.*
+backup*

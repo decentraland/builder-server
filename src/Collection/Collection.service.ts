@@ -510,17 +510,22 @@ export class CollectionService {
   }
 
   public async isDCLPublished(contractAddress: string) {
+    // First check if collection has items with blockchain id, if so, it means it's already published.
+    const hasPublishedItems = await Item.hasPublishedItems(contractAddress)
+    if (hasPublishedItems) {
+      return true
+    }
+
+    // If not, the collection could exist but the user hasn't called /collections/:collection_id/publish yet, so we check if it exists in the subgraph. If it exists, then it is published.
     const remoteCollection = await collectionAPI.fetchCollection(
       contractAddress
     )
-
-    // Fallback: check against the blockchain, in case the subgraph is lagging
-    if (!remoteCollection) {
-      const isCollectionPublished = await isPublished(contractAddress)
-      return isCollectionPublished
+    if (remoteCollection) {
+      return true
     }
 
-    return true
+    // If the collection is not found in the subgraph, it could be because it is lagging, so we check against the blockchain. If the contract exists, then the collection is published.
+    return isPublished(contractAddress)
   }
 
   public async isOwnedOrManagedBy(

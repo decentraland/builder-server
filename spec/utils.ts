@@ -305,6 +305,12 @@ export function mockIsCollectionPublished(
   id: string,
   isCollectionPublished: boolean
 ) {
+  if (!(Item.hasPublishedItems as jest.Mock).mock) {
+    throw new Error(
+      "Item.hasPublishedItems should be mocked to mock the CollectionService.isPublished method but it isn't"
+    )
+  }
+
   if (!(collectionAPI.fetchCollection as jest.Mock).mock) {
     throw new Error(
       "collectionAPI.fetchCollection should be mocked to mock the CollectionService.isPublished method but it isn't"
@@ -317,6 +323,9 @@ export function mockIsCollectionPublished(
     )
   }
 
+  ;(Item.hasPublishedItems as jest.Mock).mockResolvedValueOnce(
+    isCollectionPublished
+  )
   ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
     (givenId) =>
       Promise.resolve(id === givenId && isCollectionPublished ? {} : undefined)

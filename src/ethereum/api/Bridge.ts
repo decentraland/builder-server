@@ -90,6 +90,7 @@ export class Bridge {
    * For more info on how a full item looks, see `Bridge.toFullItem`. For more info on the merge see `Bridge.mergeTPItem`
    * @param dbItems - Database TP items
    * @param itemCurations - ItemCurationAttributes items
+   * @param dbCollections - optional: the db collections corresponding to those items. If it's not provided, they will be retrieved from the database
    */
   static async consolidateTPItems(
     dbItems: ItemAttributes[],

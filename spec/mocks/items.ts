@@ -157,6 +157,7 @@ export const dbItemMock: ItemAttributes = {
 
 export const dbTPItemMock: ThirdPartyItemAttributes = {
   ...dbItemMock,
+  id: uuidv4(),
   blockchain_item_id: null,
   collection_id: dbTPCollectionMock.id,
   urn_suffix: '1',

@@ -227,7 +227,8 @@ export class ItemService {
 
     const items = await Bridge.consolidateTPItems(
       dbItems,
-      collectionItemCurations
+      collectionItemCurations,
+      [dbCollection]
     )
     return { collection, items }
   }
@@ -246,7 +247,9 @@ export class ItemService {
       ? Bridge.mergeCollection(dbCollection, remoteCollection)
       : dbCollection
 
-    const items = await Bridge.consolidateItems(dbItems, remoteItems)
+    const items = await Bridge.consolidateItems(dbItems, remoteItems, [
+      dbCollection,
+    ])
 
     return { collection, items }
   }

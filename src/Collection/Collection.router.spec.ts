@@ -117,7 +117,6 @@ describe('Collection router', () => {
     let collectionToUpsert: FullCollection
 
     beforeEach(() => {
-      url = `/collections/${dbCollection.id}`
       urn_suffix = dbTPCollection.urn_suffix
       third_party_id = dbTPCollection.third_party_id
     })
@@ -126,6 +125,7 @@ describe('Collection router', () => {
       let otherId: string
 
       beforeEach(() => {
+        url = `/collections/${dbCollection.id}`
         otherId = 'bec9eb58-2ac0-11ec-8d3d-0242ac130003'
         collectionToUpsert = {
           ...toFullCollection(dbCollectionMock),
@@ -153,6 +153,9 @@ describe('Collection router', () => {
     })
 
     describe('and the request is missing the collection property', () => {
+      beforeEach(() => {
+        url = `/collections/${dbCollection.id}`
+      })
       it('should return an http error for the invalid request body', () => {
         return server
           .put(buildURL(url))
@@ -181,6 +184,7 @@ describe('Collection router', () => {
 
     describe('when the collection is a third party collection', () => {
       beforeEach(() => {
+        url = `/collections/${dbTPCollection.id}`
         urn = `${third_party_id}:${urn_suffix}`
         collectionToUpsert = {
           ...toFullCollection(dbTPCollection),
@@ -488,6 +492,7 @@ describe('Collection router', () => {
 
     describe('when the collection is a decentraland collection', () => {
       beforeEach(() => {
+        url = `/collections/${dbCollection.id}`
         urn = `urn:decentraland:${network}:collections-v2:${dbCollection.contract_address}`
       })
 
@@ -1107,12 +1112,9 @@ describe('Collection router', () => {
   })
 
   describe('when deleting a collection', () => {
-    beforeEach(() => {
-      url = `/collections/${dbTPCollection.id}`
-    })
-
     describe('and the collection is a TP collection', () => {
       beforeEach(() => {
+        url = `/collections/${dbTPCollection.id}`
         mockExistsMiddleware(Collection, dbTPCollection.id)
       })
 
@@ -1249,6 +1251,7 @@ describe('Collection router', () => {
 
     describe('and the collection is a DCL collection', () => {
       beforeEach(() => {
+        url = `/collections/${dbCollection.id}`
         mockExistsMiddleware(Collection, dbCollection.id)
         mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
         ;(Collection.findByIds as jest.MockedFunction<
@@ -1561,7 +1564,9 @@ describe('Collection router', () => {
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
             dbTPCollection,
           ])
-          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([dbItemMock])
+          ;(Item.findByIds as jest.Mock).mockResolvedValueOnce([
+            { ...dbItemMock, collection_id: dbTPCollection.id },
+          ])
           ;(ItemCuration.findLastCreatedByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
             itemCurationMock
           )
@@ -1608,8 +1613,8 @@ describe('Collection router', () => {
             dbTPCollection,
           ])
           dbItems = [
-            { ...dbItemMock, id: uuid() },
-            { ...dbItemMock, id: uuid() },
+            { ...dbItemMock, id: uuid(), collection_id: dbTPCollection.id },
+            { ...dbItemMock, id: uuid(), collection_id: dbTPCollection.id },
           ]
           dbItemIds = dbItems.map((item) => item.id)
           slotUsageCheque = { id: uuid() } as SlotUsageChequeAttributes
@@ -1980,9 +1985,9 @@ describe('Collection router', () => {
       })
     })
 
-    describe('and the collection is a Decentraland collection', () => {
+    describe('and the collection is a Standard collection', () => {
       beforeEach(() => {
-        url = `/collections/${dbTPCollection.id}/publish`
+        url = `/collections/${dbCollection.id}/publish`
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbCollection,
         ])
@@ -2411,32 +2416,34 @@ describe('Collection router', () => {
         })
       })
     })
-  })
 
-  describe('and the collection is not a TP collection', () => {
-    beforeEach(() => {
-      url = `/collections/${dbCollection.id}/approvalData`
-      ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
-      ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([dbCollection])
-      ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
-        {}
-      )
-    })
+    describe('and the collection is not a TP collection', () => {
+      beforeEach(() => {
+        url = `/collections/${dbCollection.id}/approvalData`
+        ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollection,
+        ])
+        ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+          {}
+        )
+      })
 
-    it('should respond with a 409 and a message signaling that the collection is not third party', () => {
-      return server
-        .get(buildURL(url))
-        .set(createAuthHeaders('get', url))
-        .expect(409)
-        .then((response: any) => {
-          expect(response.body).toEqual({
-            ok: false,
-            data: {
-              id: dbTPCollection.id,
-            },
-            error: 'Collection is not Third Party',
+      it('should respond with a 409 and a message signaling that the collection is not third party', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(409)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: {
+                id: dbCollection.id,
+              },
+              error: 'Collection is not Third Party',
+            })
           })
-        })
+      })
     })
   })
 })

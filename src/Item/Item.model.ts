@@ -186,17 +186,22 @@ export const ItemQueries = Object.freeze({
     offset: number = 0
   ) =>
     SQL`
-      SELECT items.*, count(*) OVER() AS total_count
-        FROM ${raw(Item.tableName)} items
-        ${
-          status
-            ? SQL`JOIN ${raw(
-                ItemCuration.tableName
-              )} item_curations ON items.id = item_curations.item_id`
-            : SQL``
-        }
-        WHERE items.collection_id = ANY(${collectionIds})
-          AND ${status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`}
+        SELECT items.*, count(*) OVER() AS total_count FROM (
+          SELECT DISTINCT ON (items.id) items.id, items.*
+            FROM ${raw(Item.tableName)} items
+              ${
+                status
+                  ? SQL`JOIN ${raw(
+                      ItemCuration.tableName
+                    )} item_curations ON items.id = item_curations.item_id`
+                  : SQL``
+              }
+            WHERE items.collection_id = ANY(${collectionIds})
+              AND ${
+                status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`
+              }
+            ORDER BY items.id
+          ) items
         ORDER BY items.created_at ASC
         LIMIT ${limit}
         OFFSET ${offset}

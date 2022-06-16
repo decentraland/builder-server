@@ -15,7 +15,7 @@ import { wallet } from './wallet'
 
 export const dbCollectionMock: CollectionAttributes = {
   id: uuidv4(),
-  name: 'Test',
+  name: 'Standard Mocked Collection',
   eth_address: wallet.address,
   salt: '',
   contract_address: '0x02b6bD2420cCADC38726BD34BB7f5c52B3F4F3ff',
@@ -35,6 +35,8 @@ export const dbCollectionMock: CollectionAttributes = {
 
 export const dbTPCollectionMock: ThirdPartyCollectionAttributes = {
   ...dbCollectionMock,
+  id: uuidv4(),
+  name: 'TP Mocked Collection',
   eth_address: '',
   contract_address: null,
   urn_suffix: 'collection-id',

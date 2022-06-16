@@ -68,19 +68,11 @@ jest.mock('../Committee')
 jest.mock('./access')
 jest.mock('./Item.model')
 
-function mockItemConsolidation(
-  itemsAttributes: ItemAttributes[],
-  wearables: CatalystItem[],
-  collection = dbCollectionMock
-) {
-  ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
-    itemsAttributes
-  )
+function mockItemConsolidation(wearables: CatalystItem[]) {
   ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce(wearables)
   ;(collectionAPI.buildItemId as jest.Mock).mockImplementation(
     (contractAddress, tokenId) => contractAddress + '-' + tokenId
   )
-  ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([collection])
 }
 
 const server = supertest(app.getApp())
@@ -260,10 +252,12 @@ describe('Item router', () => {
       ;(collectionAPI.fetchItems as jest.Mock).mockResolvedValueOnce([
         itemFragment,
       ])
-      ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
-        dbTPCollectionMock,
-      ]) // for third parties
-      mockItemConsolidation([dbItem], [wearable])
+      ;(Collection.findByIds as jest.Mock).mockImplementation((ids) =>
+        [dbCollectionMock, dbTPCollectionMock].filter((collection) =>
+          ids.includes(collection.id)
+        )
+      )
+      mockItemConsolidation([wearable])
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
       url = '/items'
     })
@@ -302,11 +296,13 @@ describe('Item router', () => {
   describe('when getting all the items of an address', () => {
     let allAddressItems: ItemAttributes[]
     beforeEach(() => {
-      ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
-        dbTPCollectionMock,
-      ]) // for third parties
+      ;(Collection.findByIds as jest.Mock).mockImplementation((ids) =>
+        [dbCollectionMock, dbTPCollectionMock].filter((collection) =>
+          ids.includes(collection.id)
+        )
+      )
       ;(ItemCuration.find as jest.Mock).mockResolvedValueOnce([dbItemCuration])
-      mockItemConsolidation([dbItem], [wearable])
+      mockItemConsolidation([wearable])
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
     })
 
@@ -490,7 +486,7 @@ describe('Item router', () => {
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbCollectionMock,
         ])
-        mockItemConsolidation([dbItemMock], [wearable])
+        mockItemConsolidation([wearable])
       })
 
       describe('and there pagination params are not passed', () => {
@@ -585,7 +581,7 @@ describe('Item router', () => {
         ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
           dbItemCuration,
         ])
-        mockItemConsolidation([dbItemMock], [tpWearable], dbTPCollectionMock)
+        mockItemConsolidation([tpWearable])
         url = `/collections/${dbCollectionMock.id}/items`
       })
 
@@ -973,7 +969,7 @@ describe('Item router', () => {
               beforeEach(() => {
                 itemToUpsert = {
                   ...itemToUpsert,
-                  collection_id: dbItem.collection_id,
+                  collection_id: tpCollectionMock.id,
                   urn: buildTPItemURN(
                     tpCollectionMock.third_party_id,
                     tpCollectionMock.urn_suffix,
@@ -1065,7 +1061,7 @@ describe('Item router', () => {
               beforeEach(() => {
                 itemToUpsert = {
                   ...itemToUpsert,
-                  collection_id: dbItem.collection_id,
+                  collection_id: tpCollectionMock.id,
                   urn: dbItemURN,
                 }
                 mockItem.upsert.mockImplementation((createdItem) =>
@@ -1119,7 +1115,10 @@ describe('Item router', () => {
                         content_hash:
                           'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
                       },
-                      { item_id: dbTPItem.id, status: CurationStatus.PENDING }
+                      {
+                        item_id: itemToUpsert.id,
+                        status: CurationStatus.PENDING,
+                      }
                     )
                   })
               })
@@ -1180,7 +1179,13 @@ describe('Item router', () => {
             it('should not check if the URN is repeated when upserting by URN', () => {
               return server
                 .put(buildURL(url))
-                .send({ item: { ...itemToUpsert, urn } })
+                .send({
+                  item: {
+                    ...itemToUpsert,
+                    urn,
+                    collection_id: tpCollectionMock.id,
+                  },
+                })
                 .set(createAuthHeaders('put', url))
                 .expect(200)
                 .then(() => {
@@ -1191,7 +1196,13 @@ describe('Item router', () => {
             it('should respond with a 200, update the item and return the updated item', () => {
               return server
                 .put(buildURL(url))
-                .send({ item: { ...itemToUpsert, urn } })
+                .send({
+                  item: {
+                    ...itemToUpsert,
+                    urn,
+                    collection_id: tpCollectionMock.id,
+                  },
+                })
                 .set(createAuthHeaders('put', url))
                 .expect(200)
                 .then((response: any) => {
@@ -1729,7 +1740,6 @@ describe('Item router', () => {
           )
           const updatedItem: ItemAttributes = {
             ...dbItem,
-            collection_id: tpCollectionMock.id,
             eth_address: wallet.address,
             local_content_hash: null,
             updated_at: currentDate,
@@ -1765,11 +1775,13 @@ describe('Item router', () => {
     let collectionMock: CollectionAttributes
 
     beforeEach(() => {
-      url = `/items/${dbItem.id}`
       collectionMock = { ...collectionMock }
     })
 
     describe('and the item is a DCL item', () => {
+      beforeEach(() => {
+        url = `/items/${dbItem.id}`
+      })
       describe('and the user is not authorized', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbItem.id)
@@ -1878,6 +1890,9 @@ describe('Item router', () => {
     })
 
     describe('and the item is a third party item', () => {
+      beforeEach(() => {
+        url = `/items/${dbTPItem.id}`
+      })
       describe('and the collection of the item is not part of a third party collection', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbTPItem.id)

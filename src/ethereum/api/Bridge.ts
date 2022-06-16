@@ -6,7 +6,7 @@ import {
   Collection,
   ThirdPartyCollectionAttributes,
 } from '../../Collection'
-import { ItemAttributes, Item, FullItem } from '../../Item'
+import { ItemAttributes, FullItem } from '../../Item'
 import { fromUnixTimestamp } from '../../utils/parse'
 import { buildTPItemURN } from '../../Item/utils'
 import { decodeThirdPartyItemURN, isTPCollection } from '../../utils/urn'
@@ -90,13 +90,17 @@ export class Bridge {
    * For more info on how a full item looks, see `Bridge.toFullItem`. For more info on the merge see `Bridge.mergeTPItem`
    * @param dbItems - Database TP items
    * @param itemCurations - ItemCurationAttributes items
+   * @param dbCollections - optional: the db collections corresponding to those items. If it's not provided, they will be retrieved from the database
    */
   static async consolidateTPItems(
     dbItems: ItemAttributes[],
-    itemCurations: ItemCurationAttributes[]
+    itemCurations: ItemCurationAttributes[],
+    dbCollections?: CollectionAttributes[]
   ): Promise<FullItem[]> {
     const dbTPItemIds = dbItems.map((item) => item.collection_id!)
-    const dbTPCollections = await Collection.findByIds(dbTPItemIds)
+    const dbTPCollections = dbCollections
+      ? dbCollections
+      : await Collection.findByIds(dbTPItemIds)
 
     const dbTPCollectionsIndex = this.indexById(dbTPCollections)
     const itemCurationsIndex = this.indexBy(itemCurations, 'item_id')
@@ -250,38 +254,27 @@ export class Bridge {
    * For more info on what data is updated from the published item, see `Bridge.mergeItem`
    * @param dbItems - DB stantdard items
    * @param remoteItems - blockchain standard items (inside a collection)
+   * @param dbCollections - optional: the db collections corresponding to those items. If it's not provided, they will be retrieved from the database
    */
   static async consolidateItems(
     dbItems: ItemAttributes[],
-    remoteItems: ItemFragment[]
+    remoteItems: ItemFragment[],
+    dbCollections?: CollectionAttributes[]
   ): Promise<FullItem[]> {
     const items: FullItem[] = []
 
-    // To avoid multiple queries to the db, we will fetch all the items that match the blockchain_id and their collections
-    // to filter them later
-    const remoteDBItems = await Item.findByBlockchainIdsAndContractAddresses(
-      remoteItems.map((remoteItem) => ({
-        blockchainId: remoteItem.blockchainId,
-        collectionAddress: remoteItem.collection.id,
-      }))
-    )
-
-    // Filter items to avoid duplicates
-    const allDbItems = this.distinctById<ItemAttributes>([
-      ...dbItems,
-      ...remoteDBItems,
-    ])
-
     // Get db collections from DB items
     const collectionIds = []
-    for (const item of allDbItems) {
+    for (const item of dbItems) {
       if (item.collection_id) {
         collectionIds.push(item.collection_id)
       }
     }
 
     const [dbResults, catalystItems] = await Promise.all([
-      Collection.findByIds(collectionIds),
+      dbCollections
+        ? Promise.resolve(dbCollections)
+        : Collection.findByIds(collectionIds),
       peerAPI.fetchWearables<StandardWearable>(
         remoteItems.map((item) => item.urn)
       ),
@@ -291,7 +284,7 @@ export class Bridge {
     const dbCollectionsIndex = this.indexById(dbResults)
     const catalystItemsIndex = this.indexById(catalystItems)
 
-    for (let dbItem of allDbItems) {
+    for (let dbItem of dbItems) {
       let itemToAdd = Bridge.toFullItem(dbItem)
       const dbCollection = dbItem.collection_id
         ? dbCollectionsIndex[dbItem.collection_id]

@@ -5,8 +5,6 @@ config:
     secure: v1:otw+92ejjeAgoBNw:au9UYhAZ0iHuFuFHMyRFVg==
   service-builder:FORUM_API_KEY:
     secure: v1:DyogukMdO4GbO6PI:UbWJce41J1Yumv9CNSgYHgMRCd+ONSXiPiFsoXjooRKoTdP345+Kbg/PmKvn/d03VQrE7NNxsKCWtUzYgqqJZvz6GfiGv1xTzLMRAAMRM94=
-  service-builder:MATIC_RPC_URL:
-    secure: v1:y/iM1Wm+dYBLHDYj:M0aTQQ/VY1MFxHisx+WOX4IppE1CTMrd2VS7PFf16HdlQEgNPYdJvBaZX/O2mrMDxhe5MBJFJZBCL5hYCZSx88IhmoRky59nYiQeCJAueH000Vtch0SOtv+/UrdY
   service-builder:OPEN_SEA_API_KEY:
     secure: v1:OL2jZRoBBWA9ouLG:vNKw88qloxfUo0o7CwT4yiFdKbvIV9nRUh45KuCzIWCB0hThPJnyHPE/b+XyC2+R
   service-builder:WAREHOUSE_TOKEN:

@@ -2,6 +2,7 @@ import { env } from 'decentraland-commons'
 import { ContractName, getContract } from 'decentraland-transactions'
 import { ethers } from 'ethers'
 import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
+import { getRpcUrl } from '../utils/eth'
 
 export function isUsingRaritiesWithOracle(): boolean {
   return env.get<string | undefined>('FF_RARITIES_WITH_ORACLE') === '1'
@@ -17,7 +18,7 @@ export function getRarityFromBlockchain(
     chainId
   )
 
-  const provider = new ethers.providers.JsonRpcProvider(getMaticRpcUrl())
+  const provider = new ethers.providers.JsonRpcProvider(getRpcUrl())
 
   const contract = new ethers.Contract(
     raritiesWithOracle.address,
@@ -26,14 +27,4 @@ export function getRarityFromBlockchain(
   )
 
   return contract.getRarityByName(name)
-}
-
-function getMaticRpcUrl(): string {
-  const maticRpcUrl = env.get<string | undefined>('MATIC_RPC_URL')
-
-  if (!maticRpcUrl) {
-    throw new Error('MATIC_RPC_URL not defined')
-  }
-
-  return maticRpcUrl
 }

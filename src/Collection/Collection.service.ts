@@ -308,7 +308,9 @@ export class CollectionService {
 
     return {
       collection: Bridge.mergeTPCollection(dbCollection, lastItemCuration),
-      items: await Bridge.consolidateTPItems(dbItems, itemCurations, [dbCollection]),
+      items: await Bridge.consolidateTPItems(dbItems, itemCurations, [
+        dbCollection,
+      ]),
       itemCurations,
     }
   }

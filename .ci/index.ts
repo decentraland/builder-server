@@ -129,8 +129,11 @@ export = async function main() {
         value: prometheusStack.getOutput('serviceMetricsBearerToken'),
       },
       {
-        name: 'MATIC_RPC_URL',
-        value: config.requireSecret('MATIC_RPC_URL'),
+        name: 'RPC_URL',
+        value:
+          env === 'prd' || env === 'stg'
+            ? 'https://rpc.decentraland.org/polygon'
+            : 'https://rpc.decentraland.org/mumbai',
       },
       { name: 'WAREHOUSE_URL', value: config.requireSecret('WAREHOUSE_URL') },
       { name: 'WAREHOUSE_CONTEXT_PREFIX', value: env },

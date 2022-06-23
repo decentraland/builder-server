@@ -1,15 +1,18 @@
-import { providers } from 'ethers'
 import { env } from 'decentraland-commons'
+import { providers } from 'ethers'
 import { isContract } from 'decentraland-transactions'
 
-export const MATIC_RPC_URL = env.get('MATIC_RPC_URL', '')
+export function getRpcUrl(): string {
+  const rpcUrl = env.get<string | undefined>('RPC_URL')
 
-if (!MATIC_RPC_URL) {
-  throw new Error('Please set a MATIC_RPC_URL env variable')
+  if (!rpcUrl) {
+    throw new Error('RPC_URL not defined')
+  }
+
+  return rpcUrl
 }
 
-const provider = new providers.JsonRpcProvider(MATIC_RPC_URL)
-
 export async function isPublished(collectionAddress: string) {
+  const provider = new providers.JsonRpcProvider(getRpcUrl())
   return isContract(provider, collectionAddress)
 }

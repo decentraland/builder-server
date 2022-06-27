@@ -444,8 +444,8 @@ export class ItemService {
         ))
 
       if (isDbCollectionPublished) {
-        // Prohibits adding new items to a published collection
-        if (!dbItem) {
+        // Prohibits adding new items or moving orphan ones to a published collection
+        if (!dbItem || !dbItem.collection_id) {
           throw new DCLItemAlreadyPublishedError(
             item.id,
             dbCollection.contract_address!,

@@ -1628,6 +1628,32 @@ describe('Item router', () => {
           })
         })
 
+        describe('and the item is orphan and is being moved into the collection', () => {
+          beforeEach(() => {
+            mockItem.findOne.mockResolvedValueOnce({
+              ...itemToUpsert,
+              collection_id: null,
+            })
+          })
+
+          it('should fail with can not add the item to a published collection message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({
+                item: { ...itemToUpsert, collection_id: collectionMock.id },
+              })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.conflict)
+
+            expect(response.body).toEqual({
+              data: { id: itemToUpsert.id },
+              error:
+                "The collection that contains this item has been already published. The item can't be inserted.",
+              ok: false,
+            })
+          })
+        })
+
         describe('and the item is being removed from the collection', () => {
           beforeEach(() => {
             mockItem.findOne.mockResolvedValueOnce(itemToUpsert)

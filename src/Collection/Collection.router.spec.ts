@@ -1,6 +1,7 @@
 import supertest from 'supertest'
 import { ethers } from 'ethers'
 import { v4 as uuid } from 'uuid'
+import { utils } from 'decentraland-commons'
 import {
   createAuthHeaders,
   buildURL,
@@ -115,6 +116,7 @@ describe('Collection router', () => {
     let third_party_id: string
     let urn: string
     let collectionToUpsert: FullCollection
+    let expectedCollectionToUpsert: FullCollection
 
     beforeEach(() => {
       urn_suffix = dbTPCollection.urn_suffix
@@ -187,6 +189,13 @@ describe('Collection router', () => {
         url = `/collections/${dbTPCollection.id}`
         urn = `${third_party_id}:${urn_suffix}`
         collectionToUpsert = {
+          ...utils.omit(toFullCollection(dbTPCollection), [
+            'created_at',
+            'updated_at',
+          ]),
+          urn,
+        }
+        expectedCollectionToUpsert = {
           ...toFullCollection(dbTPCollection),
           urn,
         }
@@ -370,6 +379,8 @@ describe('Collection router', () => {
             ...attributes,
             item_count: 0,
             lock: null,
+            created_at: expectedCollectionToUpsert.created_at,
+            updated_at: expectedCollectionToUpsert.updated_at,
           }))
         })
 
@@ -383,7 +394,7 @@ describe('Collection router', () => {
               expect(response.body).toEqual({
                 ok: true,
                 data: {
-                  ...convertCollectionDatesToISO(collectionToUpsert),
+                  ...convertCollectionDatesToISO(expectedCollectionToUpsert),
                   item_count: 0,
                   contract_address: null,
                 },
@@ -467,6 +478,8 @@ describe('Collection router', () => {
               ...attributes,
               item_count: 0,
               lock: null,
+              created_at: expectedCollectionToUpsert.created_at,
+              updated_at: expectedCollectionToUpsert.updated_at,
             }))
           })
 
@@ -480,7 +493,7 @@ describe('Collection router', () => {
                 expect(response.body).toEqual({
                   ok: true,
                   data: convertCollectionDatesToISO({
-                    ...collectionToUpsert,
+                    ...expectedCollectionToUpsert,
                     item_count: 0,
                   }),
                 })
@@ -709,7 +722,14 @@ describe('Collection router', () => {
       describe('and the collection is upserted', () => {
         beforeEach(() => {
           collectionToUpsert = {
-            ...toFullCollection(dbCollection),
+            ...utils.omit(toFullCollection(dbCollectionMock), [
+              'created_at',
+              'updated_at',
+            ]),
+            urn,
+          }
+          expectedCollectionToUpsert = {
+            ...toFullCollection(dbCollectionMock),
             urn,
           }
           mockOwnableCanUpsert(
@@ -727,6 +747,8 @@ describe('Collection router', () => {
             ...attributes,
             item_count: 0,
             lock: null,
+            created_at: expectedCollectionToUpsert.created_at,
+            updated_at: expectedCollectionToUpsert.updated_at,
           }))
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
@@ -749,7 +771,7 @@ describe('Collection router', () => {
               expect(response.body).toEqual({
                 ok: true,
                 data: convertCollectionDatesToISO({
-                  ...collectionToUpsert,
+                  ...expectedCollectionToUpsert,
                   item_count: 0,
                   salt: expect.stringMatching(/0[xX][0-9a-fA-F]{64}/),
                   contract_address: expect.stringMatching(

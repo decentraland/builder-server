@@ -33,8 +33,6 @@ export const collectionSchema = Object.freeze({
     'salt',
     'contract_address',
     'reviewed_at',
-    'created_at',
-    'updated_at',
   ],
 })
 

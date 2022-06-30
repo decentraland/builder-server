@@ -67,7 +67,7 @@ export function toDBCollection(
   let salt = isTP ? '' : collection.salt
 
   return {
-    ...utils.omit(collection, ['urn', 'lock']),
+    ...utils.omit(collection, ['urn', 'lock', 'created_at', 'updated_at']),
     urn_suffix,
     eth_address,
     contract_address,

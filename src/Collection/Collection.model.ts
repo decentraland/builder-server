@@ -292,7 +292,7 @@ export class Collection extends Model<CollectionAttributes> {
       )})
       VALUES (${database.toValuePlaceholders(collection)})
       ON CONFLICT (id)
-      DO UPDATE SET ${database.toAssignmentFields(attributes, 1)}
+      DO UPDATE SET ${database.toAssignmentFields(attributes, 1)},"updated_at" = now()
       RETURNING *, (SELECT COUNT(*) FROM ${
         Item.tableName
       } WHERE collections.id = items.collection_id) as item_count`,

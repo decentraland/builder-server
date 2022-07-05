@@ -221,7 +221,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { assignee, status, sort, q, is_published } = req.query
+    const { assignee, status, sort, q, isPublished } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -244,7 +244,7 @@ export class CollectionRouter extends Router {
       assignee: assignee as string,
       status: status as CurationStatusFilter,
       sort: sort as CurationStatusSort,
-      isPublished: is_published ? is_published === 'true' : undefined,
+      isPublished: isPublished ? isPublished === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
       remoteIds: status
@@ -274,6 +274,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
+    const { isPublished } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -295,6 +296,7 @@ export class CollectionRouter extends Router {
         limit,
         address: eth_address,
         sort: CurationStatusSort.NEWEST,
+        isPublished: isPublished ? isPublished === 'true' : undefined,
         remoteIds: authorizedRemoteCollections.map(
           (remoteCollection) => remoteCollection.id
         ),
@@ -305,9 +307,13 @@ export class CollectionRouter extends Router {
     const totalCollections =
       Number(allCollectionsWithCount[0]?.collection_count) || 0
 
+    const dbCollections = allCollectionsWithCount.map((collectionWithCount) =>
+      omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
+    )
+
     const consolidated = (
       await Bridge.consolidateAllCollections(
-        allCollectionsWithCount,
+        dbCollections,
         authorizedRemoteCollections
       )
     ).map(toFullCollection)

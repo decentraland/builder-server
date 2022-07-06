@@ -904,7 +904,7 @@ describe('Collection router', () => {
         q = 'collection name 1'
         totalCollectionsFromDb = 1
         baseUrl = '/collections'
-        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&sort=${sort}&isPublished=${isPublished}&q=${q}`
+        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&sort=${sort}&is_published=${isPublished}&q=${q}`
         ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([
           { ...dbCollection, collection_count: totalCollectionsFromDb },
         ])
@@ -1005,7 +1005,7 @@ describe('Collection router', () => {
 
       it('should respond with pagination data and should have call the findAll method with the right params', () => {
         return server
-          .get(buildURL(`${url}?limit=${limit}&page=${page}&isPublished=${isPublished}`))
+          .get(buildURL(`${url}?limit=${limit}&page=${page}&is_published=${isPublished}`))
           .set(createAuthHeaders('get', url))
           .expect(200)
           .then((response: any) => {

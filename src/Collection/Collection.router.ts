@@ -221,7 +221,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { assignee, status, sort, q, isPublished } = req.query
+    const { assignee, status, sort, q, is_published } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -244,7 +244,7 @@ export class CollectionRouter extends Router {
       assignee: assignee as string,
       status: status as CurationStatusFilter,
       sort: sort as CurationStatusSort,
-      isPublished: isPublished ? isPublished === 'true' : undefined,
+      isPublished: is_published ? is_published === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
       remoteIds: status
@@ -274,7 +274,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { isPublished } = req.query
+    const { is_published } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -296,7 +296,7 @@ export class CollectionRouter extends Router {
         limit,
         address: eth_address,
         sort: CurationStatusSort.NEWEST,
-        isPublished: isPublished ? isPublished === 'true' : undefined,
+        isPublished: is_published ? is_published === 'true' : undefined,
         remoteIds: authorizedRemoteCollections.map(
           (remoteCollection) => remoteCollection.id
         ),

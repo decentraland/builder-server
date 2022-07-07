@@ -1,8 +1,21 @@
+import { StandardWearable } from '@dcl/schemas'
 import { WearableBodyShape } from '../wearable/types'
+
+export type Emote = Omit<StandardWearable, 'data'> & {
+  emoteDataADR74: {
+    category: EmoteCategory
+    representations: {
+      bodyShapes: WearableBodyShape[]
+      mainFile: string
+      contents: string[]
+    }[]
+    tags: string[]
+    loop: boolean
+  }
+}
 
 export enum EmoteCategory {
   SIMPLE = 'simple',
-  LOOP = 'loop',
 }
 
 export type EmoteRepresentation = {

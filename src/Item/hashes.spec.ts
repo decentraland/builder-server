@@ -88,7 +88,7 @@ describe('when calculating the hashes of a standard emote item', () => {
       },
       data: {
         tags: [],
-        category: EmoteCategory.LOOP as any,
+        category: EmoteCategory.SIMPLE as any,
         representations: [
           {
             bodyShapes: [WearableBodyShape.MALE],

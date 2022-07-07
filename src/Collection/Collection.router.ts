@@ -274,6 +274,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
+    const { is_published } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -295,6 +296,7 @@ export class CollectionRouter extends Router {
         limit,
         address: eth_address,
         sort: CurationStatusSort.NEWEST,
+        isPublished: is_published ? is_published === 'true' : undefined,
         remoteIds: authorizedRemoteCollections.map(
           (remoteCollection) => remoteCollection.id
         ),
@@ -305,9 +307,13 @@ export class CollectionRouter extends Router {
     const totalCollections =
       Number(allCollectionsWithCount[0]?.collection_count) || 0
 
+    const dbCollections = allCollectionsWithCount.map((collectionWithCount) =>
+      omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
+    )
+
     const consolidated = (
       await Bridge.consolidateAllCollections(
-        allCollectionsWithCount,
+        dbCollections,
         authorizedRemoteCollections
       )
     ).map(toFullCollection)

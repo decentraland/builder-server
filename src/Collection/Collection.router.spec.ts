@@ -975,59 +975,120 @@ describe('Collection router', () => {
 
   describe('when retrieving the collections of an address', () => {
     beforeEach(() => {
-      ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
-        dbCollection,
-        dbTPCollection,
-      ])
-      ;(Collection.findByContractAddresses as jest.Mock).mockReturnValueOnce([])
-      ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
-        dbTPCollection,
-      ])
       ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock).mockReturnValueOnce(
         []
       )
-      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
-        [{ id: dbTPCollection.third_party_id }]
-      )
-      ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
-        itemCurationMock
-      )
-      mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
+      ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
       url = `/${wallet.address}/collections`
     })
 
-    it('should return the requested collections with the URN', () => {
-      return server
-        .get(buildURL(url))
-        .set(createAuthHeaders('get', url))
-        .expect(200)
-        .then((response: any) => {
-          expect(Collection.findAll).toHaveBeenCalledWith({
-            address: wallet.address,
-            limit: undefined,
-            offset: undefined,
-            sort: CurationStatusSort.NEWEST,
-            thirdPartyIds: [dbTPCollection.third_party_id],
-            remoteIds: [],
-          })
-          expect(response.body).toEqual({
-            data: [
-              {
-                ...resultingCollectionAttributes,
-                urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+    describe('sending pagination params plus filtering options', () => {
+      let page: number,
+        limit: number,
+        isPublished: string,
+        totalCollectionsFromDb: number
+      beforeEach(() => {
+          page = 1, 
+          limit = 3,
+          isPublished = 'true',
+          totalCollectionsFromDb = 1
+        ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
+          { ...dbCollection, collection_count: totalCollectionsFromDb },
+        ])
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce(
+          []
+        )
+        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
+          []
+        )
+      })
+
+      it('should respond with pagination data and should have call the findAll method with the right params', () => {
+        return server
+          .get(buildURL(`${url}?limit=${limit}&page=${page}&is_published=${isPublished}`))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                total: totalCollectionsFromDb,
+                pages: totalCollectionsFromDb,
+                page,
+                limit,
+                results: [
+                  {
+                    ...resultingCollectionAttributes,
+                    urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                  },
+                ],
               },
-              {
-                ...toResultCollection(dbTPCollection),
-                is_published: true,
-                urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
-                reviewed_at: itemCurationMock.updated_at.toISOString(),
-                created_at: itemCurationMock.created_at.toISOString(),
-                updated_at: itemCurationMock.updated_at.toISOString(),
-              },
-            ],
-            ok: true,
+
+              ok: true,
+            })
+            expect(Collection.findAll).toHaveBeenCalledWith({
+              address: wallet.address,
+              limit,
+              offset: page - 1,
+              sort: CurationStatusSort.NEWEST,
+              isPublished: true,
+              thirdPartyIds: [],
+              remoteIds: [],
+            })
           })
-        })
+      })
+    })
+
+    describe('and not sending any pagination params ', () => {
+      beforeEach(() => {
+        ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
+          dbCollection,
+          dbTPCollection,
+        ])
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
+          dbTPCollection,
+        ])
+        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
+          [{ id: dbTPCollection.third_party_id }]
+        )
+        ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
+          itemCurationMock
+        )
+        mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
+      })
+
+      it('should return the requested collections with the URN', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(Collection.findAll).toHaveBeenCalledWith({
+              address: wallet.address,
+              limit: undefined,
+              offset: undefined,
+              sort: CurationStatusSort.NEWEST,
+              thirdPartyIds: [dbTPCollection.third_party_id],
+              remoteIds: [],
+            })
+            expect(response.body).toEqual({
+              data: [
+                {
+                  ...resultingCollectionAttributes,
+                  urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                },
+                {
+                  ...toResultCollection(dbTPCollection),
+                  is_published: true,
+                  urn: `${dbTPCollection.third_party_id}:${dbTPCollection.urn_suffix}`,
+                  reviewed_at: itemCurationMock.updated_at.toISOString(),
+                  created_at: itemCurationMock.created_at.toISOString(),
+                  updated_at: itemCurationMock.updated_at.toISOString(),
+                },
+              ],
+              ok: true,
+            })
+          })
+      })
     })
   })
 

@@ -204,7 +204,7 @@ export const ItemQueries = Object.freeze({
           SELECT DISTINCT ON (items.id) items.id, items.*
             FROM ${raw(Item.tableName)} items
               ${
-                status || synced
+                status || synced !== undefined
                   ? SQL`
                     JOIN (
                       SELECT 
@@ -216,10 +216,14 @@ export const ItemQueries = Object.freeze({
                       ) item_curations
                     ON items.id = item_curations.item_id
                     ${
-                      synced
+                      synced === false
                         ? SQL`
-                      AND items.local_content_hash != item_curations.content_hash
-                      AND item_curations.status = 'approved'`
+                          AND items.local_content_hash != item_curations.content_hash
+                          AND item_curations.status = 'approved'`
+                        : synced === true
+                        ? SQL`
+                          AND items.local_content_hash = item_curations.content_hash
+                          AND item_curations.status = 'approved'`
                         : SQL``
                     }
                   `

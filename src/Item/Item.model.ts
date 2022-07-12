@@ -158,22 +158,35 @@ export class Item extends Model<ItemAttributes> {
 
   static async findByCollectionIds(
     collectionIds: string[],
+    synced?: boolean,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return await this.query<ItemWithTotalCount>(
-      ItemQueries.selectByCollectionIds(collectionIds, undefined, limit, offset)
+    const query = ItemQueries.selectByCollectionIds(
+      collectionIds,
+      undefined,
+      synced,
+      limit,
+      offset
     )
+    return await this.query<ItemWithTotalCount>(query)
   }
 
   static async findByCollectionIdAndStatus(
     collectionId: string,
     status: CurationStatus,
+    synced?: boolean,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
     return await this.query<ItemWithTotalCount>(
-      ItemQueries.selectByCollectionIds([collectionId], status, limit, offset)
+      ItemQueries.selectByCollectionIds(
+        [collectionId],
+        status,
+        synced,
+        limit,
+        offset
+      )
     )
   }
 }
@@ -182,6 +195,7 @@ export const ItemQueries = Object.freeze({
   selectByCollectionIds: (
     collectionIds: string[],
     status?: CurationStatus,
+    synced?: boolean,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) =>
@@ -190,10 +204,25 @@ export const ItemQueries = Object.freeze({
           SELECT DISTINCT ON (items.id) items.id, items.*
             FROM ${raw(Item.tableName)} items
               ${
-                status
-                  ? SQL`JOIN ${raw(
-                      ItemCuration.tableName
-                    )} item_curations ON items.id = item_curations.item_id`
+                status || synced
+                  ? SQL`
+                    JOIN (
+                      SELECT 
+                        DISTINCT ON (item_curations.item_id) item_curations.item_id, 
+                          item_curations.content_hash,
+                          item_curations.status
+                        FROM ${raw(ItemCuration.tableName)}
+                        ORDER BY item_curations.item_id, item_curations.created_at desc
+                      ) item_curations
+                    ON items.id = item_curations.item_id
+                    ${
+                      synced
+                        ? SQL`
+                      AND items.local_content_hash != item_curations.content_hash
+                      AND item_curations.status = 'approved'`
+                        : SQL``
+                    }
+                  `
                   : SQL``
               }
             WHERE items.collection_id = ANY(${collectionIds})

@@ -139,6 +139,7 @@ export class ItemService {
     collectionId: string,
     filters: {
       status?: CurationStatus
+      synced?: boolean
       limit?: number
       offset?: number
     }
@@ -147,7 +148,7 @@ export class ItemService {
     items: FullItem[]
     totalItems: number
   }> {
-    const { status, limit, offset } = filters
+    const { synced, status, limit, offset } = filters
     const dbCollection = await this.collectionService.getDBCollection(
       collectionId
     )
@@ -157,10 +158,11 @@ export class ItemService {
         ? await Item.findByCollectionIdAndStatus(
             collectionId,
             CurationStatus.PENDING,
+            synced,
             limit,
             offset
           )
-        : await Item.findByCollectionIds([collectionId], limit, offset)
+        : await Item.findByCollectionIds([collectionId], synced, limit, offset)
 
     const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
     const dbItems = dbItemsWithCount.map((dbItemWithCount) =>

@@ -515,20 +515,22 @@ describe('Item router', () => {
               expect(Item.findByCollectionIds).toHaveBeenCalledWith(
                 [dbCollectionMock.id],
                 undefined,
+                undefined,
                 undefined
               )
             })
         })
       })
 
-      describe('and pagination params are passed', () => {
+      describe('and pagination and synced params are passed', () => {
         let baseUrl: string
         let page: number
         let limit: number
+        let synced: boolean
         beforeEach(() => {
-          ;(page = 1), (limit = 1)
+          ;(page = 1), (limit = 1), (synced = false)
           baseUrl = `/collections/${dbCollectionMock.id}/items`
-          url = `${baseUrl}?limit=${limit}&page=${page}`
+          url = `${baseUrl}?limit=${limit}&page=${page}&synced=${synced}`
         })
         it('should call the find method with the pagination params', () => {
           return server
@@ -557,6 +559,7 @@ describe('Item router', () => {
               })
               expect(Item.findByCollectionIds).toHaveBeenCalledWith(
                 [dbCollectionMock.id],
+                synced,
                 limit,
                 limit * (page - 1)
               )

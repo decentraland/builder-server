@@ -140,7 +140,8 @@ export class Collection extends Model<CollectionAttributes> {
               : SQL`
                 WHERE (
                   (items.blockchain_item_id is NOT NULL AND c.third_party_id IS NULL)
-                  OR c.third_party_id is NOT NULL))
+                  OR c.third_party_id is NOT NULL
+                )
               `
           }
         `
@@ -291,7 +292,10 @@ export class Collection extends Model<CollectionAttributes> {
       )})
       VALUES (${database.toValuePlaceholders(collection)})
       ON CONFLICT (id)
-      DO UPDATE SET ${database.toAssignmentFields(attributes, 1)},"updated_at" = now()
+      DO UPDATE SET ${database.toAssignmentFields(
+        attributes,
+        1
+      )},"updated_at" = now()
       RETURNING *, (SELECT COUNT(*) FROM ${
         Item.tableName
       } WHERE collections.id = items.collection_id) as item_count`,

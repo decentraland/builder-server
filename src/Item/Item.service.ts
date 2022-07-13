@@ -157,8 +157,10 @@ export class ItemService {
       status && isTP
         ? await Item.findByCollectionIdAndStatus(
             collectionId,
-            CurationStatus.PENDING,
-            synced,
+            {
+              synced,
+              status: CurationStatus.PENDING,
+            },
             limit,
             offset
           )

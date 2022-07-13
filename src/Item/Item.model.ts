@@ -7,6 +7,11 @@ import { DBItemApprovalData, ItemAttributes } from './Item.types'
 
 type ItemWithTotalCount = ItemAttributes & { total_count: number }
 
+type ItemQueryOptions = {
+  status?: CurationStatus
+  synced?: boolean
+}
+
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
@@ -164,8 +169,9 @@ export class Item extends Model<ItemAttributes> {
   ) {
     const query = ItemQueries.selectByCollectionIds(
       collectionIds,
-      undefined,
-      synced,
+      {
+        synced,
+      },
       limit,
       offset
     )
@@ -174,16 +180,18 @@ export class Item extends Model<ItemAttributes> {
 
   static async findByCollectionIdAndStatus(
     collectionId: string,
-    status: CurationStatus,
-    synced?: boolean,
+    options: ItemQueryOptions,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
+    const { status, synced } = options
     return await this.query<ItemWithTotalCount>(
       ItemQueries.selectByCollectionIds(
         [collectionId],
-        status,
-        synced,
+        {
+          status,
+          synced,
+        },
         limit,
         offset
       )
@@ -194,12 +202,12 @@ export class Item extends Model<ItemAttributes> {
 export const ItemQueries = Object.freeze({
   selectByCollectionIds: (
     collectionIds: string[],
-    status?: CurationStatus,
-    synced?: boolean,
+    options: ItemQueryOptions,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
-  ) =>
-    SQL`
+  ) => {
+    const { status, synced } = options
+    return SQL`
         SELECT items.*, count(*) OVER() AS total_count FROM (
           SELECT DISTINCT ON (items.id) items.id, items.*
             FROM ${raw(Item.tableName)} items
@@ -238,5 +246,6 @@ export const ItemQueries = Object.freeze({
         ORDER BY items.created_at ASC
         LIMIT ${limit}
         OFFSET ${offset}
-    `,
+    `
+  },
 })

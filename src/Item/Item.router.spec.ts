@@ -528,7 +528,9 @@ describe('Item router', () => {
         let limit: number
         let synced: boolean
         beforeEach(() => {
-          ;(page = 1), (limit = 1), (synced = false)
+          page = 1
+          limit = 1
+          synced = false
           baseUrl = `/collections/${dbCollectionMock.id}/items`
           url = `${baseUrl}?limit=${limit}&page=${page}&synced=${synced}`
         })

@@ -7,6 +7,11 @@ import { DBItemApprovalData, ItemAttributes } from './Item.types'
 
 type ItemWithTotalCount = ItemAttributes & { total_count: number }
 
+type ItemQueryOptions = {
+  status?: CurationStatus
+  synced?: boolean
+}
+
 export class Item extends Model<ItemAttributes> {
   static tableName = 'items'
 
@@ -158,22 +163,38 @@ export class Item extends Model<ItemAttributes> {
 
   static async findByCollectionIds(
     collectionIds: string[],
+    synced?: boolean,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    return await this.query<ItemWithTotalCount>(
-      ItemQueries.selectByCollectionIds(collectionIds, undefined, limit, offset)
+    const query = ItemQueries.selectByCollectionIds(
+      collectionIds,
+      {
+        synced,
+      },
+      limit,
+      offset
     )
+    return await this.query<ItemWithTotalCount>(query)
   }
 
   static async findByCollectionIdAndStatus(
     collectionId: string,
-    status: CurationStatus,
+    options: ItemQueryOptions,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
+    const { status, synced } = options
     return await this.query<ItemWithTotalCount>(
-      ItemQueries.selectByCollectionIds([collectionId], status, limit, offset)
+      ItemQueries.selectByCollectionIds(
+        [collectionId],
+        {
+          status,
+          synced,
+        },
+        limit,
+        offset
+      )
     )
   }
 }
@@ -181,19 +202,39 @@ export class Item extends Model<ItemAttributes> {
 export const ItemQueries = Object.freeze({
   selectByCollectionIds: (
     collectionIds: string[],
-    status?: CurationStatus,
+    options: ItemQueryOptions,
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
-  ) =>
-    SQL`
+  ) => {
+    const { status, synced } = options
+    return SQL`
         SELECT items.*, count(*) OVER() AS total_count FROM (
           SELECT DISTINCT ON (items.id) items.id, items.*
             FROM ${raw(Item.tableName)} items
               ${
-                status
-                  ? SQL`JOIN ${raw(
-                      ItemCuration.tableName
-                    )} item_curations ON items.id = item_curations.item_id`
+                status || synced !== undefined
+                  ? SQL`
+                    JOIN (
+                      SELECT 
+                        DISTINCT ON (item_curations.item_id) item_curations.item_id, 
+                          item_curations.content_hash,
+                          item_curations.status
+                        FROM ${raw(ItemCuration.tableName)}
+                        ORDER BY item_curations.item_id, item_curations.created_at desc
+                      ) item_curations
+                    ON items.id = item_curations.item_id
+                    ${
+                      synced === false
+                        ? SQL`
+                          AND items.local_content_hash != item_curations.content_hash
+                          AND item_curations.status = 'approved'`
+                        : synced === true
+                        ? SQL`
+                          AND items.local_content_hash = item_curations.content_hash
+                          AND item_curations.status = 'approved'`
+                        : SQL``
+                    }
+                  `
                   : SQL``
               }
             WHERE items.collection_id = ANY(${collectionIds})
@@ -205,5 +246,6 @@ export const ItemQueries = Object.freeze({
         ORDER BY items.created_at ASC
         LIMIT ${limit}
         OFFSET ${offset}
-    `,
+    `
+  },
 })

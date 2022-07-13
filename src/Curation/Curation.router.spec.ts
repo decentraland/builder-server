@@ -555,6 +555,17 @@ describe('when handling a request', () => {
               .mockResolvedValueOnce(expectedCuration)
           })
 
+          describe('and the assignee is not a committee member', () => {
+            beforeEach(() => {
+              mockIsCommitteeMember.mockResolvedValueOnce(false)
+            })
+            it('should throw an error saying the assignee is not a committee member', async () => {
+              await expect(
+                router.insertCollectionCuration(req)
+              ).rejects.toThrowError('The assignee must be a committee member')
+            })
+          })
+
           it('should resolve with the updated curation', async () => {
             await expect(
               router.updateCollectionCuration(req)
@@ -875,6 +886,7 @@ describe('when handling a request', () => {
           } as CollectionCurationAttributes
 
           service = mockServiceWithAccess(CollectionCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
         })
 

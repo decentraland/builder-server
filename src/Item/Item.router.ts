@@ -278,8 +278,12 @@ export class ItemRouter extends Router {
   ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
     const id = server.extractFromReq(req, 'id')
     let status: CurationStatus | undefined
+    let synced: string | undefined
     try {
       status = server.extractFromReq(req, 'status')
+    } catch (error) {}
+    try {
+      synced = server.extractFromReq(req, 'synced')
     } catch (error) {}
 
     if (status && !Object.values(CurationStatus).includes(status)) {
@@ -301,6 +305,7 @@ export class ItemRouter extends Router {
         limit,
         offset: page && limit ? getOffset(page, limit) : undefined,
         status,
+        synced: synced ? synced === 'true' : undefined,
       })
 
       if (!(await hasCollectionAccess(eth_address, collection))) {

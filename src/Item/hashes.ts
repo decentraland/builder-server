@@ -3,7 +3,7 @@ import { Locale, ThirdPartyWearable, StandardWearable } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
-import { EmoteCategory, EmoteData } from './emote/types'
+import { Emote, EmoteCategory } from './emote/types'
 import { ItemAttributes, ItemType } from './Item.types'
 import { buildTPItemURN, isTPItem } from './utils'
 
@@ -39,10 +39,35 @@ function buildStandardWearableEntityMetadata(
     metrics: item.metrics,
   }
 
-  if (item.type === ItemType.EMOTE) {
-    entity.emoteDataV0 = {
-      loop: (item.data as EmoteData).category === EmoteCategory.LOOP,
-    }
+  return entity
+}
+
+function buildEmoteEntityMetadata(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+): Emote {
+  if (!isStandardItemPublished(item, collection)) {
+    throw new Error(
+      "The item's collection must be published to build its metadata"
+    )
+  }
+
+  const entity: Emote = {
+    id: getDecentralandItemURN(item, collection.contract_address!),
+    name: item.name,
+    description: item.description,
+    collectionAddress: collection.contract_address!,
+    rarity: item.rarity!,
+    i18n: [{ code: Locale.EN, text: item.name }],
+    emoteDataADR74: {
+      category: EmoteCategory.SIMPLE,
+      representations: item.data.representations,
+      tags: item.data.tags,
+      loop: false,
+    },
+    image: IMAGE_PATH,
+    thumbnail: THUMBNAIL_PATH,
+    metrics: item.metrics,
   }
 
   return entity
@@ -98,7 +123,11 @@ async function calculateStandardItemContentHash(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): Promise<string> {
-  const metadata = await buildStandardWearableEntityMetadata(item, collection)
+  const buildMetadata =
+    item.type === ItemType.WEARABLE
+      ? buildStandardWearableEntityMetadata
+      : buildEmoteEntityMetadata
+  const metadata = await buildMetadata(item, collection)
   const content = Object.keys(item.contents).map((file) => ({
     file,
     hash: item.contents[file],

@@ -1,7 +1,4 @@
-import { Request } from 'express'
 import AWS from 'aws-sdk'
-import multer from 'multer'
-import multerS3 from 'multer-s3'
 import mimeTypes from 'mime-types'
 import { env, utils, Log } from 'decentraland-commons'
 
@@ -13,7 +10,7 @@ if (!ACCESS_KEY || !ACCESS_SECRET) {
   )
 }
 
-const BUCKET_NAME = env.get('AWS_BUCKET_NAME', '')
+export const BUCKET_NAME = env.get('AWS_BUCKET_NAME', '')
 if (!BUCKET_NAME) {
   throw new Error(
     'You need to add an AWS bucket name to your env file. Check the .env.example file'
@@ -146,43 +143,19 @@ export function uploadFile(
     ACL: acl,
     ContentType,
   }
-  log.info(`Uploading file "${key}"`)
+  log.info(
+    `Uploading file "${key}" and params ${JSON.stringify(
+      utils.omit(params, ['Body'])
+    )}`
+  )
 
   return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
     params
   )
 }
 
-export function getFileUploader(
-  options: { acl: ACLValues; mimeTypes?: string[]; maxFileSize?: number },
-  callback: (req: Request, file: Express.Multer.File) => string
-) {
-  const { acl, mimeTypes = [], maxFileSize = MAX_FILE_SIZE } = options
-
-  return multer({
-    limits: {
-      fileSize: maxFileSize,
-    },
-    fileFilter: function (_, file, cb) {
-      if (mimeTypes.length > 0) {
-        cb(null, mimeTypes.includes(file.mimetype))
-      } else {
-        cb(null, true)
-      }
-    },
-    storage: multerS3({
-      s3: s3,
-      acl: acl,
-      bucket: BUCKET_NAME,
-      key: (req, file, next) => {
-        try {
-          next(null, callback(req as Request, file))
-        } catch (error) {
-          next(error, '')
-        }
-      },
-    }),
-  })
+export function isValidFileSize(size: number) {
+  return size <= MAX_FILE_SIZE
 }
 
 export const getBucketURL = (): string =>

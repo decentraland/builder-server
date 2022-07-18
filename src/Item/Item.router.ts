@@ -1,5 +1,6 @@
-import { Request, Response } from 'express'
-import { utils } from 'decentraland-commons'
+import multer from 'multer'
+import { Request } from 'express'
+import { hashV1 } from '@dcl/hashing'
 import { server } from 'decentraland-server'
 import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
@@ -15,7 +16,7 @@ import {
   withSchemaValidation,
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
-import { S3Item, getFileUploader, ACL, S3Content } from '../S3'
+import { S3Content, S3Item, uploadRequestFiles } from '../S3'
 import { Collection, CollectionService } from '../Collection'
 import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
@@ -54,10 +55,6 @@ export class ItemRouter extends Router {
   public collectionService = new CollectionService()
   private itemService = new ItemService()
 
-  itemFilesRequestHandler:
-    | ((req: Request, res: Response) => Promise<boolean>) // Promisified RequestHandler
-    | undefined
-
   private modelAuthorizationCheck = (
     _: OwnableModel,
     id: string,
@@ -75,8 +72,6 @@ export class ItemRouter extends Router {
       this.modelAuthorizationCheck
     )
     const withLowercasedAddress = withLowercasedParams(['address'])
-
-    this.itemFilesRequestHandler = this.getItemFilesRequestHandler()
 
     /**
      * Returns all items
@@ -147,6 +142,7 @@ export class ItemRouter extends Router {
       withAuthentication,
       withItemExists,
       withItemAuthorization,
+      multer().any(),
       server.handleRequest(this.uploadItemFiles)
     )
   }
@@ -472,11 +468,19 @@ export class ItemRouter extends Router {
     return true
   }
 
-  uploadItemFiles = async (req: Request, res: Response) => {
-    const id = server.extractFromReq(req, 'id')
+  uploadItemFiles = async (req: Request) => {
     try {
-      await this.itemFilesRequestHandler!(req, res)
+      await uploadRequestFiles(req.files, async (file) => {
+        const hash = await hashV1(file.buffer)
+        if (hash !== file.fieldname) {
+          throw new Error(
+            'The CID supplied does not correspond to the actual hash of the file'
+          )
+        }
+        return new S3Content().getFileKey(hash)
+      })
     } catch (error: any) {
+      const id = server.extractFromReq(req, 'id')
       try {
         await Promise.all([Item.delete({ id }), new S3Item(id).delete()])
       } catch (error) {
@@ -487,12 +491,5 @@ export class ItemRouter extends Router {
         message: error.message,
       })
     }
-  }
-
-  private getItemFilesRequestHandler() {
-    const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) => {
-      return new S3Content().getFileKey(file.fieldname)
-    })
-    return utils.promisify<boolean>(uploader.any())
   }
 }

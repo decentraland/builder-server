@@ -1,6 +1,7 @@
 export * from './s3'
 export * from './manifest'
 export * from './pool'
+export * from './uploadRequestFiles'
 export * from './S3Project'
 export * from './S3AssetPack'
 export * from './S3Content'

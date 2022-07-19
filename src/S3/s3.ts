@@ -146,11 +146,7 @@ export function uploadFile(
     ACL: acl,
     ContentType,
   }
-  log.info(
-    `Uploading file "${key}" and params ${JSON.stringify(
-      utils.omit(params, ['Body'])
-    )}`
-  )
+  log.info(`Uploading file "${key}"`)
 
   return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
     params

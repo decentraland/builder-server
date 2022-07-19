@@ -1,24 +1,20 @@
-import { Request, Response } from 'express'
+import multer from 'multer'
+import { Request } from 'express'
 import { server } from 'decentraland-server'
-import { utils } from 'decentraland-commons'
-
 import { Router } from '../common/Router'
 import { HTTPError } from '../common/HTTPError'
+import { getCID } from '../utils/cid'
 import {
   withModelExists,
   asMiddleware,
   withModelAuthorization,
 } from '../middleware'
-import { S3AssetPack, S3Content, getFileUploader, ACL } from '../S3'
+import { S3Content, S3AssetPack, uploadRequestFiles } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'
 import { withAuthentication } from '../middleware/authentication'
 
 export class AssetRouter extends Router {
-  assetFilesRequestHandler:
-    | ((req: Request, res: Response) => Promise<boolean>) // Promisified RequestHandler
-    | undefined
-
   mount() {
     const withAssetExists = withModelExists(Asset)
     const withAssetPackExists = withModelExists(AssetPack, 'assetPackId')
@@ -26,8 +22,6 @@ export class AssetRouter extends Router {
       AssetPack,
       'assetPackId'
     )
-
-    this.assetFilesRequestHandler = this.getAssetFilesRequestHandler()
 
     /**
      * Upload the files for each asset in an asset pack
@@ -38,6 +32,7 @@ export class AssetRouter extends Router {
       withAssetPackExists,
       withAssetPackAuthorization,
       asMiddleware(this.assetBelongsToPackMiddleware),
+      multer().any(),
       server.handleRequest(this.uploadAssetFiles)
     )
 
@@ -68,13 +63,24 @@ export class AssetRouter extends Router {
     }
   }
 
-  uploadAssetFiles = async (req: Request, res: Response) => {
+  uploadAssetFiles = async (req: Request) => {
     try {
-      await this.assetFilesRequestHandler!(req, res)
+      await uploadRequestFiles(req.files, async (file) => {
+        const hash = await getCID({
+          path: file.originalname,
+          content: file.buffer,
+          size: file.size,
+        })
+        if (hash !== file.fieldname) {
+          throw new Error(
+            'The CID supplied does not correspond to the actual hash of the file'
+          )
+        }
+        return new S3Content().getFileKey(hash)
+      })
     } catch (error) {
       const assetPackId = server.extractFromReq(req, 'assetPackId')
       const s3AssetPack = new S3AssetPack(assetPackId)
-
       try {
         await Promise.all([
           AssetPack.hardDelete({ id: assetPackId }),
@@ -83,18 +89,10 @@ export class AssetRouter extends Router {
       } catch (error) {
         // Skip
       }
-
       throw new HTTPError('An error occurred trying to upload asset files', {
-        message: error.message,
+        message: (error as Error).message,
       })
     }
-  }
-
-  private getAssetFilesRequestHandler() {
-    const uploader = getFileUploader({ acl: ACL.publicRead }, (_, file) =>
-      new S3Content().getFileKey(file.fieldname)
-    )
-    return utils.promisify<boolean>(uploader.any())
   }
 
   private getAsset(req: Request) {

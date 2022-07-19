@@ -13,7 +13,7 @@ if (!ACCESS_KEY || !ACCESS_SECRET) {
   )
 }
 
-const BUCKET_NAME = env.get('AWS_BUCKET_NAME', '')
+export const BUCKET_NAME = env.get('AWS_BUCKET_NAME', '')
 if (!BUCKET_NAME) {
   throw new Error(
     'You need to add an AWS bucket name to your env file. Check the .env.example file'
@@ -183,6 +183,10 @@ export function getFileUploader(
       },
     }),
   })
+}
+
+export function isValidFileSize(size: number) {
+  return size <= MAX_FILE_SIZE
 }
 
 export const getBucketURL = (): string =>

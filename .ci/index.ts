@@ -95,7 +95,7 @@ export = async function main() {
       },
       {
         name: 'CHAIN_NAME',
-        value: env === 'prd' || env === 'stg' ? 'Ethereum Mainnet' : 'Ropsten',
+        value: env === 'prd' || env === 'stg' ? 'Ethereum Mainnet' : 'Goerli',
       },
       {
         name: 'COLLECTIONS_GRAPH_URL',

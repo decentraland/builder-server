@@ -14,7 +14,7 @@ export function getMappedChainIdForCurrentChainName():
   switch (chainName) {
     case ChainName.ETHEREUM_MAINNET:
       return ChainId.MATIC_MAINNET
-    case ChainName.ETHEREUM_ROPSTEN:
+    case ChainName.ETHEREUM_GOERLI:
       return ChainId.MATIC_MUMBAI
     default:
       throw new Error(

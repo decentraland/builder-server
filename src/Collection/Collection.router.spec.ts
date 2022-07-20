@@ -111,7 +111,7 @@ describe('Collection router', () => {
   })
 
   describe('when upserting a collection', () => {
-    const network = 'ropsten'
+    const network = 'goerli'
     let urn_suffix: string
     let third_party_id: string
     let urn: string

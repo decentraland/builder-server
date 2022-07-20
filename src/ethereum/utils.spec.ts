@@ -49,7 +49,7 @@ describe('when obtaining the collection factory address', () => {
 
   describe('when CHAIN_NAME === "Goerli"', () => {
     it('should return the collection factory v3 address on matic mumbai', () => {
-      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_ROPSTEN)
+      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_GOERLI)
 
       expect(getFactoryCollectionAddress()).toBe(
         '0xDDb3781Fff645325C8896AA1F067bAa381607ecc'

@@ -1,7 +1,7 @@
 import { Wallet as EthersWallet } from 'ethers'
 import { Bytes } from '@ethersproject/bytes'
 import { Signer } from '@ethersproject/abstract-signer'
-import { Authenticator, AuthLinkType, AuthIdentity } from 'dcl-crypto'
+import { Authenticator, AuthLinkType, AuthIdentity } from '@dcl/crypto'
 
 export type Wallet = {
   address: string

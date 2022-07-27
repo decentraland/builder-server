@@ -1,10 +1,10 @@
 import fetch from 'isomorphic-fetch'
 import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { AuthLink } from '@dcl/crypto'
 import { ILoggerComponent } from '@well-known-components/interfaces'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { env } from 'decentraland-commons'
 import { LambdasClient } from 'dcl-catalyst-client'
-import { AuthLink } from 'dcl-crypto'
 import { logExecutionTime } from '../../utils/logging'
 
 export const THUMBNAIL_PATH = 'thumbnail.png'
@@ -29,7 +29,9 @@ export class PeerAPI {
   logger: ILoggerComponent.ILogger
 
   constructor() {
-    this.lambdasClient = new LambdasClient(`${PEER_URL}/lambdas`)
+    this.lambdasClient = new LambdasClient({
+      lambdasUrl: `${PEER_URL}/lambdas`,
+    })
     this.logger = createConsoleLogComponent().getLogger('PeerAPI')
   }
 

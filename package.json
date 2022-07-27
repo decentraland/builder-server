@@ -77,7 +77,6 @@
     "uuid": "^8.3.2"
   },
   "devDependencies": {
-    "@types/multer-s3": "^2.7.9",
     "@types/interface-datastore": "^1.0.0",
     "@types/pull-stream": "^3.6.2",
     "@swc/core": "^1.2.102",

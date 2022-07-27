@@ -217,11 +217,11 @@ export class ProjectRouter extends Router {
   async uploadFiles(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
-    // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
+    // req.files is an object with: { [fieldName]: Express.Multer.File[] }
     // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
     // So the array will always have only one item on it
     // We cast req.files for easier access of each file. The field name is still accessible on each File
-    const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
+    const reqFiles = req.files as Record<string, Express.Multer.File[]>
 
     const files = Object.values(reqFiles).map((files) => files[0])
 

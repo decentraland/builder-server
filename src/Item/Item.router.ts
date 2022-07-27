@@ -14,7 +14,7 @@ import {
   withSchemaValidation,
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
-import { getUploader } from '../S3'
+import { getUploader, S3Content } from '../S3'
 import { Collection, CollectionService } from '../Collection'
 import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
@@ -141,7 +141,10 @@ export class ItemRouter extends Router {
       withItemExists,
       withItemAuthorization,
       getUploader({
-        getFileKey: (file) => hashV1(file.stream),
+        getFileKey: async (file) => {
+          const hash = await hashV1(file.stream)
+          return new S3Content().getFileKey(hash)
+        },
       }).any(),
       server.handleRequest(this.uploadItemFiles)
     )

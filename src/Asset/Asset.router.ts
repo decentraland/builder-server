@@ -7,7 +7,7 @@ import {
   asMiddleware,
   withModelAuthorization,
 } from '../middleware'
-import { getUploader } from '../S3'
+import { getUploader, S3Content } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'
 import { withAuthentication } from '../middleware/authentication'
@@ -31,7 +31,10 @@ export class AssetRouter extends Router {
       withAssetPackAuthorization,
       asMiddleware(this.assetBelongsToPackMiddleware),
       getUploader({
-        getFileKey: (file) => hashV1(file.stream),
+        getFileKey: async (file) => {
+          const hash = await hashV1(file.stream)
+          return new S3Content().getFileKey(hash)
+        },
       }).any(),
       server.handleRequest(this.uploadAssetFiles)
     )

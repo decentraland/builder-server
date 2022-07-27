@@ -1,4 +1,3 @@
-import multer from 'multer'
 import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
@@ -9,7 +8,7 @@ import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
-import { S3Project, getBucketURL, uploadRequestFiles } from '../S3'
+import { S3Project, getBucketURL, getUploader } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { Project } from './Project.model'
@@ -109,7 +108,17 @@ export class ProjectRouter extends Router {
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
-      multer().fields(
+      getUploader({
+        mimeTypes: MIME_TYPES,
+        getFileKey: async (file, req) => {
+          const id = server.extractFromReq(req, 'id')
+          const extension = mimeTypes.extension(file.mimetype)
+          const filename = `${file.fieldname}.${extension}`
+
+          // **Important** Shares folder with the other project files
+          return new S3Project(id).getFileKey(filename)
+        },
+      }).fields(
         FILE_NAMES.map((name) => ({
           name,
           maxCount: 1,
@@ -208,17 +217,13 @@ export class ProjectRouter extends Router {
   async uploadFiles(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
 
-    const files = await uploadRequestFiles(
-      req.files,
-      async (file) => {
-        const extension = mimeTypes.extension(file.mimetype)
-        const filename = `${file.fieldname}.${extension}`
+    // req.files is an object with: { [fieldName]: Express.MulterS3.File[] }
+    // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
+    // So the array will always have only one item on it
+    // We cast req.files for easier access of each file. The field name is still accessible on each File
+    const reqFiles = req.files as Record<string, Express.MulterS3.File[]>
 
-        // **Important** Shares folder with the other project files
-        return new S3Project(id).getFileKey(filename)
-      },
-      { mimeTypes: MIME_TYPES }
-    )
+    const files = Object.values(reqFiles).map((files) => files[0])
 
     const thumbnail = files.find(
       (file) => file.fieldname === THUMBNAIL_FILE_NAME

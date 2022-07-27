@@ -1,4 +1,3 @@
-import multer from 'multer'
 import { server } from 'decentraland-server'
 import { env, utils } from 'decentraland-commons'
 import { v4 as uuidv4 } from 'uuid'
@@ -19,7 +18,7 @@ import {
   withAuthentication,
   AuthRequest,
 } from '../middleware/authentication'
-import { S3AssetPack, uploadRequestFiles } from '../S3'
+import { getUploader, S3AssetPack } from '../S3'
 import { ExpressApp } from '../common/ExpressApp'
 import { asyncHandler } from '../common/asyncHandler'
 import { Ownable } from '../Ownable'
@@ -106,7 +105,15 @@ export class AssetPackRouter extends Router {
       withAuthentication,
       withAssetPackExists,
       withAssetPackAuthorization,
-      multer().single(THUMBNAIL_FILE_NAME),
+      getUploader({
+        mimeTypes: THUMBNAIL_MIME_TYPES,
+        getFileKey: async (_, req) => {
+          const id = server.extractFromReq(req, 'id')
+          const s3AssetPack = new S3AssetPack(id)
+          const filename = s3AssetPack.getThumbnailFilename()
+          return s3AssetPack.getFileKey(filename)
+        },
+      }).single(THUMBNAIL_FILE_NAME),
       server.handleRequest(this.uploadThumbnail)
     )
   }
@@ -291,18 +298,7 @@ export class AssetPackRouter extends Router {
 
   async uploadThumbnail(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-
     const thumbnail = req.file as Express.Multer.File // using `single` on getFileUploaderMiddleware
-
-    await uploadRequestFiles(
-      [thumbnail],
-      async () => {
-        const s3AssetPack = new S3AssetPack(id)
-        const filename = s3AssetPack.getThumbnailFilename()
-        return s3AssetPack.getFileKey(filename)
-      },
-      { mimeTypes: THUMBNAIL_MIME_TYPES }
-    )
 
     if (thumbnail) {
       const filename = new S3AssetPack(id).getThumbnailFilename()

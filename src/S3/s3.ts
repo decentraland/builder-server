@@ -1,3 +1,4 @@
+import { Readable } from 'stream'
 import AWS from 'aws-sdk'
 import mimeTypes from 'mime-types'
 import { env, utils, Log } from 'decentraland-commons'
@@ -17,7 +18,8 @@ if (!BUCKET_NAME) {
   )
 }
 
-const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
+export const MAX_FILE_SIZE =
+  parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
 
 const STORAGE_URL = env.get('AWS_STORAGE_URL', undefined)
 
@@ -85,6 +87,27 @@ export async function listFiles(
     : contents
 }
 
+export async function moveFile(source: string, key: string) {
+  log.info(`Moving "${source}" to "${key}"`)
+
+  // The "move" operation does not exist on S3, we need to copy and delete the original file
+  await copyFile(source, key)
+  await deleteFile(source)
+  return true
+}
+
+export async function copyFile(source: string, key: string) {
+  const params = {
+    Bucket: BUCKET_NAME,
+    CopySource: `/${BUCKET_NAME}/${source}`,
+    Key: key,
+  }
+  log.info(`Copying "${source}" to "${key}"`)
+  return utils.promisify<AWS.S3.CopyObjectOutput>(s3.copyObject.bind(s3))(
+    params
+  )
+}
+
 export async function deleteFile(key: string) {
   const params = {
     Bucket: BUCKET_NAME,
@@ -129,7 +152,7 @@ export async function checkFile(key: string): Promise<boolean> {
 
 export function uploadFile(
   key: string,
-  data: Buffer,
+  data: Buffer | Readable,
   acl: ACLValues,
   options: Partial<AWS.S3.PutObjectRequest> = {}
 ) {
@@ -143,17 +166,14 @@ export function uploadFile(
     ACL: acl,
     ContentType,
   }
-  log.info(
-    `Uploading file "${key}" and params ${JSON.stringify(
-      utils.omit(params, ['Body'])
-    )}`
-  )
+  log.info(`Uploading file "${key}"`)
 
   return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
     params
   )
 }
 
+<<<<<<< HEAD
 export function isValidFileSize(size: number) {
   return size <= MAX_FILE_SIZE
 }
@@ -162,6 +182,8 @@ export function isValidFileSize(size: number) {
   return size <= MAX_FILE_SIZE
 }
 
+=======
+>>>>>>> 4f33867 (feat: use hashv1 for asset files)
 export const getBucketURL = (): string =>
   STORAGE_URL
     ? `${STORAGE_URL}/${BUCKET_NAME}`

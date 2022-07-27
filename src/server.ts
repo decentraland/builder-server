@@ -24,7 +24,7 @@ import { AnalyticsRouter } from './Analytics'
 import { NFTRouter } from './NFT'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
-// import { withLogger } from './middleware'
+import { withLogger } from './middleware'
 import { ProjectByCoordRouter } from './Project'
 import { errorHandler } from './common/errorHandler'
 
@@ -38,7 +38,7 @@ const logs = createConsoleLogComponent()
 
 app
   .useCORS(CORS_ORIGIN, CORS_METHOD)
-  // .use(withLogger())
+  .use(withLogger())
   .useJSON()
   .useVersion(API_VERSION)
   .useMetrics()

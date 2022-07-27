@@ -173,17 +173,6 @@ export function uploadFile(
   )
 }
 
-<<<<<<< HEAD
-export function isValidFileSize(size: number) {
-  return size <= MAX_FILE_SIZE
-}
-
-export function isValidFileSize(size: number) {
-  return size <= MAX_FILE_SIZE
-}
-
-=======
->>>>>>> 4f33867 (feat: use hashv1 for asset files)
 export const getBucketURL = (): string =>
   STORAGE_URL
     ? `${STORAGE_URL}/${BUCKET_NAME}`

@@ -63,11 +63,8 @@ export class AssetRouter extends Router {
     }
   }
 
-  uploadAssetFiles = (req: Request) => {
+  uploadAssetFiles = () => {
     // This handler is only here so `server.handleRequest` has a valid callback and it can return the appropiate formated response
-    console.log('===========================================')
-    console.log(req.files)
-    console.log('===========================================')
   }
 
   private getAsset(req: Request) {

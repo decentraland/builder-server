@@ -97,8 +97,7 @@ describe('when fetching all rarities', () => {
 
   describe('when fetching a rarity from the blockchain fails', () => {
     it('should fail with a could not fetch from blockchain error', async () => {
-      mockGetRarityFromBlockchain.mockImplementation(() =>
-        Promise.reject(new Error('Atahualpa Yupanqui'))
+      mockGetRarityFromBlockchain.mockRejectedValueOnce(new Error('Atahualpa Yupanqui')
       )
 
       const { body } = await server.get(buildURL('/rarities')).expect(404)

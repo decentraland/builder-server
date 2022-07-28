@@ -87,13 +87,12 @@ export async function listFiles(
     : contents
 }
 
-export async function moveFile(source: string, key: string) {
+export async function moveFile(source: string, key: string): Promise<void> {
   log.info(`Moving "${source}" to "${key}"`)
 
   // The "move" operation does not exist on S3, we need to copy and delete the original file
   await copyFile(source, key)
   await deleteFile(source)
-  return true
 }
 
 export async function copyFile(source: string, key: string) {

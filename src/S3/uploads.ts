@@ -2,7 +2,7 @@ import { PassThrough } from 'stream'
 import { v4 as uuid } from 'uuid'
 import multer from 'multer'
 import { Request } from 'express'
-import { ACL, deleteFile, MAX_FILE_SIZE, moveFile, uploadFile } from './s3'
+import { ACL, MAX_FILE_SIZE, moveFile, uploadFile } from './s3'
 import { GetFileKey, UploaderOptions, MulterFile } from './types'
 
 export function getUploader({
@@ -64,12 +64,10 @@ class Storage implements multer.StorageEngine {
   }
 
   async _removeFile(
-    req: Request,
-    file: MulterFile,
+    _req: Request,
+    _file: MulterFile,
     callback: (error: Error | null) => void
   ): Promise<void> {
-    const key = await this.getFileKey(file, req)
-    await deleteFile(key)
     callback(null)
   }
 }

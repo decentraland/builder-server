@@ -4,7 +4,7 @@ import { Router } from '../common/Router'
 import { collectionAPI } from '../ethereum/api/collection'
 import { RarityFragment } from '../ethereum/api/fragments'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { isUsingRaritiesWithOracle, getRarityFromBlockchain } from './utils'
+import { getRarityFromBlockchain } from './utils'
 import { Currency, Rarity } from './types'
 
 export class RarityRouter extends Router {
@@ -18,12 +18,6 @@ export class RarityRouter extends Router {
 
   getRarities = async (): Promise<Rarity[]> => {
     const graphRarities = await collectionAPI.fetchRarities()
-
-    // If the server is still using the old rarities contract,
-    // return rarities as they have been always returned.
-    if (!isUsingRaritiesWithOracle()) {
-      return graphRarities
-    }
 
     // Query the blockchain to obtain rarities with MANA prices converted from USD.
     const blockchainRarities = await Promise.all(
@@ -53,10 +47,6 @@ export class RarityRouter extends Router {
   }
 
   getRarity = async (req: Request): Promise<Rarity> => {
-    if (!isUsingRaritiesWithOracle()) {
-      throw new HTTPError(`Cannot GET ${req.path}`, {}, STATUS_CODES.notFound)
-    }
-
     const name = req.params.name
 
     const rarities = await collectionAPI.fetchRarities()

@@ -1,12 +1,7 @@
-import { env } from 'decentraland-commons'
 import { ContractName, getContract } from 'decentraland-transactions'
 import { ethers } from 'ethers'
 import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
 import { getRpcUrl } from '../utils/eth'
-
-export function isUsingRaritiesWithOracle(): boolean {
-  return env.get<string | undefined>('FF_RARITIES_WITH_ORACLE') === '1'
-}
 
 export function getRarityFromBlockchain(
   name: string

@@ -44,15 +44,15 @@ class Storage implements multer.StorageEngine {
     // We're creating two PassThrough streams to to avoid any type of race condition
     // The original stream comes from file.stream. The reading of the stream is kicked of when we pipe it into the first PassThrough
     // This allows for both operations, the upload and the file key generation to be done "simultaneously" without keeping the entire stream data in memory
-    const getFileKeyStream = new PassThrough()
-    const uploadFileStream = new PassThrough()
-
-    getFileKeyStream.pipe(uploadFileStream)
+    const fileStream1 = new PassThrough()
+    const fileStream2 = new PassThrough()
 
     const [key] = await Promise.all([
-      this.getFileKey({ ...file, stream: getFileKeyStream }, req),
-      uploadFile(id, uploadFileStream, ACL.publicRead),
-      file.stream.pipe(getFileKeyStream),
+      this.getFileKey({ ...file, stream: fileStream1 }, req),
+      uploadFile(id, fileStream2, ACL.publicRead),
+
+      file.stream.pipe(fileStream1),
+      fileStream1.pipe(fileStream2),
     ])
 
     // move file to key

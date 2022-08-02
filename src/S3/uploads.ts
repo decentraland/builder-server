@@ -50,9 +50,8 @@ class Storage implements multer.StorageEngine {
     const [key] = await Promise.all([
       this.getFileKey({ ...file, stream: fileStream1 }, req),
       uploadFile(id, fileStream2, ACL.publicRead),
-
       file.stream.pipe(fileStream1),
-      fileStream1.pipe(fileStream2),
+      file.stream.pipe(fileStream2),
     ])
 
     // move file to key

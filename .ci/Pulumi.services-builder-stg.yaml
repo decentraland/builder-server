@@ -8,7 +8,7 @@ config:
   service-builder:OPEN_SEA_API_KEY:
     secure: v1:H1N6sE1uwje9dPFP:Biix9ZJokBqZBuJlYsKvuQESpenOONcHaEhv04mg0g4xIjCcmGQEWt9AJ4kVnnMy
   service-builder:WAREHOUSE_TOKEN:
-    secure: v1:LV8gh6FinM8kkWOh:LzCyrIJMr19cAJZ9Q+WtWcRkZHQT+FTedeqqUAQtYUM+up78hLUN/W61sz9bvcMje5BvlP/PPneHSzP/ZhTd/7USstQ/ENYsdkCGIGSj3ds=
+    secure: v1:mj2siM5gBfNN0mts:5Ge3m49qJ4KCcmpySp9dUH7G2v7hAKpc7xCEHaLTNHnSR9uLD9IjMxyBCW3m/aUEtYY0iieIvNsGTv7b1NfL20kA4hwW6TxDHcD5u8XuqIVM
   service-builder:WAREHOUSE_URL:
     secure: v1:U+iEdS6dwHe8E6+u:Ky54cIVvonc4cNOPn3b/I/cneVjzcgHzqiYAOE9bcr4M47LFV83YJv6TjGS3U69Kkcq34NR9cgZ/PS8fWQ==
   service-builder:db-password:

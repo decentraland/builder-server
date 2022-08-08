@@ -1,4 +1,4 @@
-import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { Wearable } from '@dcl/schemas'
 import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
@@ -278,9 +278,7 @@ export class ItemService {
         ? Bridge.mergeTPCollection(collection, lastItemCuration)
         : collection
 
-      const catalystItems = await peerAPI.fetchWearables<ThirdPartyWearable>([
-        urn,
-      ])
+      const catalystItems = await peerAPI.fetchWearables<Wearable>([urn])
       if (catalystItems.length > 0) {
         item = Bridge.mergeTPItem(dbItem, collection, catalystItems[0])
       }
@@ -319,9 +317,9 @@ export class ItemService {
         collection = Bridge.mergeCollection(dbCollection, remoteCollection)
 
         if (remoteItem) {
-          const [catalystItem] = await peerAPI.fetchWearables<StandardWearable>(
-            [remoteItem.urn]
-          )
+          const [catalystItem] = await peerAPI.fetchWearables<Wearable>([
+            remoteItem.urn,
+          ])
           item = Bridge.mergeItem(
             dbItem,
             remoteItem,
@@ -672,7 +670,7 @@ export class ItemService {
     ) {
       throw new URNAlreadyInUseError(id, urn, action)
     }
-    const [wearable] = await peerAPI.fetchWearables<ThirdPartyWearable>([urn])
+    const [wearable] = await peerAPI.fetchWearables<Wearable>([urn])
     if (wearable) {
       throw new URNAlreadyInUseError(id, urn, action)
     }

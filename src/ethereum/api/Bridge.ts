@@ -1,4 +1,4 @@
-import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { Wearable } from '@dcl/schemas'
 import { constants } from 'ethers'
 import { utils } from 'decentraland-commons'
 import {
@@ -123,7 +123,7 @@ export class Bridge {
       itemsByURN[urn] = item
     }
 
-    const tpCatalystItems = await peerAPI.fetchWearables<ThirdPartyWearable>(
+    const tpCatalystItems = await peerAPI.fetchWearables<Wearable>(
       Object.keys(itemsByURN)
     )
 
@@ -165,7 +165,7 @@ export class Bridge {
   static mergeTPItem(
     dbItem: ItemAttributes,
     dbCollection: ThirdPartyCollectionAttributes,
-    catalystItem?: ThirdPartyWearable
+    catalystItem?: Wearable
   ): FullItem {
     const data = dbItem.data
     const category = data.category
@@ -194,7 +194,7 @@ export class Bridge {
       is_approved: !!catalystItem,
       content_hash: null,
       catalyst_content_hash: catalystItem
-        ? catalystItem.merkleProof.entityHash
+        ? (catalystItem as any).merkleProof.entityHash
         : null,
       data: {
         ...data,
@@ -275,9 +275,7 @@ export class Bridge {
       dbCollections
         ? Promise.resolve(dbCollections)
         : Collection.findByIds(collectionIds),
-      peerAPI.fetchWearables<StandardWearable>(
-        remoteItems.map((item) => item.urn)
-      ),
+      peerAPI.fetchWearables<Wearable>(remoteItems.map((item) => item.urn)),
     ])
 
     // Reduce it to a map for fast lookup

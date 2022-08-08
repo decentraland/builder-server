@@ -1,12 +1,7 @@
-import { WearableCategory } from '@dcl/schemas'
-
-export enum WearableBodyShape {
-  MALE = 'urn:decentraland:off-chain:base-avatars:BaseMale',
-  FEMALE = 'urn:decentraland:off-chain:base-avatars:BaseFemale',
-}
+import { WearableCategory, BodyShape } from '@dcl/schemas'
 
 export type WearableRepresentation = {
-  bodyShapes: WearableBodyShape[]
+  bodyShapes: BodyShape[]
   mainFile: string
   contents: string[]
   overrideReplaces: WearableCategory[]
@@ -32,7 +27,7 @@ export const wearableSchema = Object.freeze({
         properties: {
           bodyShapes: {
             type: 'array',
-            items: { enum: Object.values(WearableBodyShape) },
+            items: { enum: Object.values(BodyShape.schema.enum) },
           },
           mainFile: { type: 'string' },
           contents: {

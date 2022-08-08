@@ -1,5 +1,3 @@
-import multer from 'multer'
-import { Request } from 'express'
 import { hashV1 } from '@dcl/hashing'
 import { server } from 'decentraland-server'
 import { omit } from 'decentraland-commons/dist/utils'
@@ -16,7 +14,7 @@ import {
   withSchemaValidation,
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
-import { S3Content, S3Item, uploadRequestFiles } from '../S3'
+import { getUploader, S3Content } from '../S3'
 import { Collection, CollectionService } from '../Collection'
 import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
@@ -142,7 +140,12 @@ export class ItemRouter extends Router {
       withAuthentication,
       withItemExists,
       withItemAuthorization,
-      multer().any(),
+      getUploader({
+        getFileKey: async (file) => {
+          const hash = await hashV1(file.stream)
+          return new S3Content().getFileKey(hash)
+        },
+      }).any(),
       server.handleRequest(this.uploadItemFiles)
     )
   }
@@ -473,28 +476,7 @@ export class ItemRouter extends Router {
     return true
   }
 
-  uploadItemFiles = async (req: Request) => {
-    try {
-      await uploadRequestFiles(req.files, async (file) => {
-        const hash = await hashV1(file.buffer)
-        if (hash !== file.fieldname) {
-          throw new Error(
-            'The CID supplied does not correspond to the actual hash of the file'
-          )
-        }
-        return new S3Content().getFileKey(hash)
-      })
-    } catch (error: any) {
-      const id = server.extractFromReq(req, 'id')
-      try {
-        await Promise.all([Item.delete({ id }), new S3Item(id).delete()])
-      } catch (error) {
-        // Skip
-      }
-
-      throw new HTTPError('An error occurred trying to upload item files', {
-        message: error.message,
-      })
-    }
+  uploadItemFiles = () => {
+    // This handler is only here so `server.handleRequest` has a valid callback and it can return the appropiate formated response
   }
 }

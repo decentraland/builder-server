@@ -1,7 +1,5 @@
-import { Request } from 'express'
+import { Readable } from 'stream'
 import AWS from 'aws-sdk'
-import multer from 'multer'
-import multerS3 from 'multer-s3'
 import mimeTypes from 'mime-types'
 import { env, utils, Log } from 'decentraland-commons'
 
@@ -20,7 +18,8 @@ if (!BUCKET_NAME) {
   )
 }
 
-const MAX_FILE_SIZE = parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
+export const MAX_FILE_SIZE =
+  parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
 
 const STORAGE_URL = env.get('AWS_STORAGE_URL', undefined)
 
@@ -88,6 +87,26 @@ export async function listFiles(
     : contents
 }
 
+export async function moveFile(source: string, key: string): Promise<void> {
+  log.info(`Moving "${source}" to "${key}"`)
+
+  // The "move" operation does not exist on S3, we need to copy and delete the original file
+  await copyFile(source, key)
+  await deleteFile(source)
+}
+
+export async function copyFile(source: string, key: string) {
+  const params = {
+    Bucket: BUCKET_NAME,
+    CopySource: `/${BUCKET_NAME}/${source}`,
+    Key: key,
+  }
+  log.info(`Copying "${source}" to "${key}"`)
+  return utils.promisify<AWS.S3.CopyObjectOutput>(s3.copyObject.bind(s3))(
+    params
+  )
+}
+
 export async function deleteFile(key: string) {
   const params = {
     Bucket: BUCKET_NAME,
@@ -132,7 +151,7 @@ export async function checkFile(key: string): Promise<boolean> {
 
 export function uploadFile(
   key: string,
-  data: Buffer,
+  data: Buffer | Readable,
   acl: ACLValues,
   options: Partial<AWS.S3.PutObjectRequest> = {}
 ) {
@@ -151,42 +170,6 @@ export function uploadFile(
   return utils.promisify<AWS.S3.ManagedUpload.SendData>(s3.upload.bind(s3))(
     params
   )
-}
-
-export function getFileUploader(
-  options: { acl: ACLValues; mimeTypes?: string[]; maxFileSize?: number },
-  callback: (req: Request, file: Express.Multer.File) => string
-) {
-  const { acl, mimeTypes = [], maxFileSize = MAX_FILE_SIZE } = options
-
-  return multer({
-    limits: {
-      fileSize: maxFileSize,
-    },
-    fileFilter: function (_, file, cb) {
-      if (mimeTypes.length > 0) {
-        cb(null, mimeTypes.includes(file.mimetype))
-      } else {
-        cb(null, true)
-      }
-    },
-    storage: multerS3({
-      s3: s3,
-      acl: acl,
-      bucket: BUCKET_NAME,
-      key: (req, file, next) => {
-        try {
-          next(null, callback(req as Request, file))
-        } catch (error) {
-          next(error, '')
-        }
-      },
-    }),
-  })
-}
-
-export function isValidFileSize(size: number) {
-  return size <= MAX_FILE_SIZE
 }
 
 export const getBucketURL = (): string =>

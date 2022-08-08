@@ -1,5 +1,5 @@
 import { constants } from 'ethers'
-import { Rarity, ThirdPartyWearable } from '@dcl/schemas'
+import { Rarity, Wearable, BodyShape } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
 import {
   ItemFragment,
@@ -16,7 +16,6 @@ import {
 import { toUnixTimestamp } from '../../src/utils/parse'
 import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
-import { WearableBodyShape } from '../../src/Item/wearable/types'
 import { isTPCollection } from '../../src/utils/urn'
 import { CatalystItem } from '../../src/ethereum/api/peer'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
@@ -75,7 +74,7 @@ export function asResultItem(item: ItemAttributes): ResultItem {
 export function toResultTPItem(
   itemAttributes: ItemAttributes,
   dbCollection?: CollectionAttributes,
-  catalystItem?: ThirdPartyWearable
+  catalystItem?: Wearable
 ): ResultItem {
   const hasURN =
     itemAttributes.urn_suffix && dbCollection && isTPCollection(dbCollection)
@@ -100,7 +99,7 @@ export function toResultTPItem(
     beneficiary: constants.AddressZero,
     content_hash: null,
     catalyst_content_hash: catalystItem
-      ? catalystItem?.merkleProof.entityHash
+      ? (catalystItem as any)?.merkleProof.entityHash
       : null,
   }
   delete (resultItem as Omit<typeof resultItem, 'urn_suffix'> & {
@@ -126,7 +125,7 @@ export const dbItemMock: ItemAttributes = {
   data: {
     representations: [
       {
-        bodyShapes: [WearableBodyShape.MALE],
+        bodyShapes: [BodyShape.MALE],
         mainFile: 'male/M_3LAU_Hat_Blue.glb',
         contents: ['male/M_3LAU_Hat_Blue.glb'],
         overrideHides: [],

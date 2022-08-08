@@ -156,10 +156,6 @@ export = async function main() {
         name: 'OPEN_SEA_API_KEY',
         value: config.requireSecret('OPEN_SEA_API_KEY'),
       },
-      {
-        name: 'FF_RARITIES_WITH_ORACLE',
-        value: '1',
-      },
     ],
     hostname,
     {

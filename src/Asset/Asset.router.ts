@@ -1,15 +1,13 @@
-import multer from 'multer'
 import { Request } from 'express'
 import { server } from 'decentraland-server'
+import { hashV1 } from '@dcl/hashing'
 import { Router } from '../common/Router'
-import { HTTPError } from '../common/HTTPError'
-import { getCID } from '../utils/cid'
 import {
   withModelExists,
   asMiddleware,
   withModelAuthorization,
 } from '../middleware'
-import { S3Content, S3AssetPack, uploadRequestFiles } from '../S3'
+import { getUploader, S3Content } from '../S3'
 import { AssetPack } from '../AssetPack'
 import { Asset } from './Asset.model'
 import { withAuthentication } from '../middleware/authentication'
@@ -32,7 +30,12 @@ export class AssetRouter extends Router {
       withAssetPackExists,
       withAssetPackAuthorization,
       asMiddleware(this.assetBelongsToPackMiddleware),
-      multer().any(),
+      getUploader({
+        getFileKey: async (file) => {
+          const hash = await hashV1(file.stream)
+          return new S3Content().getFileKey(hash)
+        },
+      }).any(),
       server.handleRequest(this.uploadAssetFiles)
     )
 
@@ -63,36 +66,8 @@ export class AssetRouter extends Router {
     }
   }
 
-  uploadAssetFiles = async (req: Request) => {
-    try {
-      await uploadRequestFiles(req.files, async (file) => {
-        const hash = await getCID({
-          path: file.originalname,
-          content: file.buffer,
-          size: file.size,
-        })
-        if (hash !== file.fieldname) {
-          throw new Error(
-            'The CID supplied does not correspond to the actual hash of the file'
-          )
-        }
-        return new S3Content().getFileKey(hash)
-      })
-    } catch (error) {
-      const assetPackId = server.extractFromReq(req, 'assetPackId')
-      const s3AssetPack = new S3AssetPack(assetPackId)
-      try {
-        await Promise.all([
-          AssetPack.hardDelete({ id: assetPackId }),
-          s3AssetPack.deleteFile(s3AssetPack.getThumbnailFilename()),
-        ])
-      } catch (error) {
-        // Skip
-      }
-      throw new HTTPError('An error occurred trying to upload asset files', {
-        message: (error as Error).message,
-      })
-    }
+  uploadAssetFiles = () => {
+    // This handler is only here so `server.handleRequest` has a valid callback and it can return the appropiate formated response
   }
 
   private getAsset(req: Request) {

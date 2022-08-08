@@ -4,11 +4,11 @@ config:
   service-builder:ANALYTICS_CONNECTION_STRING:
     secure: v1:otw+92ejjeAgoBNw:au9UYhAZ0iHuFuFHMyRFVg==
   service-builder:FORUM_API_KEY:
-    secure: v1:DyogukMdO4GbO6PI:UbWJce41J1Yumv9CNSgYHgMRCd+ONSXiPiFsoXjooRKoTdP345+Kbg/PmKvn/d03VQrE7NNxsKCWtUzYgqqJZvz6GfiGv1xTzLMRAAMRM94=
+    secure: v1:7rn73BWMabPIHq/e:JuX4njhvOAt3Dyjetd/fQLZyvwEowu9iD4cXSlHB/TzvR5f9yQBRtBT+5waiG4pT9A6YKobHAlW1Idhrf134N9StdMHL6S43oL1Zb0auGCM=
   service-builder:OPEN_SEA_API_KEY:
     secure: v1:OL2jZRoBBWA9ouLG:vNKw88qloxfUo0o7CwT4yiFdKbvIV9nRUh45KuCzIWCB0hThPJnyHPE/b+XyC2+R
   service-builder:WAREHOUSE_TOKEN:
-    secure: v1:MZrlUTJWr+JJ/6w3:etSELpGKF5rq35SM7JKiYWd9nKs6Xab7HpZ6mf0kdFx6S7ZkN8pf3R+9OooiGkIrW7KqNyNyicENxRSxM2Qcjm1PNvORQXtprg1AQq73hKE=
+    secure: v1:eSvaGa0tsw5/ACjI:Cdk9hx/VIyqexfXad7kUAVzr0tQBMiA5y0ZmFPC0MN5Mh9AQeDwNwfJG7SKREpeLbhyDR8JqAq3iPSbUoCpBZimrihDIvgw/WvWQiWkcbGx4
   service-builder:WAREHOUSE_URL:
     secure: v1:REfZKPVh4eES/hKk:m6abN7WdTGGRrqvmKnLyq5692m9H3Dxc39xE+KbZ/edSXkGKK0dswnhicuAx8CmaRPVjaZfJZ5UjyLybAw==
   service-builder:db-password:

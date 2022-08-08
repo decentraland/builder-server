@@ -518,16 +518,18 @@ export class CollectionService {
       return true
     }
 
+    // We check against the blockchain directly first to avoid mishaps with thegraph
+    // If the contract exists, then the collection is published.
+    const isBlockchainPublished = await isPublished(contractAddress)
+    if (isBlockchainPublished) {
+      return true
+    }
+
     // If not, the collection could exist but the user hasn't called /collections/:collection_id/publish yet, so we check if it exists in the subgraph. If it exists, then it is published.
     const remoteCollection = await collectionAPI.fetchCollection(
       contractAddress
     )
-    if (remoteCollection) {
-      return true
-    }
-
-    // If the collection is not found in the subgraph, it could be because it is lagging, so we check against the blockchain. If the contract exists, then the collection is published.
-    return isPublished(contractAddress)
+    return !!remoteCollection
   }
 
   public async isOwnedOrManagedBy(

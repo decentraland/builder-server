@@ -1,5 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
-import { AuthLink, Authenticator, AuthChain, AuthLinkType } from 'dcl-crypto'
+import { AuthLink, Authenticator, AuthChain, AuthLinkType } from '@dcl/crypto'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { AuthRequestLegacy } from './authentication-legacy'

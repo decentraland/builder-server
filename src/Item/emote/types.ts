@@ -16,6 +16,7 @@ export const emoteSchema = Object.freeze({
   type: 'object',
   properties: {
     category: { enum: Object.values(EmoteCategory.schema.enum) },
+    loop: { type: 'boolean' },
     representations: {
       type: 'array',
       items: {
@@ -43,5 +44,5 @@ export const emoteSchema = Object.freeze({
     },
   },
   additionalProperties: false,
-  required: ['representations', 'tags'],
+  required: ['representations', 'tags', 'loop'],
 })

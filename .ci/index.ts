@@ -91,7 +91,7 @@ export = async function main() {
         value:
           env === 'prd' || env === 'stg'
             ? 'https://peer.decentraland.org'
-            : 'https://peer.decentraland.zone',
+            : 'https://peer-ap1.decentraland.zone',
       },
       {
         name: 'CHAIN_NAME',

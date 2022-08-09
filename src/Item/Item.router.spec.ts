@@ -1,4 +1,4 @@
-import { Rarity, StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { Rarity, Wearable } from '@dcl/schemas'
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { Wallet } from 'ethers'
@@ -89,8 +89,8 @@ describe('Item router', () => {
   let resultItemNotPublished: ResultItem
   let resultTPItemNotPublished: ResultItem
   let resultTPItemPublished: ResultItem
-  let wearable: StandardWearable
-  let tpWearable: ThirdPartyWearable
+  let wearable: Wearable
+  let tpWearable: Wearable
   let itemFragment: ItemFragment
   let url: string
 

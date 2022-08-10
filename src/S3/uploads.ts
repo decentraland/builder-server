@@ -7,6 +7,7 @@ import { GetFileKey, UploaderOptions, MulterFile } from './types'
 
 export function getUploader({
   getFileKey,
+  getFileStreamKey,
   maxFileSize = MAX_FILE_SIZE,
   mimeTypes,
 }: UploaderOptions = {}) {
@@ -14,7 +15,11 @@ export function getUploader({
     limits: {
       fileSize: maxFileSize,
     },
-    storage: new Storage(getFileKey || defaultGetFileKey, mimeTypes),
+    storage: new Storage(
+      getFileKey || defaultGetFileKey,
+      getFileStreamKey,
+      mimeTypes
+    ),
   }
   return multer(options)
 }
@@ -22,8 +27,23 @@ export function getUploader({
 class Storage implements multer.StorageEngine {
   constructor(
     public getFileKey: GetFileKey,
+    public getFileStreamKey?: GetFileKey,
     public validMimeTypes?: string[]
   ) {}
+
+  getKey(file: MulterFile, req: Request) {
+    // If "getFileStreamKey" is defined, we need to create a new PassThrough stream since the function
+    // will need a stream to read from. If not, the function won't use a stream to generate the key.
+    return this.getFileStreamKey
+      ? this.getFileStreamKey(
+          {
+            ...file,
+            stream: file.stream.pipe(new PassThrough()),
+          },
+          req
+        )
+      : this.getFileKey(file, req)
+  }
 
   async _handleFile(
     req: Request,
@@ -43,12 +63,12 @@ class Storage implements multer.StorageEngine {
 
     // The original stream comes from file.stream. The reading of the stream is kicked of when we pipe it into the first PassThrough
     // This allows for both operations, the upload and the file key generation to be done "simultaneously" without keeping the entire stream data in memory
-    const fileStream1 = new PassThrough()
+
+    const uploadStream = file.stream.pipe(new PassThrough())
 
     const [key] = await Promise.all([
-      this.getFileKey({ ...file, stream: fileStream1 }, req),
-      file.stream.pipe(fileStream1),
-      uploadFile(id, file.stream, ACL.publicRead),
+      this.getKey(file, req),
+      uploadFile(id, uploadStream, ACL.publicRead),
     ])
 
     // move file to key

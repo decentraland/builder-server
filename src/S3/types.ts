@@ -12,7 +12,8 @@ export type MulterFile = Express.Multer.File
 export type GetFileKey = (file: MulterFile, req: Request) => Promise<string>
 
 export type UploaderOptions = Partial<{
-  getFileKey: GetFileKey
   maxFileSize: number
   mimeTypes: string[]
+  getFileKey: GetFileKey
+  getFileStreamKey: GetFileKey
 }>

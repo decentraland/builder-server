@@ -1,5 +1,5 @@
 import fetch from 'isomorphic-fetch'
-import { StandardWearable, ThirdPartyWearable } from '@dcl/schemas'
+import { Wearable } from '@dcl/schemas'
 import { AuthLink } from '@dcl/crypto'
 import { ILoggerComponent } from '@well-known-components/interfaces'
 import { createConsoleLogComponent } from '@well-known-components/logger'
@@ -20,7 +20,7 @@ export type SignatureBody = {
   timestamp: string
 }
 
-export type CatalystItem = StandardWearable | ThirdPartyWearable
+export type CatalystItem = Wearable
 
 export const PEER_URL = env.get('PEER_URL', '')
 

@@ -1,7 +1,6 @@
 import {
   Rarity,
-  ThirdPartyWearable,
-  StandardWearable,
+  Wearable,
   WearableCategory,
   WearableRepresentation,
   I18N,
@@ -13,7 +12,7 @@ import {
   thirdPartyItemFragmentMock,
 } from './items'
 
-export const wearableMock: StandardWearable = {
+export const wearableMock: Wearable = {
   id: itemFragmentMock.urn,
   name: dbItemMock.name,
   description: dbItemMock.description,
@@ -32,7 +31,7 @@ export const wearableMock: StandardWearable = {
   },
 }
 
-export const tpWearableMock: ThirdPartyWearable = {
+export const tpWearableMock: Wearable = {
   ...wearableMock,
   id: thirdPartyItemFragmentMock.urn,
   merkleProof: {

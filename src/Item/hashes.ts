@@ -1,9 +1,14 @@
 import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
-import { Locale, ThirdPartyWearable, StandardWearable } from '@dcl/schemas'
+import {
+  Locale,
+  Wearable,
+  Emote,
+  EmoteCategory,
+  ThirdPartyProps,
+} from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
-import { Emote, EmoteCategory } from './emote/types'
 import { ItemAttributes, ItemType } from './Item.types'
 import { buildTPItemURN, isTPItem } from './utils'
 
@@ -13,14 +18,14 @@ const IMAGE_PATH = 'image.png'
 function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
-): StandardWearable & { emoteDataV0?: { loop: boolean } } {
+): Wearable & { emoteDataV0?: { loop: boolean } } {
   if (!isStandardItemPublished(item, collection)) {
     throw new Error(
       "The item's collection must be published to build its metadata"
     )
   }
 
-  const entity: StandardWearable & { emoteDataV0?: { loop: boolean } } = {
+  const entity: Wearable & { emoteDataV0?: { loop: boolean } } = {
     id: getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,
     description: item.description,
@@ -60,7 +65,7 @@ function buildEmoteEntityMetadata(
     rarity: item.rarity!,
     i18n: [{ code: Locale.EN, text: item.name }],
     emoteDataADR74: {
-      category: EmoteCategory.SIMPLE,
+      category: EmoteCategory.DANCE,
       representations: item.data.representations,
       tags: item.data.tags,
       loop: false,
@@ -76,7 +81,7 @@ function buildEmoteEntityMetadata(
 function buildTPWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
-): Omit<ThirdPartyWearable, 'merkleProof'> {
+): Omit<Wearable, 'merkleProof'> & { content: ThirdPartyProps['content'] } {
   return {
     id: buildTPItemURN(
       collection.third_party_id!,

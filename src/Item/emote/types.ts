@@ -1,25 +1,7 @@
-import { StandardWearable } from '@dcl/schemas'
-import { WearableBodyShape } from '../wearable/types'
-
-export type Emote = Omit<StandardWearable, 'data'> & {
-  emoteDataADR74: {
-    category: EmoteCategory
-    representations: {
-      bodyShapes: WearableBodyShape[]
-      mainFile: string
-      contents: string[]
-    }[]
-    tags: string[]
-    loop: boolean
-  }
-}
-
-export enum EmoteCategory {
-  SIMPLE = 'simple',
-}
+import { BodyShape, EmoteCategory } from '@dcl/schemas'
 
 export type EmoteRepresentation = {
-  bodyShapes: WearableBodyShape[]
+  bodyShapes: BodyShape[]
   mainFile: string
   contents: string[]
 }
@@ -33,7 +15,8 @@ export type EmoteData = {
 export const emoteSchema = Object.freeze({
   type: 'object',
   properties: {
-    category: { enum: Object.values(EmoteCategory) },
+    category: { enum: Object.values(EmoteCategory.schema.enum) },
+    loop: { type: 'boolean' },
     representations: {
       type: 'array',
       items: {
@@ -41,7 +24,7 @@ export const emoteSchema = Object.freeze({
         properties: {
           bodyShapes: {
             type: 'array',
-            items: { enum: Object.values(WearableBodyShape) },
+            items: { enum: Object.values(BodyShape.schema.enum) },
           },
           mainFile: { type: 'string' },
           contents: {
@@ -61,5 +44,5 @@ export const emoteSchema = Object.freeze({
     },
   },
   additionalProperties: false,
-  required: ['representations', 'tags'],
+  required: ['representations', 'tags', 'loop'],
 })

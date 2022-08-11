@@ -1,4 +1,4 @@
-import { Rarity, WearableCategory } from '@dcl/schemas'
+import { BodyShape, EmoteCategory, Rarity, WearableCategory } from '@dcl/schemas'
 import { dbItemMock, dbTPItemMock } from '../../spec/mocks/items'
 import {
   dbCollectionMock,
@@ -6,8 +6,6 @@ import {
 } from '../../spec/mocks/collections'
 import { THUMBNAIL_PATH } from '../ethereum/api/peer'
 import { CollectionAttributes } from '../Collection'
-import { WearableBodyShape } from './wearable/types'
-import { EmoteCategory } from './emote/types'
 import { ItemAttributes, ItemType } from './Item.types'
 import { calculateItemContentHash } from './hashes'
 
@@ -35,7 +33,7 @@ describe('when calculating the hashes of a standard wearable item', () => {
         category: WearableCategory.EARRING,
         representations: [
           {
-            bodyShapes: [WearableBodyShape.MALE],
+            bodyShapes: [BodyShape.MALE],
             mainFile: 'male/F_3LAU_Hat_Blue.glb',
             contents: ['male/F_3LAU_Hat_Blue.glb'],
             overrideHides: [WearableCategory.EYEWEAR],
@@ -88,10 +86,10 @@ describe('when calculating the hashes of a standard emote item', () => {
       },
       data: {
         tags: [],
-        category: EmoteCategory.SIMPLE as any,
+        category: EmoteCategory.DANCE as any,
         representations: [
           {
-            bodyShapes: [WearableBodyShape.MALE],
+            bodyShapes: [BodyShape.MALE],
             mainFile: 'male/F_3LAU_Hat_Blue.glb',
             contents: ['male/F_3LAU_Hat_Blue.glb'],
           } as any,
@@ -117,7 +115,7 @@ describe('when calculating the hashes of a standard emote item', () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      'bafkreif4iub3aff6tgernh556tim4y7g4wvgs7tlgvqqhnd7qgsskox5cu'
+      'bafkreiboiuykpzmxmkeizhlr2bvwtzdekbjtwpgztxo7fp5il6gkalbvwu'
     )
   })
 })
@@ -144,7 +142,7 @@ describe('when calculating the hashes of a TP item', () => {
         category: WearableCategory.EARRING,
         representations: [
           {
-            bodyShapes: [WearableBodyShape.MALE],
+            bodyShapes: [BodyShape.MALE],
             mainFile: 'male/F_3LAU_Hat_Blue.glb',
             contents: ['male/F_3LAU_Hat_Blue.glb'],
             overrideHides: [WearableCategory.EYEWEAR],

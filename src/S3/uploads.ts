@@ -33,7 +33,7 @@ class Storage implements multer.StorageEngine {
 
   getKey(file: MulterFile, req: Request) {
     // If "getFileStreamKey" is defined, we need to create a new PassThrough stream since the function
-    // will need a stream to read from. If not, the function won't use a stream to generate the key.
+    // will need a stream to read from. If not, we assume the function won't use a stream to generate the key.
     return this.getFileStreamKey
       ? this.getFileStreamKey(
           {

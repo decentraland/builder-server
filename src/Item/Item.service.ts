@@ -120,7 +120,7 @@ export class ItemService {
         ethAddress
       )
     } else {
-      return dbItem.eth_address === dbItem.eth_address
+      return ethAddress === dbItem.eth_address
     }
   }
 

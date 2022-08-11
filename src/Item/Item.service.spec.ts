@@ -8,22 +8,35 @@ jest.mock('./Item.model')
 describe('Item Service', () => {
   let dbItem: ItemAttributes
   describe('isOwnedOrManagedBy', () => {
-    const service = new ItemService()
+    let service: ItemService
     beforeEach(() => {
-      dbItem = { ...dbItemMock, eth_address: '0xoriginalAddress' }
-      ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
+      service = new ItemService()
     })
 
-    it('should return true when the owner is the sender', async () => {
-      expect(
-        await service.isOwnedOrManagedBy(dbItem.id, '0xoriginalAddress')
-      ).toBe(true)
+    describe('when the owner is the same as the one in the DB', () => {
+      beforeEach(() => {
+        dbItem = { ...dbItemMock, eth_address: '0xoriginalAddress' }
+        ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
+      })
+
+      it('should return true', async () => {
+        expect(
+          await service.isOwnedOrManagedBy(dbItem.id, '0xoriginalAddress')
+        ).toBe(true)
+      })
     })
 
-    it('should return false when  the sender is not the owner', async () => {
-      expect(
-        await service.isOwnedOrManagedBy(dbItem.id, '0xanotherAddress')
-      ).toBe(false)
+    describe('when the owner is not the same as the one in the DB', () => {
+      beforeEach(() => {
+        dbItem = { ...dbItemMock, eth_address: '0xanotherAddress' }
+        ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
+      })
+
+      it('should return false', async () => {
+        expect(
+          await service.isOwnedOrManagedBy(dbItem.id, '0xoriginalAddress')
+        ).toBe(false)
+      })
     })
   })
 })

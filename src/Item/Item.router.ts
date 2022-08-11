@@ -141,7 +141,7 @@ export class ItemRouter extends Router {
       withItemExists,
       withItemAuthorization,
       getUploader({
-        getFileKey: async (file) => {
+        getFileStreamKey: async (file) => {
           const hash = await hashV1(file.stream)
           return new S3Content().getFileKey(hash)
         },

@@ -1,4 +1,4 @@
-export const metricsSchema = Object.freeze({
+export const modelMetricsSchema = Object.freeze({
   type: 'object',
   properties: {
     meshes: { type: 'number', minimum: 0 },
@@ -17,4 +17,16 @@ export const metricsSchema = Object.freeze({
     'triangles',
     'entities',
   ],
+})
+
+export const animationMetricsSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    sequences: { type: 'number', minimum: 1 },
+    duration: { type: 'number', minimum: 0 },
+    frames: { type: 'number', minimum: 0 },
+    fps: { type: 'number', minimum: 0 },
+  },
+  additionalProperties: false,
+  required: ['sequences', 'duration', 'frames', 'fps'],
 })

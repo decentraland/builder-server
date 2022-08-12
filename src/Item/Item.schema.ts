@@ -1,6 +1,9 @@
 import { Rarity } from '@dcl/schemas'
 import { matchers } from '../common/matchers'
-import { metricsSchema } from '../Metrics/Metrics.schema'
+import {
+  emoteMetricsSchema,
+  wearableMetricsSchema,
+} from '../Metrics/Metrics.schema'
 import { emoteSchema } from './emote/types'
 import { FullItem, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
@@ -34,7 +37,10 @@ export const itemSchema = Object.freeze({
     updated_at: { type: 'string' },
     type: { enum: Object.values(ItemType) },
     data: { type: 'object', anyOf: [wearableSchema, emoteSchema] },
-    metrics: metricsSchema,
+    metrics: {
+      type: 'object',
+      anyOf: [wearableMetricsSchema, emoteMetricsSchema],
+    },
     contents: {
       type: 'object',
       additionalProperties: true,

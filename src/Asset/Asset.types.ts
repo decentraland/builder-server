@@ -1,4 +1,4 @@
-import { metricsSchema } from '../Metrics/Metrics.schema'
+import { wearableMetricsSchema } from '../Metrics/Metrics.schema'
 import { parametersSchema, AssetParameter } from './Parameters'
 import { actionsSchema } from './Actions'
 
@@ -32,7 +32,7 @@ export const assetSchema = Object.freeze({
       type: 'object',
       additionalProperties: true,
     },
-    metrics: metricsSchema,
+    metrics: wearableMetricsSchema,
     parameters: parametersSchema,
     actions: actionsSchema,
   },

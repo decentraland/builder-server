@@ -1,8 +1,8 @@
 import { Rarity } from '@dcl/schemas'
 import { matchers } from '../common/matchers'
 import {
-  emoteMetricsSchema,
-  wearableMetricsSchema,
+  animationMetricsSchema,
+  modelMetricsSchema,
 } from '../Metrics/Metrics.schema'
 import { emoteSchema } from './emote/types'
 import { FullItem, ItemType } from './Item.types'
@@ -39,7 +39,7 @@ export const itemSchema = Object.freeze({
     data: { type: 'object', anyOf: [wearableSchema, emoteSchema] },
     metrics: {
       type: 'object',
-      anyOf: [wearableMetricsSchema, emoteMetricsSchema],
+      anyOf: [modelMetricsSchema, animationMetricsSchema],
     },
     contents: {
       type: 'object',

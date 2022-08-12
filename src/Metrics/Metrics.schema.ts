@@ -1,4 +1,4 @@
-export const wearableMetricsSchema = Object.freeze({
+export const modelMetricsSchema = Object.freeze({
   type: 'object',
   properties: {
     meshes: { type: 'number', minimum: 0 },
@@ -19,7 +19,7 @@ export const wearableMetricsSchema = Object.freeze({
   ],
 })
 
-export const emoteMetricsSchema = Object.freeze({
+export const animationMetricsSchema = Object.freeze({
   type: 'object',
   properties: {
     sequences: { type: 'number', minimum: 1 },

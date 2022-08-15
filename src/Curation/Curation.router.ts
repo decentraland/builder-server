@@ -384,6 +384,19 @@ export class CurationRouter extends Router {
       )
     }
 
+    if (curationJSON.assignee) {
+      const isAssigneeCommitteeMember = await isCommitteeMember(
+        curationJSON.assignee.toLowerCase()
+      )
+      if (!isAssigneeCommitteeMember) {
+        throw new HTTPError(
+          'The assignee must be a committee member',
+          { id },
+          STATUS_CODES.unauthorized
+        )
+      }
+    }
+
     let fieldsToUpdate: Partial<
       CollectionCurationAttributes & ItemCurationAttributes
     > = {

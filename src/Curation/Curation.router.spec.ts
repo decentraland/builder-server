@@ -360,6 +360,78 @@ describe('when handling a request', () => {
       })
     })
 
+    describe('when passing a new assignee and the caller is not a committee member', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: {
+            id: 'some id',
+          },
+          body: {
+            curation: {
+              assignee: '0xnotCommitteeMember',
+              status: CurationStatus.PENDING,
+            },
+          },
+        } as any
+      })
+
+      describe('when updating a collection curation', () => {
+        beforeEach(() => {
+          service = mockServiceWithAccess(CollectionCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(false) // the first call checks if the caller is a committee member
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ id: 'curationId' } as any)
+        })
+
+        it('should reject with an error message saying the assignee is not a committee member', async () => {
+          await expect(
+            router.updateCollectionCuration(req)
+          ).rejects.toThrowError(
+            'Only committee members can modify the assignee'
+          )
+        })
+      })
+    })
+
+    describe('when the new assignee is not a committee member', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: {
+            id: 'some id',
+          },
+          body: {
+            curation: {
+              assignee: '0xnotCommitteeMember',
+              status: CurationStatus.PENDING,
+            },
+          },
+        } as any
+      })
+
+      describe('when updating a collection curation', () => {
+        beforeEach(() => {
+          service = mockServiceWithAccess(CollectionCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(true) // the first call checks if the caller is a committee member
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ id: 'curationId' } as any)
+        })
+
+        it('should reject with an error message saying the assignee is not a committee member', async () => {
+          await expect(
+            router.updateCollectionCuration(req)
+          ).rejects.toThrowError('The assignee must be a committee member')
+        })
+      })
+    })
+
     describe('when the payload is invalid', () => {
       let req: AuthRequest
 
@@ -566,18 +638,24 @@ describe('when handling a request', () => {
             })
           })
 
-          it('should resolve with the updated curation', async () => {
-            await expect(
-              router.updateCollectionCuration(req)
-            ).resolves.toStrictEqual(expectedCuration)
-          })
+          describe('and the caller and the assignee are committee members', () => {
+            beforeEach(() => {
+              mockIsCommitteeMember.mockResolvedValue(true)
+            })
 
-          it('should call the update method with the right data', async () => {
-            await router.updateCollectionCuration(req)
+            it('should resolve with the updated curation', async () => {
+              await expect(
+                router.updateCollectionCuration(req)
+              ).resolves.toStrictEqual(expectedCuration)
+            })
 
-            expect(updateSpy).toHaveBeenCalledWith('curationId', {
-              assignee: assignee.toLowerCase(),
-              updated_at: expect.any(Date),
+            it('should call the update method with the right data', async () => {
+              await router.updateCollectionCuration(req)
+
+              expect(updateSpy).toHaveBeenCalledWith('curationId', {
+                assignee: assignee.toLowerCase(),
+                updated_at: expect.any(Date),
+              })
             })
           })
         })
@@ -604,6 +682,8 @@ describe('when handling a request', () => {
             jest
               .spyOn(service, 'updateById')
               .mockResolvedValueOnce(expectedCuration)
+
+            mockIsCommitteeMember.mockResolvedValueOnce(true)
 
             updateSpy = jest
               .spyOn(service, 'updateById')

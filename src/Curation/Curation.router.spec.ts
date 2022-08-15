@@ -360,6 +360,43 @@ describe('when handling a request', () => {
       })
     })
 
+    describe('when passing a new assignee and the caller is not a committee member', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: {
+            id: 'some id',
+          },
+          body: {
+            curation: {
+              assignee: '0xnotCommitteeMember',
+              status: CurationStatus.PENDING,
+            },
+          },
+        } as any
+      })
+
+      describe('when updating a collection curation', () => {
+        beforeEach(() => {
+          service = mockServiceWithAccess(CollectionCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(false) // the first call checks if the caller is a committee member
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ id: 'curationId' } as any)
+        })
+
+        it('should reject with an error message saying the assignee is not a committee member', async () => {
+          await expect(
+            router.updateCollectionCuration(req)
+          ).rejects.toThrowError(
+            'Only committee members can modify the assignee'
+          )
+        })
+      })
+    })
+
     describe('when the new assignee is not a committee member', () => {
       let req: AuthRequest
 
@@ -381,6 +418,7 @@ describe('when handling a request', () => {
       describe('when updating a collection curation', () => {
         beforeEach(() => {
           service = mockServiceWithAccess(CollectionCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(true) // the first call checks if the caller is a committee member
           jest
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
@@ -600,9 +638,9 @@ describe('when handling a request', () => {
             })
           })
 
-          describe('and the assignee is a committee member', () => {
+          describe('and the caller and the assignee are committee members', () => {
             beforeEach(() => {
-              mockIsCommitteeMember.mockResolvedValueOnce(true)
+              mockIsCommitteeMember.mockResolvedValue(true)
             })
 
             it('should resolve with the updated curation', async () => {

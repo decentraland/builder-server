@@ -1,7 +1,7 @@
 // DCL: urn:decentraland:{network}:collections-v2:{contract-address}
 //  TP: urn:decentraland:{network}:collections-thirdparty:{third-party-name}:{collection-id}(:{item-id})?
 
-const network = '(mainnet|ropsten|matic|mumbai)'
+const network = '(mainnet|goerli|matic|mumbai)'
 const address = '0x[a-fA-F0-9]{40}'
 const urnSlot = '[^:|\\s]+'
 const baseURN = `urn:decentraland:${network}`

@@ -28,8 +28,8 @@ jobs:
           AUTH0_DOMAIN: AUTH0_DOMAIN
           DEFAULT_ETH_ADDRESS: DEFAULT_ETH_ADDRESS
           ANALYTICS_CONNECTION_STRING: ANALYTICS_CONNECTION_STRING
-          PEER_URL: https://peer.decentraland.zone
-          CHAIN_NAME: Ropsten
+          PEER_URL: PEER_URL
+          CHAIN_NAME: Goerli
           THIRD_PARTY_GRAPH_URL: 'http://thid-party-url'
           OPEN_SEA_URL: OPEN_SEA_URL
           OPEN_SEA_API_KEY: OPEN_SEA_API_KEY

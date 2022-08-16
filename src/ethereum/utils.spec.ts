@@ -25,9 +25,9 @@ describe('when obtaining the forwarder address', () => {
     })
   })
 
-  describe('when CHAIN_NAME === "Ropsten"', () => {
+  describe('when CHAIN_NAME === "Goerli"', () => {
     it('should return the address of the forwarder in matic mumbai', () => {
-      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_ROPSTEN)
+      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_GOERLI)
 
       expect(getForwarderAddress()).toBe(
         '0x71e56Ad57eca3fAAe5077b7F9ea731a25785fF92'
@@ -47,9 +47,9 @@ describe('when obtaining the collection factory address', () => {
     })
   })
 
-  describe('when CHAIN_NAME === "Ropsten"', () => {
+  describe('when CHAIN_NAME === "Goerli"', () => {
     it('should return the collection factory v3 address on matic mumbai', () => {
-      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_ROPSTEN)
+      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_GOERLI)
 
       expect(getFactoryCollectionAddress()).toBe(
         '0xDDb3781Fff645325C8896AA1F067bAa381607ecc'
@@ -69,9 +69,9 @@ describe('when obtaining the codehash', () => {
     })
   })
 
-  describe('when CHAIN_NAME === "Ropsten"', () => {
+  describe('when CHAIN_NAME === "Goerli"', () => {
     it('should return the codehash for the factory v3 in matic mumbai', async () => {
-      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_ROPSTEN)
+      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_GOERLI)
 
       expect(getFactoryCollectionCodeHash()).toBe(
         '0x7917e9ddbe5e0fd8de84efee3e8089ca7878af7a6aa1a62b4d0b6160821d4de8'

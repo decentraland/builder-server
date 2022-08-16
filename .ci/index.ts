@@ -91,11 +91,11 @@ export = async function main() {
         value:
           env === 'prd' || env === 'stg'
             ? 'https://peer.decentraland.org'
-            : 'https://peer.decentraland.zone',
+            : 'https://peer-ap1.decentraland.zone',
       },
       {
         name: 'CHAIN_NAME',
-        value: env === 'prd' || env === 'stg' ? 'Ethereum Mainnet' : 'Ropsten',
+        value: env === 'prd' || env === 'stg' ? 'Ethereum Mainnet' : 'Goerli',
       },
       {
         name: 'COLLECTIONS_GRAPH_URL',

@@ -14,7 +14,7 @@ import { Collection } from './Collection.model'
 import { getChequeMessageHash, getMergedCollection } from './utils'
 
 describe('when decoding the TP collection URN', () => {
-  const collectionNetwork = 'ropsten'
+  const collectionNetwork = 'goerli'
   const thirdPartyId = `urn:decentraland:${collectionNetwork}:collections-thirdparty:a-third-party-id`
   const collectionURNSuffix = 'a-urn-suffix'
   let fullUrn: string

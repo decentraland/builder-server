@@ -9,3 +9,11 @@ export function getDefaultEthAddress() {
   }
   return defaultEthAddress
 }
+
+export function getLimitSplitDate() {
+  return new Date(1660884520544) // 19 Aug
+}
+
+export function isAfterLimitSplitDate(date: Date) {
+  return date.getTime() >= getLimitSplitDate().getTime()
+}

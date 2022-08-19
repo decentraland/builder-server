@@ -22,14 +22,14 @@ import { getUploader, S3AssetPack } from '../S3'
 import { ExpressApp } from '../common/ExpressApp'
 import { asyncHandler } from '../common/asyncHandler'
 import { Ownable } from '../Ownable'
-import { Asset } from '../Asset'
+import { Asset, MAX_ASSETS_COUNT } from '../Asset'
 import { AssetPack } from './AssetPack.model'
 import {
   AssetPackAttributes,
   FullAssetPackAttributes,
   assetPackSchema,
 } from './AssetPack.types'
-import { getDefaultEthAddress } from './utils'
+import { getDefaultEthAddress, isAfterLimitSplitDate } from './utils'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
 const THUMBNAIL_FILE_NAME = 'thumbnail'
@@ -263,6 +263,14 @@ export class AssetPackRouter extends Router {
       })
     }
 
+    const assetIds = assets.map((asset) => asset.id)
+    if (await Asset.existsAnyWithADifferentEthAddress(assetIds, eth_address)) {
+      throw new HTTPError(
+        "One of the assets you're trying to upload belongs to a different address. Check the ids",
+        { eth_address, assetIds }
+      )
+    }
+
     const currentAssetPack = await AssetPack.findOneWithAssets(id)
     if (currentAssetPack) {
       // Only delete assets that no longer exist
@@ -272,15 +280,26 @@ export class AssetPackRouter extends Router {
           assetIdsToDelete.push(currentAsset.id)
         }
       }
-      await Asset.deleteForAssetPackByIds(id, assetIdsToDelete)
-    }
 
-    const assetIds = assets.map((asset) => asset.id)
-    if (await Asset.existsAnyWithADifferentEthAddress(assetIds, eth_address)) {
-      throw new HTTPError(
-        "One of the assets you're trying to upload belongs to a different address. Check the ids",
-        { eth_address, assetIds }
-      )
+      const finalAssetsCount =
+        assets.length + currentAssetPack.assets.length - assetIdsToDelete.length
+
+      if (
+        isAfterLimitSplitDate(currentAssetPack.created_at) &&
+        finalAssetsCount > MAX_ASSETS_COUNT
+      ) {
+        throw new Error(
+          `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`
+        )
+      }
+
+      await Asset.deleteForAssetPackByIds(id, assetIdsToDelete)
+    } else {
+      if (assets.length > MAX_ASSETS_COUNT) {
+        throw new Error(
+          `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`
+        )
+      }
     }
 
     const upsertResult = await new AssetPack(attributes).upsert()

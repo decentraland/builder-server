@@ -39,6 +39,14 @@ export class Asset extends Model<AssetAttributes> {
       WHERE id = ANY(${ids})`)
   }
 
+  static findByAssetPackId(assetPackId: string, limit: number | null = null) {
+    return this.query<AssetAttributes>(SQL`
+    SELECT *
+      FROM ${SQL.raw(this.tableName)}
+      WHERE asset_pack_id = ${assetPackId}
+      LIMIT ${limit}`)
+  }
+
   static async upsert<U extends QueryPart = any>(
     attributes: U,
     onConflict?: OnConflict<U, Partial<U>> | undefined

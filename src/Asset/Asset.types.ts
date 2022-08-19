@@ -17,6 +17,8 @@ export type AssetAttributes = {
   parameters: AssetParameter[]
 }
 
+export const MAX_ASSETS_COUNT = 80
+
 export const assetSchema = Object.freeze({
   type: 'object',
   properties: {

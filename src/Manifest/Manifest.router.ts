@@ -158,7 +158,7 @@ export class ManifestRouter extends Router {
 
     const manifest = {
       ...manifestJSON,
-      project: { ...manifestJSON.project, eth_address },
+      project: { ...manifestJSON.project, id, eth_address },
     } as ManifestAttributes
 
     const statistics = collectStatistics(manifest)

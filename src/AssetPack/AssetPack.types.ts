@@ -12,6 +12,8 @@ export type FullAssetPackAttributes = {
 }
 export type AssetPackAttributes = Omit<FullAssetPackAttributes, 'assets'>
 
+export const MAX_ASSET_PACKS_COUNT = 10
+
 export const assetPackSchema = Object.freeze({
   type: 'object',
   properties: {

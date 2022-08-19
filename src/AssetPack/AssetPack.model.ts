@@ -1,7 +1,16 @@
 import { Model, SQL } from 'decentraland-server'
 
-import { AssetQueries } from '../Asset'
-import { AssetPackAttributes, FullAssetPackAttributes } from './AssetPack.types'
+import { Asset, AssetQueries, MAX_ASSETS_COUNT } from '../Asset'
+import {
+  AssetPackAttributes,
+  FullAssetPackAttributes,
+  MAX_ASSET_PACKS_COUNT,
+} from './AssetPack.types'
+import {
+  getDefaultEthAddress,
+  getLimitSplitDate,
+  isAfterLimitSplitDate,
+} from './utils'
 
 export class AssetPack extends Model<AssetPackAttributes> {
   static tableName = 'asset_packs'
@@ -23,21 +32,62 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return this.db.delete(this.tableName, conditions)
   }
 
-  static async findByEthAddressWithAssets(ethAddress: string | undefined) {
+  static async findByDefaultEthAddress() {
     return this.query<FullAssetPackAttributes>(SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)}
         WHERE is_deleted = FALSE
-          AND eth_address = ${ethAddress}`)
+          AND eth_address = ${getDefaultEthAddress()}`)
+  }
+
+  static async findByEthAddressWithAssets(ethAddress: string | undefined) {
+    if (ethAddress === getDefaultEthAddress()) {
+      return this.findByDefaultEthAddress()
+    }
+
+    const query = SQL`
+      SELECT *, ${AssetQueries.selectFromAssetPack()}
+        FROM ${SQL.raw(this.tableName)}
+        WHERE is_deleted = FALSE
+          AND eth_address = ${ethAddress}
+          AND created_at < ${getLimitSplitDate()}`
+
+    const queryWithLimit = SQL`
+      SELECT *, ${AssetQueries.selectFromAssetPack(
+        Asset.tableName,
+        MAX_ASSETS_COUNT
+      )}
+        FROM ${SQL.raw(this.tableName)}
+        WHERE is_deleted = FALSE
+          AND eth_address = ${ethAddress}
+          AND created_at >= ${getLimitSplitDate()}
+        LIMIT ${MAX_ASSET_PACKS_COUNT}`
+
+    const results = await Promise.all([
+      this.query<FullAssetPackAttributes>(query),
+      this.query<FullAssetPackAttributes>(queryWithLimit),
+    ])
+
+    return results.flat()
   }
 
   static async findOneWithAssets(id: string) {
-    const assetPacks = await this.query<FullAssetPackAttributes>(SQL`
-      SELECT *, ${AssetQueries.selectFromAssetPack()}
+    const [assetPack] = await this.query<FullAssetPackAttributes>(SQL`
+      SELECT *
         FROM ${SQL.raw(this.tableName)} as asset_packs
         WHERE is_deleted = FALSE
-          AND id = ${id}`)
-    return assetPacks[0]
+          AND id = ${id}
+        LIMIT 1`)
+
+    if (assetPack) {
+      const limit = isAfterLimitSplitDate(assetPack.created_at)
+        ? MAX_ASSETS_COUNT
+        : null
+
+      assetPack.assets = await Asset.findByAssetPackId(id, limit)
+    }
+
+    return assetPack
   }
 
   static async isVisible(id: string, ethAddresses: string[] = []) {

@@ -17,5 +17,5 @@ export function getLimitSplitDate() {
 }
 
 export function isAfterLimitSplitDate(date: Date) {
-  return date.getTime() >= getLimitSplitDate().getTime()
+  return new Date(date).getTime() >= getLimitSplitDate().getTime()
 }

@@ -80,7 +80,7 @@ export class AssetPack extends Model<AssetPackAttributes> {
         LIMIT 1`)
 
     if (assetPack) {
-      const limit = isAfterLimitSplitDate(new Date(assetPack.created_at))
+      const limit = isAfterLimitSplitDate(assetPack.created_at)
         ? MAX_ASSETS_COUNT
         : null
 

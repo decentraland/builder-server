@@ -285,6 +285,7 @@ export class AssetPackRouter extends Router {
         assets.length + currentAssetPack.assets.length - assetIdsToDelete.length
 
       if (
+        eth_address !== DEFAULT_ETH_ADDRESS &&
         isAfterLimitSplitDate(currentAssetPack.created_at) &&
         finalAssetsCount > MAX_ASSETS_COUNT
       ) {
@@ -294,12 +295,10 @@ export class AssetPackRouter extends Router {
       }
 
       await Asset.deleteForAssetPackByIds(id, assetIdsToDelete)
-    } else {
-      if (assets.length > MAX_ASSETS_COUNT) {
-        throw new Error(
-          `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`
-        )
-      }
+    } else if (assets.length > MAX_ASSETS_COUNT) {
+      throw new Error(
+        `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`
+      )
     }
 
     const upsertResult = await new AssetPack(attributes).upsert()

@@ -6,7 +6,11 @@ import {
   FullAssetPackAttributes,
   MAX_ASSET_PACKS_COUNT,
 } from './AssetPack.types'
-import { getLimitSplitDate, isAfterLimitSplitDate } from './utils'
+import {
+  getDefaultEthAddress,
+  getLimitSplitDate,
+  isAfterLimitSplitDate,
+} from './utils'
 
 export class AssetPack extends Model<AssetPackAttributes> {
   static tableName = 'asset_packs'
@@ -28,7 +32,19 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return this.db.delete(this.tableName, conditions)
   }
 
+  static async findByDefaultEthAddress() {
+    return this.query<FullAssetPackAttributes>(SQL`
+      SELECT *, ${AssetQueries.selectFromAssetPack()}
+        FROM ${SQL.raw(this.tableName)}
+        WHERE is_deleted = FALSE
+          AND eth_address = ${getDefaultEthAddress()}`)
+  }
+
   static async findByEthAddressWithAssets(ethAddress: string | undefined) {
+    if (ethAddress === getDefaultEthAddress()) {
+      return this.findByDefaultEthAddress()
+    }
+
     const query = SQL`
       SELECT *, ${AssetQueries.selectFromAssetPack()}
         FROM ${SQL.raw(this.tableName)}

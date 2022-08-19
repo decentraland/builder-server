@@ -11,7 +11,9 @@ export function getDefaultEthAddress() {
 }
 
 export function getLimitSplitDate() {
-  return new Date(1660884520544) // 19 Aug
+  // This date, Fri Aug 19 2022, is an arbitrary cut for new assets and asset packs. It acts as an inflexion point for new business logic we want to use.
+  // For example: If you create an asset pack after it, it'll have a limit in the amount of assets it can have
+  return new Date(1660884520544)
 }
 
 export function isAfterLimitSplitDate(date: Date) {

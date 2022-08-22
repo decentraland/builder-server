@@ -112,7 +112,7 @@ function buildLegacyEmoteEntityMetadata(
     data: {
       hides: [],
       replaces: [],
-      category: 'hat' as WearableCategory,
+      category: WearableCategory.HAT,
       representations: item.data.representations.map((representation) => ({
         ...representation,
         overrideReplaces: [],

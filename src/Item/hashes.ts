@@ -1,3 +1,4 @@
+import { env } from 'decentraland-commons'
 import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
 import {
   Locale,
@@ -5,6 +6,7 @@ import {
   Emote,
   EmoteCategory,
   ThirdPartyProps,
+  WearableCategory,
 } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
@@ -78,6 +80,64 @@ function buildEmoteEntityMetadata(
   return entity
 }
 
+function buildLegacyEmoteEntityMetadata(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+): Wearable & {
+  emoteDataV0?:
+    | {
+        loop: boolean
+      }
+    | undefined
+} {
+  if (!isStandardItemPublished(item, collection)) {
+    throw new Error(
+      "The item's collection must be published to build its metadata"
+    )
+  }
+
+  const entity: Wearable & {
+    emoteDataV0?:
+      | {
+          loop: boolean
+        }
+      | undefined
+  } = {
+    id: getDecentralandItemURN(item, collection.contract_address!),
+    name: item.name,
+    description: item.description,
+    collectionAddress: collection.contract_address!,
+    rarity: item.rarity!,
+    i18n: [{ code: Locale.EN, text: item.name }],
+    data: {
+      hides: [],
+      replaces: [],
+      category: WearableCategory.HAT,
+      representations: item.data.representations.map((representation) => ({
+        ...representation,
+        overrideReplaces: [],
+        overrideHides: [],
+      })),
+      tags: item.data.tags,
+    },
+    image: IMAGE_PATH,
+    thumbnail: THUMBNAIL_PATH,
+    metrics: {
+      triangles: 0,
+      materials: 0,
+      textures: 0,
+      meshes: 0,
+      bodies: 0,
+      entities: 1,
+    },
+    emoteDataV0: {
+      loop: false,
+    },
+  }
+
+  return entity
+}
+
 function buildTPWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
@@ -128,10 +188,13 @@ async function calculateStandardItemContentHash(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): Promise<string> {
+  const emotesFF = env.get('NEW_EMOTES_FLOW', false)
   const buildMetadata =
-    item.type === ItemType.WEARABLE
-      ? buildStandardWearableEntityMetadata
-      : buildEmoteEntityMetadata
+    item.type === ItemType.EMOTE
+      ? emotesFF
+        ? buildEmoteEntityMetadata
+        : buildLegacyEmoteEntityMetadata
+      : buildStandardWearableEntityMetadata
   const metadata = await buildMetadata(item, collection)
   const content = Object.keys(item.contents).map((file) => ({
     file,

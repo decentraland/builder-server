@@ -21,6 +21,7 @@ import { TiersRouter } from './Tiers'
 import { S3Router } from './S3'
 import { ShareRouter } from './Share'
 import { AnalyticsRouter } from './Analytics'
+import { LANDRouter } from './LAND'
 import { NFTRouter } from './NFT'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
@@ -66,6 +67,7 @@ new ShareRouter(app).mount()
 new AnalyticsRouter(app).mount()
 new TiersRouter(app).mount()
 new NFTRouter(app).mount()
+new LANDRouter(app).mount()
 
 app.use(errorHandler)
 

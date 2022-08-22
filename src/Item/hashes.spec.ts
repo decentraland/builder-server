@@ -115,7 +115,7 @@ describe('when calculating the hashes of a standard emote item', () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      'bafkreiboiuykpzmxmkeizhlr2bvwtzdekbjtwpgztxo7fp5il6gkalbvwu'
+      'bafkreih2ln2rws646fyk56xwmysgk27cdwqnm6wa343nanlpiamf44vpfa'
     )
   })
 })

@@ -4,10 +4,13 @@ export type Redirection = {
   i18nClickHereMsg: string
 }
 
-export type UploadRedirectionResponse = Redirection & { ipfsHash: string }
-export type GetEIP1557ContentHashResponse = (Redirection & {
-  eip1557ContentHash: string
-})[]
+export type RedirectionWithContentHash = Redirection & {
+  contentHash: string
+}
+
+export type UploadRedirectionResponse = RedirectionWithContentHash
+
+export type GetRedirectionContentHashResponse = RedirectionWithContentHash[]
 
 const redirectionSchema = Object.freeze({
   type: 'object',
@@ -35,7 +38,7 @@ export const uploadRedirectionSchema = Object.freeze({
   required: ['redirection'],
 })
 
-export const getEIP1557ContentHashSchema = Object.freeze({
+export const getRedirectionContentHashSchema = Object.freeze({
   type: 'object',
   properties: {
     redirections: {

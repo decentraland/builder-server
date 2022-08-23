@@ -10,8 +10,8 @@ import { Router } from '../common/Router'
 import { withSchemaValidation } from '../middleware'
 import { getCID } from '../utils/cid'
 import {
-  GetEIP1557ContentHashResponse,
-  getEIP1557ContentHashSchema,
+  GetRedirectionContentHashResponse,
+  getRedirectionContentHashSchema,
   Redirection,
   UploadRedirectionResponse,
   uploadRedirectionSchema,
@@ -26,9 +26,9 @@ export class LANDRouter extends Router {
     )
 
     this.router.post(
-      '/lands/eip1557ContentHash',
-      withSchemaValidation(getEIP1557ContentHashSchema),
-      server.handleRequest(this.getEIP1557ContentHash)
+      '/lands/redirection/contentHash',
+      withSchemaValidation(getRedirectionContentHashSchema),
+      server.handleRequest(this.getRedirectionContentHash)
     )
   }
 
@@ -87,19 +87,19 @@ export class LANDRouter extends Router {
 
     return {
       ...redirection,
-      ipfsHash: Hash,
+      contentHash: await contentHash.fromIpfs(Hash),
     }
   }
 
-  private getEIP1557ContentHash = async (
+  private getRedirectionContentHash = async (
     req: Request
-  ): Promise<GetEIP1557ContentHashResponse> => {
+  ): Promise<GetRedirectionContentHashResponse> => {
     const redirections: Redirection[] = server.extractFromReq(
       req,
       'redirections'
     )
 
-    const output: GetEIP1557ContentHashResponse = []
+    const output: GetRedirectionContentHashResponse = []
 
     for (const redirection of redirections) {
       const redirectionFile = this.generateRedirectionFile(redirection)
@@ -112,7 +112,7 @@ export class LANDRouter extends Router {
 
       output.push({
         ...redirection,
-        eip1557ContentHash: await contentHash.fromIpfs(ipfsHash),
+        contentHash: await contentHash.fromIpfs(ipfsHash),
       })
     }
 

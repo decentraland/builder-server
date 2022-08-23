@@ -4,13 +4,14 @@ export type Redirection = {
   i18nClickHereMsg: string
 }
 
-export type RedirectionWithContentHash = Redirection & {
+export type RedirectionWithHashes = Redirection & {
+  ipfsHash: string
   contentHash: string
 }
 
-export type UploadRedirectionResponse = RedirectionWithContentHash
+export type UploadRedirectionResponse = RedirectionWithHashes
 
-export type GetRedirectionContentHashResponse = RedirectionWithContentHash[]
+export type GetRedirectionContentHashResponse = RedirectionWithHashes[]
 
 const redirectionSchema = Object.freeze({
   type: 'object',

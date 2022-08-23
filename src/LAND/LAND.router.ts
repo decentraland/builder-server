@@ -87,6 +87,7 @@ export class LANDRouter extends Router {
 
     return {
       ...redirection,
+      ipfsHash: Hash,
       contentHash: await contentHash.fromIpfs(Hash),
     }
   }
@@ -112,6 +113,7 @@ export class LANDRouter extends Router {
 
       output.push({
         ...redirection,
+        ipfsHash,
         contentHash: await contentHash.fromIpfs(ipfsHash),
       })
     }

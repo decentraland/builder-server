@@ -10,8 +10,8 @@ import { Router } from '../common/Router'
 import { withSchemaValidation } from '../middleware'
 import { getCID } from '../utils/cid'
 import {
-  GetRedirectionContentHashResponse,
-  getRedirectionContentHashSchema,
+  GetRedirectionHashesResponse,
+  getRedirectionHashesSchema,
   Redirection,
   UploadRedirectionResponse,
   uploadRedirectionSchema,
@@ -26,9 +26,9 @@ export class LANDRouter extends Router {
     )
 
     this.router.post(
-      '/lands/redirection/contentHash',
-      withSchemaValidation(getRedirectionContentHashSchema),
-      server.handleRequest(this.getRedirectionContentHash)
+      '/lands/redirection/hashes',
+      withSchemaValidation(getRedirectionHashesSchema),
+      server.handleRequest(this.getRedirectionHashes)
     )
   }
 
@@ -92,15 +92,15 @@ export class LANDRouter extends Router {
     }
   }
 
-  private getRedirectionContentHash = async (
+  private getRedirectionHashes = async (
     req: Request
-  ): Promise<GetRedirectionContentHashResponse> => {
+  ): Promise<GetRedirectionHashesResponse> => {
     const redirections: Redirection[] = server.extractFromReq(
       req,
       'redirections'
     )
 
-    const output: GetRedirectionContentHashResponse = []
+    const output: GetRedirectionHashesResponse = []
 
     for (const redirection of redirections) {
       const redirectionFile = this.generateRedirectionFile(redirection)

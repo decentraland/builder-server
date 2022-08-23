@@ -11,7 +11,7 @@ export type RedirectionWithHashes = Redirection & {
 
 export type UploadRedirectionResponse = RedirectionWithHashes
 
-export type GetRedirectionContentHashResponse = RedirectionWithHashes[]
+export type GetRedirectionHashesResponse = RedirectionWithHashes[]
 
 const redirectionSchema = Object.freeze({
   type: 'object',
@@ -39,7 +39,7 @@ export const uploadRedirectionSchema = Object.freeze({
   required: ['redirection'],
 })
 
-export const getRedirectionContentHashSchema = Object.freeze({
+export const getRedirectionHashesSchema = Object.freeze({
   type: 'object',
   properties: {
     redirections: {

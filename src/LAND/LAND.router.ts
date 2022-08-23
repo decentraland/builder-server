@@ -9,7 +9,13 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { Router } from '../common/Router'
 import { withSchemaValidation } from '../middleware'
 import { getCID } from '../utils/cid'
-import { RedirectionData, uploadRedirectionSchema } from './LAND.types'
+import {
+  GetEIP1557ContentHashResponse,
+  getEIP1557ContentHashSchema,
+  Redirection,
+  UploadRedirectionResponse,
+  uploadRedirectionSchema,
+} from './LAND.types'
 
 export class LANDRouter extends Router {
   mount() {
@@ -19,13 +25,16 @@ export class LANDRouter extends Router {
       server.handleRequest(this.uploadRedirection)
     )
 
-    this.router.get(
+    this.router.post(
       '/lands/eip1557ContentHash',
+      withSchemaValidation(getEIP1557ContentHashSchema),
       server.handleRequest(this.getEIP1557ContentHash)
     )
   }
 
-  private uploadRedirection = async (req: Request) => {
+  private uploadRedirection = async (
+    req: Request
+  ): Promise<UploadRedirectionResponse> => {
     const url = env.get('IPFS_URL')
     const projectId = env.get('IPFS_PROJECT_ID')
     const apiKey = env.get('IPFS_API_KEY')
@@ -38,9 +47,9 @@ export class LANDRouter extends Router {
       throw new Error('IPFS_API_KEY not defined')
     }
 
-    const data: RedirectionData = server.extractFromReq(req, 'data')
+    const redirection: Redirection = server.extractFromReq(req, 'redirection')
 
-    const redirectionFile = this.generateRedirectionFile(data)
+    const redirectionFile = this.generateRedirectionFile(redirection)
 
     const formData = new FormData()
 
@@ -77,37 +86,44 @@ export class LANDRouter extends Router {
     const { Hash } = await result.json()
 
     return {
-      hash: Hash,
+      ...redirection,
+      ipfsHash: Hash,
     }
   }
 
-  private getEIP1557ContentHash = async (req: Request) => {
-    const data: RedirectionData = {
-      landURL: server.extractFromReq(req, 'landURL'),
-      msg1: server.extractFromReq(req, 'msg1'),
-      msg2: server.extractFromReq(req, 'msg2'),
+  private getEIP1557ContentHash = async (
+    req: Request
+  ): Promise<GetEIP1557ContentHashResponse> => {
+    const redirections: Redirection[] = server.extractFromReq(
+      req,
+      'redirections'
+    )
+
+    const output: GetEIP1557ContentHashResponse = []
+
+    for (const redirection of redirections) {
+      const redirectionFile = this.generateRedirectionFile(redirection)
+
+      const ipfsHash = await getCID({
+        path: 'index.html',
+        content: redirectionFile,
+        size: redirectionFile.byteLength,
+      })
+
+      output.push({
+        ...redirection,
+        eip1557ContentHash: await contentHash.fromIpfs(ipfsHash),
+      })
     }
 
-    const redirectionFile = this.generateRedirectionFile(data)
-
-    const ipfsHash = await getCID({
-      path: 'index.html',
-      content: redirectionFile,
-      size: redirectionFile.byteLength,
-    })
-
-    const hash = await contentHash.fromIpfs(ipfsHash)
-
-    return {
-      hash,
-    }
+    return output
   }
 
   private generateRedirectionFile = ({
     landURL,
-    msg1,
-    msg2,
-  }: RedirectionData): Buffer => {
+    i18nCouldNotRedirectMsg,
+    i18nClickHereMsg,
+  }: Redirection): Buffer => {
     const html: string = `<html>
     <head>
       <meta
@@ -117,9 +133,9 @@ export class LANDRouter extends Router {
     </head>
     <body>
       <p>
-        ${msg1}
+        ${i18nCouldNotRedirectMsg}
         <a href="${landURL}">
-          ${msg2}
+          ${i18nClickHereMsg}
         </a>.
       </p>
     </body>

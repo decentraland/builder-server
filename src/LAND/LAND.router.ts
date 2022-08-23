@@ -7,27 +7,21 @@ import * as contentHash from 'content-hash'
 import fetch, { Response as FetchResponse } from 'node-fetch'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { Router } from '../common/Router'
-import { withSchemaValidation } from '../middleware'
 import { getCID } from '../utils/cid'
 import {
   GetRedirectionHashesResponse,
-  getRedirectionHashesSchema,
-  Redirection,
   UploadRedirectionResponse,
-  uploadRedirectionSchema,
 } from './LAND.types'
 
 export class LANDRouter extends Router {
   mount() {
     this.router.post(
-      '/lands/redirection',
-      withSchemaValidation(uploadRedirectionSchema),
+      '/lands/:coords/redirection',
       server.handleRequest(this.uploadRedirection)
     )
 
-    this.router.post(
-      '/lands/redirection/hashes',
-      withSchemaValidation(getRedirectionHashesSchema),
+    this.router.get(
+      '/lands/hashes',
       server.handleRequest(this.getRedirectionHashes)
     )
   }
@@ -35,21 +29,13 @@ export class LANDRouter extends Router {
   private uploadRedirection = async (
     req: Request
   ): Promise<UploadRedirectionResponse> => {
-    const url = env.get('IPFS_URL')
-    const projectId = env.get('IPFS_PROJECT_ID')
-    const apiKey = env.get('IPFS_API_KEY')
+    const { url, projectId, apiKey } = this.getEnvs()
 
-    if (!url) {
-      throw new Error('IPFS_URL not defined')
-    }
+    const coords = server.extractFromReq(req, 'coords')
 
-    if (!apiKey) {
-      throw new Error('IPFS_API_KEY not defined')
-    }
+    this.validateCoords(coords)
 
-    const redirection: Redirection = server.extractFromReq(req, 'redirection')
-
-    const redirectionFile = this.generateRedirectionFile(redirection)
+    const redirectionFile = this.generateRedirectionFile(coords)
 
     const formData = new FormData()
 
@@ -86,7 +72,6 @@ export class LANDRouter extends Router {
     const { Hash } = await result.json()
 
     return {
-      ...redirection,
       ipfsHash: Hash,
       contentHash: await contentHash.fromIpfs(Hash),
     }
@@ -95,15 +80,15 @@ export class LANDRouter extends Router {
   private getRedirectionHashes = async (
     req: Request
   ): Promise<GetRedirectionHashesResponse> => {
-    const redirections: Redirection[] = server.extractFromReq(
-      req,
-      'redirections'
-    )
+    const coordsQueryParam = server.extractFromReq(req, 'coords')
+    const separatedCoords = coordsQueryParam.split(';')
 
     const output: GetRedirectionHashesResponse = []
 
-    for (const redirection of redirections) {
-      const redirectionFile = this.generateRedirectionFile(redirection)
+    for (const coords of separatedCoords) {
+      this.validateCoords(coords)
+
+      const redirectionFile = this.generateRedirectionFile(coords)
 
       const ipfsHash = await getCID({
         path: 'index.html',
@@ -111,8 +96,11 @@ export class LANDRouter extends Router {
         size: redirectionFile.byteLength,
       })
 
+      const [x, y] = coords.split(',').map((val) => Number(val))
+
       output.push({
-        ...redirection,
+        x,
+        y,
         ipfsHash,
         contentHash: await contentHash.fromIpfs(ipfsHash),
       })
@@ -121,23 +109,53 @@ export class LANDRouter extends Router {
     return output
   }
 
-  private generateRedirectionFile = ({
-    landURL,
-    i18nCouldNotRedirectMsg,
-    i18nClickHereMsg,
-  }: Redirection): Buffer => {
+  private getEnvs = () => {
+    const url = env.get('IPFS_URL')
+    const projectId = env.get('IPFS_PROJECT_ID')
+    const apiKey = env.get('IPFS_API_KEY')
+
+    if (!url) {
+      throw new Error('IPFS_URL not defined')
+    }
+
+    if (!projectId) {
+      throw new Error('IPFS_PROJECT_ID not defined')
+    }
+
+    if (!apiKey) {
+      throw new Error('IPFS_API_KEY not defined')
+    }
+
+    return {
+      url,
+      projectId,
+      apiKey,
+    }
+  }
+
+  private validateCoords = (coords: string): void => {
+    if (!/-?[1-9]\d*,-?[1-9]\d*/.test(coords)) {
+      throw new HTTPError(
+        'Invalid coordinates',
+        { coords },
+        STATUS_CODES.badRequest
+      )
+    }
+  }
+
+  private generateRedirectionFile = (coords: string): Buffer => {
     const html: string = `<html>
     <head>
       <meta
         http-equiv="refresh"
-        content="0; URL=${landURL}"
+        content="0; URL=https://play.decentraland.org?position=${coords}"
       />
     </head>
     <body>
       <p>
-        ${i18nCouldNotRedirectMsg}
-        <a href="${landURL}">
-          ${i18nClickHereMsg}
+        If you are not redirected
+        <a href="https://play.decentraland.org?position=${coords}">
+          Click here
         </a>.
       </p>
     </body>

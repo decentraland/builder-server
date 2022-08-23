@@ -15,14 +15,14 @@ import {
 
 export class LANDRouter extends Router {
   mount() {
+    this.router.get(
+      '/lands/redirection/hashes',
+      server.handleRequest(this.getRedirectionHashes)
+    )
+
     this.router.post(
       '/lands/:coords/redirection',
       server.handleRequest(this.uploadRedirection)
-    )
-
-    this.router.get(
-      '/lands/hashes',
-      server.handleRequest(this.getRedirectionHashes)
     )
   }
 
@@ -135,7 +135,7 @@ export class LANDRouter extends Router {
       url,
       projectId,
       apiKey,
-      explorerUrl
+      explorerUrl,
     }
   }
 

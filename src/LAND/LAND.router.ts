@@ -35,7 +35,9 @@ export class LANDRouter extends Router {
 
     this.validateCoords(coords)
 
-    const redirectionFile = this.generateRedirectionFile(coords)
+    const locale = req.headers['accept-language']
+
+    const redirectionFile = this.generateRedirectionFile(coords, locale)
 
     const formData = new FormData()
 
@@ -83,12 +85,14 @@ export class LANDRouter extends Router {
     const coordsQueryParam = server.extractFromReq(req, 'coords')
     const separatedCoords = coordsQueryParam.split(';')
 
+    const locale = req.headers['accept-language']
+
     const output: GetRedirectionHashesResponse = []
 
     for (const coords of separatedCoords) {
       this.validateCoords(coords)
 
-      const redirectionFile = this.generateRedirectionFile(coords)
+      const redirectionFile = this.generateRedirectionFile(coords, locale)
 
       const ipfsHash = await getCID({
         path: 'index.html',
@@ -149,8 +153,24 @@ export class LANDRouter extends Router {
     }
   }
 
-  private generateRedirectionFile = (coords: string): Buffer => {
+  private generateRedirectionFile = (
+    coords: string,
+    locale?: string
+  ): Buffer => {
     const { explorerUrl } = this.getEnvs()
+
+    let messages: [string, string]
+
+    switch (locale) {
+      case 'zh-CN':
+        messages = ['如果您未重定向', '点击这里']
+        break
+      case 'es-ES':
+        messages = ['Si no estas siendo redirigido', 'Has click aquí']
+        break
+      default:
+        messages = ['If you are not redirected', 'Click here']
+    }
 
     const html: string = `<html>
     <head>
@@ -161,9 +181,9 @@ export class LANDRouter extends Router {
     </head>
     <body>
       <p>
-        If you are not redirected
+        ${messages[0]}
         <a href="${explorerUrl}?position=${coords}">
-          Click here
+          ${messages[1]}
         </a>.
       </p>
     </body>

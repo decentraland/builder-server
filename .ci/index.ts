@@ -172,6 +172,10 @@ export = async function main() {
         name: 'IPFS_API_KEY',
         value: config.requireSecret('IPFS_API_KEY'),
       },
+      {
+        name: 'EXPLORER_URL',
+        value: 'https://play.decentraland.org',
+      },
     ],
     hostname,
     {

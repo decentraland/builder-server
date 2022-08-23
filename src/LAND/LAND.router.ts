@@ -113,6 +113,7 @@ export class LANDRouter extends Router {
     const url = env.get('IPFS_URL')
     const projectId = env.get('IPFS_PROJECT_ID')
     const apiKey = env.get('IPFS_API_KEY')
+    const explorerUrl = env.get('EXPLORER_URL')
 
     if (!url) {
       throw new Error('IPFS_URL not defined')
@@ -126,10 +127,15 @@ export class LANDRouter extends Router {
       throw new Error('IPFS_API_KEY not defined')
     }
 
+    if (!explorerUrl) {
+      throw new Error('EXPLORER_URL not defined')
+    }
+
     return {
       url,
       projectId,
       apiKey,
+      explorerUrl
     }
   }
 
@@ -144,17 +150,19 @@ export class LANDRouter extends Router {
   }
 
   private generateRedirectionFile = (coords: string): Buffer => {
+    const { explorerUrl } = this.getEnvs()
+
     const html: string = `<html>
     <head>
       <meta
         http-equiv="refresh"
-        content="0; URL=https://play.decentraland.org?position=${coords}"
+        content="0; URL=${explorerUrl}?position=${coords}"
       />
     </head>
     <body>
       <p>
         If you are not redirected
-        <a href="https://play.decentraland.org?position=${coords}">
+        <a href="${explorerUrl}?position=${coords}">
           Click here
         </a>.
       </p>

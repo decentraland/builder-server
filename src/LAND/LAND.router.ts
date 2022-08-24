@@ -13,6 +13,8 @@ import {
   UploadRedirectionResponse,
 } from './LAND.types'
 
+const MAX_COORDS = 50
+
 export class LANDRouter extends Router {
   private ipfsUrl = env.get('IPFS_URL')
   private ipfsProjectId = env.get('IPFS_PROJECT_ID')
@@ -87,14 +89,24 @@ export class LANDRouter extends Router {
   private getRedirectionHashes = async (
     req: Request
   ): Promise<GetRedirectionHashesResponse> => {
-    const coordsQueryParam = server.extractFromReq(req, 'coords')
-    const separatedCoords = coordsQueryParam.split(';')
+    const coordsListQP = server.extractFromReq<string | string[]>(req, 'coords')
+
+    const coordsList =
+      typeof coordsListQP === 'string' ? [coordsListQP] : coordsListQP
+
+    if (coordsList.length > MAX_COORDS) {
+      throw new HTTPError(
+        'Max 50 coords',
+        { amount: coordsList.length },
+        STATUS_CODES.badRequest
+      )
+    }
 
     const locale = req.headers['accept-language']
 
     const output: GetRedirectionHashesResponse = []
 
-    for (const coords of separatedCoords) {
+    for (const coords of coordsList) {
       this.validateCoords(coords)
 
       const redirectionFile = this.generateRedirectionFile(coords, locale)

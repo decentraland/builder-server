@@ -13,7 +13,7 @@ import {
   UploadRedirectionResponse,
 } from './LAND.types'
 
-const MAX_COORDS = 50
+const MAX_COORDS = 150
 
 export class LANDRouter extends Router {
   private ipfsUrl = env.get('IPFS_URL')
@@ -96,7 +96,7 @@ export class LANDRouter extends Router {
 
     if (coordsList.length > MAX_COORDS) {
       throw new HTTPError(
-        'Max 50 coords',
+        `Max ${MAX_COORDS} coords`,
         { amount: coordsList.length },
         STATUS_CODES.badRequest
       )

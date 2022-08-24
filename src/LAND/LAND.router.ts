@@ -14,9 +14,16 @@ import {
 } from './LAND.types'
 
 export class LANDRouter extends Router {
+  private ipfsUrl = env.get('IPFS_URL')
+  private ipfsProjectId = env.get('IPFS_PROJECT_ID')
+  private ipfsApiKey = env.get('IPFS_API_KEY')
+  private explorerUrl = env.get('EXPLORER_URL')
+
   mount() {
+    this.verifyEnvs()
+
     this.router.get(
-      '/lands/redirection/hashes',
+      '/lands/redirectionHashes',
       server.handleRequest(this.getRedirectionHashes)
     )
 
@@ -29,8 +36,6 @@ export class LANDRouter extends Router {
   private uploadRedirection = async (
     req: Request
   ): Promise<UploadRedirectionResponse> => {
-    const { url, projectId, apiKey } = this.getEnvs()
-
     const coords = server.extractFromReq(req, 'coords')
 
     this.validateCoords(coords)
@@ -46,12 +51,12 @@ export class LANDRouter extends Router {
     let result: FetchResponse
 
     try {
-      result = await fetch(url + '/api/v0/add?pin=false', {
+      result = await fetch(this.ipfsUrl + '/api/v0/add?pin=false', {
         method: 'post',
         body: formData,
         headers: {
           Authorization: `Basic ${Buffer.from(
-            `${projectId}:${apiKey}`
+            `${this.ipfsProjectId}:${this.ipfsApiKey}`
           ).toString('base64')}`,
         },
       })
@@ -113,33 +118,21 @@ export class LANDRouter extends Router {
     return output
   }
 
-  private getEnvs = () => {
-    const url = env.get('IPFS_URL')
-    const projectId = env.get('IPFS_PROJECT_ID')
-    const apiKey = env.get('IPFS_API_KEY')
-    const explorerUrl = env.get('EXPLORER_URL')
-
-    if (!url) {
+  private verifyEnvs = () => {
+    if (!this.ipfsUrl) {
       throw new Error('IPFS_URL not defined')
     }
 
-    if (!projectId) {
+    if (!this.ipfsProjectId) {
       throw new Error('IPFS_PROJECT_ID not defined')
     }
 
-    if (!apiKey) {
+    if (!this.ipfsApiKey) {
       throw new Error('IPFS_API_KEY not defined')
     }
 
-    if (!explorerUrl) {
+    if (!this.explorerUrl) {
       throw new Error('EXPLORER_URL not defined')
-    }
-
-    return {
-      url,
-      projectId,
-      apiKey,
-      explorerUrl,
     }
   }
 
@@ -157,8 +150,6 @@ export class LANDRouter extends Router {
     coords: string,
     locale?: string
   ): Buffer => {
-    const { explorerUrl } = this.getEnvs()
-
     let messages: [string, string]
 
     switch (locale) {
@@ -176,13 +167,13 @@ export class LANDRouter extends Router {
     <head>
       <meta
         http-equiv="refresh"
-        content="0; URL=${explorerUrl}?position=${coords}"
+        content="0; URL=${this.explorerUrl}?position=${coords}"
       />
     </head>
     <body>
       <p>
         ${messages[0]}
-        <a href="${explorerUrl}?position=${coords}">
+        <a href="${this.explorerUrl}?position=${coords}">
           ${messages[1]}
         </a>.
       </p>

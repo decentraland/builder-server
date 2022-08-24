@@ -33,6 +33,10 @@ jobs:
           THIRD_PARTY_GRAPH_URL: 'http://thid-party-url'
           OPEN_SEA_URL: OPEN_SEA_URL
           OPEN_SEA_API_KEY: OPEN_SEA_API_KEY
+          IPFS_URL: IPFS_URL
+          IPFS_PROJECT_ID: IPFS_PROJECT_ID
+          IPFS_API_KEY: IPFS_API_KEY
+          EXPLORER_URL: EXPLORER_URL
       - name: Report Coverage
         uses: coverallsapp/github-action@master
         with:

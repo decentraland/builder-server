@@ -13,7 +13,8 @@ import {
   UploadRedirectionResponse,
 } from './LAND.types'
 
-const MAX_COORDS = 150
+export const MAX_COORDS = 150
+const INDEX_FILE = 'index.html'
 
 export class LANDRouter extends Router {
   private ipfsUrl = env.get('IPFS_URL')
@@ -48,7 +49,7 @@ export class LANDRouter extends Router {
 
     const formData = new FormData()
 
-    formData.append('blob', redirectionFile, 'index.html')
+    formData.append('blob', redirectionFile, INDEX_FILE)
 
     let result: FetchResponse
 
@@ -89,7 +90,13 @@ export class LANDRouter extends Router {
   private getRedirectionHashes = async (
     req: Request
   ): Promise<GetRedirectionHashesResponse> => {
-    const coordsListQP = server.extractFromReq<string | string[]>(req, 'coords')
+    let coordsListQP: string | string[]
+
+    try {
+      coordsListQP = server.extractFromReq<string | string[]>(req, 'coords')
+    } catch (e) {
+      throw new HTTPError(e.message, {}, STATUS_CODES.badRequest)
+    }
 
     const coordsList =
       typeof coordsListQP === 'string' ? [coordsListQP] : coordsListQP
@@ -112,7 +119,7 @@ export class LANDRouter extends Router {
       const redirectionFile = this.generateRedirectionFile(coords, locale)
 
       const ipfsHash = await getCID({
-        path: 'index.html',
+        path: INDEX_FILE,
         content: redirectionFile,
         size: redirectionFile.byteLength,
       })

@@ -76,18 +76,34 @@ export class LANDRouter extends Router {
     }
 
     if (!result.ok) {
+      let error: string = 'Could not get error from response'
+
+      try {
+        error = await result.text()
+      } catch (e) {}
+
       throw new HTTPError(
-        'Failed to upload file to IPFS as the IPFS server responded with a non 200 status',
-        { message: await result.text() },
+        'Failed to upload file to IPFS as the IPFS server response was not ok',
+        { message: error },
         STATUS_CODES.error
       )
     }
 
-    const { Hash } = await result.json()
+    let ipfsHash
+
+    try {
+      ipfsHash = (await result.json()).Hash
+    } catch (e: any) {
+      throw new HTTPError(
+        'The response from the IPFS server is not a json',
+        { message: e.message },
+        STATUS_CODES.error
+      )
+    }
 
     return {
-      ipfsHash: Hash,
-      contentHash: await contentHash.fromIpfs(Hash),
+      ipfsHash,
+      contentHash: await contentHash.fromIpfs(ipfsHash),
     }
   }
 

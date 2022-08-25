@@ -71,23 +71,74 @@ describe('LAND router', () => {
     describe('and the fetch to the ipfs server responds with an error', () => {
       beforeEach(() => {
         url = '/lands/100,100/redirection'
+      })
 
-        //@ts-ignore
-        mockFetch.mockResolvedValueOnce({
-          ok: false,
-          text: () => Promise.resolve('error'),
+      describe('and the error can be extracted as text from the response', () => {
+        beforeEach(() => {
+          //@ts-ignore
+          mockFetch.mockResolvedValueOnce({
+            ok: false,
+            text: () => Promise.resolve('error'),
+          })
+        })
+
+        it('should respond with 500 and ipfs server responded with non 200 status and extracted error message', async () => {
+          const { body } = await server.post(buildURL(url)).expect(500)
+
+          expect(body).toEqual({
+            data: {
+              message: 'error',
+            },
+            error:
+              'Failed to upload file to IPFS as the IPFS server response was not ok',
+            ok: false,
+          })
         })
       })
 
-      it('should respond with 500 and ipfs server responded with non 200 status message', async () => {
+      describe('and the error fails to be extracted from the response as text', () => {
+        beforeEach(() => {
+          //@ts-ignore
+          mockFetch.mockResolvedValueOnce({
+            ok: false,
+            text: () => Promise.reject(new Error('error')),
+          })
+        })
+
+        it('should respond with 500 and ipfs server responded with non 200 status and extracted error message', async () => {
+          const { body } = await server.post(buildURL(url)).expect(500)
+
+          expect(body).toEqual({
+            data: {
+              message: 'Could not get error from response',
+            },
+            error:
+              'Failed to upload file to IPFS as the IPFS server response was not ok',
+            ok: false,
+          })
+        })
+      })
+    })
+
+    describe('and the fetch to the ipfs server does not respond with a json', () => {
+      beforeEach(() => {
+        url = '/lands/100,100/redirection'
+
+        //@ts-ignore
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: () => Promise.reject(new Error('error')),
+        })
+      })
+
+      it('should respond with 500 and ipfs server responded with non json message', async () => {
         const { body } = await server.post(buildURL(url)).expect(500)
 
         expect(body).toEqual({
           data: {
             message: 'error',
           },
-          error:
-            'Failed to upload file to IPFS as the IPFS server responded with a non 200 status',
+          error: 'The response from the IPFS server is not a json',
           ok: false,
         })
       })

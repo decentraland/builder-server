@@ -2,11 +2,29 @@ import supertest from 'supertest'
 import { buildURL } from '../../spec/utils'
 import { app } from '../server'
 import { MAX_COORDS } from './LAND.router'
+import { getLandRouterEnvs } from './utils'
+
+jest.mock('./utils')
+
+const mockGetLandRouterEnvs = getLandRouterEnvs as jest.MockedFunction<
+  typeof getLandRouterEnvs
+>
 
 const server = supertest(app.getApp())
 
 describe('LAND router', () => {
   let url: string
+
+  beforeEach(() => {
+    jest.clearAllMocks()
+
+    mockGetLandRouterEnvs.mockImplementation(() => ({
+      ipfsUrl: 'https://ipfs.xyz',
+      ipfsProjectId: 'ipfsProjectId',
+      ipfsApiKey: 'ipfsApiKey',
+      explorerUrl: 'https://explorer.xyz',
+    }))
+  })
 
   describe('when fetching the redirection file hashes', () => {
     beforeEach(() => {
@@ -57,8 +75,8 @@ describe('LAND router', () => {
           expect(body).toEqual({
             data: new Array(MAX_COORDS).fill({
               contentHash:
-                'e30101701220166b6b4d93ece408525081ade3c0258c6e992180d9b4ceb469d08192589095d7',
-              ipfsHash: 'QmPrAgSua8WLPZ4CNL6tGMSdN45Kte3WjPJTPjfQSfv1kJ',
+                'e301017012205453e784584c205c23a771c67af071129721f0e21b0472e3061361005393a908',
+              ipfsHash: 'QmU1qAKrZKEUinZ7j7gbPcJ7dKSkJ6diHLk9YrB4PbLr7q',
               x: 100,
               y: 100,
             }),
@@ -99,15 +117,15 @@ describe('LAND router', () => {
             data: [
               {
                 contentHash:
-                  'e30101701220166b6b4d93ece408525081ade3c0258c6e992180d9b4ceb469d08192589095d7',
-                ipfsHash: 'QmPrAgSua8WLPZ4CNL6tGMSdN45Kte3WjPJTPjfQSfv1kJ',
+                  'e301017012205453e784584c205c23a771c67af071129721f0e21b0472e3061361005393a908',
+                ipfsHash: 'QmU1qAKrZKEUinZ7j7gbPcJ7dKSkJ6diHLk9YrB4PbLr7q',
                 x: 100,
                 y: 100,
               },
               {
                 contentHash:
-                  'e301017012207a05747aa476fe4f72b0316b99b6f5af96be152288d9a840aba5d2bc17bd88b7',
-                ipfsHash: 'QmWYyGnw1QRSZDZKaXppu9GW37JtFGdhgADLVSagguXgjg',
+                  'e301017012204d02b4fe9cee2f8e4ab0a88adbf2338faa903355a0280d725f72f0f79929c079',
+                ipfsHash: 'QmTXGVk1DtCP6km25iNUmEmV2Wf7dCFAziwiTzZNeQKM9z',
                 x: 200,
                 y: 200,
               },
@@ -149,8 +167,8 @@ describe('LAND router', () => {
             data: [
               {
                 contentHash:
-                  'e30101701220166b6b4d93ece408525081ade3c0258c6e992180d9b4ceb469d08192589095d7',
-                ipfsHash: 'QmPrAgSua8WLPZ4CNL6tGMSdN45Kte3WjPJTPjfQSfv1kJ',
+                  'e301017012205453e784584c205c23a771c67af071129721f0e21b0472e3061361005393a908',
+                ipfsHash: 'QmU1qAKrZKEUinZ7j7gbPcJ7dKSkJ6diHLk9YrB4PbLr7q',
                 x: 100,
                 y: 100,
               },

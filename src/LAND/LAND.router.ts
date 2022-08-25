@@ -1,4 +1,3 @@
-import { env } from 'decentraland-commons'
 import { server } from 'decentraland-server'
 import FormData from 'form-data'
 import { Request } from 'express'
@@ -12,19 +11,13 @@ import {
   GetRedirectionHashesResponse,
   UploadRedirectionResponse,
 } from './LAND.types'
+import { getLandRouterEnvs } from './utils'
 
 export const MAX_COORDS = 150
 const INDEX_FILE = 'index.html'
 
 export class LANDRouter extends Router {
-  private ipfsUrl = env.get('IPFS_URL')
-  private ipfsProjectId = env.get('IPFS_PROJECT_ID')
-  private ipfsApiKey = env.get('IPFS_API_KEY')
-  private explorerUrl = env.get('EXPLORER_URL')
-
   mount() {
-    this.verifyEnvs()
-
     this.router.get(
       '/lands/redirectionHashes',
       server.handleRequest(this.getRedirectionHashes)
@@ -39,13 +32,24 @@ export class LANDRouter extends Router {
   private uploadRedirection = async (
     req: Request
   ): Promise<UploadRedirectionResponse> => {
+    const {
+      ipfsUrl,
+      ipfsProjectId,
+      ipfsApiKey,
+      explorerUrl,
+    } = getLandRouterEnvs()
+
     const coords = server.extractFromReq(req, 'coords')
 
     this.validateCoords(coords)
 
     const locale = req.headers['accept-language']
 
-    const redirectionFile = this.generateRedirectionFile(coords, locale)
+    const redirectionFile = this.generateRedirectionFile(
+      coords,
+      explorerUrl,
+      locale
+    )
 
     const formData = new FormData()
 
@@ -54,12 +58,12 @@ export class LANDRouter extends Router {
     let result: FetchResponse
 
     try {
-      result = await fetch(this.ipfsUrl + '/api/v0/add?pin=false', {
+      result = await fetch(ipfsUrl + '/api/v0/add?pin=false', {
         method: 'post',
         body: formData,
         headers: {
           Authorization: `Basic ${Buffer.from(
-            `${this.ipfsProjectId}:${this.ipfsApiKey}`
+            `${ipfsProjectId}:${ipfsApiKey}`
           ).toString('base64')}`,
         },
       })
@@ -90,11 +94,13 @@ export class LANDRouter extends Router {
   private getRedirectionHashes = async (
     req: Request
   ): Promise<GetRedirectionHashesResponse> => {
+    const { explorerUrl } = getLandRouterEnvs()
+
     let coordsListQP: string | string[]
 
     try {
       coordsListQP = server.extractFromReq<string | string[]>(req, 'coords')
-    } catch (e) {
+    } catch (e: any) {
       throw new HTTPError(e.message, {}, STATUS_CODES.badRequest)
     }
 
@@ -116,7 +122,11 @@ export class LANDRouter extends Router {
     for (const coords of coordsList) {
       this.validateCoords(coords)
 
-      const redirectionFile = this.generateRedirectionFile(coords, locale)
+      const redirectionFile = this.generateRedirectionFile(
+        coords,
+        explorerUrl,
+        locale
+      )
 
       const ipfsHash = await getCID({
         path: INDEX_FILE,
@@ -137,24 +147,6 @@ export class LANDRouter extends Router {
     return output
   }
 
-  private verifyEnvs = () => {
-    if (!this.ipfsUrl) {
-      throw new Error('IPFS_URL not defined')
-    }
-
-    if (!this.ipfsProjectId) {
-      throw new Error('IPFS_PROJECT_ID not defined')
-    }
-
-    if (!this.ipfsApiKey) {
-      throw new Error('IPFS_API_KEY not defined')
-    }
-
-    if (!this.explorerUrl) {
-      throw new Error('EXPLORER_URL not defined')
-    }
-  }
-
   private validateCoords = (coords: string): void => {
     if (!/^-?[1-9]\d*,-?[1-9]\d*$/.test(coords)) {
       throw new HTTPError(
@@ -167,6 +159,7 @@ export class LANDRouter extends Router {
 
   private generateRedirectionFile = (
     coords: string,
+    explorerUrl: string,
     locale?: string
   ): Buffer => {
     let messages: [string, string]
@@ -186,13 +179,13 @@ export class LANDRouter extends Router {
     <head>
       <meta
         http-equiv="refresh"
-        content="0; URL=${this.explorerUrl}?position=${coords}"
+        content="0; URL=${explorerUrl}?position=${coords}"
       />
     </head>
     <body>
       <p>
         ${messages[0]}
-        <a href="${this.explorerUrl}?position=${coords}">
+        <a href="${explorerUrl}?position=${coords}">
           ${messages[1]}
         </a>.
       </p>

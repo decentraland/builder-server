@@ -67,18 +67,18 @@ export class LANDRouter extends Router {
           ).toString('base64')}`,
         },
       })
-    } catch (e) {
+    } catch (e: any) {
       throw new HTTPError(
-        'Failed to upload file to IPFS # Request',
-        {},
+        'Failed to upload file to IPFS as the IPFS server could not be reached',
+        { message: e.message },
         STATUS_CODES.error
       )
     }
 
     if (!result.ok) {
       throw new HTTPError(
-        'Failed to upload file to IPFS # Response',
-        {},
+        'Failed to upload file to IPFS as the IPFS server responded with a non 200 status',
+        { message: await result.text() },
         STATUS_CODES.error
       )
     }

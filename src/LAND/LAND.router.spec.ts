@@ -3,12 +3,16 @@ import { buildURL } from '../../spec/utils'
 import { app } from '../server'
 import { MAX_COORDS } from './LAND.router'
 import { getLandRouterEnvs } from './utils'
+import fetch from 'node-fetch'
 
 jest.mock('./utils')
+jest.mock('node-fetch')
 
 const mockGetLandRouterEnvs = getLandRouterEnvs as jest.MockedFunction<
   typeof getLandRouterEnvs
 >
+
+const mockFetch = fetch as jest.MockedFunction<typeof fetch>
 
 const server = supertest(app.getApp())
 
@@ -24,6 +28,100 @@ describe('LAND router', () => {
       ipfsApiKey: 'ipfsApiKey',
       explorerUrl: 'https://explorer.xyz',
     }))
+  })
+
+  describe('when creating a redirection file', () => {
+    describe('and the coords in the url are invalid', () => {
+      beforeEach(() => {
+        url = '/lands/invalid/redirection'
+      })
+
+      it('should respond with 400 and invalid coords message', async () => {
+        const { body } = await server.post(buildURL(url)).expect(400)
+
+        expect(body).toEqual({
+          data: { coords: 'invalid' },
+          error: `Invalid coordinates`,
+          ok: false,
+        })
+      })
+    })
+
+    describe('and the fetch to the ipfs server throws an error', () => {
+      beforeEach(() => {
+        url = '/lands/100,100/redirection'
+
+        mockFetch.mockRejectedValueOnce(new Error('error'))
+      })
+
+      it('should respond with 500 and ipfs server could not be reached message', async () => {
+        const { body } = await server.post(buildURL(url)).expect(500)
+
+        expect(body).toEqual({
+          data: {
+            message: 'error',
+          },
+          error:
+            'Failed to upload file to IPFS as the IPFS server could not be reached',
+          ok: false,
+        })
+      })
+    })
+
+    describe('and the fetch to the ipfs server responds with an error', () => {
+      beforeEach(() => {
+        url = '/lands/100,100/redirection'
+
+        //@ts-ignore
+        mockFetch.mockResolvedValueOnce({
+          ok: false,
+          text: () => Promise.resolve('error'),
+        })
+      })
+
+      it('should respond with 500 and ipfs server responded with non 200 status message', async () => {
+        const { body } = await server.post(buildURL(url)).expect(500)
+
+        expect(body).toEqual({
+          data: {
+            message: 'error',
+          },
+          error:
+            'Failed to upload file to IPFS as the IPFS server responded with a non 200 status',
+          ok: false,
+        })
+      })
+    })
+
+    describe('and the ipfs server responds the ipfs hash of the uploaded blob', () => {
+      let responseHash: string
+
+      beforeEach(() => {
+        url = '/lands/100,100/redirection'
+        responseHash = 'QmU1qAKrZKEUinZ7j7gbPcJ7dKSkJ6diHLk9YrB4PbLr7q'
+        //@ts-ignore
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              Hash: responseHash,
+            }),
+        })
+      })
+
+      it('should respond with 500 and ipfs server responded with non 200 status message', async () => {
+        const { body } = await server.post(buildURL(url)).expect(200)
+
+        expect(body).toEqual({
+          data: {
+            ipfsHash: responseHash,
+            contentHash:
+              'e301017012205453e784584c205c23a771c67af071129721f0e21b0472e3061361005393a908',
+          },
+          ok: true,
+        })
+      })
+    })
   })
 
   describe('when fetching the redirection file hashes', () => {

@@ -160,6 +160,22 @@ export = async function main() {
         name: 'OPEN_SEA_API_KEY',
         value: config.requireSecret('OPEN_SEA_API_KEY'),
       },
+      {
+        name: 'IPFS_URL',
+        value: 'https://ipfs.infura.io:5001',
+      },
+      {
+        name: 'IPFS_PROJECT_ID',
+        value: config.requireSecret('IPFS_PROJECT_ID'),
+      },
+      {
+        name: 'IPFS_API_KEY',
+        value: config.requireSecret('IPFS_API_KEY'),
+      },
+      {
+        name: 'EXPLORER_URL',
+        value: 'https://play.decentraland.org',
+      },
     ],
     hostname,
     {

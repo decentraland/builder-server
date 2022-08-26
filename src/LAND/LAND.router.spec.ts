@@ -47,14 +47,14 @@ describe('LAND router', () => {
       })
     })
 
-    describe('and the fetch to the ipfs server throws an error', () => {
+    describe('and the fetch to the IPFS server throws an error', () => {
       beforeEach(() => {
         url = '/lands/100,100/redirection'
 
         mockFetch.mockRejectedValueOnce(new Error('error'))
       })
 
-      it('should respond with 500 and ipfs server could not be reached message', async () => {
+      it('should respond with a 500 status code and a message saying that the IPFS server could not be reached', async () => {
         const { body } = await server.post(buildURL(url)).expect(500)
 
         expect(body).toEqual({
@@ -68,7 +68,7 @@ describe('LAND router', () => {
       })
     })
 
-    describe('and the fetch to the ipfs server responds with an error', () => {
+    describe('and the fetch to the IPFS server responds with an error', () => {
       beforeEach(() => {
         url = '/lands/100,100/redirection'
       })
@@ -82,7 +82,7 @@ describe('LAND router', () => {
           })
         })
 
-        it('should respond with 500 and ipfs server responded with non 200 status and extracted error message', async () => {
+        it('should respond with a 500 status code and the extracted IPFS error message', async () => {
           const { body } = await server.post(buildURL(url)).expect(500)
 
           expect(body).toEqual({
@@ -105,7 +105,7 @@ describe('LAND router', () => {
           })
         })
 
-        it('should respond with 500 and ipfs server responded with non 200 status and extracted error message', async () => {
+        it('should respond with a 500 status code and the extracted IPFS error message', async () => {
           const { body } = await server.post(buildURL(url)).expect(500)
 
           expect(body).toEqual({
@@ -120,7 +120,7 @@ describe('LAND router', () => {
       })
     })
 
-    describe('and the fetch to the ipfs server does not respond with a json', () => {
+    describe('and the fetch to the IPFS server does not respond with a json', () => {
       beforeEach(() => {
         url = '/lands/100,100/redirection'
 
@@ -131,7 +131,7 @@ describe('LAND router', () => {
         })
       })
 
-      it('should respond with 500 and ipfs server responded with non json message', async () => {
+      it('should respond with a 500 status code and a message saying that IPFS responded with a non json message', async () => {
         const { body } = await server.post(buildURL(url)).expect(500)
 
         expect(body).toEqual({
@@ -144,7 +144,7 @@ describe('LAND router', () => {
       })
     })
 
-    describe('and the ipfs server responds the ipfs hash of the uploaded blob', () => {
+    describe('and the ipfs server responds the IPFS hash of the uploaded blob', () => {
       let responseHash: string
 
       beforeEach(() => {
@@ -160,7 +160,7 @@ describe('LAND router', () => {
         })
       })
 
-      it('should respond with 500 and ipfs server responded with non 200 status message', async () => {
+      it('should respond with a 200 status code, the IPFS hash and the content hash', async () => {
         const { body } = await server.post(buildURL(url)).expect(200)
 
         expect(body).toEqual({
@@ -181,7 +181,7 @@ describe('LAND router', () => {
     })
 
     describe('when coords is not provided as query param', () => {
-      it('should respond with 400 and could not get coords message', async () => {
+      it('should respond with a 400 status code and a message saying that it could not get the coords', async () => {
         const { body } = await server.get(buildURL(url)).expect(400)
 
         expect(body).toEqual({
@@ -199,7 +199,7 @@ describe('LAND router', () => {
           .join('&')}`
       })
 
-      it('should respond with a 400 and invalid coordinates message', async () => {
+      it('should respond with a 400 status code and a message saying that the coordinates are invalid', async () => {
         const { body } = await server.get(buildURL(url)).expect(400)
 
         expect(body).toEqual({
@@ -218,7 +218,7 @@ describe('LAND router', () => {
             .join('&')}`
         })
 
-        it('should respond with a 200 and objects with hashes for all provided coords', async () => {
+        it('should respond with a 200 status code and objects with hashes for all provided coords', async () => {
           const { body } = await server.get(buildURL(url)).expect(200)
 
           expect(body).toEqual({
@@ -241,7 +241,7 @@ describe('LAND router', () => {
           url = '/lands/redirectionHashes?coords=100,100&coords=invalid'
         })
 
-        it('should respond with a 400 and invalid coordinates message', async () => {
+        it('should respond with a 400 status code and an invalid coordinates message', async () => {
           const { body } = await server.get(buildURL(url)).expect(400)
 
           expect(body).toEqual({
@@ -259,7 +259,7 @@ describe('LAND router', () => {
           url = '/lands/redirectionHashes?coords=100,100&coords=200,200'
         })
 
-        it('should respond with a 200 and and two objects with hashes for those coords', async () => {
+        it('should respond with a 200 status code and and two objects with hashes for those coords', async () => {
           const { body } = await server.get(buildURL(url)).expect(200)
 
           expect(body).toEqual({
@@ -291,7 +291,7 @@ describe('LAND router', () => {
           url = '/lands/redirectionHashes?coords=invalid'
         })
 
-        it('should respond with a 400 and invalid coordinates message', async () => {
+        it('should respond with a 400 status code and an invalid coordinates message', async () => {
           const { body } = await server.get(buildURL(url)).expect(400)
 
           expect(body).toEqual({
@@ -309,7 +309,7 @@ describe('LAND router', () => {
           url = '/lands/redirectionHashes?coords=100,100'
         })
 
-        it('should respond with a 200 and and a single object with hashes for those coords', async () => {
+        it('should respond with a 200 status code and a single object with hashes for those coords', async () => {
           const { body } = await server.get(buildURL(url)).expect(200)
 
           expect(body).toEqual({

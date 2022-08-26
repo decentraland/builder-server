@@ -89,7 +89,7 @@ export class LANDRouter extends Router {
       )
     }
 
-    let ipfsHash
+    let ipfsHash: string
 
     try {
       ipfsHash = (await result.json()).Hash

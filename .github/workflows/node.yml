@@ -1,23 +1,24 @@
-name: CI
+name: node
 
-on: [push, pull_request]
+on:
+  push:
 
 jobs:
-  Tests:
+  install:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v2
-      - name: Use Node.js 14
-        uses: actions/setup-node@v2
+      - uses: actions/checkout@master
+      - name: Use Node.js 16.x
+        uses: actions/setup-node@v1
         with:
-          node-version: '14'
-          cache: 'npm'
+          node-version: 16.x
+          cache: npm
       - name: Install
         run: npm ci
+      - name: Build
+        run: npm run build
       - name: Test
-        run: npm run test:coverage
-        if: ${{ always() }}
+        run: npm run test
         env:
           AWS_ACCESS_KEY: AWS_ACCESS_KEY
           AWS_ACCESS_SECRET: AWS_ACCESS_SECRET
@@ -37,7 +38,7 @@ jobs:
           IPFS_PROJECT_ID: IPFS_PROJECT_ID
           IPFS_API_KEY: IPFS_API_KEY
           EXPLORER_URL: EXPLORER_URL
-      - name: Report Coverage
+      - name: Report coverage
         uses: coverallsapp/github-action@master
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}

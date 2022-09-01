@@ -197,6 +197,9 @@ export = async function main() {
       memoryReservation: 1024,
       cpuReservation: env === 'prd' ? 1024 : 256,
       desiredCount: env === 'prd' ? 3 : 1,
+      extraExposedServiceOptions: {
+        createCloudflareProxiedSubdomain: true
+      },
       securityGroups: [
         (await acceptDbSecurityGroup()).id,
         await acceptBastionSecurityGroupId(),

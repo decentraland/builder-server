@@ -69,7 +69,7 @@ jest.mock('./access')
 jest.mock('./Item.model')
 
 function mockItemConsolidation(wearables: CatalystItem[]) {
-  ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce(wearables)
+  ;(peerAPI.fetchItems as jest.Mock).mockResolvedValueOnce(wearables)
   ;(collectionAPI.buildItemId as jest.Mock).mockImplementation(
     (contractAddress, tokenId) => contractAddress + '-' + tokenId
   )
@@ -155,7 +155,7 @@ describe('Item router', () => {
         ;(collectionAPI.fetchCollectionWithItem as jest.Mock).mockResolvedValueOnce(
           { collection: itemFragment.collection, item: itemFragment }
         )
-        ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([wearable])
+        ;(peerAPI.fetchItems as jest.Mock).mockResolvedValueOnce([wearable])
         resultingItem = toResultItem(dbItem, itemFragment, wearable)
       })
 
@@ -586,7 +586,12 @@ describe('Item router', () => {
         ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
           dbItemCuration,
         ])
-        mockItemConsolidation([tpWearable])
+        ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([
+          tpWearable,
+        ])
+        ;(collectionAPI.buildItemId as jest.Mock).mockImplementation(
+          (contractAddress, tokenId) => contractAddress + '-' + tokenId
+        )
         url = `/collections/${dbCollectionMock.id}/items`
       })
 

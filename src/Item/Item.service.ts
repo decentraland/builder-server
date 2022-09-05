@@ -317,9 +317,11 @@ export class ItemService {
         collection = Bridge.mergeCollection(dbCollection, remoteCollection)
 
         if (remoteItem) {
-          const [catalystItem] = await peerAPI.fetchWearables<Wearable>([
-            remoteItem.urn,
-          ])
+          const [catalystItem] = await peerAPI.fetchItems<Wearable>(
+            [dbItem],
+            [remoteItem],
+            [dbCollection]
+          )
           item = Bridge.mergeItem(
             dbItem,
             remoteItem,

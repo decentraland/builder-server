@@ -271,15 +271,18 @@ export class Bridge {
       }
     }
 
-    const [dbResults, catalystItems] = await Promise.all([
-      dbCollections
-        ? Promise.resolve(dbCollections)
-        : Collection.findByIds(collectionIds),
-      peerAPI.fetchWearables<Wearable>(remoteItems.map((item) => item.urn)),
-    ])
+    const dbCollectionResults = await (dbCollections
+      ? Promise.resolve(dbCollections)
+      : Collection.findByIds(collectionIds))
+
+    const catalystItems = await peerAPI.fetchItems(
+      dbItems,
+      remoteItems,
+      dbCollectionResults
+    )
 
     // Reduce it to a map for fast lookup
-    const dbCollectionsIndex = this.indexById(dbResults)
+    const dbCollectionsIndex = this.indexById(dbCollectionResults)
     const catalystItemsIndex = this.indexById(catalystItems)
 
     for (let dbItem of dbItems) {

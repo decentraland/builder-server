@@ -988,16 +988,14 @@ describe('Collection router', () => {
         isPublished: string,
         totalCollectionsFromDb: number
       beforeEach(() => {
-          page = 1, 
-          limit = 3,
-          isPublished = 'true',
-          totalCollectionsFromDb = 1
+        ;(page = 1),
+          (limit = 3),
+          (isPublished = 'true'),
+          (totalCollectionsFromDb = 1)
         ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
           { ...dbCollection, collection_count: totalCollectionsFromDb },
         ])
-        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce(
-          []
-        )
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([])
         ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
           []
         )
@@ -1005,7 +1003,11 @@ describe('Collection router', () => {
 
       it('should respond with pagination data and should have call the findAll method with the right params', () => {
         return server
-          .get(buildURL(`${url}?limit=${limit}&page=${page}&is_published=${isPublished}`))
+          .get(
+            buildURL(
+              `${url}?limit=${limit}&page=${page}&is_published=${isPublished}`
+            )
+          )
           .set(createAuthHeaders('get', url))
           .expect(200)
           .then((response: any) => {
@@ -2164,8 +2166,8 @@ describe('Collection router', () => {
             ;(Collection.findByIds as jest.MockedFunction<
               typeof Collection.findByIds
             >).mockResolvedValueOnce([{ ...dbCollection, item_count: 1 }])
-            ;(peerAPI.fetchWearables as jest.MockedFunction<
-              typeof peerAPI.fetchWearables
+            ;(peerAPI.fetchItems as jest.MockedFunction<
+              typeof peerAPI.fetchItems
             >).mockResolvedValueOnce([])
           })
 

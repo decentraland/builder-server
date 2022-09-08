@@ -16,6 +16,14 @@ import { buildTPItemURN, isTPItem } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
+const ANIMATION_EMPTY_METRICS = {
+  triangles: 0,
+  materials: 0,
+  textures: 0,
+  meshes: 0,
+  bodies: 0,
+  entities: 1,
+}
 
 function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
@@ -74,7 +82,7 @@ function buildEmoteEntityMetadata(
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
-    metrics: item.metrics,
+    metrics: ANIMATION_EMPTY_METRICS,
   }
 
   return entity
@@ -122,14 +130,7 @@ function buildLegacyEmoteEntityMetadata(
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
-    metrics: {
-      triangles: 0,
-      materials: 0,
-      textures: 0,
-      meshes: 0,
-      bodies: 0,
-      entities: 1,
-    },
+    metrics: ANIMATION_EMPTY_METRICS,
     emoteDataV0: {
       loop: false,
     },

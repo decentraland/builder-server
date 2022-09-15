@@ -4,9 +4,9 @@ import {
   Locale,
   Wearable,
   Emote,
-  EmoteCategory,
   ThirdPartyProps,
   WearableCategory,
+  EmoteDataADR74,
 } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
@@ -67,6 +67,8 @@ function buildEmoteEntityMetadata(
     )
   }
 
+  const data = (item.data as unknown) as EmoteDataADR74
+
   const entity: Emote = {
     id: getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,
@@ -75,10 +77,10 @@ function buildEmoteEntityMetadata(
     rarity: item.rarity!,
     i18n: [{ code: Locale.EN, text: item.name }],
     emoteDataADR74: {
-      category: (item.data.category as unknown) as EmoteCategory,
-      representations: item.data.representations,
-      tags: item.data.tags,
-      loop: false,
+      category: data.category,
+      representations: data.representations,
+      tags: data.tags,
+      loop: data.loop,
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,

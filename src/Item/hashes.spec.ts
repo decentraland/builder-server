@@ -1,4 +1,9 @@
-import { BodyShape, EmoteCategory, Rarity, WearableCategory } from '@dcl/schemas'
+import {
+  BodyShape,
+  EmoteCategory,
+  Rarity,
+  WearableCategory,
+} from '@dcl/schemas'
 import { dbItemMock, dbTPItemMock } from '../../spec/mocks/items'
 import {
   dbCollectionMock,
@@ -115,7 +120,7 @@ describe('when calculating the hashes of a standard emote item', () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      'bafkreicfhee6f7tovvz5w3xd62ki7e6fdsvo7nxnd2krdjaotuxt3uuyvu'
+      'bafkreih6pqxtcmaqfualgyjfydwmmpllu2n34gyipekdcaud47zkrijsli'
     )
   })
 })

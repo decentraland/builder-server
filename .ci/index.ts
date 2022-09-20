@@ -149,10 +149,6 @@ export = async function main() {
             : 'https://api.thegraph.com/subgraphs/name/decentraland/tpr-matic-mumbai',
       },
       {
-        name: 'NEW_EMOTES_FLOW',
-        value: env === 'prd' || env === 'stg' ? '' : '1',
-      },
-      {
         name: 'OPEN_SEA_URL',
         value: 'https://api.opensea.io/api/v1',
       },
@@ -198,7 +194,7 @@ export = async function main() {
       cpuReservation: env === 'prd' ? 1024 : 256,
       desiredCount: env === 'prd' ? 3 : 1,
       extraExposedServiceOptions: {
-        createCloudflareProxiedSubdomain: true
+        createCloudflareProxiedSubdomain: true,
       },
       securityGroups: [
         (await acceptDbSecurityGroup()).id,

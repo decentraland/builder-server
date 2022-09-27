@@ -26,14 +26,22 @@ export class S3Router extends Router {
     this.router.head('/storage/contents/:filename', this.handleContents)
   }
 
-  private buildRedirectUrl(model: S3Model, filename: string) {
-    return `${getBucketURL()}/${model.getFileKey(filename)}`
+  private buildRedirectUrl(
+    model: S3Model,
+    filename: string,
+    ts: string | undefined
+  ) {
+    return `${getBucketURL()}/${model.getFileKey(filename)}${
+      ts ? `?ts=${ts}` : ''
+    }`
   }
 
   private permanentlyRedirectFile(req: Request, res: Response, model: S3Model) {
     const filename = server.extractFromReq(req, 'filename')
+    // This param is to avoid cache misbehavior and force to download the file.
+    const ts = req.query.ts as string
     addInmutableCacheControlHeader(res)
-    return res.redirect(this.buildRedirectUrl(model, filename), 301)
+    return res.redirect(this.buildRedirectUrl(model, filename, ts), 301)
   }
 
   private handleAssetPacks = (req: Request, res: Response) => {

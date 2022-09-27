@@ -29,18 +29,19 @@ export class S3Router extends Router {
   private buildRedirectUrl(
     model: S3Model,
     filename: string,
-    cacheblock: boolean = false
+    ts: string | undefined
   ) {
     return `${getBucketURL()}/${model.getFileKey(filename)}${
-      cacheblock ? '?cacheblock=true' : ''
+      ts ? `?ts=${ts}` : ''
     }`
   }
 
   private permanentlyRedirectFile(req: Request, res: Response, model: S3Model) {
     const filename = server.extractFromReq(req, 'filename')
-    const cacheblock = req.query.cacheblock === 'true'
+    // This param is to avoid cache misbehavior and force to download the file.
+    const ts = req.query.ts as string
     addInmutableCacheControlHeader(res)
-    return res.redirect(this.buildRedirectUrl(model, filename, cacheblock), 301)
+    return res.redirect(this.buildRedirectUrl(model, filename, ts), 301)
   }
 
   private handleAssetPacks = (req: Request, res: Response) => {

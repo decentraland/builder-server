@@ -52,7 +52,7 @@
     "content-hash": "^2.5.2",
     "cors": "^2.8.5",
     "dcl-catalyst-client": "^12.0.4",
-    "dcl-ops-lib": "^1.0.6",
+    "dcl-ops-lib": "^5.26.1",
     "decentraland-commons": "^5.1.0",
     "decentraland-server": "^3.0.0",
     "decentraland-transactions": "^1.37.0",

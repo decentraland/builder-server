@@ -26,14 +26,14 @@ const ANIMATION_EMPTY_METRICS = {
 function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
-): Wearable & { emoteDataV0?: { loop: boolean } } {
+): Wearable {
   if (!isStandardItemPublished(item, collection)) {
     throw new Error(
       "The item's collection must be published to build its metadata"
     )
   }
 
-  const entity: Wearable & { emoteDataV0?: { loop: boolean } } = {
+  const entity: Wearable = {
     id: getDecentralandItemURN(item, collection.contract_address!),
     name: item.name,
     description: item.description,

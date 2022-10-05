@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import { server } from 'decentraland-server'
 import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
@@ -173,6 +174,14 @@ export class CollectionRouter extends Router {
       withCollectionAuthorization,
       server.handleRequest(this.deleteCollection)
     )
+
+    /**
+     * Gets the collection addresses filtered by given filters
+     */
+    this.router.get(
+      '/addresses',
+      server.handleRequest(this.getAddressesCollections)
+    )
   }
 
   getApprovalData = async (req: AuthRequest): Promise<ItemApprovalData> => {
@@ -221,7 +230,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { assignee, status, sort, q, is_published } = req.query
+    const { assignee, status, sort, q, is_published, tag } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -252,6 +261,11 @@ export class CollectionRouter extends Router {
         : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.
           // We filter at this level and not in the query because we need all the collections so they can be consolidated later on.
           remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
+      itemTags: tag
+        ? Array.isArray(tag)
+          ? (tag as string[])
+          : [tag as string]
+        : undefined,
     })
 
     const totalCollections =
@@ -581,5 +595,53 @@ export class CollectionRouter extends Router {
     }
 
     return true
+  }
+
+  getAddressesCollections = async (
+    req: Request
+  ): Promise<PaginatedResponse<string> | string[]> => {
+    const { page, limit } = getPaginationParams(req)
+    const { assignee, status, sort, q, is_published, tag } = req.query
+
+    // If status is passed, the graph query will be filtered and those results will be included in a WHERE statement in the query later on
+    // If status is not passed, the query won't be filtered and all the collections will be retrieved
+    const remoteCollections = await collectionAPI.fetchCollections(
+      toRemoteWhereCondition({ status: status as CurationStatusFilter })
+    )
+
+    const allCollectionsWithCount = await this.service.getCollections({
+      q: q as string,
+      assignee: assignee as string,
+      status: status as CurationStatusFilter,
+      sort: sort as CurationStatusSort,
+      isPublished: is_published ? is_published === 'true' : undefined,
+      offset: page && limit ? getOffset(page, limit) : undefined,
+      limit,
+      remoteIds: status
+        ? remoteCollections.map((c) => c.id)
+        : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.
+          // We filter at this level and not in the query because we need all the collections so they can be consolidated later on.
+          remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
+      itemTags: tag
+        ? Array.isArray(tag)
+          ? (tag as string[])
+          : [tag as string]
+        : undefined,
+    })
+
+    const totalCollections =
+      Number(allCollectionsWithCount[0]?.collection_count) || 0
+
+    const dbCollections = allCollectionsWithCount.map((collectionWithCount) =>
+      omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
+    )
+
+    const consolidated = (
+      await Bridge.consolidateAllCollections(dbCollections, remoteCollections)
+    ).map((collection) => collection.contract_address!)
+
+    return page && limit
+      ? generatePaginatedResponse(consolidated, totalCollections, limit, page)
+      : consolidated
   }
 }

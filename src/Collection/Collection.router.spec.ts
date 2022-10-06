@@ -941,6 +941,72 @@ describe('Collection router', () => {
               limit,
               thirdPartyIds: [],
               remoteIds: [],
+              itemTags: undefined,
+            })
+          })
+      })
+    })
+
+    describe('and sending pagination params plus filtering with array tag options', () => {
+      let page: number,
+        limit: number,
+        baseUrl: string,
+        totalCollectionsFromDb: number,
+        q: string,
+        assignee: string,
+        status: string,
+        sort: string,
+        isPublished: string,
+        itemTag: string,
+        itemTag2: string
+      beforeEach(() => {
+        ;(page = 1), (limit = 3)
+        assignee = '0x1234567890123456789012345678901234567890'
+        status = 'published'
+        sort = 'NAME_DESC'
+        isPublished = 'true'
+        q = 'collection name 1'
+        itemTag = 'TAG'
+        itemTag2 = 'TAG2'
+        totalCollectionsFromDb = 1
+        baseUrl = '/collections'
+        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&sort=${sort}&is_published=${isPublished}&q=${q}&tag=${itemTag}&tag=${itemTag2}`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([
+          { ...dbCollection, collection_count: totalCollectionsFromDb },
+        ])
+      })
+      it('should respond with pagination data and should have call the findAll method with the right params', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                total: totalCollectionsFromDb,
+                pages: totalCollectionsFromDb,
+                page,
+                limit,
+                results: [
+                  {
+                    ...resultingCollectionAttributes,
+                    urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                  },
+                ],
+              },
+              ok: true,
+            })
+            expect(Collection.findAll).toHaveBeenCalledWith({
+              q,
+              assignee,
+              status,
+              sort,
+              isPublished: true,
+              offset: page - 1, // it's the offset
+              limit,
+              thirdPartyIds: [],
+              remoteIds: [],
+              itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
             })
           })
       })
@@ -2526,6 +2592,201 @@ describe('Collection router', () => {
                 id: dbCollection.id,
               },
               error: 'Collection is not Third Party',
+            })
+          })
+      })
+    })
+  })
+
+  describe('when retrieving all the collections addresses', () => {
+    beforeEach(() => {
+      ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+      ;(Collection.findByContractAddresses as jest.Mock).mockResolvedValueOnce(
+        []
+      )
+      ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
+      thirdPartyAPIMock.fetchThirdParties.mockResolvedValueOnce([])
+    })
+
+    describe('and sending pagination params', () => {
+      let page: number, limit: number
+      let baseUrl: string
+      let totalCollectionsFromDb: number
+      beforeEach(() => {
+        ;(page = 1), (limit = 3)
+        totalCollectionsFromDb = 1
+        baseUrl = '/addresses'
+        url = `${baseUrl}?limit=${limit}&page=${page}`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([
+          { ...dbCollection, collection_count: totalCollectionsFromDb },
+        ])
+      })
+      it('should respond with pagination data and should have call the findAll method with the params', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                total: totalCollectionsFromDb,
+                pages: totalCollectionsFromDb,
+                page,
+                limit,
+                results: [resultingCollectionAttributes.contract_address],
+              },
+              ok: true,
+            })
+            expect(Collection.findAll).toHaveBeenCalledWith({
+              assignee: undefined,
+              isPublished: undefined,
+              q: undefined,
+              sort: undefined,
+              status: undefined,
+              limit,
+              offset: page - 1, // it's the offset,
+              thirdPartyIds: [],
+              remoteIds: [],
+              itemTags: undefined,
+            })
+          })
+      })
+    })
+
+    describe('and sending pagination params plus filtering options', () => {
+      let page: number,
+        limit: number,
+        baseUrl: string,
+        totalCollectionsFromDb: number,
+        q: string,
+        assignee: string,
+        status: string,
+        sort: string,
+        isPublished: string,
+        itemTag: string
+      beforeEach(() => {
+        ;(page = 1), (limit = 3)
+        assignee = '0x1234567890123456789012345678901234567890'
+        status = 'published'
+        sort = 'NAME_DESC'
+        isPublished = 'true'
+        q = 'collection name 1'
+        itemTag = 'TAG'
+        totalCollectionsFromDb = 1
+        baseUrl = '/addresses'
+        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&sort=${sort}&is_published=${isPublished}&q=${q}&tag=${itemTag}`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([
+          { ...dbCollection, collection_count: totalCollectionsFromDb },
+        ])
+      })
+      it('should respond with pagination data and should have call the findAll method with the right params', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                total: totalCollectionsFromDb,
+                pages: totalCollectionsFromDb,
+                page,
+                limit,
+                results: [resultingCollectionAttributes.contract_address],
+              },
+              ok: true,
+            })
+            expect(Collection.findAll).toHaveBeenCalledWith({
+              q,
+              assignee,
+              status,
+              sort,
+              isPublished: true,
+              offset: page - 1, // it's the offset
+              limit,
+              thirdPartyIds: [],
+              remoteIds: [],
+              itemTags: [itemTag.toLowerCase()],
+            })
+          })
+      })
+    })
+
+    describe('and sending pagination params plus filtering with array tag options', () => {
+      let page: number,
+        limit: number,
+        baseUrl: string,
+        totalCollectionsFromDb: number,
+        q: string,
+        assignee: string,
+        status: string,
+        sort: string,
+        isPublished: string,
+        itemTag: string,
+        itemTag2: string
+      beforeEach(() => {
+        ;(page = 1), (limit = 3)
+        assignee = '0x1234567890123456789012345678901234567890'
+        status = 'published'
+        sort = 'NAME_DESC'
+        isPublished = 'true'
+        q = 'collection name 1'
+        itemTag = 'TAG'
+        itemTag2 = 'TAG2'
+        totalCollectionsFromDb = 1
+        baseUrl = '/addresses'
+        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&sort=${sort}&is_published=${isPublished}&q=${q}&tag=${itemTag}&tag=${itemTag2}`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([
+          { ...dbCollection, collection_count: totalCollectionsFromDb },
+        ])
+      })
+      it('should respond with pagination data and should have call the findAll method with the right params', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                total: totalCollectionsFromDb,
+                pages: totalCollectionsFromDb,
+                page,
+                limit,
+                results: [resultingCollectionAttributes.contract_address],
+              },
+              ok: true,
+            })
+            expect(Collection.findAll).toHaveBeenCalledWith({
+              q,
+              assignee,
+              status,
+              sort,
+              isPublished: true,
+              offset: page - 1, // it's the offset
+              limit,
+              thirdPartyIds: [],
+              remoteIds: [],
+              itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
+            })
+          })
+      })
+    })
+
+    describe('and not sending any pagination params ', () => {
+      beforeEach(() => {
+        url = `/addresses`
+        ;(Collection.findAll as jest.Mock)
+          .mockResolvedValueOnce([dbCollection])
+          .mockResolvedValueOnce([])
+      })
+      it('should respond with all the collections addresses', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [resultingCollectionAttributes.contract_address],
+              ok: true,
             })
           })
       })

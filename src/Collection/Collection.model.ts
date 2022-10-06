@@ -26,6 +26,7 @@ export type FindCollectionParams = {
   sort?: CurationStatusSort
   isPublished?: boolean
   remoteIds?: CollectionAttributes['id'][]
+  itemTags?: string[]
 }
 
 export class Collection extends Model<CollectionAttributes> {
@@ -71,9 +72,16 @@ export class Collection extends Model<CollectionAttributes> {
     address,
     thirdPartyIds,
     remoteIds,
+    itemTags,
   }: Pick<
     FindCollectionParams,
-    'q' | 'assignee' | 'status' | 'address' | 'thirdPartyIds' | 'remoteIds'
+    | 'q'
+    | 'assignee'
+    | 'status'
+    | 'address'
+    | 'thirdPartyIds'
+    | 'remoteIds'
+    | 'itemTags'
   >) {
     if (!q && !assignee && !status && !address && !thirdPartyIds?.length) {
       return SQL``
@@ -99,6 +107,9 @@ export class Collection extends Model<CollectionAttributes> {
           : status === CurationStatusFilter.UNDER_REVIEW // Under review: isApproved false from the contract OR it's assigned & has pending curation
           ? SQL`collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING}`
           : SQL``
+        : undefined,
+      itemTags
+        ? SQL`LOWER(items.data::json->>'tags')::jsonb ? ANY(${itemTags})`
         : undefined,
     ].filter(Boolean)
 
@@ -188,6 +199,13 @@ export class Collection extends Model<CollectionAttributes> {
           )} cc ORDER BY cc.collection_id, cc.created_at DESC) collection_curations 
           ON collection_curations.collection_id = collections.id
         `}
+        ${
+          whereFilters.itemTags
+            ? SQL`LEFT JOIN ${raw(
+                Item.tableName
+              )} items ON collections.id = items.collection_id`
+            : SQL``
+        }
         ${SQL`${this.getFindAllWhereStatement(whereFilters)}`}
         ${SQL`${this.getOrderByStatement(sort, whereFilters.remoteIds)}`}
         LIMIT ${limit}

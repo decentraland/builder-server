@@ -263,8 +263,8 @@ export class CollectionRouter extends Router {
           remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
       itemTags: tag
         ? Array.isArray(tag)
-          ? (tag as string[])
-          : [tag as string]
+          ? (tag as string[]).map((t) => t.toLowerCase())
+          : [(tag as string).toLowerCase()]
         : undefined,
     })
 
@@ -624,8 +624,8 @@ export class CollectionRouter extends Router {
           remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
       itemTags: tag
         ? Array.isArray(tag)
-          ? (tag as string[])
-          : [tag as string]
+          ? (tag as string[]).map((t) => t.toLowerCase())
+          : [(tag as string).toLowerCase()]
         : undefined,
     })
 

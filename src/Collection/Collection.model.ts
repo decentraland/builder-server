@@ -109,7 +109,7 @@ export class Collection extends Model<CollectionAttributes> {
           : SQL``
         : undefined,
       itemTags
-        ? SQL`(items.data::json->'tags')::jsonb ? ANY(${itemTags})`
+        ? SQL`LOWER(items.data::json->>'tags')::jsonb ? ANY(${itemTags})`
         : undefined,
     ].filter(Boolean)
 

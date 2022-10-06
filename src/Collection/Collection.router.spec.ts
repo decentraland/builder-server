@@ -1006,7 +1006,7 @@ describe('Collection router', () => {
               limit,
               thirdPartyIds: [],
               remoteIds: [],
-              itemTags: [itemTag, itemTag2],
+              itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
             })
           })
       })
@@ -2705,7 +2705,7 @@ describe('Collection router', () => {
               limit,
               thirdPartyIds: [],
               remoteIds: [],
-              itemTags: [itemTag],
+              itemTags: [itemTag.toLowerCase()],
             })
           })
       })
@@ -2765,7 +2765,7 @@ describe('Collection router', () => {
               limit,
               thirdPartyIds: [],
               remoteIds: [],
-              itemTags: [itemTag, itemTag2],
+              itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
             })
           })
       })

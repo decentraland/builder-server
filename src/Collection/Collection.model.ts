@@ -72,16 +72,9 @@ export class Collection extends Model<CollectionAttributes> {
     address,
     thirdPartyIds,
     remoteIds,
-    itemTags,
   }: Pick<
     FindCollectionParams,
-    | 'q'
-    | 'assignee'
-    | 'status'
-    | 'address'
-    | 'thirdPartyIds'
-    | 'remoteIds'
-    | 'itemTags'
+    'q' | 'assignee' | 'status' | 'address' | 'thirdPartyIds' | 'remoteIds'
   >) {
     if (!q && !assignee && !status && !address && !thirdPartyIds?.length) {
       return SQL``
@@ -107,9 +100,6 @@ export class Collection extends Model<CollectionAttributes> {
           : status === CurationStatusFilter.UNDER_REVIEW // Under review: isApproved false from the contract OR it's assigned & has pending curation
           ? SQL`collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING}`
           : SQL``
-        : undefined,
-      itemTags
-        ? SQL`LOWER(items.data::json->>'tags')::jsonb ? ANY(${itemTags})`
         : undefined,
     ].filter(Boolean)
 
@@ -159,6 +149,19 @@ export class Collection extends Model<CollectionAttributes> {
       : SQL``
   }
 
+  static getItemsTagJoinStatement(itemTags: string[]) {
+    return itemTags.length > 0
+      ? SQL`
+          JOIN (
+            SELECT items.collection_id
+            FROM ${raw(Item.tableName)} items
+            WHERE LOWER(items.data::json->>'tags')::jsonb ? ANY(${itemTags})
+            GROUP BY items.collection_id
+          ) items_tags on items_tags.collection_id = collections.id
+        `
+      : SQL``
+  }
+
   /**
    * Finds all the Collections that given parameters. It sorts and paginates the results.
    * If the status is APPROVED, the remoteIds will be the ones with `isApproved` true.
@@ -175,6 +178,7 @@ export class Collection extends Model<CollectionAttributes> {
    * @param address - the address to filter by.
    * @param thirdPartyIds - the third party ids to filter by. If it's a committee member, the array will have all the ids.
    * @param remoteIds - The remote ids to filter the query with
+   * @param itemTags - The item tags to filter the query with
    */
   static findAll({
     limit = DEFAULT_LIMIT,
@@ -201,9 +205,7 @@ export class Collection extends Model<CollectionAttributes> {
         `}
         ${
           whereFilters.itemTags
-            ? SQL`LEFT JOIN ${raw(
-                Item.tableName
-              )} items ON collections.id = items.collection_id`
+            ? this.getItemsTagJoinStatement(whereFilters.itemTags)
             : SQL``
         }
         ${SQL`${this.getFindAllWhereStatement(whereFilters)}`}

@@ -5,7 +5,7 @@ import { CollectionCuration } from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
-import { CollectionAttributes } from './Collection.types'
+import { CollectionAttributes, CollectionTypeFilter } from './Collection.types'
 
 type CollectionWithItemCount = CollectionAttributes & {
   item_count: number
@@ -23,6 +23,7 @@ export type FindCollectionParams = {
   thirdPartyIds?: string[]
   assignee?: string
   status?: CurationStatusFilter
+  type?: CollectionTypeFilter
   sort?: CurationStatusSort
   isPublished?: boolean
   remoteIds?: CollectionAttributes['id'][]
@@ -69,14 +70,15 @@ export class Collection extends Model<CollectionAttributes> {
     q,
     assignee,
     status,
+    type,
     address,
     thirdPartyIds,
     remoteIds,
   }: Pick<
     FindCollectionParams,
-    'q' | 'assignee' | 'status' | 'address' | 'thirdPartyIds' | 'remoteIds'
+    'q' | 'assignee' | 'status' | 'type' | 'address' | 'thirdPartyIds' | 'remoteIds'
   >) {
-    if (!q && !assignee && !status && !address && !thirdPartyIds?.length) {
+    if (!q && !assignee && !status && !type && !address && !thirdPartyIds?.length) {
       return SQL``
     }
     const conditions = [
@@ -99,6 +101,13 @@ export class Collection extends Model<CollectionAttributes> {
           ? SQL`collection_curations.assignee is NULL AND collections.contract_address = ANY(${remoteIds})`
           : status === CurationStatusFilter.UNDER_REVIEW // Under review: isApproved false from the contract OR it's assigned & has pending curation
           ? SQL`collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING}`
+          : SQL``
+        : undefined,
+      type
+        ? type === CollectionTypeFilter.STANDARD
+          ? SQL`collections.third_party_id IS NULL AND collections.urn_suffix IS NULL`
+          : type === CollectionTypeFilter.THIRD_PARTY
+          ? SQL`collections.third_party_id IS NOT NULL  AND collections.urn_suffix IS NOT NULL`
           : SQL``
         : undefined,
     ].filter(Boolean)

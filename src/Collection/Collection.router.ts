@@ -46,6 +46,7 @@ import {
   PublishCollectionResponse,
   CollectionAttributes,
   FullCollection,
+  CollectionTypeFilter
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
@@ -230,7 +231,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { assignee, status, sort, q, is_published, tag } = req.query
+    const { assignee, status, sort, q, is_published, tag, type } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -252,6 +253,7 @@ export class CollectionRouter extends Router {
       q: q as string,
       assignee: assignee as string,
       status: status as CurationStatusFilter,
+      type: type as CollectionTypeFilter,
       sort: sort as CurationStatusSort,
       isPublished: is_published ? is_published === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,

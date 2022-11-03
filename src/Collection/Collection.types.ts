@@ -43,3 +43,8 @@ export type PublishCollectionResponse<T> = {
   items: FullItem[]
   itemCurations?: ItemCurationAttributes[]
 }
+
+export enum CollectionTypeFilter {
+  STANDARD = 'standard',
+  THIRD_PARTY = 'third_party'
+}

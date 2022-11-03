@@ -206,11 +206,11 @@ export class Collection extends Model<CollectionAttributes> {
             ${SQL`${this.getPublishedJoinStatement(isPublished)}`}  
         ) collections
         ${SQL`
-        LEFT JOIN 
+        INNER JOIN
           (SELECT DISTINCT on (cc.collection_id) cc.* FROM ${raw(
             CollectionCuration.tableName
           )} cc ORDER BY cc.collection_id, cc.created_at DESC) collection_curations 
-          ON collection_curations.collection_id = collections.id
+          ON collection_curations.collection_id = collections.id OR (collections.urn_suffix IS NULL AND collections.third_party_id IS NULL)
         `}
         ${
           whereFilters.itemTags

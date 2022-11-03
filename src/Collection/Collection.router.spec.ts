@@ -876,6 +876,7 @@ describe('Collection router', () => {
               q: undefined,
               sort: undefined,
               status: undefined,
+              type: undefined,
               limit,
               offset: page - 1, // it's the offset,
               thirdPartyIds: [],
@@ -893,18 +894,20 @@ describe('Collection router', () => {
         q: string,
         assignee: string,
         status: string,
+        type: string,
         sort: string,
         isPublished: string
       beforeEach(() => {
         ;(page = 1), (limit = 3)
         assignee = '0x1234567890123456789012345678901234567890'
         status = 'published'
+        type = 'standard'
         sort = 'NAME_DESC'
         isPublished = 'true'
         q = 'collection name 1'
         totalCollectionsFromDb = 1
         baseUrl = '/collections'
-        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&sort=${sort}&is_published=${isPublished}&q=${q}`
+        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&type=${type}&sort=${sort}&is_published=${isPublished}&q=${q}`
         ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([
           { ...dbCollection, collection_count: totalCollectionsFromDb },
         ])
@@ -935,6 +938,7 @@ describe('Collection router', () => {
               q,
               assignee,
               status,
+              type,
               sort,
               isPublished: true,
               offset: page - 1, // it's the offset
@@ -955,6 +959,7 @@ describe('Collection router', () => {
         q: string,
         assignee: string,
         status: string,
+        type: string,
         sort: string,
         isPublished: string,
         itemTag: string,
@@ -963,6 +968,7 @@ describe('Collection router', () => {
         ;(page = 1), (limit = 3)
         assignee = '0x1234567890123456789012345678901234567890'
         status = 'published'
+        type = 'standard'
         sort = 'NAME_DESC'
         isPublished = 'true'
         q = 'collection name 1'
@@ -970,7 +976,7 @@ describe('Collection router', () => {
         itemTag2 = 'TAG2'
         totalCollectionsFromDb = 1
         baseUrl = '/collections'
-        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&sort=${sort}&is_published=${isPublished}&q=${q}&tag=${itemTag}&tag=${itemTag2}`
+        url = `${baseUrl}?limit=${limit}&page=${page}&assignee=${assignee}&status=${status}&type=${type}&sort=${sort}&is_published=${isPublished}&q=${q}&tag=${itemTag}&tag=${itemTag2}`
         ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([
           { ...dbCollection, collection_count: totalCollectionsFromDb },
         ])
@@ -1000,6 +1006,7 @@ describe('Collection router', () => {
               q,
               assignee,
               status,
+              type,
               sort,
               isPublished: true,
               offset: page - 1, // it's the offset

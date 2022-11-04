@@ -163,7 +163,7 @@ export class Collection extends Model<CollectionAttributes> {
               : SQL`
                 WHERE (
                   (items.blockchain_item_id is NOT NULL AND c.third_party_id IS NULL)
-                  OR c.third_party_id is NOT NULL
+                  OR (c.third_party_id is NOT NULL AND item_curations.item_id IS NOT NULL)
                 )
               `
           }
@@ -219,11 +219,11 @@ export class Collection extends Model<CollectionAttributes> {
             ${SQL`${this.getPublishedJoinStatement(isPublished)}`}  
         ) collections
         ${SQL`
-        INNER JOIN
+        LEFT JOIN
           (SELECT DISTINCT on (cc.collection_id) cc.* FROM ${raw(
             CollectionCuration.tableName
           )} cc ORDER BY cc.collection_id, cc.created_at DESC) collection_curations 
-          ON collection_curations.collection_id = collections.id OR (collections.urn_suffix IS NULL AND collections.third_party_id IS NULL)
+          ON collection_curations.collection_id = collections.id
         `}
         ${
           whereFilters.itemTags

@@ -76,9 +76,22 @@ export class Collection extends Model<CollectionAttributes> {
     remoteIds,
   }: Pick<
     FindCollectionParams,
-    'q' | 'assignee' | 'status' | 'type' | 'address' | 'thirdPartyIds' | 'remoteIds'
+    | 'q'
+    | 'assignee'
+    | 'status'
+    | 'type'
+    | 'address'
+    | 'thirdPartyIds'
+    | 'remoteIds'
   >) {
-    if (!q && !assignee && !status && !type && !address && !thirdPartyIds?.length) {
+    if (
+      !q &&
+      !assignee &&
+      !status &&
+      !type &&
+      !address &&
+      !thirdPartyIds?.length
+    ) {
       return SQL``
     }
     const conditions = [
@@ -107,7 +120,7 @@ export class Collection extends Model<CollectionAttributes> {
         ? type === CollectionTypeFilter.STANDARD
           ? SQL`collections.third_party_id IS NULL AND collections.urn_suffix IS NULL`
           : type === CollectionTypeFilter.THIRD_PARTY
-          ? SQL`collections.third_party_id IS NOT NULL  AND collections.urn_suffix IS NOT NULL`
+          ? SQL`collections.third_party_id IS NOT NULL AND collections.urn_suffix IS NOT NULL`
           : SQL``
         : undefined,
     ].filter(Boolean)

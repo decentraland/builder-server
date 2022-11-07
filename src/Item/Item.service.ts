@@ -423,7 +423,25 @@ export class ItemService {
     dbCollection: CollectionAttributes | undefined,
     eth_address: string
   ): Promise<FullItem> {
-    const canUpsert = await new Ownable(Item).canUpsert(item.id, eth_address)
+    let isManager = false
+    const isDbCollectionPublished =
+      dbCollection &&
+      (await this.collectionService.isDCLPublished(
+        dbCollection.contract_address!
+      ))
+
+    if (isDbCollectionPublished) {
+      const remoteCollection = await collectionAPI.fetchCollection(
+        dbCollection.contract_address!
+      )
+
+      isManager = remoteCollection!.managers.some(
+        manager => manager === eth_address
+      )
+    }
+
+    const canUpsert =
+      (await new Ownable(Item).canUpsert(item.id, eth_address)) || isManager
     if (!canUpsert) {
       throw new UnauthorizedToUpsertError(item.id, eth_address)
     }
@@ -433,19 +451,13 @@ export class ItemService {
         dbCollection.eth_address.toLowerCase() !== eth_address
 
       // Prohibits adding an item to a collection that is not owned by the user
-      if (isCollectionOwnerDifferent) {
+      if (isCollectionOwnerDifferent && !isManager) {
         throw new UnauthorizedToChangeToCollectionError(
           item.id,
           eth_address,
           item.collection_id!
         )
       }
-
-      const isDbCollectionPublished =
-        dbCollection &&
-        (await this.collectionService.isDCLPublished(
-          dbCollection.contract_address!
-        ))
 
       if (isDbCollectionPublished) {
         // Prohibits adding new items or moving orphan ones to a published collection

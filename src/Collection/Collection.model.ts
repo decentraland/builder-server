@@ -162,17 +162,19 @@ export class Collection extends Model<CollectionAttributes> {
             isPublished === false
               ? SQL`
                 WHERE (
-                  (items.blockchain_item_id is NULL AND c.third_party_id IS NULL) AND
+                  ((items.blockchain_item_id is NULL AND c.third_party_id is NULL) AND
                   (SELECT COUNT(*) FROM item_curations
                     LEFT JOIN items on items.id = item_curations.item_id
                     LEFT JOIN collections cc on cc.id = items.collection_id
                     WHERE items.collection_id = c.id AND item_curations.item_id = items.id
                   ) = 0)
+                  OR (c.third_party_id is NOT NULL AND item_curations.item_id is NULL)
+                )
               `
               : SQL`
                 WHERE (
-                  (items.blockchain_item_id is NOT NULL AND c.third_party_id IS NULL)
-                  OR (c.third_party_id is NOT NULL AND item_curations.item_id IS NOT NULL)
+                  (items.blockchain_item_id is NOT NULL AND c.third_party_id is NULL)
+                  OR (c.third_party_id is NOT NULL AND item_curations.item_id is NOT NULL)
                 )
               `
           }

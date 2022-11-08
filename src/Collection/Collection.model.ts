@@ -96,25 +96,26 @@ export class Collection extends Model<CollectionAttributes> {
     }
     const isStandard = SQL`collections.third_party_id is NULL AND collections.urn_suffix is NULL`
     const isThirdParty = SQL`collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL`
-    const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (collections.contract_address = ANY(${remoteIds}) OR ${isThirdParty}))`
+    const isInRemoteIds = SQL`collections.contract_address = ANY(${remoteIds})`
+    const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (${isInRemoteIds} OR ${isThirdParty}))`
     const conditions = [
       q ? SQL`collections.name ILIKE '%' || ${q} || '%'` : undefined,
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
       address
         ? thirdPartyIds?.length
-          ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}) OR collections.contract_address = ANY(${remoteIds}))`
-          : SQL`(collections.eth_address = ${address} OR collections.contract_address = ANY(${remoteIds}))`
+          ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}) OR ${isInRemoteIds})`
+          : SQL`(collections.eth_address = ${address} OR ${isInRemoteIds})`
         : undefined,
       status
         ? [
             CurationStatusFilter.PENDING,
             CurationStatusFilter.APPROVED,
           ].includes(status)
-          ? SQL`${sameStatusAndInTheBlockchain} OR (collection_curations.id is NULL AND collections.contract_address = ANY(${remoteIds}))`
+          ? SQL`${sameStatusAndInTheBlockchain} OR (collection_curations.id is NULL AND ${isInRemoteIds})`
           : status === CurationStatusFilter.REJECTED // To review: Not assigned && isApproved false from the contract
           ? sameStatusAndInTheBlockchain
           : status === CurationStatusFilter.TO_REVIEW // To review: Not assigned && isApproved false from the contract
-          ? SQL`collection_curations.assignee is NULL AND ((${isThirdParty}) OR (collections.contract_address = ANY(${remoteIds}) AND ${isStandard}))`
+          ? SQL`collection_curations.assignee is NULL AND ((${isThirdParty}) OR (${isInRemoteIds} AND ${isStandard}))`
           : status === CurationStatusFilter.UNDER_REVIEW // Under review: isApproved false from the contract OR it's assigned & has pending curation
           ? SQL`collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING}`
           : SQL``

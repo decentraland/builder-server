@@ -423,22 +423,15 @@ export class ItemService {
     dbCollection: CollectionAttributes | undefined,
     eth_address: string
   ): Promise<FullItem> {
-    let isManager = false
     const isDbCollectionPublished =
       dbCollection &&
       (await this.collectionService.isDCLPublished(
         dbCollection.contract_address!
       ))
 
-    if (isDbCollectionPublished) {
-      const remoteCollection = await collectionAPI.fetchCollection(
-        dbCollection!.contract_address!
-      )
-
-      isManager = remoteCollection!.managers.some(
-        manager => manager === eth_address
-      )
-    }
+    const isManager =
+      isDbCollectionPublished &&
+      (await this.collectionService.isDCLManager(dbCollection!.id, eth_address))
 
     const canUpsert =
       (await new Ownable(Item).canUpsert(item.id, eth_address)) || isManager

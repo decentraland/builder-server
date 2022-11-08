@@ -94,6 +94,10 @@ export class Collection extends Model<CollectionAttributes> {
     ) {
       return SQL``
     }
+    const isStandard =
+      'collections.third_party_id is NULL AND collections.urn_suffix is NULL'
+    const isThirdParty =
+      'collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL'
     const conditions = [
       q ? SQL`collections.name ILIKE '%' || ${q} || '%'` : undefined,
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
@@ -106,21 +110,26 @@ export class Collection extends Model<CollectionAttributes> {
         ? [
             CurationStatusFilter.PENDING,
             CurationStatusFilter.APPROVED,
+            CurationStatusFilter.REJECTED,
           ].includes(status)
-          ? SQL`collection_curations.status = ${status} AND collections.contract_address = ANY(${remoteIds})`
-          : status === CurationStatusFilter.REJECTED // Rejected not a single curation in approved
-          ? SQL`collection_curations.status = ${status} AND collections.contract_address = ANY(${remoteIds})`
+          ? SQL`(collection_curations.status = ${status} AND (collections.contract_address = ANY(${remoteIds}) OR ${raw(
+              isThirdParty
+            )})) OR (collection_curations.id is NULL AND collections.contract_address = ANY(${remoteIds}))`
           : status === CurationStatusFilter.TO_REVIEW // To review: Not assigned && isApproved false from the contract
-          ? SQL`collection_curations.assignee is NULL AND collections.contract_address = ANY(${remoteIds})`
+          ? SQL`collection_curations.assignee is NULL AND ((${raw(
+              isThirdParty
+            )}) OR (collections.contract_address = ANY(${remoteIds}) AND ${raw(
+              isStandard
+            )}))`
           : status === CurationStatusFilter.UNDER_REVIEW // Under review: isApproved false from the contract OR it's assigned & has pending curation
           ? SQL`collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING}`
           : SQL``
         : undefined,
       type
         ? type === CollectionTypeFilter.STANDARD
-          ? SQL`collections.third_party_id IS NULL AND collections.urn_suffix IS NULL`
+          ? SQL`${raw(isStandard)}`
           : type === CollectionTypeFilter.THIRD_PARTY
-          ? SQL`collections.third_party_id IS NOT NULL AND collections.urn_suffix IS NOT NULL`
+          ? SQL`${raw(isThirdParty)}`
           : SQL``
         : undefined,
     ].filter(Boolean)

@@ -532,6 +532,21 @@ export class CollectionService {
     return !!remoteCollection
   }
 
+  public async isDCLManager(
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> {
+    const collection = await this.getCollection(id)
+
+    if (collection) {
+      return collection.managers.some(
+        manager => manager === ethAddress
+      )
+    }
+
+    return false
+  }
+
   public async isOwnedOrManagedBy(
     id: string,
     ethAddress: string

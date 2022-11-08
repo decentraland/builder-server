@@ -1617,6 +1617,16 @@ describe('Item router', () => {
         describe('and the item is being inserted', () => {
           beforeEach(() => {
             mockItem.findOne.mockResolvedValueOnce(undefined)
+            mockCollection.findByIds.mockResolvedValueOnce([
+              {
+                ...dbCollectionMock,
+                item_count: 1,
+              },
+            ])
+            ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+              () => Promise.resolve(itemFragment.collection)
+            )
           })
 
           it('should fail with can not add item to published collection message', async () => {
@@ -1627,7 +1637,7 @@ describe('Item router', () => {
               .expect(STATUS_CODES.conflict)
 
             expect(mockItem.findOne).toHaveBeenCalledTimes(1)
-            expect(mockCollection.findByIds).toHaveBeenCalledTimes(1)
+            expect(mockCollection.findByIds).toHaveBeenCalledTimes(2)
 
             expect(response.body).toEqual({
               data: { id: itemToUpsert.id },
@@ -1638,12 +1648,84 @@ describe('Item router', () => {
           })
         })
 
+        describe('and the item is being updated by a manager', () => {
+          let currentDate: Date
+          let ethAddress: string
+
+          beforeEach(() => {
+            currentDate = new Date()
+            jest.useFakeTimers()
+            jest.setSystemTime(currentDate)
+            ethAddress = '0x1234'
+            dbItem = { ...dbItem, eth_address: ethAddress }
+            mockItem.upsert.mockImplementation((createdItem) =>
+              Promise.resolve({
+                ...createdItem,
+                blockchain_item_id: dbItem.blockchain_item_id,
+                eth_address: ethAddress,
+              })
+            )
+            mockItem.findOne.mockResolvedValueOnce(dbItem)
+            mockCollection.findByIds.mockResolvedValueOnce([
+              {
+                ...dbCollectionMock,
+                item_count: 1,
+              },
+            ])
+            ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+              () =>
+                Promise.resolve({
+                  ...itemFragment.collection,
+                  owner: ethAddress,
+                  managers: [wallet.address],
+                })
+            )
+          })
+
+          afterEach(() => {
+            jest.useRealTimers()
+          })
+
+          it('should respond with the updated item', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: itemToUpsert, name: 'aNewName' })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.ok)
+
+            expect(mockItem.findOne).toHaveBeenCalledTimes(1)
+            expect(mockCollection.findByIds).toHaveBeenCalledTimes(2)
+            expect(response.body).toEqual({
+              data: {
+                ...Bridge.toFullItem(dbItem),
+                local_content_hash:
+                  'bafkreiejcahiwp257urwn5u2wn5os3mcjhvid6eqhmok7tezzhvdm5njqy',
+                eth_address: ethAddress,
+                created_at: dbItem.created_at.toISOString(),
+                updated_at: currentDate.toISOString(),
+              },
+              ok: true,
+            })
+          })
+        })
+
         describe('and the item is orphan and is being moved into the collection', () => {
           beforeEach(() => {
             mockItem.findOne.mockResolvedValueOnce({
               ...itemToUpsert,
               collection_id: null,
             })
+            mockCollection.findByIds.mockResolvedValueOnce([
+              {
+                ...dbCollectionMock,
+                item_count: 1,
+              },
+            ])
+            ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+              () => Promise.resolve(itemFragment.collection)
+            )
           })
 
           it('should fail with can not add the item to a published collection message', async () => {
@@ -1667,6 +1749,16 @@ describe('Item router', () => {
         describe('and the item is being removed from the collection', () => {
           beforeEach(() => {
             mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+            mockCollection.findByIds.mockResolvedValueOnce([
+              {
+                ...dbCollectionMock,
+                item_count: 1,
+              },
+            ])
+            ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+              () => Promise.resolve(itemFragment.collection)
+            )
           })
 
           it('should fail with can not remove item from published collection message', async () => {
@@ -1688,6 +1780,16 @@ describe('Item router', () => {
         describe("and the item's rarity is being changed", () => {
           beforeEach(() => {
             mockItem.findOne.mockResolvedValueOnce(dbItem)
+            mockCollection.findByIds.mockResolvedValueOnce([
+              {
+                ...dbCollectionMock,
+                item_count: 1,
+              },
+            ])
+            ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+              () => Promise.resolve(itemFragment.collection)
+            )
           })
 
           it('should fail with can not update items rarity message', async () => {
@@ -1722,6 +1824,16 @@ describe('Item router', () => {
               })
             )
             mockItem.findOne.mockResolvedValueOnce(dbItem)
+            mockCollection.findByIds.mockResolvedValueOnce([
+              {
+                ...dbCollectionMock,
+                item_count: 1,
+              },
+            ])
+            ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+              () => Promise.resolve(itemFragment.collection)
+            )
           })
 
           afterEach(() => {

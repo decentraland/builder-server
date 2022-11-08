@@ -432,7 +432,7 @@ export class ItemService {
 
     if (isDbCollectionPublished) {
       const remoteCollection = await collectionAPI.fetchCollection(
-        dbCollection.contract_address!
+        dbCollection!.contract_address!
       )
 
       isManager = remoteCollection!.managers.some(

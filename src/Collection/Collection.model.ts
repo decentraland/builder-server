@@ -5,7 +5,7 @@ import { CollectionCuration } from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
-import { CollectionAttributes } from './Collection.types'
+import { CollectionAttributes, CollectionTypeFilter } from './Collection.types'
 
 type CollectionWithItemCount = CollectionAttributes & {
   item_count: number
@@ -23,6 +23,7 @@ export type FindCollectionParams = {
   thirdPartyIds?: string[]
   assignee?: string
   status?: CurationStatusFilter
+  type?: CollectionTypeFilter
   sort?: CurationStatusSort
   isPublished?: boolean
   remoteIds?: CollectionAttributes['id'][]
@@ -69,36 +70,61 @@ export class Collection extends Model<CollectionAttributes> {
     q,
     assignee,
     status,
+    type,
     address,
     thirdPartyIds,
     remoteIds,
   }: Pick<
     FindCollectionParams,
-    'q' | 'assignee' | 'status' | 'address' | 'thirdPartyIds' | 'remoteIds'
+    | 'q'
+    | 'assignee'
+    | 'status'
+    | 'type'
+    | 'address'
+    | 'thirdPartyIds'
+    | 'remoteIds'
   >) {
-    if (!q && !assignee && !status && !address && !thirdPartyIds?.length) {
+    if (
+      !q &&
+      !assignee &&
+      !status &&
+      !type &&
+      !address &&
+      !thirdPartyIds?.length
+    ) {
       return SQL``
     }
+    const isStandard = SQL`collections.third_party_id is NULL AND collections.urn_suffix is NULL`
+    const isThirdParty = SQL`collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL`
+    const isInRemoteIds = SQL`collections.contract_address = ANY(${remoteIds})`
+    const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (${isInRemoteIds} OR ${isThirdParty}))`
     const conditions = [
       q ? SQL`collections.name ILIKE '%' || ${q} || '%'` : undefined,
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
       address
         ? thirdPartyIds?.length
-          ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}) OR collections.contract_address = ANY(${remoteIds}))`
-          : SQL`(collections.eth_address = ${address} OR collections.contract_address = ANY(${remoteIds}))`
+          ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}) OR ${isInRemoteIds})`
+          : SQL`(collections.eth_address = ${address} OR ${isInRemoteIds})`
         : undefined,
       status
         ? [
             CurationStatusFilter.PENDING,
             CurationStatusFilter.APPROVED,
           ].includes(status)
-          ? SQL`collection_curations.status = ${status} AND collections.contract_address = ANY(${remoteIds})`
-          : status === CurationStatusFilter.REJECTED // Rejected not a single curation in approved
-          ? SQL`collection_curations.status = ${status} AND collections.contract_address = ANY(${remoteIds})`
+          ? SQL`${sameStatusAndInTheBlockchain} OR (collection_curations.id is NULL AND ${isInRemoteIds})`
+          : status === CurationStatusFilter.REJECTED // To review: Not assigned && isApproved false from the contract
+          ? sameStatusAndInTheBlockchain
           : status === CurationStatusFilter.TO_REVIEW // To review: Not assigned && isApproved false from the contract
-          ? SQL`collection_curations.assignee is NULL AND collections.contract_address = ANY(${remoteIds})`
+          ? SQL`collection_curations.assignee is NULL AND ((${isThirdParty}) OR (${isInRemoteIds} AND ${isStandard}))`
           : status === CurationStatusFilter.UNDER_REVIEW // Under review: isApproved false from the contract OR it's assigned & has pending curation
           ? SQL`collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING}`
+          : SQL``
+        : undefined,
+      type
+        ? type === CollectionTypeFilter.STANDARD
+          ? isStandard
+          : type === CollectionTypeFilter.THIRD_PARTY
+          ? isThirdParty
           : SQL``
         : undefined,
     ].filter(Boolean)
@@ -131,17 +157,19 @@ export class Collection extends Model<CollectionAttributes> {
             isPublished === false
               ? SQL`
                 WHERE (
-                  (items.blockchain_item_id is NULL AND c.third_party_id IS NULL) AND
+                  ((items.blockchain_item_id is NULL AND c.third_party_id is NULL) AND
                   (SELECT COUNT(*) FROM item_curations
                     LEFT JOIN items on items.id = item_curations.item_id
                     LEFT JOIN collections cc on cc.id = items.collection_id
                     WHERE items.collection_id = c.id AND item_curations.item_id = items.id
                   ) = 0)
+                  OR (c.third_party_id is NOT NULL AND item_curations.item_id is NULL)
+                )
               `
               : SQL`
                 WHERE (
-                  (items.blockchain_item_id is NOT NULL AND c.third_party_id IS NULL)
-                  OR c.third_party_id is NOT NULL
+                  (items.blockchain_item_id is NOT NULL AND c.third_party_id is NULL)
+                  OR (c.third_party_id is NOT NULL AND item_curations.item_id is NOT NULL)
                 )
               `
           }
@@ -197,7 +225,7 @@ export class Collection extends Model<CollectionAttributes> {
             ${SQL`${this.getPublishedJoinStatement(isPublished)}`}  
         ) collections
         ${SQL`
-        LEFT JOIN 
+        LEFT JOIN
           (SELECT DISTINCT on (cc.collection_id) cc.* FROM ${raw(
             CollectionCuration.tableName
           )} cc ORDER BY cc.collection_id, cc.created_at DESC) collection_curations 

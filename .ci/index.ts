@@ -1,6 +1,7 @@
 import { acceptBastionSecurityGroupId } from 'dcl-ops-lib/acceptBastion'
 import * as pulumi from '@pulumi/pulumi'
 import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
+import { createImageFromContext } from 'dcl-ops-lib/createImageFromContext'
 import { createFargateTask } from 'dcl-ops-lib/createFargateTask'
 import { env, envTLD, publicTLD } from 'dcl-ops-lib/domain'
 import { acceptDbSecurityGroup } from 'dcl-ops-lib/acceptDb'
@@ -16,6 +17,8 @@ export = async function main() {
   const dbhost = getDbHostAndPort()
 
   const connectionString = pulumi.interpolate`postgres://${dbname}:${dbpassword}@${dbhost}/${dbname}`
+
+  const registry = createImageFromContext('builder-server', '..', {})
 
   const revision = process.env['CI_COMMIT_SHA']
   const image = `decentraland/builder-server:${revision}`
@@ -49,7 +52,7 @@ export = async function main() {
 
   const builderApi = await createFargateTask(
     `builder-api`,
-    image,
+    registry.image.imageName,
     5000,
     [
       { name: 'hostname', value: `builder-server-${env}` },

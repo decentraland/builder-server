@@ -97,7 +97,7 @@ export class Collection extends Model<CollectionAttributes> {
     const isStandard = SQL`collections.third_party_id is NULL AND collections.urn_suffix is NULL`
     const isThirdParty = SQL`collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL`
     const isInRemoteIds = SQL`collections.contract_address = ANY(${remoteIds})`
-    const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (${isInRemoteIds} OR ${isThirdParty}))`
+    const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (${isInRemoteIds} OR (${isThirdParty})))`
     const conditions = [
       q ? SQL`collections.name ILIKE '%' || ${q} || '%'` : undefined,
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
@@ -111,7 +111,7 @@ export class Collection extends Model<CollectionAttributes> {
             CurationStatusFilter.PENDING,
             CurationStatusFilter.APPROVED,
           ].includes(status)
-          ? SQL`${sameStatusAndInTheBlockchain} OR (collection_curations.id is NULL AND ${isInRemoteIds})`
+          ? SQL`(${sameStatusAndInTheBlockchain} OR (collection_curations.id is NULL AND ${isInRemoteIds}))`
           : status === CurationStatusFilter.REJECTED // To review: Not assigned && isApproved false from the contract
           ? sameStatusAndInTheBlockchain
           : status === CurationStatusFilter.TO_REVIEW // To review: Not assigned && isApproved false from the contract

@@ -61,6 +61,13 @@ export class Collection extends Model<CollectionAttributes> {
         return SQL`ORDER BY collections.name DESC`
       case CurationStatusSort.NEWEST:
         return SQL`ORDER BY collections.created_at DESC`
+      case CurationStatusSort.OLDEST:
+        return SQL`ORDER BY collections.created_at ASC`
+      case CurationStatusSort.UPDATED_AT_ASC:
+        return SQL`ORDER BY collections.updated_at ASC`
+      case CurationStatusSort.UPDATED_AT_DESC:
+        return SQL`ORDER BY collections.updated_at DESC`
+
       default:
         return SQL``
     }

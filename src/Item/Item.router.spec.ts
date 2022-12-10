@@ -1535,6 +1535,7 @@ describe('Item router', () => {
       describe('and the collection of the item is being changed', () => {
         beforeEach(() => {
           mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          mockItem.hasPublishedItems.mockResolvedValueOnce(true)
           mockCollection.findByIds.mockResolvedValueOnce([
             {
               ...collectionMock,
@@ -1545,17 +1546,19 @@ describe('Item router', () => {
           mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         })
 
-        it('should fail with cant change item collection message', async () => {
-          const response = await server
-            .put(buildURL(url))
-            .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
-            .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.unauthorized)
+        describe('and the collection to move the item is published', () => {
+          it('should fail with cant change item collection message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.unauthorized)
 
-          expect(response.body).toEqual({
-            data: { id: dbItem.id },
-            error: "Item can't change between collections.",
-            ok: false,
+            expect(response.body).toEqual({
+              data: { id: dbItem.id },
+              error: "Item can't change between collections.",
+              ok: false,
+            })
           })
         })
       })

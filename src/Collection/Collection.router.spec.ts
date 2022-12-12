@@ -66,7 +66,7 @@ import {
   SlotUsageCheque,
   SlotUsageChequeAttributes,
 } from '../SlotUsageCheque'
-import { CurationStatus, CurationStatusSort } from '../Curation'
+import { CurationStatus } from '../Curation'
 import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
@@ -76,6 +76,7 @@ import {
   CollectionAttributes,
   ThirdPartyCollectionAttributes,
   FullCollection,
+  CollectionSort
 } from './Collection.types'
 
 const server = supertest(app.getApp())
@@ -1059,12 +1060,15 @@ describe('Collection router', () => {
       let page: number,
         limit: number,
         isPublished: string,
-        totalCollectionsFromDb: number
+        totalCollectionsFromDb: number,
+        sort: string
+  
       beforeEach(() => {
         ;(page = 1),
           (limit = 3),
           (isPublished = 'true'),
-          (totalCollectionsFromDb = 1)
+          (totalCollectionsFromDb = 1),
+          (sort=CollectionSort.NAME_ASC)
         ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
           { ...dbCollection, collection_count: totalCollectionsFromDb },
         ])
@@ -1078,7 +1082,7 @@ describe('Collection router', () => {
         return server
           .get(
             buildURL(
-              `${url}?limit=${limit}&page=${page}&is_published=${isPublished}`
+              `${url}?limit=${limit}&page=${page}&is_published=${isPublished}&sort=${sort}`
             )
           )
           .set(createAuthHeaders('get', url))
@@ -1104,7 +1108,7 @@ describe('Collection router', () => {
               address: wallet.address,
               limit,
               offset: page - 1,
-              sort: CurationStatusSort.NEWEST,
+              sort,
               isPublished: true,
               thirdPartyIds: [],
               remoteIds: [],
@@ -1141,7 +1145,7 @@ describe('Collection router', () => {
               address: wallet.address,
               limit: undefined,
               offset: undefined,
-              sort: CurationStatusSort.NEWEST,
+              sort: CollectionSort.NEWEST,
               thirdPartyIds: [dbTPCollection.third_party_id],
               remoteIds: [],
             })

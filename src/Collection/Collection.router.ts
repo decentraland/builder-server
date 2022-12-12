@@ -38,7 +38,7 @@ import {
   getOffset,
   getPaginationParams,
 } from '../Pagination/utils'
-import { CurationStatusFilter, CurationStatusSort } from '../Curation'
+import { CurationStatusFilter } from '../Curation'
 import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -46,7 +46,8 @@ import {
   PublishCollectionResponse,
   CollectionAttributes,
   FullCollection,
-  CollectionTypeFilter
+  CollectionTypeFilter,
+  CollectionSort
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
@@ -254,7 +255,7 @@ export class CollectionRouter extends Router {
       assignee: assignee as string,
       status: status as CurationStatusFilter,
       type: type as CollectionTypeFilter,
-      sort: sort as CurationStatusSort,
+      sort: sort as CollectionSort,
       isPublished: is_published ? is_published === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
@@ -311,7 +312,7 @@ export class CollectionRouter extends Router {
         offset: page && limit ? getOffset(page, limit) : undefined,
         limit,
         address: eth_address,
-        sort: sort as CurationStatusSort || CurationStatusSort.NEWEST,
+        sort: sort as CollectionSort || CollectionSort.NEWEST,
         isPublished: is_published ? is_published === 'true' : undefined,
         remoteIds: authorizedRemoteCollections.map(
           (remoteCollection) => remoteCollection.id
@@ -615,7 +616,7 @@ export class CollectionRouter extends Router {
       q: q as string,
       assignee: assignee as string,
       status: status as CurationStatusFilter,
-      sort: sort as CurationStatusSort,
+      sort: sort as CollectionSort,
       isPublished: is_published ? is_published === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,

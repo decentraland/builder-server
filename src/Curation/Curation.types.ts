@@ -17,16 +17,6 @@ export enum CurationStatusFilter {
   UNDER_REVIEW = 'under_review',
 }
 
-export enum CurationStatusSort {
-  MOST_RELEVANT = 'MOST_RELEVANT',
-  NEWEST = 'NEWEST',
-  OLDEST = 'OLDEST',
-  NAME_DESC = 'NAME_DESC',
-  NAME_ASC = 'NAME_ASC',
-  UPDATED_AT_DESC = 'UPDATED_AT_DESC',
-  UPDATED_AT_ASC = 'UPDATED_AT_ASC'
-}
-
 export const patchCurationSchema = Object.freeze({
   type: 'object',
   properties: {

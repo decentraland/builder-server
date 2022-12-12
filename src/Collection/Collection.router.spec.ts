@@ -1068,7 +1068,7 @@ describe('Collection router', () => {
           (limit = 3),
           (isPublished = 'true'),
           (totalCollectionsFromDb = 1),
-          (sort=CollectionSort.NAME_ASC)
+          (sort = CollectionSort.NAME_ASC)
         ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
           { ...dbCollection, collection_count: totalCollectionsFromDb },
         ])
@@ -1145,7 +1145,7 @@ describe('Collection router', () => {
               address: wallet.address,
               limit: undefined,
               offset: undefined,
-              sort: CollectionSort.NEWEST,
+              sort: CollectionSort.CREATED_AT_DESC,
               thirdPartyIds: [dbTPCollection.third_party_id],
               remoteIds: [],
             })

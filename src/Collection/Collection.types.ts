@@ -51,8 +51,8 @@ export enum CollectionTypeFilter {
 
 export enum CollectionSort {
   MOST_RELEVANT = 'MOST_RELEVANT',
-  NEWEST = 'NEWEST',
-  OLDEST = 'OLDEST',
+  CREATED_AT_DESC = 'CREATED_AT_DESC',
+  CREATED_AT_ASC = 'CREATED_AT_ASC',
   NAME_DESC = 'NAME_DESC',
   NAME_ASC = 'NAME_ASC',
   UPDATED_AT_DESC = 'UPDATED_AT_DESC',

@@ -312,7 +312,7 @@ export class CollectionRouter extends Router {
         offset: page && limit ? getOffset(page, limit) : undefined,
         limit,
         address: eth_address,
-        sort: sort as CollectionSort || CollectionSort.NEWEST,
+        sort: sort as CollectionSort || CollectionSort.CREATED_AT_DESC,
         isPublished: is_published ? is_published === 'true' : undefined,
         remoteIds: authorizedRemoteCollections.map(
           (remoteCollection) => remoteCollection.id

@@ -47,10 +47,10 @@ export class ItemService {
   private collectionService = new CollectionService()
 
   /**
-   * Updates or insert an item, either a third party item or a decentraland item.
+   * Updates or insert an item, either a third party item or a standard item.
    *
    * @param item - The item to be updated or inserted.
-   * @param eth_address - The item in the DB to be updated or inserted.
+   * @param eth_address - The address that is trying to upsert the item.
    */
   public async upsertItem(
     item: FullItem,
@@ -75,8 +75,8 @@ export class ItemService {
       // Moving items between published collections is forbidden
       if (
         this.checkItemIsMovedToAnotherCollection(item, dbItem) &&
-        (!(await this.checkItemCollectionIsValidToMove(item.collection_id)) ||
-          !(await this.checkItemCollectionIsValidToMove(dbItem.collection_id)))
+        (!(await this.checkCanAddItemsToCollection(item.collection_id)) ||
+          !(await this.checkCanAddItemsToCollection(dbItem.collection_id)))
       ) {
         throw new ItemCantBeMovedFromCollectionError(item.id)
       }
@@ -346,7 +346,7 @@ export class ItemService {
     return { item, collection }
   }
 
-  private async checkItemCollectionIsValidToMove(
+  private async checkCanAddItemsToCollection(
     collectionId: string | null
   ): Promise<boolean> {
     if (collectionId) {

@@ -1,11 +1,11 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { DEFAULT_LIMIT } from '../Pagination/utils'
-import { CurationStatusFilter, CurationStatusSort } from '../Curation'
+import { CurationStatusFilter } from '../Curation'
 import { CollectionCuration } from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
-import { CollectionAttributes, CollectionTypeFilter } from './Collection.types'
+import { CollectionAttributes, CollectionTypeFilter, CollectionSort } from './Collection.types'
 
 type CollectionWithItemCount = CollectionAttributes & {
   item_count: number
@@ -24,7 +24,7 @@ export type FindCollectionParams = {
   assignee?: string
   status?: CurationStatusFilter
   type?: CollectionTypeFilter
-  sort?: CurationStatusSort
+  sort?: CollectionSort
   isPublished?: boolean
   remoteIds?: CollectionAttributes['id'][]
   itemTags?: string[]
@@ -33,9 +33,9 @@ export type FindCollectionParams = {
 export class Collection extends Model<CollectionAttributes> {
   static tableName = 'collections'
 
-  static getOrderByStatement(sort?: CurationStatusSort, remoteIds?: string[]) {
+  static getOrderByStatement(sort?: CollectionSort, remoteIds?: string[]) {
     switch (sort) {
-      case CurationStatusSort.MOST_RELEVANT:
+      case CollectionSort.MOST_RELEVANT:
         // Order should be
         // 1- To review: Not assigned && isApproved false from the contract
         // 2- Under review: Assigned && isApproved false from the contract OR has pending curation
@@ -55,12 +55,19 @@ export class Collection extends Model<CollectionAttributes> {
             ELSE 4
           END, collections.created_at DESC
         `
-      case CurationStatusSort.NAME_ASC:
+      case CollectionSort.NAME_ASC:
         return SQL`ORDER BY collections.name ASC`
-      case CurationStatusSort.NAME_DESC:
+      case CollectionSort.NAME_DESC:
         return SQL`ORDER BY collections.name DESC`
-      case CurationStatusSort.NEWEST:
+      case CollectionSort.CREATED_AT_DESC:
         return SQL`ORDER BY collections.created_at DESC`
+      case CollectionSort.CREATED_AT_ASC:
+        return SQL`ORDER BY collections.created_at ASC`
+      case CollectionSort.UPDATED_AT_ASC:
+        return SQL`ORDER BY collections.updated_at ASC`
+      case CollectionSort.UPDATED_AT_DESC:
+        return SQL`ORDER BY collections.updated_at DESC`
+
       default:
         return SQL``
     }

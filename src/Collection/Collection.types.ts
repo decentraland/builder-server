@@ -48,3 +48,13 @@ export enum CollectionTypeFilter {
   STANDARD = 'standard',
   THIRD_PARTY = 'third_party'
 }
+
+export enum CollectionSort {
+  MOST_RELEVANT = 'MOST_RELEVANT',
+  CREATED_AT_DESC = 'CREATED_AT_DESC',
+  CREATED_AT_ASC = 'CREATED_AT_ASC',
+  NAME_DESC = 'NAME_DESC',
+  NAME_ASC = 'NAME_ASC',
+  UPDATED_AT_DESC = 'UPDATED_AT_DESC',
+  UPDATED_AT_ASC = 'UPDATED_AT_ASC'
+}

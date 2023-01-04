@@ -47,10 +47,10 @@ export class ItemService {
   private collectionService = new CollectionService()
 
   /**
-   * Updates or insert an item, either a third party item or a decentraland item.
+   * Updates or insert an item, either a third party item or a standard item.
    *
    * @param item - The item to be updated or inserted.
-   * @param eth_address - The item in the DB to be updated or inserted.
+   * @param eth_address - The address that is trying to upsert the item.
    */
   public async upsertItem(
     item: FullItem,
@@ -72,8 +72,14 @@ export class ItemService {
     }
 
     if (dbItem) {
-      // Moving items between collections is forbidden
-      this.checkItemIsMovedToAnotherCollection(item, dbItem)
+      // Moving items between published collections is forbidden
+      if (
+        this.checkItemIsMovedToAnotherCollection(item, dbItem) &&
+        (!(await this.checkCanAddItemsToCollection(item.collection_id)) ||
+          !(await this.checkCanAddItemsToCollection(dbItem.collection_id)))
+      ) {
+        throw new ItemCantBeMovedFromCollectionError(item.id)
+      }
     }
 
     const collectionId: string | null =
@@ -340,20 +346,40 @@ export class ItemService {
     return { item, collection }
   }
 
+  private async checkCanAddItemsToCollection(
+    collectionId: string | null
+  ): Promise<boolean> {
+    if (collectionId) {
+      const collection = await this.collectionService.getDBCollection(
+        collectionId
+      )
+
+      if (isTPCollection(collection)) {
+        return false
+      }
+
+      const isCollectionPublished =
+        collection.contract_address &&
+        (await this.collectionService.isDCLPublished(
+          collection.contract_address
+        ))
+      return isCollectionPublished === false
+    }
+
+    return false
+  }
+
   private checkItemIsMovedToAnotherCollection(
     itemToUpsert: FullItem,
     dbItem: ItemAttributes
-  ): void {
+  ): boolean {
     const areBothCollectionIdsDefined =
-      itemToUpsert.collection_id && dbItem.collection_id
+      !!itemToUpsert.collection_id && !!dbItem.collection_id
 
-    const isItemCollectionBeingChanged =
+    return (
       areBothCollectionIdsDefined &&
       itemToUpsert.collection_id !== dbItem.collection_id
-
-    if (isItemCollectionBeingChanged) {
-      throw new ItemCantBeMovedFromCollectionError(itemToUpsert.id)
-    }
+    )
   }
 
   private async deleteDCLItem(dbItem: ItemAttributes): Promise<void> {

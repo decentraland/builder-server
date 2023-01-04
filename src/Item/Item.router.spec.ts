@@ -1535,7 +1535,7 @@ describe('Item router', () => {
       describe('and the collection of the item is being changed', () => {
         beforeEach(() => {
           mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
-          mockCollection.findByIds.mockResolvedValueOnce([
+          mockCollection.findByIds.mockResolvedValue([
             {
               ...collectionMock,
               eth_address: wallet.address,
@@ -1545,17 +1545,42 @@ describe('Item router', () => {
           mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
         })
 
-        it('should fail with cant change item collection message', async () => {
-          const response = await server
-            .put(buildURL(url))
-            .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
-            .set(createAuthHeaders('put', url))
-            .expect(STATUS_CODES.unauthorized)
+        describe('and the item is part of a collection that is is published', () => {
+          beforeEach(() => {
+            mockItem.hasPublishedItems.mockResolvedValueOnce(false)
+            mockItem.hasPublishedItems.mockResolvedValueOnce(true)
+          })
+          it('should fail with cant change item collection message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.unauthorized)
 
-          expect(response.body).toEqual({
-            data: { id: dbItem.id },
-            error: "Item can't change between collections.",
-            ok: false,
+            expect(response.body).toEqual({
+              data: { id: dbItem.id },
+              error: "Item can't change between collections.",
+              ok: false,
+            })
+          })
+        })
+
+        describe('and the collection to move the item is published', () => {
+          beforeEach(() => {
+            mockItem.hasPublishedItems.mockResolvedValueOnce(true)
+          })
+          it('should fail with cant change item collection message', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, collection_id: mockUUID } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.unauthorized)
+
+            expect(response.body).toEqual({
+              data: { id: dbItem.id },
+              error: "Item can't change between collections.",
+              ok: false,
+            })
           })
         })
       })

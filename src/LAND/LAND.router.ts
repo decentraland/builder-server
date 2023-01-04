@@ -164,7 +164,7 @@ export class LANDRouter extends Router {
   }
 
   private validateCoords = (coords: string): void => {
-    if (!/^-?[1-9]\d*,-?[1-9]\d*$/.test(coords)) {
+    if (!/^-?[--9]\d*,-?[0-9]\d*$/.test(coords)) {
       throw new HTTPError(
         'Invalid coordinates',
         { coords },

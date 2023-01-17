@@ -5,9 +5,9 @@ import { env, utils, Log } from 'decentraland-commons'
 
 const ACCESS_KEY = env.get('AWS_ACCESS_KEY', '')
 const ACCESS_SECRET = env.get('AWS_ACCESS_SECRET', '')
-if ((ACCESS_KEY && !ACCESS_SECRET) || (!ACCESS_KEY && ACCESS_SECRET)) {
+if (!ACCESS_KEY || !ACCESS_SECRET) {
   throw new Error(
-    'The ACCESS_KEY and ACCESS_SECRET credentials must be provided at the same time.'
+    'You need to add an AWS key and secret to your env file. Check the .env.example file'
   )
 }
 
@@ -36,14 +36,9 @@ export type ACLValues = typeof ACL[keyof typeof ACL]
 
 const log = new Log('s3')
 
-let config: AWS.S3.ClientConfiguration = {}
-
-if (ACCESS_KEY && ACCESS_SECRET) {
-  config = {
-    ...config,
-    accessKeyId: ACCESS_KEY,
-    secretAccessKey: ACCESS_SECRET,
-  }
+let config: AWS.S3.ClientConfiguration = {
+  accessKeyId: ACCESS_KEY,
+  secretAccessKey: ACCESS_SECRET,
 }
 
 if (STORAGE_URL) {

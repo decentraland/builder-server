@@ -8,12 +8,22 @@ export function migrate(
   commandArguments: string[],
   migrationsDir: string = __dirname
 ) {
-  const CONNECTION_STRING = env.get('CONNECTION_STRING', '')
+  let connectionString: string | undefined = env.get(
+    'CONNECTION_STRING',
+    undefined
+  )
 
-  if (!CONNECTION_STRING) {
-    throw new Error(
-      'Please set a CONNECTION_STRING env variable before running migrations'
-    )
+  if (!connectionString) {
+    const dbUser = env.get('PG_COMPONENT_PSQL_USER')
+    const dbDatabaseName = env.get('PG_COMPONENT_PSQL_DATABASE')
+    const dbPort = env.get('PG_COMPONENT_PSQL_PORT')
+    const dbHost = env.get('PG_COMPONENT_PSQL_HOST')
+    const dbPassword = env.get('PG_COMPONENT_PSQL_PASSWORD')
+
+    if (!dbUser || !dbDatabaseName || !dbPort || !dbHost || !dbPassword) {
+      throw new Error('The DB parameters must be set')
+    }
+    connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbDatabaseName}`
   }
 
   const spawnArgs = [
@@ -35,7 +45,7 @@ export function migrate(
     path.resolve(migrationsDir, 'node-pg-migrate'),
     spawnArgs,
     {
-      env: { ...process.env, CONNECTION_STRING },
+      env: { ...process.env, CONNECTION_STRING: connectionString },
     }
   )
 

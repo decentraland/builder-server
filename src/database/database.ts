@@ -11,6 +11,23 @@ pg.setTypeParser(1114, (date) => {
 })
 
 database.connect = async () => {
-  const CONNECTION_STRING = env.get('CONNECTION_STRING', undefined)
-  return pg.connect(CONNECTION_STRING)
+  let connectionString: string | undefined = env.get(
+    'CONNECTION_STRING',
+    undefined
+  )
+
+  if (!connectionString) {
+    const dbUser = env.get('PG_COMPONENT_PSQL_USER')
+    const dbDatabaseName = env.get('PG_COMPONENT_PSQL_DATABASE')
+    const dbPort = env.get('PG_COMPONENT_PSQL_PORT')
+    const dbHost = env.get('PG_COMPONENT_PSQL_HOST')
+    const dbPassword = env.get('PG_COMPONENT_PSQL_PASSWORD')
+
+    if (!dbUser || !dbDatabaseName || !dbPort || !dbHost || !dbPassword) {
+      throw new Error('The DB parameters must be set')
+    }
+    connectionString = `postgres://${dbUser}:${dbPassword}@${dbHost}:${dbPort}/${dbDatabaseName}`
+  }
+
+  return pg.connect(connectionString)
 }

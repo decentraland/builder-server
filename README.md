@@ -63,7 +63,7 @@ contents
 ```
 
 #Extra Info
-If you are usign windows subsystem, you will need to start the postgresql service each time
+If you are using windows subsystem, you will need to start the postgresql service each time
 
 `sudo service postgresql start`
 
@@ -93,4 +93,3 @@ AWS_STORAGE_URL=http://localhost:9000
 You can then run the `builder-service` normally as instructed in [RUN](#run)
 
 This method also provides some utilities to facilitate developer experience with a database viewer that can be accessed in http://localhost:8080, as well as an object storage viewer in http://localhost:9001
-

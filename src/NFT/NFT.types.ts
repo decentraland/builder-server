@@ -9,7 +9,7 @@ export type NFT = {
   name: string | null
   description: string | null
   externalLink: string | null
-  owner: NFTAccount
+  owner: NFTAccount | null
   contract: NFTContract
   traits: NFTTrait[]
   lastSale: NFTSale | null

@@ -264,13 +264,48 @@ describe('when getting a list of nfts', () => {
     })
   })
 
-  it('should return cursor data and the list of nfts', async () => {
-    const data = await service.getNFTs()
+  describe('when the response is ok', () => {
+    it('should return cursor data and the list of nfts', async () => {
+      const data = await service.getNFTs()
 
-    expect(data).toEqual({
-      next: 'next',
-      nfts: [mockMappedExternalNFT],
-      previous: 'previous',
+      expect(data).toEqual({
+        next: 'next',
+        nfts: [mockMappedExternalNFT],
+        previous: 'previous',
+      })
+    })
+
+    describe('and is an ens', () => {
+      let mockNFT: any
+      let mockMappedNFT: NFT
+      beforeEach(() => {
+        mockNFT = { ...mockExternalNFT, owner: null, top_ownerships: undefined }
+        mockMappedNFT = {
+          ...mockMappedExternalNFT,
+          owner: null,
+          topOwnerships: null,
+        }
+        mockFetch.mockReset()
+        mockFetch.mockResolvedValueOnce({
+          ok: true,
+          json: () =>
+            Promise.resolve({
+              next: 'next',
+              previous: 'previous',
+              assets: [mockNFT],
+            }),
+        } as Response)
+      })
+
+      it('should return an nft without owner', async () => {
+        const data = await service.getNFTs()
+
+        expect(data).toEqual({
+          next: 'next',
+          nfts: [mockMappedNFT],
+          previous: 'previous',
+        })
+      })
     })
   })
 })

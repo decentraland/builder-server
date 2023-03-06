@@ -208,7 +208,7 @@ export class NFTService {
       name: ext.name,
       description: ext.description,
       externalLink: ext.external_link,
-      owner: mapAccount(ext.owner),
+      owner: ext.owner ? mapAccount(ext.owner) : null,
       contract: mapContract(ext.asset_contract),
       traits: (ext.traits as any[]).map(mapTrait),
       lastSale: ext.last_sale ? mapSale(ext.last_sale) : null,

@@ -76,7 +76,8 @@ import {
   CollectionAttributes,
   ThirdPartyCollectionAttributes,
   FullCollection,
-  CollectionSort
+  CollectionSort,
+  CollectionTypeFilter
 } from './Collection.types'
 
 const server = supertest(app.getApp())
@@ -2656,6 +2657,7 @@ describe('Collection router', () => {
               status: undefined,
               limit,
               offset: page - 1, // it's the offset,
+              type: CollectionTypeFilter.STANDARD,
               thirdPartyIds: [],
               remoteIds: [],
               itemTags: undefined,
@@ -2716,6 +2718,7 @@ describe('Collection router', () => {
               limit,
               thirdPartyIds: [],
               remoteIds: [],
+              type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase()],
             })
           })
@@ -2776,6 +2779,7 @@ describe('Collection router', () => {
               limit,
               thirdPartyIds: [],
               remoteIds: [],
+              type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
             })
           })

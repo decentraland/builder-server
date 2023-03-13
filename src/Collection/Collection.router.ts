@@ -620,6 +620,7 @@ export class CollectionRouter extends Router {
       isPublished: is_published ? is_published === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
+      type: CollectionTypeFilter.STANDARD,
       remoteIds: status
         ? remoteCollections.map((c) => c.id)
         : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.

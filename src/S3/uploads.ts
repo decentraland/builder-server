@@ -51,8 +51,8 @@ class Storage implements multer.StorageEngine {
     callback: (error?: any, info?: Partial<MulterFile>) => void
   ): Promise<void> {
     if (!isValidMimeType(file.mimetype, this.validMimeTypes)) {
-      throw new Error(
-        `Invalid file type ${file.mimetype} for ${file.fieldname}.`
+      return callback(
+        new Error(`Invalid file type ${file.mimetype} for ${file.fieldname}.`)
       )
     }
 

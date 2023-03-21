@@ -9,5 +9,5 @@ if [[ -z "${CONNECTION_STRING}" ]]; then
   export CONNECTION_STRING=postgres://${PG_COMPONENT_PSQL_USER}:${PG_COMPONENT_PSQL_PASSWORD}@${PG_COMPONENT_PSQL_HOST}:${PG_COMPONENT_PSQL_PORT}/${PG_COMPONENT_PSQL_DATABASE}
 fi
 
-time npm run migrate:docker up || exit 1
+npm run migrate:docker up || exit 1
 node --inspect="0.0.0.0:9229" ./dist/src/server.js || exit 1

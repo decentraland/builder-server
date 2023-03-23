@@ -659,6 +659,7 @@ describe('when handling a request', () => {
             })
           })
         })
+
         describe('and it updates both the status & assignee', () => {
           let assignee: string
           beforeEach(() => {
@@ -683,7 +684,9 @@ describe('when handling a request', () => {
               .spyOn(service, 'updateById')
               .mockResolvedValueOnce(expectedCuration)
 
-            mockIsCommitteeMember.mockResolvedValueOnce(true)
+            mockIsCommitteeMember
+              .mockResolvedValueOnce(true)
+              .mockResolvedValueOnce(true)
 
             updateSpy = jest
               .spyOn(service, 'updateById')

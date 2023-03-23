@@ -3,9 +3,9 @@ import { SQL, raw } from 'decentraland-server'
 import { db } from '../database'
 import { SearchableParameters } from './SearchableParameters'
 import { SearchableConditions } from './SearchableConditions'
-import { Pagination, Sort } from './Searchable.types'
+import { BaseAttributes, Pagination, Sort } from './Searchable.types'
 
-export class SearchableModel<T> {
+export class SearchableModel<T extends BaseAttributes> {
   constructor(public readonly tableName: string) {}
 
   async search(

@@ -10,6 +10,7 @@ import {
   getDefaultEthAddress,
 } from '../../src/AssetPack'
 import { Asset, AssetAttributes } from '../../src/Asset'
+import { isErrorWithMessage } from '../../src/utils/errors'
 import { getAssetPath, readJSON, readFile, getAssetsUrl } from './utils'
 import {
   DefaultAssetPack,
@@ -98,13 +99,21 @@ async function upsertAssets(assetPacks: DefaultAssetPack[]) {
         }
       } catch (error) {
         // if the download errors out, we assume asset.decentraland is down and every asset has been uploaded to S3
-        console.log(`Ignoring ERROR: ${error.message}`)
+        console.log(
+          `Ignoring ERROR: ${
+            isErrorWithMessage(error) ? error.message : 'Unknown'
+          }`
+        )
       }
     }
     try {
       await Promise.all(assetPromises)
     } catch (error) {
-      console.log(`Error saving assets: ${error.message}`)
+      console.log(
+        `Error saving assets: ${
+          isErrorWithMessage(error) ? error.message : 'Unknown'
+        }`
+      )
     }
   }
 }

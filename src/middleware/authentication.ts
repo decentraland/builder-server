@@ -2,20 +2,18 @@ import { Request, Response, NextFunction } from 'express'
 import { AuthLink, Authenticator, AuthChain, AuthLinkType } from '@dcl/crypto'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
-import { AuthRequestLegacy } from './authentication-legacy'
+import { isErrorWithMessage } from '../utils/errors'
 import { peerAPI } from '../ethereum/api/peer'
 
 export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 
 export type AuthRequest = Request & {
-  authLegacy?: AuthRequestLegacy['auth']
   auth: Record<string, string | number | boolean> & {
     ethAddress: string
   }
 }
 
 export type PermissiveAuthRequest = Request & {
-  authLegacy?: AuthRequest['auth']
   auth: Record<string, string | number | boolean> & {
     ethAddress: string | null
   }
@@ -42,7 +40,7 @@ const getAuthenticationMiddleware = <
   try {
     ethAddress = await decodeAuthChain(req)
   } catch (error) {
-    errorMessage = error.message
+    errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
   }
 
   if (errorMessage && !isPermissive) {
@@ -51,9 +49,6 @@ const getAuthenticationMiddleware = <
       .json(server.sendError({ message: errorMessage }, 'Unauthenticated'))
   } else {
     const cryptoAuthReq = req as T
-    if (cryptoAuthReq.auth) {
-      cryptoAuthReq.authLegacy = (cryptoAuthReq as any).auth
-    }
     const auth: PermissiveAuthRequest['auth'] = { ethAddress }
     cryptoAuthReq.auth = auth
     next()
@@ -93,7 +88,7 @@ async function decodeAuthChain(req: Request): Promise<string> {
           }
         }
       } catch (error) {
-        errorMessage = error.message
+        errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
       }
     }
   }

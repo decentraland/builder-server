@@ -660,7 +660,7 @@ describe('when handling a request', () => {
           })
         })
 
-        describe.only('and it updates both the status & assignee', () => {
+        describe('and it updates both the status & assignee', () => {
           let assignee: string
           beforeEach(() => {
             assignee = mockAddress

@@ -1,5 +1,4 @@
 export * from './asMiddleware'
-export * from './authentication-legacy'
 export * from './authentication'
 export * from './authorization'
 export * from './schemaValidator'

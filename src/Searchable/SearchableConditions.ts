@@ -15,7 +15,7 @@ const DEFAULT_WHITELIST: Whitelist<BaseAttributes> = {
   includes: [],
 }
 
-export class SearchableConditions<T> {
+export class SearchableConditions<T extends BaseAttributes> {
   requestParameters: RequestParameters
   private queryString: QueryString
   private whitelist: Whitelist<T>

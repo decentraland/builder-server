@@ -6,6 +6,7 @@ import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Collection, CollectionAttributes } from '../Collection'
+import { isErrorWithMessage } from '../utils/errors'
 import { createPost } from './client'
 import { ForumPost, forumPostSchema } from './Forum.types'
 
@@ -56,7 +57,7 @@ export class ForumRouter extends Router {
     } catch (error) {
       throw new HTTPError(
         'Error creating forum post',
-        { errors: error.message },
+        { errors: isErrorWithMessage(error) ? error.message : 'Unknown' },
         STATUS_CODES.error
       )
     }

@@ -27,7 +27,7 @@ const DEFAULT_BOUNDS: Bounds = {
 }
 const MIN_PAGINATION_LIMIT = 0
 
-export class SearchableParameters<T = BaseAttributes> {
+export class SearchableParameters<T extends BaseAttributes = BaseAttributes> {
   requestParameters: RequestParameters
   private whitelist: Whitelist<T>
   private bounds: Bounds

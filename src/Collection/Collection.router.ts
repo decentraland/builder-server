@@ -14,7 +14,11 @@ import {
   AuthRequest,
 } from '../middleware'
 import { Bridge } from '../ethereum/api/Bridge'
-import { collectionAPI } from '../ethereum/api/collection'
+import {
+  canUseCollectionAPIAlt,
+  collectionAPI,
+  collectionAPIAlt,
+} from '../ethereum/api/collection'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import {
@@ -608,9 +612,14 @@ export class CollectionRouter extends Router {
     const { page, limit } = getPaginationParams(req)
     const { assignee, status, sort, q, is_published, tag } = req.query
 
+    // If the conditions are met, use the alternative collection api that uses a different subgraph.
+    let desiredCollectionAPI = (await canUseCollectionAPIAlt())
+      ? collectionAPIAlt
+      : collectionAPI
+
     // If status is passed, the graph query will be filtered and those results will be included in a WHERE statement in the query later on
     // If status is not passed, the query won't be filtered and all the collections will be retrieved
-    const remoteCollections = await collectionAPI.fetchCollections(
+    const remoteCollections = await desiredCollectionAPI.fetchCollections(
       toRemoteWhereCondition({ status: status as CurationStatusFilter })
     )
 

@@ -1,4 +1,4 @@
-import { Request } from 'express'
+import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
@@ -39,6 +39,7 @@ import {
   getPaginationParams,
 } from '../Pagination/utils'
 import { CurationStatusFilter, CurationStatusSort } from '../Curation'
+import { addCustomMaxAgeCacheControlHeader } from '../common/headers'
 import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -46,7 +47,7 @@ import {
   PublishCollectionResponse,
   CollectionAttributes,
   FullCollection,
-  CollectionTypeFilter
+  CollectionTypeFilter,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
@@ -600,7 +601,8 @@ export class CollectionRouter extends Router {
   }
 
   getAddressesCollections = async (
-    req: Request
+    req: Request,
+    res: Response
   ): Promise<PaginatedResponse<string> | string[]> => {
     const { page, limit } = getPaginationParams(req)
     const { assignee, status, sort, q, is_published, tag } = req.query
@@ -641,6 +643,9 @@ export class CollectionRouter extends Router {
     const consolidated = (
       await Bridge.consolidateAllCollections(dbCollections, remoteCollections)
     ).map((collection) => collection.contract_address!)
+
+    const RES_MAX_AGE = 300 // 5 mins
+    addCustomMaxAgeCacheControlHeader(res, RES_MAX_AGE)
 
     return page && limit
       ? generatePaginatedResponse(consolidated, totalCollections, limit, page)

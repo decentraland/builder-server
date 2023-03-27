@@ -339,6 +339,8 @@ export const canUseCollectionAPIAlt = async () => {
 
   try {
     const response = await fetch(
+      // TODO: Provide via env?
+      // TODO: Abstract this to be able to use a generic feature flag solution in servers.
       'https://feature-flags.decentraland.org/builder.json'
     )
 

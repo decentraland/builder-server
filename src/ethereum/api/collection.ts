@@ -2,7 +2,10 @@ import gql from 'graphql-tag'
 import { env } from 'decentraland-commons'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { ILoggerComponent } from '@well-known-components/interfaces'
+import { ChainName } from '@dcl/schemas'
+import fetch from 'node-fetch'
 import { logExecutionTime } from '../../utils/logging'
+import { getChainName } from '../utils'
 import {
   collectionFragment,
   itemFragment,
@@ -326,3 +329,25 @@ export class CollectionAPI extends BaseGraphAPI {
 }
 
 export const collectionAPI = new CollectionAPI(COLLECTIONS_URL)
+
+export const collectionAPIAlt = new CollectionAPI(`${COLLECTIONS_URL}-s`)
+
+export const canUseCollectionAPIAlt = async () => {
+  const isValidChain = getChainName() === ChainName.ETHEREUM_MAINNET
+
+  let isFeatureFlagEnabled = false
+
+  try {
+    const response = await fetch(
+      'https://feature-flags.decentraland.org/builder.json'
+    )
+
+    const json = await response.json()
+
+    isFeatureFlagEnabled = json.flags['builder-collection-api-alt']
+  } catch (e) {
+    console.warn('Error fetching feature flags', (e as Error).message)
+  }
+
+  return isValidChain && isFeatureFlagEnabled
+}

@@ -2,7 +2,7 @@ import { env } from 'decentraland-commons'
 import { ChainId, ChainName, getURNProtocol } from '@dcl/schemas'
 import { ContractName, getContract } from 'decentraland-transactions'
 
-function getChainName() {
+export function getChainName() {
   return env.get('CHAIN_NAME') as ChainName
 }
 

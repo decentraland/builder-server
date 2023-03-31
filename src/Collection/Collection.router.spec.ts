@@ -77,7 +77,7 @@ import {
   ThirdPartyCollectionAttributes,
   FullCollection,
   CollectionSort,
-  CollectionTypeFilter
+  CollectionTypeFilter,
 } from './Collection.types'
 
 const server = supertest(app.getApp())
@@ -171,9 +171,9 @@ describe('Collection router', () => {
               ok: false,
               data: [
                 {
-                  dataPath: '',
+                  instancePath: '',
                   keyword: 'required',
-                  message: "should have required property 'collection'",
+                  message: "must have required property 'collection'",
                   params: {
                     missingProperty: 'collection',
                   },
@@ -1063,7 +1063,7 @@ describe('Collection router', () => {
         isPublished: string,
         totalCollectionsFromDb: number,
         sort: string
-  
+
       beforeEach(() => {
         ;(page = 1),
           (limit = 3),

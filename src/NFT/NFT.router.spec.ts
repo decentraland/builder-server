@@ -24,7 +24,7 @@ describe('when getting nfts', () => {
         data: {
           dataPath: '/owner',
         },
-        error: 'should match pattern "^0x[a-fA-F0-9]{40}$"',
+        error: 'must match pattern "^0x[a-fA-F0-9]{40}$"',
         ok: false,
       })
     })
@@ -40,7 +40,7 @@ describe('when getting nfts', () => {
         data: {
           dataPath: '/first',
         },
-        error: 'should be >= 1',
+        error: 'must be >= 1',
         ok: false,
       })
     })
@@ -56,7 +56,7 @@ describe('when getting nfts', () => {
         data: {
           dataPath: '/first',
         },
-        error: 'should be >= 1',
+        error: 'must be >= 1',
         ok: false,
       })
     })
@@ -72,7 +72,7 @@ describe('when getting nfts', () => {
         data: {
           dataPath: '/first',
         },
-        error: 'should be number',
+        error: 'must be number',
         ok: false,
       })
     })
@@ -88,7 +88,7 @@ describe('when getting nfts', () => {
         data: {
           dataPath: '',
         },
-        error: 'should have property first when property skip is present',
+        error: 'must have property first when property skip is present',
         ok: false,
       })
     })
@@ -104,7 +104,7 @@ describe('when getting nfts', () => {
         data: {
           dataPath: '/skip',
         },
-        error: 'should be >= 0',
+        error: 'must be >= 0',
         ok: false,
       })
     })
@@ -120,7 +120,7 @@ describe('when getting nfts', () => {
         data: {
           dataPath: '/skip',
         },
-        error: 'should be number',
+        error: 'must be number',
         ok: false,
       })
     })
@@ -194,7 +194,7 @@ describe('when getting a single nft', () => {
         data: {
           dataPath: '/contractAddress',
         },
-        error: 'should match pattern "^0x[a-fA-F0-9]{40}$"',
+        error: 'must match pattern "^0x[a-fA-F0-9]{40}$"',
         ok: false,
       })
     })

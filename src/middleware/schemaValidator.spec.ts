@@ -39,9 +39,9 @@ describe('when posting invalid data', () => {
           error: 'Invalid request body',
           data: [
             {
-              dataPath: '/id',
+              instancePath: '/id',
               keyword: 'type',
-              message: 'should be string',
+              message: 'must be string',
               params: { type: 'string' },
               schemaPath: '#/properties/id/type',
             },
@@ -62,9 +62,9 @@ describe('when posting no data', () => {
           error: 'Invalid request body',
           data: [
             {
-              dataPath: '',
+              instancePath: '',
               keyword: 'required',
-              message: "should have required property 'id'",
+              message: "must have required property 'id'",
               params: { missingProperty: 'id' },
               schemaPath: '#/required',
             },

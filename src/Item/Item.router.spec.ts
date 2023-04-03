@@ -55,6 +55,7 @@ import { Item } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
+  ItemType,
   ThirdPartyItemAttributes,
 } from './Item.types'
 
@@ -652,7 +653,7 @@ describe('Item router', () => {
           mockIsThirdPartyManager(wallet.address, false)
         })
 
-        it('should respond with a 401 signaling that hte user is unauthorized to upsert the item in the collection', () => {
+        it('should respond with a 401 signaling that the user is unauthorized to upsert the item in the collection', () => {
           return server
             .put(buildURL(url))
             .send({ item: itemToUpsert })
@@ -684,7 +685,7 @@ describe('Item router', () => {
               expect(response.body).toEqual({
                 data: [
                   expect.objectContaining({
-                    dataPath: '/item/urn',
+                    instancePath: '/item/urn',
                     keyword: 'pattern',
                   }),
                 ],
@@ -893,7 +894,7 @@ describe('Item router', () => {
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
                   local_content_hash:
-                    'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                    '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
                 }
                 mockItem.upsert.mockImplementation((createdItem) =>
                   Promise.resolve({
@@ -1086,7 +1087,7 @@ describe('Item router', () => {
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
                   local_content_hash:
-                    'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                    '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
                 }
                 resultingItem = {
                   ...toResultItem(
@@ -1123,7 +1124,7 @@ describe('Item router', () => {
                     expect(ItemCuration.update).toHaveBeenCalledWith(
                       {
                         content_hash:
-                          'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                          '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
                       },
                       {
                         item_id: itemToUpsert.id,
@@ -1156,7 +1157,7 @@ describe('Item router', () => {
                 collection_id: tpCollectionMock.id,
                 eth_address: wallet.address,
                 local_content_hash:
-                  'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                  '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
               }
               resultingItem = {
                 ...toResultItem(
@@ -1316,7 +1317,7 @@ describe('Item router', () => {
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
                   local_content_hash:
-                    'a630459778465b4882e1cc3e86a019ace033dc06fd2b0d16f4cbab8e075c32f5',
+                    '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
                 }
                 mockThirdPartyURNExists(itemToUpsert.urn!, false)
                 resultingItem = {
@@ -1383,22 +1384,26 @@ describe('Item router', () => {
         }
       })
 
-      describe('and the item inserted has an invalid name', () => {
-        it("should fail with a message indicating that the name doesn't match the pattern", () => {
+      describe('and the item inserted has an invalid type', () => {
+        it("should fail with a message indicating that the type doesn't match the available types", () => {
           return server
             .put(buildURL(url))
-            .send({ item: { ...itemToUpsert, name: 'anInvalid:name' } })
+            .send({ item: { ...itemToUpsert, type: 'anInvalidType' } })
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.badRequest)
             .then((response: any) => {
               expect(response.body).toEqual({
                 data: [
                   {
-                    dataPath: '/item/name',
-                    keyword: 'pattern',
-                    message: 'should match pattern "^[^:]*$"',
-                    params: { pattern: '^[^:]*$' },
-                    schemaPath: '#/properties/item/properties/name/pattern',
+                    instancePath: '/item',
+                    keyword: 'discriminator',
+                    message: 'value of tag "type" must be in oneOf',
+                    params: {
+                      error: 'mapping',
+                      tag: 'type',
+                      tagValue: 'anInvalidType',
+                    },
+                    schemaPath: `#/properties/item/discriminator`,
                   },
                 ],
                 error: 'Invalid request body',
@@ -1408,25 +1413,97 @@ describe('Item router', () => {
         })
       })
 
+      describe('and the item inserted has an invalid name', () => {
+        it.each([
+          [0, ItemType.WEARABLE],
+          [1, ItemType.EMOTE],
+        ])(
+          "should fail with a message indicating that the name doesn't match the pattern",
+          (schemaItemTypeIdx, type) => {
+            return server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, name: 'anInvalid:name', type } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.badRequest)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  data: [
+                    {
+                      instancePath: '/item/name',
+                      keyword: 'pattern',
+                      message: 'must match pattern "^[^:]*$"',
+                      params: { pattern: '^[^:]*$' },
+                      schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/name/pattern`,
+                    },
+                  ],
+                  error: 'Invalid request body',
+                  ok: false,
+                })
+              })
+          }
+        )
+      })
+
       describe('and the item inserted has an invalid description', () => {
-        it("should fail with a message indicating that the description doesn't match the pattern", () => {
+        it.each([
+          [0, ItemType.WEARABLE],
+          [1, ItemType.EMOTE],
+        ])(
+          "should fail with a message indicating that the description doesn't match the pattern",
+          (schemaItemTypeIdx, type) => {
+            return server
+              .put(buildURL(url))
+              .send({
+                item: {
+                  ...itemToUpsert,
+                  description: 'anInvalid:nescription',
+                  type,
+                },
+              })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.badRequest)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  data: [
+                    {
+                      instancePath: '/item/description',
+                      keyword: 'pattern',
+                      message: 'must match pattern "^[^:]*$"',
+                      params: { pattern: '^[^:]*$' },
+                      schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/description/pattern`,
+                    },
+                  ],
+                  error: 'Invalid request body',
+                  ok: false,
+                })
+              })
+          }
+        )
+      })
+
+      describe('and the item inserted data does not match the item type data schema', () => {
+        it('should fail with a message indicating that are missing properties for the data schema', () => {
           return server
             .put(buildURL(url))
             .send({
-              item: { ...itemToUpsert, description: 'anInvalid:nescription' },
+              item: {
+                ...itemToUpsert,
+                data: { ...itemToUpsert.data },
+                type: ItemType.EMOTE,
+              },
             })
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.badRequest)
             .then((response: any) => {
+              console.log(response.body)
               expect(response.body).toEqual({
                 data: [
                   {
-                    dataPath: '/item/description',
-                    keyword: 'pattern',
-                    message: 'should match pattern "^[^:]*$"',
-                    params: { pattern: '^[^:]*$' },
-                    schemaPath:
-                      '#/properties/item/properties/description/pattern',
+                    instancePath: '/item/data',
+                    keyword: 'required',
+                    message: "must have required property 'loop'",
+                    params: { missingProperty: 'loop' },
+                    schemaPath: `#/properties/item/oneOf/1/properties/data/required`,
                   },
                 ],
                 error: 'Invalid request body',
@@ -1725,7 +1802,7 @@ describe('Item router', () => {
               data: {
                 ...Bridge.toFullItem(dbItem),
                 local_content_hash:
-                  'bafkreiejcahiwp257urwn5u2wn5os3mcjhvid6eqhmok7tezzhvdm5njqy',
+                  'bafkreiaqn33clj5i7vtdbsmltwrfclrfs4tb3rgdnlzfjtfpdkyxix2e6e',
                 eth_address: ethAddress,
                 created_at: dbItem.created_at.toISOString(),
                 updated_at: currentDate.toISOString(),
@@ -1876,7 +1953,7 @@ describe('Item router', () => {
               data: {
                 ...Bridge.toFullItem(dbItem),
                 local_content_hash:
-                  'bafkreiejcahiwp257urwn5u2wn5os3mcjhvid6eqhmok7tezzhvdm5njqy',
+                  'bafkreiaqn33clj5i7vtdbsmltwrfclrfs4tb3rgdnlzfjtfpdkyxix2e6e',
                 eth_address: wallet.address,
                 created_at: dbItem.created_at.toISOString(),
                 updated_at: currentDate.toISOString(),

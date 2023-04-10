@@ -1495,7 +1495,6 @@ describe('Item router', () => {
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.badRequest)
             .then((response: any) => {
-              console.log(response.body)
               expect(response.body).toEqual({
                 data: [
                   {

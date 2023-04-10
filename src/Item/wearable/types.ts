@@ -9,7 +9,7 @@ export type WearableRepresentation = {
 }
 
 export type WearableData = {
-  category?: WearableCategory
+  category: WearableCategory
   representations: WearableRepresentation[]
   replaces: WearableCategory[]
   hides: WearableCategory[]
@@ -69,5 +69,5 @@ export const wearableSchema = Object.freeze({
     },
   },
   additionalProperties: false,
-  required: ['representations', 'replaces', 'hides', 'tags'],
+  required: ['category', 'representations', 'replaces', 'hides', 'tags'],
 })

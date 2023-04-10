@@ -1,5 +1,5 @@
 import { constants } from 'ethers'
-import { Rarity, Wearable, BodyShape } from '@dcl/schemas'
+import { Rarity, Wearable, BodyShape, WearableCategory } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
 import {
   ItemFragment,
@@ -123,6 +123,7 @@ export const dbItemMock: ItemAttributes = {
   rarity: Rarity.COMMON,
   type: ItemType.WEARABLE,
   data: {
+    category: WearableCategory.HAT,
     representations: [
       {
         bodyShapes: [BodyShape.MALE],

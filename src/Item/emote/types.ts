@@ -7,7 +7,7 @@ export type EmoteRepresentation = {
 }
 
 export type EmoteData = {
-  category?: EmoteCategory
+  category: EmoteCategory
   representations: EmoteRepresentation[]
   tags: string[]
 }
@@ -44,5 +44,5 @@ export const emoteSchema = Object.freeze({
     },
   },
   additionalProperties: false,
-  required: ['representations', 'tags', 'loop'],
+  required: ['category', 'loop', 'representations', 'tags'],
 })

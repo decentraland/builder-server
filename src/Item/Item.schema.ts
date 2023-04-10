@@ -9,8 +9,7 @@ import { FullItem, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
 
 // The schema is placed into this file to avoid a circular dependency.
-export const itemSchema = Object.freeze({
-  type: 'object',
+const baseItemSchema = Object.freeze({
   properties: {
     id: { type: 'string', format: 'uuid' },
     urn: { type: ['string', 'null'], pattern: matchers.urn },
@@ -35,12 +34,6 @@ export const itemSchema = Object.freeze({
     is_approved: { type: 'boolean' },
     created_at: { type: 'string' },
     updated_at: { type: 'string' },
-    type: { enum: Object.values(ItemType) },
-    data: { type: 'object', anyOf: [wearableSchema, emoteSchema] },
-    metrics: {
-      type: 'object',
-      anyOf: [modelMetricsSchema, animationMetricsSchema],
-    },
     contents: {
       type: 'object',
       additionalProperties: true,
@@ -57,6 +50,32 @@ export const itemSchema = Object.freeze({
     'type',
     'metrics',
     'contents',
+  ],
+})
+
+export const itemSchema = Object.freeze({
+  type: 'object',
+  discriminator: { propertyName: 'type' },
+  required: ['type'],
+  oneOf: [
+    {
+      ...baseItemSchema,
+      properties: {
+        ...baseItemSchema.properties,
+        type: { const: ItemType.WEARABLE },
+        data: wearableSchema,
+        metrics: modelMetricsSchema,
+      },
+    },
+    {
+      ...baseItemSchema,
+      properties: {
+        ...baseItemSchema.properties,
+        type: { const: ItemType.EMOTE },
+        data: emoteSchema,
+        metrics: animationMetricsSchema,
+      },
+    },
   ],
 })
 

@@ -55,7 +55,7 @@ export class NFTRouter extends Router {
 
       throw new HTTPError(
         error.message!,
-        { dataPath: error.dataPath },
+        { dataPath: error.instancePath },
         STATUS_CODES.badRequest
       )
     }
@@ -108,7 +108,7 @@ export class NFTRouter extends Router {
 
       throw new HTTPError(
         error.message!,
-        { dataPath: error.dataPath },
+        { dataPath: error.instancePath },
         STATUS_CODES.badRequest
       )
     }

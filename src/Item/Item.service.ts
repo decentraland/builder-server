@@ -455,22 +455,24 @@ export class ItemService {
         dbCollection.contract_address!
       ))
 
+    const isCollectionOwner =
+      dbCollection && dbCollection.eth_address.toLowerCase() === eth_address
+
     const isManager =
       isDbCollectionPublished &&
       (await this.collectionService.isDCLManager(dbCollection!.id, eth_address))
 
     const canUpsert =
-      (await new Ownable(Item).canUpsert(item.id, eth_address)) || isManager
+      isCollectionOwner ||
+      (await new Ownable(Item).canUpsert(item.id, eth_address)) ||
+      isManager
     if (!canUpsert) {
       throw new UnauthorizedToUpsertError(item.id, eth_address)
     }
 
     if (dbCollection) {
-      const isCollectionOwnerDifferent =
-        dbCollection.eth_address.toLowerCase() !== eth_address
-
       // Prohibits adding an item to a collection that is not owned by the user
-      if (isCollectionOwnerDifferent && !isManager) {
+      if (!isCollectionOwner && !isManager) {
         throw new UnauthorizedToChangeToCollectionError(
           item.id,
           eth_address,
@@ -520,7 +522,7 @@ export class ItemService {
 
     const attributes = toDBItem({
       ...item,
-      eth_address,
+      eth_address: dbItem?.eth_address ?? eth_address,
     })
 
     attributes.blockchain_item_id = dbItem ? dbItem.blockchain_item_id : null

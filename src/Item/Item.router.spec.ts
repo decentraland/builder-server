@@ -635,20 +635,21 @@ describe('Item router', () => {
       const itemUrnSuffix = 'an-item-urn-suffix'
 
       beforeEach(() => {
-        dbItem = { ...dbItem, blockchain_item_id: null }
-        itemToUpsert = utils.omit(dbItem, ['created_at', 'updated_at'])
+        url = `/items/${dbTPItem.id}`
+        dbTPItem = { ...dbTPItem, blockchain_item_id: null }
+        itemToUpsert = utils.omit(dbTPItem, ['created_at', 'updated_at'])
       })
 
       describe('and the user upserting is not authorized to do so', () => {
         beforeEach(() => {
-          url = `/items/${dbItem.id}`
+          url = `/items/${dbTPItem.id}`
           itemToUpsert = {
             ...itemToUpsert,
             collection_id: tpCollectionMock.id,
           }
           mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
-            dbCollectionMock,
+            tpCollectionMock,
           ])
           mockIsThirdPartyManager(wallet.address, false)
         })
@@ -661,7 +662,7 @@ describe('Item router', () => {
             .expect(STATUS_CODES.unauthorized)
             .then((response: any) => {
               expect(response.body).toEqual({
-                data: { id: dbItem.id, eth_address: wallet.address },
+                data: { id: dbTPItem.id, eth_address: wallet.address },
                 error: 'The user is unauthorized to upsert the collection.',
                 ok: false,
               })
@@ -671,7 +672,7 @@ describe('Item router', () => {
 
       describe("and the item's urn is not valid", () => {
         beforeEach(() => {
-          url = `/items/${dbItem.id}`
+          url = `/items/${dbTPItem.id}`
           itemToUpsert = { ...itemToUpsert, urn: 'some-invalid-urn' }
         })
 
@@ -698,7 +699,7 @@ describe('Item router', () => {
 
       describe("and the item contains a representation with file names that aren't included in the contents", () => {
         beforeEach(() => {
-          url = `/items/${dbItem.id}`
+          url = `/items/${dbTPItem.id}`
           itemToUpsert = {
             ...itemToUpsert,
             data: {
@@ -739,13 +740,13 @@ describe('Item router', () => {
         })
 
         describe('and the update moves the item out of the collection', () => {
-          let dbItemURN: string
+          let dbTPItemURN: string
 
           beforeEach(() => {
-            url = `/items/${dbItem.id}`
+            url = `/items/${dbTPItem.id}`
             itemToUpsert = { ...itemToUpsert, collection_id: null }
-            dbItem = { ...dbItem, collection_id: tpCollectionMock.id }
-            dbItemURN = buildTPItemURN(
+            dbTPItem = { ...dbTPItem, collection_id: tpCollectionMock.id }
+            dbTPItemURN = buildTPItemURN(
               tpCollectionMock.third_party_id,
               tpCollectionMock.urn_suffix,
               itemUrnSuffix
@@ -757,7 +758,7 @@ describe('Item router', () => {
               })
             )
             mockItem.findOne.mockResolvedValueOnce({
-              ...dbItem,
+              ...dbTPItem,
               collection_id: tpCollectionMock.id,
               urn_suffix: itemUrnSuffix,
             })
@@ -771,12 +772,13 @@ describe('Item router', () => {
 
             beforeEach(() => {
               const updatedItem = {
-                ...dbItem,
+                ...dbTPItem,
                 urn_suffix: null,
                 collection_id: null,
                 eth_address: wallet.address,
+                local_content_hash: null,
               }
-              mockThirdPartyItemCurationExists(dbItem.id, false)
+              mockThirdPartyItemCurationExists(dbTPItem.id, false)
               resultingItem = {
                 ...toResultItem(
                   updatedItem,
@@ -805,7 +807,7 @@ describe('Item router', () => {
 
           describe("and it's published", () => {
             beforeEach(() => {
-              mockThirdPartyItemCurationExists(dbItem.id, true)
+              mockThirdPartyItemCurationExists(dbTPItem.id, true)
             })
 
             it('should fail with 409 and a message saying that the item is already published', () => {
@@ -818,7 +820,7 @@ describe('Item router', () => {
                   expect(response.body).toEqual({
                     data: {
                       id: itemToUpsert.id,
-                      urn: dbItemURN,
+                      urn: dbTPItemURN,
                     },
                     error:
                       "The third party item is already published. It can't be inserted or updated.",
@@ -831,9 +833,9 @@ describe('Item router', () => {
 
         describe('and the update moves the item into the collection', () => {
           beforeEach(() => {
-            url = `/items/${dbItem.id}`
+            url = `/items/${dbTPItem.id}`
             mockItem.findOne.mockResolvedValueOnce({
-              ...dbItem,
+              ...dbTPItem,
               collection_id: null,
               urn_suffix: null,
             })
@@ -889,7 +891,7 @@ describe('Item router', () => {
 
               beforeEach(() => {
                 const updatedItem = {
-                  ...dbItem,
+                  ...dbTPItem,
                   urn_suffix: itemUrnSuffix,
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
@@ -953,17 +955,17 @@ describe('Item router', () => {
         })
 
         describe("and the item's collection doesn't change", () => {
-          let dbItemURN: string
+          let dbTPItemURN: string
 
           beforeEach(() => {
-            dbItem = { ...dbItem, urn_suffix: itemUrnSuffix }
-            dbItemURN = buildTPItemURN(
+            dbTPItem = { ...dbTPItem, urn_suffix: itemUrnSuffix }
+            dbTPItemURN = buildTPItemURN(
               tpCollectionMock.third_party_id,
               tpCollectionMock.urn_suffix,
               itemUrnSuffix
             )
             mockItem.findOne.mockResolvedValueOnce({
-              ...dbItem,
+              ...dbTPItem,
               collection_id: tpCollectionMock.id,
               urn_suffix: itemUrnSuffix,
             })
@@ -974,7 +976,7 @@ describe('Item router', () => {
 
           describe('and it is updating the item by id', () => {
             beforeEach(() => {
-              url = `/items/${dbItem.id}`
+              url = `/items/${dbTPItem.id}`
             })
             describe('and the URN changes', () => {
               beforeEach(() => {
@@ -991,7 +993,7 @@ describe('Item router', () => {
 
               describe('and the item is already published', () => {
                 beforeEach(() => {
-                  mockThirdPartyItemCurationExists(dbItem.id, true)
+                  mockThirdPartyItemCurationExists(dbTPItem.id, true)
                 })
 
                 it('should fail with 409 and a message saying that the item is already published', () => {
@@ -1004,7 +1006,7 @@ describe('Item router', () => {
                       expect(response.body).toEqual({
                         data: {
                           id: itemToUpsert.id,
-                          urn: dbItemURN,
+                          urn: dbTPItemURN,
                         },
                         error:
                           "The third party item is already published. It can't be inserted or updated.",
@@ -1017,7 +1019,7 @@ describe('Item router', () => {
               describe('and the item is not published but the new URN is already in use', () => {
                 describe('if the URN is in the catalyst', () => {
                   beforeEach(() => {
-                    mockThirdPartyItemCurationExists(dbItem.id, false)
+                    mockThirdPartyItemCurationExists(dbTPItem.id, false)
                     mockThirdPartyURNExists(itemToUpsert.urn!, true)
                   })
                   it('should fail with 409 and a message saying that the URN is already assigned to another item', () => {
@@ -1073,7 +1075,7 @@ describe('Item router', () => {
                 itemToUpsert = {
                   ...itemToUpsert,
                   collection_id: tpCollectionMock.id,
-                  urn: dbItemURN,
+                  urn: dbTPItemURN,
                 }
                 mockItem.upsert.mockImplementation((createdItem) =>
                   Promise.resolve({
@@ -1082,7 +1084,7 @@ describe('Item router', () => {
                   })
                 )
                 const updatedItem = {
-                  ...dbItem,
+                  ...dbTPItem,
                   urn_suffix: itemUrnSuffix,
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
@@ -1152,7 +1154,7 @@ describe('Item router', () => {
                 })
               )
               const updatedItem = {
-                ...dbItem,
+                ...dbTPItem,
                 urn_suffix: itemUrnSuffix,
                 collection_id: tpCollectionMock.id,
                 eth_address: wallet.address,
@@ -1312,7 +1314,7 @@ describe('Item router', () => {
                   })
                 )
                 const updatedItem = {
-                  ...dbItem,
+                  ...dbTPItem,
                   urn_suffix: itemUrnSuffix,
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
@@ -1916,6 +1918,7 @@ describe('Item router', () => {
 
           beforeEach(() => {
             currentDate = new Date()
+            dbItem = { ...dbItem, eth_address: wallet.address }
             jest.useFakeTimers()
             jest.setSystemTime(currentDate)
             mockItem.upsert.mockImplementation((createdItem) =>

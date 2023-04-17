@@ -1918,6 +1918,7 @@ describe('Item router', () => {
 
           beforeEach(() => {
             currentDate = new Date()
+            dbItem = { ...dbItem, eth_address: wallet.address }
             jest.useFakeTimers()
             jest.setSystemTime(currentDate)
             mockItem.upsert.mockImplementation((createdItem) =>

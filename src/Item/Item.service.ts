@@ -522,7 +522,7 @@ export class ItemService {
 
     const attributes = toDBItem({
       ...item,
-      eth_address,
+      eth_address: dbItem?.eth_address ?? eth_address,
     })
 
     attributes.blockchain_item_id = dbItem ? dbItem.blockchain_item_id : null
@@ -674,6 +674,8 @@ export class ItemService {
       eth_address,
       ...(dbItem ? { id: dbItem.id } : {}), // if it is not receiving the id in the body but the item exists
     })
+
+    console.log(attributes)
 
     attributes.local_content_hash = !isMovingItemOutOfACollection
       ? await calculateItemContentHash(attributes, dbCollection)

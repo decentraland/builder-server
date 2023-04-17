@@ -675,8 +675,6 @@ export class ItemService {
       ...(dbItem ? { id: dbItem.id } : {}), // if it is not receiving the id in the body but the item exists
     })
 
-    console.log(attributes)
-
     attributes.local_content_hash = !isMovingItemOutOfACollection
       ? await calculateItemContentHash(attributes, dbCollection)
       : null

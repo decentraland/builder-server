@@ -1,5 +1,5 @@
-import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client/core'
 import 'isomorphic-fetch'
+import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client/core'
 import { env } from 'decentraland-commons'
 
 export function createClient(url: string) {

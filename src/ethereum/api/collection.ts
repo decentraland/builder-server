@@ -184,9 +184,14 @@ export class CollectionAPI extends BaseGraphAPI {
   fetchCollections = async (
     filters: CollectionQueryFilters
   ): Promise<CollectionFragment[]> => {
-    return this.paginate(['collections'], {
-      query: getCollectionsQuery(filters),
-    })
+    return logExecutionTime(
+      () =>
+        this.paginate(['collections'], {
+          query: getCollectionsQuery(filters),
+        }),
+      this.logger,
+      'Collections fetch'
+    )
   }
 
   fetchCollectionsByAuthorizedUser = async (

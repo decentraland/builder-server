@@ -3,8 +3,8 @@ import { env } from 'decentraland-commons'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { ILoggerComponent } from '@well-known-components/interfaces'
 import { ChainName } from '@dcl/schemas'
-import fetch from 'node-fetch'
 import { logExecutionTime } from '../../utils/logging'
+import { isFeatureFlagEnabled } from '../../utils/features'
 import { getChainName } from '../utils'
 import {
   collectionFragment,
@@ -340,21 +340,9 @@ export const collectionAPIAlt = new CollectionAPI(`${COLLECTIONS_URL}-s`)
 export const canUseCollectionAPIAlt = async () => {
   const isValidChain = getChainName() === ChainName.ETHEREUM_MAINNET
 
-  let isFeatureFlagEnabled = false
+  const isBuilderCollectionApiAltEnabled = await isFeatureFlagEnabled(
+    'collection-api-alt'
+  )
 
-  try {
-    const response = await fetch(
-      // TODO: Provide via env?
-      // TODO: Abstract this to be able to use a generic feature flag solution in servers.
-      'https://feature-flags.decentraland.org/builder.json'
-    )
-
-    const json = await response.json()
-
-    isFeatureFlagEnabled = json.flags['builder-collection-api-alt']
-  } catch (e) {
-    console.warn('Error fetching feature flags', (e as Error).message)
-  }
-
-  return isValidChain && isFeatureFlagEnabled
+  return isValidChain && isBuilderCollectionApiAltEnabled
 }

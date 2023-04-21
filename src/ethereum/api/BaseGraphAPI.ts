@@ -1,10 +1,13 @@
 import {
+  ApolloClient,
   ApolloQueryResult,
   NetworkStatus,
+  NormalizedCacheObject,
   OperationVariables,
   QueryOptions,
 } from '@apollo/client/core'
-import { ApolloClient, NormalizedCacheObject } from '@apollo/client/core'
+import { HTTPError, STATUS_CODES } from '../../common/HTTPError'
+import { isErrorWithMessage } from '../../utils/errors'
 import { createClient } from './graphClient'
 
 export const MAX_RESULTS = 1000
@@ -62,6 +65,9 @@ export class BaseGraphAPI {
       const result = await this.client.query<T, TVariables>(options)
       return result
     } catch (error) {
+      if (isErrorWithMessage(error) && error.message.includes('aborted')) {
+        throw new HTTPError(error.message, {}, STATUS_CODES.error)
+      }
       const data = {} as T
       return { data, loading: false, networkStatus: NetworkStatus.error }
     }

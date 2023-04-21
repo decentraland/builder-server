@@ -1,13 +1,14 @@
 import {
+  ApolloClient,
   ApolloQueryResult,
   NetworkStatus,
+  NormalizedCacheObject,
   OperationVariables,
   QueryOptions,
 } from '@apollo/client/core'
-import { ApolloClient, NormalizedCacheObject } from '@apollo/client/core'
-import { createClient } from './graphClient'
 import { HTTPError, STATUS_CODES } from '../../common/HTTPError'
 import { isErrorWithMessage } from '../../utils/errors'
+import { createClient } from './graphClient'
 
 export const MAX_RESULTS = 1000
 

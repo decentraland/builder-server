@@ -1,7 +1,7 @@
 import nodefetch, { RequestInit } from 'node-fetch'
+import { env } from 'decentraland-commons'
 import { ApolloClient, HttpLink, InMemoryCache } from '@apollo/client/core'
 import { createConsoleLogComponent } from '@well-known-components/logger'
-import { env } from 'decentraland-commons'
 import { isErrorWithMessage } from '../../utils/errors'
 
 export function createClient(url: string) {

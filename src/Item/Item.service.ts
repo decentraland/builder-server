@@ -120,7 +120,7 @@ export class ItemService {
     const dbItem = await Item.findOne<ItemAttributes>(id)
     if (!dbItem) {
       return false
-    } else if (isTPItem(dbItem)) {
+    } else if (dbItem.collection_id) {
       return this.collectionService.isOwnedOrManagedBy(
         dbItem.collection_id,
         ethAddress
@@ -455,24 +455,19 @@ export class ItemService {
         dbCollection.contract_address!
       ))
 
-    const isCollectionOwner =
-      dbCollection && dbCollection.eth_address.toLowerCase() === eth_address
-
-    const isManager =
-      isDbCollectionPublished &&
-      (await this.collectionService.isDCLManager(dbCollection!.id, eth_address))
+    const isOwnerOrManager = await this.isOwnedOrManagedBy(item.id, eth_address)
 
     const canUpsert =
-      isCollectionOwner ||
-      (await new Ownable(Item).canUpsert(item.id, eth_address)) ||
-      isManager
+      isOwnerOrManager ||
+      (await new Ownable(Item).canUpsert(item.id, eth_address))
+
     if (!canUpsert) {
       throw new UnauthorizedToUpsertError(item.id, eth_address)
     }
 
     if (dbCollection) {
       // Prohibits adding an item to a collection that is not owned by the user
-      if (!isCollectionOwner && !isManager) {
+      if (!isOwnerOrManager) {
         throw new UnauthorizedToChangeToCollectionError(
           item.id,
           eth_address,

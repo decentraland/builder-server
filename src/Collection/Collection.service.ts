@@ -532,16 +532,11 @@ export class CollectionService {
     return !!remoteCollection
   }
 
-  public async isDCLManager(
-    id: string,
-    ethAddress: string
-  ): Promise<boolean> {
+  public async isDCLManager(id: string, ethAddress: string): Promise<boolean> {
     const collection = await this.getCollection(id)
 
     if (collection) {
-      return collection.managers.some(
-        manager => manager === ethAddress
-      )
+      return collection.managers.some((manager) => manager === ethAddress)
     }
 
     return false
@@ -555,7 +550,10 @@ export class CollectionService {
     if (collection && isTPCollection(collection)) {
       return thirdPartyAPI.isManager(collection.third_party_id!, ethAddress)
     } else if (collection) {
-      return collection.eth_address === ethAddress
+      return (
+        collection.eth_address === ethAddress ||
+        this.isDCLManager(id, ethAddress)
+      )
     }
 
     return false

@@ -2037,12 +2037,7 @@ describe('Item router', () => {
       describe('and the user is not authorized', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbItem.id)
-          mockItemAuthorizationMiddleware(
-            dbItem.id,
-            wallet.address,
-            false,
-            false
-          )
+          mockItemAuthorizationMiddleware(dbItem, wallet.address, false, false)
         })
 
         it('should respond with a 401 and a message signaling that the user is not authorized', () => {
@@ -2065,16 +2060,17 @@ describe('Item router', () => {
 
       describe("and the item doesn't have a collection", () => {
         beforeEach(() => {
-          mockExistsMiddleware(Item, dbItem.id)
+          const mockDbItem = { ...dbItem, collection_id: null }
+          mockExistsMiddleware(Item, mockDbItem.id)
           mockItemAuthorizationMiddleware(
-            dbItem.id,
+            mockDbItem,
             wallet.address,
             false,
             true
           )
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
-          >).mockResolvedValueOnce({ ...dbItem, collection_id: null })
+          >).mockResolvedValueOnce(mockDbItem)
         })
 
         it('should respond with a 200 and delete the item', () => {
@@ -2096,15 +2092,13 @@ describe('Item router', () => {
       describe('and the item has a collection', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbItem.id)
-          mockItemAuthorizationMiddleware(
-            dbItem.id,
-            wallet.address,
-            false,
-            true
-          )
+          mockItemAuthorizationMiddleware(dbItem, wallet.address, false, true)
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
           >).mockResolvedValueOnce(dbItem)
+          ;(Collection.findOne as jest.MockedFunction<
+            typeof Collection.findOne
+          >).mockResolvedValueOnce(dbCollectionMock)
           ;(Collection.findByIds as jest.MockedFunction<
             typeof Collection.findByIds
           >).mockResolvedValueOnce([
@@ -2148,12 +2142,7 @@ describe('Item router', () => {
       describe('and the collection of the item is not part of a third party collection', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbTPItem.id)
-          mockItemAuthorizationMiddleware(
-            dbTPItem.id,
-            wallet.address,
-            true,
-            true
-          )
+          mockItemAuthorizationMiddleware(dbTPItem, wallet.address, true, true)
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
           >).mockResolvedValueOnce(dbTPItem)
@@ -2190,12 +2179,7 @@ describe('Item router', () => {
       describe('and the collection of the item is locked', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbTPItem.id)
-          mockItemAuthorizationMiddleware(
-            dbTPItem.id,
-            wallet.address,
-            true,
-            true
-          )
+          mockItemAuthorizationMiddleware(dbTPItem, wallet.address, true, true)
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
           >).mockResolvedValueOnce(dbTPItem)
@@ -2239,12 +2223,7 @@ describe('Item router', () => {
       describe('and the item exists in the catalyst', () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbTPItem.id)
-          mockItemAuthorizationMiddleware(
-            dbTPItem.id,
-            wallet.address,
-            true,
-            true
-          )
+          mockItemAuthorizationMiddleware(dbTPItem, wallet.address, true, true)
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
           >).mockResolvedValueOnce(dbTPItem)
@@ -2282,12 +2261,7 @@ describe('Item router', () => {
       describe("and the item doesn't exist in the catalayst and the third party collection is not locked", () => {
         beforeEach(() => {
           mockExistsMiddleware(Item, dbTPItem.id)
-          mockItemAuthorizationMiddleware(
-            dbTPItem.id,
-            wallet.address,
-            true,
-            true
-          )
+          mockItemAuthorizationMiddleware(dbTPItem, wallet.address, true, true)
           ;(Item.findOne as jest.MockedFunction<
             typeof Item.findOne
           >).mockResolvedValueOnce(dbTPItem)

@@ -9,10 +9,10 @@ import { Collection } from '../src/Collection'
 import { ItemCuration } from '../src/Curation/ItemCuration'
 import { Ownable } from '../src/Ownable/Ownable'
 import { Item } from '../src/Item/Item.model'
+import { ItemAttributes } from '../src/Item/Item.types'
 import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
 import { wallet } from './mocks/wallet'
 import { dbCollectionMock } from './mocks/collections'
-import { dbItemMock } from './mocks/items'
 import { tpWearableMock } from './mocks/peer'
 
 export function buildURL(
@@ -221,30 +221,32 @@ export function mockThirdPartyURNExists(
  * by mocking all the function calls to the Collection model and the TP requests.
  * This mock requires the Item model findOne method to be mocked first.
  *
- * @param id - The id of the item to be authorized.
+ * @param item - The item to be authorized.
  * @param ethAddress - The ethAddress of the user that will be requesting authorization to the item.
  * @param isThirdParty - If the mock is for a third party item.
  * @param isAuthorized - If the user should be authorized or not. This is useful to test the response of the middleware.
  */
 export function mockItemAuthorizationMiddleware(
-  id: string,
+  item: ItemAttributes,
   eth_address: string,
   isThirdParty = false,
   isAuthorized = true
 ) {
   const itemToReturn = {
-    ...dbItemMock,
+    ...item,
     urn_suffix: isThirdParty ? 'third-party' : null,
     eth_address,
   }
 
   ;(Item.findOne as jest.Mock).mockImplementationOnce((givenId) =>
-    Promise.resolve(givenId === id && isAuthorized ? itemToReturn : undefined)
+    Promise.resolve(
+      givenId === item.id && isAuthorized ? itemToReturn : undefined
+    )
   )
 
-  if (isThirdParty) {
+  if (isThirdParty && item.collection_id) {
     mockCollectionAuthorizationMiddleware(
-      dbItemMock.collection_id!,
+      item.collection_id,
       eth_address,
       isThirdParty,
       isAuthorized

@@ -1,8 +1,11 @@
+import { dbCollectionMock } from '../../spec/mocks/collections'
 import { dbItemMock } from '../../spec/mocks/items'
+import { Collection } from '../Collection/Collection.model'
 import { Item } from './Item.model'
 import { ItemService } from './Item.service'
 import { ItemAttributes } from './Item.types'
 
+jest.mock('../Collection/Collection.model')
 jest.mock('./Item.model')
 
 describe('Item Service', () => {
@@ -17,6 +20,10 @@ describe('Item Service', () => {
       beforeEach(() => {
         dbItem = { ...dbItemMock, eth_address: '0xoriginalAddress' }
         ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+          ...dbCollectionMock,
+          eth_address: '0xoriginalAddress',
+        })
       })
 
       it('should return true', async () => {

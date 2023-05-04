@@ -120,7 +120,7 @@ export class ItemService {
     const dbItem = await Item.findOne<ItemAttributes>(id)
     if (!dbItem) {
       return false
-    } else if (isTPItem(dbItem)) {
+    } else if (dbItem.collection_id) {
       return this.collectionService.isOwnedOrManagedBy(
         dbItem.collection_id,
         ethAddress
@@ -466,6 +466,7 @@ export class ItemService {
       isCollectionOwner ||
       (await new Ownable(Item).canUpsert(item.id, eth_address)) ||
       isManager
+
     if (!canUpsert) {
       throw new UnauthorizedToUpsertError(item.id, eth_address)
     }

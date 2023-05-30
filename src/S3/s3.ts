@@ -19,7 +19,7 @@ if (!BUCKET_NAME) {
 }
 
 export const MAX_FILE_SIZE =
-  parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 10000000
+  parseInt(env.get('AWS_MAX_FILE_SIZE', ''), 10) || 26214400
 
 const STORAGE_URL = env.get('AWS_STORAGE_URL', undefined)
 

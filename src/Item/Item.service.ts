@@ -85,7 +85,7 @@ export class ItemService {
     const collectionId: string | null =
       dbItem?.collection_id ?? item.collection_id
     if (collectionId) {
-      dbCollection = await this.collectionService.getDBCollection(collectionId)
+      dbCollection = await this.collectionService.getCollection(collectionId)
     }
 
     // Set the item dates
@@ -456,7 +456,7 @@ export class ItemService {
       ))
 
     const isCollectionOwner =
-      dbCollection && dbCollection.eth_address.toLowerCase() === eth_address
+    dbCollection && dbCollection.eth_address.toLowerCase() === eth_address
 
     const isManager =
       isDbCollectionPublished &&

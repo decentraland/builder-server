@@ -456,7 +456,7 @@ export class ItemService {
       ))
 
     const isCollectionOwner =
-    dbCollection && dbCollection.eth_address.toLowerCase() === eth_address
+      dbCollection && dbCollection.eth_address.toLowerCase() === eth_address
 
     const isManager =
       isDbCollectionPublished &&

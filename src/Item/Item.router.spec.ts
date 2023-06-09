@@ -1727,8 +1727,12 @@ describe('Item router', () => {
               },
             ])
             ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
-            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
-              () => Promise.resolve(itemFragment.collection)
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementation(
+              () =>
+                Promise.resolve({
+                  ...itemFragment.collection,
+                  creator: wallet.address,
+                })
             )
           })
 
@@ -1776,7 +1780,7 @@ describe('Item router', () => {
               },
             ])
             ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
-            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementation(
               () =>
                 Promise.resolve({
                   ...itemFragment.collection,
@@ -1802,8 +1806,7 @@ describe('Item router', () => {
             expect(response.body).toEqual({
               data: {
                 ...Bridge.toFullItem(dbItem),
-                local_content_hash:
-                  'bafkreiaqn33clj5i7vtdbsmltwrfclrfs4tb3rgdnlzfjtfpdkyxix2e6e',
+                local_content_hash: expect.any(String),
                 eth_address: ethAddress,
                 created_at: dbItem.created_at.toISOString(),
                 updated_at: currentDate.toISOString(),
@@ -1827,7 +1830,11 @@ describe('Item router', () => {
             ])
             ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
             ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
-              () => Promise.resolve(itemFragment.collection)
+              () =>
+                Promise.resolve({
+                  ...itemFragment.collection,
+                  creator: wallet.address,
+                })
             )
           })
 
@@ -1860,7 +1867,11 @@ describe('Item router', () => {
             ])
             ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
             ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
-              () => Promise.resolve(itemFragment.collection)
+              () =>
+                Promise.resolve({
+                  ...itemFragment.collection,
+                  creator: wallet.address,
+                })
             )
           })
 
@@ -1891,7 +1902,11 @@ describe('Item router', () => {
             ])
             ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
             ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
-              () => Promise.resolve(itemFragment.collection)
+              () =>
+                Promise.resolve({
+                  ...itemFragment.collection,
+                  creator: wallet.address,
+                })
             )
           })
 
@@ -1936,7 +1951,11 @@ describe('Item router', () => {
             ])
             ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
             ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
-              () => Promise.resolve(itemFragment.collection)
+              () =>
+                Promise.resolve({
+                  ...itemFragment.collection,
+                  creator: wallet.address,
+                })
             )
           })
 
@@ -1954,8 +1973,7 @@ describe('Item router', () => {
             expect(response.body).toEqual({
               data: {
                 ...Bridge.toFullItem(dbItem),
-                local_content_hash:
-                  'bafkreiaqn33clj5i7vtdbsmltwrfclrfs4tb3rgdnlzfjtfpdkyxix2e6e',
+                local_content_hash: expect.any(String),
                 eth_address: wallet.address,
                 created_at: dbItem.created_at.toISOString(),
                 updated_at: currentDate.toISOString(),

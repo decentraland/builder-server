@@ -5,17 +5,44 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
-import { Collection, CollectionAttributes } from '../Collection'
+import {
+  Collection,
+  CollectionAttributes,
+  CollectionService,
+} from '../Collection'
 import { isErrorWithMessage } from '../utils/errors'
-import { createPost } from './client'
+import { createPost, getPost, updatePost } from './client'
 import { ForumPost, forumPostSchema } from './Forum.types'
+import { isTPCollection } from '../utils/urn'
+import { MAX_FORUM_ITEMS } from '../Item/utils'
+import { Item } from '../Item'
+import { Bridge } from '../ethereum/api/Bridge'
+import { OwnableModel } from '../Ownable'
+import {
+  buildCollectionForumPost,
+  buildCollectionForumUpdateReply,
+} from './utils'
 
 const validator = getValidator()
 
 export class ForumRouter extends Router {
+  public service = new CollectionService()
+
+  private modelAuthorizationCheck = (
+    _: OwnableModel,
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> => {
+    return this.service.isOwnedOrManagedBy(id, ethAddress)
+  }
+
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
-    const withCollectionAuthorization = withModelAuthorization(Collection)
+    const withCollectionAuthorization = withModelAuthorization(
+      Collection,
+      'id',
+      this.modelAuthorizationCheck
+    )
 
     /**
      * Post a new thread to the forum
@@ -42,18 +69,44 @@ export class ForumRouter extends Router {
     const forumPost: ForumPost = forumPostJSON as ForumPost
 
     const collection = await Collection.findOne(collectionId)
+
     if (collection.forum_link) {
       throw new HTTPError('Forum post already exists', { id: collectionId })
     }
 
     try {
-      const { id, link } = await createPost(forumPost)
-      await Collection.update<CollectionAttributes>(
-        { forum_id: id, forum_link: link },
-        { id: collectionId }
-      )
+      if (isTPCollection(collection)) {
+        // This logic is repeated in the Collection.router, we should generalize this behavior.
+        const items = await Item.findOrderedByCollectionId(collectionId)
+        const slicedItems = items
+          .slice(0, MAX_FORUM_ITEMS)
+          .map((item) => Bridge.toFullItem(item, collection))
 
-      return link
+        if (collection.forum_id) {
+          const postData = await getPost(collection.forum_id)
+          await updatePost(
+            collection.forum_id,
+            buildCollectionForumUpdateReply(postData.raw, slicedItems)
+          )
+          return
+        } else {
+          const { id: postId, link } = await createPost(
+            buildCollectionForumPost(collection, slicedItems)
+          )
+          await Collection.update<CollectionAttributes>(
+            { forum_link: link, forum_id: postId },
+            { id: collectionId }
+          )
+          return link
+        }
+      } else {
+        const { id, link } = await createPost(forumPost)
+        await Collection.update<CollectionAttributes>(
+          { forum_id: id, forum_link: link },
+          { id: collectionId }
+        )
+        return link
+      }
     } catch (error) {
       throw new HTTPError(
         'Error creating forum post',

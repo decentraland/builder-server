@@ -42,7 +42,6 @@ export async function createPost(
 export async function createAssigneeEventPost(
   forumPost: ForumNewPost
 ): Promise<void> {
-  console.log('in here')
   const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
     headers: {
       'Api-Key': FORUM_API_KEY,

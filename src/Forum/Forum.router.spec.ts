@@ -30,7 +30,7 @@ import { MAX_FORUM_ITEMS } from '../Item/utils'
 
 const server = supertest(app.getApp())
 
-jest.mock('../Collection/Collection.Service')
+jest.mock('../Collection/Collection.service')
 jest.mock('../Curation/ItemCuration/ItemCuration.model')
 jest.mock('../Curation/CollectionCuration/CollectionCuration.model')
 jest.mock('../Collection/Collection.model')

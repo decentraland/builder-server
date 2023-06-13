@@ -27,13 +27,6 @@ import {
 } from '../Item/Item.errors'
 import { Item, ItemApprovalData } from '../Item'
 import { isCommitteeMember } from '../Committee'
-import {
-  buildCollectionForumPost,
-  buildCollectionForumUpdateReply,
-  createPost,
-  getPost,
-  updatePost,
-} from '../Forum'
 import { sendDataToWarehouse } from '../warehouse'
 import { Cheque } from '../SlotUsageCheque'
 import { PaginatedResponse } from '../Pagination'
@@ -45,6 +38,7 @@ import {
 import { CurationStatusFilter } from '../Curation'
 import { addCustomMaxAgeCacheControlHeader } from '../common/headers'
 import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
+import { ForumService } from '../Forum/Forum.service'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
@@ -52,7 +46,7 @@ import {
   CollectionAttributes,
   FullCollection,
   CollectionTypeFilter,
-  CollectionSort
+  CollectionSort,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
@@ -72,6 +66,7 @@ const validator = getValidator()
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
+  public forumService = new ForumService()
 
   private modelAuthorizationCheck = (
     _: OwnableModel,
@@ -317,7 +312,7 @@ export class CollectionRouter extends Router {
         offset: page && limit ? getOffset(page, limit) : undefined,
         limit,
         address: eth_address,
-        sort: sort as CollectionSort || CollectionSort.CREATED_AT_DESC,
+        sort: (sort as CollectionSort) || CollectionSort.CREATED_AT_DESC,
         isPublished: is_published ? is_published === 'true' : undefined,
         remoteIds: authorizedRemoteCollections.map(
           (remoteCollection) => remoteCollection.id
@@ -400,27 +395,10 @@ export class CollectionRouter extends Router {
         // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
         // TODO: Should this be halting the response? Retries?
 
-        if (dbCollection.forum_id) {
-          const postData = await getPost(dbCollection.forum_id)
-          await updatePost(
-            dbCollection.forum_id,
-            buildCollectionForumUpdateReply(
-              postData.raw,
-              result.items.slice(0, MAX_FORUM_ITEMS)
-            )
-          )
-        } else {
-          const { id: postId, link } = await createPost(
-            buildCollectionForumPost(
-              result.collection,
-              result.items.slice(0, MAX_FORUM_ITEMS)
-            )
-          )
-          await Collection.update<CollectionAttributes>(
-            { forum_link: link, forum_id: postId },
-            { id }
-          )
-        }
+        this.forumService.upsertThirdPartyCollectionForumPost(
+          dbCollection,
+          result.items.slice(0, MAX_FORUM_ITEMS)
+        )
       } else {
         const dbItems = await Item.findOrderedByCollectionId(id)
         result = await this.service.publishDCLCollection(dbCollection, dbItems)

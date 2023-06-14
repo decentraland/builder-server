@@ -168,6 +168,10 @@ describe('Forum router', () => {
                 ...dbTPCollection,
                 forum_id: forumId,
               })
+              ;(updatePost as jest.Mock).mockResolvedValueOnce({
+                id: forumId,
+                link: forumLink,
+              })
             })
 
             it('should update the forum post with the response data', () => {
@@ -186,6 +190,17 @@ describe('Forum router', () => {
                       items.slice(0, MAX_FORUM_ITEMS) as any
                     )
                   )
+                })
+            })
+
+            it('should return the link of the forum post', () => {
+              return server
+                .post(buildURL(url))
+                .set(authHeaders)
+                .send({ forumPost: post })
+                .expect(200)
+                .then((response: any) => {
+                  expect(response.body).toEqual({ data: forumLink, ok: true })
                 })
             })
           })

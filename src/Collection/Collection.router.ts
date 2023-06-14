@@ -395,7 +395,7 @@ export class CollectionRouter extends Router {
         // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
         // TODO: Should this be halting the response? Retries?
 
-        this.forumService.upsertThirdPartyCollectionForumPost(
+        await this.forumService.upsertThirdPartyCollectionForumPost(
           dbCollection,
           result.items.slice(0, MAX_FORUM_ITEMS)
         )

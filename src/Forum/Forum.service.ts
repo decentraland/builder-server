@@ -9,28 +9,28 @@ import {
   buildCollectionForumPost,
   buildCollectionForumUpdateReply,
 } from './utils'
+import { UpsertPostResult } from './Forum.types'
 
 export class ForumService {
   async upsertThirdPartyCollectionForumPost(
     collection: ThirdPartyCollectionAttributes,
     items: FullItem[]
   ): Promise<string | undefined> {
+    let result: UpsertPostResult
     if (collection.forum_id) {
       const postData = await getPost(collection.forum_id)
-      await updatePost(
+      result = await updatePost(
         collection.forum_id,
         buildCollectionForumUpdateReply(postData.raw, items)
       )
-      return
     } else {
-      const { id: postId, link } = await createPost(
-        buildCollectionForumPost(collection, items)
-      )
+      result = await createPost(buildCollectionForumPost(collection, items))
+      const { id: postId, link } = result
       await Collection.update<CollectionAttributes>(
         { forum_link: link, forum_id: postId },
         { id: collection.id }
       )
-      return link
     }
+    return result.link
   }
 }

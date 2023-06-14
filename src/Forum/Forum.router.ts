@@ -76,12 +76,13 @@ export class ForumRouter extends Router {
         // This logic is repeated in the Collection.router, we should generalize this behavior.
         const items = await Item.findOrderedByCollectionId(collectionId)
 
-        return this.service.upsertThirdPartyCollectionForumPost(
+        const link = await this.service.upsertThirdPartyCollectionForumPost(
           collection,
           items
             .slice(0, MAX_FORUM_ITEMS)
             .map((item) => Bridge.toFullItem(item, collection))
         )
+        return link
       } else {
         const { id, link } = await createPost(forumPost)
         await Collection.update<CollectionAttributes>(

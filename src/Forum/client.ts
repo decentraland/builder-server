@@ -1,15 +1,22 @@
 import fetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
-import { CreateResponse, ForumNewPost, ForumPost } from './Forum.types'
+import {
+  CreateResponse,
+  CreateSuccess,
+  ForumNewPost,
+  ForumPost,
+  UpsertPostResult,
+} from './Forum.types'
 
 const FORUM_URL = env.get('FORUM_URL', '')
 const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
 const FORUM_API_USERNAME = env.get('FORUM_API_USERNAME', '')
 const FORUM_CATEGORY = env.get('FORUM_CATEGORY')
 
-export async function createPost(
-  post: ForumPost
-): Promise<{ id: number; link: string }> {
+const postLink = ({ topic_slug, topic_id }: CreateSuccess) =>
+  `${FORUM_URL}/t/${topic_slug}/${topic_id}`
+
+export async function createPost(post: ForumPost): Promise<UpsertPostResult> {
   const forumPost = {
     ...post,
     title: sanitizeTitle(post.title!),
@@ -35,8 +42,7 @@ export async function createPost(
     )
   }
 
-  const { id, topic_id, topic_slug } = result
-  return { id, link: `${FORUM_URL}/t/${topic_slug}/${topic_id}` }
+  return { id: result.id, link: postLink(result) }
 }
 
 export async function createAssigneeEventPost(
@@ -75,7 +81,10 @@ export async function getPost(id: number): Promise<ForumPost> {
   return result
 }
 
-export async function updatePost(id: number, rawPost: ForumPost['raw']) {
+export async function updatePost(
+  id: number,
+  rawPost: ForumPost['raw']
+): Promise<UpsertPostResult> {
   const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
     headers: {
       'Api-Key': FORUM_API_KEY,
@@ -95,6 +104,8 @@ export async function updatePost(id: number, rawPost: ForumPost['raw']) {
       )}`
     )
   }
+
+  return { id, link: postLink(result) }
 }
 
 function sanitizeTitle(title: string) {

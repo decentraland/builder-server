@@ -1,5 +1,4 @@
 import { server } from 'decentraland-server'
-
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -11,29 +10,27 @@ import {
   CollectionService,
 } from '../Collection'
 import { isErrorWithMessage } from '../utils/errors'
-import { createPost, getPost, updatePost } from './client'
+import { createPost } from './client'
 import { ForumPost, forumPostSchema } from './Forum.types'
 import { isTPCollection } from '../utils/urn'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { Item } from '../Item'
 import { Bridge } from '../ethereum/api/Bridge'
 import { OwnableModel } from '../Ownable'
-import {
-  buildCollectionForumPost,
-  buildCollectionForumUpdateReply,
-} from './utils'
+import { ForumService } from './Forum.service'
 
 const validator = getValidator()
 
 export class ForumRouter extends Router {
-  public service = new CollectionService()
+  public service = new ForumService()
+  public collectionService = new CollectionService()
 
   private modelAuthorizationCheck = (
     _: OwnableModel,
     id: string,
     ethAddress: string
   ): Promise<boolean> => {
-    return this.service.isOwnedOrManagedBy(id, ethAddress)
+    return this.collectionService.isOwnedOrManagedBy(id, ethAddress)
   }
 
   mount() {
@@ -56,7 +53,7 @@ export class ForumRouter extends Router {
     )
   }
 
-  async post(req: AuthRequest) {
+  post = async (req: AuthRequest) => {
     const collectionId: string = server.extractFromReq(req, 'id')
     const forumPostJSON: any = server.extractFromReq(req, 'forumPost')
 
@@ -78,27 +75,14 @@ export class ForumRouter extends Router {
       if (isTPCollection(collection)) {
         // This logic is repeated in the Collection.router, we should generalize this behavior.
         const items = await Item.findOrderedByCollectionId(collectionId)
-        const slicedItems = items
-          .slice(0, MAX_FORUM_ITEMS)
-          .map((item) => Bridge.toFullItem(item, collection))
 
-        if (collection.forum_id) {
-          const postData = await getPost(collection.forum_id)
-          await updatePost(
-            collection.forum_id,
-            buildCollectionForumUpdateReply(postData.raw, slicedItems)
-          )
-          return
-        } else {
-          const { id: postId, link } = await createPost(
-            buildCollectionForumPost(collection, slicedItems)
-          )
-          await Collection.update<CollectionAttributes>(
-            { forum_link: link, forum_id: postId },
-            { id: collectionId }
-          )
-          return link
-        }
+        const link = await this.service.upsertThirdPartyCollectionForumPost(
+          collection,
+          items
+            .slice(0, MAX_FORUM_ITEMS)
+            .map((item) => Bridge.toFullItem(item, collection))
+        )
+        return link
       } else {
         const { id, link } = await createPost(forumPost)
         await Collection.update<CollectionAttributes>(

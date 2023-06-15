@@ -31,6 +31,8 @@ export type CreateError = {
 
 export type CreateResponse = CreateSuccess | CreateError
 
+export type UpsertPostResult = { id: number; link: string }
+
 export const forumPostSchema = Object.freeze({
   type: 'object',
   properties: {

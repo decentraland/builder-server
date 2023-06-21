@@ -638,10 +638,12 @@ export class CollectionRouter extends Router {
 
     if (tags?.includes('pride23')) {
       consolidated = consolidated.filter((c) => {
+        // If it has not been reviewed we don't care about filtering it.
         if (!c.reviewed_at) {
           return true
         }
 
+        // Will not return any pride items that were updated after being reviewed.
         return c.updated_at <= c.reviewed_at
       })
     }

@@ -601,6 +601,12 @@ export class CollectionRouter extends Router {
       toRemoteWhereCondition({ status: status as CurationStatusFilter })
     )
 
+    const tags = tag
+      ? Array.isArray(tag)
+        ? (tag as string[]).map((t) => t.toLowerCase())
+        : [(tag as string).toLowerCase()]
+      : undefined
+
     const allCollectionsWithCount = await this.service.getCollections({
       q: q as string,
       assignee: assignee as string,
@@ -615,11 +621,7 @@ export class CollectionRouter extends Router {
         : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.
           // We filter at this level and not in the query because we need all the collections so they can be consolidated later on.
           remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
-      itemTags: tag
-        ? Array.isArray(tag)
-          ? (tag as string[]).map((t) => t.toLowerCase())
-          : [(tag as string).toLowerCase()]
-        : undefined,
+      itemTags: tags,
     })
 
     const totalCollections =
@@ -629,15 +631,30 @@ export class CollectionRouter extends Router {
       omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
     )
 
-    const consolidated = (
-      await Bridge.consolidateAllCollections(dbCollections, remoteCollections)
-    ).map((collection) => collection.contract_address!)
+    const consolidated = await Bridge.consolidateAllCollections(
+      dbCollections,
+      remoteCollections
+    )
+
+    if (tags?.includes('pride23')) {
+      consolidated.filter((c) => {
+        if (!c.reviewed_at) {
+          return true
+        }
+
+        return c.updated_at <= c.reviewed_at
+      })
+    }
+
+    const addresses = consolidated.map(
+      (collection) => collection.contract_address!
+    )
 
     const RES_MAX_AGE = 300 // 5 mins
     addCustomMaxAgeCacheControlHeader(res, RES_MAX_AGE)
 
     return page && limit
-      ? generatePaginatedResponse(consolidated, totalCollections, limit, page)
-      : consolidated
+      ? generatePaginatedResponse(addresses, totalCollections, limit, page)
+      : addresses
   }
 }

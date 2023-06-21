@@ -631,13 +631,13 @@ export class CollectionRouter extends Router {
       omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
     )
 
-    const consolidated = await Bridge.consolidateAllCollections(
+    let consolidated = await Bridge.consolidateAllCollections(
       dbCollections,
       remoteCollections
     )
 
     if (tags?.includes('pride23')) {
-      consolidated.filter((c) => {
+      consolidated = consolidated.filter((c) => {
         if (!c.reviewed_at) {
           return true
         }

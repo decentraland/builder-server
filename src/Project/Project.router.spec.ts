@@ -25,12 +25,13 @@ const mockEmptyResult = {
 }
 
 describe('Project Router', () => {
-  const url = '/projects/'
+  let url = ''
 
   describe('when getting the projects of a user', () => {
     let mockResult: any
     describe('and the user has projects', () => {
       beforeEach(() => {
+        url = '/projects/'
         mockResult = {
           items: [aProject],
           total: 1,
@@ -92,13 +93,12 @@ describe('Project Router', () => {
   })
 
   describe('when getting the scene templates', () => {
-    let queryParams: Record<string, string>
     let mockResult: any
-
+  
     beforeEach(() => {
-      queryParams = { is_template: 'true' }
+      url = '/templates'
     })
-
+  
     describe('and there are templates created', () => {
       beforeEach(() => {
         mockResult = {
@@ -110,17 +110,17 @@ describe('Project Router', () => {
           .spyOn(SearchableModel.prototype, 'search')
           .mockResolvedValueOnce(mockResult)
       })
-
+  
       afterEach(() => {
         jest.resetAllMocks()
       })
-
+  
       it('should return the templates', async () => {
         const response = await server
-          .get(buildURL(url, queryParams))
+          .get(buildURL(url))
           .set(createAuthHeaders('get', url))
           .expect(200)
-
+  
         expect(response.body).toEqual({
           data: mockResult,
           ok: true,
@@ -130,24 +130,24 @@ describe('Project Router', () => {
         )
       })
     })
-
+  
     describe('and there are not templates created', () => {
       beforeEach(() => {
         jest
           .spyOn(SearchableModel.prototype, 'search')
           .mockResolvedValueOnce(mockEmptyResult)
       })
-
+  
       afterEach(() => {
         jest.resetAllMocks()
       })
-
+  
       it('should return an empty array', async () => {
         const response = await server
-          .get(buildURL(url, queryParams))
+          .get(buildURL(url))
           .set(createAuthHeaders('get', url))
           .expect(200)
-
+  
         expect(response.body).toEqual({
           data: mockEmptyResult,
           ok: true,
@@ -157,37 +157,5 @@ describe('Project Router', () => {
         )
       })
     })
-
-    describe.each(['false', 'undefined', 'null', ''])(
-      'and send the queryParam is_template: %s',
-      (is_template) => {
-        beforeEach(() => {
-          queryParams = { ...queryParams, is_template }
-          jest.spyOn(SearchableProject.prototype, 'searchByEthAddress')
-          jest
-            .spyOn(SearchableModel.prototype, 'search')
-            .mockResolvedValueOnce(mockEmptyResult)
-        })
-
-        afterEach(() => {
-          jest.resetAllMocks()
-        })
-
-        it('should call the searchByEthAddress method', async () => {
-          const response = await server
-            .get(buildURL(url, queryParams))
-            .set(createAuthHeaders('get', url))
-            .expect(200)
-
-          expect(response.body).toEqual({
-            data: mockEmptyResult,
-            ok: true,
-          })
-          expect(
-            SearchableProject.prototype.searchByEthAddress
-          ).toBeCalledTimes(1)
-        })
-      }
-    )
   })
 })

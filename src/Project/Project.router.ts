@@ -7,7 +7,11 @@ import { Router } from '../common/Router'
 import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
-import { withModelExists, withModelAuthorization } from '../middleware'
+import {
+  withModelExists,
+  withModelAuthorization,
+  withLowercaseQueryParams,
+} from '../middleware'
 import { S3Project, getBucketURL, getUploader } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
@@ -45,6 +49,7 @@ export class ProjectRouter extends Router {
     this.router.get(
       '/projects',
       withAuthentication,
+      withLowercaseQueryParams(['is_template']),
       server.handleRequest(this.getProjects)
     )
 
@@ -130,8 +135,15 @@ export class ProjectRouter extends Router {
 
   async getProjects(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
+    const is_template = req.query.is_template
+
     const projectSearcher = new SearchableProject(req)
-    return projectSearcher.searchByEthAddress(eth_address)
+
+    if (is_template === 'true') {
+      return projectSearcher.searchByIsTemplate()
+    } else {
+      return projectSearcher.searchByEthAddress(eth_address)
+    }
   }
 
   async getProject(req: AuthRequest) {

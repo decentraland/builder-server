@@ -28,4 +28,22 @@ export class SearchableProject {
 
     return searchableProject.search(parameters, conditions)
   }
+
+  async searchByIsTemplate() {
+    const requestParameters = new RequestParameters(this.req)
+    const searchableProject = new SearchableModel<ProjectAttributes>(
+      Project.tableName
+    )
+    const parameters = new SearchableParameters<ProjectAttributes>(
+      requestParameters
+    )
+    const conditions = new SearchableConditions<ProjectAttributes>(
+      requestParameters,
+      { eq: searchableProjectProperties }
+    )
+    conditions.addExtras('eq', { is_template: true })
+    conditions.addExtras('eq', { is_deleted: false })
+
+    return searchableProject.search(parameters, conditions)
+  }
 }

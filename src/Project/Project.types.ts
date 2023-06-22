@@ -18,6 +18,9 @@ export type ProjectAttributes = {
   created_at: Date
   updated_at: Date
   creation_coords: string
+  is_template: boolean
+  video?: string
+  template_status?: TemplateStatus
 }
 
 export type ProjectStatisticsAttributes = Pick<
@@ -31,6 +34,11 @@ export type ProjectStatisticsAttributes = Pick<
   | 'gltf_shapes'
   | 'nft_shapes'
 >
+
+export enum TemplateStatus {
+  PENDING = 'pending',
+  AVAILABLE = 'available',
+}
 
 export const projectSchema = Object.freeze({
   type: 'object',
@@ -47,6 +55,12 @@ export const projectSchema = Object.freeze({
     created_at: { type: ['string', 'null'] },
     updated_at: { type: ['string', 'null'] },
     creation_coords: { type: 'string' },
+    is_template: { type: ['boolean', 'null'] },
+    video: { type: ['string', 'null'] },
+    template_status: {
+      type: ['string', 'null'],
+      enum: [TemplateStatus.PENDING, TemplateStatus.AVAILABLE, null],
+    },
   },
   additionalProperties: false,
   required: ['id', 'title', 'description', 'scene_id', 'cols', 'rows'],
@@ -60,4 +74,6 @@ export const searchableProjectProperties: (keyof ProjectAttributes)[] = [
   'created_at',
   'updated_at',
   'creation_coords',
+  'is_template',
+  'template_status',
 ]

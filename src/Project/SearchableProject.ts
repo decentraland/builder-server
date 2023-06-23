@@ -1,4 +1,5 @@
 import { String } from 'aws-sdk/clients/codebuild'
+import { Request } from 'express'
 import { ProjectAttributes, Project, searchableProjectProperties } from '.'
 import { AuthRequest } from '../middleware'
 import { RequestParameters } from '../RequestParameters'
@@ -9,7 +10,7 @@ import {
 } from '../Searchable'
 
 export class SearchableProject {
-  constructor(private req: AuthRequest) {}
+  constructor(private req: AuthRequest | Request) {}
 
   async searchByEthAddress(eth_address: String) {
     const requestParameters = new RequestParameters(this.req)

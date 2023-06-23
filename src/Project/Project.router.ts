@@ -10,7 +10,6 @@ import { getValidator } from '../utils/validator'
 import {
   withModelExists,
   withModelAuthorization,
-  withLowercaseQueryParams,
 } from '../middleware'
 import { S3Project, getBucketURL, getUploader } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
@@ -44,12 +43,19 @@ export class ProjectRouter extends Router {
     const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
+     * Get all templates
+     */
+     this.router.get(
+      '/templates',
+      server.handleRequest(this.getTemplates)
+    )
+
+    /**
      * Get all projects
      */
     this.router.get(
       '/projects',
       withAuthentication,
-      withLowercaseQueryParams(['is_template']),
       server.handleRequest(this.getProjects)
     )
 
@@ -135,15 +141,16 @@ export class ProjectRouter extends Router {
 
   async getProjects(req: AuthRequest) {
     const eth_address = req.auth.ethAddress
-    const is_template = req.query.is_template
 
     const projectSearcher = new SearchableProject(req)
 
-    if (is_template === 'true') {
-      return projectSearcher.searchByIsTemplate()
-    } else {
-      return projectSearcher.searchByEthAddress(eth_address)
-    }
+    return projectSearcher.searchByEthAddress(eth_address)
+  }
+
+  async getTemplates(req: Request) {
+    const projectSearcher = new SearchableProject(req)
+
+    return projectSearcher.searchByIsTemplate()
   }
 
   async getProject(req: AuthRequest) {

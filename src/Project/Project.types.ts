@@ -36,8 +36,8 @@ export type ProjectStatisticsAttributes = Pick<
 >
 
 export enum TemplateStatus {
-  PENDING = 'pending',
-  AVAILABLE = 'available',
+  ACTIVE = 'active',
+  COMING_SOON = 'coming_soon',
 }
 
 export const projectSchema = Object.freeze({
@@ -59,7 +59,7 @@ export const projectSchema = Object.freeze({
     video: { type: ['string', 'null'] },
     template_status: {
       type: ['string', 'null'],
-      enum: [TemplateStatus.PENDING, TemplateStatus.AVAILABLE, null],
+      enum: [TemplateStatus.COMING_SOON, TemplateStatus.ACTIVE, null],
     },
   },
   additionalProperties: false,

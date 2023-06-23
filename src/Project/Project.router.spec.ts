@@ -16,7 +16,7 @@ const aTemplate = {
   id: 'aTemplateId',
   is_template: true,
   video: 'aTemplateVideo',
-  template_status: TemplateStatus.AVAILABLE,
+  template_status: TemplateStatus.ACTIVE,
 }
 
 const mockEmptyResult = {

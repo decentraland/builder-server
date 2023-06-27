@@ -131,6 +131,9 @@ export class PoolRouter extends Router {
       is_public,
       is_deleted,
       creation_coords,
+      is_template,
+      video,
+      template_status,
       ...upsertPool
     } = (project || {}) as ProjectAttributes
 

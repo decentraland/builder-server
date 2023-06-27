@@ -12,7 +12,7 @@ import {
   AuthRequest,
 } from '../middleware'
 import { Ownable } from '../Ownable'
-import { Project } from '../Project'
+import { Project, TemplateStatus } from '../Project'
 import {
   S3Project,
   MANIFEST_FILENAME,
@@ -33,6 +33,11 @@ export class ManifestRouter extends Router {
     })
     const withPublishedProjectExists = withModelExists(Project)
     const withProjectAuthorization = withModelAuthorization(Project)
+    const withTemplateExists = withModelExists(Project, 'id', {
+      is_deleted: false,
+      is_template: true,
+      template_status: TemplateStatus.ACTIVE,
+    })
 
     /**
      * Returns the manifest of a project
@@ -60,6 +65,15 @@ export class ManifestRouter extends Router {
     this.router.get(
       '/publics/:id/manifest',
       withProjectExists,
+      this.getProjectManifest
+    )
+
+    /**
+     * Returns the manifest of a template
+     */
+    this.router.get(
+      '/templates/:id/manifest',
+      withTemplateExists,
       this.getProjectManifest
     )
 

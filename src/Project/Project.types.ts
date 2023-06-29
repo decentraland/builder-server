@@ -77,3 +77,13 @@ export const searchableProjectProperties: (keyof ProjectAttributes)[] = [
   'is_template',
   'template_status',
 ]
+
+export const sortableTemplateProperties = {
+  sort: {
+    by: [
+      'template_status',
+      'created_at',
+      'updated_at',
+    ] as (keyof ProjectAttributes)[],
+  },
+}

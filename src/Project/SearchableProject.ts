@@ -1,6 +1,11 @@
 import { String } from 'aws-sdk/clients/codebuild'
 import { Request } from 'express'
-import { ProjectAttributes, Project, searchableProjectProperties } from '.'
+import {
+  ProjectAttributes,
+  Project,
+  searchableProjectProperties,
+  sortableTemplateProperties,
+} from '.'
 import { AuthRequest } from '../middleware'
 import { RequestParameters } from '../RequestParameters'
 import {
@@ -36,7 +41,8 @@ export class SearchableProject {
       Project.tableName
     )
     const parameters = new SearchableParameters<ProjectAttributes>(
-      requestParameters
+      requestParameters,
+      sortableTemplateProperties
     )
     const conditions = new SearchableConditions<ProjectAttributes>(
       requestParameters,

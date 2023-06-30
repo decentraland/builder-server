@@ -8,11 +8,14 @@ import {
 } from '.'
 import { AuthRequest } from '../middleware'
 import { RequestParameters } from '../RequestParameters'
+import { getDefaultEthAddress } from '../AssetPack/utils'
 import {
   SearchableModel,
   SearchableParameters,
   SearchableConditions,
 } from '../Searchable'
+
+const DEFAULT_ETH_ADDRESS = getDefaultEthAddress()
 
 export class SearchableProject {
   constructor(private req: AuthRequest | Request) {}
@@ -49,6 +52,8 @@ export class SearchableProject {
       { eq: searchableProjectProperties }
     )
     conditions.addExtras('eq', { is_template: true })
+    // For now, fetch templates only from the DEFAULT_ETH_ADDRESS
+    conditions.addExtras('eq', { eth_address: DEFAULT_ETH_ADDRESS })
     conditions.addExtras('eq', { is_deleted: false })
 
     return searchableProject.search(parameters, conditions)

@@ -3,6 +3,7 @@ import {
   Wearable,
   WearableCategory,
   WearableRepresentation,
+  HideableWearableCategory,
   I18N,
 } from '@dcl/schemas'
 import { dbCollectionMock } from './collections'
@@ -25,8 +26,8 @@ export const wearableMock: Wearable = {
   data: {
     category: WearableCategory.HAT,
     representations: [] as WearableRepresentation[],
-    replaces: [] as WearableCategory[],
-    hides: [] as WearableCategory[],
+    replaces: [] as HideableWearableCategory[],
+    hides: [] as HideableWearableCategory[],
     tags: [],
   },
 }

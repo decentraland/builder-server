@@ -1,18 +1,18 @@
-import { WearableCategory, BodyShape } from '@dcl/schemas'
+import { WearableCategory, BodyShape, HideableWearableCategory } from '@dcl/schemas'
 
 export type WearableRepresentation = {
   bodyShapes: BodyShape[]
   mainFile: string
   contents: string[]
-  overrideReplaces: WearableCategory[]
-  overrideHides: WearableCategory[]
+  overrideReplaces: HideableWearableCategory[]
+  overrideHides: HideableWearableCategory[]
 }
 
 export type WearableData = {
   category: WearableCategory
   representations: WearableRepresentation[]
-  replaces: WearableCategory[]
-  hides: WearableCategory[]
+  replaces: HideableWearableCategory[]
+  hides: HideableWearableCategory[]
   tags: string[]
 }
 
@@ -37,11 +37,11 @@ export const wearableSchema = Object.freeze({
           },
           overrideReplaces: {
             type: 'array',
-            items: WearableCategory.schema,
+            items: HideableWearableCategory.schema,
           },
           overrideHides: {
             type: 'array',
-            items: WearableCategory.schema,
+            items: HideableWearableCategory.schema,
           },
         },
         additionalProperties: false,
@@ -57,11 +57,11 @@ export const wearableSchema = Object.freeze({
     },
     replaces: {
       type: 'array',
-      items: WearableCategory.schema,
+      items: HideableWearableCategory.schema,
     },
     hides: {
       type: 'array',
-      items: WearableCategory.schema,
+      items: HideableWearableCategory.schema,
     },
     tags: {
       type: 'array',

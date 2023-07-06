@@ -68,7 +68,9 @@ class Storage implements multer.StorageEngine {
 
     const [key] = await Promise.all([
       this.getKey(file, req),
-      uploadFile(id, uploadStream, ACL.publicRead),
+      uploadFile(id, uploadStream, ACL.publicRead, {
+        ContentType: file.mimetype,
+      }),
     ])
 
     // move file to key

@@ -1,5 +1,6 @@
 import { hashV1 } from '@dcl/hashing'
 import { server } from 'decentraland-server'
+import { env } from 'decentraland-commons'
 import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -28,6 +29,7 @@ import {
   getPaginationParams,
 } from '../Pagination/utils'
 import { CurationStatus } from '../Curation'
+import { MulterFile } from '../S3/types'
 import { Item } from './Item.model'
 import { ItemAttributes } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
@@ -48,6 +50,9 @@ import {
   URNAlreadyInUseError,
 } from './Item.errors'
 
+export const MAX_VIDEO_SIZE =
+  parseInt(env.get('AWS_MAX_VIDEO_SIZE', ''), 10) || 5e7 // 50MB
+
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service
   public collectionService = new CollectionService()
@@ -59,6 +64,11 @@ export class ItemRouter extends Router {
     ethAddress: string
   ): Promise<boolean> => {
     return this.itemService.isOwnedOrManagedBy(id, ethAddress)
+  }
+
+  private getFileStreamKey = async (file: MulterFile) => {
+    const hash = await hashV1(file.stream)
+    return new S3Content().getFileKey(hash)
   }
 
   mount() {
@@ -141,10 +151,22 @@ export class ItemRouter extends Router {
       withItemExists,
       withItemAuthorization,
       getUploader({
-        getFileStreamKey: async (file) => {
-          const hash = await hashV1(file.stream)
-          return new S3Content().getFileKey(hash)
-        },
+        getFileStreamKey: this.getFileStreamKey,
+      }).any(),
+      server.handleRequest(this.uploadItemFiles)
+    )
+
+    /**
+     * Upload the videos for an item
+     */
+    this.router.post(
+      '/items/:id/videos',
+      withAuthentication,
+      withItemExists,
+      withItemAuthorization,
+      getUploader({
+        maxFileSize: MAX_VIDEO_SIZE,
+        getFileStreamKey: this.getFileStreamKey,
       }).any(),
       server.handleRequest(this.uploadItemFiles)
     )

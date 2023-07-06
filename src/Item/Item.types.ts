@@ -2,7 +2,8 @@ import { Rarity } from '@dcl/schemas'
 import { ItemCurationAttributes } from '../Curation/ItemCuration'
 import { MetricsAttributes } from '../Metrics'
 import { Cheque } from '../SlotUsageCheque'
-import { WearableData } from './wearable/types'
+import { SmartWearableData, WearableData } from './wearable/types'
+import { EmoteData } from './emote/types'
 
 export enum ItemType {
   WEARABLE = 'wearable',
@@ -11,7 +12,7 @@ export enum ItemType {
 
 export type ItemContents = Record<string, string>
 
-export type ItemAttributes = {
+export type ItemAttributes<T = ItemType.WEARABLE> = {
   id: string // uuid
   /**
    * The urn_suffix field holds the item part of the URN in third party items.
@@ -31,7 +32,9 @@ export type ItemAttributes = {
   beneficiary?: string | null
   rarity: Rarity
   type: ItemType
-  data: WearableData
+  data: T extends ItemType.WEARABLE
+    ? WearableData | SmartWearableData
+    : EmoteData
   metrics: MetricsAttributes
   contents: ItemContents
   created_at: Date

@@ -16,6 +16,10 @@ export type WearableData = {
   tags: string[]
 }
 
+export type SmartWearableData = WearableData & {
+  requiredPermissions: string[]
+}
+
 export const wearableSchema = Object.freeze({
   type: 'object',
   properties: {
@@ -64,6 +68,10 @@ export const wearableSchema = Object.freeze({
       items: HideableWearableCategory.schema,
     },
     tags: {
+      type: 'array',
+      items: { type: 'string' },
+    },
+    requiredPermissions: {
       type: 'array',
       items: { type: 'string' },
     },

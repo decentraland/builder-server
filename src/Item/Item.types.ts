@@ -22,7 +22,7 @@ export type ItemAttributes = {
   name: string
   description: string
   thumbnail: string
-  video: string
+  video?: string
   eth_address: string
   collection_id: string | null
   blockchain_item_id: string | null

@@ -20,6 +20,7 @@ const baseItemSchema = Object.freeze({
       pattern: '^[^:]*$',
     },
     thumbnail: { type: 'string' },
+    video: { type: ['string', 'null'] },
     eth_address: { type: 'string' },
     collection_id: { type: ['string', 'null'], format: 'uuid' },
     blockchain_item_id: { type: ['string', 'null'] },

@@ -14,7 +14,7 @@ else
   # Create the bucket and set the policy to public so anything can 
   # be downloaded or uploaded
   mc mb minio/builder-server
-  mc policy set public minio/builder-server
+  mc anonymous set public minio/builder-server
 fi
 
 # Keep the service running so it can be accessed later with docker-compose exec

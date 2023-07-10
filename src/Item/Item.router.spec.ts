@@ -1514,6 +1514,41 @@ describe('Item router', () => {
         })
       })
 
+      describe('and the item data does not match the item type data schema', () => {
+        it('should fail with a message indicating that are missing properties for the data schema', () => {
+          return server
+            .put(buildURL(url))
+            .send({
+              item: {
+                ...itemToUpsert,
+                data: {
+                  ...itemToUpsert.data,
+                  requiredPermissions: 'aPermission',
+                },
+                type: ItemType.WEARABLE,
+              },
+            })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  {
+                    instancePath: '/item/data/requiredPermissions',
+                    keyword: 'type',
+                    message: 'must be array',
+                    params: { type: 'array' },
+                    schemaPath:
+                      '#/properties/item/oneOf/0/properties/data/properties/requiredPermissions/type',
+                  },
+                ],
+                error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
+
       describe('and the param id is different from payload id', () => {
         it('should fail with body and url ids do not match message', async () => {
           const response = await server

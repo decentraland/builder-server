@@ -3,8 +3,9 @@ import { Emote, Wearable } from '@dcl/schemas'
 import { AuthLink } from '@dcl/crypto'
 import { ILoggerComponent } from '@well-known-components/interfaces'
 import { createConsoleLogComponent } from '@well-known-components/logger'
+import { createFetchComponent } from '@well-known-components/fetch-component'
 import { env } from 'decentraland-commons'
-import { LambdasClient } from 'dcl-catalyst-client'
+import { ContentClient, createContentClient } from 'dcl-catalyst-client/dist/client/ContentClient'
 import { ItemAttributes, ItemType } from '../../Item'
 import { CollectionAttributes } from '../../Collection'
 import { logExecutionTime } from '../../utils/logging'
@@ -29,12 +30,13 @@ export type CatalystItem = Wearable | Emote
 export const PEER_URL = env.get('PEER_URL', '')
 
 export class PeerAPI {
-  lambdasClient: LambdasClient
+  contentClient: ContentClient
   logger: ILoggerComponent.ILogger
 
   constructor() {
-    this.lambdasClient = new LambdasClient({
-      lambdasUrl: `${PEER_URL}/lambdas`,
+    this.contentClient = createContentClient({
+      url: `${PEER_URL}/content`,
+      fetcher: createFetchComponent()
     })
     this.logger = createConsoleLogComponent().getLogger('PeerAPI')
   }
@@ -66,9 +68,8 @@ export class PeerAPI {
     return logExecutionTime(
       () =>
         urns.length > 0
-          ? (this.lambdasClient.fetchWearables({
-              wearableIds: urns,
-            }) as Promise<T[]>)
+          ? (this.contentClient.fetchEntitiesByIds(urns)
+              .then((entities) => entities.map((entity) => entity.metadata)) as Promise<T[]>)
           : [],
       this.logger,
       'Wearables Fetch'
@@ -79,9 +80,8 @@ export class PeerAPI {
     return logExecutionTime(
       () =>
         urns.length > 0
-          ? (this.lambdasClient.fetchEmotes({
-              emoteIds: urns,
-            }) as Promise<T[]>)
+          ? (this.contentClient.fetchEntitiesByIds(urns)
+              .then((entities) => entities.map((entity) => entity.metadata)) as Promise<T[]>)
           : [],
       this.logger,
       'Emotes Fetch'

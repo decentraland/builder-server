@@ -13,6 +13,7 @@ export type WearableData = {
   representations: WearableRepresentation[]
   replaces: HideableWearableCategory[]
   hides: HideableWearableCategory[]
+  removesDefaultHiding?: HideableWearableCategory[]
   tags: string[]
 }
 
@@ -66,6 +67,10 @@ export const wearableSchema = Object.freeze({
     hides: {
       type: 'array',
       items: HideableWearableCategory.schema,
+    },
+    removesDefaultHiding: {
+      type: 'array',
+      items: HideableWearableCategory.schema
     },
     tags: {
       type: 'array',

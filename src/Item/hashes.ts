@@ -43,6 +43,7 @@ function buildStandardWearableEntityMetadata(
     data: {
       replaces: item.data.replaces,
       hides: item.data.hides,
+      removesDefaultHiding: item.data.removesDefaultHiding,
       tags: item.data.tags,
       category: item.data.category!,
       representations: item.data.representations,
@@ -104,6 +105,7 @@ function buildTPWearableEntityMetadata(
     data: {
       replaces: item.data.replaces,
       hides: item.data.hides,
+      removesDefaultHiding: item.data.removesDefaultHiding,
       tags: item.data.tags,
       category: item.data.category!,
       representations: item.data.representations,

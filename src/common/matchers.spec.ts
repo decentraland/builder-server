@@ -14,7 +14,7 @@ describe('matchers', () => {
 
     it('should append the other matchers', () => {
       expect(matchers.urn).toBe(
-        'urn:decentraland:(mainnet|goerli|matic|mumbai):(?:collections-thirdparty:[^:|\\s]+:[^:|\\s]+|collections-v2:0x[a-fA-F0-9]{40})'
+        'urn:decentraland:(mainnet|goerli|sepolia|matic|mumbai):(?:collections-thirdparty:[^:|\\s]+:[^:|\\s]+|collections-v2:0x[a-fA-F0-9]{40})'
       )
     })
 

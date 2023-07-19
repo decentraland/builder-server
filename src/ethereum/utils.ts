@@ -15,6 +15,7 @@ export function getMappedChainIdForCurrentChainName():
     case ChainName.ETHEREUM_MAINNET:
       return ChainId.MATIC_MAINNET
     case ChainName.ETHEREUM_GOERLI:
+    case ChainName.ETHEREUM_SEPOLIA:
       return ChainId.MATIC_MUMBAI
     default:
       throw new Error(

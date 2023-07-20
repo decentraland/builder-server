@@ -51,7 +51,7 @@ import {
 } from './Item.errors'
 
 export const MAX_VIDEO_SIZE =
-  parseInt(env.get('AWS_MAX_VIDEO_SIZE', ''), 10) || 5e7 // 50MB
+  parseInt(env.get('AWS_MAX_VIDEO_SIZE', ''), 10) || 4e6 // 4MB
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service

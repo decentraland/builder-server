@@ -1,3 +1,4 @@
+import { Request } from 'express'
 import { hashV1 } from '@dcl/hashing'
 import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
@@ -13,6 +14,8 @@ import {
   AuthRequest,
   withLowercasedParams,
   withSchemaValidation,
+  withValidContractAddress,
+  withValidItemId,
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
 import { getUploader, S3Content } from '../S3'
@@ -31,7 +34,7 @@ import {
 import { CurationStatus } from '../Curation'
 import { MulterFile } from '../S3/types'
 import { Item } from './Item.model'
-import { ItemAttributes } from './Item.types'
+import { ItemAttributes, ItemContents } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
 import { hasPublicAccess } from './access'
@@ -169,6 +172,14 @@ export class ItemRouter extends Router {
         getFileStreamKey: this.getFileStreamKey,
       }).any(),
       server.handleRequest(this.uploadItemFiles)
+    )
+
+    this.router.get(
+      '/items/:collectionAddress/:itemId/contents',
+      withLowercasedParams(['collectionAddress', 'itemId']),
+      withValidContractAddress('collectionAddress'),
+      withValidItemId('itemId'),
+      server.handleRequest(this.getItemContents)
     )
   }
 
@@ -500,5 +511,31 @@ export class ItemRouter extends Router {
 
   uploadItemFiles = () => {
     // This handler is only here so `server.handleRequest` has a valid callback and it can return the appropiate formated response
+  }
+
+  getItemContents = async (req: Request): Promise<ItemContents | null> => {
+    const { params } = req
+    const { collectionAddress, itemId } = params
+
+    try {
+      const {
+        item,
+      } = await this.itemService.getItemByContractAddressAndTokenId(
+        collectionAddress,
+        itemId
+      )
+      return item.contents
+    } catch (error) {
+      if (error instanceof NonExistentCollectionError) {
+        throw new HTTPError(
+          'Not found',
+          { collectionAddress },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof InconsistentItemError) {
+        throw new HTTPError(error.message, { itemId }, STATUS_CODES.error)
+      }
+      throw error
+    }
   }
 }

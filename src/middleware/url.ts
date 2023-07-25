@@ -1,4 +1,8 @@
 import { Request, Response, NextFunction } from 'express'
+import { utils } from 'ethers'
+import { server } from 'decentraland-server'
+
+import { STATUS_CODES } from '../common/HTTPError'
 
 /**
  * Lowercase a set of URL params before hitting the handler.
@@ -51,3 +55,36 @@ export function withLowercaseQueryParams(params?: string[]) {
 
 const isString = (value: unknown) =>
   typeof value === 'string' || value instanceof String
+
+export function withValidContractAddress(param: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const contractAddress = server.extractFromReq(req, param)
+
+    if (!utils.isAddress(contractAddress)) {
+      res
+        .status(STATUS_CODES.badRequest)
+        .json(
+          server.sendError(
+            { contractAddress },
+            `Invalid address ${contractAddress}`
+          )
+        )
+      return
+    }
+    next()
+  }
+}
+
+export function withValidItemId(param: string) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    const itemId = server.extractFromReq(req, param)
+
+    if (Number.isNaN(parseInt(itemId, 10))) {
+      res
+        .status(STATUS_CODES.badRequest)
+        .json(server.sendError({ itemId }, `Invalid Item ID ${itemId}`))
+      return
+    }
+    next()
+  }
+}

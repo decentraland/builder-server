@@ -1,4 +1,8 @@
-import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
+import {
+  EntityContentItemReference,
+  calculateMultipleHashesADR32,
+  keccak256Hash,
+} from '@dcl/hashing'
 import {
   Locale,
   Wearable,
@@ -14,6 +18,7 @@ import { buildTPItemURN, isTPItem } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
+const VIDEO_PATH = 'video.mp4'
 const ANIMATION_EMPTY_METRICS = {
   triangles: 0,
   materials: 0,
@@ -145,10 +150,16 @@ async function calculateStandardItemContentHash(
       ? buildEmoteEntityMetadata
       : buildStandardWearableEntityMetadata
   const metadata = await buildMetadata(item, collection)
-  const content = Object.keys(item.contents).map((file) => ({
-    file,
-    hash: item.contents[file],
-  }))
+  const content: EntityContentItemReference[] = []
+
+  for (const file of Object.keys(item.contents)) {
+    if (file === VIDEO_PATH) continue
+    content.push({
+      file,
+      hash: item.contents[file],
+    })
+  }
+
   const { hash } = await calculateMultipleHashesADR32(content, metadata)
 
   return hash

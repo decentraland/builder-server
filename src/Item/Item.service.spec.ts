@@ -1,8 +1,10 @@
 import { dbCollectionMock } from '../../spec/mocks/collections'
 import { dbItemMock, itemFragmentMock } from '../../spec/mocks/items'
+import { wearableMock } from '../../spec/mocks/peer'
 import { Collection } from '../Collection/Collection.model'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
+import { peerAPI } from '../ethereum/api/peer'
 import { UnauthorizedToUpsertError } from './Item.errors'
 import { Item } from './Item.model'
 import { ItemService } from './Item.service'
@@ -10,6 +12,7 @@ import { ItemAttributes } from './Item.types'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../Collection/Collection.model')
+jest.mock('../ethereum/api/peer')
 jest.mock('./Item.model')
 
 describe('Item Service', () => {
@@ -82,20 +85,73 @@ describe('Item Service', () => {
           ).toEqual({
             ...Bridge.toFullItem(dbItem),
             local_content_hash: expect.any(String),
-            updated_at: expect.anything()
+            updated_at: expect.anything(),
           })
         })
       })
 
       describe('and the previous owner tries to upsert an item', () => {
         it('should throw unauthorized', async () => {
-          expect(
-            () => service.upsertItem(
-              Bridge.toFullItem(dbItem),
-              oldCreatorAddress
-            ) 
+          expect(() =>
+            service.upsertItem(Bridge.toFullItem(dbItem), oldCreatorAddress)
           ).rejects.toThrow(UnauthorizedToUpsertError)
         })
+      })
+    })
+  })
+
+  describe('getItemByContractAddressAndTokenId', () => {
+    beforeEach(() => {
+      dbItem = {
+        ...dbItemMock,
+        collection_id: dbCollectionMock.id,
+        blockchain_item_id: '0',
+      }
+    })
+
+    describe('when the item is found', () => {
+      beforeEach(() => {
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          [dbItem]
+        )
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbCollectionMock
+        )
+        ;(collectionAPI.fetchCollectionWithItem as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragmentMock.collection, item: itemFragmentMock }
+        )
+        ;(peerAPI.fetchItems as jest.Mock).mockResolvedValueOnce([wearableMock])
+      })
+
+      it('should return the merged item', async () => {
+        expect(
+          service.getItemByContractAddressAndTokenId('0xa', '1')
+        ).resolves.toEqual({
+          item: Bridge.mergeItem(
+            dbItem,
+            itemFragmentMock,
+            itemFragmentMock.collection,
+            wearableMock
+          ),
+          collection: Bridge.mergeCollection(
+            dbCollectionMock,
+            itemFragmentMock.collection
+          ),
+        })
+      })
+    })
+
+    describe('when the item is not found', () => {
+      beforeEach(() => {
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+      })
+
+      it('should throw a NonExistentItemError error with the collectionAddress and the blockchainId', async () => {
+        expect(
+          service.getItemByContractAddressAndTokenId('0xa', '1')
+        ).rejects.toThrow("The item doesn't exist.")
       })
     })
   })

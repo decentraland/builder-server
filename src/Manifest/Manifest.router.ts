@@ -153,18 +153,13 @@ export class ManifestRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const manifestJSONMaybe: any = server.extractFromReq(req, 'manifest')
     const eth_address = req.auth.ethAddress
-    console.log('aca')
     const validate = validator.compile(manifestSchema)
-    console.log('saca')
     validate(manifestJSONMaybe)
-    console.log('paca')
     const manifestJSON: ManifestAttributes = manifestJSONMaybe
 
     if (validate.errors) {
       throw new HTTPError('Invalid schema', validate.errors)
     }
-
-    console.log('taca')
 
     const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
     if (!canUpsert) {

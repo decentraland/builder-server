@@ -60,7 +60,9 @@ export const sceneSchemaSdk7 = {
       type: 'string',
     },
     mappings: {
-      type: 'string',
+      type: 'object',
+      properties: {},
+      additionalProperties: true,
     },
   },
   additionalProperties: true,

@@ -2363,7 +2363,7 @@ describe('Item router', () => {
         url = `/items/${dbCollectionMock.contract_address}/${dbItem.blockchain_item_id}/contents`
       })
 
-      it('should returns the item contents', async () => {
+      it('should return the item contents', async () => {
         return server
           .get(buildURL(url))
           .expect(200)
@@ -2390,7 +2390,7 @@ describe('Item router', () => {
       })
     })
 
-    describe("and  the item doesn't belong to a published collection", () => {
+    describe("and the item doesn't belong to a published collection", () => {
       beforeEach(() => {
         dbItem.collection_id = dbCollectionMock.id
         dbItem.blockchain_item_id = '1'
@@ -2401,7 +2401,7 @@ describe('Item router', () => {
         url = `/items/${dbCollectionMock.contract_address}/${dbItem.blockchain_item_id}/contents`
       })
 
-      it('should returns an error', async () => {
+      it('should return an error', async () => {
         return server
           .get(buildURL(url))
           .expect(200)

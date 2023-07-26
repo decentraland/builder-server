@@ -202,6 +202,26 @@ export class ItemService {
     return Item.findItemsByAddress(address, thirdPartyIds, params)
   }
 
+  public async getItemByContractAddressAndTokenId(
+    collectionAddress: string,
+    blockchainId: string
+  ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
+    const dbItem = await Item.findByBlockchainIdsAndContractAddresses([
+      {
+        blockchainId,
+        collectionAddress,
+      },
+    ])
+
+    if (dbItem.length === 0) {
+      throw new NonExistentItemError(`${collectionAddress}-${blockchainId}`)
+    }
+
+    return isTPItem(dbItem[0])
+      ? this.getTPItem(dbItem[0])
+      : this.getDCLItem(dbItem[0])
+  }
+
   /**
    * Takes a list of items and returns an object containing two sets, one of standard items and the other of TP items
    * @param allItems - Items to split, can be any combination of item types

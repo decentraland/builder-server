@@ -14,6 +14,7 @@ import { buildTPItemURN, isTPItem } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
+const VIDEO_PATH = 'video.mp4'
 const ANIMATION_EMPTY_METRICS = {
   triangles: 0,
   materials: 0,
@@ -22,6 +23,8 @@ const ANIMATION_EMPTY_METRICS = {
   bodies: 0,
   entities: 1,
 }
+
+const IGNORE_CONTENTS_FILES = [VIDEO_PATH]
 
 function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
@@ -145,10 +148,14 @@ async function calculateStandardItemContentHash(
       ? buildEmoteEntityMetadata
       : buildStandardWearableEntityMetadata
   const metadata = await buildMetadata(item, collection)
-  const content = Object.keys(item.contents).map((file) => ({
-    file,
-    hash: item.contents[file],
-  }))
+  // Skip computing the file's hash that won't be sent to the content server
+  const content = Object.keys(item.contents)
+    .filter((file) => !IGNORE_CONTENTS_FILES.includes(file))
+    .map((file) => ({
+      file,
+      hash: item.contents[file],
+    }))
+
   const { hash } = await calculateMultipleHashesADR32(content, metadata)
 
   return hash

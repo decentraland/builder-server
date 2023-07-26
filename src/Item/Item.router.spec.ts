@@ -2343,4 +2343,126 @@ describe('Item router', () => {
       })
     })
   })
+
+  describe('when getting an item contents', () => {
+    describe('and the item belongs to a published collection', () => {
+      beforeEach(() => {
+        dbItem.collection_id = dbCollectionMock.id
+        dbItem.blockchain_item_id = '0'
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          [dbItem]
+        )
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbCollectionMock
+        )
+        ;(collectionAPI.fetchCollectionWithItem as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragment.collection, item: itemFragment }
+        )
+        ;(peerAPI.fetchItems as jest.Mock).mockResolvedValueOnce([wearable])
+        resultingItem = toResultItem(dbItem, itemFragment, wearable)
+        url = `/items/${dbCollectionMock.contract_address}/${dbItem.blockchain_item_id}/contents`
+      })
+
+      it('should return the item contents', async () => {
+        return server
+          .get(buildURL(url))
+          .expect(200)
+          .then((response: any) => {
+            expect(collectionAPI.fetchCollectionWithItem).toHaveBeenCalledWith(
+              dbCollectionMock.contract_address,
+              `${dbCollectionMock.contract_address}-${dbItem.blockchain_item_id}`
+            )
+            expect(response.body).toEqual({
+              data: {
+                ...resultingItem.contents,
+              },
+              ok: true,
+            })
+            expect(
+              Item.findByBlockchainIdsAndContractAddresses
+            ).toHaveBeenCalledWith([
+              {
+                blockchainId: dbItem.blockchain_item_id,
+                collectionAddress: dbCollectionMock.contract_address?.toLowerCase(),
+              },
+            ])
+          })
+      })
+    })
+
+    describe("and the item doesn't belong to a published collection", () => {
+      beforeEach(() => {
+        dbItem.collection_id = dbCollectionMock.id
+        dbItem.blockchain_item_id = '1'
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+        resultingItem = toResultItem(dbItem)
+        url = `/items/${dbCollectionMock.contract_address}/${dbItem.blockchain_item_id}/contents`
+      })
+
+      it('should return an error', async () => {
+        return server
+          .get(buildURL(url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {},
+              error: "The item doesn't exist.",
+              ok: false,
+            })
+            expect(
+              Item.findByBlockchainIdsAndContractAddresses
+            ).toHaveBeenCalledWith([
+              {
+                blockchainId: `${dbItem.blockchain_item_id}`,
+                collectionAddress: dbCollectionMock.contract_address?.toLowerCase(),
+              },
+            ])
+          })
+      })
+    })
+
+    describe('and the collectionAddress is not a valid address', () => {
+      it.each(['aCollectionAddress', '0xa', 'null'])(
+        'should fail with a message indicating that the address is not valid',
+        async (collectionAddress) => {
+          url = `/items/${collectionAddress}/${dbItem.blockchain_item_id}/contents`
+          return server
+            .get(buildURL(url))
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  contractAddress: collectionAddress.toLowerCase(),
+                },
+                error: `Invalid address ${collectionAddress.toLowerCase()}`,
+                ok: false,
+              })
+            })
+        }
+      )
+    })
+
+    describe('and the blockchain itemId is not a valid address', () => {
+      it.each(['aItemId', 'null', 'a'])(
+        'should fail with a message indicating that the item id is not valid',
+        async (blockchainItemId) => {
+          url = `/items/${dbCollectionMock.contract_address}/${blockchainItemId}/contents`
+          return server
+            .get(buildURL(url))
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  itemId: blockchainItemId.toLowerCase(),
+                },
+                error: `Invalid Item ID ${blockchainItemId.toLowerCase()}`,
+                ok: false,
+              })
+            })
+        }
+      )
+    })
+  })
 })

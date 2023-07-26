@@ -23,7 +23,7 @@ const server = supertest(app.getApp())
 describe('when fetching the item contents', () => {
   describe('when the collection address is invalid', () => {
     it.each(['aCollectionAddress', '0xa', 'null'])(
-      'should respond with a 400 and  with a message indicating that the address is not valid',
+      'should respond with a 400 and a message indicating that the address is not valid',
       async (collectionAddress) => {
         return server
           .get(buildURL(`/test/${collectionAddress}/0/contents`))

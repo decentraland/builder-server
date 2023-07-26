@@ -266,7 +266,7 @@ describe('when calculating the hashes of a standard smart wearable item', () => 
     }
   })
 
-  it("should return the hash of the item's entity", () => {
+  it("should return the hash of the item's entity, ignoring the contents video file", () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(

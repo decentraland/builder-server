@@ -1,8 +1,4 @@
-import {
-  EntityContentItemReference,
-  calculateMultipleHashesADR32,
-  keccak256Hash,
-} from '@dcl/hashing'
+import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
 import {
   Locale,
   Wearable,
@@ -27,6 +23,8 @@ const ANIMATION_EMPTY_METRICS = {
   bodies: 0,
   entities: 1,
 }
+
+const IGNORE_CONTENTS_FILES = [VIDEO_PATH]
 
 function buildStandardWearableEntityMetadata(
   item: ItemAttributes,
@@ -150,15 +148,13 @@ async function calculateStandardItemContentHash(
       ? buildEmoteEntityMetadata
       : buildStandardWearableEntityMetadata
   const metadata = await buildMetadata(item, collection)
-  const content: EntityContentItemReference[] = []
-
-  for (const file of Object.keys(item.contents)) {
-    if (file === VIDEO_PATH) continue
-    content.push({
+  // Skip computing the file's hash that won't be sent to the content server
+  const content = Object.keys(item.contents)
+    .filter((file) => !IGNORE_CONTENTS_FILES.includes(file))
+    .map((file) => ({
       file,
       hash: item.contents[file],
-    })
-  }
+    }))
 
   const { hash } = await calculateMultipleHashesADR32(content, metadata)
 

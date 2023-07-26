@@ -57,10 +57,15 @@ export const sceneSchemaSdk7 = {
   type: 'object',
   properties: {
     composite: {
-      type: 'string',
+      oneOf: [
+        { type: 'string' },
+        { type: 'object', properties: {}, additionalProperties: true },
+      ],
     },
     mappings: {
-      type: 'string',
+      type: 'object',
+      properties: {},
+      additionalProperties: true,
     },
   },
   additionalProperties: true,

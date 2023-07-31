@@ -46,7 +46,6 @@ export class S3Router extends Router {
       getUploader({
         getFileStreamKey: async (file) => {
           const hash = await hashV1(file.stream)
-          console.log('hash', hash)
           return new S3Content().getFileKey(hash)
         },
       }).any(),

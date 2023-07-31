@@ -1,4 +1,6 @@
 import { Request, Response } from 'express'
+import fetch from 'node-fetch'
+import { hashV1 } from '@dcl/hashing'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -7,6 +9,8 @@ import { getBucketURL } from './s3'
 import { S3AssetPack } from './S3AssetPack'
 import { S3Content } from './S3Content'
 import { S3Model } from './S3Model'
+import { withAuthentication } from '../middleware'
+import { getUploader } from './uploads'
 
 export class S3Router extends Router {
   mount() {
@@ -24,6 +28,30 @@ export class S3Router extends Router {
      * Get the response headers for a file
      */
     this.router.head('/storage/contents/:filename', this.handleContents)
+
+    /**
+     * Return whether a file exists or not in the content server without downloading it
+     */
+    this.router.get(
+      '/storage/contents/:filename/exists',
+      server.handleRequest(this.handleExists)
+    )
+
+    /**
+     * Upload a file
+     */
+    this.router.post(
+      '/storage/upload',
+      withAuthentication,
+      getUploader({
+        getFileStreamKey: async (file) => {
+          const hash = await hashV1(file.stream)
+          console.log('hash', hash)
+          return new S3Content().getFileKey(hash)
+        },
+      }).any(),
+      server.handleRequest(this.handleUpload)
+    )
   }
 
   private buildRedirectUrl(
@@ -52,5 +80,25 @@ export class S3Router extends Router {
   private handleContents = (req: Request, res: Response) => {
     const model = new S3Content()
     this.permanentlyRedirectFile(req, res, model)
+  }
+
+  private handleExists = async (req: Request, res: Response) => {
+    const model = new S3Content()
+    const filename = server.extractFromReq(req, 'filename')
+    const ts = req.query.ts as string
+    const url = this.buildRedirectUrl(model, filename, ts)
+    try {
+      const content = await fetch(url)
+      if (content.ok) {
+        return // it exists
+      }
+    } catch (error) {}
+    res.status(404) // it does not exist
+  }
+
+  private handleUpload(req: Request, _res: Response) {
+    return {
+      hash: (req.files as { fieldname: string }[])[0]!.fieldname.split('/')[1],
+    }
   }
 }

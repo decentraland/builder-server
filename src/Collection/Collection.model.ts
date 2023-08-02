@@ -5,7 +5,11 @@ import { CollectionCuration } from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
-import { CollectionAttributes, CollectionTypeFilter, CollectionSort } from './Collection.types'
+import {
+  CollectionAttributes,
+  CollectionTypeFilter,
+  CollectionSort,
+} from './Collection.types'
 
 type CollectionWithItemCount = CollectionAttributes & {
   item_count: number

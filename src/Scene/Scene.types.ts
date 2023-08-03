@@ -13,8 +13,22 @@ export type SceneSDK6Attributes = {
   components: Record<string, SceneComponentAttribute>
 }
 
+export type Layout = {
+  parcels: { x: number; y: number }[]
+  base: { x: number; y: number }
+}
+
+type CompositeComponent = {
+  name: string
+  data: any
+}
+
+export type CompositeDefinition = {
+  components: CompositeComponent[]
+}
+
 export type SceneSDK7Attributes = {
-  composite: string
+  composite: CompositeDefinition
   mappings: Record<string, string>
 }
 

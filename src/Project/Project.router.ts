@@ -2,21 +2,25 @@ import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
 import path from 'path'
-
 import { Router } from '../common/Router'
 import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
+import { withModelExists, withModelAuthorization } from '../middleware'
 import {
-  withModelExists,
-  withModelAuthorization,
-} from '../middleware'
-import { S3Project, getBucketURL, getUploader } from '../S3'
+  S3Content,
+  S3Project,
+  getBucketURL,
+  getProjectManifest,
+  getUploader,
+} from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
+import { SDK7Scene } from '../Scene/SDK7Scene'
+import { COMPOSITE_FILE_HASH } from '../Scene/composite'
 
 export const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
@@ -45,10 +49,7 @@ export class ProjectRouter extends Router {
     /**
      * Get all templates
      */
-     this.router.get(
-      '/templates',
-      server.handleRequest(this.getTemplates)
-    )
+    this.router.get('/templates', server.handleRequest(this.getTemplates))
 
     /**
      * Get all projects
@@ -136,6 +137,12 @@ export class ProjectRouter extends Router {
         }))
       ),
       server.handleRequest(this.uploadFiles)
+    )
+
+    this.router.get(
+      '/projects/:id/contents/:content',
+      withProjectExists,
+      server.handleRequest(this.getContents)
     )
   }
 
@@ -257,5 +264,46 @@ export class ProjectRouter extends Router {
     }
 
     return true
+  }
+
+  async getContents(req: Request, res: Response) {
+    const projectId = server.extractFromReq(req, 'id')
+    const content = server.extractFromReq(req, 'content')
+
+    // when content is preview, return entity object
+    if (content === 'preview') {
+      const { scene, project } = await getProjectManifest(projectId)
+
+      if (scene.sdk6) {
+        throw new Error("Can't preview sdk6 scenes")
+      }
+
+      const entity = await new SDK7Scene(scene.sdk7).getEntity(project)
+
+      // Add composite file
+      entity.content = [
+        { file: 'composite.json', hash: COMPOSITE_FILE_HASH },
+        ...entity.content,
+      ]
+
+      return entity
+    }
+
+    // when content is composite, return scene composite
+    if (content === COMPOSITE_FILE_HASH) {
+      const { scene } = await getProjectManifest(projectId)
+      if (scene.sdk6) {
+        throw new Error("SDK6 scene don't have composite definition")
+      }
+      return scene.sdk7.composite
+    }
+
+    // redirect to content in s3
+    const ts = req.query.ts as string
+    const redirectPath = `${getBucketURL()}/${new S3Content().getFileKey(
+      content
+    )}${ts ? `?ts=${ts}` : ''}`
+
+    return res.redirect(redirectPath, 301)
   }
 }

@@ -16,11 +16,11 @@ import {
 } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
+import { SDK7Scene } from '../Scene/SDK7Scene'
+import { COMPOSITE_FILE_HASH } from '../Scene/composite'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
-import { SDK7Scene } from '../Scene/SDK7Scene'
-import { COMPOSITE_FILE_HASH } from '../Scene/composite'
 
 export const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [

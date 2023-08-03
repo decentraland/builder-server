@@ -1,14 +1,14 @@
 import supertest from 'supertest'
+import { ContentMapping, Entity } from '@dcl/schemas'
 import { buildURL, createAuthHeaders } from '../../spec/utils'
 import { SearchableModel } from '../Searchable/SearchableModel'
 import { app } from '../server'
 import * as s3Module from '../S3'
-import { SearchableProject } from './SearchableProject'
-import { TemplateStatus } from './Project.types'
 import { ManifestAttributes } from '../Manifest'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { ContentMapping, Entity } from '@dcl/schemas'
 import { COMPOSITE_FILE_HASH } from '../Scene/composite'
+import { SearchableProject } from './SearchableProject'
+import { TemplateStatus } from './Project.types'
 
 jest.mock('../S3', () => {
   return {

@@ -31,7 +31,6 @@ export class S3Model {
     let file
     try {
       const key = this.getFileKey(filename)
-      console.log(key)
       file = await readFile(key)
     } catch (error) {
       // No previous entity

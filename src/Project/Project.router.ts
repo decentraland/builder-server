@@ -142,7 +142,7 @@ export class ProjectRouter extends Router {
     this.router.get(
       '/projects/:id/contents/:content',
       withProjectExists,
-      server.handleRequest(this.getContents)
+      this.getContents
     )
   }
 
@@ -235,8 +235,8 @@ export class ProjectRouter extends Router {
 
     addInmutableCacheControlHeader(res)
     return res.redirect(
-      `${getBucketURL()}/${project.getFileKey(filename)}`,
-      301
+      301,
+      `${getBucketURL()}/${project.getFileKey(filename)}`
     )
   }
 
@@ -272,30 +272,55 @@ export class ProjectRouter extends Router {
 
     // when content is preview, return entity object
     if (content === 'preview') {
-      const { scene, project } = await getProjectManifest(projectId)
+      try {
+        const { scene, project } = await getProjectManifest(projectId)
+        if (scene.sdk6) {
+          return res
+            .status(STATUS_CODES.badRequest)
+            .send(
+              server.sendError(
+                { projectId: project.id },
+                "Can't preview projects with sdk6 scene"
+              )
+            )
+        }
 
-      if (scene.sdk6) {
-        throw new Error("Can't preview sdk6 scenes")
+        const entity = await new SDK7Scene(scene.sdk7).getEntity(project)
+
+        // Add composite file
+        entity.content = [
+          { file: 'composite.json', hash: COMPOSITE_FILE_HASH },
+          ...entity.content,
+        ]
+
+        return res.json(entity)
+      } catch(error) {
+        return res
+          .status(STATUS_CODES.notFound)
+          .send(server.sendError({ projectId }, (error as Error)?.message))
       }
-
-      const entity = await new SDK7Scene(scene.sdk7).getEntity(project)
-
-      // Add composite file
-      entity.content = [
-        { file: 'composite.json', hash: COMPOSITE_FILE_HASH },
-        ...entity.content,
-      ]
-
-      return entity
     }
 
     // when content is composite, return scene composite
     if (content === COMPOSITE_FILE_HASH) {
-      const { scene } = await getProjectManifest(projectId)
-      if (scene.sdk6) {
-        throw new Error("SDK6 scene don't have composite definition")
+      try {
+        const { scene } = await getProjectManifest(projectId)
+        if (scene.sdk6) {
+          return res
+            .status(STATUS_CODES.badRequest)
+            .send(
+              server.sendError(
+                { projectId },
+                "SDK6 scene don't have composite definition"
+              )
+            )
+        }
+        return res.json(scene.sdk7.composite)
+      } catch (error: any) {
+        return res
+          .status(STATUS_CODES.notFound)
+          .send(server.sendError({ projectId }, (error as Error)?.message))
       }
-      return scene.sdk7.composite
     }
 
     // redirect to content in s3
@@ -304,6 +329,6 @@ export class ProjectRouter extends Router {
       content
     )}${ts ? `?ts=${ts}` : ''}`
 
-    return res.redirect(redirectPath, 301)
+    return res.redirect(301, redirectPath)
   }
 }

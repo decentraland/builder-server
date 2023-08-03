@@ -63,7 +63,6 @@ export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
     Key: key,
   }
   log.info(`Reading file "${key}"`)
-  console.log(BUCKET_NAME)
   return utils.promisify<AWS.S3.GetObjectOutput>(s3.getObject.bind(s3))(params)
 }
 

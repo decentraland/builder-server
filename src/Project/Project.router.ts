@@ -17,7 +17,7 @@ import {
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { COMPOSITE_FILE_HASH } from '../Scene/composite'
+import { COMPOSITE_FILE_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
@@ -271,7 +271,7 @@ export class ProjectRouter extends Router {
     const content = server.extractFromReq(req, 'content')
 
     // when content is preview, return entity object
-    if (content === 'preview') {
+    if (content === PREVIEW_HASH) {
       try {
         const { scene, project } = await getProjectManifest(projectId)
         if (scene.sdk6) {

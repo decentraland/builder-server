@@ -289,7 +289,7 @@ export class ProjectRouter extends Router {
 
         // Add composite file
         entity.content = [
-          { file: 'composite.json', hash: COMPOSITE_FILE_HASH },
+          { file: 'assets/scene/main.composite', hash: COMPOSITE_FILE_HASH },
           ...entity.content,
         ]
 

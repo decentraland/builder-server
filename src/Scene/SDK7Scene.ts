@@ -28,7 +28,7 @@ export class SDK7Scene {
     const base = this.getLayout().base
     return {
       owner: '',
-      main: 'bin/game.js',
+      main: 'assets/scene/main.composite',
       display: {
         title: project.title,
         favicon: 'favicon_asset',

@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import fs from 'fs'
 import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
 import path from 'path'
@@ -35,6 +36,8 @@ const FILE_NAMES = [
   'west',
 ]
 const MIME_TYPES = ['image/png', 'image/jpeg']
+
+const maincrdt = fs.readFileSync('main.crdt')
 
 const validator = getValidator()
 export class ProjectRouter extends Router {
@@ -315,6 +318,15 @@ export class ProjectRouter extends Router {
     const projectId = server.extractFromReq(req, 'id')
     const content = server.extractFromReq(req, 'content')
 
+
+    if (content === 'melicrdt') {
+      return res.send(maincrdt)
+    }
+
+    if (content === 'meliindex') {
+      return res.redirect(301, '/meliindex.js')
+    }
+
     // when content is preview, return entity object
     if (content === PREVIEW_HASH) {
       try {
@@ -334,7 +346,8 @@ export class ProjectRouter extends Router {
 
         // Add composite file
         entity.content = [
-          { file: "assets/scene/main.composite", hash: COMPOSITE_FILE_HASH },
+          // { file: "bin/index.js", hash: "meliindex" },
+          { file: "main.crdt", hash: "melicrdt" },
           ...entity.content,
         ]
 

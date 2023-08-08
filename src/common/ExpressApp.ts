@@ -9,6 +9,7 @@ import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
 
 var privateKey  = fs.readFileSync('localhost-key.pem');
 var certificate = fs.readFileSync('localhost.pem');
+var test = fs.readFileSync('meliindex.js')
 
 export class ExpressApp {
   protected app: express.Application
@@ -82,6 +83,10 @@ export class ExpressApp {
         return res.send(await register.metrics())
       }
     )
+
+    this.app.use('/meliindex.js', (_, res) => {
+      return res.send(test)
+    })
 
     const metrics = async (
       req: express.Request,

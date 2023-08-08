@@ -274,10 +274,9 @@ export class ProjectRouter extends Router {
       healthy: true,
       acceptingUsers: true,
       configurations: {
-        networkId: 1,
         globalScenesUrn: [],
         scenesUrn: [
-          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/projects/${projectId}/contents/`
+          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}v1/projects/${projectId}/contents/`
         ],
         minimap: {
           enabled: false,
@@ -288,8 +287,7 @@ export class ProjectRouter extends Router {
           textures: [
             "https://worlds-content-server.decentraland.org/contents/bafkreidduubi76bntd27dewz4cvextrfl3qyd4td6mtztuisxi26q64dnq"
           ]
-        },
-        realmName: "preview"
+        }
       },
       content: {
         healthy: true,
@@ -302,7 +300,7 @@ export class ProjectRouter extends Router {
       comms: {
         healthy: true,
         protocol: "v3",
-        fixedAdapter: "offline"
+        fixedAdapter: "offline:offline"
       }
     })
   }

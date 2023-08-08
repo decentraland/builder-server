@@ -21,7 +21,6 @@ import { COMPOSITE_FILE_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
-import { PREVIEW_HASH } from '../Scene/utils'
 
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
@@ -281,10 +280,9 @@ export class ProjectRouter extends Router {
       healthy: true,
       acceptingUsers: true,
       configurations: {
-        networkId: 1,
         globalScenesUrn: [],
         scenesUrn: [
-          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/projects/${projectId}/contents/`
+          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}v1/projects/${projectId}/contents/`
         ],
         minimap: {
           enabled: false,
@@ -295,8 +293,7 @@ export class ProjectRouter extends Router {
           textures: [
             "https://worlds-content-server.decentraland.org/contents/bafkreidduubi76bntd27dewz4cvextrfl3qyd4td6mtztuisxi26q64dnq"
           ]
-        },
-        realmName: "preview"
+        }
       },
       content: {
         healthy: true,
@@ -309,7 +306,7 @@ export class ProjectRouter extends Router {
       comms: {
         healthy: true,
         protocol: "v3",
-        fixedAdapter: "offline"
+        fixedAdapter: "offline:offline"
       }
     })
   }
@@ -337,7 +334,7 @@ export class ProjectRouter extends Router {
 
         // Add composite file
         entity.content = [
-          { file: 'composite.json', hash: COMPOSITE_FILE_HASH },
+          { file: "assets/scene/main.composite", hash: COMPOSITE_FILE_HASH },
           ...entity.content,
         ]
 

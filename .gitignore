@@ -12,3 +12,4 @@ coverage
 .DS_Store
 .env.migration.*
 backup*
+*.pem

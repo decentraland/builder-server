@@ -1,8 +1,14 @@
 import express from 'express'
+import fs from 'fs'
 import cors from 'cors'
+import http from 'http'
+import https from 'https'
 import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
 import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
+
+var privateKey  = fs.readFileSync('localhost-key.pem');
+var certificate = fs.readFileSync('localhost.pem');
 
 export class ExpressApp {
   protected app: express.Application
@@ -124,12 +130,13 @@ export class ExpressApp {
   }
 
   listen(port: string | number) {
-    return new Promise((resolve) =>
-      this.app.listen(port, () => {
-        console.log('Server running on port', port)
-        resolve(undefined)
-      })
-    )
+    var httpServer = http.createServer(this.app);
+    var httpsServer = https.createServer({ key: privateKey, cert:certificate }, this.app);
+    return new Promise((resolve) => {
+      httpServer.listen(port, undefined, () => console.log("HTTP Server running on port", port))
+      httpsServer.listen(8443, undefined, undefined, () => console.log("HTTPS Server running on port", 8443))
+      resolve(port)
+    })
   }
 
   getApp() {

@@ -6,7 +6,7 @@ import { app } from '../server'
 import * as s3Module from '../S3'
 import { ManifestAttributes } from '../Manifest'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { COMPOSITE_FILE_HASH, CRDT_HASH, PREVIEW_HASH } from '../Scene/utils'
+import { CRDT_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { SearchableProject } from './SearchableProject'
 import { TemplateStatus } from './Project.types'
 

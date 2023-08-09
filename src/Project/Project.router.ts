@@ -23,7 +23,6 @@ import { CRDT_HASH, INDEX_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
-import { PREVIEW_HASH } from '../Scene/utils'
 
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
@@ -329,7 +328,7 @@ export class ProjectRouter extends Router {
         entity.content = [
           { file: "bin/index.js", hash: INDEX_HASH },
           { file: "main.crdt", hash: CRDT_HASH },
-          ...entity.content.filter(({ file }) => file !== 'main.crdt'),
+          ...entity.content,
         ]
 
         return res.json(entity)

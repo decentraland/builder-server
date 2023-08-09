@@ -6,7 +6,7 @@ import { app } from '../server'
 import * as s3Module from '../S3'
 import { ManifestAttributes } from '../Manifest'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { COMPOSITE_FILE_HASH, PREVIEW_HASH } from '../Scene/utils'
+import { CRDT_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { SearchableProject } from './SearchableProject'
 import { TemplateStatus } from './Project.types'
 
@@ -218,7 +218,7 @@ describe('Project Router', () => {
     
         it('should return error', async () => {
           return await server
-            .get(buildURL(`/projects/${projectId}/contents/${COMPOSITE_FILE_HASH}`))
+            .get(buildURL(`/projects/${projectId}/contents/${CRDT_HASH}`))
             .expect(400)
         })
       })
@@ -235,7 +235,7 @@ describe('Project Router', () => {
 
         it('should return composite definition', async () => {
           const response = await server
-            .get(buildURL(`/projects/${projectId}/contents/${COMPOSITE_FILE_HASH}`))
+            .get(buildURL(`/projects/${projectId}/contents/${CRDT_HASH}`))
             .expect(200)
           expect(response.body).toEqual(composite)
         })

@@ -29,6 +29,7 @@ export type CompositeDefinition = {
 
 export type SceneSDK7Attributes = {
   composite: CompositeDefinition
+  crdt: Uint8Array | string
   mappings: Record<string, string>
 }
 

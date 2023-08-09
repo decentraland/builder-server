@@ -18,7 +18,7 @@ import {
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { COMPOSITE_FILE_HASH, PREVIEW_HASH } from '../Scene/utils'
+import { CRDT_HASH, INDEX_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
@@ -37,9 +37,10 @@ const FILE_NAMES = [
 ]
 const MIME_TYPES = ['image/png', 'image/jpeg']
 
-const maincrdt = fs.readFileSync('main.crdt')
-
 const validator = getValidator()
+const scenePreviewMain = fs.readFileSync('src/Project/scene-preview.js')
+// const mainCrdt = fs.readFileSync('main.crdt')
+
 export class ProjectRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
@@ -318,15 +319,10 @@ export class ProjectRouter extends Router {
     const projectId = server.extractFromReq(req, 'id')
     const content = server.extractFromReq(req, 'content')
 
-
-    if (content === 'melicrdt') {
-      return res.send(maincrdt)
+    if (content === INDEX_HASH) {
+      return res.send(new TextDecoder().decode(scenePreviewMain))
     }
-
-    if (content === 'meliindex') {
-      return res.redirect(301, '/meliindex.js')
-    }
-
+  
     // when content is preview, return entity object
     if (content === PREVIEW_HASH) {
       try {
@@ -346,8 +342,8 @@ export class ProjectRouter extends Router {
 
         // Add composite file
         entity.content = [
-          // { file: "bin/index.js", hash: "meliindex" },
-          { file: "main.crdt", hash: "melicrdt" },
+          { file: "bin/index.js", hash: INDEX_HASH },
+          // { file: "main.crdt", hash: CRDT_HASH },
           ...entity.content,
         ]
 
@@ -359,8 +355,8 @@ export class ProjectRouter extends Router {
       }
     }
 
-    // when content is composite, return scene composite
-    if (content === COMPOSITE_FILE_HASH) {
+    // when content is crdt, return scene crdt file
+    if (content === CRDT_HASH) {
       try {
         const { scene } = await getProjectManifest(projectId)
         if (scene.sdk6) {
@@ -373,7 +369,8 @@ export class ProjectRouter extends Router {
               )
             )
         }
-        return res.json(scene.sdk7.composite)
+        res.setHeader('Content-Type', 'application/octet-stream')
+        return res.status(200).send(scene.sdk7.crdt)
       } catch (error: any) {
         return res
           .status(STATUS_CODES.notFound)

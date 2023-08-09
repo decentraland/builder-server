@@ -1,4 +1,5 @@
 import { Request, Response } from 'express'
+import fs from 'fs'
 import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
 import path from 'path'
@@ -13,11 +14,12 @@ import {
   getBucketURL,
   getProjectManifest,
   getUploader,
+  CRDT_FILENAME
 } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { COMPOSITE_FILE_HASH, PREVIEW_HASH } from '../Scene/utils'
+import { CRDT_HASH, INDEX_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
@@ -34,7 +36,7 @@ const FILE_NAMES = [
 const MIME_TYPES = ['image/png', 'image/jpeg']
 
 const validator = getValidator()
-
+const scenePreviewMain = fs.readFileSync('src/Project/scene-preview.js')
 export class ProjectRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
@@ -143,6 +145,28 @@ export class ProjectRouter extends Router {
       '/projects/:id/contents/:content',
       withProjectExists,
       this.getContents
+    )
+
+    this.router.put(
+      '/projects/:id/crdt', 
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
+      getUploader({
+        getFileKey: async (_file, req) => {
+          const id = server.extractFromReq(req, 'id')
+          return new S3Project(id).getFileKey(CRDT_FILENAME)
+        },
+      }).any(),
+      server.handleRequest(this.upsertCrdt)
+    )
+
+    this.router.get(
+      '/projects/:id/crdt',
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
+      this.getCrdt
     )
   }
 
@@ -270,6 +294,10 @@ export class ProjectRouter extends Router {
     const projectId = server.extractFromReq(req, 'id')
     const content = server.extractFromReq(req, 'content')
 
+    if (content === INDEX_HASH) {
+      return res.send(new TextDecoder().decode(scenePreviewMain))
+    }
+
     // when content is preview, return entity object
     if (content === PREVIEW_HASH) {
       try {
@@ -289,8 +317,9 @@ export class ProjectRouter extends Router {
 
         // Add composite file
         entity.content = [
-          { file: 'assets/scene/main.composite', hash: COMPOSITE_FILE_HASH },
-          ...entity.content,
+          { file: "bin/index.js", hash: INDEX_HASH },
+          { file: "main.crdt", hash: CRDT_HASH },
+          ...entity.content.filter(({ file }) => file !== 'main.crdt'),
         ]
 
         return res.json(entity)
@@ -301,26 +330,11 @@ export class ProjectRouter extends Router {
       }
     }
 
-    // when content is composite, return scene composite
-    if (content === COMPOSITE_FILE_HASH) {
-      try {
-        const { scene } = await getProjectManifest(projectId)
-        if (scene.sdk6) {
-          return res
-            .status(STATUS_CODES.badRequest)
-            .send(
-              server.sendError(
-                { projectId },
-                "SDK6 scene don't have composite definition"
-              )
-            )
-        }
-        return res.json(scene.sdk7.composite)
-      } catch (error: any) {
-        return res
-          .status(STATUS_CODES.notFound)
-          .send(server.sendError({ projectId }, (error as Error)?.message))
-      }
+    // when content is crdt, return scene crdt file
+    if (content === CRDT_HASH) {
+      const redirectPath = `${getBucketURL()}/${new S3Project(projectId).getFileKey(CRDT_FILENAME)}`
+      console.log({ redirectPath })
+      return res.redirect(301, redirectPath)
     }
 
     // redirect to content in s3
@@ -330,5 +344,18 @@ export class ProjectRouter extends Router {
     )}${ts ? `?ts=${ts}` : ''}`
 
     return res.redirect(301, redirectPath)
+  }
+
+  async upsertCrdt(_req: AuthRequest) {
+    return true
+  }
+
+  async getCrdt(req: Request, res: Response) {
+    const id = server.extractFromReq(req, 'id')
+
+    return res.redirect(
+      `${getBucketURL()}/${(new S3Project(id)).getFileKey(CRDT_FILENAME)}`,
+      301
+    )
   }
 }

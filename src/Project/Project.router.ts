@@ -11,7 +11,7 @@ import {
   withModelExists,
   withModelAuthorization,
 } from '../middleware'
-import { S3Project, getBucketURL, getUploader } from '../S3'
+import { S3Project, getBucketURL, getUploader, CRDT_FILENAME } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { Project } from './Project.model'
@@ -137,6 +137,28 @@ export class ProjectRouter extends Router {
       ),
       server.handleRequest(this.uploadFiles)
     )
+
+    this.router.put(
+      '/projects/:id/crdt', 
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
+      getUploader({
+        getFileKey: async (_file, req) => {
+          const id = server.extractFromReq(req, 'id')
+          return new S3Project(id).getFileKey(CRDT_FILENAME)
+        },
+      }).any(),
+      server.handleRequest(this.upsertCrdt)
+    )
+
+    this.router.get(
+      '/projects/:id/crdt',
+      withAuthentication,
+      withProjectExists,
+      withProjectAuthorization,
+      this.getCrdt
+    )
   }
 
   async getProjects(req: AuthRequest) {
@@ -257,5 +279,18 @@ export class ProjectRouter extends Router {
     }
 
     return true
+  }
+
+  async upsertCrdt(_req: AuthRequest) {
+    return true
+  }
+
+  async getCrdt(req: Request, res: Response) {
+    const id = server.extractFromReq(req, 'id')
+
+    return res.redirect(
+      `${getBucketURL()}/${(new S3Project(id)).getFileKey(CRDT_FILENAME)}`,
+      301
+    )
   }
 }

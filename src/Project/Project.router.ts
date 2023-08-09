@@ -17,6 +17,10 @@ import { Ownable } from '../Ownable'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
+import { PREVIEW_HASH } from '../Scene/utils'
+
+const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
+const PEER_URL = process.env.PEER_URL
 
 export const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
@@ -30,7 +34,6 @@ const FILE_NAMES = [
 const MIME_TYPES = ['image/png', 'image/jpeg']
 
 const validator = getValidator()
-
 export class ProjectRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
@@ -136,6 +139,12 @@ export class ProjectRouter extends Router {
         }))
       ),
       server.handleRequest(this.uploadFiles)
+    )
+
+    this.router.get(
+      '/projects/:id/about',
+      withProjectExists,
+      this.getPreviewAbout
     )
 
     this.router.put(
@@ -279,6 +288,33 @@ export class ProjectRouter extends Router {
     }
 
     return true
+  }
+
+  async getPreviewAbout(req: Request, res: Response) {
+    const projectId = server.extractFromReq(req, 'id')
+    return res.json({
+      healthy: true,
+      acceptingUsers: true,
+      configurations: {
+        globalScenesUrn: [],
+        scenesUrn: [
+          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}v1/projects/${projectId}/contents/`
+        ]
+      },
+      content: {
+        healthy: true,
+        publicUrl: `${PEER_URL}/content`
+      },
+      lambdas: {
+        healthy: true,
+        publicUrl: `${PEER_URL}/lambdas`
+      },
+      comms: {
+        healthy: true,
+        protocol: "v3",
+        fixedAdapter: "offline:offline"
+      }
+    })
   }
 
   async upsertCrdt(_req: AuthRequest) {

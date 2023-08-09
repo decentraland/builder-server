@@ -27,8 +27,9 @@ export class SDK7Scene {
   getDefinition(project: ProjectAttributes) {
     const base = this.getLayout().base
     return {
+      allowedMediaHostnames: [],
       owner: '',
-      main: 'assets/scene/main.composite',
+      main: 'bin/index.js',
       display: {
         title: project.title,
         favicon: 'favicon_asset',
@@ -38,6 +39,8 @@ export class SDK7Scene {
         parcels: this.getParcelsAsString(),
         base: `${base.x},${base.y}`,
       },
+      ecs7: true,
+      runtimeVersion: "7",
       source: {
         version: 1,
         origin: 'builder',

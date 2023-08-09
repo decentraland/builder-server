@@ -6,7 +6,7 @@ import { app } from '../server'
 import * as s3Module from '../S3'
 import { ManifestAttributes } from '../Manifest'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { COMPOSITE_FILE_HASH, PREVIEW_HASH } from '../Scene/utils'
+import { COMPOSITE_FILE_HASH, CRDT_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { SearchableProject } from './SearchableProject'
 import { TemplateStatus } from './Project.types'
 
@@ -206,25 +206,8 @@ describe('Project Router', () => {
       })
     })
 
-    describe('and getting scene composite', () => {
-      describe('and project scene is in sdk6', () => {
-        beforeEach(() => {
-          (s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce({
-            version: 1,
-            project: {},
-            scene: { sdk6: { id: 'scene-id' }, sdk7: null }
-          } as unknown as ManifestAttributes)
-        })
-    
-        it('should return error', async () => {
-          return await server
-            .get(buildURL(`/projects/${projectId}/contents/${COMPOSITE_FILE_HASH}`))
-            .expect(400)
-        })
-      })
-
-      describe('and project scene is in sdk7', () => {
-        const composite = { components: [] }
+    describe('and getting scene main.crdt file', () => {
+      const composite = { components: [] }
         beforeEach(() => {
           (s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce({
             version: 1,
@@ -233,13 +216,11 @@ describe('Project Router', () => {
           } as unknown as ManifestAttributes)
         })
 
-        it('should return composite definition', async () => {
-          const response = await server
-            .get(buildURL(`/projects/${projectId}/contents/${COMPOSITE_FILE_HASH}`))
-            .expect(200)
-          expect(response.body).toEqual(composite)
+        it('should redirect to crdt file in s3', async () => {
+          return await server
+            .get(buildURL(`/projects/${projectId}/contents/${CRDT_HASH}`))
+            .expect(301)
         })
-      })
     })
 
     describe('and getting file hash', () => {

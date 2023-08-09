@@ -277,17 +277,7 @@ export class ProjectRouter extends Router {
         globalScenesUrn: [],
         scenesUrn: [
           `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}v1/projects/${projectId}/contents/`
-        ],
-        minimap: {
-          enabled: false,
-          dataImage: "https://worlds-content-server.decentraland.org/contents/bafkreidduubi76bntd27dewz4cvextrfl3qyd4td6mtztuisxi26q64dnq",
-          estateImage: "https://worlds-content-server.decentraland.org/contents/bafkreidduubi76bntd27dewz4cvextrfl3qyd4td6mtztuisxi26q64dnq"
-        },
-        skybox: {
-          textures: [
-            "https://worlds-content-server.decentraland.org/contents/bafkreidduubi76bntd27dewz4cvextrfl3qyd4td6mtztuisxi26q64dnq"
-          ]
-        }
+        ]
       },
       content: {
         healthy: true,

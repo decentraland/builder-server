@@ -22,6 +22,7 @@ import { CRDT_HASH, INDEX_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
+import { CRDT_FILENAME } from '../S3/crdt'
 
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
@@ -39,7 +40,6 @@ const MIME_TYPES = ['image/png', 'image/jpeg']
 
 const validator = getValidator()
 const scenePreviewMain = fs.readFileSync('src/Project/scene-preview.js')
-// const mainCrdt = fs.readFileSync('main.crdt')
 
 export class ProjectRouter extends Router {
   mount() {
@@ -343,8 +343,8 @@ export class ProjectRouter extends Router {
         // Add composite file
         entity.content = [
           { file: "bin/index.js", hash: INDEX_HASH },
-          // { file: "main.crdt", hash: CRDT_HASH },
-          ...entity.content,
+          { file: "main.crdt", hash: CRDT_HASH },
+          ...entity.content.filter(({ file }) => file !== 'main.crdt'),
         ]
 
         return res.json(entity)
@@ -357,25 +357,9 @@ export class ProjectRouter extends Router {
 
     // when content is crdt, return scene crdt file
     if (content === CRDT_HASH) {
-      try {
-        const { scene } = await getProjectManifest(projectId)
-        if (scene.sdk6) {
-          return res
-            .status(STATUS_CODES.badRequest)
-            .send(
-              server.sendError(
-                { projectId },
-                "SDK6 scene don't have composite definition"
-              )
-            )
-        }
-        res.setHeader('Content-Type', 'application/octet-stream')
-        return res.status(200).send(scene.sdk7.crdt)
-      } catch (error: any) {
-        return res
-          .status(STATUS_CODES.notFound)
-          .send(server.sendError({ projectId }, (error as Error)?.message))
-      }
+      const redirectPath = `${getBucketURL()}/${new S3Project(projectId).getFileKey(CRDT_FILENAME)}`
+      console.log({ redirectPath })
+      return res.redirect(301, redirectPath)
     }
 
     // redirect to content in s3

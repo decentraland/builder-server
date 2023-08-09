@@ -1,1 +1,1 @@
-export const CRDT_FILENAME = 'crdt.main'
+export const CRDT_FILENAME = 'main.crdt'

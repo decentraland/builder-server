@@ -7,8 +7,8 @@ import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
 import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
 
-var privateKey  = fs.readFileSync('localhost-key.pem');
-var certificate = fs.readFileSync('localhost.pem');
+var privateKey  = fs.readFileSync('../credentials/localhost-key.pem');
+var certificate = fs.readFileSync('../credentials/localhost.pem');
 
 export class ExpressApp {
   protected app: express.Application

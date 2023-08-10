@@ -362,7 +362,7 @@ export class ProjectRouter extends Router {
       configurations: {
         globalScenesUrn: [],
         scenesUrn: [
-          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}v1/projects/${projectId}/contents/`
+          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/v1/projects/${projectId}/contents/`
         ]
       },
       content: {

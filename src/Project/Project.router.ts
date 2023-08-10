@@ -342,7 +342,6 @@ export class ProjectRouter extends Router {
     // when content is crdt, return scene crdt file
     if (content === CRDT_HASH) {
       const redirectPath = `${getBucketURL()}/${new S3Project(projectId).getFileKey(CRDT_FILENAME)}`
-      console.log({ redirectPath })
       return res.redirect(301, redirectPath)
     }
 

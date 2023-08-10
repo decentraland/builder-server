@@ -1,1 +1,3 @@
+export const CRDT_HASH = 'bafkreiaurs4qwhwxxbqmpjmam5idcqatnffc743dim63nynihtkjnsjdoy'
 export const PREVIEW_HASH = 'bafkreiczoxhrxosdeoi4srth6wegejpwsn34bkult6rb7xp3ehejxt4qsi'
+export const INDEX_HASH = 'bafkreietbnzqbmdsllqd4amkpaa7fp3bslehgioced5z7qhjtj5huqaesy'

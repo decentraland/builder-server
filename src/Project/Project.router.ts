@@ -1,23 +1,28 @@
 import { Request, Response } from 'express'
+import fs from 'fs'
 import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
 import path from 'path'
-
 import { Router } from '../common/Router'
 import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
+import { withModelExists, withModelAuthorization } from '../middleware'
 import {
-  withModelExists,
-  withModelAuthorization,
-} from '../middleware'
-import { S3Project, getBucketURL, getUploader, CRDT_FILENAME } from '../S3'
+  S3Content,
+  S3Project,
+  getBucketURL,
+  getProjectManifest,
+  getUploader,
+  CRDT_FILENAME
+} from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
+import { SDK7Scene } from '../Scene/SDK7Scene'
+import { CRDT_HASH, INDEX_HASH, PREVIEW_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
-import { PREVIEW_HASH } from '../Scene/utils'
 
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
@@ -34,6 +39,7 @@ const FILE_NAMES = [
 const MIME_TYPES = ['image/png', 'image/jpeg']
 
 const validator = getValidator()
+const scenePreviewMain = fs.readFileSync('static/scene-preview.js.raw', 'utf-8')
 export class ProjectRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
@@ -48,10 +54,7 @@ export class ProjectRouter extends Router {
     /**
      * Get all templates
      */
-     this.router.get(
-      '/templates',
-      server.handleRequest(this.getTemplates)
-    )
+    this.router.get('/templates', server.handleRequest(this.getTemplates))
 
     /**
      * Get all projects
@@ -139,6 +142,12 @@ export class ProjectRouter extends Router {
         }))
       ),
       server.handleRequest(this.uploadFiles)
+    )
+
+    this.router.get(
+      '/projects/:id/contents/:content',
+      withProjectExists,
+      this.getContents
     )
 
     this.router.get(
@@ -259,8 +268,8 @@ export class ProjectRouter extends Router {
 
     addInmutableCacheControlHeader(res)
     return res.redirect(
-      `${getBucketURL()}/${project.getFileKey(filename)}`,
-      301
+      301,
+      `${getBucketURL()}/${project.getFileKey(filename)}`
     )
   }
 
@@ -288,6 +297,61 @@ export class ProjectRouter extends Router {
     }
 
     return true
+  }
+
+  async getContents(req: Request, res: Response) {
+    const projectId = server.extractFromReq(req, 'id')
+    const content = server.extractFromReq(req, 'content')
+
+    if (content === INDEX_HASH) {
+      return res.send(scenePreviewMain)
+    }
+
+    // when content is preview, return entity object
+    if (content === PREVIEW_HASH) {
+      try {
+        const { scene, project } = await getProjectManifest(projectId)
+        if (scene.sdk6) {
+          return res
+            .status(STATUS_CODES.badRequest)
+            .send(
+              server.sendError(
+                { projectId: project.id },
+                "Can't preview projects with sdk6 scene"
+              )
+            )
+        }
+
+        const entity = await new SDK7Scene(scene.sdk7).getEntity(project)
+
+        // Add composite file
+        entity.content = [
+          { file: "bin/index.js", hash: INDEX_HASH },
+          { file: "main.crdt", hash: CRDT_HASH },
+          ...entity.content,
+        ]
+
+        return res.json(entity)
+      } catch(error) {
+        return res
+          .status(STATUS_CODES.notFound)
+          .send(server.sendError({ projectId }, (error as Error)?.message))
+      }
+    }
+
+    // when content is crdt, return scene crdt file
+    if (content === CRDT_HASH) {
+      const redirectPath = `${getBucketURL()}/${new S3Project(projectId).getFileKey(CRDT_FILENAME)}`
+      return res.redirect(301, redirectPath)
+    }
+
+    // redirect to content in s3
+    const ts = req.query.ts as string
+    const redirectPath = `${getBucketURL()}/${new S3Content().getFileKey(
+      content
+    )}${ts ? `?ts=${ts}` : ''}`
+
+    return res.redirect(301, redirectPath)
   }
 
   async getPreviewAbout(req: Request, res: Response) {

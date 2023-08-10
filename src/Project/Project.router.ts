@@ -39,7 +39,7 @@ const FILE_NAMES = [
 const MIME_TYPES = ['image/png', 'image/jpeg']
 
 const validator = getValidator()
-const scenePreviewMain = fs.readFileSync('src/Project/scene-preview.js')
+const scenePreviewMain = fs.readFileSync('static/scene-preview.js.raw', 'utf-8')
 export class ProjectRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
@@ -304,7 +304,7 @@ export class ProjectRouter extends Router {
     const content = server.extractFromReq(req, 'content')
 
     if (content === INDEX_HASH) {
-      return res.send(new TextDecoder().decode(scenePreviewMain))
+      return res.send(scenePreviewMain)
     }
 
     // when content is preview, return entity object

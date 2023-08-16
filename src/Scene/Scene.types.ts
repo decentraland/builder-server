@@ -88,8 +88,6 @@ export const sceneSchemaSdk7 = {
 
 export const sceneSchema = {
   anyOf: [
-    // TODO: eventually remove old schema
-    sceneSchemaSdk6,
     {
       type: 'object',
       properties: {

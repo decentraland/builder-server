@@ -47,15 +47,21 @@ export function collectStatistics(
 
     return result
   } else {
+    const get = (name: string) =>
+      scene.sdk7.composite.components.find(
+        (component) => name === component.name
+      )
+    const count = (name: string) => Object.keys(get(name)?.data || {}).length
+    const transforms = count('core::Transform')
+    const gltf_shapes = count('core::GltfContainer')
     return {
       cols: project.cols,
       rows: project.rows,
       parcels: project.rows * project.cols,
-      // TODO: gather metrics from SDK7
       entities: 0,
-      transforms: 0,
+      transforms,
       scripts: 0,
-      gltf_shapes: 0,
+      gltf_shapes,
       nft_shapes: 0,
     }
   }

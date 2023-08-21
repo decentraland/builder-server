@@ -9,6 +9,7 @@ import { UnauthorizedToUpsertError } from './Item.errors'
 import { Item } from './Item.model'
 import { ItemService } from './Item.service'
 import { ItemAttributes } from './Item.types'
+import { VIDEO_PATH } from './utils'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../Collection/Collection.model')
@@ -152,6 +153,75 @@ describe('Item Service', () => {
         expect(
           service.getItemByContractAddressAndTokenId('0xa', '1')
         ).rejects.toThrow("The item doesn't exist.")
+      })
+    })
+  })
+
+  describe('updateDCLItemsContent', () => {
+    describe('when the collection contains smart wearables', () => {
+      beforeEach(() => {
+        dbItem = {
+          ...dbItemMock,
+          contents: {
+            ...dbItemMock.contents,
+            'male/game.js': 'hash1',
+            [VIDEO_PATH]: 'videoHash',
+          },
+          video: 'videoHash',
+        }
+        ;(Item.upsert as jest.Mock).mockRestore()
+        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([dbItem])
+      })
+
+      describe('and the item has an updated video', () => {
+        beforeEach(() => {
+          dbItem = {
+            ...dbItem,
+            video: '',
+          }
+          ;(Item.findByCollectionIds as jest.Mock).mockRestore()
+          ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
+            dbItem,
+          ])
+        })
+
+        it('should update the item video with the new video content hash', async () => {
+          const collectionId = 'collectionId'
+          const updateSpy = jest.spyOn(Item, 'upsert').mockResolvedValue({
+            ...dbItem,
+            video: 'videoHash',
+          })
+          await service.updateDCLItemsContent(collectionId)
+          expect(updateSpy).toHaveBeenCalledWith({
+            ...dbItem,
+            video: 'videoHash',
+            updated_at: expect.anything(),
+          })
+        })
+      })
+
+      describe('and the item does not have an updated video', () => {
+        it('should not update the item video', async () => {
+          const collectionId = 'collectionId'
+          const updateSpy = jest.spyOn(Item, 'upsert')
+          await service.updateDCLItemsContent(collectionId)
+          expect(updateSpy).not.toHaveBeenCalled()
+        })
+      })
+    })
+
+    describe('when the collection does not contain smart wearables', () => {
+      beforeEach(() => {
+        dbItem = { ...dbItemMock }
+        ;(Item.upsert as jest.Mock).mockRestore()
+        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([dbItem])
+      })
+
+      it('should not update the item', async () => {
+        const collectionId = 'collectionId'
+        const updateSpy = jest.spyOn(Item, 'upsert')
+        await service.updateDCLItemsContent(collectionId)
+        expect(updateSpy).not.toHaveBeenCalled()
       })
     })
   })

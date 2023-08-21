@@ -41,7 +41,13 @@ import {
   ItemAttributes,
   ThirdPartyItemAttributes,
 } from './Item.types'
-import { buildTPItemURN, isTPItem, toDBItem } from './utils'
+import {
+  VIDEO_PATH,
+  buildTPItemURN,
+  isSmartWearable,
+  isTPItem,
+  toDBItem,
+} from './utils'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -731,5 +737,24 @@ export class ItemService {
     if (wearable) {
       throw new URNAlreadyInUseError(id, urn, action)
     }
+  }
+
+  /* This method updates the video field for smart wearables
+   * that has an updated video content
+   */
+  public async updateDCLItemsContent(collectionId: string) {
+    const dbItemsWithCount = await Item.findByCollectionIds([collectionId])
+    const dbItems = dbItemsWithCount.map((dbItemWithCount) =>
+      omit<ItemAttributes>(dbItemWithCount, ['total_count'])
+    )
+
+    dbItems.forEach(async (dbItem) => {
+      if (isSmartWearable(dbItem)) {
+        if (dbItem.video !== dbItem.contents[VIDEO_PATH]) {
+          dbItem.video = dbItem.contents[VIDEO_PATH]
+          await Item.upsert(dbItem)
+        }
+      }
+    })
   }
 }

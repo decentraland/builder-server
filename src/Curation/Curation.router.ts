@@ -419,6 +419,10 @@ export class CurationRouter extends Router {
       updated_at: new Date(),
     }
 
+    if (curationJSON.status === CurationStatus.APPROVED) {
+      await this.updateCollectionItemsContent(id)
+    }
+
     if (type === CurationType.ITEM) {
       fieldsToUpdate = {
         ...fieldsToUpdate,
@@ -479,7 +483,6 @@ export class CurationRouter extends Router {
         }
         attributes.assignee = curationJSON.assignee.toLowerCase()
       }
-      await this.updateCollectionItemsContent(id)
     }
     if (type === CurationType.ITEM) {
       attributes.item_id = id
@@ -501,8 +504,8 @@ export class CurationRouter extends Router {
   }
 
   /* This method updates the video field of smart wearables
-   * after the collection curation is created.
-   * This way we can handle if the vide was updated after the collection was published
+   * after the collection curation is approved.
+   * This way we can handle if the video was updated after the collection was published
    */
   private updateCollectionItemsContent = async (collectionId: string) => {
     const itemService = new ItemService()

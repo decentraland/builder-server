@@ -528,7 +528,7 @@ export class ItemRouter extends Router {
       let { contents } = item
 
       if (isSmartWearable(item)) {
-        // Returns the item.video field as latest approved video showcase for smart wearables)
+        // Returns the item.video field as latest approved video showcase for smart wearables
         contents = {
           ...contents,
           [VIDEO_PATH]: item.video as string,

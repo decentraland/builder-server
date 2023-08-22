@@ -49,7 +49,7 @@ import {
   CollectionAttributes,
   ThirdPartyCollectionAttributes,
 } from '../Collection/Collection.types'
-import { buildTPItemURN } from './utils'
+import { VIDEO_PATH, buildTPItemURN } from './utils'
 import { hasPublicAccess } from './access'
 import { Item } from './Item.model'
 import {
@@ -2387,6 +2387,50 @@ describe('Item router', () => {
               },
             ])
           })
+      })
+
+      describe('and the item is a smart wearable', () => {
+        beforeEach(() => {
+          dbItem.video = 'latestVideoHash'
+          dbItem.contents = {
+            ...dbItem.contents,
+            'game.js': 'fileHash',
+            [VIDEO_PATH]: 'oldHash',
+          }
+
+          resultingItem.contents = {
+            ...dbItem.contents,
+            [VIDEO_PATH]: 'latestVideoHash',
+          }
+        })
+
+        it('should return the item contents using the hash of the item.video field', async () => {
+          return server
+            .get(buildURL(url))
+            .expect(200)
+            .then((response: any) => {
+              expect(
+                collectionAPI.fetchCollectionWithItem
+              ).toHaveBeenCalledWith(
+                dbCollectionMock.contract_address,
+                `${dbCollectionMock.contract_address}-${dbItem.blockchain_item_id}`
+              )
+              expect(response.body).toEqual({
+                data: {
+                  ...resultingItem.contents,
+                },
+                ok: true,
+              })
+              expect(
+                Item.findByBlockchainIdsAndContractAddresses
+              ).toHaveBeenCalledWith([
+                {
+                  blockchainId: dbItem.blockchain_item_id,
+                  collectionAddress: dbCollectionMock.contract_address?.toLowerCase(),
+                },
+              ])
+            })
+        })
       })
     })
 

@@ -509,7 +509,7 @@ export class CurationRouter extends Router {
    */
   private updateCollectionItemsContent = async (collectionId: string) => {
     const itemService = new ItemService()
-    itemService.updateDCLItemsContent(collectionId)
+    await itemService.updateDCLItemsContent(collectionId)
   }
 
   private validateAccessToCuration = async (

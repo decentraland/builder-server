@@ -3,10 +3,12 @@ import { decodeThirdPartyItemURN, isTPItemURN } from '../utils/urn'
 import {
   FullItem,
   ItemAttributes,
+  ItemType,
   ThirdPartyItemAttributes,
 } from './Item.types'
 
 export const MAX_FORUM_ITEMS = 20
+export const VIDEO_PATH = 'video.mp4'
 
 export function toDBItem(item: FullItem): ItemAttributes {
   const attributes = {
@@ -39,4 +41,11 @@ export function isTPItem(
   item: ItemAttributes
 ): item is ThirdPartyItemAttributes {
   return item.urn_suffix !== null && item.collection_id !== null
+}
+
+export function isSmartWearable(item: ItemAttributes): boolean {
+  return (
+    item.type === ItemType.WEARABLE &&
+    Object.keys(item.contents).some((path) => path.endsWith('.js'))
+  )
 }

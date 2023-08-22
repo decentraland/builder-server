@@ -10,6 +10,7 @@ import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
 import { Item, ThirdPartyItemAttributes } from '../Item'
+import { ItemService } from '../Item/Item.service'
 import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
@@ -418,6 +419,10 @@ export class CurationRouter extends Router {
       updated_at: new Date(),
     }
 
+    if (curationJSON.status === CurationStatus.APPROVED) {
+      await this.updateCollectionItemsContent(id)
+    }
+
     if (type === CurationType.ITEM) {
       fieldsToUpdate = {
         ...fieldsToUpdate,
@@ -496,6 +501,15 @@ export class CurationRouter extends Router {
         STATUS_CODES.badRequest
       )
     return dbItem.local_content_hash
+  }
+
+  /* This method updates the video field of smart wearables
+   * after the collection curation is approved.
+   * This way we can handle if the video was updated after the collection was published
+   */
+  private updateCollectionItemsContent = async (collectionId: string) => {
+    const itemService = new ItemService()
+    await itemService.updateDCLItemsContent(collectionId)
   }
 
   private validateAccessToCuration = async (

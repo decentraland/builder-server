@@ -10,11 +10,10 @@ import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import { ItemAttributes, ItemType } from './Item.types'
-import { buildTPItemURN, isTPItem } from './utils'
+import { buildTPItemURN, isTPItem, VIDEO_PATH } from './utils'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
-const VIDEO_PATH = 'video.mp4'
 const ANIMATION_EMPTY_METRICS = {
   triangles: 0,
   materials: 0,

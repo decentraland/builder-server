@@ -1,4 +1,7 @@
-import { dbCollectionMock } from '../../spec/mocks/collections'
+import {
+  collectionFragmentMock,
+  dbCollectionMock,
+} from '../../spec/mocks/collections'
 import { dbItemMock, itemFragmentMock } from '../../spec/mocks/items'
 import { wearableMock } from '../../spec/mocks/peer'
 import { Collection } from '../Collection/Collection.model'
@@ -96,6 +99,57 @@ describe('Item Service', () => {
           expect(() =>
             service.upsertItem(Bridge.toFullItem(dbItem), oldCreatorAddress)
           ).rejects.toThrow(UnauthorizedToUpsertError)
+        })
+      })
+    })
+
+    describe('when the collection db is published', () => {
+      describe('and the collection contains smart wearables', () => {
+        beforeEach(() => {
+          oldCreatorAddress = '0xoldCreator'
+          const dbCollection = {
+            ...dbCollectionMock,
+            eth_address: oldCreatorAddress,
+          }
+          dbItem = {
+            ...dbItemMock,
+            eth_address: oldCreatorAddress,
+            contents: {
+              ...dbItemMock.contents,
+              'male/game.js': 'hash1',
+              [VIDEO_PATH]: 'videoHash2',
+            },
+            video: 'videoHash',
+          }
+          ;(Item.findOne as jest.Mock).mockRestore()
+          ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
+          ;(Item.hasPublishedItems as jest.Mock).mockResolvedValue(true)
+          ;(Item.upsert as jest.Mock).mockImplementation((value) => value)
+          ;(Collection.findByIds as jest.Mock).mockRestore()
+          ;(Collection.findByIds as jest.Mock).mockImplementation((ids) =>
+            [dbCollection].filter((collection) => ids.includes(collection.id))
+          )
+          ;(collectionAPI.fetchCollection as jest.Mock).mockRestore()
+          ;(collectionAPI.fetchCollection as jest.Mock).mockImplementation(() =>
+            Promise.resolve({
+              ...collectionFragmentMock,
+              creator: oldCreatorAddress,
+            })
+          )
+        })
+
+        it('should update the item without updating the video field', async () => {
+          const item = {
+            ...dbItem,
+            video: 'videoHash2',
+          }
+          expect(
+            await service.upsertItem(Bridge.toFullItem(item), item.eth_address)
+          ).toEqual({
+            ...Bridge.toFullItem(dbItem),
+            local_content_hash: expect.any(String),
+            updated_at: expect.anything(),
+          })
         })
       })
     })

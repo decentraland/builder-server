@@ -543,6 +543,13 @@ export class ItemService {
             ItemAction.RARITY_UPDATE
           )
         }
+
+        /* If the collection is published, doesn't update the smart wearable video field.
+         * This field will be updated when the curation is approved.
+         */
+        if (isSmartWearable(dbItem)) {
+          item.video = dbItem.video
+        }
       } else if (this.collectionService.isLockActive(dbCollection.lock)) {
         throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
       }

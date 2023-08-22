@@ -11,7 +11,7 @@ import { peerAPI } from '../ethereum/api/peer'
 import { UnauthorizedToUpsertError } from './Item.errors'
 import { Item } from './Item.model'
 import { ItemService } from './Item.service'
-import { ItemAttributes } from './Item.types'
+import { FullItem, ItemAttributes } from './Item.types'
 import { VIDEO_PATH } from './utils'
 
 jest.mock('../ethereum/api/collection')
@@ -105,6 +105,7 @@ describe('Item Service', () => {
 
     describe('when the collection db is published', () => {
       describe('and the collection contains smart wearables', () => {
+        let mockUpsertedItem: FullItem
         beforeEach(() => {
           oldCreatorAddress = '0xoldCreator'
           const dbCollection = {
@@ -121,21 +122,21 @@ describe('Item Service', () => {
             },
             video: 'videoHash',
           }
-          ;(Item.findOne as jest.Mock).mockRestore()
+          mockUpsertedItem = {
+            ...Bridge.toFullItem(dbItem),
+            local_content_hash: expect.any(String),
+            updated_at: expect.anything(),
+          }
           ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
-          ;(Item.hasPublishedItems as jest.Mock).mockResolvedValue(true)
-          ;(Item.upsert as jest.Mock).mockImplementation((value) => value)
-          ;(Collection.findByIds as jest.Mock).mockRestore()
-          ;(Collection.findByIds as jest.Mock).mockImplementation((ids) =>
-            [dbCollection].filter((collection) => ids.includes(collection.id))
-          )
-          ;(collectionAPI.fetchCollection as jest.Mock).mockRestore()
-          ;(collectionAPI.fetchCollection as jest.Mock).mockImplementation(() =>
-            Promise.resolve({
-              ...collectionFragmentMock,
-              creator: oldCreatorAddress,
-            })
-          )
+          ;(Item.hasPublishedItems as jest.Mock).mockResolvedValueOnce(true)
+          ;(Item.upsert as jest.Mock).mockResolvedValueOnce(mockUpsertedItem)
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbCollection,
+          ])
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce({
+            ...collectionFragmentMock,
+            creator: oldCreatorAddress,
+          })
         })
 
         it('should update the item without updating the video field', async () => {
@@ -145,11 +146,7 @@ describe('Item Service', () => {
           }
           expect(
             await service.upsertItem(Bridge.toFullItem(item), item.eth_address)
-          ).toEqual({
-            ...Bridge.toFullItem(dbItem),
-            local_content_hash: expect.any(String),
-            updated_at: expect.anything(),
-          })
+          ).toEqual(mockUpsertedItem)
         })
       })
     })

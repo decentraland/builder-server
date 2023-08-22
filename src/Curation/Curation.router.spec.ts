@@ -598,8 +598,9 @@ describe('when handling a request', () => {
 
           describe('and the collection contains an smart wearable', () => {
             let mockItem: ItemAttributes
-            let itemSpy: jest.SpyInstance<
-              ReturnType<typeof Item['findByCollectionIds']>
+            let mockItemsWithCount: ItemAttributes & { total_count: number }
+            let updateItemSpy: jest.SpyInstance<
+              ReturnType<typeof Item['upsert']>
             >
 
             beforeEach(() => {
@@ -612,11 +613,17 @@ describe('when handling a request', () => {
                 },
                 video: 'videoHash',
               }
-              updateSpy.mockRestore()
+
+              mockItemsWithCount = {
+                ...mockItem,
+                total_count: 1,
+              }
+
               expectedCuration = {
                 ...expectedCuration,
                 status: CurationStatus.APPROVED,
               }
+
               req = {
                 ...req,
                 body: {
@@ -625,76 +632,46 @@ describe('when handling a request', () => {
                   },
                 },
               } as any
+
+              updateSpy = jest
+                .spyOn(service, 'updateById')
+                .mockResolvedValueOnce(expectedCuration)
+              jest
+                .spyOn(Item, 'findByCollectionIds')
+                .mockResolvedValueOnce([mockItemsWithCount])
+              updateItemSpy = jest
+                .spyOn(Item, 'upsert')
+                .mockResolvedValueOnce(mockItem)
             })
 
             describe('and the smart wearable has updated the video', () => {
               const newVideoHash = 'newVideoHash'
 
               beforeEach(() => {
-                mockItem = {
-                  ...mockItem,
-                  contents: {
-                    ...mockItem.contents,
-                    [VIDEO_PATH]: newVideoHash,
-                  },
-                  video: '',
+                mockItemsWithCount.contents = {
+                  ...mockItemsWithCount.contents,
+                  [VIDEO_PATH]: newVideoHash,
                 }
-                itemSpy = jest
-                  .spyOn(Item, 'findByCollectionIds')
-                  .mockResolvedValueOnce([
-                    {
-                      ...mockItem,
-                      total_count: 1,
-                    },
-                  ])
+
+                mockItem.contents = {
+                  ...mockItem.contents,
+                  [VIDEO_PATH]: newVideoHash,
+                }
+                mockItem.video = newVideoHash
               })
 
               it('should resolved with the inserted curation and update the item video', async () => {
-                updateSpy = jest
-                  .spyOn(service, 'updateById')
-                  .mockResolvedValueOnce(expectedCuration)
-                const updateItemSpy = jest
-                  .spyOn(Item, 'upsert')
-                  .mockResolvedValue({
-                    ...mockItem,
-                    video: newVideoHash,
-                  })
-
                 await router.updateCollectionCuration(req)
-
                 expect(updateSpy).toHaveBeenCalledWith('curationId', {
                   status: CurationStatus.APPROVED,
                   updated_at: expect.any(Date),
                 })
-
-                expect(updateItemSpy).toHaveBeenCalledWith({
-                  ...mockItem,
-                  video: newVideoHash,
-                })
+                expect(updateItemSpy).toHaveBeenCalledWith(mockItem)
               })
             })
 
             describe('and the smart wearable has not updated the video', () => {
-              beforeEach(() => {
-                itemSpy.mockRestore()
-                itemSpy = jest
-                  .spyOn(Item, 'findByCollectionIds')
-                  .mockResolvedValueOnce([
-                    {
-                      ...mockItem,
-                      total_count: 1,
-                    },
-                  ])
-              })
-
               it('should resolved with the inserted curation and not update the item video', async () => {
-                updateSpy = jest
-                  .spyOn(service, 'updateById')
-                  .mockResolvedValueOnce(expectedCuration)
-                const updateItemSpy = jest
-                  .spyOn(Item, 'upsert')
-                  .mockResolvedValue(mockItem)
-
                 await router.updateCollectionCuration(req)
                 expect(updateSpy).toHaveBeenCalledWith('curationId', {
                   status: CurationStatus.APPROVED,
@@ -1081,9 +1058,6 @@ describe('when handling a request', () => {
           service = mockServiceWithAccess(CollectionCuration, true)
           mockIsCommitteeMember.mockResolvedValueOnce(true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
-          jest
-            .spyOn(Item, 'findByCollectionIds')
-            .mockResolvedValueOnce([{ ...dbItemMock, total_count: 1 }])
         })
 
         it('should resolve with the inserted curation', async () => {

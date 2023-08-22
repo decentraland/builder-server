@@ -52,6 +52,7 @@ import {
   UnauthorizedToUpsertError,
   URNAlreadyInUseError,
 } from './Item.errors'
+import { VIDEO_PATH, isSmartWearable } from './utils'
 
 export const MAX_VIDEO_SIZE =
   parseInt(env.get('AWS_MAX_VIDEO_SIZE', ''), 10) || 4e6 // 4MB
@@ -524,7 +525,17 @@ export class ItemRouter extends Router {
         collectionAddress,
         itemId
       )
-      return item.contents
+      let { contents } = item
+
+      if (isSmartWearable(item)) {
+        // Returns the item.video field as latest approved video showcase for smart wearables
+        contents = {
+          ...contents,
+          [VIDEO_PATH]: item.video as string,
+        }
+      }
+
+      return contents
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(

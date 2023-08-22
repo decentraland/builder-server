@@ -43,7 +43,7 @@ export function isTPItem(
   return item.urn_suffix !== null && item.collection_id !== null
 }
 
-export function isSmartWearable(item: ItemAttributes): boolean {
+export function isSmartWearable(item: ItemAttributes | FullItem): boolean {
   return (
     item.type === ItemType.WEARABLE &&
     Object.keys(item.contents).some((path) => path.endsWith('.js'))

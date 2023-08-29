@@ -1,7 +1,7 @@
 import fetch from 'node-fetch'
 import { Emote, Wearable } from '@dcl/schemas'
 import { AuthLink } from '@dcl/crypto'
-import { ILoggerComponent } from '@well-known-components/interfaces'
+import { IFetchComponent, ILoggerComponent } from '@well-known-components/interfaces'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { createFetchComponent } from '@well-known-components/fetch-component'
 import { env } from 'decentraland-commons'
@@ -32,36 +32,15 @@ export const PEER_URL = env.get('PEER_URL', '')
 export class PeerAPI {
   contentClient: ContentClient
   logger: ILoggerComponent.ILogger
+  fetcher: IFetchComponent
 
   constructor() {
+    this.fetcher = createFetchComponent()
     this.contentClient = createContentClient({
       url: `${PEER_URL}/content`,
-      fetcher: createFetchComponent()
+      fetcher: this.fetcher
     })
     this.logger = createConsoleLogComponent().getLogger('PeerAPI')
-  }
-
-  async validateSignature(
-    body: SignatureBody
-  ): Promise<ValidateSignatureResponse> {
-    const response = await logExecutionTime(
-      () =>
-        fetch(`${PEER_URL}/lambdas/crypto/validate-signature`, {
-          method: 'post',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(body, null, 2),
-        }),
-      this.logger,
-      'Validate Signature Fetch'
-    )
-    const result = (await response.json()) as ValidateSignatureResponse
-    if (!result.valid) {
-      this.logger.error('Logging request unsuccessful')
-      throw new Error(result.error)
-    }
-    return result
   }
 
   async fetchWearables<T extends CatalystItem>(urns: string[]): Promise<T[]> {

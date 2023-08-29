@@ -5,7 +5,10 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { createFetchComponent } from '@well-known-components/fetch-component'
 import { env } from 'decentraland-commons'
-import { ContentClient, createContentClient } from 'dcl-catalyst-client/dist/client/ContentClient'
+import {
+  ContentClient,
+  createContentClient,
+} from 'dcl-catalyst-client/dist/client/ContentClient'
 import { ItemAttributes, ItemType } from '../../Item'
 import { CollectionAttributes } from '../../Collection'
 import { logExecutionTime } from '../../utils/logging'
@@ -36,7 +39,7 @@ export class PeerAPI {
   constructor() {
     this.contentClient = createContentClient({
       url: `${PEER_URL}/content`,
-      fetcher: createFetchComponent()
+      fetcher: createFetchComponent(),
     })
     this.logger = createConsoleLogComponent().getLogger('PeerAPI')
   }
@@ -68,8 +71,11 @@ export class PeerAPI {
     return logExecutionTime(
       () =>
         urns.length > 0
-          ? (this.contentClient.fetchEntitiesByIds(urns)
-              .then((entities) => entities.map((entity) => entity.metadata)) as Promise<T[]>)
+          ? (this.contentClient
+              .fetchEntitiesByPointers(urns)
+              .then((entities) =>
+                entities.map((entity) => entity.metadata)
+              ) as Promise<T[]>)
           : [],
       this.logger,
       'Wearables Fetch'
@@ -80,8 +86,11 @@ export class PeerAPI {
     return logExecutionTime(
       () =>
         urns.length > 0
-          ? (this.contentClient.fetchEntitiesByIds(urns)
-              .then((entities) => entities.map((entity) => entity.metadata)) as Promise<T[]>)
+          ? (this.contentClient
+              .fetchEntitiesByPointers(urns)
+              .then((entities) =>
+                entities.map((entity) => entity.metadata)
+              ) as Promise<T[]>)
           : [],
       this.logger,
       'Emotes Fetch'

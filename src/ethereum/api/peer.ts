@@ -1,4 +1,3 @@
-import fetch from 'node-fetch'
 import { Emote, Wearable } from '@dcl/schemas'
 import { AuthLink } from '@dcl/crypto'
 import { IFetchComponent, ILoggerComponent } from '@well-known-components/interfaces'

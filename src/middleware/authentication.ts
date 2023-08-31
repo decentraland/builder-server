@@ -72,7 +72,7 @@ async function decodeAuthChain(req: Request): Promise<string> {
     } else {
       try {
         await verify(req.method, req.path, req.headers, {
-          fetcher: peerAPI.fetcher
+          fetcher: peerAPI.signatureFetcher
         })
       } catch (error) {
         errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'

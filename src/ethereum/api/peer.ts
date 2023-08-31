@@ -34,13 +34,13 @@ export const PEER_URL = env.get('PEER_URL', '')
 export class PeerAPI {
   contentClient: ContentClient
   logger: ILoggerComponent.ILogger
-  fetcher: IFetchComponent
+  signatureFetcher: IFetchComponent
 
   constructor() {
-    this.fetcher = createFetchComponent()
+    this.signatureFetcher = createFetchComponent()
     this.contentClient = createContentClient({
       url: `${PEER_URL}/content`,
-      fetcher: this.fetcher,
+      fetcher: createFetchComponent(),
     })
     this.logger = createConsoleLogComponent().getLogger('PeerAPI')
   }

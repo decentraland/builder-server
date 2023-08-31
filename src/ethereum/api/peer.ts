@@ -42,6 +42,29 @@ export class PeerAPI {
     this.logger = createConsoleLogComponent().getLogger('PeerAPI')
   }
 
+  async validateSignature(
+    body: SignatureBody
+  ): Promise<ValidateSignatureResponse> {
+    const response = await logExecutionTime(
+      () =>
+        fetch(`${PEER_URL}/lambdas/crypto/validate-signature`, {
+          method: 'post',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(body, null, 2),
+        }),
+      this.logger,
+      'Validate Signature Fetch'
+    )
+    const result = (await response.json()) as ValidateSignatureResponse
+    if (!result.valid) {
+      this.logger.error('Logging request unsuccessful')
+      throw new Error(result.error)
+    }
+    return result
+  }
+
   async fetchWearables<T extends CatalystItem>(urns: string[]): Promise<T[]> {
     return logExecutionTime(
       () =>

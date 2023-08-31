@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
-import { AuthLink } from '@dcl/crypto'
+import { AuthLink, Authenticator } from '@dcl/crypto'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { isErrorWithMessage } from '../utils/errors'
 import { peerAPI } from '../ethereum/api/peer'
 import { verify } from '@dcl/platform-crypto-middleware'
+import { isEIP1664AuthChain } from '@dcl/platform-crypto-middleware/dist/verify'
 
 export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 
@@ -75,6 +76,12 @@ async function decodeAuthChain(req: Request): Promise<string> {
         })
       } catch (error) {
         errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
+        try {
+          await validateSignature(req, authChain)
+          errorMessage = null // clear error if has success
+        } catch (error) {
+          errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
+        }
       }
     }
   }
@@ -84,6 +91,31 @@ async function decodeAuthChain(req: Request): Promise<string> {
   }
 
   return ethAddress!.toLowerCase()
+}
+
+/**
+ * @deprecated use `verify` from '@dcl/platform-crypto-middleware', this function is mantained for retro-compatibility, but after we remove all the uses from the front-end should be removed
+ * returns error message
+ */
+async function validateSignature(req: Request, authChain: AuthLink[]) {
+  // TODO: We are waiting for the final implementation of https://github.com/decentraland/decentraland-crypto-middleware in order to complete use it.
+  // For the time being, we need to reduce the number of request to the catalysts
+  const endpoint = (req.method + ':' + req.path).toLowerCase()
+  if (isEIP1664AuthChain(authChain)) {
+    // We don't use the response, just want to make sure it does not blow up
+    await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
+  } else {
+    const res = await Authenticator.validateSignature(
+      endpoint,
+      authChain,
+      null as any,
+      Date.now()
+    )
+
+    if (!res.ok) {
+      throw new Error(res.message)
+    }
+  }
 }
 
 export const withAuthentication = getAuthenticationMiddleware()

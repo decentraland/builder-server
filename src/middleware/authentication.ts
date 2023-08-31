@@ -62,10 +62,10 @@ async function decodeAuthChain(req: Request): Promise<string> {
   let ethAddress: string | null = null
   let errorMessage: string | null = null
 
-  if (authChain.length === 0) {
+  if (!Authenticator.isValidAuthChain(authChain)) {
     errorMessage = `Invalid auth chain`
   } else {
-    ethAddress = authChain[0].payload
+    ethAddress = Authenticator.ownerAddress(authChain)
 
     if (!ethAddress) {
       errorMessage = 'Missing ETH address in auth chain'

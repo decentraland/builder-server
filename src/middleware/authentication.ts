@@ -78,9 +78,9 @@ async function decodeAuthChain(req: Request): Promise<string> {
         errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
         try {
           await validateSignature(req, authChain)
-          errorMessage = null // clear error if has success
-        } catch (error) {
-          errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
+          errorMessage = null // clear error if it has success
+        } catch (_) {
+          // we use the error reported 
         }
       }
     }

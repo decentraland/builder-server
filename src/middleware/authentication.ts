@@ -1,11 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
 import { AuthLink, Authenticator } from '@dcl/crypto'
+import { verify } from '@dcl/platform-crypto-middleware'
+import { isEIP1664AuthChain } from '@dcl/platform-crypto-middleware/dist/verify'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { isErrorWithMessage } from '../utils/errors'
 import { peerAPI } from '../ethereum/api/peer'
-import { verify } from '@dcl/platform-crypto-middleware'
-import { isEIP1664AuthChain } from '@dcl/platform-crypto-middleware/dist/verify'
 
 export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 
@@ -72,7 +72,7 @@ async function decodeAuthChain(req: Request): Promise<string> {
     } else {
       try {
         await verify(req.method, req.path, req.headers, {
-          fetcher: peerAPI.signatureFetcher
+          fetcher: peerAPI.signatureFetcher,
         })
       } catch (error) {
         errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
@@ -80,7 +80,7 @@ async function decodeAuthChain(req: Request): Promise<string> {
           await validateSignature(req, authChain)
           errorMessage = null // clear error if it has success
         } catch (_) {
-          // we use the error reported 
+          // we use the error reported
         }
       }
     }

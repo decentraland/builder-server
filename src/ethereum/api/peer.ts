@@ -1,7 +1,6 @@
-import fetch from 'node-fetch'
 import { Emote, Wearable } from '@dcl/schemas'
 import { AuthLink } from '@dcl/crypto'
-import { ILoggerComponent } from '@well-known-components/interfaces'
+import { IFetchComponent, ILoggerComponent } from '@well-known-components/interfaces'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { createFetchComponent } from '@well-known-components/fetch-component'
 import { env } from 'decentraland-commons'
@@ -35,8 +34,10 @@ export const PEER_URL = env.get('PEER_URL', '')
 export class PeerAPI {
   contentClient: ContentClient
   logger: ILoggerComponent.ILogger
+  signatureFetcher: IFetchComponent
 
   constructor() {
+    this.signatureFetcher = createFetchComponent()
     this.contentClient = createContentClient({
       url: `${PEER_URL}/content`,
       fetcher: createFetchComponent(),

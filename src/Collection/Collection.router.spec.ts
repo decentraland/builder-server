@@ -1207,7 +1207,7 @@ describe('Collection router', () => {
       now = 1633022119407
       lock = new Date(now)
       mockAuthenticationSignatureValidationDate()
-      jest.spyOn(Date, 'now').mockReturnValueOnce(now)
+      jest.spyOn(Date, 'now').mockReturnValue(now)
       mockExistsMiddleware(Collection, dbCollection.id)
       mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
       ;(Collection.findByIds as jest.MockedFunction<
@@ -1382,7 +1382,7 @@ describe('Collection router', () => {
             mockThirdPartyCollectionIsPublished(dbTPCollection.id, false)
             jest
               .spyOn(Date, 'now')
-              .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)
+              .mockReturnValue(lockDate.getTime() + 1000 * 60 * 60 * 24)
           })
 
           afterEach(() => {
@@ -1484,7 +1484,7 @@ describe('Collection router', () => {
           mockIsCollectionPublished(dbCollection.id, false)
           jest
             .spyOn(Date, 'now')
-            .mockReturnValueOnce(lockDate.getTime() + 1000 * 60 * 60 * 24)
+            .mockReturnValue(lockDate.getTime() + 1000 * 60 * 60 * 24)
         })
 
         afterEach(() => {

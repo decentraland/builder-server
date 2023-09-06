@@ -1,11 +1,15 @@
 import { Request, Response, NextFunction } from 'express'
-import { AuthLink, Authenticator, AuthChain, AuthLinkType } from '@dcl/crypto'
+import { AuthLink, Authenticator } from '@dcl/crypto'
+import { verify } from '@dcl/platform-crypto-middleware'
+import { isEIP1664AuthChain } from '@dcl/platform-crypto-middleware/dist/verify'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
 import { isErrorWithMessage } from '../utils/errors'
 import { peerAPI } from '../ethereum/api/peer'
 
 export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
+export const MISSING_ETH_ADDRESS_ERROR = 'Missing ETH address in auth chain'
+export const INVALID_AUTH_CHAIN_MESSAGE = 'Invalid auth chain'
 
 export type AuthRequest = Request & {
   auth: Record<string, string | number | boolean> & {
@@ -55,40 +59,31 @@ const getAuthenticationMiddleware = <
   }
 }
 
-async function decodeAuthChain(req: Request): Promise<string> {
+export async function decodeAuthChain(req: Request): Promise<string> {
   const authChain = buildAuthChain(req)
   let ethAddress: string | null = null
   let errorMessage: string | null = null
 
-  if (authChain.length === 0) {
-    errorMessage = `Invalid auth chain`
+  if (!Authenticator.isValidAuthChain(authChain)) {
+    errorMessage = INVALID_AUTH_CHAIN_MESSAGE
   } else {
-    ethAddress = authChain[0].payload
+    ethAddress = Authenticator.ownerAddress(authChain)
 
     if (!ethAddress) {
-      errorMessage = 'Missing ETH address in auth chain'
+      errorMessage = MISSING_ETH_ADDRESS_ERROR
     } else {
       try {
-        // TODO: We are waiting for the final implementation of https://github.com/decentraland/decentraland-crypto-middleware in order to complete use it.
-        // For the time being, we need to reduce the number of request to the catalysts
-        const endpoint = (req.method + ':' + req.path).toLowerCase()
-        if (isEIP1664AuthChain(authChain)) {
-          // We don't use the response, just want to make sure it does not blow up
-          await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
-        } else {
-          const res = await Authenticator.validateSignature(
-            endpoint,
-            authChain,
-            null as any,
-            Date.now()
-          )
-
-          if (!res.ok) {
-            errorMessage = res.message!
-          }
-        }
+        await verify(req.method, req.path, req.headers, {
+          fetcher: peerAPI.signatureFetcher,
+        })
       } catch (error) {
         errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
+        try {
+          await validateSignature(req, authChain)
+          errorMessage = null // clear error if it has success
+        } catch (error) {
+          errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
+        }
       }
     }
   }
@@ -100,16 +95,28 @@ async function decodeAuthChain(req: Request): Promise<string> {
   return ethAddress!.toLowerCase()
 }
 
-export function isEIP1664AuthChain(authChain: AuthChain) {
-  switch (authChain.length) {
-    case 2:
-    case 3:
-      return (
-        authChain[0].type === AuthLinkType.SIGNER &&
-        authChain[1].type === AuthLinkType.ECDSA_EIP_1654_EPHEMERAL
-      )
-    default:
-      return false
+/**
+ * @deprecated use `verify` from '@dcl/platform-crypto-middleware', this function is mantained for retro-compatibility, but after we remove all the uses from the front-end should be removed
+ * returns error message
+ */
+async function validateSignature(req: Request, authChain: AuthLink[]) {
+  // TODO: We are waiting for the final implementation of https://github.com/decentraland/decentraland-crypto-middleware in order to complete use it.
+  // For the time being, we need to reduce the number of request to the catalysts
+  const endpoint = (req.method + ':' + req.path).toLowerCase()
+  if (isEIP1664AuthChain(authChain)) {
+    // We don't use the response, just want to make sure it does not blow up
+    await peerAPI.validateSignature({ authChain, timestamp: endpoint }) // We send the endpoint as the timestamp, yes
+  } else {
+    const res = await Authenticator.validateSignature(
+      endpoint,
+      authChain,
+      null as any,
+      Date.now()
+    )
+
+    if (!res.ok) {
+      throw new Error(res.message)
+    }
   }
 }
 

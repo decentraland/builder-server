@@ -219,7 +219,7 @@ describe('Project Router', () => {
         it('should redirect to crdt file in s3', async () => {
           return await server
             .get(buildURL(`/projects/${projectId}/contents/${CRDT_HASH}`))
-            .expect(301)
+            .expect(302)
         })
     })
 

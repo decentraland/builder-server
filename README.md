@@ -94,3 +94,16 @@ You can then run the `builder-service` normally as instructed in [RUN](#run)
 
 This method also provides some utilities to facilitate developer experience with a database viewer that can be accessed in http://localhost:8080, as well as an object storage viewer in http://localhost:9001
 
+# Use a local development scene for the Builder preview
+
+The builder uses a javascript file compiled from the [asset-packs](https://github.com/decentraland/asset-packs) repo to make the items work once deployed. 
+
+If you are developing this javascript locally and want the builder server to serve that file instead of the one in the asset packs CDN, you can use these two env variables:
+
+```
+DEV_SCENE_JS_PATH=/path/to/bin/index.js
+DEV_SCENE_JS_PORT=8000
+```
+
+The first one is the path to the `bin/index.js` generated when automatically when running the `npm start` command in the [asset-packs](https://github.com/decentraland/asset-packs) repo. 
+That command also starts a local dev server, by default on port 8000, but could be a different one if you already have something running on that port. The correct port should be used as the value of the second env variable.

@@ -8,6 +8,8 @@ import { isErrorWithMessage } from '../utils/errors'
 import { peerAPI } from '../ethereum/api/peer'
 
 export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
+export const MISSING_ETH_ADDRESS_ERROR = 'Missing ETH address in auth chain'
+export const INVALID_AUTH_CHAIN_MESSAGE = 'Invalid auth chain'
 
 export type AuthRequest = Request & {
   auth: Record<string, string | number | boolean> & {
@@ -57,18 +59,18 @@ const getAuthenticationMiddleware = <
   }
 }
 
-async function decodeAuthChain(req: Request): Promise<string> {
+export async function decodeAuthChain(req: Request): Promise<string> {
   const authChain = buildAuthChain(req)
   let ethAddress: string | null = null
   let errorMessage: string | null = null
 
   if (!Authenticator.isValidAuthChain(authChain)) {
-    errorMessage = `Invalid auth chain`
+    errorMessage = INVALID_AUTH_CHAIN_MESSAGE
   } else {
     ethAddress = Authenticator.ownerAddress(authChain)
 
     if (!ethAddress) {
-      errorMessage = 'Missing ETH address in auth chain'
+      errorMessage = MISSING_ETH_ADDRESS_ERROR
     } else {
       try {
         await verify(req.method, req.path, req.headers, {
@@ -79,8 +81,8 @@ async function decodeAuthChain(req: Request): Promise<string> {
         try {
           await validateSignature(req, authChain)
           errorMessage = null // clear error if it has success
-        } catch (_) {
-          // we use the error reported
+        } catch (error) {
+          errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
         }
       }
     }

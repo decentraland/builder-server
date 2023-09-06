@@ -1,5 +1,5 @@
 import { Request, Response } from 'express'
-import fs from 'fs'
+import fetch from 'node-fetch'
 import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
 import path from 'path'
@@ -14,7 +14,7 @@ import {
   getBucketURL,
   getProjectManifest,
   getUploader,
-  CRDT_FILENAME
+  CRDT_FILENAME,
 } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
@@ -26,6 +26,7 @@ import { SearchableProject } from './SearchableProject'
 
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
+const BUILDER_ITEMS_URL = process.env.BUILDER_ITEMS_URL
 
 export const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
@@ -39,7 +40,7 @@ const FILE_NAMES = [
 const MIME_TYPES = ['image/png', 'image/jpeg']
 
 const validator = getValidator()
-const scenePreviewMain = fs.readFileSync('static/scene-preview.js.raw', 'utf-8')
+
 export class ProjectRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Project, 'id', {
@@ -157,7 +158,7 @@ export class ProjectRouter extends Router {
     )
 
     this.router.put(
-      '/projects/:id/crdt', 
+      '/projects/:id/crdt',
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -304,7 +305,15 @@ export class ProjectRouter extends Router {
     const content = server.extractFromReq(req, 'content')
 
     if (content === INDEX_HASH) {
-      return res.send(scenePreviewMain)
+      if (process.env.DEV_SCENE_JS_PATH) {
+        console.log('Serving local scene javascript file')
+        const b64 = btoa(process.env.DEV_SCENE_JS_PATH)
+        const js = await fetch(
+          `http://localhost:${process.env.DEV_SCENE_JS_PORT}/content/contents/b64-${b64}`
+        ).then((resp) => resp.text())
+        return res.send(js)
+      }
+      return res.redirect(302, `${BUILDER_ITEMS_URL}/scene.js`)
     }
 
     // when content is preview, return entity object
@@ -326,13 +335,13 @@ export class ProjectRouter extends Router {
 
         // Add composite file
         entity.content = [
-          { file: "bin/index.js", hash: INDEX_HASH },
-          { file: "main.crdt", hash: CRDT_HASH },
+          { file: 'bin/index.js', hash: INDEX_HASH },
+          { file: 'main.crdt', hash: CRDT_HASH },
           ...entity.content,
         ]
 
         return res.json(entity)
-      } catch(error) {
+      } catch (error) {
         return res
           .status(STATUS_CODES.notFound)
           .send(server.sendError({ projectId }, (error as Error)?.message))
@@ -341,8 +350,10 @@ export class ProjectRouter extends Router {
 
     // when content is crdt, return scene crdt file
     if (content === CRDT_HASH) {
-      const redirectPath = `${getBucketURL()}/${new S3Project(projectId).getFileKey(CRDT_FILENAME)}`
-      return res.redirect(301, redirectPath)
+      const redirectPath = `${getBucketURL()}/${new S3Project(
+        projectId
+      ).getFileKey(CRDT_FILENAME)}`
+      return res.redirect(302, redirectPath)
     }
 
     // redirect to content in s3
@@ -362,22 +373,22 @@ export class ProjectRouter extends Router {
       configurations: {
         globalScenesUrn: [],
         scenesUrn: [
-          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/v1/projects/${projectId}/contents/`
-        ]
+          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/v1/projects/${projectId}/contents/`,
+        ],
       },
       content: {
         healthy: true,
-        publicUrl: `${PEER_URL}/content`
+        publicUrl: `${PEER_URL}/content`,
       },
       lambdas: {
         healthy: true,
-        publicUrl: `${PEER_URL}/lambdas`
+        publicUrl: `${PEER_URL}/lambdas`,
       },
       comms: {
         healthy: true,
-        protocol: "v3",
-        fixedAdapter: "offline:offline"
-      }
+        protocol: 'v3',
+        fixedAdapter: 'offline:offline',
+      },
     })
   }
 
@@ -389,8 +400,8 @@ export class ProjectRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     return res.redirect(
-      `${getBucketURL()}/${(new S3Project(id)).getFileKey(CRDT_FILENAME)}`,
-      301
+      `${getBucketURL()}/${new S3Project(id).getFileKey(CRDT_FILENAME)}`,
+      302
     )
   }
 }

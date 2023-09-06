@@ -1,4 +1,5 @@
 import { Request, Response, NextFunction } from 'express'
+import { env } from 'decentraland-commons'
 import { AuthLink, Authenticator } from '@dcl/crypto'
 import { verify } from '@dcl/platform-crypto-middleware'
 import { isEIP1664AuthChain } from '@dcl/platform-crypto-middleware/dist/verify'
@@ -7,6 +8,7 @@ import { STATUS_CODES } from '../common/HTTPError'
 import { isErrorWithMessage } from '../utils/errors'
 import { peerAPI } from '../ethereum/api/peer'
 
+const API_VERSION = env.get('API_VERSION', 'v1')
 export const AUTH_CHAIN_HEADER_PREFIX = 'x-identity-auth-chain-'
 export const MISSING_ETH_ADDRESS_ERROR = 'Missing ETH address in auth chain'
 export const INVALID_AUTH_CHAIN_MESSAGE = 'Invalid auth chain'
@@ -73,7 +75,7 @@ export async function decodeAuthChain(req: Request): Promise<string> {
       errorMessage = MISSING_ETH_ADDRESS_ERROR
     } else {
       try {
-        await verify(req.method, req.path, req.headers, {
+        await verify(req.method, `/${API_VERSION}${req.path}`, req.headers, {
           fetcher: peerAPI.signatureFetcher,
         })
       } catch (error) {

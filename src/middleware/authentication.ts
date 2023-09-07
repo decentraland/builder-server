@@ -77,6 +77,7 @@ export async function decodeAuthChain(req: Request): Promise<string> {
       try {
         await verify(req.method, `/${API_VERSION}${req.path}`, req.headers, {
           fetcher: peerAPI.signatureFetcher,
+          expiration: 1000 * 60 * 5, // 5 minutes
         })
       } catch (error) {
         errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'

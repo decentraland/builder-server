@@ -1,5 +1,4 @@
 import { Request, Response } from 'express'
-import fetch from 'node-fetch'
 import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
 import path from 'path'
@@ -19,14 +18,13 @@ import {
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { Ownable } from '../Ownable'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { CRDT_HASH, INDEX_HASH, PREVIEW_HASH } from '../Scene/utils'
+import { CRDT_HASH, ENTITY_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
 import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
 
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
-const BUILDER_ITEMS_URL = process.env.BUILDER_ITEMS_URL
 
 export const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
@@ -304,20 +302,8 @@ export class ProjectRouter extends Router {
     const projectId = server.extractFromReq(req, 'id')
     const content = server.extractFromReq(req, 'content')
 
-    if (content === INDEX_HASH) {
-      if (process.env.DEV_SCENE_JS_PATH) {
-        console.log('Serving local scene javascript file')
-        const b64 = btoa(process.env.DEV_SCENE_JS_PATH)
-        const js = await fetch(
-          `http://localhost:${process.env.DEV_SCENE_JS_PORT}/content/contents/b64-${b64}`
-        ).then((resp) => resp.text())
-        return res.send(js)
-      }
-      return res.redirect(302, `${BUILDER_ITEMS_URL}/scene.js`)
-    }
-
     // when content is preview, return entity object
-    if (content === PREVIEW_HASH) {
+    if (content === ENTITY_HASH) {
       try {
         const { scene, project } = await getProjectManifest(projectId)
         if (scene.sdk6) {
@@ -333,9 +319,8 @@ export class ProjectRouter extends Router {
 
         const entity = await new SDK7Scene(scene.sdk7).getEntity(project)
 
-        // Add composite file
+        // Add crdt file
         entity.content = [
-          { file: 'bin/index.js', hash: INDEX_HASH },
           { file: 'main.crdt', hash: CRDT_HASH },
           ...entity.content,
         ]
@@ -373,7 +358,7 @@ export class ProjectRouter extends Router {
       configurations: {
         globalScenesUrn: [],
         scenesUrn: [
-          `urn:decentraland:entity:${PREVIEW_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/v1/projects/${projectId}/contents/`,
+          `urn:decentraland:entity:${ENTITY_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/v1/projects/${projectId}/contents/`,
         ],
       },
       content: {

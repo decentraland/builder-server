@@ -6,21 +6,23 @@ import { app } from '../server'
 import * as s3Module from '../S3'
 import { ManifestAttributes } from '../Manifest'
 import { SDK7Scene } from '../Scene/SDK7Scene'
-import { CRDT_HASH, PREVIEW_HASH } from '../Scene/utils'
+import { CRDT_HASH, ENTITY_HASH } from '../Scene/utils'
 import { SearchableProject } from './SearchableProject'
 import { TemplateStatus } from './Project.types'
 
 jest.mock('../S3', () => {
   return {
     ...jest.requireActual('../S3'),
-    getProjectManifest: jest.fn()
+    getProjectManifest: jest.fn(),
   }
 })
 
 jest.mock('../middleware', () => {
   return {
     ...jest.requireActual('../middleware'),
-    withModelExists: jest.fn().mockImplementation(() => jest.fn((_req, _res, next) => next()))
+    withModelExists: jest
+      .fn()
+      .mockImplementation(() => jest.fn((_req, _res, next) => next())),
   }
 })
 
@@ -109,11 +111,11 @@ describe('Project Router', () => {
 
   describe('when getting the scene templates', () => {
     let mockResult: any
-  
+
     beforeEach(() => {
       url = '/templates'
     })
-  
+
     describe('and there are templates created', () => {
       beforeEach(() => {
         mockResult = {
@@ -125,13 +127,13 @@ describe('Project Router', () => {
           .spyOn(SearchableModel.prototype, 'search')
           .mockResolvedValueOnce(mockResult)
       })
-  
+
       it('should return the templates', async () => {
         const response = await server
           .get(buildURL(url))
           .set(createAuthHeaders('get', url))
           .expect(200)
-  
+
         expect(response.body).toEqual({
           data: mockResult,
           ok: true,
@@ -141,20 +143,20 @@ describe('Project Router', () => {
         )
       })
     })
-  
+
     describe('and there are not templates created', () => {
       beforeEach(() => {
         jest
           .spyOn(SearchableModel.prototype, 'search')
           .mockResolvedValueOnce(mockEmptyResult)
       })
-  
+
       it('should return an empty array', async () => {
         const response = await server
           .get(buildURL(url))
           .set(createAuthHeaders('get', url))
           .expect(200)
-  
+
         expect(response.body).toEqual({
           data: mockEmptyResult,
           ok: true,
@@ -172,16 +174,16 @@ describe('Project Router', () => {
     describe('and getting project preview', () => {
       describe('and project scene is in sdk6', () => {
         beforeEach(() => {
-          (s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce({
+          ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce(({
             version: 1,
             project: {},
-            scene: { sdk6: { id: 'scene-id' }, sdk7: null }
-          } as unknown as ManifestAttributes)
+            scene: { sdk6: { id: 'scene-id' }, sdk7: null },
+          } as unknown) as ManifestAttributes)
         })
-    
+
         it('should return error', async () => {
           return await server
-            .get(buildURL(`/projects/${projectId}/contents/${PREVIEW_HASH}`))
+            .get(buildURL(`/projects/${projectId}/contents/${ENTITY_HASH}`))
             .expect(400)
         })
       })
@@ -189,17 +191,19 @@ describe('Project Router', () => {
       describe('and project scene is in sdk7', () => {
         const entity = { id: 'entity-id', content: [] as ContentMapping[] }
         beforeEach(() => {
-          (s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce({
+          ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce(({
             version: 1,
             project: {},
-            scene: { sdk6: null, sdk7: { id: 'scene-id' } }
-          } as unknown as ManifestAttributes)
-          jest.spyOn(SDK7Scene.prototype, 'getEntity').mockResolvedValueOnce(entity as Entity)
+            scene: { sdk6: null, sdk7: { id: 'scene-id' } },
+          } as unknown) as ManifestAttributes)
+          jest
+            .spyOn(SDK7Scene.prototype, 'getEntity')
+            .mockResolvedValueOnce(entity as Entity)
         })
 
         it('should return entity object', async () => {
           const response = await server
-            .get(buildURL(`/projects/${projectId}/contents/${PREVIEW_HASH}`))
+            .get(buildURL(`/projects/${projectId}/contents/${ENTITY_HASH}`))
             .expect(200)
           expect(response.body).toEqual(entity)
         })
@@ -208,19 +212,19 @@ describe('Project Router', () => {
 
     describe('and getting scene main.crdt file', () => {
       const composite = { components: [] }
-        beforeEach(() => {
-          (s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce({
-            version: 1,
-            project: {},
-            scene: { sdk6: null, sdk7: { id: 'scene-id', composite } }
-          } as unknown as ManifestAttributes)
-        })
+      beforeEach(() => {
+        ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce(({
+          version: 1,
+          project: {},
+          scene: { sdk6: null, sdk7: { id: 'scene-id', composite } },
+        } as unknown) as ManifestAttributes)
+      })
 
-        it('should redirect to crdt file in s3', async () => {
-          return await server
-            .get(buildURL(`/projects/${projectId}/contents/${CRDT_HASH}`))
-            .expect(302)
-        })
+      it('should redirect to crdt file in s3', async () => {
+        return await server
+          .get(buildURL(`/projects/${projectId}/contents/${CRDT_HASH}`))
+          .expect(302)
+      })
     })
 
     describe('and getting file hash', () => {

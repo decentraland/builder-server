@@ -77,15 +77,20 @@ export async function decodeAuthChain(req: Request): Promise<string> {
       try {
         await verify(req.method, `/${API_VERSION}${req.path}`, req.headers, {
           fetcher: peerAPI.signatureFetcher,
-          expiration: 1000 * 60 * 5, // 5 minutes
+          expiration: 1000 * 60 * 30, // 30 minutes
         })
       } catch (error) {
-        errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
+        errorMessage = isErrorWithMessage(error)
+          ? `"verify" method failed with error: ${error.message}`
+          : 'Unknown'
         try {
           await validateSignature(req, authChain)
           errorMessage = null // clear error if it has success
         } catch (error) {
-          errorMessage = isErrorWithMessage(error) ? error.message : 'Unknown'
+          errorMessage = `${errorMessage}.
+          "validateSignature" method failed with error: ${
+            isErrorWithMessage(error) ? error.message : 'Unknown'
+          }`
         }
       }
     }

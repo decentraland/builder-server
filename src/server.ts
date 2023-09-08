@@ -27,6 +27,7 @@ import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
 import { withLogger } from './middleware'
 import { ProjectByCoordRouter } from './Project'
+import { NewsletterRouter } from './Newsletter'
 import { errorHandler } from './common/errorHandler'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
@@ -68,6 +69,7 @@ new AnalyticsRouter(app).mount()
 new TiersRouter(app).mount()
 new NFTRouter(app).mount()
 new LANDRouter(app).mount()
+new NewsletterRouter(app).mount()
 
 app.use(errorHandler)
 

@@ -8,7 +8,8 @@ const NEWSLETTER_SERVICE_API_KEY = env.get('NEWSLETTER_SERVICE_API_KEY', '')
 
 export namespace Newsletter {
   export async function subscribe(
-    email: string
+    email: string,
+    source = 'Builder'
   ): Promise<SubscriptionResponse | null> {
     try {
       const options = {
@@ -22,7 +23,7 @@ export namespace Newsletter {
           email,
           reactivate_existing: true,
           send_welcome_email: false,
-          utm_source: 'Builder',
+          utm_source: source,
           utm_campaign: 'Builder',
           utm_medium: 'organic',
         }),

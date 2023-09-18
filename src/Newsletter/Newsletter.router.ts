@@ -9,7 +9,7 @@ export class NewsletterRouter extends Router {
   }
 
   async subscribe(req: Request) {
-    const email = req.body.email
-    return Newsletter.subscribe(email)
+    const { email, source } = req.body
+    return Newsletter.subscribe(email, source)
   }
 }

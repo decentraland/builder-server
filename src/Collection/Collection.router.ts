@@ -245,7 +245,7 @@ export class CollectionRouter extends Router {
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
-    if (!canRequestCollections && !(q && isPublished)) {
+    if (!canRequestCollections && !(q && isPublished === 'true')) {
       throw new HTTPError(
         'Unauthorized',
         { eth_address },

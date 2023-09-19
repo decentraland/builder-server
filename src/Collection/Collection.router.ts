@@ -12,6 +12,7 @@ import {
   withLowercasedParams,
   withSchemaValidation,
   AuthRequest,
+  withPermissiveAuthentication,
 } from '../middleware'
 import { Bridge } from '../ethereum/api/Bridge'
 import {
@@ -90,7 +91,7 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections',
-      withAuthentication,
+      withPermissiveAuthentication,
       server.handleRequest(this.getCollections)
     )
 
@@ -232,11 +233,19 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { assignee, status, sort, q, is_published, tag, type } = req.query
+    const {
+      assignee,
+      status,
+      sort,
+      q,
+      is_published: isPublished,
+      tag,
+      type,
+    } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
-    if (!canRequestCollections) {
+    if (!canRequestCollections && !(q && isPublished)) {
       throw new HTTPError(
         'Unauthorized',
         { eth_address },
@@ -256,7 +265,7 @@ export class CollectionRouter extends Router {
       status: status as CurationStatusFilter,
       type: type as CollectionTypeFilter,
       sort: sort as CollectionSort,
-      isPublished: is_published ? is_published === 'true' : undefined,
+      isPublished: isPublished ? isPublished === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
       remoteIds: status

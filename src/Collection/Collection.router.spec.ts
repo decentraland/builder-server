@@ -857,7 +857,6 @@ describe('Collection router', () => {
         ;(Collection.findByContractAddresses as jest.Mock).mockResolvedValueOnce(
           []
         )
-        // url = '/collections?q=name&isPublished=true'
         ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
         thirdPartyAPIMock.fetchThirdParties.mockResolvedValueOnce([])
       })

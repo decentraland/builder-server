@@ -849,7 +849,7 @@ describe('Collection router', () => {
       })
     })
 
-    describe('and its not a committee member but has request has the params "q" for a search term and "isPublished"', () => {
+    describe('and its not a committee member but the request has the params "q" for a search term and "isPublished"', () => {
       let q: string
       let isPublished: boolean
       beforeEach(() => {

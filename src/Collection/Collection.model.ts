@@ -110,7 +110,7 @@ export class Collection extends Model<CollectionAttributes> {
     const isInRemoteIds = SQL`collections.contract_address = ANY(${remoteIds})`
     const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (${isInRemoteIds} OR (${isThirdParty})))`
     const conditions = [
-      q ? SQL`collections.name % ${q} ` : undefined,
+      q ? SQL`collections.name ILIKE '%' || ${q} || '%'` : undefined,
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
       address
         ? thirdPartyIds?.length

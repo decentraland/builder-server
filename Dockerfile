@@ -1,6 +1,6 @@
 ARG RUN
 
-FROM node:18.17.1-alpine as builder
+FROM node:18-alpine3.16 as builder
 
 WORKDIR /app
 

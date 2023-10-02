@@ -10,7 +10,7 @@ config:
   service-builder:IPFS_PROJECT_ID:
     secure: v1:GklZnQh0qAS+qGW0:5yNdfp12OHH3W/JpllJ2rUtQOF5bZ3y3qCsX2f4XLAin/3qiixEXEWhc+Q==
   service-builder:OPEN_SEA_API_KEY:
-    secure: v1:eUmpidoKIP3dzRZ5:MP7ooTh17ZcQ51xxni/0LdROOYzU3TYQ3+pEdbuXd+0JXp/rc3x+rcSpv0gpk4zD
+    secure: v1:cBaTdw1997nrIo/l:ulREU6XIqoTknr/Tf5VgXApLZj98yl1jA7TgIS5OJ15LsNUeAGd5PHdDcUJjl26p
   service-builder:WAREHOUSE_TOKEN:
     secure: v1:cWIRxpwU5s44BP0Y:i2k/QwUytajdTTsjtjN2sX+fbC1AC/0ZnP2iQ3msuLBFzcC/G0tYPdrJ6ashi8tphHIh+nYVtBsUV1nrq3gxQJ1ZO8Bnzs+j4Hfax89qza2A
   service-builder:WAREHOUSE_URL:

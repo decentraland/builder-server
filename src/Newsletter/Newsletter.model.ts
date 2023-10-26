@@ -39,4 +39,43 @@ export namespace Newsletter {
       return null
     }
   }
+
+  export async function deleteSubscription(subscriptionId: string): Promise<void> {
+    try {
+      const options = {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${NEWSLETTER_SERVICE_API_KEY}`,
+        },
+      }
+      await nodefetch(
+        `${NEWSLETTER_SERVICE_URL}/publications/${NEWSLETTER_PUBLICATION_ID}/subscriptions/${subscriptionId}`,
+        options
+      )
+    } catch (error) {
+      console.error(error)
+    }
+  }
+
+  export async function getSubscription(subscriptionId: string): Promise<SubscriptionResponse | null> {
+    try {
+      const options = {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${NEWSLETTER_SERVICE_API_KEY}`,
+        },
+      }
+      const response = await nodefetch(
+        `${NEWSLETTER_SERVICE_URL}/publications/${NEWSLETTER_PUBLICATION_ID}/subscriptions/${subscriptionId}`,
+        options
+      )
+
+      return response.json()
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+  }
 }

@@ -1,4 +1,4 @@
-import nodefetch from 'node-fetch'
+import nodefetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
 import { SubscriptionResponse } from './Newsletter.types'
 
@@ -40,7 +40,9 @@ export namespace Newsletter {
     }
   }
 
-  export async function deleteSubscription(subscriptionId: string): Promise<SubscriptionResponse | null> {
+  export async function deleteSubscription(
+    subscriptionId: string
+  ): Promise<Response | null> {
     try {
       const options = {
         method: 'DELETE',
@@ -54,14 +56,16 @@ export namespace Newsletter {
         options
       )
 
-      return response.json()
+      return response
     } catch (error) {
       console.error(error)
       return null
     }
   }
 
-  export async function getSubscription(subscriptionId: string): Promise<SubscriptionResponse | null> {
+  export async function getSubscription(
+    subscriptionId: string
+  ): Promise<SubscriptionResponse | null> {
     try {
       const options = {
         method: 'GET',

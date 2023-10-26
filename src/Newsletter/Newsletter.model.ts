@@ -1,4 +1,4 @@
-import nodefetch from 'node-fetch'
+import nodefetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
 import { SubscriptionResponse } from './Newsletter.types'
 
@@ -30,6 +30,52 @@ export namespace Newsletter {
       }
       const response = await nodefetch(
         `${NEWSLETTER_SERVICE_URL}/publications/${NEWSLETTER_PUBLICATION_ID}/subscriptions`,
+        options
+      )
+
+      return response.json()
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+  }
+
+  export async function deleteSubscription(
+    subscriptionId: string
+  ): Promise<Response | null> {
+    try {
+      const options = {
+        method: 'DELETE',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${NEWSLETTER_SERVICE_API_KEY}`,
+        },
+      }
+      const response = await nodefetch(
+        `${NEWSLETTER_SERVICE_URL}/publications/${NEWSLETTER_PUBLICATION_ID}/subscriptions/${subscriptionId}`,
+        options
+      )
+
+      return response
+    } catch (error) {
+      console.error(error)
+      return null
+    }
+  }
+
+  export async function getSubscription(
+    subscriptionId: string
+  ): Promise<SubscriptionResponse | null> {
+    try {
+      const options = {
+        method: 'GET',
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${NEWSLETTER_SERVICE_API_KEY}`,
+        },
+      }
+      const response = await nodefetch(
+        `${NEWSLETTER_SERVICE_URL}/publications/${NEWSLETTER_PUBLICATION_ID}/subscriptions/${subscriptionId}`,
         options
       )
 

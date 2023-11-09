@@ -24,7 +24,6 @@ export namespace Newsletter {
           reactivate_existing: true,
           send_welcome_email: false,
           utm_source: source,
-          utm_campaign: 'Builder',
           utm_medium: 'organic',
         }),
       }

@@ -58,7 +58,7 @@ export class LANDRouter extends Router {
     let result: FetchResponse
 
     try {
-      result = await fetch(ipfsUrl + '/api/v0/add?pin=false', {
+      result = await fetch(ipfsUrl + '/api/v0/add', {
         method: 'post',
         body: formData,
         headers: {

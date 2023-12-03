@@ -52,12 +52,10 @@ export class SDK7Scene {
         },
       },
       requiredPermissions: [
-        [
-          'USE_FETCH',
-          'USE_WEB3_API',
-          'ALLOW_TO_TRIGGER_AVATAR_EMOTE',
-          'ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE',
-        ],
+        'USE_FETCH',
+        'USE_WEB3_API',
+        'ALLOW_TO_TRIGGER_AVATAR_EMOTE',
+        'ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE',
       ],
     }
   }

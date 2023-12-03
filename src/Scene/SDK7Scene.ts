@@ -40,7 +40,7 @@ export class SDK7Scene {
         base: `${base.x},${base.y}`,
       },
       ecs7: true,
-      runtimeVersion: "7",
+      runtimeVersion: '7',
       source: {
         version: 1,
         origin: 'builder',
@@ -51,6 +51,14 @@ export class SDK7Scene {
           cols: project.cols,
         },
       },
+      requiredPermissions: [
+        [
+          'USE_FETCH',
+          'USE_WEB3_API',
+          'ALLOW_TO_TRIGGER_AVATAR_EMOTE',
+          'ALLOW_TO_MOVE_PLAYER_INSIDE_SCENE',
+        ],
+      ],
     }
   }
 

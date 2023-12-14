@@ -55,7 +55,7 @@ import {
 import { VIDEO_PATH, isSmartWearable } from './utils'
 
 export const MAX_VIDEO_SIZE =
-  parseInt(env.get('AWS_MAX_VIDEO_SIZE', ''), 10) || 4e6 // 4MB
+  parseInt(env.get('AWS_MAX_VIDEO_SIZE', ''), 10) || 250e6 // 250MB
 
 export class ItemRouter extends Router {
   // To be removed once we move everything to the item service

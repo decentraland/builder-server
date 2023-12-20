@@ -4,20 +4,20 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
+import { isErrorWithMessage } from '../utils/errors'
 import {
   Collection,
   CollectionAttributes,
   CollectionService,
 } from '../Collection'
-import { isErrorWithMessage } from '../utils/errors'
-import { createPost } from './client'
-import { ForumPost, forumPostSchema } from './Forum.types'
 import { isTPCollection } from '../utils/urn'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { Item } from '../Item'
 import { Bridge } from '../ethereum/api/Bridge'
 import { OwnableModel } from '../Ownable'
+import { createPost } from './client'
 import { ForumService } from './Forum.service'
+import { ForumPost, forumPostSchema } from './Forum.types'
 
 const validator = getValidator()
 

@@ -535,6 +535,13 @@ export class CollectionService {
   public async isDCLManager(id: string, ethAddress: string): Promise<boolean> {
     const collection = await this.getCollection(id)
 
+    return collection && this.isDCLManagerOfCollection(collection, ethAddress)
+  }
+
+  public isDCLManagerOfCollection(
+    collection: CollectionAttributes,
+    ethAddress: string
+  ): boolean {
     if (collection) {
       return collection.managers.some((manager) => manager === ethAddress)
     }

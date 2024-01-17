@@ -62,9 +62,10 @@ export class ItemService {
     item: FullItem,
     eth_address: string
   ): Promise<FullItem> {
-    let dbCollection: CollectionAttributes | undefined = undefined
     const decodedItemURN =
       !item.id && item.urn ? decodeThirdPartyItemURN(item.urn) : null
+
+    // Finds the item to be updated by URN if it's a third party item or by ID if it's not
     const dbItem = decodedItemURN
       ? await Item.findByURNSuffix(
           decodedItemURN.third_party_id,
@@ -77,21 +78,38 @@ export class ItemService {
       throw new ThirdPartyItemInsertByURNError(item.urn)
     }
 
-    if (dbItem) {
-      // Moving items between published collections is forbidden
-      if (
-        this.checkItemIsMovedToAnotherCollection(item, dbItem) &&
-        (!(await this.checkCanAddItemsToCollection(item.collection_id)) ||
-          !(await this.checkCanAddItemsToCollection(dbItem.collection_id)))
-      ) {
-        throw new ItemCantBeMovedFromCollectionError(item.id)
-      }
-    }
+    const isMovingItemFromACollectionToAnother =
+      dbItem && this.isMovingItemFromACollectionToAnother(item, dbItem)
+    const isMovingOrphanItemIntoACollection =
+      dbItem && dbItem.collection_id === null && item.collection_id !== null
 
-    const collectionId: string | null =
-      dbItem?.collection_id ?? item.collection_id
-    if (collectionId) {
-      dbCollection = await this.collectionService.getCollection(collectionId)
+    const collectionId = dbItem?.collection_id ?? item.collection_id
+
+    const [dbItemCollection, itemCollection] = await Promise.all([
+      collectionId
+        ? this.collectionService.getDBCollection(collectionId)
+        : undefined,
+      isMovingItemFromACollectionToAnother || isMovingOrphanItemIntoACollection
+        ? this.collectionService.getDBCollection(item.collection_id!)
+        : undefined,
+    ])
+
+    // Moving items between TP collections is forbidden
+    const isMovingFromDCLCollectionToTPCollectionOrViceVersa =
+      isMovingItemFromACollectionToAnother &&
+      itemCollection &&
+      dbItemCollection &&
+      (isTPCollection(itemCollection) || isTPCollection(dbItemCollection))
+    const isMovingOrphanItemIntoATPCollection =
+      isMovingOrphanItemIntoACollection &&
+      itemCollection &&
+      isTPCollection(itemCollection)
+
+    if (
+      isMovingFromDCLCollectionToTPCollectionOrViceVersa ||
+      isMovingOrphanItemIntoATPCollection
+    ) {
+      throw new ItemCantBeMovedFromCollectionError(item.id)
     }
 
     // Set the item dates
@@ -99,10 +117,21 @@ export class ItemService {
 
     // An item is a third party item if it's current collection or the collection
     // that is going to be inserted into is a third party collection.
-    if (dbCollection && isTPCollection(dbCollection)) {
-      return this.upsertThirdPartyItem(item, dbItem, dbCollection, eth_address)
+    if (dbItemCollection && isTPCollection(dbItemCollection)) {
+      return this.upsertThirdPartyItem(
+        item,
+        dbItem,
+        dbItemCollection,
+        eth_address
+      )
     } else {
-      return this.upsertDCLItem(item, dbItem, dbCollection, eth_address)
+      return this.upsertDCLItem(
+        item,
+        dbItem,
+        dbItemCollection,
+        itemCollection,
+        eth_address
+      )
     }
   }
 
@@ -372,30 +401,7 @@ export class ItemService {
     return { item, collection }
   }
 
-  private async checkCanAddItemsToCollection(
-    collectionId: string | null
-  ): Promise<boolean> {
-    if (collectionId) {
-      const collection = await this.collectionService.getDBCollection(
-        collectionId
-      )
-
-      if (isTPCollection(collection)) {
-        return false
-      }
-
-      const isCollectionPublished =
-        collection.contract_address &&
-        (await this.collectionService.isDCLPublished(
-          collection.contract_address
-        ))
-      return isCollectionPublished === false
-    }
-
-    return false
-  }
-
-  private checkItemIsMovedToAnotherCollection(
+  private isMovingItemFromACollectionToAnother(
     itemToUpsert: FullItem,
     dbItem: ItemAttributes
   ): boolean {
@@ -469,38 +475,69 @@ export class ItemService {
     await Item.delete({ id: dbItem.id })
   }
 
+  private isCollectionOwner(
+    address: string,
+    collection: CollectionAttributes
+  ): boolean {
+    return collection.eth_address.toLowerCase() === address.toLowerCase()
+  }
+
   private async upsertDCLItem(
     item: FullItem,
     dbItem: ItemAttributes | undefined,
+    // the collection of the item to be inserted into
     dbCollection: CollectionAttributes | undefined,
+    // the target collection fo the item
+    itemCollection: CollectionAttributes | undefined,
     eth_address: string
   ): Promise<FullItem> {
-    const isDbCollectionPublished =
+    const isMovingItemBetweenCollections =
+      dbItem && this.isMovingItemFromACollectionToAnother(item, dbItem)
+
+    const [
+      isDbItemCollectionPublished,
+      isItemCollectionPublished,
+    ] = await Promise.all([
       dbCollection &&
-      (await this.collectionService.isDCLPublished(
-        dbCollection.contract_address!
-      ))
+        dbCollection.contract_address &&
+        this.collectionService.isDCLPublished(dbCollection.contract_address),
+      isMovingItemBetweenCollections &&
+        itemCollection &&
+        itemCollection.contract_address &&
+        this.collectionService.isDCLPublished(itemCollection.contract_address),
+    ])
 
-    const isCollectionOwner =
-      dbCollection &&
-      dbCollection.eth_address.toLowerCase() === eth_address.toLowerCase()
+    const isDbItemCollectionOwner =
+      dbCollection && this.isCollectionOwner(eth_address, dbCollection)
+    const isItemCollectionOwner =
+      itemCollection && this.isCollectionOwner(eth_address, itemCollection)
 
-    const isManager =
-      isDbCollectionPublished &&
-      (await this.collectionService.isDCLManager(dbCollection!.id, eth_address))
+    // Check if we have permissions to move or edit an orphaned item
+    if (!dbItem?.collection_id) {
+      const canUpsert = await new Ownable(Item).canUpsert(item.id, eth_address)
 
-    const canUpsert =
-      isCollectionOwner ||
-      (await new Ownable(Item).canUpsert(item.id, eth_address)) ||
-      isManager
-
-    if (!canUpsert) {
-      throw new UnauthorizedToUpsertError(item.id, eth_address)
+      if (!canUpsert) {
+        throw new UnauthorizedToUpsertError(item.id, eth_address)
+      }
     }
 
+    const isManagerOfDbItemCollection =
+      isDbItemCollectionPublished &&
+      dbCollection &&
+      this.collectionService.isDCLManagerOfCollection(dbCollection, eth_address)
+
+    const isManagerOfItemCollection =
+      isItemCollectionPublished &&
+      itemCollection &&
+      this.collectionService.isDCLManagerOfCollection(
+        itemCollection,
+        eth_address
+      )
+
+    // Performs checks to the collection the item is being inserted or moved out of
     if (dbCollection) {
       // Prohibits adding an item to a collection that is not owned by the user
-      if (!isCollectionOwner && !isManager) {
+      if (!isDbItemCollectionOwner && !isManagerOfDbItemCollection) {
         throw new UnauthorizedToChangeToCollectionError(
           item.id,
           eth_address,
@@ -508,13 +545,17 @@ export class ItemService {
         )
       }
 
-      if (isDbCollectionPublished) {
+      if (isDbItemCollectionPublished) {
         // Prohibits adding new items or moving orphan ones to a published collection
-        if (!dbItem || !dbItem.collection_id) {
+        if (
+          isMovingItemBetweenCollections ||
+          !dbItem ||
+          !dbItem.collection_id
+        ) {
           throw new DCLItemAlreadyPublishedError(
             item.id,
             dbCollection.contract_address!,
-            ItemAction.INSERT
+            ItemAction.UPSERT
           )
         }
 
@@ -551,6 +592,31 @@ export class ItemService {
           item.video = dbItem.video
         }
       } else if (this.collectionService.isLockActive(dbCollection.lock)) {
+        throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
+      }
+    }
+
+    // Performs checks to the collection the item is being moved into
+    if (itemCollection) {
+      // Prohibits moving an item to a collection that is not owned by the user
+      if (!isItemCollectionOwner && !isManagerOfItemCollection) {
+        throw new UnauthorizedToChangeToCollectionError(
+          item.id,
+          eth_address,
+          item.collection_id!
+        )
+      }
+
+      if (isItemCollectionPublished) {
+        // Prohibits moving an existing item to a published collection
+        if (isMovingItemBetweenCollections) {
+          throw new DCLItemAlreadyPublishedError(
+            item.id,
+            itemCollection.contract_address ?? 'Unknown contract address',
+            ItemAction.INSERT
+          )
+        }
+      } else if (this.collectionService.isLockActive(itemCollection.lock)) {
         throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
       }
     }
@@ -592,6 +658,28 @@ export class ItemService {
     dbCollection: CollectionAttributes,
     eth_address: string
   ): Promise<FullItem> {
+    const isMovingItemIntoAnotherCollection =
+      dbItem &&
+      dbItem.collection_id !== null &&
+      item.collection_id !== null &&
+      dbItem.collection_id !== item.collection_id
+    const isMovingItemOutOfACollection =
+      dbItem && dbItem.collection_id !== null && item.collection_id === null
+    const isMovingItemIntoACollection =
+      dbItem && dbItem.collection_id === null && item.collection_id !== null
+
+    if (
+      isMovingItemIntoAnotherCollection ||
+      isMovingItemOutOfACollection ||
+      isMovingItemIntoACollection
+    ) {
+      throw new ItemCantBeMovedFromCollectionError(item.id)
+    }
+
+    if (item.urn === null) {
+      throw new InvalidItemURNError()
+    }
+
     // Check if the collection being used in this update or insert process is accessible by the user
     if (dbCollection) {
       if (
@@ -603,97 +691,47 @@ export class ItemService {
         throw new UnauthorizedToUpsertError(item.id, eth_address)
       }
     }
-
-    const isMovingItemOutOfACollection =
-      dbItem && dbItem.collection_id !== null && item.collection_id === null
-    const isMovingItemIntoACollection =
-      dbItem && dbItem.collection_id === null && item.collection_id !== null
+    const decodedURN = decodeThirdPartyItemURN(item.urn)
 
     // If there's an existing item already, we'll update it
     if (dbItem) {
-      if (!isMovingItemOutOfACollection && item.urn === null) {
-        throw new InvalidItemURNError()
-      }
-
-      if (isMovingItemOutOfACollection) {
-        // The item can't be moved if published
+      if (dbItem.urn_suffix !== decodedURN.item_urn_suffix) {
+        // Check if the item is published before changing it
         if (await ItemCuration.existsByItemId(dbItem.id)) {
           const dbItemURN = buildTPItemURN(
-            dbCollection!.third_party_id!,
-            dbCollection!.urn_suffix!,
-            dbItem.urn_suffix!
-          )
-          throw new ThirdPartyItemAlreadyPublishedError(
-            dbItem.id,
-            dbItemURN,
-            ItemAction.UPSERT
-          )
-        }
-
-        // nullify the item URN so we get a nulled urn_suffix when inserting it into the DB
-        item.urn = null
-      } else if (isMovingItemIntoACollection) {
-        const decodedItemURN = decodeThirdPartyItemURN(item.urn!)
-
-        // Can't add an item with a URN that already exists (If it was URN)
-        if (await ItemCuration.existsByItemId(dbItem.id)) {
-          const dbItemURN = buildTPItemURN(
-            dbCollection!.third_party_id!,
-            dbCollection!.urn_suffix!,
-            decodedItemURN.item_urn_suffix
-          )
-          throw new ThirdPartyItemAlreadyPublishedError(
-            dbItem.id,
-            dbItemURN,
-            ItemAction.UPSERT
-          )
-        }
-      }
-      // Collection doesn't change.
-      else {
-        const decodedURN = decodeThirdPartyItemURN(item.urn!)
-        if (dbItem.urn_suffix !== decodedURN.item_urn_suffix) {
-          // Check if the item is published before changing it
-          if (await ItemCuration.existsByItemId(dbItem.id)) {
-            const dbItemURN = buildTPItemURN(
-              dbCollection.third_party_id!,
-              dbCollection.urn_suffix!,
-              dbItem.urn_suffix!
-            )
-
-            throw new ThirdPartyItemAlreadyPublishedError(
-              dbItem.id,
-              dbItemURN,
-              ItemAction.UPSERT
-            )
-          }
-
-          // Build the item's URN using the third party id and the urn suffix in the collection
-          // to prevent URNs from being manipulated.
-          const itemURN = buildTPItemURN(
             dbCollection.third_party_id!,
             dbCollection.urn_suffix!,
-            decodedURN.item_urn_suffix
+            dbItem.urn_suffix!
           )
-          // Check if the new URN is not already in use
-          // If the item is being upserted by id, check if the URN is not already in use
-          if (item.id) {
-            await this.checkIfThirdPartyItemURNExists(item.id, itemURN)
-          }
+
+          throw new ThirdPartyItemAlreadyPublishedError(
+            dbItem.id,
+            dbItemURN,
+            ItemAction.UPSERT
+          )
+        }
+
+        // Build the item's URN using the third party id and the urn suffix in the collection
+        // to prevent URNs from being manipulated.
+        const itemURN = buildTPItemURN(
+          dbCollection.third_party_id!,
+          dbCollection.urn_suffix!,
+          decodedURN.item_urn_suffix
+        )
+        // Check if the new URN is not already in use
+        // If the item is being upserted by id, check if the URN is not already in use
+        if (item.id) {
+          await this.checkIfThirdPartyItemURNExists(item.id, itemURN)
         }
       }
     }
+
     // The item didn't exist and is being inserted into a third party collection.
     else {
-      if (item.urn === null) {
-        throw new InvalidItemURNError()
-      }
-
-      const decodedItemURN = decodeThirdPartyItemURN(item.urn!)
       const itemURN = buildTPItemURN(
         dbCollection.third_party_id!,
         dbCollection.urn_suffix!,
-        decodedItemURN.item_urn_suffix
+        decodedURN.item_urn_suffix
       )
 
       // If the item is being inserted, check if the URN is not already in use

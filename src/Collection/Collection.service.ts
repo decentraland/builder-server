@@ -535,11 +535,14 @@ export class CollectionService {
   public async isDCLManager(id: string, ethAddress: string): Promise<boolean> {
     const collection = await this.getCollection(id)
 
-    if (collection) {
-      return collection.managers.some((manager) => manager === ethAddress)
-    }
+    return collection && this.isDCLManagerOfCollection(collection, ethAddress)
+  }
 
-    return false
+  public isDCLManagerOfCollection(
+    collection: CollectionAttributes,
+    ethAddress: string
+  ): boolean {
+    return collection.managers.some((manager) => manager === ethAddress)
   }
 
   public async isOwnedOrManagedBy(

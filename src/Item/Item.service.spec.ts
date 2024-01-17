@@ -1,17 +1,24 @@
 import {
-  collectionFragmentMock,
   dbCollectionMock,
+  dbTPCollectionMock,
 } from '../../spec/mocks/collections'
-import { dbItemMock, itemFragmentMock } from '../../spec/mocks/items'
+import {
+  dbItemMock,
+  dbTPItemMock,
+  itemFragmentMock,
+} from '../../spec/mocks/items'
 import { wearableMock } from '../../spec/mocks/peer'
 import { Collection } from '../Collection/Collection.model'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
-import { UnauthorizedToUpsertError } from './Item.errors'
+import {
+  ItemCantBeMovedFromCollectionError,
+  ThirdPartyItemInsertByURNError,
+} from './Item.errors'
 import { Item } from './Item.model'
 import { ItemService } from './Item.service'
-import { FullItem, ItemAttributes } from './Item.types'
+import { ItemAttributes } from './Item.types'
 import { VIDEO_PATH } from './utils'
 
 jest.mock('../ethereum/api/collection')
@@ -21,6 +28,7 @@ jest.mock('./Item.model')
 
 describe('Item Service', () => {
   let dbItem: ItemAttributes
+  let dbTPItem: ItemAttributes
   let service: ItemService
   beforeEach(() => {
     service = new ItemService()
@@ -59,95 +67,60 @@ describe('Item Service', () => {
   })
 
   describe('upsertItem', () => {
-    let newCreatorAddress: string
-    let oldCreatorAddress: string
-
-    describe('when the collection db eth_address is not the same as the collectionApi creator', () => {
+    describe('and the item is being moved from a TP collection to a DCL collection', () => {
       beforeEach(() => {
-        newCreatorAddress = '0xnewCreator'
-        oldCreatorAddress = '0xoldCreator'
-        dbItem = { ...dbItemMock, eth_address: oldCreatorAddress }
+        dbItem = { ...dbItemMock, collection_id: dbCollectionMock.id }
+        dbTPItem = { ...dbItemMock, collection_id: dbTPCollectionMock.id }
         ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
-        ;(Item.hasPublishedItems as jest.Mock).mockResolvedValue(true)
-        ;(Item.upsert as jest.Mock).mockImplementation((value) => value)
         ;(Collection.findByIds as jest.Mock).mockImplementation((ids) =>
-          [dbCollectionMock].filter((collection) => ids.includes(collection.id))
-        )
-        ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
-        ;(collectionAPI.fetchCollection as jest.Mock).mockImplementation(() =>
-          Promise.resolve({ ...itemFragmentMock, creator: newCreatorAddress })
+          [dbCollectionMock, dbTPCollectionMock].filter((collection) =>
+            ids.includes(collection.id)
+          )
         )
       })
 
-      describe('and the creator tries to upsert an item', () => {
-        it('should return item information', async () => {
-          expect(
-            await service.upsertItem(
-              Bridge.toFullItem(dbItem),
-              newCreatorAddress
-            )
-          ).toEqual({
-            ...Bridge.toFullItem(dbItem),
-            local_content_hash: expect.any(String),
-            updated_at: expect.anything(),
-          })
-        })
-      })
-
-      describe('and the previous owner tries to upsert an item', () => {
-        it('should throw unauthorized', async () => {
-          expect(() =>
-            service.upsertItem(Bridge.toFullItem(dbItem), oldCreatorAddress)
-          ).rejects.toThrow(UnauthorizedToUpsertError)
-        })
+      it('should throw the ItemCantBeMovedFromCollectionError error', () => {
+        return expect(() =>
+          service.upsertItem(
+            Bridge.toFullItem(dbTPItem, dbTPCollectionMock),
+            '0xnewCreator'
+          )
+        ).rejects.toThrowError(ItemCantBeMovedFromCollectionError)
       })
     })
 
-    describe('when the collection db is published', () => {
-      describe('and the collection contains smart wearables', () => {
-        let mockUpsertedItem: FullItem
-        beforeEach(() => {
-          oldCreatorAddress = '0xoldCreator'
-          const dbCollection = {
-            ...dbCollectionMock,
-            eth_address: oldCreatorAddress,
-          }
-          dbItem = {
-            ...dbItemMock,
-            eth_address: oldCreatorAddress,
-            contents: {
-              ...dbItemMock.contents,
-              'male/game.js': 'hash1',
-              [VIDEO_PATH]: 'videoHash2',
-            },
-            video: 'videoHash',
-          }
-          mockUpsertedItem = {
-            ...Bridge.toFullItem(dbItem),
-            local_content_hash: expect.any(String),
-            updated_at: expect.anything(),
-          }
-          ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
-          ;(Item.hasPublishedItems as jest.Mock).mockResolvedValueOnce(true)
-          ;(Item.upsert as jest.Mock).mockResolvedValueOnce(mockUpsertedItem)
-          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
-            dbCollection,
-          ])
-          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce({
-            ...collectionFragmentMock,
-            creator: oldCreatorAddress,
-          })
-        })
+    describe('and the item is being moved from a DCL collection to a TP collection', () => {
+      beforeEach(() => {
+        dbItem = { ...dbItemMock, collection_id: dbCollectionMock.id }
+        dbTPItem = { ...dbItemMock, collection_id: dbTPCollectionMock.id }
+        ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbTPItem)
+        ;(Collection.findByIds as jest.Mock).mockImplementation((ids) =>
+          [dbCollectionMock, dbTPCollectionMock].filter((collection) =>
+            ids.includes(collection.id)
+          )
+        )
+      })
 
-        it('should update the item without updating the video field', async () => {
-          const item = {
-            ...dbItem,
-            video: 'videoHash2',
-          }
-          expect(
-            await service.upsertItem(Bridge.toFullItem(item), item.eth_address)
-          ).toEqual(mockUpsertedItem)
-        })
+      it('should throw the ItemCantBeMovedFromCollectionError error', () => {
+        return expect(() =>
+          service.upsertItem(Bridge.toFullItem(dbItem), '0xnewCreator')
+        ).rejects.toThrowError(ItemCantBeMovedFromCollectionError)
+      })
+    })
+
+    describe('and the item being inserted only contains a URN', () => {
+      beforeEach(() => {
+        dbTPItem = { ...dbTPItemMock, id: null as any }
+        ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
+      })
+
+      it('should throw the ThirdPartyItemInsertByURNError error', () => {
+        return expect(() =>
+          service.upsertItem(
+            Bridge.toFullItem(dbTPItem, dbTPCollectionMock),
+            '0xnewCreator'
+          )
+        ).rejects.toThrowError(ThirdPartyItemInsertByURNError)
       })
     })
   })
@@ -175,8 +148,8 @@ describe('Item Service', () => {
         ;(peerAPI.fetchItems as jest.Mock).mockResolvedValueOnce([wearableMock])
       })
 
-      it('should return the merged item', async () => {
-        expect(
+      it('should return the merged item', () => {
+        return expect(
           service.getItemByContractAddressAndTokenId('0xa', '1')
         ).resolves.toEqual({
           item: Bridge.mergeItem(
@@ -200,8 +173,8 @@ describe('Item Service', () => {
         )
       })
 
-      it('should throw a NonExistentItemError error with the collectionAddress and the blockchainId', async () => {
-        expect(
+      it('should throw a NonExistentItemError error with the collectionAddress and the blockchainId', () => {
+        return expect(
           service.getItemByContractAddressAndTokenId('0xa', '1')
         ).rejects.toThrow("The item doesn't exist.")
       })

@@ -84,7 +84,7 @@ export class UnauthorizedToChangeToCollectionError extends Error {
     public eth_address: string,
     public collection_id: string
   ) {
-    super("The new collection for the item isn't owned by the same owner.")
+    super("You're not authorized to to change this collection.")
   }
 }
 

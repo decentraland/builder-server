@@ -542,11 +542,7 @@ export class CollectionService {
     collection: CollectionAttributes,
     ethAddress: string
   ): boolean {
-    if (collection) {
-      return collection.managers.some((manager) => manager === ethAddress)
-    }
-
-    return false
+    return collection.managers.some((manager) => manager === ethAddress)
   }
 
   public async isOwnedOrManagedBy(

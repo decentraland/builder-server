@@ -360,6 +360,13 @@ export class ProjectRouter extends Router {
         scenesUrn: [
           `urn:decentraland:entity:${ENTITY_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/v1/projects/${projectId}/contents/`,
         ],
+        minimap: {
+          enabled: false
+        },
+        skybox: {
+          fixedHour: 36000
+        },
+        realmName: `builder-preview-${projectId}`
       },
       content: {
         healthy: true,

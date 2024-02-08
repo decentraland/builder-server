@@ -366,7 +366,7 @@ export class ProjectRouter extends Router {
         skybox: {
           fixedHour: 36000
         },
-        realmName: `web-editor-${projectId}`
+        realmName: `web-editor-${projectId.split('-').slice(-1)}`
       },
       content: {
         healthy: true,

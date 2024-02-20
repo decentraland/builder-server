@@ -16,7 +16,8 @@ export class SDK7Scene {
 
   getLayout(): Layout {
     return this.getComposite().components.find(
-      ({ name }) => name === 'inspector::Scene'
+      ({ name }) =>
+        name === 'inspector::SceneMetadata' || name === 'inspector::Scene'
     )?.data[0].json.layout
   }
 

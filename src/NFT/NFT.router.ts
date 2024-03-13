@@ -63,9 +63,12 @@ export class NFTRouter extends Router {
     let nfts: GetNFTsResponse
 
     // Get NFTs from service
+    if (!query.owner) {
+      throw new HTTPError('Owner is required', STATUS_CODES.badRequest)
+    }
     try {
       nfts = await this.nftService.getNFTs({
-        owner: query.owner?.toString(),
+        owner: query.owner.toString(),
         first: query.first ? +query.first : undefined,
         skip: query.skip ? +query.skip : undefined,
         cursor: query.cursor?.toString(),

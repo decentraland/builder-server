@@ -5,6 +5,7 @@ import {
   GetNFTsParams,
   GetNFTsResponse,
   NFT,
+  OpenSeaV2AccountNFT,
   OpenSeaV2NFT,
 } from './NFT.types'
 
@@ -43,7 +44,7 @@ export class NFTService {
     skip,
     cursor,
     network = 'ethereum',
-  }: GetNFTsParams = {}): Promise<GetNFTsResponse> {
+  }: GetNFTsParams): Promise<GetNFTsResponse> {
     // Build query params for request
     const params: string[] = []
 
@@ -80,13 +81,13 @@ export class NFTService {
 
     const json = await response.json()
 
-    const externalNFTs: OpenSeaV2NFT[] = json.nfts
+    const externalNFTs: OpenSeaV2AccountNFT[] = json.nfts
 
     // Map OpenSea assets into our NFT object
     const nfts = externalNFTs.map((ext) => ({
       tokenId: ext.identifier,
       contract: { address: ext.contract, name: ext.collection }, // string,
-      name: ext.collection,
+      name: ext.name,
       imageUrl: ext.image_url,
       description: ext.description,
     }))
@@ -135,7 +136,7 @@ export class NFTService {
       },
       name: externalNFT.nft.name,
       imageUrl: externalNFT.nft.image_url,
-      description: externalNFT.nft.description,
+      description: externalNFT.nft.description || '',
     }
   }
 }

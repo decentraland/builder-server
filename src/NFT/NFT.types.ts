@@ -9,7 +9,7 @@ export type NFT = {
 
 // Service types
 export type GetNFTsParams = {
-  owner?: string
+  owner: string
   first?: number
   skip?: number
   cursor?: string
@@ -29,49 +29,64 @@ export type GetNFTParams = {
 }
 
 // OpensSea API response types
+export type OpenSeaV2GetNFTsByAccountResponse = {
+  nfts: OpenSeaV2AccountNFT[]
+}
+
+export type OpenSeaV2AccountNFT = {
+  identifier: string
+  collection: string
+  contract: string
+  token_standard: string
+  name: string
+  description: string
+  image_url: string
+  metadata_url: string
+  opensea_url: string
+  updated_at: string
+  is_disabled: boolean
+  is_nsfw: boolean
+}
+
 export type OpenSeaV2NFT = {
-  nft: {
-    identifier: string
-    collection: string
-    contract: string
-    token_standard: string
-    name: string
-    description: string
-    image_url: string
-    metadata_url: string
-    created_at: string
-    updated_at: string
-    is_disabled: boolean
-    is_nsfw: boolean
-    animation_url: string
-    is_suspicious: boolean
-    creator: string
-    traits: [
-      {
-        trait_type: string
-        display_type: number
-        max_value: string
-        trait_count: number
-        value: string
-      }
-    ]
-    owners: [
-      {
-        address: string
-        quantity: number
-      }
-    ]
-    rarity: {
-      strategy_id: {}
-      strategy_version: string
-      rank: number
-      score: number
-      calculated_at: ''
-      max_rank: number
-      total_supply: number
-      ranking_features: {
-        unique_attribute_count: number
-      }
+  identifier: string
+  collection: string
+  contract: string
+  token_standard: string
+  name: string
+  description: string | null
+  image_url: string
+  metadata_url: string
+  opensea_url: string
+  updated_at: string
+  is_disabled: boolean
+  is_nsfw: boolean
+  animation_url: string | null
+  is_suspicious: boolean
+  creator: string
+  traits: {
+    trait_type: string
+    display_type: string | null
+    max_value: string | null
+    value: number | string
+  }[]
+
+  owners: [
+    {
+      address: string
+      quantity: number
     }
-  }
+  ]
+  rarity: {
+    strategy_id: {}
+    strategy_version: string
+    rank: number
+    score: number
+    calculated_at: ''
+    max_rank: number
+    total_supply: number
+    ranking_features: {
+      unique_attribute_count: number
+    }
+  } | null
 }

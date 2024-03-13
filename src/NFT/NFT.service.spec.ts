@@ -40,7 +40,7 @@ beforeEach(() => {
     collection: 'decentraland',
     contract: '0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d',
     token_standard: 'erc721',
-    name: 'tuviejapolis',
+    name: 'metropolis',
     description: null,
     image_url:
       'https://api.decentraland.org/v1/parcels/23/-24/map.png?size=24&width=1024&height=1024',

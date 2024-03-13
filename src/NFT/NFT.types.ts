@@ -1,85 +1,10 @@
 // NFT Entity
 export type NFT = {
   tokenId: string
-  backgroundColor: string | null
   imageUrl: string
-  imagePreviewUrl: string | null
-  imageThumbnailUrl: string | null
-  imageOriginalUrl: string | null
-  name: string | null
-  description: string | null
-  externalLink: string | null
-  owner: NFTAccount | null
-  contract: NFTContract
-  traits: NFTTrait[]
-  lastSale: NFTSale | null
-  sellOrders: NFTOrder[] | null
-  orders: NFTOrder[] | null
-  topOwnerships: NFTOwnership[] | null
-}
-
-export type NFTAccount = {
-  user: { username: string } | null
-  profileImageUrl: string
-  address: string
-  config: string
-}
-
-export type NFTContract = {
-  address: string
-  createdDate: string
   name: string
-  nftVersion: string | null
-  schemaName: string
-  symbol: string
-  totalSupply: string | null
   description: string
-  externalLink: string | null
-  imageUrl: string | null
-}
-
-export type NFTTrait = {
-  type: string
-  value: string | number
-  displayType: string | null
-}
-
-export type NFTSale = {
-  eventType: string
-  eventTimestamp: string
-  totalPrice: string
-  quantity: string
-  paymentToken: NFTToken
-  transaction: NFTTransaction
-}
-
-export type NFTOrder = {
-  maker: NFTAccount
-  currentPrice: string
-  paymentTokenContract: NFTToken
-}
-
-export type NFTOwnership = {
-  owner: NFTAccount
-  quantity: string
-}
-
-export type NFTToken = {
-  id: number
-  symbol: string
-  address: string
-  imageUrl: string
-  name: string
-  decimals: number
-  ethPrice: string
-  usdPrice: string
-}
-
-export type NFTTransaction = {
-  id: number
-  fromAccount: NFTAccount
-  toAccount: NFTAccount
-  transactionHash: string
+  contract: { address: string; name: string }
 }
 
 // Service types
@@ -88,6 +13,7 @@ export type GetNFTsParams = {
   first?: number
   skip?: number
   cursor?: string
+  network?: string
 }
 
 export type GetNFTsResponse = {
@@ -99,4 +25,53 @@ export type GetNFTsResponse = {
 export type GetNFTParams = {
   contractAddress: string
   tokenId: string
+  network?: string
+}
+
+// OpensSea API response types
+export type OpenSeaV2NFT = {
+  nft: {
+    identifier: string
+    collection: string
+    contract: string
+    token_standard: string
+    name: string
+    description: string
+    image_url: string
+    metadata_url: string
+    created_at: string
+    updated_at: string
+    is_disabled: boolean
+    is_nsfw: boolean
+    animation_url: string
+    is_suspicious: boolean
+    creator: string
+    traits: [
+      {
+        trait_type: string
+        display_type: number
+        max_value: string
+        trait_count: number
+        value: string
+      }
+    ]
+    owners: [
+      {
+        address: string
+        quantity: number
+      }
+    ]
+    rarity: {
+      strategy_id: {}
+      strategy_version: string
+      rank: number
+      score: number
+      calculated_at: ''
+      max_rank: number
+      total_supply: number
+      ranking_features: {
+        unique_attribute_count: number
+      }
+    }
+  }
 }

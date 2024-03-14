@@ -5,14 +5,8 @@ import {
   GetNFTsParams,
   GetNFTsResponse,
   NFT,
-  NFTAccount,
-  NFTContract,
-  NFTSale,
-  NFTOrder,
-  NFTOwnership,
-  NFTToken,
-  NFTTrait,
-  NFTTransaction,
+  OpenSeaV2AccountNFT,
+  OpenSeaV2NFT,
 } from './NFT.types'
 
 export class NFTService {
@@ -49,13 +43,10 @@ export class NFTService {
     first,
     skip,
     cursor,
-  }: GetNFTsParams = {}): Promise<GetNFTsResponse> {
+    network = 'ethereum',
+  }: GetNFTsParams): Promise<GetNFTsResponse> {
     // Build query params for request
     const params: string[] = []
-
-    if (owner) {
-      params.push(`owner=${owner}`)
-    }
 
     if (first) {
       params.push(`limit=${first}`)
@@ -70,7 +61,7 @@ export class NFTService {
     }
 
     // Build url
-    let url = `${this.OPEN_SEA_URL}/assets`
+    let url = `${this.OPEN_SEA_URL}/chain/${network}/account/${owner}/nfts`
 
     if (params.length > 0) {
       url = `${url}?${params.join('&')}`
@@ -90,10 +81,16 @@ export class NFTService {
 
     const json = await response.json()
 
-    const externalNFTs: any[] = json.assets
+    const externalNFTs: OpenSeaV2AccountNFT[] = json.nfts
 
     // Map OpenSea assets into our NFT object
-    const nfts = externalNFTs.map(this.mapExternalNFT)
+    const nfts = externalNFTs.map((ext) => ({
+      tokenId: ext.identifier,
+      contract: { address: ext.contract, name: ext.collection }, // string,
+      name: ext.name,
+      imageUrl: ext.image_url,
+      description: ext.description,
+    }))
 
     return {
       next: json.next,
@@ -112,9 +109,10 @@ export class NFTService {
   public async getNFT({
     contractAddress,
     tokenId,
+    network = 'ethereum',
   }: GetNFTParams): Promise<NFT | undefined> {
     // Build url
-    let url = `${this.OPEN_SEA_URL}/asset/${contractAddress}/${tokenId}/`
+    let url = `${this.OPEN_SEA_URL}/chain/${network}/contract/${contractAddress}/nfts/${tokenId}`
 
     // Fetch nft
     const response = await fetch(url, {
@@ -128,97 +126,17 @@ export class NFTService {
       return undefined
     }
 
-    const externalNFT = await response.json()
-
-    return this.mapExternalNFT(externalNFT)
-  }
-
-  private mapExternalNFT(ext: any): NFT {
-    const mapAccount = (account: any): NFTAccount => ({
-      user: account.user ? { username: account.user.username } : null,
-      profileImageUrl: account.profile_img_url,
-      address: account.address,
-      config: account.config,
-    })
-
-    const mapToken = (token: any): NFTToken => ({
-      id: token.id,
-      symbol: token.symbol,
-      address: token.address,
-      imageUrl: token.image_url,
-      name: token.name,
-      decimals: token.decimals,
-      ethPrice: token.eth_price,
-      usdPrice: token.usd_price,
-    })
-
-    const mapContract = (contract: any): NFTContract => ({
-      address: contract.address,
-      createdDate: contract.created_date,
-      name: contract.name,
-      nftVersion: contract.nft_version,
-      schemaName: contract.schema_name,
-      symbol: contract.symbol,
-      totalSupply: contract.total_supply,
-      description: contract.description,
-      externalLink: contract.external_link,
-      imageUrl: contract.image_url,
-    })
-
-    const mapTrait = (trait: any): NFTTrait => ({
-      type: trait.trait_type,
-      value: trait.value,
-      displayType: trait.display_type,
-    })
-
-    const mapTransaction = (transaction: any): NFTTransaction => ({
-      id: transaction.id,
-      fromAccount: mapAccount(transaction.from_account),
-      toAccount: mapAccount(transaction.to_account),
-      transactionHash: transaction.transaction_hash,
-    })
-
-    const mapSale = (sale: any): NFTSale => ({
-      eventType: sale.event_type,
-      eventTimestamp: sale.event_timestamp,
-      totalPrice: sale.total_price,
-      quantity: sale.quantity,
-      paymentToken: mapToken(sale.payment_token),
-      transaction: mapTransaction(sale.transaction),
-    })
-
-    const mapOrder = (order: any): NFTOrder => ({
-      maker: mapAccount(order.maker),
-      currentPrice: order.current_price,
-      paymentTokenContract: mapToken(order.payment_token_contract),
-    })
-
-    const mapOwnership = (ownership: any): NFTOwnership => ({
-      owner: mapAccount(ownership.owner),
-      quantity: ownership.quantity,
-    })
+    const externalNFT: { nft: OpenSeaV2NFT } = await response.json()
 
     return {
-      tokenId: ext.token_id,
-      backgroundColor: ext.background_color,
-      imageUrl: ext.image_url,
-      imagePreviewUrl: ext.image_preview_url,
-      imageThumbnailUrl: ext.image_thumbnail_url,
-      imageOriginalUrl: ext.image_original_url,
-      name: ext.name,
-      description: ext.description,
-      externalLink: ext.external_link,
-      owner: ext.owner ? mapAccount(ext.owner) : null,
-      contract: mapContract(ext.asset_contract),
-      traits: (ext.traits as any[]).map(mapTrait),
-      lastSale: ext.last_sale ? mapSale(ext.last_sale) : null,
-      sellOrders: ext.sell_orders
-        ? (ext.sell_orders as any[]).map(mapOrder)
-        : null,
-      orders: ext.orders ? (ext.orders as any[]).map(mapOrder) : null,
-      topOwnerships: ext.top_ownerships
-        ? (ext.top_ownerships as any[]).map(mapOwnership)
-        : null,
+      tokenId: externalNFT.nft.identifier,
+      contract: {
+        address: externalNFT.nft.contract,
+        name: externalNFT.nft.collection,
+      },
+      name: externalNFT.nft.name,
+      imageUrl: externalNFT.nft.image_url,
+      description: externalNFT.nft.description || '',
     }
   }
 }

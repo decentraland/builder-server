@@ -130,7 +130,9 @@ describe('when getting nfts', () => {
     it('should fail with a server error', async () => {
       mockNFTService.prototype.getNFTs.mockRejectedValueOnce('Rejected!')
 
-      const response = await server.get('/v1/nfts').expect(STATUS_CODES.error)
+      const response = await server
+        .get(`/v1/nfts?owner=${mockAddress}`)
+        .expect(STATUS_CODES.error)
 
       expect(response.body).toEqual({
         data: {},
@@ -147,9 +149,13 @@ describe('when getting nfts', () => {
       nfts: [],
     })
 
-    const response = await server.get('/v1/nfts').expect(STATUS_CODES.ok)
+    const response = await server
+      .get(`/v1/nfts?owner=${mockAddress}`)
+      .expect(STATUS_CODES.ok)
 
-    expect(mockNFTService.prototype.getNFTs).toHaveBeenCalledWith({})
+    expect(mockNFTService.prototype.getNFTs).toHaveBeenCalledWith({
+      owner: mockAddress,
+    })
 
     expect(response.body).toEqual({
       data: {
@@ -244,7 +250,51 @@ describe('when getting a single nft', () => {
   })
 
   it('should return an nft', async () => {
-    const nft: NFT = getMockNFT()
+    const nft: NFT = getMockNFT({
+      identifier: '8166776806102523123120990578362437074920',
+      collection: 'decentraland',
+      contract: '0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d',
+      token_standard: 'erc721',
+      name: 'metropolis',
+      description: null,
+      image_url:
+        'https://api.decentraland.org/v1/parcels/23/-24/map.png?size=24&width=1024&height=1024',
+      metadata_url:
+        'https://api.decentraland.org/v2/contracts/0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d/tokens/8166776806102523123120990578362437074920',
+      opensea_url:
+        'https://opensea.io/assets/ethereum/0xf87e31492faf9a91b02ee0deaad50d51d56d5d4d/8166776806102523123120990578362437074920',
+      updated_at: '2021-03-20T19:08:07.308381',
+      is_disabled: false,
+      is_nsfw: false,
+      animation_url: null,
+      is_suspicious: false,
+      creator: '0x52e4e32428c123a1f83da9839f139734a5a5b2b9',
+      traits: [
+        {
+          trait_type: 'Type',
+          display_type: null,
+          max_value: null,
+          value: 'Land',
+        },
+        {
+          trait_type: 'Distance to Road',
+          display_type: 'number',
+          max_value: null,
+          value: 0,
+        },
+        { trait_type: 'X', display_type: 'number', max_value: null, value: 23 },
+        {
+          trait_type: 'Y',
+          display_type: 'number',
+          max_value: null,
+          value: -24,
+        },
+      ],
+      owners: [
+        { address: '0x87956abc4078a0cc3b89b419928b857b8af826ed', quantity: 1 },
+      ],
+      rarity: null,
+    })
 
     mockNFTService.prototype.getNFT.mockResolvedValueOnce(nft)
 

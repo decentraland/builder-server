@@ -56,29 +56,32 @@ class Storage implements multer.StorageEngine {
       )
     }
 
-    // The upload key will be a unique UUID first so it can be later renamed (copy + delete in S3) or deleted to the file key we obtained.
-    // We do it this way because we want to avoid having files in memory for each upload, but we need to read the file stream to hash it.
-    // That means that we cant hash first and upload later, we need to do it on the same stream read
-    const id = uuid()
+    try {
+      // The upload key will be a unique UUID first so it can be later renamed (copy + delete in S3) or deleted to the file key we obtained.
+      // We do it this way because we want to avoid having files in memory for each upload, but we need to read the file stream to hash it.
+      // That means that we cant hash first and upload later, we need to do it on the same stream read
+      const id = uuid()
 
-    // The original stream comes from file.stream. The reading of the stream is kicked of when we pipe it into the first PassThrough
-    // This allows for both operations, the upload and the file key generation to be done "simultaneously" without keeping the entire stream data in memory
+      // The original stream comes from file.stream. The reading of the stream is kicked of when we pipe it into the first PassThrough
+      // This allows for both operations, the upload and the file key generation to be done "simultaneously" without keeping the entire stream data in memory
 
-    const uploadStream = file.stream.pipe(new PassThrough())
+      const uploadStream = file.stream.pipe(new PassThrough())
 
-    const [key] = await Promise.all([
-      this.getKey(file, req),
-      uploadFile(id, uploadStream, ACL.publicRead, {
-        ContentType: file.mimetype,
-      }),
-    ])
+      const [key] = await Promise.all([
+        this.getKey(file, req),
+        uploadFile(id, uploadStream, ACL.publicRead, {
+          ContentType: file.mimetype,
+        }),
+      ])
 
-    // move file to key
-    await moveFile(id, key)
-
-    callback(null, {
-      fieldname: key,
-    })
+      // move file to key
+      await moveFile(id, key)
+      callback(null, {
+        fieldname: key,
+      })
+    } catch (error) {
+      callback(error)
+    }
   }
 
   async _removeFile(

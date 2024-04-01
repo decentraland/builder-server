@@ -49,6 +49,7 @@ function buildStandardWearableEntityMetadata(
       tags: item.data.tags,
       category: item.data.category!,
       representations: item.data.representations,
+      blockVrmExport: item.data.blockVrmExport
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
@@ -111,6 +112,7 @@ function buildTPWearableEntityMetadata(
       tags: item.data.tags,
       category: item.data.category!,
       representations: item.data.representations,
+      blockVrmExport: item.data.blockVrmExport
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,

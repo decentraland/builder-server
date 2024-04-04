@@ -21,7 +21,7 @@ import {
 } from './Item.errors'
 import { Item, MAX_TAGS_LENGTH } from './Item.model'
 import { ItemService } from './Item.service'
-import { FullItem, ItemAttributes } from './Item.types'
+import { ItemAttributes } from './Item.types'
 import { VIDEO_PATH } from './utils'
 
 jest.mock('../ethereum/api/collection')

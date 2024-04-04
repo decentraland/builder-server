@@ -28,28 +28,8 @@ jest.mock('../ethereum/api/collection')
 jest.mock('../Collection/Collection.model')
 jest.mock('../ethereum/api/peer')
 jest.mock('./Item.model')
-// jest.mock('../Collection/Collection.service', () => {
-//   // Require the actual module to not mock everything
-//   const actualModule = jest.requireActual('../Collection/Collection.service');
-//   console.log('actualModule: ', actualModule);
-
-//   // Create a mock for just the getDBCollection method
-//   const mockGetDBCollection = jest.fn();
-
-//   // Extend the actual CollectionService class and override the method you wish to mock
-//   class MockCollectionService extends actualModule.CollectionService {
-//     getDBCollection = mockGetDBCollection;
-//   }
-
-//   // Return the modified module with the mocked class
-//   return {
-//     ...actualModule,
-//     CollectionService: MockCollectionService,
-//   };
-// });
 
 describe('Item Service', () => {
-  let item: FullItem
   let dbItem: ItemAttributes
   let dbTPItem: ItemAttributes
   let service: ItemService
@@ -60,10 +40,6 @@ describe('Item Service', () => {
   describe('isOwnedOrManagedBy', () => {
     describe('when the owner is the same as the one in the DB', () => {
       beforeEach(() => {
-        // ;(CollectionService.prototype
-        //   .getDBCollection as jest.Mock).mockResolvedValueOnce(
-        //   dbCollectionMock
-        // )
         dbItem = { ...dbItemMock, eth_address: '0xoriginalAddress' }
         ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({

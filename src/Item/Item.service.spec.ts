@@ -158,6 +158,7 @@ describe('Item Service', () => {
               dbCollectionMock
             )
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
+            CollectionService.prototype.isDCLPublished = jest.fn()
           })
           it('should not throw any errors and return the inserted item', () => {
             const result = service.upsertItem(

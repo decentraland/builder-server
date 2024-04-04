@@ -8,25 +8,48 @@ import {
   itemFragmentMock,
 } from '../../spec/mocks/items'
 import { wearableMock } from '../../spec/mocks/peer'
+import { mockOwnableCanUpsert } from '../../spec/utils'
 import { Collection } from '../Collection/Collection.model'
+import { CollectionService } from '../Collection/Collection.service'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
 import {
   ItemCantBeMovedFromCollectionError,
+  MaximunAmountOfTagsReachedError,
   ThirdPartyItemInsertByURNError,
 } from './Item.errors'
-import { Item } from './Item.model'
+import { Item, MAX_TAGS_LENGTH } from './Item.model'
 import { ItemService } from './Item.service'
-import { ItemAttributes } from './Item.types'
+import { FullItem, ItemAttributes } from './Item.types'
 import { VIDEO_PATH } from './utils'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../Collection/Collection.model')
 jest.mock('../ethereum/api/peer')
 jest.mock('./Item.model')
+// jest.mock('../Collection/Collection.service', () => {
+//   // Require the actual module to not mock everything
+//   const actualModule = jest.requireActual('../Collection/Collection.service');
+//   console.log('actualModule: ', actualModule);
+
+//   // Create a mock for just the getDBCollection method
+//   const mockGetDBCollection = jest.fn();
+
+//   // Extend the actual CollectionService class and override the method you wish to mock
+//   class MockCollectionService extends actualModule.CollectionService {
+//     getDBCollection = mockGetDBCollection;
+//   }
+
+//   // Return the modified module with the mocked class
+//   return {
+//     ...actualModule,
+//     CollectionService: MockCollectionService,
+//   };
+// });
 
 describe('Item Service', () => {
+  let item: FullItem
   let dbItem: ItemAttributes
   let dbTPItem: ItemAttributes
   let service: ItemService
@@ -37,6 +60,10 @@ describe('Item Service', () => {
   describe('isOwnedOrManagedBy', () => {
     describe('when the owner is the same as the one in the DB', () => {
       beforeEach(() => {
+        // ;(CollectionService.prototype
+        //   .getDBCollection as jest.Mock).mockResolvedValueOnce(
+        //   dbCollectionMock
+        // )
         dbItem = { ...dbItemMock, eth_address: '0xoriginalAddress' }
         ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
@@ -121,6 +148,122 @@ describe('Item Service', () => {
             '0xnewCreator'
           )
         ).rejects.toThrowError(ThirdPartyItemInsertByURNError)
+      })
+    })
+
+    describe('and the item being upserted contains tags', () => {
+      beforeEach(() => {
+        CollectionService.prototype.getDBCollection = jest.fn()
+      })
+      describe('and it is an insert operation', () => {
+        beforeEach(() => {
+          ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
+        })
+        describe('and it is inserting less than the maximun amount of tags', () => {
+          beforeEach(() => {
+            dbItem = {
+              ...dbItemMock,
+              eth_address: '0xAddress',
+              data: {
+                ...dbItemMock.data,
+                tags: Array(MAX_TAGS_LENGTH - 1).fill('tag'),
+              },
+            }
+            dbCollectionMock.eth_address = dbItem.eth_address
+            mockOwnableCanUpsert(Item, dbItem.id, dbItem.eth_address, true)
+            mockOwnableCanUpsert(
+              Collection,
+              dbCollectionMock.id,
+              dbItem.eth_address,
+              true
+            )
+            ;(CollectionService.prototype
+              .getDBCollection as jest.Mock).mockResolvedValueOnce(
+              dbCollectionMock
+            )
+            ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
+          })
+          it('should not throw any errors and return the inserted item', () => {
+            const result = service.upsertItem(
+              Bridge.toFullItem(dbItem, dbTPCollectionMock),
+              dbItem.eth_address
+            )
+            return expect(result).resolves.toEqual(
+              Bridge.toFullItem(dbItem, dbCollectionMock)
+            )
+          })
+        })
+
+        describe('and it is inserting more than the maximun amount of tags', () => {
+          beforeEach(() => {
+            dbItem = {
+              ...dbItemMock,
+              data: {
+                ...dbItemMock.data,
+                tags: Array(MAX_TAGS_LENGTH + 1).fill('tag'),
+              },
+            }
+          })
+          it('should throw the MaximunAmountOfTagsReachedError error', () => {
+            return expect(() =>
+              service.upsertItem(
+                Bridge.toFullItem(dbItem, dbTPCollectionMock),
+                dbItem.eth_address
+              )
+            ).rejects.toThrowError(MaximunAmountOfTagsReachedError)
+          })
+        })
+      })
+
+      describe('and it is an update operation', () => {
+        beforeEach(() => {
+          ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(dbItem)
+        })
+        describe('and the item already has the maximun amount of tags', () => {
+          it('should throw the MaximunAmountOfTagsReachedError error', () => {
+            return expect(() =>
+              service.upsertItem(
+                Bridge.toFullItem(dbItem, dbTPCollectionMock),
+                dbItem.eth_address
+              )
+            ).rejects.toThrowError(MaximunAmountOfTagsReachedError)
+          })
+        })
+
+        describe('and the item has less than the maximun amount of tags', () => {
+          beforeEach(() => {
+            dbItem = {
+              ...dbItemMock,
+              eth_address: '0xAddress',
+              data: {
+                ...dbItemMock.data,
+                tags: Array(MAX_TAGS_LENGTH - 1).fill('tag'),
+              },
+            }
+            dbCollectionMock.eth_address = dbItem.eth_address
+            mockOwnableCanUpsert(Item, dbItem.id, dbItem.eth_address, true)
+            mockOwnableCanUpsert(
+              Collection,
+              dbCollectionMock.id,
+              dbItem.eth_address,
+              true
+            )
+            ;(CollectionService.prototype
+              .getDBCollection as jest.Mock).mockResolvedValueOnce(
+              dbCollectionMock
+            )
+            ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
+          })
+          it('should not throw any error and return the inserted item', () => {
+            const result = service.upsertItem(
+              Bridge.toFullItem(dbItem, dbTPCollectionMock),
+              dbItem.eth_address
+            )
+            return expect(result).resolves.toEqual(
+              Bridge.toFullItem(dbItem, dbCollectionMock)
+            )
+          })
+        })
       })
     })
   })

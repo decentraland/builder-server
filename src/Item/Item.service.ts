@@ -34,8 +34,9 @@ import {
   InvalidItemURNError,
   URNAlreadyInUseError,
   ThirdPartyItemInsertByURNError,
+  MaximunAmountOfTagsReachedError,
 } from './Item.errors'
-import { Item } from './Item.model'
+import { Item, MAX_TAGS_LENGTH } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
@@ -72,6 +73,16 @@ export class ItemService {
           decodedItemURN.item_urn_suffix
         )
       : await Item.findOne<ItemAttributes>(item.id)
+
+    if (item.data.tags.length > MAX_TAGS_LENGTH) {
+      const isAlreadyExcided =
+        !!dbItem && dbItem.data.tags.length > MAX_TAGS_LENGTH
+      const isAddingMoreTags =
+        !!dbItem && item.data.tags.length > dbItem.data.tags.length
+      if (!dbItem || (isAlreadyExcided && isAddingMoreTags)) {
+        throw new MaximunAmountOfTagsReachedError(item.id)
+      }
+    }
 
     // Inserting by URN is not allowed
     if (!item.id && item.urn && !dbItem) {
@@ -515,7 +526,6 @@ export class ItemService {
     // Check if we have permissions to move or edit an orphaned item
     if (!dbItem?.collection_id) {
       const canUpsert = await new Ownable(Item).canUpsert(item.id, eth_address)
-
       if (!canUpsert) {
         throw new UnauthorizedToUpsertError(item.id, eth_address)
       }

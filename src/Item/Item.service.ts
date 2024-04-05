@@ -34,8 +34,9 @@ import {
   InvalidItemURNError,
   URNAlreadyInUseError,
   ThirdPartyItemInsertByURNError,
+  MaximunAmountOfTagsReachedError,
 } from './Item.errors'
-import { Item } from './Item.model'
+import { Item, MAX_TAGS_LENGTH } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
@@ -62,6 +63,7 @@ export class ItemService {
     item: FullItem,
     eth_address: string
   ): Promise<FullItem> {
+    console.log('here1')
     const decodedItemURN =
       !item.id && item.urn ? decodeThirdPartyItemURN(item.urn) : null
 
@@ -72,11 +74,24 @@ export class ItemService {
           decodedItemURN.item_urn_suffix
         )
       : await Item.findOne<ItemAttributes>(item.id)
+    console.log('here2')
+    if (item.data.tags.length > MAX_TAGS_LENGTH) {
+      const isAlreadyExceeded =
+        !!dbItem && dbItem.data.tags.length > MAX_TAGS_LENGTH
+      const isAddingMoreTags =
+        !!dbItem && item.data.tags.length > dbItem.data.tags.length
+      if (!dbItem || (isAlreadyExceeded && isAddingMoreTags)) {
+        throw new MaximunAmountOfTagsReachedError(item.id)
+      }
+    }
+    console.log('here3')
 
     // Inserting by URN is not allowed
     if (!item.id && item.urn && !dbItem) {
       throw new ThirdPartyItemInsertByURNError(item.urn)
     }
+
+    console.log('here4')
 
     const isMovingItemFromACollectionToAnother =
       dbItem && this.isMovingItemFromACollectionToAnother(item, dbItem)
@@ -115,6 +130,7 @@ export class ItemService {
     // Set the item dates
     item = { ...item, ...buildModelDates(dbItem?.created_at) }
 
+    console.log('here5')
     // An item is a third party item if it's current collection or the collection
     // that is going to be inserted into is a third party collection.
     if (dbItemCollection && isTPCollection(dbItemCollection)) {
@@ -494,6 +510,7 @@ export class ItemService {
     const isMovingItemBetweenCollections =
       dbItem && this.isMovingItemFromACollectionToAnother(item, dbItem)
 
+    console.log('here6')
     const [
       isDbItemCollectionPublished,
       isItemCollectionPublished,
@@ -506,6 +523,7 @@ export class ItemService {
         itemCollection.contract_address &&
         this.collectionService.isDCLPublished(itemCollection.contract_address),
     ])
+    console.log('here7')
 
     const isDbItemCollectionOwner =
       dbCollection && this.isCollectionOwner(eth_address, dbCollection)
@@ -515,7 +533,6 @@ export class ItemService {
     // Check if we have permissions to move or edit an orphaned item
     if (!dbItem?.collection_id) {
       const canUpsert = await new Ownable(Item).canUpsert(item.id, eth_address)
-
       if (!canUpsert) {
         throw new UnauthorizedToUpsertError(item.id, eth_address)
       }

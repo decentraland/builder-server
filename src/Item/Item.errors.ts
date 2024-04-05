@@ -1,3 +1,5 @@
+import { MAX_TAGS_LENGTH } from './Item.model'
+
 export enum ItemAction {
   DELETE = 'deleted',
   INSERT = 'inserted',
@@ -38,6 +40,14 @@ export class URNAlreadyInUseError extends Error {
   constructor(public id: string, public urn: string, action: ItemAction) {
     super(
       `The URN provided already belong to another item. The item can't be ${action}.`
+    )
+  }
+}
+
+export class MaximunAmountOfTagsReachedError extends Error {
+  constructor(public id: string) {
+    super(
+      `You hace exceeded the maximun amount of tags allowed (${MAX_TAGS_LENGTH}).`
     )
   }
 }

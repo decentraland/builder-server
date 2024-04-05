@@ -5,6 +5,8 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import { DEFAULT_LIMIT } from '../Pagination/utils'
 import { DBItemApprovalData, ItemAttributes } from './Item.types'
 
+export const MAX_TAGS_LENGTH = 20
+
 type ItemWithTotalCount = ItemAttributes & { total_count: number }
 
 type ItemQueryOptions = {

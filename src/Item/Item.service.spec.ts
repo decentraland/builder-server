@@ -83,7 +83,7 @@ describe('Item Service', () => {
       })
 
       it('should throw the ItemCantBeMovedFromCollectionError error', () => {
-        return expect(() =>
+        return expect(
           service.upsertItem(
             Bridge.toFullItem(dbTPItem, dbTPCollectionMock),
             '0xnewCreator'
@@ -105,7 +105,7 @@ describe('Item Service', () => {
       })
 
       it('should throw the ItemCantBeMovedFromCollectionError error', () => {
-        return expect(() =>
+        return expect(
           service.upsertItem(Bridge.toFullItem(dbItem), '0xnewCreator')
         ).rejects.toThrowError(ItemCantBeMovedFromCollectionError)
       })
@@ -118,7 +118,7 @@ describe('Item Service', () => {
       })
 
       it('should throw the ThirdPartyItemInsertByURNError error', () => {
-        return expect(() =>
+        return expect(
           service.upsertItem(
             Bridge.toFullItem(dbTPItem, dbTPCollectionMock),
             '0xnewCreator'
@@ -182,7 +182,7 @@ describe('Item Service', () => {
             }
           })
           it('should throw the MaximunAmountOfTagsReachedError error', () => {
-            return expect(() =>
+            return expect(
               service.upsertItem(
                 Bridge.toFullItem(dbItem, dbTPCollectionMock),
                 dbItem.eth_address
@@ -198,7 +198,7 @@ describe('Item Service', () => {
         })
         describe('and the item already has the maximun amount of tags', () => {
           it('should throw the MaximunAmountOfTagsReachedError error', () => {
-            return expect(() =>
+            return expect(
               service.upsertItem(
                 Bridge.toFullItem(dbItem, dbTPCollectionMock),
                 dbItem.eth_address

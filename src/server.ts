@@ -32,8 +32,12 @@ import { errorHandler } from './common/errorHandler'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
-const CORS_ORIGIN = env.get('CORS_ORIGIN', '*')
+let CORS_ORIGIN: string | string[] = env.get('CORS_ORIGIN', '*')
 const CORS_METHOD = env.get('CORS_METHOD', '*')
+
+if (CORS_ORIGIN.split(',').length > 1) {
+  CORS_ORIGIN = CORS_ORIGIN.split(',')
+}
 
 export const app = new ExpressApp()
 const logs = createConsoleLogComponent()

@@ -1,5 +1,5 @@
 import express from 'express'
-import cors from 'cors'
+import cors, { CorsOptions } from 'cors'
 import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
 import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
@@ -21,9 +21,9 @@ export class ExpressApp {
     return this
   }
 
-  useCORS(origin: string, method: string) {
-    const corsOptions = {
-      origin: origin,
+  useCORS(origin: CorsOptions['origin'], method: string) {
+    const corsOptions: CorsOptions = {
+      origin,
       methods: method,
       allowedHeaders: '*',
       exposedHeaders: [

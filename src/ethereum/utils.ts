@@ -43,7 +43,7 @@ export function getFactoryCollectionCodeHash() {
     [ChainId.MATIC_MUMBAI]:
       '0x7917e9ddbe5e0fd8de84efee3e8089ca7878af7a6aa1a62b4d0b6160821d4de8',
     [ChainId.MATIC_AMOY]:
-      '0xc5bd2e95bc8bf4499c511b9b40aef6298cda5a6d154869db199c160e29672930'
+      '0xe8aa6287567a0945907cc65108e8b18ba8cd8bff5675eb3b3d405125525ed1cf'
   }
 
   const chainId = getMappedChainIdForCurrentChainName()

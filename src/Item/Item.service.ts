@@ -63,18 +63,17 @@ export class ItemService {
     item: FullItem,
     eth_address: string
   ): Promise<FullItem> {
-    console.log('here1')
     const decodedItemURN =
       !item.id && item.urn ? decodeThirdPartyItemURN(item.urn) : null
 
     // Finds the item to be updated by URN if it's a third party item or by ID if it's not
     const dbItem = decodedItemURN
       ? await Item.findByURNSuffix(
-          decodedItemURN.third_party_id,
-          decodedItemURN.item_urn_suffix
-        )
+        decodedItemURN.third_party_id,
+        decodedItemURN.item_urn_suffix
+      )
       : await Item.findOne<ItemAttributes>(item.id)
-    console.log('here2')
+
     if (item.data.tags.length > MAX_TAGS_LENGTH) {
       const isAlreadyExceeded =
         !!dbItem && dbItem.data.tags.length > MAX_TAGS_LENGTH
@@ -84,14 +83,11 @@ export class ItemService {
         throw new MaximunAmountOfTagsReachedError(item.id)
       }
     }
-    console.log('here3')
 
     // Inserting by URN is not allowed
     if (!item.id && item.urn && !dbItem) {
       throw new ThirdPartyItemInsertByURNError(item.urn)
     }
-
-    console.log('here4')
 
     const isMovingItemFromACollectionToAnother =
       dbItem && this.isMovingItemFromACollectionToAnother(item, dbItem)
@@ -130,7 +126,6 @@ export class ItemService {
     // Set the item dates
     item = { ...item, ...buildModelDates(dbItem?.created_at) }
 
-    console.log('here5')
     // An item is a third party item if it's current collection or the collection
     // that is going to be inserted into is a third party collection.
     if (dbItemCollection && isTPCollection(dbItemCollection)) {
@@ -213,14 +208,14 @@ export class ItemService {
     const dbItemsWithCount =
       status && isTP
         ? await Item.findByCollectionIdAndStatus(
-            collectionId,
-            {
-              synced,
-              status: CurationStatus.PENDING,
-            },
-            limit,
-            offset
-          )
+          collectionId,
+          {
+            synced,
+            status: CurationStatus.PENDING,
+          },
+          limit,
+          offset
+        )
         : await Item.findByCollectionIds([collectionId], synced, limit, offset)
 
     const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
@@ -510,20 +505,18 @@ export class ItemService {
     const isMovingItemBetweenCollections =
       dbItem && this.isMovingItemFromACollectionToAnother(item, dbItem)
 
-    console.log('here6')
     const [
       isDbItemCollectionPublished,
       isItemCollectionPublished,
     ] = await Promise.all([
       dbCollection &&
-        dbCollection.contract_address &&
-        this.collectionService.isDCLPublished(dbCollection.contract_address),
+      dbCollection.contract_address &&
+      this.collectionService.isDCLPublished(dbCollection.contract_address),
       isMovingItemBetweenCollections &&
-        itemCollection &&
-        itemCollection.contract_address &&
-        this.collectionService.isDCLPublished(itemCollection.contract_address),
+      itemCollection &&
+      itemCollection.contract_address &&
+      this.collectionService.isDCLPublished(itemCollection.contract_address),
     ])
-    console.log('here7')
 
     const isDbItemCollectionOwner =
       dbCollection && this.isCollectionOwner(eth_address, dbCollection)

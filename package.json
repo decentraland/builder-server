@@ -33,7 +33,7 @@
     "@dcl/crypto": "^3.0.1",
     "@dcl/hashing": "^1.1.0",
     "@dcl/platform-crypto-middleware": "^1.0.2",
-    "@dcl/schemas": "^11.4.1-20240412130706.commit-0f2e689",
+    "@dcl/schemas": "^11.5.0",
     "@ethersproject/solidity": "^5.7.0",
     "@types/escape-html": "0.0.20",
     "@types/express": "^4.17.11",

@@ -32,8 +32,23 @@ import { errorHandler } from './common/errorHandler'
 
 const SERVER_PORT = env.get('SERVER_PORT', '5000')
 const API_VERSION = env.get('API_VERSION', 'v1')
-const CORS_ORIGIN = env.get('CORS_ORIGIN', '*')
+let CORS_ORIGIN: string | RegExp | (string | RegExp)[] = env.get(
+  'CORS_ORIGIN',
+  '*'
+)
 const CORS_METHOD = env.get('CORS_METHOD', '*')
+
+if (CORS_ORIGIN.split(';').length > 1) {
+  CORS_ORIGIN = CORS_ORIGIN.split(';')
+    .map((origin) => origin.trim())
+    .map((origin) =>
+      origin.startsWith('regex:')
+        ? new RegExp(origin.replace('regex:', ''))
+        : origin
+    )
+} else if (CORS_ORIGIN.startsWith('regex:')) {
+  CORS_ORIGIN = new RegExp(CORS_ORIGIN.replace('regex:', ''))
+}
 
 export const app = new ExpressApp()
 const logs = createConsoleLogComponent()

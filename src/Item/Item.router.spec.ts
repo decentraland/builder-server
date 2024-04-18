@@ -945,7 +945,7 @@ describe('Item router', () => {
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
                   local_content_hash:
-                    '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
+                    'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
                 }
                 resultingItem = {
                   ...toResultItem(
@@ -982,7 +982,7 @@ describe('Item router', () => {
                     expect(ItemCuration.update).toHaveBeenCalledWith(
                       {
                         content_hash:
-                          '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
+                          'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
                       },
                       {
                         item_id: itemToUpsert.id,
@@ -1015,7 +1015,7 @@ describe('Item router', () => {
                 collection_id: tpCollectionMock.id,
                 eth_address: wallet.address,
                 local_content_hash:
-                  '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
+                  'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
               }
               resultingItem = {
                 ...toResultItem(
@@ -1178,7 +1178,7 @@ describe('Item router', () => {
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
                   local_content_hash:
-                    '1590ff765dfe1479b6a6bc46baa493659c57b9b4a99244da7d3ed9464e4c535c',
+                    'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
                 }
                 mockThirdPartyURNExists(itemToUpsert.urn!, false)
                 resultingItem = {

@@ -66,7 +66,7 @@ describe('when calculating the hashes of a standard wearable item', () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      'bafkreihtcjnfcahy3nomnhxiuyjyzj2fxzy3eab7ctmxl237nf2vsoqkmu'
+      'bafkreigblh3xd4r57xvpvokhyhzydmmb5wt6ri7tyf25hpm7flknjkyqma'
     )
   })
 })
@@ -120,7 +120,7 @@ describe('when calculating the hashes of a standard emote item', () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      'bafkreih6pqxtcmaqfualgyjfydwmmpllu2n34gyipekdcaud47zkrijsli'
+      'bafkreie2zynwvkky5jxvnyhc2rhhzyyqwdrpmoetcxfaka4zc533adqsoq'
     )
   })
 })
@@ -174,7 +174,7 @@ describe('when calculating the hashes of a TP item', () => {
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      '0a00e995e0df3736a9a7aa5b7607861f6426239b4acc23f60da69fa3637ae4b8'
+      'fa107ac8f8a5444454532548b2d906569a275573a7158a6a170f0592f9368313'
     )
   })
 })
@@ -270,7 +270,7 @@ describe('when calculating the hashes of a standard smart wearable item', () => 
     return expect(
       calculateItemContentHash(dbItem, dbCollection)
     ).resolves.toEqual(
-      'bafkreicvxgq74rvh74ldh4bj2fsxbgitd5gvv3ykan6eox6tjlisqazk2q'
+      'bafkreidwpzttiygmitkrzgubk3xaiashgvyuqf2u2p47fb7w666rggutzy'
     )
   })
 })

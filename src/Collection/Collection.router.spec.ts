@@ -95,6 +95,7 @@ jest.mock('./Collection.model')
 jest.mock('./access')
 
 const thirdPartyAPIMock = thirdPartyAPI as jest.Mocked<typeof thirdPartyAPI>
+const tpUrnPrefix = 'urn:decentraland:amoy:collections-v2'
 
 describe('Collection router', () => {
   let dbCollection: CollectionAttributes
@@ -761,6 +762,7 @@ describe('Collection router', () => {
         })
 
         it('should upsert the collection and respond with a 200 and the upserted collection', () => {
+          const urnRegex = `${tpUrnPrefix}:0[xX][0-9a-fA-F]{40}`
           return server
             .put(buildURL(url))
             .set(createAuthHeaders('put', url))
@@ -780,9 +782,7 @@ describe('Collection router', () => {
                     /0[xX][0-9a-fA-F]{40}/
                   ),
                   eth_address: wallet.address,
-                  urn: expect.stringMatching(
-                    /urn:decentraland:mumbai:collections-v2:0[xX][0-9a-fA-F]{40}/
-                  ),
+                  urn: expect.stringMatching(new RegExp(urnRegex)),
                 }),
               })
             })
@@ -797,6 +797,7 @@ describe('Collection router', () => {
           })
 
           it('should upsert the collection and respond with a 200 and the upserted collection', () => {
+            const urnRegex = `${tpUrnPrefix}:0[xX][0-9a-fA-F]{40}`
             return server
               .put(buildURL(url))
               .set(createAuthHeaders('put', url))
@@ -815,9 +816,7 @@ describe('Collection router', () => {
                     contract_address: expect.stringMatching(
                       /0[xX][0-9a-fA-F]{40}/
                     ),
-                    urn: expect.stringMatching(
-                      /urn:decentraland:mumbai:collections-v2:0[xX][0-9a-fA-F]{40}/
-                    ),
+                    urn: expect.stringMatching(new RegExp(urnRegex)),
                   }),
                 })
               })
@@ -888,7 +887,7 @@ describe('Collection router', () => {
                   results: [
                     {
                       ...resultingCollectionAttributes,
-                      urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                      urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                     },
                   ],
                 },
@@ -952,7 +951,7 @@ describe('Collection router', () => {
                   results: [
                     {
                       ...resultingCollectionAttributes,
-                      urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                      urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                     },
                   ],
                 },
@@ -1021,7 +1020,7 @@ describe('Collection router', () => {
                   results: [
                     {
                       ...resultingCollectionAttributes,
-                      urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                      urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                     },
                   ],
                 },
@@ -1061,7 +1060,7 @@ describe('Collection router', () => {
                 data: [
                   {
                     ...resultingCollectionAttributes,
-                    urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                    urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                   },
                 ],
                 ok: true,
@@ -1108,7 +1107,7 @@ describe('Collection router', () => {
                   results: [
                     {
                       ...resultingCollectionAttributes,
-                      urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                      urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                     },
                   ],
                 },
@@ -1172,7 +1171,7 @@ describe('Collection router', () => {
                   results: [
                     {
                       ...resultingCollectionAttributes,
-                      urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                      urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                     },
                   ],
                 },
@@ -1241,7 +1240,7 @@ describe('Collection router', () => {
                   results: [
                     {
                       ...resultingCollectionAttributes,
-                      urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                      urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                     },
                   ],
                 },
@@ -1281,7 +1280,7 @@ describe('Collection router', () => {
                 data: [
                   {
                     ...resultingCollectionAttributes,
-                    urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                    urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                   },
                 ],
                 ok: true,
@@ -1342,7 +1341,7 @@ describe('Collection router', () => {
                 results: [
                   {
                     ...resultingCollectionAttributes,
-                    urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                    urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                   },
                 ],
               },
@@ -1398,7 +1397,7 @@ describe('Collection router', () => {
               data: [
                 {
                   ...resultingCollectionAttributes,
-                  urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+                  urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                 },
                 {
                   ...toResultCollection(dbTPCollection),
@@ -1434,7 +1433,7 @@ describe('Collection router', () => {
           expect(response.body).toEqual({
             data: {
               ...resultingCollectionAttributes,
-              urn: `urn:decentraland:mumbai:collections-v2:${dbCollection.contract_address}`,
+              urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
             },
             ok: true,
           })
@@ -2787,7 +2786,7 @@ describe('Collection router', () => {
             beforeEach(() => {
               thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce({
                 id:
-                  '0x7954b5d263d7d1298c98fa330de6a0d94952bb5f6694cab0dde144239d56dce1',
+                  '0x80a6f1bdeaeccc9caec3f8fcf7bde7cf1219735b0fa8dd058d0a8a8b81b8ea16',
               } as ReceiptFragment)
               thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce({
                 root: 'aRootValue',

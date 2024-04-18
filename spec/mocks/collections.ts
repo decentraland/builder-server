@@ -39,9 +39,9 @@ export const dbTPCollectionMock: ThirdPartyCollectionAttributes = {
   name: 'TP Mocked Collection',
   eth_address: '',
   contract_address: null,
-  urn_suffix: 'collection-id',
+  urn_suffix: 'test-collection',
   third_party_id:
-    'urn:decentraland:mumbai:collections-thirdparty:third-party-id',
+    'urn:decentraland:amoy:collections-thirdparty:dcl-tests',
 }
 
 export const collectionFragmentMock: CollectionFragment = {

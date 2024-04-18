@@ -144,7 +144,7 @@ describe('when getting the cheque hash', () => {
   let thirdPartyId: string
 
   beforeEach(() => {
-    thirdPartyId = 'urn:decentraland:mumbai:collections-thirdparty:jean-pier'
+    thirdPartyId = 'urn:decentraland:amoy:collections-thirdparty:jean-pier'
     cheque = {
       signature:
         '0x1dd053b34b48bc1e08be16c1d4f51908b4551040cf0fb390b90d18583dab2c7716ba3c73f00b5143e8ecdcd6227433226195e545a897df2e28849e91d291d9201c',
@@ -156,7 +156,7 @@ describe('when getting the cheque hash', () => {
 
   it('should return the correct hash', () => {
     return expect(getChequeMessageHash(cheque, thirdPartyId)).resolves.toEqual(
-      '0x808b380dc4bd97f8a0cf17c3548ad5c085964b31a99d5c52311c571b398783bc'
+      '0x507e4d6eb5ec23efbfdc3c2fdb46176f71657ca7443f76ae5701dc58c7d0c57e'
     )
   })
 })

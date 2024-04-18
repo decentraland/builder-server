@@ -25,12 +25,12 @@ describe('when obtaining the forwarder address', () => {
     })
   })
 
-  describe('when CHAIN_NAME === "Goerli"', () => {
-    it('should return the address of the forwarder in matic mumbai', () => {
-      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_GOERLI)
+  describe('when CHAIN_NAME === "Sepolia"', () => {
+    it('should return the address of the forwarder in matic amoy', () => {
+      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_SEPOLIA)
 
       expect(getForwarderAddress()).toBe(
-        '0x71e56Ad57eca3fAAe5077b7F9ea731a25785fF92'
+        '0x7b1fe9de545b22cb553766817b84d655ce8121c9'
       )
     })
   })
@@ -47,12 +47,12 @@ describe('when obtaining the collection factory address', () => {
     })
   })
 
-  describe('when CHAIN_NAME === "Goerli"', () => {
-    it('should return the collection factory v3 address on matic mumbai', () => {
-      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_GOERLI)
+  describe('when CHAIN_NAME === "Sepolia"', () => {
+    it('should return the collection factory v3 address on matic amoy', () => {
+      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_SEPOLIA)
 
       expect(getFactoryCollectionAddress()).toBe(
-        '0xDDb3781Fff645325C8896AA1F067bAa381607ecc'
+        '0x802de0c509add2ee29de24de7225daaff4741c43'
       )
     })
   })
@@ -69,12 +69,12 @@ describe('when obtaining the codehash', () => {
     })
   })
 
-  describe('when CHAIN_NAME === "Goerli"', () => {
-    it('should return the codehash for the factory v3 in matic mumbai', async () => {
-      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_GOERLI)
+  describe('when CHAIN_NAME === "Sepolia"', () => {
+    it('should return the codehash for the factory v3 in matic amoy', async () => {
+      mockEnv.get.mockReturnValueOnce(ChainName.ETHEREUM_SEPOLIA)
 
       expect(getFactoryCollectionCodeHash()).toBe(
-        '0x7917e9ddbe5e0fd8de84efee3e8089ca7878af7a6aa1a62b4d0b6160821d4de8'
+        '0xe8aa6287567a0945907cc65108e8b18ba8cd8bff5675eb3b3d405125525ed1cf'
       )
     })
   })

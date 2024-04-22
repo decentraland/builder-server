@@ -107,7 +107,7 @@ export class ManifestRouter extends Router {
      */
     this.router.put(
       '/projects/:id/manifest',
-      withCors,
+      withPermissiveCors,
       withAuthentication,
       server.handleRequest(this.upsertManifest)
     )
@@ -117,7 +117,7 @@ export class ManifestRouter extends Router {
      */
     this.router.delete(
       '/projects/:id/manifest',
-      withCors,
+      withPermissiveCors,
       withAuthentication,
       withProjectAuthorization,
       server.handleRequest(this.deleteManifest)

@@ -96,6 +96,7 @@ export class CurationRouter extends Router {
 
     this.router.post(
       '/collections/:id/curation/post',
+      withCors,
       withAuthentication,
       server.handleRequest(this.createCurationNewAssigneePost)
     )

@@ -16,6 +16,7 @@ export class ThirdPartyRouter extends Router {
      * CORS for the OPTIONS header
      */
     this.router.options('/thirdParties', withCors)
+    this.router.options('/thirdParties/:id', withCors)
     this.router.options('/thirdParties/:id/slots', withCors)
 
     /**

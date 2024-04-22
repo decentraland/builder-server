@@ -4,6 +4,7 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, AuthRequest } from '../middleware'
 import { isCommitteeMember } from '../Committee'
+import { withCors } from '../middleware/cors'
 import { collectionAPI } from '../ethereum/api/collection'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
@@ -40,38 +41,55 @@ export class CurationRouter extends Router {
     //   - /collections/:id/curation -> /collectionCurations/:id
     //   - /items/:id/curation -> /itemCurations/:id
     //   - etc
+
+    /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/curations', withCors)
+    this.router.options('/collectionCuration/:id/itemsStats', withCors)
+    this.router.options('/collections/:id/itemCurations', withCors)
+    this.router.options('/collections/:id/curation', withCors)
+    this.router.options('/collections/:id/curation/post', withCors)
+    this.router.options('/items/:id/curation', withCors)
+
     this.router.get(
       '/curations',
+      withCors,
       withAuthentication,
       server.handleRequest(this.getCollectionCurations)
     )
 
     this.router.get(
       '/collectionCuration/:id/itemsStats',
+      withCors,
       withAuthentication,
       server.handleRequest(this.getCollectionCurationItemStats)
     )
 
     this.router.get(
       '/collections/:id/itemCurations',
+      withCors,
       withAuthentication,
       server.handleRequest(this.getCollectionItemCurations)
     )
 
     this.router.get(
       '/collections/:id/curation',
+      withCors,
       withAuthentication,
       server.handleRequest(this.getCollectionCuration)
     )
 
     this.router.patch(
       '/collections/:id/curation',
+      withCors,
       withAuthentication,
       server.handleRequest(this.updateCollectionCuration)
     )
 
     this.router.post(
       '/collections/:id/curation',
+      withCors,
       withAuthentication,
       server.handleRequest(this.insertCollectionCuration)
     )
@@ -84,18 +102,21 @@ export class CurationRouter extends Router {
 
     this.router.get(
       '/items/:id/curation',
+      withCors,
       withAuthentication,
       server.handleRequest(this.getItemCuration)
     )
 
     this.router.patch(
       '/items/:id/curation',
+      withCors,
       withAuthentication,
       server.handleRequest(this.updateItemCuration)
     )
 
     this.router.post(
       '/items/:id/curation',
+      withCors,
       withAuthentication,
       server.handleRequest(this.insertItemCuration)
     )

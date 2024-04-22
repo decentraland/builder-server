@@ -2,6 +2,7 @@ import { Request } from 'express'
 import { server } from 'decentraland-server'
 import { hashV1 } from '@dcl/hashing'
 import { Router } from '../common/Router'
+import { withCors } from '../middleware/cors'
 import {
   withModelExists,
   asMiddleware,
@@ -22,10 +23,18 @@ export class AssetRouter extends Router {
     )
 
     /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/assetPacks/:assetPackId/assets/:id/files', withCors)
+    this.router.options('/assets/:id', withCors)
+    this.router.options('/assets', withCors)
+
+    /**
      * Upload the files for each asset in an asset pack
      */
     this.router.post(
       '/assetPacks/:assetPackId/assets/:id/files',
+      withCors,
       withAuthentication,
       withAssetPackExists,
       withAssetPackAuthorization,
@@ -44,6 +53,7 @@ export class AssetRouter extends Router {
      */
     this.router.get(
       '/assets/:id',
+      withCors,
       withAssetExists,
       server.handleRequest(this.getAsset)
     )
@@ -51,7 +61,7 @@ export class AssetRouter extends Router {
     /**
      * Get a multiple assets
      */
-    this.router.get('/assets', server.handleRequest(this.getAssets))
+    this.router.get('/assets', withCors, server.handleRequest(this.getAssets))
   }
 
   async assetBelongsToPackMiddleware(req: Request) {

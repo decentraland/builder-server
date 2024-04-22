@@ -4,6 +4,7 @@ import { v4 as uuidv4 } from 'uuid'
 import express from 'express'
 import { ILoggerComponent } from '@well-known-components/interfaces'
 
+import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -59,10 +60,18 @@ export class AssetPackRouter extends Router {
     const withAssetPackAuthorization = withModelAuthorization(AssetPack)
 
     /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/assetPacks', withCors)
+    this.router.options('/assetPacks/:id', withCors)
+    this.router.options('/assetPacks/:id/thumbnail', withCors)
+
+    /**
      * Get all asset packs
      */
     this.router.get(
       '/assetPacks',
+      withCors,
       withPermissiveAuthentication,
       withLowercaseQueryParams(['owner']),
       asyncHandler(this.getAssetPacks)
@@ -73,6 +82,7 @@ export class AssetPackRouter extends Router {
      */
     this.router.get(
       '/assetPacks/:id',
+      withCors,
       withPermissiveAuthentication,
       server.handleRequest(this.getAssetPack)
     )
@@ -82,6 +92,7 @@ export class AssetPackRouter extends Router {
      */
     this.router.put(
       '/assetPacks/:id',
+      withCors,
       withAuthentication,
       server.handleRequest(this.upsertAssetPack)
     )
@@ -91,6 +102,7 @@ export class AssetPackRouter extends Router {
      */
     this.router.delete(
       '/assetPacks/:id',
+      withCors,
       withAuthentication,
       withAssetPackExists,
       withAssetPackAuthorization,
@@ -102,6 +114,7 @@ export class AssetPackRouter extends Router {
      */
     this.router.post(
       '/assetPacks/:id/thumbnail',
+      withCors,
       withAuthentication,
       withAssetPackExists,
       withAssetPackAuthorization,

@@ -9,6 +9,7 @@ import {
   withAuthentication,
   withModelAuthorization,
 } from '../middleware'
+import { withCors } from '../middleware/cors'
 import { S3Project, MANIFEST_FILENAME, POOL_FILENAME, ACL } from '../S3'
 import { RequestParameters } from '../RequestParameters'
 import { Project, ProjectAttributes } from '../Project'
@@ -33,12 +34,18 @@ export class PoolRouter extends Router {
       is_deleted: false,
     })
     const withProjectAuthorization = withModelAuthorization(Project)
+    /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/pools', withCors)
+    this.router.options('/projects/:id/pool', withCors)
 
     /**
      * Get all pools
      */
     this.router.get(
       '/pools',
+      withCors,
       withPermissiveAuthentication,
       server.handleRequest(this.getPools)
     )
@@ -48,6 +55,7 @@ export class PoolRouter extends Router {
      */
     this.router.get(
       '/projects/:id/pool',
+      withCors,
       withPermissiveAuthentication,
       server.handleRequest(this.getPool)
     )
@@ -57,6 +65,7 @@ export class PoolRouter extends Router {
      */
     this.router.put(
       '/projects/:id/pool',
+      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,

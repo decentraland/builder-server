@@ -2,6 +2,7 @@ import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
 import { withAuthentication, withModelExists, AuthRequest } from '../middleware'
+import { withCors } from '../middleware/cors'
 import { RequestParameters } from '../RequestParameters'
 import { PoolLike } from './PoolLike.model'
 import { Pool } from '../Pool'
@@ -10,12 +11,17 @@ import { PoolLikeCount } from './PoolLike.types'
 export class PoolLikeRouter extends Router {
   mount() {
     const withProjectExists = withModelExists(Pool, 'id')
+    /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/pools/:id/likes', withCors)
 
     /**
      * Returns the total likes of a pool
      */
     this.router.get(
       '/pools/:id/likes',
+      withCors,
       withProjectExists,
       server.handleRequest(this.countLikes)
     )
@@ -25,6 +31,7 @@ export class PoolLikeRouter extends Router {
      */
     this.router.put(
       '/pools/:id/likes',
+      withCors,
       withAuthentication,
       withProjectExists,
       server.handleRequest(this.likePool)
@@ -35,6 +42,7 @@ export class PoolLikeRouter extends Router {
      */
     this.router.delete(
       '/pools/:id/likes',
+      withCors,
       withAuthentication,
       withProjectExists,
       server.handleRequest(this.dislikePool)

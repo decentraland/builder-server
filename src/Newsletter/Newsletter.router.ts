@@ -1,13 +1,32 @@
 import { Request } from 'express'
 import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
+import { withCors } from '../middleware/cors'
 import { Newsletter } from './Newsletter.model'
 
 export class NewsletterRouter extends Router {
   mount() {
-    this.router.post('/newsletter', server.handleRequest(this.subscribe))
-    this.router.delete('/newsletter/:subscriptionId', server.handleRequest(this.deleteSubscription))
-    this.router.get('/newsletter/:subscriptionId', server.handleRequest(this.getSubscription))
+    /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/newsletter', withCors)
+    this.router.options('/newsletter/:subscriptionId', withCors)
+
+    this.router.post(
+      '/newsletter',
+      withCors,
+      server.handleRequest(this.subscribe)
+    )
+    this.router.delete(
+      '/newsletter/:subscriptionId',
+      withCors,
+      server.handleRequest(this.deleteSubscription)
+    )
+    this.router.get(
+      '/newsletter/:subscriptionId',
+      withCors,
+      server.handleRequest(this.getSubscription)
+    )
   }
 
   async subscribe(req: Request) {

@@ -5,6 +5,7 @@ import { env } from 'decentraland-commons'
 import { Router } from '../common/Router'
 
 import { Project } from '../Project/Project.model'
+import { withPermissiveCors } from '../middleware/cors'
 import { withSocialUserAgentDetector, SocialRequest } from '../middleware/share'
 import { Params, ElementType } from './Share.types'
 import { Pool, PoolAttributes } from '../Pool'
@@ -19,10 +20,16 @@ const BUILDER_SHARE_URL = env.get('BUILDER_SHARE_URL', BUILDER_URL)
 export class ShareRouter extends Router {
   mount() {
     /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/share/:type(scene|pool)/:id', withPermissiveCors)
+
+    /**
      * Redirect to scene
      */
     this.router.get(
       '/share/:type(scene|pool)/:id',
+      withPermissiveCors,
       withSocialUserAgentDetector,
       asyncHandler(this.redirectToBuilder)
     )

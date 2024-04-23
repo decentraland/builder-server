@@ -3,6 +3,7 @@ import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
+import { withCors } from '../middleware/cors'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
 import { isErrorWithMessage } from '../utils/errors'
 import {
@@ -42,10 +43,16 @@ export class ForumRouter extends Router {
     )
 
     /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/collections/:id/post', withCors)
+
+    /**
      * Post a new thread to the forum
      */
     this.router.post(
       '/collections/:id/post',
+      withCors,
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,

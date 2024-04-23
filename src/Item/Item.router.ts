@@ -4,6 +4,7 @@ import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 import { omit } from 'decentraland-commons/dist/utils'
 import { Router } from '../common/Router'
+import { withCors } from '../middleware/cors'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { collectionAPI } from '../ethereum/api/collection'
 import { Bridge } from '../ethereum/api/Bridge'
@@ -86,10 +87,23 @@ export class ItemRouter extends Router {
     const withLowercasedAddress = withLowercasedParams(['address'])
 
     /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/items', withCors)
+    this.router.options('/:address/items', withCors)
+    this.router.options('/items/:id', withCors)
+    this.router.options('/collections/:id/items', withCors)
+    this.router.options('/items/:idOrURN', withCors)
+    this.router.options('/items/:id/files', withCors)
+    this.router.options('/items/:id/videos', withCors)
+    this.router.options('/items/:collectionAddress/:itemId/contents', withCors)
+
+    /**
      * Returns all items
      */
     this.router.get(
       '/items',
+      withCors,
       withAuthentication,
       server.handleRequest(this.getItems)
     )
@@ -99,6 +113,7 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/:address/items',
+      withCors,
       withAuthentication,
       withLowercasedAddress,
       server.handleRequest(this.getAddressItems)
@@ -109,6 +124,7 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/items/:id',
+      withCors,
       withAuthentication,
       withItemExists,
       server.handleRequest(this.getItem)
@@ -119,6 +135,7 @@ export class ItemRouter extends Router {
      */
     this.router.get(
       '/collections/:id/items',
+      withCors,
       withAuthentication,
       withCollectionExist,
       server.handleRequest(this.getCollectionItems)
@@ -130,6 +147,7 @@ export class ItemRouter extends Router {
      */
     this.router.put(
       '/items/:idOrURN',
+      withCors,
       withAuthentication,
       withSchemaValidation(upsertItemSchema),
       server.handleRequest(this.upsertItem)
@@ -140,6 +158,7 @@ export class ItemRouter extends Router {
      */
     this.router.delete(
       '/items/:id',
+      withCors,
       withAuthentication,
       withItemExists,
       withItemAuthorization,
@@ -151,6 +170,7 @@ export class ItemRouter extends Router {
      */
     this.router.post(
       '/items/:id/files',
+      withCors,
       withAuthentication,
       withItemExists,
       withItemAuthorization,
@@ -165,6 +185,7 @@ export class ItemRouter extends Router {
      */
     this.router.post(
       '/items/:id/videos',
+      withCors,
       withAuthentication,
       withItemExists,
       withItemAuthorization,
@@ -177,6 +198,7 @@ export class ItemRouter extends Router {
 
     this.router.get(
       '/items/:collectionAddress/:itemId/contents',
+      withCors,
       withLowercasedParams(['collectionAddress', 'itemId']),
       withValidContractAddress('collectionAddress'),
       withValidItemId('itemId'),

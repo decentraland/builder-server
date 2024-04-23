@@ -4,6 +4,7 @@ import { Request } from 'express'
 //@ts-ignore
 import * as contentHash from 'content-hash'
 import fetch, { Response as FetchResponse } from 'node-fetch'
+import { withCors } from '../middleware/cors'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { Router } from '../common/Router'
 import { getCID } from '../utils/cid'
@@ -18,13 +19,21 @@ const INDEX_FILE = 'index.html'
 
 export class LANDRouter extends Router {
   mount() {
+    /**
+     * CORS for the OPTIONS header
+     */
+    this.router.options('/lands/redirectionHashes', withCors)
+    this.router.options('/lands/:coords/redirection', withCors)
+
     this.router.get(
       '/lands/redirectionHashes',
+      withCors,
       server.handleRequest(this.getRedirectionHashes)
     )
 
     this.router.post(
       '/lands/:coords/redirection',
+      withCors,
       server.handleRequest(this.uploadRedirection)
     )
   }

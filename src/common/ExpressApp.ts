@@ -1,5 +1,4 @@
 import express from 'express'
-import cors, { CorsOptions } from 'cors'
 import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
 import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
@@ -18,25 +17,6 @@ export class ExpressApp {
       express.urlencoded({ extended: false, limit: '2mb' }),
       express.json({ limit: '5mb' })
     )
-    return this
-  }
-
-  useCORS(origin: CorsOptions['origin'], method: string) {
-    const corsOptions: CorsOptions = {
-      origin,
-      methods: method,
-      allowedHeaders: '*',
-      exposedHeaders: [
-        'ETag',
-        'Cache-Control',
-        'Content-Language',
-        'Content-Type',
-        'Expires',
-        'Last-Modified',
-        'Pragma',
-      ],
-    }
-    this.app.use(cors(corsOptions))
     return this
   }
 

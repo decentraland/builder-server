@@ -1,7 +1,6 @@
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { withCors } from '../middleware/cors'
 import { HTTPError } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
 import {
@@ -25,17 +24,10 @@ const withDeploymentAuthorization = withModelAuthorization(Deployment)
 export class DeploymentRouter extends Router {
   mount() {
     /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/deployments', withCors)
-    this.router.options('/projects/:id/deployment', withCors)
-
-    /**
      * Get all deployments
      */
     this.router.get(
       '/deployments',
-      withCors,
       withAuthentication,
       server.handleRequest(this.getDeployments)
     )
@@ -45,7 +37,6 @@ export class DeploymentRouter extends Router {
      */
     this.router.get(
       '/projects/:id/deployment',
-      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -57,7 +48,6 @@ export class DeploymentRouter extends Router {
      */
     this.router.put(
       '/projects/:id/deployment',
-      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -69,7 +59,6 @@ export class DeploymentRouter extends Router {
      */
     this.router.delete(
       '/projects/:id/deployment',
-      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,

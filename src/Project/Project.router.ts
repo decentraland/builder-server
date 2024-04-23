@@ -3,7 +3,6 @@ import { server } from 'decentraland-server'
 import mimeTypes from 'mime-types'
 import path from 'path'
 import { Router } from '../common/Router'
-import { withCors, withPermissiveCors } from '../middleware/cors'
 import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -52,34 +51,15 @@ export class ProjectRouter extends Router {
     const withProjectAuthorization = withModelAuthorization(Project)
 
     /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/templates', withCors)
-    this.router.options('/projects', withCors)
-    this.router.options('/projects/:id', withCors)
-    this.router.options('/projects/:coords/coords', withCors)
-    this.router.options('/projects/:id/public', withCors)
-    this.router.options('/projects/:id/media/:filename', withPermissiveCors)
-    this.router.options('/projects/:id/media', withCors)
-    this.router.options('/projects/:id/contents/:content', withPermissiveCors)
-    this.router.options('/projects/:id/about', withCors)
-    this.router.options('/projects/:id/crdt', withPermissiveCors)
-
-    /**
      * Get all templates
      */
-    this.router.get(
-      '/templates',
-      withCors,
-      server.handleRequest(this.getTemplates)
-    )
+    this.router.get('/templates', server.handleRequest(this.getTemplates))
 
     /**
      * Get all projects
      */
     this.router.get(
       '/projects',
-      withCors,
       withAuthentication,
       server.handleRequest(this.getProjects)
     )
@@ -89,7 +69,6 @@ export class ProjectRouter extends Router {
      */
     this.router.get(
       '/projects/:id',
-      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -102,7 +81,6 @@ export class ProjectRouter extends Router {
      */
     this.router.put(
       '/projects/:id',
-      withCors,
       withAuthentication,
       server.handleRequest(this.upsertProject)
     )
@@ -112,7 +90,6 @@ export class ProjectRouter extends Router {
      */
     this.router.delete(
       '/projects/:id',
-      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -124,14 +101,12 @@ export class ProjectRouter extends Router {
      */
     this.router.delete(
       '/projects/:coords/coords',
-      withCors,
       withAuthentication,
       server.handleRequest(this.removeCoordsFromProjects)
     )
 
     this.router.get(
       '/projects/:id/public',
-      withCors,
       withProjectExistsAndIsPublic,
       server.handleRequest(this.getPublicProject)
     )
@@ -139,18 +114,13 @@ export class ProjectRouter extends Router {
     /**
      * Get a project media attachment
      */
-    this.router.get(
-      '/projects/:id/media/:filename',
-      withPermissiveCors,
-      this.getMedia
-    )
+    this.router.get('/projects/:id/media/:filename', this.getMedia)
 
     /**
      * Upload a project media attachment
      */
     this.router.post(
       '/projects/:id/media',
-      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -175,21 +145,18 @@ export class ProjectRouter extends Router {
 
     this.router.get(
       '/projects/:id/contents/:content',
-      withPermissiveCors,
       withProjectExists,
       this.getContents
     )
 
     this.router.get(
       '/projects/:id/about',
-      withCors,
       withProjectExists,
       this.getPreviewAbout
     )
 
     this.router.put(
       '/projects/:id/crdt',
-      withCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -204,7 +171,6 @@ export class ProjectRouter extends Router {
 
     this.router.get(
       '/projects/:id/crdt',
-      withPermissiveCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -395,12 +361,12 @@ export class ProjectRouter extends Router {
           `urn:decentraland:entity:${ENTITY_HASH}?=&baseUrl=${BUILDER_SERVER_URL}/v1/projects/${projectId}/contents/`,
         ],
         minimap: {
-          enabled: false,
+          enabled: false
         },
         skybox: {
-          fixedHour: 36000,
+          fixedHour: 36000
         },
-        realmName: `web-editor-${projectId.split('-').slice(-1)}`,
+        realmName: `web-editor-${projectId.split('-').slice(-1)}`
       },
       content: {
         healthy: true,

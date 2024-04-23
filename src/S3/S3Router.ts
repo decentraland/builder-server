@@ -4,7 +4,6 @@ import { hashV1 } from '@dcl/hashing'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { withCors, withPermissiveCors } from '../middleware/cors'
 import { addInmutableCacheControlHeader } from '../common/headers'
 import { getBucketURL } from './s3'
 import { S3AssetPack } from './S3AssetPack'
@@ -16,46 +15,25 @@ import { getUploader } from './uploads'
 export class S3Router extends Router {
   mount() {
     /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/storage/assetPacks/:filename', withPermissiveCors)
-    this.router.options('/storage/contents/:filename', withPermissiveCors)
-    this.router.options('/storage/contents/:filename/exists', withCors)
-    this.router.options('/storage/upload', withCors)
-
-    /**
      * Get an asset pack file by file id
      */
-    this.router.get(
-      '/storage/assetPacks/:filename',
-      withPermissiveCors,
-      this.handleAssetPacks
-    )
+    this.router.get('/storage/assetPacks/:filename', this.handleAssetPacks)
 
     /**
      * Get an asset file by file id (also contains items)
      */
-    this.router.get(
-      '/storage/contents/:filename',
-      withPermissiveCors,
-      this.handleContents
-    )
+    this.router.get('/storage/contents/:filename', this.handleContents)
 
     /**
      * Get the response headers for a file
      */
-    this.router.head(
-      '/storage/contents/:filename',
-      withPermissiveCors,
-      this.handleContents
-    )
+    this.router.head('/storage/contents/:filename', this.handleContents)
 
     /**
      * Return whether a file exists or not in the content server without downloading it
      */
     this.router.get(
       '/storage/contents/:filename/exists',
-      withCors,
       server.handleRequest(this.handleExists)
     )
 
@@ -64,7 +42,6 @@ export class S3Router extends Router {
      */
     this.router.post(
       '/storage/upload',
-      withCors,
       withAuthentication,
       getUploader({
         getFileStreamKey: async (file) => {

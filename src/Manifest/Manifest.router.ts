@@ -2,7 +2,6 @@ import { server } from 'decentraland-server'
 import { Request, Response } from 'express'
 
 import { Router } from '../common/Router'
-import { withCors, withPermissiveCors } from '../middleware/cors'
 import { addInmutableCacheControlHeader } from '../common/headers'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -41,20 +40,10 @@ export class ManifestRouter extends Router {
     })
 
     /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/projects/:id/manifest', withPermissiveCors)
-    this.router.options('/manifests', withCors)
-    this.router.options('/publics/:id/manifest', withPermissiveCors)
-    this.router.options('/templates/:id/manifest', withPermissiveCors)
-    this.router.options('/pools/:id/manifest', withPermissiveCors)
-
-    /**
      * Returns the manifest of a project
      */
     this.router.get(
       '/projects/:id/manifest',
-      withPermissiveCors,
       withAuthentication,
       withProjectExists,
       withProjectAuthorization,
@@ -66,7 +55,6 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/manifests',
-      withCors,
       withAuthentication,
       server.handleRequest(this.getManifests)
     )
@@ -76,7 +64,6 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/publics/:id/manifest',
-      withPermissiveCors,
       withProjectExists,
       this.getProjectManifest
     )
@@ -86,7 +73,6 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/templates/:id/manifest',
-      withPermissiveCors,
       withTemplateExists,
       this.getProjectManifest
     )
@@ -96,7 +82,6 @@ export class ManifestRouter extends Router {
      */
     this.router.get(
       '/pools/:id/manifest',
-      withPermissiveCors,
       withPublishedProjectExists,
       this.getPoolManifest
     )
@@ -107,7 +92,6 @@ export class ManifestRouter extends Router {
      */
     this.router.put(
       '/projects/:id/manifest',
-      withPermissiveCors,
       withAuthentication,
       server.handleRequest(this.upsertManifest)
     )
@@ -117,7 +101,6 @@ export class ManifestRouter extends Router {
      */
     this.router.delete(
       '/projects/:id/manifest',
-      withPermissiveCors,
       withAuthentication,
       withProjectAuthorization,
       server.handleRequest(this.deleteManifest)

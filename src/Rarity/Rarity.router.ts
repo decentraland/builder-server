@@ -1,7 +1,6 @@
 import { server } from 'decentraland-server'
 import { Request } from 'express'
 import { Router } from '../common/Router'
-import { withCors } from '../middleware/cors'
 import { collectionAPI } from '../ethereum/api/collection'
 import { RarityFragment } from '../ethereum/api/fragments'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
@@ -10,25 +9,11 @@ import { Currency, Rarity } from './types'
 
 export class RarityRouter extends Router {
   mount() {
-    /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/rarities', withCors)
-    this.router.options('/rarities/:name', withCors)
-
     // Returns the available rarities.
-    this.router.get(
-      '/rarities',
-      withCors,
-      server.handleRequest(this.getRarities)
-    )
+    this.router.get('/rarities', server.handleRequest(this.getRarities))
 
     // Returns a single rarity according to the rarity name provided.
-    this.router.get(
-      '/rarities/:name',
-      withCors,
-      server.handleRequest(this.getRarity)
-    )
+    this.router.get('/rarities/:name', server.handleRequest(this.getRarity))
   }
 
   getRarities = async (): Promise<Rarity[]> => {

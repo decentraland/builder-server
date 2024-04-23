@@ -1,7 +1,6 @@
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
-import { withCors } from '../middleware/cors'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { AuthRequest, withAuthentication } from '../middleware/authentication'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
@@ -13,18 +12,10 @@ export class ThirdPartyRouter extends Router {
   private thirdPartyService = new ThirdPartyService()
   mount() {
     /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/thirdParties', withCors)
-    this.router.options('/thirdParties/:id', withCors)
-    this.router.options('/thirdParties/:id/slots', withCors)
-
-    /**
      * Get third party records
      */
     this.router.get(
       '/thirdParties',
-      withCors,
       withAuthentication,
       server.handleRequest(this.getThirdParties)
     )
@@ -33,7 +24,6 @@ export class ThirdPartyRouter extends Router {
      */
     this.router.get(
       '/thirdParties/:id/slots',
-      withCors,
       withAuthentication,
       server.handleRequest(this.getThirdPartyAvailableSlots)
     )
@@ -42,7 +32,6 @@ export class ThirdPartyRouter extends Router {
      */
     this.router.get(
       '/thirdParties/:id',
-      withCors,
       server.handleRequest(this.getThirdParty)
     )
   }

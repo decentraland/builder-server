@@ -1,7 +1,6 @@
 import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
 import { omit } from 'decentraland-commons/dist/utils'
-import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -88,23 +87,10 @@ export class CollectionRouter extends Router {
     const withLowercasedAddress = withLowercasedParams(['address'])
 
     /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/collections', withCors)
-    this.router.options('/:address/collections', withCors)
-    this.router.options('/collections/:id', withCors)
-    this.router.options('/collections/:id/publish', withCors)
-    this.router.options('/collections/:id/tos', withCors)
-    this.router.options('/collections/:id/lock', withCors)
-    this.router.options('/collections/:id/approvalData', withCors)
-    this.router.options('/addresses', withCors)
-
-    /**
      * Returns all collections
      */
     this.router.get(
       '/collections',
-      withCors,
       withPermissiveAuthentication,
       server.handleRequest(this.getCollections)
     )
@@ -114,7 +100,6 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/:address/collections',
-      withCors,
       withAuthentication,
       withLowercasedAddress,
       server.handleRequest(this.getAddressCollections)
@@ -125,7 +110,6 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id',
-      withCors,
       withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getCollection)
@@ -136,7 +120,6 @@ export class CollectionRouter extends Router {
      */
     this.router.post(
       '/collections/:id/publish',
-      withCors,
       withAuthentication,
       withCollectionExists,
       server.handleRequest(this.publishCollection)
@@ -147,7 +130,6 @@ export class CollectionRouter extends Router {
      */
     this.router.post(
       '/collections/:id/tos',
-      withCors,
       withAuthentication,
       withCollectionExists,
       server.handleRequest(this.saveTOS)
@@ -158,7 +140,6 @@ export class CollectionRouter extends Router {
      */
     this.router.post(
       '/collections/:id/lock',
-      withCors,
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,
@@ -170,7 +151,6 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/collections/:id/approvalData',
-      withCors,
       withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getApprovalData)
@@ -182,7 +162,6 @@ export class CollectionRouter extends Router {
      */
     this.router.put(
       '/collections/:id',
-      withCors,
       withAuthentication,
       withSchemaValidation(upsertCollectionSchema),
       server.handleRequest(this.upsertCollection)
@@ -193,7 +172,6 @@ export class CollectionRouter extends Router {
      */
     this.router.delete(
       '/collections/:id',
-      withCors,
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,
@@ -205,7 +183,6 @@ export class CollectionRouter extends Router {
      */
     this.router.get(
       '/addresses',
-      withCors,
       server.handleRequest(this.getAddressesCollections)
     )
   }

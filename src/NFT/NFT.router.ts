@@ -2,7 +2,6 @@ import { server } from 'decentraland-server'
 import { Request } from 'express'
 import Ajv from 'ajv'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { NFTService } from './NFT.service'
 import { GetNFTsResponse, NFT } from './NFT.types'
@@ -11,16 +10,9 @@ export class NFTRouter extends Router {
   private readonly nftService = new NFTService()
 
   mount() {
-    /**
-     * CORS for the OPTIONS header
-     */
-    this.router.options('/nfts', withCors)
-    this.router.options('/nfts/:contractAddress/:tokenId', withCors)
-
-    this.router.get('/nfts', withCors, server.handleRequest(this.getNFTs))
+    this.router.get('/nfts', server.handleRequest(this.getNFTs))
     this.router.get(
       '/nfts/:contractAddress/:tokenId',
-      withCors,
       server.handleRequest(this.getNFT)
     )
   }

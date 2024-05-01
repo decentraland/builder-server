@@ -153,6 +153,7 @@ export const dbItemMock: ItemAttributes = {
   created_at: new Date(),
   updated_at: new Date(),
   local_content_hash: null,
+  utility: null,
 }
 
 export const dbTPItemMock: ThirdPartyItemAttributes = {

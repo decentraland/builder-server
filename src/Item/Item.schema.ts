@@ -39,6 +39,7 @@ const baseItemSchema = Object.freeze({
       type: 'object',
       additionalProperties: true,
     },
+    utility: { type: ['string', 'null'], maxLength: 200 },
     content_hash: { type: ['string', 'null'] },
   },
   additionalProperties: false,

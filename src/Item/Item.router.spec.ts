@@ -1407,13 +1407,13 @@ describe('Item router', () => {
         )
       })
 
-      describe('and the item inserted has an invalid description', () => {
-        it.each([
-          [0, ItemType.WEARABLE],
-          [1, ItemType.EMOTE],
-        ])(
-          "should fail with a message indicating that the description doesn't match the pattern",
-          (schemaItemTypeIdx, type) => {
+      describe.each([
+        { schemaItemTypeIdx: 0, type: ItemType.WEARABLE },
+        { schemaItemTypeIdx: 1, type: ItemType.EMOTE },
+      ])(
+        'and the item inserted of $type type has an invalid description',
+        ({ schemaItemTypeIdx, type }) => {
+          it("should fail with a message indicating that the description doesn't match the pattern", () => {
             return server
               .put(buildURL(url))
               .send({
@@ -1440,9 +1440,45 @@ describe('Item router', () => {
                   ok: false,
                 })
               })
-          }
-        )
-      })
+          })
+        }
+      )
+      describe.each([
+        { schemaItemTypeIdx: 0, type: ItemType.WEARABLE },
+        { schemaItemTypeIdx: 1, type: ItemType.EMOTE },
+      ])(
+        'and the item inserted of $type type has a longer utility than the permitted one',
+        ({ schemaItemTypeIdx, type }) => {
+          it("should fail with a message indicating that the utility doesn't match the pattern", () => {
+            return server
+              .put(buildURL(url))
+              .send({
+                item: {
+                  ...itemToUpsert,
+                  utility: 'a'.repeat(201),
+                  type,
+                },
+              })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.badRequest)
+              .then((response: any) => {
+                expect(response.body).toEqual({
+                  data: [
+                    {
+                      instancePath: '/item/utility',
+                      keyword: 'maxLength',
+                      message: 'must NOT have more than 200 characters',
+                      params: { limit: 200 },
+                      schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/utility/maxLength`,
+                    },
+                  ],
+                  error: 'Invalid request body',
+                  ok: false,
+                })
+              })
+          })
+        }
+      )
 
       describe('and the item inserted data does not match the item type data schema', () => {
         it('should fail with a message indicating that are missing properties for the data schema', () => {
@@ -2527,6 +2563,63 @@ describe('Item router', () => {
             })
         }
       )
+    })
+  })
+
+  describe('when getting the utility of a published item', () => {
+    let url: string
+    let contractAddress: string
+    let blockchainItemId: string
+
+    beforeEach(() => {
+      contractAddress = '0x1234'
+      blockchainItemId = '1'
+      url = `/published-collections/${contractAddress}/items/${blockchainItemId}/utility`
+    })
+
+    describe('and the item is found', () => {
+      let utility: string
+
+      beforeEach(() => {
+        utility = 'A utility'
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          [{ ...dbItem, utility }]
+        )
+      })
+
+      it('should respond with a 200 and the item utility', () => {
+        console.log('Test: ', buildURL(url))
+        return server
+          .get(buildURL(url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { utility },
+              ok: true,
+            })
+          })
+      })
+    })
+
+    describe('and the item is not found', () => {
+      beforeEach(() => {
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+      })
+
+      it('should respond with a 404 status code', () => {
+        return server
+          .get(buildURL(url))
+          .expect(404)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: `${contractAddress}-${blockchainItemId}` },
+              error: "The item doesn't exist.",
+              ok: false,
+            })
+          })
+      })
     })
   })
 })

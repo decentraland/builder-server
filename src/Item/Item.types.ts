@@ -36,6 +36,7 @@ export type ItemAttributes<T = ItemType.WEARABLE> = {
     ? WearableData | SmartWearableData
     : EmoteData
   metrics: MetricsAttributes
+  utility: string | null
   contents: ItemContents
   created_at: Date
   updated_at: Date

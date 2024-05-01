@@ -34,8 +34,6 @@ const corsOptions: CorsOptions = {
   ],
 }
 
-console.log('CORS OPTIONS', corsOptions)
-
 export const withCors = cors(corsOptions)
 export const withPermissiveCors = cors({
   origin: '*',

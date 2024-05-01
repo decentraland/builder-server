@@ -69,9 +69,9 @@ export class ItemService {
     // Finds the item to be updated by URN if it's a third party item or by ID if it's not
     const dbItem = decodedItemURN
       ? await Item.findByURNSuffix(
-        decodedItemURN.third_party_id,
-        decodedItemURN.item_urn_suffix
-      )
+          decodedItemURN.third_party_id,
+          decodedItemURN.item_urn_suffix
+        )
       : await Item.findOne<ItemAttributes>(item.id)
 
     if (item.data.tags.length > MAX_TAGS_LENGTH) {
@@ -208,14 +208,14 @@ export class ItemService {
     const dbItemsWithCount =
       status && isTP
         ? await Item.findByCollectionIdAndStatus(
-          collectionId,
-          {
-            synced,
-            status: CurationStatus.PENDING,
-          },
-          limit,
-          offset
-        )
+            collectionId,
+            {
+              synced,
+              status: CurationStatus.PENDING,
+            },
+            limit,
+            offset
+          )
         : await Item.findByCollectionIds([collectionId], synced, limit, offset)
 
     const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
@@ -246,6 +246,30 @@ export class ItemService {
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
     return Item.findItemsByAddress(address, thirdPartyIds, params)
+  }
+
+  /**
+   * Gets the item utility of a published collection's item.
+   *
+   * @param collectionAddress - The collection address in the blockchain.
+   * @param blockchainId - The blockchain id.
+   */
+  public async getItemUtilityByContractAddressAndTokenId(
+    collectionAddress: string,
+    blockchainId: string
+  ): Promise<string | null> {
+    const dbItem = await Item.findByBlockchainIdsAndContractAddresses([
+      {
+        blockchainId,
+        collectionAddress,
+      },
+    ])
+
+    if (dbItem.length === 0) {
+      throw new NonExistentItemError(`${collectionAddress}-${blockchainId}`)
+    }
+
+    return dbItem[0].utility
   }
 
   public async getItemByContractAddressAndTokenId(
@@ -510,12 +534,12 @@ export class ItemService {
       isItemCollectionPublished,
     ] = await Promise.all([
       dbCollection &&
-      dbCollection.contract_address &&
-      this.collectionService.isDCLPublished(dbCollection.contract_address),
+        dbCollection.contract_address &&
+        this.collectionService.isDCLPublished(dbCollection.contract_address),
       isMovingItemBetweenCollections &&
-      itemCollection &&
-      itemCollection.contract_address &&
-      this.collectionService.isDCLPublished(itemCollection.contract_address),
+        itemCollection &&
+        itemCollection.contract_address &&
+        this.collectionService.isDCLPublished(itemCollection.contract_address),
     ])
 
     const isDbItemCollectionOwner =

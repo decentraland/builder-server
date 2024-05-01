@@ -245,6 +245,44 @@ describe('Item Service', () => {
     })
   })
 
+  describe('when getting an item utility by its contract address and blockchain item id', () => {
+    beforeEach(() => {
+      dbItem = {
+        ...dbItemMock,
+        collection_id: dbCollectionMock.id,
+        utility: 'utility',
+      }
+    })
+
+    describe('when the item is not found', () => {
+      beforeEach(() => {
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+      })
+
+      it('should throw a NonExistentItemError error with the collectionAddress and the blockchainId', () => {
+        return expect(
+          service.getItemByContractAddressAndTokenId('0xa', '1')
+        ).rejects.toThrow("The item doesn't exist.")
+      })
+    })
+
+    describe('when the item is found', () => {
+      beforeEach(() => {
+        ;(Item.findByBlockchainIdsAndContractAddresses as jest.Mock).mockResolvedValueOnce(
+          [dbItem]
+        )
+      })
+
+      it('should return the utility', () => {
+        return expect(
+          service.getItemUtilityByContractAddressAndTokenId('0xa', '1')
+        ).resolves.toEqual('utility')
+      })
+    })
+  })
+
   describe('getItemByContractAddressAndTokenId', () => {
     beforeEach(() => {
       dbItem = {

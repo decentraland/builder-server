@@ -97,6 +97,10 @@ export class ItemRouter extends Router {
     this.router.options('/items/:id/files', withCors)
     this.router.options('/items/:id/videos', withCors)
     this.router.options('/items/:collectionAddress/:itemId/contents', withCors)
+    this.router.options(
+      '/published-collections/:address/items/:id/utility',
+      withCors
+    )
 
     /**
      * Returns all items
@@ -128,6 +132,12 @@ export class ItemRouter extends Router {
       withAuthentication,
       withItemExists,
       server.handleRequest(this.getItem)
+    )
+
+    this.router.get(
+      '/published-collections/:address/items/:id/utility',
+      withCors,
+      server.handleRequest(this.getItemUtilityByBlockchainIdAndContractAddress)
     )
 
     /**
@@ -291,6 +301,28 @@ export class ItemRouter extends Router {
     return page && limit
       ? generatePaginatedResponse(concatenated, totalItems, limit, page)
       : concatenated
+  }
+
+  getItemUtilityByBlockchainIdAndContractAddress = async (
+    req: Request
+  ): Promise<{ utility: string | null }> => {
+    const { address, id } = req.params
+    try {
+      const utility = await this.itemService.getItemUtilityByContractAddressAndTokenId(
+        address,
+        id
+      )
+      return { utility }
+    } catch (error) {
+      if (error instanceof NonExistentItemError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.notFound
+        )
+      }
+      throw error
+    }
   }
 
   getItem = async (req: AuthRequest): Promise<FullItem> => {

@@ -1455,7 +1455,7 @@ describe('Item router', () => {
               .send({
                 item: {
                   ...itemToUpsert,
-                  utility: 'a'.repeat(201),
+                  utility: 'a'.repeat(65),
                   type,
                 },
               })
@@ -1467,8 +1467,8 @@ describe('Item router', () => {
                     {
                       instancePath: '/item/utility',
                       keyword: 'maxLength',
-                      message: 'must NOT have more than 200 characters',
-                      params: { limit: 200 },
+                      message: 'must NOT have more than 64 characters',
+                      params: { limit: 64 },
                       schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/utility/maxLength`,
                     },
                   ],
@@ -2588,7 +2588,6 @@ describe('Item router', () => {
       })
 
       it('should respond with a 200 and the item utility', () => {
-        console.log('Test: ', buildURL(url))
         return server
           .get(buildURL(url))
           .expect(200)

@@ -324,7 +324,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { is_published, sort } = req.query
+    const { is_published, sort, q } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -342,6 +342,7 @@ export class CollectionRouter extends Router {
 
     const allCollectionsWithCount = await this.service.getCollections(
       {
+        q: q as string,
         offset: page && limit ? getOffset(page, limit) : undefined,
         limit,
         address: eth_address,

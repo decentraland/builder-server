@@ -1413,6 +1413,49 @@ describe('Collection router', () => {
           })
       })
     })
+
+    describe('and sending search query param', () => {
+      let search: string
+
+      beforeEach(() => {
+        search = 'text'
+        ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
+          { ...dbCollection, collection_count: 1 },
+        ])
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([])
+        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
+          []
+        )
+      })
+
+      it('should respond with pagination data and should have call the findAll method with the right params', () => {
+        return server
+          .get(buildURL(`${url}?q=${search}`))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  ...resultingCollectionAttributes,
+                  urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
+                },
+              ],
+              ok: true,
+            })
+            expect(Collection.findAll).toHaveBeenCalledWith({
+              address: wallet.address,
+              limit: undefined,
+              offset: undefined,
+              sort: CollectionSort.CREATED_AT_DESC,
+              thirdPartyIds: [],
+              remoteIds: [],
+              q: "text",
+              isPublished: undefined
+            })
+          })
+      })
+    })
   })
 
   describe('when retrieving a single collection', () => {

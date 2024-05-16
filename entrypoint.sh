@@ -1,5 +1,4 @@
 #!/bin/sh
-
 if [[ -z "${CONNECTION_STRING}" ]]; then
   if [ -z "${PG_COMPONENT_PSQL_USER}" ] || [ -z "${PG_COMPONENT_PSQL_PASSWORD}" ] || [ -z "${PG_COMPONENT_PSQL_HOST}" ] || [ -z "${PG_COMPONENT_PSQL_PORT}" ] || [ -z "${PG_COMPONENT_PSQL_DATABASE}" ]; then
     # Either the connection string or the individual DB encironenment variables must be set.

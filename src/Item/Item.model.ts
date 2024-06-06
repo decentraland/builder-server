@@ -3,6 +3,7 @@ import { Collection } from '../Collection/Collection.model'
 import { CurationStatus } from '../Curation'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { DEFAULT_LIMIT } from '../Pagination/utils'
+import { CollectionSort } from '../Collection'
 import { DBItemApprovalData, ItemAttributes } from './Item.types'
 
 export const MAX_TAGS_LENGTH = 20
@@ -167,7 +168,8 @@ export class Item extends Model<ItemAttributes> {
     collectionIds: string[],
     synced?: boolean,
     limit: number = DEFAULT_LIMIT,
-    offset: number = 0
+    offset: number = 0,
+    sort: CollectionSort = CollectionSort.UPDATED_AT_DESC
   ) {
     const query = ItemQueries.selectByCollectionIds(
       collectionIds,
@@ -175,16 +177,38 @@ export class Item extends Model<ItemAttributes> {
         synced,
       },
       limit,
-      offset
+      offset,
+      sort
     )
     return await this.query<ItemWithTotalCount>(query)
+  }
+
+  static getOrderByStatement(sort?: CollectionSort) {
+    switch (sort) {
+      case CollectionSort.NAME_ASC:
+        return SQL`ORDER BY items.name ASC`
+      case CollectionSort.NAME_DESC:
+        return SQL`ORDER BY items.name DESC`
+      case CollectionSort.CREATED_AT_DESC:
+        return SQL`ORDER BY items.created_at DESC`
+      case CollectionSort.CREATED_AT_ASC:
+        return SQL`ORDER BY items.created_at ASC`
+      case CollectionSort.UPDATED_AT_ASC:
+        return SQL`ORDER BY items.updated_at ASC`
+      case CollectionSort.UPDATED_AT_DESC:
+        return SQL`ORDER BY items.updated_at DESC`
+
+      default:
+        return SQL`ORDER BY items.created_at ASC`
+    }
   }
 
   static async findByCollectionIdAndStatus(
     collectionId: string,
     options: ItemQueryOptions,
     limit: number = DEFAULT_LIMIT,
-    offset: number = 0
+    offset: number = 0,
+    sort: CollectionSort = CollectionSort.CREATED_AT_ASC
   ) {
     const { status, synced } = options
     return await this.query<ItemWithTotalCount>(
@@ -195,7 +219,8 @@ export class Item extends Model<ItemAttributes> {
           synced,
         },
         limit,
-        offset
+        offset,
+        sort
       )
     )
   }
@@ -206,7 +231,8 @@ export const ItemQueries = Object.freeze({
     collectionIds: string[],
     options: ItemQueryOptions,
     limit: number = DEFAULT_LIMIT,
-    offset: number = 0
+    offset: number = 0,
+    sort: CollectionSort = CollectionSort.CREATED_AT_ASC
   ) => {
     const { status, synced } = options
     return SQL`
@@ -245,7 +271,7 @@ export const ItemQueries = Object.freeze({
               }
             ORDER BY items.id
           ) items
-        ORDER BY items.created_at ASC
+        ${SQL`${Item.getOrderByStatement(sort)}`}
         LIMIT ${limit}
         OFFSET ${offset}
     `

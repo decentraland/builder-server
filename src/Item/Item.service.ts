@@ -3,6 +3,7 @@ import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
   CollectionAttributes,
+  CollectionSort,
   ThirdPartyCollectionAttributes,
 } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
@@ -194,13 +195,14 @@ export class ItemService {
       synced?: boolean
       limit?: number
       offset?: number
+      sort?: CollectionSort
     }
   ): Promise<{
     collection: CollectionAttributes
     items: FullItem[]
     totalItems: number
   }> {
-    const { synced, status, limit, offset } = filters
+    const { synced, status, limit, offset, sort } = filters
     const dbCollection = await this.collectionService.getDBCollection(
       collectionId
     )
@@ -214,9 +216,10 @@ export class ItemService {
               status: CurationStatus.PENDING,
             },
             limit,
-            offset
+            offset,
+            sort
           )
-        : await Item.findByCollectionIds([collectionId], synced, limit, offset)
+        : await Item.findByCollectionIds([collectionId], synced, limit, offset, sort)
 
     const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
     const dbItems = dbItemsWithCount.map((dbItemWithCount) =>

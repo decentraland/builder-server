@@ -61,18 +61,58 @@ describe('decodeAuthChain', () => {
       })
 
       describe('and the verify method does not throw an error', () => {
-        beforeEach(() => {
-          ;(verify as jest.Mock).mockReturnValue(validAddress)
+        describe('and the auth metadata is not defined', () => {
+          beforeEach(() => {
+            ;(verify as jest.Mock).mockReturnValue(validAddress)
+          })
+
+          afterEach(() => {
+            ;(verify as jest.Mock).mockRestore()
+          })
+
+          it('should return the eth address without throwing an error', async () => {
+            const result = await decodeAuthChain(mockRequest)
+            expect(result).toBe(validAddress)
+            await expect(decodeAuthChain(mockRequest)).resolves.not.toThrow()
+          })
         })
 
-        afterEach(() => {
-          ;(verify as jest.Mock).mockRestore()
-        })
+        describe('and the auth metadata is defined', () => {
+          describe('and the signer is decentraland-kernel-scene', () => {
+            beforeEach(() => {
+              ;(verify as jest.Mock).mockReturnValue({
+                authMetadata: { signer: 'decentraland-kernel-scene' },
+              })
+            })
 
-        it('should return the eth address without throwing an error', async () => {
-          const result = await decodeAuthChain(mockRequest)
-          expect(result).toBe(validAddress)
-          await expect(decodeAuthChain(mockRequest)).resolves.not.toThrow()
+            afterEach(() => {
+              ;(verify as jest.Mock).mockRestore()
+            })
+
+            it('should throw an error with the invalid signature message', async () => {
+              await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
+                'Invalid signature'
+              )
+            })
+          })
+
+          describe('and the signer is not decentraland-kernel-scene', () => {
+            beforeEach(() => {
+              ;(verify as jest.Mock).mockReturnValue({
+                authMetadata: { signer: 'another signer' },
+              })
+            })
+
+            afterEach(() => {
+              ;(verify as jest.Mock).mockRestore()
+            })
+
+            it('should return the eth address without throwing an error', async () => {
+              const result = await decodeAuthChain(mockRequest)
+              expect(result).toBe(validAddress)
+              await expect(decodeAuthChain(mockRequest)).resolves.not.toThrow()
+            })
+          })
         })
       })
 

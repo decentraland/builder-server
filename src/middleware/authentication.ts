@@ -75,10 +75,23 @@ export async function decodeAuthChain(req: Request): Promise<string> {
       errorMessage = MISSING_ETH_ADDRESS_ERROR
     } else {
       try {
-        await verify(req.method, `/${API_VERSION}${req.path}`, req.headers, {
-          fetcher: peerAPI.signatureFetcher,
-          expiration: 1000 * 60 * 30, // 30 minutes
-        })
+        const data = await verify(
+          req.method,
+          `/${API_VERSION}${req.path}`,
+          req.headers,
+          {
+            fetcher: peerAPI.signatureFetcher,
+            expiration: 1000 * 60 * 30, // 30 minutes
+          }
+        )
+        if (
+          data.authMetadata &&
+          typeof data.authMetadata === 'object' &&
+          'signer' in data.authMetadata &&
+          data.authMetadata.signer === 'decentraland-kernel-scene'
+        ) {
+          errorMessage = 'Invalid signature'
+        }
       } catch (error) {
         errorMessage = isErrorWithMessage(error)
           ? `"verify" method failed with error: ${error.message}`

@@ -32,7 +32,7 @@
     "@apollo/client": "^3.3.9",
     "@dcl/crypto": "^3.0.1",
     "@dcl/hashing": "^1.1.0",
-    "@dcl/platform-crypto-middleware": "^1.0.2",
+    "@dcl/platform-crypto-middleware": "^1.1.0",
     "@dcl/schemas": "^11.5.0",
     "@ethersproject/solidity": "^5.7.0",
     "@types/escape-html": "0.0.20",

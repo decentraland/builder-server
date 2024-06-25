@@ -84,6 +84,7 @@ export async function decodeAuthChain(req: Request): Promise<string> {
             expiration: 1000 * 60 * 30, // 30 minutes
           }
         )
+
         if (
           data.authMetadata &&
           typeof data.authMetadata === 'object' &&

@@ -22,7 +22,11 @@ describe('ThirdParty router', () => {
   beforeEach(() => {
     let metadata = {
       type: ThirdPartyMetadataType.THIRD_PARTY_V1,
-      thirdParty: { name: 'a name', description: 'a description' },
+      thirdParty: {
+        name: 'a name',
+        description: 'a description',
+        contracts: [{ network: 'amoy', address: '0x0' }],
+      },
     }
     fragments = [
       {

@@ -4,7 +4,7 @@ export const collectionSchema = Object.freeze({
   type: 'object',
   properties: {
     id: { type: 'string', format: 'uuid' },
-    urn: { type: ['string', 'null'], pattern: matchers.urn },
+    urn: { type: ['string', 'null'], pattern: matchers.collectionUrn },
     name: { type: 'string', maxLength: 42 },
     eth_address: { type: 'string' },
     salt: { type: ['string', 'null'] },

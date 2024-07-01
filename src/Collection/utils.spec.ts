@@ -19,14 +19,14 @@ describe('when decoding the TP collection URN', () => {
   const collectionURNSuffix = 'a-urn-suffix'
   let fullUrn: string
 
-  describe('when the URN is not a valid TP URN', () => {
+  describe('when the URN is not a valid item URN', () => {
     beforeEach(() => {
       fullUrn = `an-invalid-urn`
     })
 
-    it('should throw indicating that the URN is not TP compliant', () => {
+    it('should throw indicating that the URN is not item compliant', () => {
       expect(() => decodeTPCollectionURN(fullUrn)).toThrow(
-        'The given collection URN is not Third Party compliant'
+        'The given item URN is not item compliant'
       )
     })
   })

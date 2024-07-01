@@ -9,5 +9,6 @@ export function toThirdParty(fragment: ThirdPartyFragment): ThirdParty {
     ...utils.omit(fragment, ['metadata']),
     name: thirdParty?.name || '',
     description: thirdParty?.description || '',
+    contracts: thirdParty?.contracts || [],
   }
 }

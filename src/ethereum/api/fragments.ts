@@ -59,6 +59,10 @@ export const thirdPartyFragment = () => gql`
       thirdParty {
         name
         description
+        contracts {
+          address
+          network
+        }
       }
     }
   }
@@ -190,9 +194,18 @@ export type ThirdPartyItemFragment = {
   }
 }
 
+export type LinkedContract = {
+  network: string
+  address: string
+}
+
 export type ThirdPartyMetadata = {
   type: ThirdPartyMetadataType
-  thirdParty: { name: string; description: string } | null
+  thirdParty: {
+    name: string
+    description: string
+    contracts: LinkedContract[]
+  } | null
 }
 
 type ThirdPartyItemMetadata = {

@@ -12,7 +12,7 @@ import { wearableSchema } from './wearable/types'
 const baseItemSchema = Object.freeze({
   properties: {
     id: { type: 'string', format: 'uuid' },
-    urn: { type: ['string', 'null'], pattern: matchers.urn },
+    urn: { type: ['string', 'null'], pattern: matchers.itemUrn },
     name: { type: 'string', maxLength: 32, pattern: '^[^:]*$' },
     description: {
       type: ['string', 'null'],

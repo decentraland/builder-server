@@ -141,7 +141,7 @@ export function hasTPCollectionURN(collection: FullCollection): boolean {
 export function decodeTPCollectionURN(
   urn: string
 ): { third_party_id: string; network: string; urn_suffix: string } {
-  const matches = new RegExp(matchers.itemUrn).exec(urn)
+  const matches = new RegExp(matchers.collectionUrn).exec(urn)
   if (!matches || !matches.groups) {
     throw new Error('The given item URN is not item compliant')
   }

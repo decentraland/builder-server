@@ -20,6 +20,7 @@ describe('toThirdParty', () => {
           thirdParty: {
             name: 'a name',
             description: 'some description',
+            contracts: [{ network: 'amoy', address: '0x0' }],
           },
         },
       }
@@ -35,6 +36,7 @@ describe('toThirdParty', () => {
         maxItems: fragment.maxItems,
         name: name,
         description: description,
+        contracts: [{ network: 'amoy', address: '0x0' }],
       }
       expect(toThirdParty(fragment)).toEqual(thirdParty)
     })
@@ -64,6 +66,7 @@ describe('toThirdParty', () => {
         maxItems: fragment.maxItems,
         name: '',
         description: '',
+        contracts: [],
       }
       expect(toThirdParty(fragment)).toEqual(thirdParty)
     })

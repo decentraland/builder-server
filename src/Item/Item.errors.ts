@@ -105,7 +105,13 @@ export class InvalidItemURNError extends Error {
 }
 
 export class RequiresMappingsError extends Error {
-  constructor() {
+  constructor(public id: string) {
     super('The item requires mappings.')
+  }
+}
+
+export class MappingNotAllowedError extends Error {
+  constructor(public id: string) {
+    super('The item does not allow mappings.')
   }
 }

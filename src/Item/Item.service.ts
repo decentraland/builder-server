@@ -19,6 +19,7 @@ import {
   decodeThirdPartyItemURN,
   getDecentralandItemURN,
   isTPCollection,
+  isTPV2ItemURN,
 } from '../utils/urn'
 import { calculateItemContentHash } from './hashes'
 import {
@@ -35,6 +36,8 @@ import {
   URNAlreadyInUseError,
   ThirdPartyItemInsertByURNError,
   MaximunAmountOfTagsReachedError,
+  RequiresMappingsError,
+  MappingNotAllowedError,
 } from './Item.errors'
 import { Item, MAX_TAGS_LENGTH } from './Item.model'
 import {
@@ -712,6 +715,12 @@ export class ItemService {
 
     if (item.urn === null) {
       throw new InvalidItemURNError()
+    }
+
+    if (isTPV2ItemURN(item.urn) && item.mappings === null) {
+      throw new RequiresMappingsError(item.id)
+    } else if (!isTPV2ItemURN(item.urn) && item.mappings) {
+      throw new MappingNotAllowedError(item.id)
     }
 
     // Check if the collection being used in this update or insert process is accessible by the user

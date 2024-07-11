@@ -456,6 +456,7 @@ export class ItemRouter extends Router {
         itemJSON,
         eth_address
       )
+
       return upsertedItem
     } catch (error) {
       if (error instanceof ThirdPartyItemInsertByURNError) {

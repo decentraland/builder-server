@@ -1,4 +1,4 @@
-import { decodeThirdPartyItemURN } from './urn'
+import { decodeThirdPartyItemURN, URNType } from './urn'
 
 describe('when decoding the an item URN', () => {
   let urn: string
@@ -43,6 +43,7 @@ describe('when decoding the an item URN', () => {
 
     it('should match the third party name, the network, the collection id and the item id', () => {
       const {
+        type,
         third_party_id,
         network: thirdPartyNetwork,
         collection_urn_suffix,
@@ -52,6 +53,7 @@ describe('when decoding the an item URN', () => {
       expect(
         `urn:decentraland:matic:collections-thirdparty:${thirdPartyId}`
       ).toEqual(third_party_id)
+      expect(type).toEqual(URNType.COLLECTIONS_THIRDPARTY)
       expect(thirdPartyNetwork).toEqual(network)
       expect(collection_urn_suffix).toEqual(collectionId)
       expect(item_urn_suffix).toEqual(tokenId)
@@ -74,6 +76,7 @@ describe('when decoding the an item URN', () => {
 
     it('should match the third party name, the network, the linked collection network, the linked collection address, the collection id and the item id', () => {
       const {
+        type,
         third_party_id,
         network,
         collection_urn_suffix,
@@ -83,6 +86,7 @@ describe('when decoding the an item URN', () => {
       expect(
         `urn:decentraland:matic:collections-linked-wearables:${thirdPartyId}`
       ).toEqual(third_party_id)
+      expect(type).toEqual(URNType.COLLECTIONS_THIRDPARTY_V2)
       expect(network).toEqual(network)
       expect(collection_urn_suffix).toEqual(collectionId)
       expect(item_urn_suffix).toEqual(tokenId)

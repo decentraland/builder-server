@@ -103,3 +103,9 @@ export class InvalidItemURNError extends Error {
     super('The item URN is invalid.')
   }
 }
+
+export class RequiresMappingsError extends Error {
+  constructor() {
+    super('The item requires mappings.')
+  }
+}

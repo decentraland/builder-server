@@ -1,6 +1,7 @@
 import {
   BodyShape,
   EmoteCategory,
+  MappingType,
   Rarity,
   WearableCategory,
 } from '@dcl/schemas'
@@ -170,12 +171,41 @@ describe('when calculating the hashes of a TP item', () => {
     }
   })
 
-  it("should return the hash of the item's entity", () => {
-    return expect(
-      calculateItemContentHash(dbItem, dbCollection)
-    ).resolves.toEqual(
-      'fa107ac8f8a5444454532548b2d906569a275573a7158a6a170f0592f9368313'
-    )
+  describe('and the item is a third party v1 item', () => {
+    beforeEach(() => {
+      dbCollection.third_party_id =
+        'urn:decentraland:amoy:collections-thirdparty:dcl-tests'
+    })
+
+    it("should return the hash of the item's entity", () => {
+      return expect(
+        calculateItemContentHash(dbItem, dbCollection)
+      ).resolves.toEqual(
+        'fa107ac8f8a5444454532548b2d906569a275573a7158a6a170f0592f9368313'
+      )
+    })
+  })
+
+  describe('and the item is a third party v2 item', () => {
+    beforeEach(() => {
+      dbCollection.third_party_id =
+        'urn:decentraland:matic:collections-linked-wearables:dcl-tests'
+      dbCollection.urn_suffix =
+        'mainnet:0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C'
+      dbItem.mappings = [
+        {
+          type: MappingType.ANY,
+        },
+      ]
+    })
+
+    it("should return the hash of the item's entity", () => {
+      return expect(
+        calculateItemContentHash(dbItem, dbCollection)
+      ).resolves.toEqual(
+        '7733fd481132e580abff759ace6a490692c992d6c19938035e9322a960fec0a3'
+      )
+    })
   })
 })
 

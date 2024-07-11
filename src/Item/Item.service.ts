@@ -786,7 +786,13 @@ export class ItemService {
       ? await calculateItemContentHash(attributes, dbCollection)
       : null
 
-    const upsertedItem: ItemAttributes = await Item.upsert(attributes)
+    const upsertedItem: ItemAttributes = await Item.upsert({
+      ...attributes,
+      ...(attributes.mappings
+        ? // Stringify the JSON mappings to store it in the DB
+          ({ mappings: JSON.stringify(attributes.mappings) } as any)
+        : {}),
+    })
     if (dbItem && attributes.local_content_hash) {
       // Update the Item Curation content_hash
       await ItemCuration.update(
@@ -794,6 +800,14 @@ export class ItemService {
         { item_id: attributes.id, status: CurationStatus.PENDING }
       )
     }
+
+    // When inserting the array as string, the client returns a string, so we need to parse it back to an array
+    if (upsertedItem.mappings) {
+      upsertedItem.mappings = JSON.parse(
+        (upsertedItem.mappings as unknown) as string
+      )
+    }
+
     return Bridge.toFullItem(upsertedItem, dbCollection)
   }
 

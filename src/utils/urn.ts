@@ -50,6 +50,7 @@ export function getDecentralandItemURN(
 export function decodeThirdPartyItemURN(
   itemURN: string
 ): {
+  type: URNType
   third_party_id: string
   network: string
   collection_urn_suffix: string
@@ -68,6 +69,9 @@ export function decodeThirdPartyItemURN(
   }
 
   return {
+    type: isTpV1
+      ? URNType.COLLECTIONS_THIRDPARTY
+      : URNType.COLLECTIONS_THIRDPARTY_V2,
     third_party_id: `urn:decentraland:${matches.groups.protocol}:${
       matches.groups.type
     }:${
@@ -111,6 +115,11 @@ export function isTPCollection(
   collection: CollectionAttributes
 ): collection is ThirdPartyCollectionAttributes {
   return !!collection.third_party_id && !!collection.urn_suffix
+}
+
+export function isTPV2ItemURN(urn: string): boolean {
+  const { type } = decodeThirdPartyItemURN(urn)
+  return type === URNType.COLLECTIONS_THIRDPARTY_V2
 }
 
 /**

@@ -1,7 +1,7 @@
 import { MappingType } from '@dcl/schemas'
 import {
-  dbCollectionMock,
-  dbTPCollectionMock,
+  dbCollectionMock as baseDbCollectionMock,
+  dbTPCollectionMock as baseDbTPCollectionMock,
 } from '../../spec/mocks/collections'
 import {
   dbItemMock,
@@ -37,9 +37,14 @@ describe('Item Service', () => {
   let dbItem: ItemAttributes
   let dbTPItem: ItemAttributes
   let service: ItemService
+  let dbCollectionMock: CollectionAttributes
+  let dbTPCollectionMock: CollectionAttributes
+
   beforeEach(() => {
     service = new ItemService()
     jest.resetAllMocks()
+    dbCollectionMock = { ...baseDbCollectionMock }
+    dbTPCollectionMock = { ...baseDbTPCollectionMock }
   })
 
   describe('isOwnedOrManagedBy', () => {
@@ -210,7 +215,7 @@ describe('Item Service', () => {
           })
         })
 
-        describe.skip('and the item has less than the maximun amount of tags', () => {
+        describe('and the item has less than the maximum amount of tags', () => {
           beforeEach(() => {
             dbItem = {
               ...dbItemMock,
@@ -231,6 +236,9 @@ describe('Item Service', () => {
             jest
               .spyOn(CollectionService.prototype, 'getDBCollection')
               .mockResolvedValueOnce(dbCollectionMock)
+            jest
+              .spyOn(CollectionService.prototype, 'isDCLPublished')
+              .mockResolvedValueOnce(false)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
           })
           it('should not throw any error and return the inserted item', () => {

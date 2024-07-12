@@ -215,7 +215,7 @@ describe('Item Service', () => {
           })
         })
 
-        describe.only('and the item has less than the maximum amount of tags', () => {
+        describe('and the item has less than the maximum amount of tags', () => {
           beforeEach(() => {
             dbItem = {
               ...dbItemMock,
@@ -236,6 +236,9 @@ describe('Item Service', () => {
             jest
               .spyOn(CollectionService.prototype, 'getDBCollection')
               .mockResolvedValueOnce(dbCollectionMock)
+            jest
+              .spyOn(CollectionService.prototype, 'isDCLPublished')
+              .mockResolvedValueOnce(false)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
           })
           it('should not throw any error and return the inserted item', () => {

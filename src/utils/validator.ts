@@ -7,7 +7,10 @@ export function getValidator() {
     removeAdditional: true,
     discriminator: true,
   })
-  ajv.addKeyword('_fromLessThanOrEqualTo', RangeMapping._fromLessThanOrEqualTo)
+  ajv.addKeyword({
+    ...RangeMapping._fromLessThanOrEqualTo,
+    keyword: '_fromLessThanOrEqualTo',
+  })
   addFormats(ajv)
   return ajv
 }

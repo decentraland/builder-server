@@ -1,12 +1,12 @@
-import { Rarity } from '@dcl/schemas'
+import { Mapping, Rarity } from '@dcl/schemas'
 import { matchers } from '../common/matchers'
 import {
   animationMetricsSchema,
   modelMetricsSchema,
 } from '../Metrics/Metrics.schema'
 import { emoteSchema } from './emote/types'
-import { FullItem, ItemType } from './Item.types'
 import { wearableSchema } from './wearable/types'
+import { FullItem, ItemType } from './Item.types'
 
 // The schema is placed into this file to avoid a circular dependency.
 const baseItemSchema = Object.freeze({
@@ -41,6 +41,13 @@ const baseItemSchema = Object.freeze({
     },
     utility: { type: ['string', 'null'], maxLength: 64 },
     content_hash: { type: ['string', 'null'] },
+    mappings: {
+      type: 'array',
+      items: { ...Mapping.schema, discriminator: { propertyName: 'type' } },
+      minItems: 1,
+      maxItems: 1,
+      nullable: true,
+    },
   },
   additionalProperties: false,
   anyOf: [{ required: ['id'] }, { required: ['urn'] }],
@@ -55,7 +62,7 @@ const baseItemSchema = Object.freeze({
   ],
 })
 
-export const itemSchema = Object.freeze({
+const itemSchema = Object.freeze({
   type: 'object',
   discriminator: { propertyName: 'type' },
   required: ['type'],

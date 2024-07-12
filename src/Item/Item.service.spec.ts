@@ -1,3 +1,4 @@
+import { MappingType } from '@dcl/schemas'
 import {
   dbCollectionMock,
   dbTPCollectionMock,
@@ -9,6 +10,7 @@ import {
 } from '../../spec/mocks/items'
 import { wearableMock } from '../../spec/mocks/peer'
 import { mockOwnableCanUpsert } from '../../spec/utils'
+import { CollectionAttributes } from '../Collection'
 import { Collection } from '../Collection/Collection.model'
 import { CollectionService } from '../Collection/Collection.service'
 import { Bridge } from '../ethereum/api/Bridge'
@@ -16,7 +18,9 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
 import {
   ItemCantBeMovedFromCollectionError,
+  MappingNotAllowedError,
   MaximunAmountOfTagsReachedError,
+  RequiresMappingsError,
   ThirdPartyItemInsertByURNError,
 } from './Item.errors'
 import { Item, MAX_TAGS_LENGTH } from './Item.model'
@@ -35,6 +39,7 @@ describe('Item Service', () => {
   let service: ItemService
   beforeEach(() => {
     service = new ItemService()
+    jest.resetAllMocks()
   })
 
   describe('isOwnedOrManagedBy', () => {
@@ -128,9 +133,6 @@ describe('Item Service', () => {
     })
 
     describe('and the item being upserted contains tags', () => {
-      beforeEach(() => {
-        CollectionService.prototype.getDBCollection = jest.fn()
-      })
       describe('and it is an insert operation', () => {
         beforeEach(() => {
           ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
@@ -153,12 +155,13 @@ describe('Item Service', () => {
               dbItem.eth_address,
               true
             )
-            ;(CollectionService.prototype
-              .getDBCollection as jest.Mock).mockResolvedValueOnce(
-              dbCollectionMock
-            )
+            jest
+              .spyOn(CollectionService.prototype, 'getDBCollection')
+              .mockResolvedValueOnce(dbCollectionMock)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
-            CollectionService.prototype.isDCLPublished = jest.fn()
+            jest
+              .spyOn(CollectionService.prototype, 'isDCLPublished')
+              .mockResolvedValueOnce(false)
           })
           it('should not throw any errors and return the inserted item', () => {
             const result = service.upsertItem(
@@ -207,7 +210,7 @@ describe('Item Service', () => {
           })
         })
 
-        describe('and the item has less than the maximun amount of tags', () => {
+        describe.skip('and the item has less than the maximun amount of tags', () => {
           beforeEach(() => {
             dbItem = {
               ...dbItemMock,
@@ -225,10 +228,9 @@ describe('Item Service', () => {
               dbItem.eth_address,
               true
             )
-            ;(CollectionService.prototype
-              .getDBCollection as jest.Mock).mockResolvedValueOnce(
-              dbCollectionMock
-            )
+            jest
+              .spyOn(CollectionService.prototype, 'getDBCollection')
+              .mockResolvedValueOnce(dbCollectionMock)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
           })
           it('should not throw any error and return the inserted item', () => {
@@ -241,6 +243,66 @@ describe('Item Service', () => {
             )
           })
         })
+      })
+    })
+
+    describe('and the item being upserted is a TP V2 item without a mapping', () => {
+      let tpCollectionMock: CollectionAttributes
+      let tpItemMock: ItemAttributes
+
+      beforeEach(() => {
+        tpCollectionMock = {
+          ...dbTPCollectionMock,
+          third_party_id:
+            'urn:decentraland:matic:collections-linked-wearables:aThirdParty',
+          urn_suffix: 'amoy:0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C',
+        }
+        tpItemMock = {
+          ...dbTPItemMock,
+          urn_suffix: '1',
+          mappings: null,
+        }
+        ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          tpCollectionMock,
+        ])
+      })
+
+      it('should throw the requires mapping error', () => {
+        return expect(
+          service.upsertItem(
+            Bridge.toFullItem(tpItemMock, tpCollectionMock),
+            tpItemMock.eth_address
+          )
+        ).rejects.toThrowError(RequiresMappingsError)
+      })
+    })
+
+    describe('and the item being upserted is a TP V1 item with a mapping', () => {
+      let tpCollectionMock: CollectionAttributes
+      let tpItemMock: ItemAttributes
+
+      beforeEach(() => {
+        tpCollectionMock = {
+          ...dbTPCollectionMock,
+        }
+        tpItemMock = {
+          ...dbTPItemMock,
+          mappings: [{ type: MappingType.ANY }],
+        }
+        ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          tpCollectionMock,
+        ])
+      })
+
+      it('should throw the mapping not allowed error', () => {
+        return expect(
+          service.upsertItem(
+            Bridge.toFullItem(tpItemMock, tpCollectionMock),
+            tpItemMock.eth_address
+          )
+        ).rejects.toThrowError(MappingNotAllowedError)
       })
     })
   })

@@ -8,7 +8,11 @@ import {
 } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
-import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
+import {
+  getDecentralandItemURN,
+  isTPCollection,
+  isTPV2ItemURN,
+} from '../utils/urn'
 import { ItemAttributes, ItemType } from './Item.types'
 import { buildTPItemURN, isTPItem, VIDEO_PATH } from './utils'
 
@@ -49,7 +53,7 @@ function buildStandardWearableEntityMetadata(
       tags: item.data.tags,
       category: item.data.category!,
       representations: item.data.representations,
-      blockVrmExport: item.data.blockVrmExport
+      blockVrmExport: item.data.blockVrmExport,
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
@@ -96,12 +100,14 @@ function buildTPWearableEntityMetadata(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): Omit<Wearable, 'merkleProof'> & { content: ThirdPartyProps['content'] } {
+  const id = buildTPItemURN(
+    collection.third_party_id!,
+    collection.urn_suffix!,
+    item.urn_suffix!
+  )
+
   return {
-    id: buildTPItemURN(
-      collection.third_party_id!,
-      collection.urn_suffix!,
-      item.urn_suffix!
-    ),
+    id,
     name: item.name,
     description: item.description,
     i18n: [{ code: Locale.EN, text: item.name }],
@@ -112,12 +118,13 @@ function buildTPWearableEntityMetadata(
       tags: item.data.tags,
       category: item.data.category!,
       representations: item.data.representations,
-      blockVrmExport: item.data.blockVrmExport
+      blockVrmExport: item.data.blockVrmExport,
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
     metrics: item.metrics,
     content: item.contents,
+    ...(isTPV2ItemURN(id) ? { mappings: item.mappings } : {}),
   }
 }
 

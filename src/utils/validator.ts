@@ -1,8 +1,16 @@
 import Ajv from 'ajv'
+import { RangeMapping } from '@dcl/schemas'
 import addFormats from 'ajv-formats'
 
 export function getValidator() {
-  const ajv = new Ajv({ removeAdditional: true, discriminator: true })
+  const ajv = new Ajv({
+    removeAdditional: true,
+    discriminator: true,
+  })
+  ajv.addKeyword({
+    ...RangeMapping._fromLessThanOrEqualTo,
+    keyword: '_fromLessThanOrEqualTo',
+  })
   addFormats(ajv)
   return ajv
 }

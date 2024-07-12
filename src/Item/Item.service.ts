@@ -19,6 +19,7 @@ import {
   decodeThirdPartyItemURN,
   getDecentralandItemURN,
   isTPCollection,
+  isTPV2ItemURN,
 } from '../utils/urn'
 import { calculateItemContentHash } from './hashes'
 import {
@@ -35,6 +36,8 @@ import {
   URNAlreadyInUseError,
   ThirdPartyItemInsertByURNError,
   MaximunAmountOfTagsReachedError,
+  RequiresMappingsError,
+  MappingNotAllowedError,
 } from './Item.errors'
 import { Item, MAX_TAGS_LENGTH } from './Item.model'
 import {
@@ -714,6 +717,12 @@ export class ItemService {
       throw new InvalidItemURNError()
     }
 
+    if (isTPV2ItemURN(item.urn) && item.mappings === null) {
+      throw new RequiresMappingsError(item.id)
+    } else if (!isTPV2ItemURN(item.urn) && item.mappings) {
+      throw new MappingNotAllowedError(item.id)
+    }
+
     // Check if the collection being used in this update or insert process is accessible by the user
     if (dbCollection) {
       if (
@@ -786,7 +795,13 @@ export class ItemService {
       ? await calculateItemContentHash(attributes, dbCollection)
       : null
 
-    const upsertedItem: ItemAttributes = await Item.upsert(attributes)
+    const upsertedItem: ItemAttributes = await Item.upsert({
+      ...attributes,
+      ...(attributes.mappings
+        ? // Stringify the JSON mappings to store it in the DB
+          ({ mappings: JSON.stringify(attributes.mappings) } as any)
+        : {}),
+    })
     if (dbItem && attributes.local_content_hash) {
       // Update the Item Curation content_hash
       await ItemCuration.update(
@@ -794,6 +809,14 @@ export class ItemService {
         { item_id: attributes.id, status: CurationStatus.PENDING }
       )
     }
+
+    // When inserting the array as string, the client returns a string, so we need to parse it back to an array
+    if (upsertedItem.mappings) {
+      upsertedItem.mappings = JSON.parse(
+        (upsertedItem.mappings as unknown) as string
+      )
+    }
+
     return Bridge.toFullItem(upsertedItem, dbCollection)
   }
 

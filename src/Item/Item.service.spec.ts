@@ -39,6 +39,7 @@ describe('Item Service', () => {
   let service: ItemService
   beforeEach(() => {
     service = new ItemService()
+    jest.resetAllMocks()
   })
 
   describe('isOwnedOrManagedBy', () => {
@@ -132,9 +133,6 @@ describe('Item Service', () => {
     })
 
     describe('and the item being upserted contains tags', () => {
-      beforeEach(() => {
-        CollectionService.prototype.getDBCollection = jest.fn()
-      })
       describe('and it is an insert operation', () => {
         beforeEach(() => {
           ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
@@ -157,12 +155,13 @@ describe('Item Service', () => {
               dbItem.eth_address,
               true
             )
-            ;(CollectionService.prototype
-              .getDBCollection as jest.Mock).mockResolvedValueOnce(
-              dbCollectionMock
-            )
+            jest
+              .spyOn(CollectionService.prototype, 'getDBCollection')
+              .mockResolvedValueOnce(dbCollectionMock)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
-            CollectionService.prototype.isDCLPublished = jest.fn()
+            jest
+              .spyOn(CollectionService.prototype, 'isDCLPublished')
+              .mockResolvedValueOnce(false)
           })
           it('should not throw any errors and return the inserted item', () => {
             const result = service.upsertItem(
@@ -229,10 +228,9 @@ describe('Item Service', () => {
               dbItem.eth_address,
               true
             )
-            ;(CollectionService.prototype
-              .getDBCollection as jest.Mock).mockResolvedValueOnce(
-              dbCollectionMock
-            )
+            jest
+              .spyOn(CollectionService.prototype, 'getDBCollection')
+              .mockResolvedValueOnce(dbCollectionMock)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
           })
           it('should not throw any error and return the inserted item', () => {

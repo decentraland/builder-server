@@ -7,36 +7,13 @@ import { matchers } from '../common/matchers'
 import { getCurrentNetworkURNProtocol } from '../ethereum/utils'
 import { ItemAttributes } from '../Item/Item.types'
 
-// const tpItemURNRegex = new RegExp(
-//   `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot}):(${matchers.urnSlot})$`
-// )
+const tpItemURNRegex = new RegExp(
+  `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot}):(${matchers.urnSlot})$`
+)
 
-// export const tpCollectionURNRegex = new RegExp(
-//   `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot})$`
-// )
-
-export enum URNProtocol {
-  MAINNET = 'mainnet',
-  GOERLI = 'goerli',
-  SEPOLIA = 'sepolia',
-  MATIC = 'matic',
-  MUMBAI = 'mumbai',
-  AMOY = 'amoy',
-  OFF_CHAIN = 'off-chain',
-}
-export enum LinkedContractProtocol {
-  MAINNET = 'mainnet',
-  SEPOLIA = 'sepolia',
-  MATIC = 'matic',
-  AMOY = 'amoy',
-}
-export enum URNType {
-  BASE_AVATARS = 'base-avatars',
-  COLLECTIONS_V2 = 'collections-v2',
-  COLLECTIONS_THIRDPARTY = 'collections-thirdparty',
-  COLLECTIONS_THIRDPARTY_V2 = 'collections-linked-wearables',
-  ENTITY = 'entity',
-}
+export const tpCollectionURNRegex = new RegExp(
+  `^(${matchers.baseURN}:${matchers.tpIdentifier}):(${matchers.urnSlot})$`
+)
 
 export function getDecentralandItemURN(
   item: ItemAttributes,
@@ -50,52 +27,26 @@ export function getDecentralandItemURN(
 export function decodeThirdPartyItemURN(
   itemURN: string
 ): {
-  type: URNType
   third_party_id: string
   network: string
   collection_urn_suffix: string
   item_urn_suffix: string
 } {
-  const matches = new RegExp(matchers.itemUrn).exec(itemURN)
-  if (!matches || !matches.groups) {
-    throw new Error('The given item URN is not item compliant')
-  }
-
-  const isTpV1 = matches.groups.type === URNType.COLLECTIONS_THIRDPARTY
-  const isTpV2 = matches.groups.type === URNType.COLLECTIONS_THIRDPARTY_V2
-
-  if (!isTpV1 && !isTpV2) {
-    throw new Error('The given item URN is not Third Party compliant')
+  const matches = tpItemURNRegex.exec(itemURN)
+  if (matches === null) {
+    throw new Error('The given item URN is not TP compliant')
   }
 
   return {
-    type: isTpV1
-      ? URNType.COLLECTIONS_THIRDPARTY
-      : URNType.COLLECTIONS_THIRDPARTY_V2,
-    third_party_id: `urn:decentraland:${matches.groups.protocol}:${
-      matches.groups.type
-    }:${
-      isTpV1
-        ? matches.groups.thirdPartyName
-        : matches.groups.thirdPartyLinkedCollectionName
-    }`,
-    network: matches.groups.protocol,
-    collection_urn_suffix: isTpV1
-      ? matches.groups.thirdPartyCollectionId
-      : matches.groups.linkedCollectionNetwork +
-        ':' +
-        matches.groups.linkedCollectionContractAddress,
-    item_urn_suffix: matches.groups.thirdPartyTokenId,
+    third_party_id: matches[1],
+    network: matches[2],
+    collection_urn_suffix: matches[3],
+    item_urn_suffix: matches[4],
   }
 }
 
 export function isTPItemURN(itemURN: string): boolean {
-  try {
-    decodeThirdPartyItemURN(itemURN)
-    return true
-  } catch (_) {
-    return false
-  }
+  return tpItemURNRegex.test(itemURN)
 }
 
 export function getDecentralandCollectionURN(
@@ -117,28 +68,14 @@ export function isTPCollection(
   return !!collection.third_party_id && !!collection.urn_suffix
 }
 
-export function isTPV2ItemURN(urn: string): boolean {
-  const { type } = decodeThirdPartyItemURN(urn)
-  return type === URNType.COLLECTIONS_THIRDPARTY_V2
-}
-
 /**
  * Checks if an URN belongs to a Decentraland Collection or to a
  * Third Party Collection.
  *
  * @param urn - The URN to be checked.
  */
-export function hasTPCollectionURN(collection: FullCollection): boolean {
-  if (!collection.urn) {
-    return false
-  }
-
-  try {
-    decodeTPCollectionURN(collection.urn)
-    return true
-  } catch (_) {
-    return false
-  }
+export function hasTPCollectionURN(collection: FullCollection) {
+  return collection.urn && tpCollectionURNRegex.test(collection.urn)
 }
 
 /**
@@ -150,31 +87,14 @@ export function hasTPCollectionURN(collection: FullCollection): boolean {
 export function decodeTPCollectionURN(
   urn: string
 ): { third_party_id: string; network: string; urn_suffix: string } {
-  const matches = new RegExp(matchers.collectionUrn).exec(urn)
-  if (!matches || !matches.groups) {
-    throw new Error('The given item URN is not item compliant')
-  }
-
-  const isTpV1 = matches.groups.type === URNType.COLLECTIONS_THIRDPARTY
-  const isTpV2 = matches.groups.type === URNType.COLLECTIONS_THIRDPARTY_V2
-
-  if (!isTpV1 && !isTpV2) {
-    throw new Error('The given item URN is not Third Party compliant')
+  const matches = tpCollectionURNRegex.exec(urn)
+  if (matches === null) {
+    throw new Error('The given collection URN is not Third Party compliant')
   }
 
   return {
-    third_party_id: `urn:decentraland:${matches.groups.protocol}:${
-      matches.groups.type
-    }:${
-      isTpV1
-        ? matches.groups.thirdPartyName
-        : matches.groups.thirdPartyLinkedCollectionName
-    }`,
-    network: matches.groups.protocol,
-    urn_suffix: isTpV1
-      ? matches.groups.thirdPartyCollectionId
-      : matches.groups.linkedCollectionNetwork +
-        ':' +
-        matches.groups.linkedCollectionContractAddress,
+    third_party_id: matches[1],
+    network: matches[2],
+    urn_suffix: matches[3],
   }
 }

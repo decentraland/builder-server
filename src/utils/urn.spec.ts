@@ -10,7 +10,7 @@ describe('when decoding the an item URN', () => {
 
     it('should throw indicating that the URN is not item compliant', () => {
       expect(() => decodeThirdPartyItemURN(urn)).toThrow(
-        'The given item URN is not item compliant'
+        'The given item URN is not TP compliant'
       )
     })
   })
@@ -22,7 +22,7 @@ describe('when decoding the an item URN', () => {
 
     it('should throw indicating that the URN is not Third Party compliant', () => {
       expect(() => decodeThirdPartyItemURN(urn)).toThrow(
-        'The given item URN is not Third Party compliant'
+        'The given item URN is not TP compliant'
       )
     })
   })

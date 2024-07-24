@@ -171,40 +171,46 @@ describe('when calculating the hashes of a TP item', () => {
     }
   })
 
-  describe('and the item is a third party v1 item', () => {
+  describe('and the item is a third party item', () => {
     beforeEach(() => {
       dbCollection.third_party_id =
         'urn:decentraland:amoy:collections-thirdparty:dcl-tests'
     })
 
-    it("should return the hash of the item's entity", () => {
-      return expect(
-        calculateItemContentHash(dbItem, dbCollection)
-      ).resolves.toEqual(
-        'fa107ac8f8a5444454532548b2d906569a275573a7158a6a170f0592f9368313'
-      )
-    })
-  })
+    describe('and the item has no mappings', () => {
+      beforeEach(() => {
+        dbItem.mappings = null
+      })
 
-  describe('and the item is a third party v2 item', () => {
-    beforeEach(() => {
-      dbCollection.third_party_id =
-        'urn:decentraland:matic:collections-linked-wearables:dcl-tests'
-      dbCollection.urn_suffix =
-        'mainnet:0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C'
-      dbItem.mappings = [
-        {
-          type: MappingType.ANY,
-        },
-      ]
+      it("should return the hash of the item's entity", () => {
+        return expect(
+          calculateItemContentHash(dbItem, dbCollection)
+        ).resolves.toEqual(
+          'fa107ac8f8a5444454532548b2d906569a275573a7158a6a170f0592f9368313'
+        )
+      })
     })
 
-    it("should return the hash of the item's entity", () => {
-      return expect(
-        calculateItemContentHash(dbItem, dbCollection)
-      ).resolves.toEqual(
-        '7733fd481132e580abff759ace6a490692c992d6c19938035e9322a960fec0a3'
-      )
+    describe('and the item has mappings', () => {
+      beforeEach(() => {
+        dbItem.mappings = {
+          amoy: {
+            '0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C': [
+              {
+                type: MappingType.ANY,
+              },
+            ],
+          },
+        }
+      })
+
+      it("should return the hash of the item's entity", () => {
+        return expect(
+          calculateItemContentHash(dbItem, dbCollection)
+        ).resolves.toEqual(
+          '80388e7d6601cf23253b74891e7bfe377bc75d5b7e58b23d6e42e5ab65a54daa'
+        )
+      })
     })
   })
 })

@@ -1167,7 +1167,7 @@ describe('Item router', () => {
               })
             })
 
-            describe.only('and the URN is not in use', () => {
+            describe('and the URN is not in use', () => {
               let resultingItem: ResultItem
 
               beforeEach(() => {
@@ -1178,7 +1178,11 @@ describe('Item router', () => {
                   })
                 )
                 itemToUpsert.mappings = {
-                  mainnet: { '0x0': [{ type: MappingType.ANY }] },
+                  mainnet: {
+                    '0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C': [
+                      { type: MappingType.ANY },
+                    ],
+                  },
                 }
                 const updatedItem = {
                   ...dbTPItem,
@@ -1187,7 +1191,7 @@ describe('Item router', () => {
                   eth_address: wallet.address,
                   mappings: itemToUpsert.mappings,
                   local_content_hash:
-                    'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
+                    '037a7a0cf5fa9bcd6b2afc9de8803a3601f50d69e2b0a1757016252f5f34a449',
                 }
                 mockThirdPartyURNExists(itemToUpsert.urn!, false)
                 resultingItem = {

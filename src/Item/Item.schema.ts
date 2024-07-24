@@ -44,7 +44,7 @@ const baseItemSchema = Object.freeze({
     },
     utility: { type: ['string', 'null'], maxLength: 64 },
     content_hash: { type: ['string', 'null'] },
-    mappings: { ...Mappings.schema, nullable: true },
+    mappings: { ...Mappings.schema, type: ['object', 'null'] },
   },
   additionalProperties: false,
   anyOf: [{ required: ['id'] }, { required: ['urn'] }],

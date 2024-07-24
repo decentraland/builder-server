@@ -675,6 +675,50 @@ describe('Item router', () => {
         })
       })
 
+      describe('and the item being upserted does not have a valid mapping', () => {
+        beforeEach(() => {
+          url = `/items/${dbTPItem.id}`
+          itemToUpsert = {
+            ...itemToUpsert,
+            mappings: {
+              amoy: {
+                '0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C': [
+                  {
+                    type: MappingType.ANY,
+                  },
+                  { type: MappingType.SINGLE, id: '1' },
+                ],
+              },
+            },
+          }
+          mockIsThirdPartyManager(wallet.address, true)
+        })
+
+        it('should respond with a 400 signaling that the mapping is invalid', () => {
+          return server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  {
+                    instancePath: '/item/mappings',
+                    keyword: '_isMappingsValid',
+                    message: 'must pass "_isMappingsValid" keyword validation',
+                    params: {},
+                    schemaPath:
+                      '#/properties/item/oneOf/0/properties/mappings/_isMappingsValid',
+                  },
+                ],
+                error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
+
       describe("and the item's urn is not valid", () => {
         beforeEach(() => {
           url = `/items/${dbTPItem.id}`

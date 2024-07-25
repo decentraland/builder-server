@@ -675,6 +675,50 @@ describe('Item router', () => {
         })
       })
 
+      describe('and the item being upserted does not have a valid mapping', () => {
+        beforeEach(() => {
+          url = `/items/${dbTPItem.id}`
+          itemToUpsert = {
+            ...itemToUpsert,
+            mappings: {
+              amoy: {
+                '0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C': [
+                  {
+                    type: MappingType.ANY,
+                  },
+                  { type: MappingType.SINGLE, id: '1' },
+                ],
+              },
+            },
+          }
+          mockIsThirdPartyManager(wallet.address, true)
+        })
+
+        it('should respond with a 400 signaling that the mapping is invalid', () => {
+          return server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.badRequest)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  {
+                    instancePath: '/item/mappings',
+                    keyword: '_isMappingsValid',
+                    message: 'must pass "_isMappingsValid" keyword validation',
+                    params: {},
+                    schemaPath:
+                      '#/properties/item/oneOf/0/properties/mappings/_isMappingsValid',
+                  },
+                ],
+                error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
+
       describe("and the item's urn is not valid", () => {
         beforeEach(() => {
           url = `/items/${dbTPItem.id}`
@@ -1142,28 +1186,6 @@ describe('Item router', () => {
               }
             })
 
-            describe('and the item has mappings', () => {
-              beforeEach(() => {
-                mockThirdPartyURNExists(itemToUpsert.urn!, false)
-                itemToUpsert.mappings = [{ type: MappingType.ANY }]
-              })
-
-              it('should respond with a 400 and a message signaling that the item does not allow mappings', () => {
-                return server
-                  .put(buildURL(url))
-                  .send({ item: itemToUpsert })
-                  .set(createAuthHeaders('put', url))
-                  .expect(STATUS_CODES.badRequest)
-                  .then((response: any) => {
-                    expect(response.body).toEqual({
-                      data: { id: itemToUpsert.id },
-                      error: 'The item does not allow mappings.',
-                      ok: false,
-                    })
-                  })
-              })
-            })
-
             describe('and the URN is already in use', () => {
               beforeEach(() => {
                 mockThirdPartyURNExists(itemToUpsert.urn!, true)
@@ -1199,13 +1221,21 @@ describe('Item router', () => {
                     blockchain_item_id: null,
                   })
                 )
+                itemToUpsert.mappings = {
+                  mainnet: {
+                    '0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C': [
+                      { type: MappingType.ANY },
+                    ],
+                  },
+                }
                 const updatedItem = {
                   ...dbTPItem,
                   urn_suffix: itemUrnSuffix,
                   collection_id: tpCollectionMock.id,
                   eth_address: wallet.address,
+                  mappings: itemToUpsert.mappings,
                   local_content_hash:
-                    'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
+                    '037a7a0cf5fa9bcd6b2afc9de8803a3601f50d69e2b0a1757016252f5f34a449',
                 }
                 mockThirdPartyURNExists(itemToUpsert.urn!, false)
                 resultingItem = {
@@ -1259,100 +1289,6 @@ describe('Item router', () => {
                   })
                 })
             })
-          })
-        })
-      })
-    })
-
-    describe('and the item is a third party v2 item', () => {
-      let itemUrnSuffix: string
-
-      beforeEach(() => {
-        itemUrnSuffix = '1'
-        url = `/items/${dbTPItem.id}`
-        dbTPItem = { ...dbTPItem, blockchain_item_id: null }
-        itemToUpsert = utils.omit(dbTPItem, ['created_at', 'updated_at'])
-        itemToUpsert.urn = buildTPItemURN(
-          'urn:decentraland:matic:collections-linked-wearables:aThirdParty',
-          'amoy:0x74c78f5A4ab22F01d5fd08455cf0Ff5C3367535C',
-          itemUrnSuffix
-        )
-      })
-
-      describe('and the item is being inserted', () => {
-        beforeEach(() => {
-          mockItem.findOne.mockResolvedValueOnce(undefined)
-          mockItem.findByURNSuffix.mockResolvedValueOnce(undefined)
-          mockCollection.findByIds.mockResolvedValueOnce([
-            { ...tpCollectionMock, item_count: 1 },
-          ])
-          mockIsThirdPartyManager(wallet.address, true)
-        })
-
-        describe('and the item does not contains a mapping', () => {
-          beforeEach(() => {
-            itemToUpsert.mappings = null
-          })
-
-          it('should respond with a 400 and a message signaling that the mapping is required', () => {
-            return server
-              .put(buildURL(url))
-              .send({ item: itemToUpsert })
-              .set(createAuthHeaders('put', url))
-              .expect(STATUS_CODES.badRequest)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  data: { id: itemToUpsert.id },
-                  error: 'The item requires mappings.',
-                  ok: false,
-                })
-              })
-          })
-        })
-
-        describe('and the inserting process is successful', () => {
-          beforeEach(() => {
-            itemToUpsert.mappings = [{ type: MappingType.ANY }]
-            mockItem.upsert.mockImplementation((createdItem) =>
-              Promise.resolve({
-                ...createdItem,
-                blockchain_item_id: null,
-              })
-            )
-            const updatedItem = {
-              ...dbTPItem,
-              urn_suffix: itemUrnSuffix,
-              mappings: itemToUpsert.mappings,
-              collection_id: tpCollectionMock.id,
-              eth_address: wallet.address,
-              local_content_hash:
-                'd193772da3213e696a074708e70ffc3ec6940471bbdf8ab6f0f4a9819a751d29',
-            }
-            mockThirdPartyURNExists(itemToUpsert.urn!, false)
-            resultingItem = {
-              ...toResultItem(
-                updatedItem,
-                undefined,
-                undefined,
-                tpCollectionMock
-              ),
-              updated_at: expect.stringMatching(isoDateStringMatcher),
-              created_at: expect.stringMatching(isoDateStringMatcher),
-            }
-          })
-
-          it('should respond with a 200, update the item and return the updated item', () => {
-            return server
-              .put(buildURL(url))
-              .send({ item: itemToUpsert })
-              .set(createAuthHeaders('put', url))
-              .expect(200)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  data: resultingItem,
-                  ok: true,
-                })
-              })
           })
         })
       })

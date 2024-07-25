@@ -1,4 +1,4 @@
-import { Mapping, Rarity } from '@dcl/schemas'
+import { Mappings, Mapping, Rarity } from '@dcl/schemas'
 import { matchers } from '../common/matchers'
 import {
   animationMetricsSchema,
@@ -8,11 +8,14 @@ import { emoteSchema } from './emote/types'
 import { wearableSchema } from './wearable/types'
 import { FullItem, ItemType } from './Item.types'
 
+// Monkey patch the schema to include the discriminator
+Mapping.schema.discriminator = { propertyName: 'type' }
+
 // The schema is placed into this file to avoid a circular dependency.
 const baseItemSchema = Object.freeze({
   properties: {
     id: { type: 'string', format: 'uuid' },
-    urn: { type: ['string', 'null'], pattern: matchers.itemUrn },
+    urn: { type: ['string', 'null'], pattern: matchers.urn },
     name: { type: 'string', maxLength: 32, pattern: '^[^:]*$' },
     description: {
       type: ['string', 'null'],
@@ -41,13 +44,7 @@ const baseItemSchema = Object.freeze({
     },
     utility: { type: ['string', 'null'], maxLength: 64 },
     content_hash: { type: ['string', 'null'] },
-    mappings: {
-      type: 'array',
-      items: { ...Mapping.schema, discriminator: { propertyName: 'type' } },
-      minItems: 1,
-      maxItems: 1,
-      nullable: true,
-    },
+    mappings: { ...Mappings.schema, type: ['object', 'null'] },
   },
   additionalProperties: false,
   anyOf: [{ required: ['id'] }, { required: ['urn'] }],
@@ -62,7 +59,7 @@ const baseItemSchema = Object.freeze({
   ],
 })
 
-const itemSchema = Object.freeze({
+export const itemSchema = Object.freeze({
   type: 'object',
   discriminator: { propertyName: 'type' },
   required: ['type'],

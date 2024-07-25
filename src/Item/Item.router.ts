@@ -46,9 +46,7 @@ import {
   InconsistentItemError,
   InvalidItemURNError,
   ItemCantBeMovedFromCollectionError,
-  MappingNotAllowedError,
   NonExistentItemError,
-  RequiresMappingsError,
   ThirdPartyItemAlreadyPublishedError,
   ThirdPartyItemInsertByURNError,
   UnauthorizedToChangeToCollectionError,
@@ -517,18 +515,6 @@ export class ItemRouter extends Router {
         )
       } else if (error instanceof InvalidItemURNError) {
         throw new HTTPError(error.message, null, STATUS_CODES.badRequest)
-      } else if (error instanceof RequiresMappingsError) {
-        throw new HTTPError(
-          error.message,
-          { id: error.id },
-          STATUS_CODES.badRequest
-        )
-      } else if (error instanceof MappingNotAllowedError) {
-        throw new HTTPError(
-          error.message,
-          { id: error.id },
-          STATUS_CODES.badRequest
-        )
       }
 
       throw error

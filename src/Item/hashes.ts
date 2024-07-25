@@ -8,11 +8,7 @@ import {
 } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
-import {
-  getDecentralandItemURN,
-  isTPCollection,
-  isTPV2ItemURN,
-} from '../utils/urn'
+import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import { ItemAttributes, ItemType } from './Item.types'
 import { buildTPItemURN, isTPItem, VIDEO_PATH } from './utils'
 
@@ -124,7 +120,7 @@ function buildTPWearableEntityMetadata(
     thumbnail: THUMBNAIL_PATH,
     metrics: item.metrics,
     content: item.contents,
-    ...(isTPV2ItemURN(id) ? { mappings: item.mappings } : {}),
+    ...(item.mappings ? { mappings: item.mappings } : {}),
   }
 }
 

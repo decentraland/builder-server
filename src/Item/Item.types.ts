@@ -1,4 +1,4 @@
-import { Rarity, Mapping } from '@dcl/schemas'
+import { Mappings, Rarity } from '@dcl/schemas'
 import { ItemCurationAttributes } from '../Curation/ItemCuration'
 import { MetricsAttributes } from '../Metrics'
 import { Cheque } from '../SlotUsageCheque'
@@ -38,7 +38,7 @@ export type ItemAttributes<T = ItemType.WEARABLE> = {
   metrics: MetricsAttributes
   utility: string | null
   contents: ItemContents
-  mappings: Mapping[] | null
+  mappings: Mappings | null
   created_at: Date
   updated_at: Date
 }

@@ -786,8 +786,6 @@ export class ItemService {
       ? await calculateItemContentHash(attributes, dbCollection)
       : null
 
-    console.log('Inserting attributes', attributes.mappings)
-
     const upsertedItem: ItemAttributes = await Item.upsert({
       ...attributes,
       ...(attributes.mappings ? { mappings: attributes.mappings } : {}),

@@ -1,3 +1,4 @@
+import { ContractNetwork } from '@dcl/schemas'
 import { matchers } from '../common/matchers'
 
 export const collectionSchema = Object.freeze({
@@ -24,6 +25,10 @@ export const collectionSchema = Object.freeze({
     reviewed_at: { type: ['string', 'null'] },
     created_at: { type: 'string' },
     updated_at: { type: 'string' },
+    linkedContractAddress: { type: ['string', 'null'] },
+    linkedContractNetwork: {
+      enum: Object.values(ContractNetwork),
+    },
   },
   additionalProperties: false,
   required: [

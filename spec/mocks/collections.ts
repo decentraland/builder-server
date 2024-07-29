@@ -28,6 +28,8 @@ export const dbCollectionMock: CollectionAttributes = {
   lock: null,
   urn_suffix: null,
   third_party_id: null,
+  linked_contract_address: null,
+  linked_contract_network: null,
   reviewed_at: new Date(),
   created_at: new Date(),
   updated_at: new Date(),
@@ -40,8 +42,9 @@ export const dbTPCollectionMock: ThirdPartyCollectionAttributes = {
   eth_address: '',
   contract_address: null,
   urn_suffix: 'test-collection',
-  third_party_id:
-    'urn:decentraland:amoy:collections-thirdparty:dcl-tests',
+  linked_contract_address: '0x02b6bD2420cCADC38726BD34BB7f5c52B3F4F3ff',
+  linked_contract_network: 'mainnet',
+  third_party_id: 'urn:decentraland:amoy:collections-thirdparty:dcl-tests',
 }
 
 export const collectionFragmentMock: CollectionFragment = {

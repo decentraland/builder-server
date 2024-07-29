@@ -44,7 +44,20 @@ const baseItemSchema = Object.freeze({
     },
     utility: { type: ['string', 'null'], maxLength: 64 },
     content_hash: { type: ['string', 'null'] },
-    mappings: { ...Mappings.schema, type: ['object', 'null'] },
+    mappings: {
+      ...Mappings.schema,
+      type: ['object', 'null'],
+      properties: Object.fromEntries(
+        Object.entries(
+          Mappings.schema.properties
+        ).map(([key, value]: [string, any]) => [
+          key,
+          { ...value, maxProperties: 1 },
+        ])
+      ),
+      // Limit to one the number of linked networks
+      maxProperties: 1,
+    },
   },
   additionalProperties: false,
   anyOf: [{ required: ['id'] }, { required: ['urn'] }],

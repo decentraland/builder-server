@@ -43,7 +43,7 @@ export const dbTPCollectionMock: ThirdPartyCollectionAttributes = {
   contract_address: null,
   urn_suffix: 'test-collection',
   linked_contract_address: '0x02b6bD2420cCADC38726BD34BB7f5c52B3F4F3ff',
-  linked_contract_network: 'mainnet',
+  linked_contract_network: 'amoy',
   third_party_id: 'urn:decentraland:amoy:collections-thirdparty:dcl-tests',
 }
 

@@ -22,6 +22,8 @@ export type CollectionAttributes = {
   forum_id: number | null
   lock: Date | null
   reviewed_at: Date | null
+  linked_contract_address: string | null
+  linked_contract_network: string | null
   created_at: Date
   updated_at: Date
 }
@@ -29,6 +31,8 @@ export type CollectionAttributes = {
 export type ThirdPartyCollectionAttributes = CollectionAttributes & {
   third_party_id: string
   urn_suffix: string
+  linked_contract_address: string
+  linked_contract_network: string
 }
 
 export type FullCollection = Omit<
@@ -46,7 +50,7 @@ export type PublishCollectionResponse<T> = {
 
 export enum CollectionTypeFilter {
   STANDARD = 'standard',
-  THIRD_PARTY = 'third_party'
+  THIRD_PARTY = 'third_party',
 }
 
 export enum CollectionSort {
@@ -56,5 +60,5 @@ export enum CollectionSort {
   NAME_DESC = 'NAME_DESC',
   NAME_ASC = 'NAME_ASC',
   UPDATED_AT_DESC = 'UPDATED_AT_DESC',
-  UPDATED_AT_ASC = 'UPDATED_AT_ASC'
+  UPDATED_AT_ASC = 'UPDATED_AT_ASC',
 }

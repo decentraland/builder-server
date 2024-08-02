@@ -4,7 +4,6 @@ import { omit } from 'decentraland-commons/dist/utils'
 import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-// import { getValidator } from '../utils/validator'
 import { InvalidRequestError } from '../utils/errors'
 import {
   withModelAuthorization,
@@ -68,8 +67,6 @@ import {
   URNAlreadyInUseError,
   WrongCollectionError,
 } from './Collection.errors'
-
-// const validator = getValidator()
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
@@ -153,8 +150,8 @@ export class CollectionRouter extends Router {
     this.router.post(
       '/collections/:id/tos',
       withCors,
-      // withAuthentication,
-      // withCollectionExists,
+      withAuthentication,
+      withCollectionExists,
       withSchemaValidation(saveTOSSchema),
       server.handleRequest(this.saveTOS)
     )

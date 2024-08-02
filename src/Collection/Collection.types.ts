@@ -26,6 +26,11 @@ export type CollectionAttributes = {
   updated_at: Date
 }
 
+export enum TermsOfServiceEvent {
+  PUBLISH_COLLECTION = 'publish_collection_tos',
+  PUBLISH_THIRD_PARTY_ITEMS = 'publish_third_party_items_tos',
+}
+
 export type ThirdPartyCollectionAttributes = CollectionAttributes & {
   third_party_id: string
   urn_suffix: string
@@ -46,7 +51,7 @@ export type PublishCollectionResponse<T> = {
 
 export enum CollectionTypeFilter {
   STANDARD = 'standard',
-  THIRD_PARTY = 'third_party'
+  THIRD_PARTY = 'third_party',
 }
 
 export enum CollectionSort {
@@ -56,5 +61,5 @@ export enum CollectionSort {
   NAME_DESC = 'NAME_DESC',
   NAME_ASC = 'NAME_ASC',
   UPDATED_AT_DESC = 'UPDATED_AT_DESC',
-  UPDATED_AT_ASC = 'UPDATED_AT_ASC'
+  UPDATED_AT_ASC = 'UPDATED_AT_ASC',
 }

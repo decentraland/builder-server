@@ -1,5 +1,6 @@
 import { ContractNetwork } from '@dcl/schemas'
 import { matchers } from '../common/matchers'
+import { TermsOfServiceEvent } from './Collection.types'
 
 export const collectionSchema = Object.freeze({
   type: 'object',
@@ -59,8 +60,21 @@ export const saveTOSSchema = Object.freeze({
       type: 'string',
       pattern: `^${matchers.email}$`,
     },
-    collection_address: { type: 'string', pattern: `^${matchers.address}$` },
+    collection_address: { type: 'string' },
+    event: {
+      type: 'string',
+      enum: [
+        TermsOfServiceEvent.PUBLISH_COLLECTION,
+        TermsOfServiceEvent.PUBLISH_THIRD_PARTY_ITEMS,
+      ],
+    },
+    hashes: {
+      type: 'array',
+      items: { type: 'string' },
+      minItems: 1,
+      maxItems: 40000,
+    },
   },
+  required: ['email'],
   additionalProperties: false,
-  required: ['email', 'collection_address'],
 })

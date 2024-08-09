@@ -15,6 +15,7 @@ describe('toThirdParty', () => {
         root: 'aRoot',
         managers: ['0x1', '0x2'],
         maxItems: '1',
+        isApproved: true,
         metadata: {
           type: ThirdPartyMetadataType.THIRD_PARTY_V1,
           thirdParty: {
@@ -34,6 +35,7 @@ describe('toThirdParty', () => {
         root: fragment.root,
         managers: fragment.managers,
         maxItems: fragment.maxItems,
+        isApproved: true,
         name: name,
         description: description,
         contracts: [{ network: 'amoy', address: '0x0' }],
@@ -51,6 +53,7 @@ describe('toThirdParty', () => {
         root: 'aRoot',
         managers: ['0x2'],
         maxItems: '2',
+        isApproved: true,
         metadata: {
           type: ThirdPartyMetadataType.THIRD_PARTY_V1,
           thirdParty: null,
@@ -64,6 +67,7 @@ describe('toThirdParty', () => {
         root: fragment.root,
         managers: fragment.managers,
         maxItems: fragment.maxItems,
+        isApproved: fragment.isApproved,
         name: '',
         description: '',
         contracts: [],

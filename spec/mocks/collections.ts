@@ -64,6 +64,7 @@ export const thirdPartyFragmentMock: ThirdPartyFragment = {
   id: dbTPCollectionMock.third_party_id,
   root: 'aRoot',
   managers: [wallet.address],
+  isApproved: true,
   maxItems: '10',
   metadata: {
     type: ThirdPartyMetadataType.THIRD_PARTY_V1,

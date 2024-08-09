@@ -54,6 +54,7 @@ export const thirdPartyFragment = () => gql`
     root
     managers
     maxItems
+    isApproved
     metadata {
       type
       thirdParty {
@@ -168,6 +169,7 @@ export type CollectionFragment = {
 export type ThirdPartyFragment = {
   id: string
   root: string
+  isApproved: boolean
   managers: string[]
   maxItems: string
   metadata: ThirdPartyMetadata

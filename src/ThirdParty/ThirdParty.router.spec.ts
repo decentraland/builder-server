@@ -32,6 +32,7 @@ describe('ThirdParty router', () => {
       {
         id: '1',
         root: 'aRoot',
+        isApproved: true,
         managers: ['0x1'],
         maxItems: '3',
         metadata,
@@ -39,6 +40,7 @@ describe('ThirdParty router', () => {
       {
         id: '2',
         root: 'anotherRoot',
+        isApproved: true,
         managers: ['0x2', '0x3'],
         maxItems: '2',
         metadata,

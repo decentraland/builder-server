@@ -1,10 +1,12 @@
 import { Authenticator, AuthIdentity } from '@dcl/crypto'
+import { Wearable } from '@dcl/schemas'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 import { collectionAPI } from '../src/ethereum/api/collection'
 import { peerAPI } from '../src/ethereum/api/peer'
 import { isPublished } from '../src/utils/eth'
 import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
+import { CollectionFragment, ItemFragment } from '../src/ethereum/api/fragments'
 import { Collection } from '../src/Collection'
 import { ItemCuration } from '../src/Curation/ItemCuration'
 import { Ownable } from '../src/Ownable/Ownable'
@@ -403,6 +405,45 @@ export function mockThirdPartyCollectionURNExists(
     }
     return Promise.resolve(urnExists)
   })
+}
+
+/**
+ * Mocks the result of the fetchCollectionWithItem method from the collections client.
+ * This mock requires collectionAPI to be mocked first.
+ *
+ * @param collectionFragment - The blockchain collection to return.
+ * @param itemFragment - The blockchain item to return.
+ */
+export function mockFetchCollectionWithItem(
+  collectionFragment: CollectionFragment | null,
+  itemFragment: ItemFragment | null
+) {
+  if (!(collectionAPI.fetchCollectionWithItem as jest.Mock).mock) {
+    throw new Error(
+      "collectionAPI.fetchCollectionWithItem should be mocked to mock the fetchCollectionWithItem method but it isn't"
+    )
+  }
+
+  ;(collectionAPI.fetchCollectionWithItem as jest.Mock).mockResolvedValueOnce({
+    collection: collectionFragment,
+    item: itemFragment,
+  })
+}
+
+/**
+ * Mocks the result of the fetch items method from the catalyst client.
+ * This mock requires peerAPI to be mocked first.
+ *
+ * @param items - The Catalyst items to return.
+ */
+export function mockFetchCatalystItems(items: Wearable[]) {
+  if (!(peerAPI.fetchItems as jest.Mock).mock) {
+    throw new Error(
+      "peerAPI.fetchItems should be mocked to mock the fetchItems method but it isn't"
+    )
+  }
+
+  ;(peerAPI.fetchItems as jest.Mock).mockResolvedValueOnce(items)
 }
 
 export const isoDateStringMatcher = /\d{4}-[01]\d-[0-3]\dT[0-2]\d:[0-5]\d:[0-5]\d\.\d+([+-][0-2]\d:[0-5]\d|Z)/

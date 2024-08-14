@@ -83,9 +83,9 @@ export function toResultTPItem(
     ...itemAttributes,
     created_at: itemAttributes.created_at.toISOString(),
     updated_at: itemAttributes.updated_at.toISOString(),
-    is_approved: true,
-    in_catalyst: true,
-    is_published: true,
+    is_approved: !!catalystItem,
+    in_catalyst: !!catalystItem,
+    is_published: !!catalystItem,
     urn: hasURN
       ? buildTPItemURN(
           dbCollection!.third_party_id!,
@@ -169,7 +169,7 @@ export const dbTPItemMock: ThirdPartyItemAttributes = {
 export const itemFragmentMock = {
   id: dbCollectionMock.contract_address + '-' + dbItemMock.blockchain_item_id,
   blockchainId: '0',
-  urn: `urn:decentraland:mumbai:collections-v2:${dbCollectionMock.contract_address}:${dbItemMock.blockchain_item_id}`,
+  urn: `urn:decentraland:amoy:collections-v2:${dbCollectionMock.contract_address}:${dbItemMock.blockchain_item_id}`,
   totalSupply: '1',
   price: dbItemMock.price!.toString(),
   beneficiary: 'aBeneficiary',

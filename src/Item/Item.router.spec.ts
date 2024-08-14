@@ -1,7 +1,7 @@
 import { MappingType, Rarity, Wearable } from '@dcl/schemas'
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
-import { Wallet } from 'ethers'
+import { ethers, Wallet } from 'ethers'
 import { utils } from 'decentraland-commons'
 import { omit } from 'decentraland-commons/dist/utils'
 import {
@@ -15,6 +15,8 @@ import {
   mockThirdPartyItemCurationExists,
   mockThirdPartyURNExists,
   isoDateStringMatcher,
+  mockFetchCollectionWithItem,
+  mockFetchCatalystItems,
 } from '../../spec/utils'
 import {
   dbCollectionMock,
@@ -129,8 +131,6 @@ describe('Item router', () => {
     resultTPItemNotPublished = asResultItem(dbTPItemNotPublished) // no itemCuration & no catalyst, should be regular Item
     resultTPItemPublished = {
       ...toResultTPItem(dbTPItemPublished, dbTPCollectionMock),
-      is_approved: false,
-      in_catalyst: false,
     }
   })
 
@@ -262,7 +262,6 @@ describe('Item router', () => {
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
       url = '/items'
     })
-
     it('should return all the items that are published with URN and the ones that are not without it', () => {
       return server
         .get(buildURL(url))
@@ -1003,8 +1002,14 @@ describe('Item router', () => {
                     undefined,
                     tpCollectionMock
                   ),
+                  beneficiary: ethers.constants.AddressZero,
+                  blockchain_item_id: updatedItem.urn_suffix,
+                  price: '0',
                   updated_at: expect.stringMatching(isoDateStringMatcher),
                 }
+                // Mock get TP item
+                mockThirdPartyItemCurationExists(dbTPItem.id, false)
+                mockThirdPartyURNExists(itemToUpsert.urn!, false)
               })
 
               it('should respond with a 200, update the item and return the updated item', () => {
@@ -1073,8 +1078,14 @@ describe('Item router', () => {
                   undefined,
                   tpCollectionMock
                 ),
+                beneficiary: ethers.constants.AddressZero,
+                blockchain_item_id: updatedItem.urn_suffix,
+                price: '0',
                 updated_at: expect.stringMatching(isoDateStringMatcher),
               }
+              // Mock get TP item
+              mockThirdPartyItemCurationExists(dbTPItem.id, false)
+              mockThirdPartyURNExists(itemToUpsert.urn!, false)
             })
 
             it('it should respond with a 400 when the urn in the url does not match the one in the body', () => {
@@ -1247,7 +1258,13 @@ describe('Item router', () => {
                   ),
                   updated_at: expect.stringMatching(isoDateStringMatcher),
                   created_at: expect.stringMatching(isoDateStringMatcher),
+                  beneficiary: ethers.constants.AddressZero,
+                  blockchain_item_id: updatedItem.urn_suffix,
+                  price: '0',
                 }
+                // Mock get TP item
+                mockThirdPartyItemCurationExists(dbTPItem.id, false)
+                mockThirdPartyURNExists(itemToUpsert.urn!, false)
               })
 
               it('should respond with a 200, update the item and return the updated item', () => {
@@ -1273,6 +1290,9 @@ describe('Item router', () => {
                 collection_id: tpCollectionMock.id,
                 urn: null,
               }
+              // Mock get TP item
+              mockThirdPartyItemCurationExists(dbTPItem.id, false)
+              mockThirdPartyURNExists(itemToUpsert.urn!, false)
             })
 
             it('should respond with a 400, signaling that the URN is not valid', () => {
@@ -1978,6 +1998,12 @@ describe('Item router', () => {
                   managers: [wallet.address],
                 })
             )
+            // Mock get item
+            mockFetchCollectionWithItem(itemFragment.collection, {
+              ...itemFragment,
+              totalSupply: '0',
+            })
+            mockFetchCatalystItems([wearable])
           })
 
           afterEach(() => {
@@ -1996,6 +2022,10 @@ describe('Item router', () => {
                 ...Bridge.toFullItem(dbItem),
                 local_content_hash: expect.any(String),
                 eth_address: ethAddress,
+                beneficiary: 'aBeneficiary',
+                in_catalyst: true,
+                is_published: true,
+                urn: wearable.id,
                 created_at: dbItem.created_at.toISOString(),
                 updated_at: currentDate.toISOString(),
               },
@@ -2105,6 +2135,12 @@ describe('Item router', () => {
                   creator: wallet.address,
                 })
             )
+            // Mock get item
+            mockFetchCollectionWithItem(itemFragment.collection, {
+              ...itemFragment,
+              totalSupply: '0',
+            })
+            mockFetchCatalystItems([wearable])
           })
 
           afterEach(() => {
@@ -2121,6 +2157,10 @@ describe('Item router', () => {
             expect(response.body).toEqual({
               data: {
                 ...Bridge.toFullItem(dbItem),
+                beneficiary: itemFragment.beneficiary,
+                in_catalyst: true,
+                is_published: true,
+                urn: wearable.id,
                 local_content_hash: expect.any(String),
                 eth_address: wallet.address,
                 created_at: dbItem.created_at.toISOString(),

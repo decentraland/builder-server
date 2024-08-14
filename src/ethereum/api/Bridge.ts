@@ -9,7 +9,11 @@ import {
 import { ItemAttributes, FullItem } from '../../Item'
 import { fromUnixTimestamp } from '../../utils/parse'
 import { buildTPItemURN } from '../../Item/utils'
-import { decodeThirdPartyItemURN, isTPCollection } from '../../utils/urn'
+import {
+  decodeThirdPartyItemURN,
+  getDecentralandItemURN,
+  isTPCollection,
+} from '../../utils/urn'
 import {
   ItemCuration,
   ItemCurationAttributes,
@@ -189,7 +193,7 @@ export class Bridge {
       blockchain_item_id: decodeThirdPartyItemURN(urn).item_urn_suffix,
       urn,
       in_catalyst: !!catalystItem,
-      is_published: true,
+      is_published: !!catalystItem,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,
       content_hash: null,
@@ -429,6 +433,8 @@ export class Bridge {
                 dbCollection.urn_suffix,
                 dbItem.urn_suffix!
               )
+            : dbCollection && !isTPCollection(dbCollection)
+            ? getDecentralandItemURN(dbItem, dbCollection.contract_address!)
             : null,
         in_catalyst: false,
         is_approved: false,

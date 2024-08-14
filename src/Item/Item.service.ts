@@ -355,10 +355,12 @@ export class ItemService {
   }
 
   private async getTPItem(
-    dbItem: ThirdPartyItemAttributes
+    dbItem: ThirdPartyItemAttributes,
+    dbCollection?: CollectionAttributes
   ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
     let item: FullItem = Bridge.toFullItem(dbItem)
-    let collection = await Collection.findOne(dbItem.collection_id)
+    let collection =
+      dbCollection ?? (await Collection.findOne(dbItem.collection_id))
 
     if (collection && isTPCollection(collection)) {
       const urn = buildTPItemURN(
@@ -375,24 +377,27 @@ export class ItemService {
         : collection
 
       const catalystItems = await peerAPI.fetchWearables<Wearable>([urn])
-      if (catalystItems.length > 0) {
-        item = Bridge.mergeTPItem(dbItem, collection, catalystItems[0])
-      }
+      item = Bridge.mergeTPItem(
+        dbItem,
+        collection as ThirdPartyCollectionAttributes,
+        catalystItems[0]
+      )
     }
 
     return { item, collection }
   }
 
   private async getDCLItem(
-    dbItem: ItemAttributes
+    dbItem: ItemAttributes,
+    dbItemCollection?: CollectionAttributes
   ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
     let item: FullItem = Bridge.toFullItem(dbItem)
     let collection: CollectionAttributes | undefined
 
     if (dbItem.collection_id && dbItem.blockchain_item_id) {
-      const dbCollection = await Collection.findOne<CollectionAttributes>(
-        dbItem.collection_id
-      )
+      const dbCollection =
+        dbItemCollection ??
+        (await Collection.findOne<CollectionAttributes>(dbItem.collection_id))
 
       if (!dbCollection) {
         throw new InconsistentItemError(
@@ -426,7 +431,6 @@ export class ItemService {
           )
         }
       }
-
       // Set the item's URN
       item.urn =
         item.urn ??
@@ -664,12 +668,20 @@ export class ItemService {
 
     // Compute the content hash of the item to later store it in the DB
     attributes.local_content_hash =
-      dbCollection && isStandardItemPublished(attributes, dbCollection)
-        ? await calculateItemContentHash(attributes, dbCollection)
+      dbCollection &&
+      isStandardItemPublished(attributes, itemCollection ?? dbCollection)
+        ? await calculateItemContentHash(
+            attributes,
+            itemCollection ?? dbCollection
+          )
         : null
 
     const upsertedItem: ItemAttributes = await Item.upsert(attributes)
-    return Bridge.toFullItem(upsertedItem, dbCollection)
+    const { item: fullItem } = await this.getDCLItem(
+      upsertedItem,
+      itemCollection ?? dbCollection
+    )
+    return fullItem
   }
 
   /**
@@ -786,10 +798,10 @@ export class ItemService {
       ? await calculateItemContentHash(attributes, dbCollection)
       : null
 
-    const upsertedItem: ItemAttributes = await Item.upsert({
+    const upsertedItem = (await Item.upsert({
       ...attributes,
       ...(attributes.mappings ? { mappings: attributes.mappings } : {}),
-    })
+    })) as ThirdPartyItemAttributes
     if (dbItem && attributes.local_content_hash) {
       // Update the Item Curation content_hash
       await ItemCuration.update(
@@ -798,7 +810,8 @@ export class ItemService {
       )
     }
 
-    return Bridge.toFullItem(upsertedItem, dbCollection)
+    const { item: fullItem } = await this.getTPItem(upsertedItem, dbCollection)
+    return fullItem
   }
 
   private async checkIfThirdPartyItemURNExists(

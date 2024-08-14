@@ -8,7 +8,11 @@ import {
   itemFragmentMock,
 } from '../../spec/mocks/items'
 import { wearableMock } from '../../spec/mocks/peer'
-import { mockOwnableCanUpsert } from '../../spec/utils'
+import {
+  mockFetchCatalystItems,
+  mockFetchCollectionWithItem,
+  mockOwnableCanUpsert,
+} from '../../spec/utils'
 import { CollectionAttributes } from '../Collection'
 import { Collection } from '../Collection/Collection.model'
 import { CollectionService } from '../Collection/Collection.service'
@@ -139,6 +143,7 @@ describe('Item Service', () => {
         beforeEach(() => {
           ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
         })
+
         describe('and it is inserting less than the maximun amount of tags', () => {
           beforeEach(() => {
             dbItem = {
@@ -164,7 +169,11 @@ describe('Item Service', () => {
             jest
               .spyOn(CollectionService.prototype, 'isDCLPublished')
               .mockResolvedValueOnce(false)
+            // Mock get item
+            mockFetchCollectionWithItem(null, null)
+            mockFetchCatalystItems([])
           })
+
           it('should not throw any errors and return the inserted item', () => {
             const result = service.upsertItem(
               Bridge.toFullItem(dbItem, dbTPCollectionMock),
@@ -201,11 +210,11 @@ describe('Item Service', () => {
         beforeEach(() => {
           ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(dbItem)
         })
-        describe('and the item already has the maximun amount of tags', () => {
+        describe('and the item already has the maximum amount of tags', () => {
           it('should throw the MaximunAmountOfTagsReachedError error', () => {
             return expect(
               service.upsertItem(
-                Bridge.toFullItem(dbItem, dbTPCollectionMock),
+                Bridge.toFullItem(dbItem, dbCollectionMock),
                 dbItem.eth_address
               )
             ).rejects.toThrowError(MaximunAmountOfTagsReachedError)
@@ -237,10 +246,14 @@ describe('Item Service', () => {
               .spyOn(CollectionService.prototype, 'isDCLPublished')
               .mockResolvedValueOnce(false)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
+            // Mock get item
+            mockFetchCollectionWithItem(null, null)
+            mockFetchCatalystItems([])
           })
+
           it('should not throw any error and return the inserted item', () => {
             const result = service.upsertItem(
-              Bridge.toFullItem(dbItem, dbTPCollectionMock),
+              Bridge.toFullItem(dbItem, dbCollectionMock),
               dbItem.eth_address
             )
             return expect(result).resolves.toEqual(

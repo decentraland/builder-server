@@ -194,7 +194,6 @@ export class Bridge {
       urn,
       in_catalyst: !!catalystItem,
       is_published: !!catalystItem,
-      // is_published: !!catalystItem,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,
       content_hash: null,

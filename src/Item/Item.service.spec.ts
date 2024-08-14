@@ -10,7 +10,7 @@ import {
 import { wearableMock } from '../../spec/mocks/peer'
 import {
   mockFetchCatalystItems,
-  mockFetchCollectionWithItems,
+  mockFetchCollectionWithItem,
   mockOwnableCanUpsert,
 } from '../../spec/utils'
 import { CollectionAttributes } from '../Collection'
@@ -170,7 +170,7 @@ describe('Item Service', () => {
               .spyOn(CollectionService.prototype, 'isDCLPublished')
               .mockResolvedValueOnce(false)
             // Mock get item
-            mockFetchCollectionWithItems(null, null)
+            mockFetchCollectionWithItem(null, null)
             mockFetchCatalystItems([])
           })
 
@@ -247,7 +247,7 @@ describe('Item Service', () => {
               .mockResolvedValueOnce(false)
             ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbItem)
             // Mock get item
-            mockFetchCollectionWithItems(null, null)
+            mockFetchCollectionWithItem(null, null)
             mockFetchCatalystItems([])
           })
 

@@ -407,7 +407,14 @@ export function mockThirdPartyCollectionURNExists(
   })
 }
 
-export function mockFetchCollectionWithItems(
+/**
+ * Mocks the result of the fetchCollectionWithItem method from the collections client.
+ * This mock requires collectionAPI to be mocked first.
+ *
+ * @param collectionFragment - The blockchain collection to return.
+ * @param itemFragment - The blockchain item to return.
+ */
+export function mockFetchCollectionWithItem(
   collectionFragment: CollectionFragment | null,
   itemFragment: ItemFragment | null
 ) {
@@ -423,6 +430,12 @@ export function mockFetchCollectionWithItems(
   })
 }
 
+/**
+ * Mocks the result of the fetch items method from the catalyst client.
+ * This mock requires peerAPI to be mocked first.
+ *
+ * @param items - The Catalyst items to return.
+ */
 export function mockFetchCatalystItems(items: Wearable[]) {
   if (!(peerAPI.fetchItems as jest.Mock).mock) {
     throw new Error(

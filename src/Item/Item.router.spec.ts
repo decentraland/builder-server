@@ -15,7 +15,7 @@ import {
   mockThirdPartyItemCurationExists,
   mockThirdPartyURNExists,
   isoDateStringMatcher,
-  mockFetchCollectionWithItems,
+  mockFetchCollectionWithItem,
   mockFetchCatalystItems,
 } from '../../spec/utils'
 import {
@@ -1999,7 +1999,7 @@ describe('Item router', () => {
                 })
             )
             // Mock get item
-            mockFetchCollectionWithItems(itemFragment.collection, {
+            mockFetchCollectionWithItem(itemFragment.collection, {
               ...itemFragment,
               totalSupply: '0',
             })
@@ -2136,7 +2136,7 @@ describe('Item router', () => {
                 })
             )
             // Mock get item
-            mockFetchCollectionWithItems(itemFragment.collection, {
+            mockFetchCollectionWithItem(itemFragment.collection, {
               ...itemFragment,
               totalSupply: '0',
             })

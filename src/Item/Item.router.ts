@@ -20,7 +20,7 @@ import {
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
 import { getUploader, S3Content } from '../S3'
-import { Collection, CollectionService } from '../Collection'
+import { Collection, CollectionService, CollectionSort } from '../Collection'
 import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
@@ -372,6 +372,8 @@ export class ItemRouter extends Router {
     try {
       synced = server.extractFromReq(req, 'synced')
     } catch (error) {}
+    const sort = req.query.sort as CollectionSort || undefined
+
 
     if (status && !Object.values(CurationStatus).includes(status)) {
       throw new HTTPError(
@@ -393,6 +395,7 @@ export class ItemRouter extends Router {
         offset: page && limit ? getOffset(page, limit) : undefined,
         status,
         synced: synced ? synced === 'true' : undefined,
+        sort: sort || CollectionSort.CREATED_AT_ASC
       })
 
       if (!(await hasCollectionAccess(eth_address, collection))) {

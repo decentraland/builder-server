@@ -1,4 +1,10 @@
-import { MappingType, Rarity, Wearable } from '@dcl/schemas'
+import {
+  ContractNetwork,
+  MappingType,
+  Rarity,
+  ThirdPartyProps,
+  Wearable,
+} from '@dcl/schemas'
 import supertest from 'supertest'
 import { v4 as uuidv4 } from 'uuid'
 import { ethers, Wallet } from 'ethers'
@@ -284,6 +290,7 @@ describe('Item router', () => {
                   dbTPCollectionMock.urn_suffix,
                   dbTPItemNotPublishedMock.urn_suffix!
                 ),
+                isMappingComplete: false,
               },
               resultTPItemPublished,
             ],
@@ -586,16 +593,29 @@ describe('Item router', () => {
         ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
           dbItemCuration,
         ])
-        ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([
-          tpWearable,
-        ])
         ;(collectionAPI.buildItemId as jest.Mock).mockImplementation(
           (contractAddress, tokenId) => contractAddress + '-' + tokenId
         )
+        const tpWearableWithMappings: Wearable & Partial<ThirdPartyProps> = {
+          ...tpWearable,
+          mappings: {
+            [ContractNetwork.SEPOLIA]: {
+              '0x0': [{ type: MappingType.SINGLE, id: '4' }],
+            },
+          },
+        }
+        resultingTPItem = toResultTPItem(
+          dbTPItem,
+          dbTPCollectionMock,
+          tpWearableWithMappings
+        )
+        ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([
+          tpWearableWithMappings,
+        ])
         url = `/collections/${dbCollectionMock.id}/items`
       })
 
-      it('should return all the items of a collection that are published with URN and the ones that are not without it', () => {
+      it('should return all the items of a collection with their URNs and the isMappingComplete property as true for the item with a mapping', () => {
         return server
           .get(buildURL(url))
           .set(createAuthHeaders('get', url))
@@ -603,7 +623,7 @@ describe('Item router', () => {
           .then((response: any) => {
             expect(response.body).toEqual({
               data: [
-                resultingTPItem,
+                { ...resultingTPItem, isMappingComplete: true },
                 resultTPItemPublished,
                 resultTPItemNotPublished,
               ],
@@ -996,15 +1016,7 @@ describe('Item router', () => {
                     'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
                 }
                 resultingItem = {
-                  ...toResultItem(
-                    updatedItem,
-                    undefined,
-                    undefined,
-                    tpCollectionMock
-                  ),
-                  beneficiary: ethers.constants.AddressZero,
-                  blockchain_item_id: updatedItem.urn_suffix,
-                  price: '0',
+                  ...toResultTPItem(updatedItem, tpCollectionMock),
                   updated_at: expect.stringMatching(isoDateStringMatcher),
                 }
                 // Mock get TP item
@@ -1072,15 +1084,7 @@ describe('Item router', () => {
                   'b3520ef20163848f0fc69fc6aee1f7240c7ef4960944fcd92ce2e67a62828f6f',
               }
               resultingItem = {
-                ...toResultItem(
-                  updatedItem,
-                  undefined,
-                  undefined,
-                  tpCollectionMock
-                ),
-                beneficiary: ethers.constants.AddressZero,
-                blockchain_item_id: updatedItem.urn_suffix,
-                price: '0',
+                ...toResultTPItem(updatedItem, tpCollectionMock),
                 updated_at: expect.stringMatching(isoDateStringMatcher),
               }
               // Mock get TP item
@@ -1229,7 +1233,6 @@ describe('Item router', () => {
                 mockItem.upsert.mockImplementation((createdItem) =>
                   Promise.resolve({
                     ...createdItem,
-                    blockchain_item_id: null,
                   })
                 )
                 itemToUpsert.mappings = {
@@ -1250,12 +1253,7 @@ describe('Item router', () => {
                 }
                 mockThirdPartyURNExists(itemToUpsert.urn!, false)
                 resultingItem = {
-                  ...toResultItem(
-                    updatedItem,
-                    undefined,
-                    undefined,
-                    tpCollectionMock
-                  ),
+                  ...toResultTPItem(updatedItem, tpCollectionMock),
                   updated_at: expect.stringMatching(isoDateStringMatcher),
                   created_at: expect.stringMatching(isoDateStringMatcher),
                   beneficiary: ethers.constants.AddressZero,

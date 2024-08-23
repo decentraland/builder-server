@@ -1,5 +1,11 @@
 import { constants } from 'ethers'
-import { Rarity, Wearable, BodyShape, WearableCategory } from '@dcl/schemas'
+import {
+  Rarity,
+  Wearable,
+  BodyShape,
+  WearableCategory,
+  ThirdPartyProps,
+} from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
 import {
   ItemFragment,
@@ -16,7 +22,7 @@ import {
 import { toUnixTimestamp } from '../../src/utils/parse'
 import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
-import { isTPCollection } from '../../src/utils/urn'
+import { decodeThirdPartyItemURN, isTPCollection } from '../../src/utils/urn'
 import { CatalystItem } from '../../src/ethereum/api/peer'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
@@ -73,11 +79,25 @@ export function asResultItem(item: ItemAttributes): ResultItem {
 
 export function toResultTPItem(
   itemAttributes: ItemAttributes,
-  dbCollection?: CollectionAttributes,
-  catalystItem?: Wearable
+  dbCollection: CollectionAttributes,
+  catalystItem?: Wearable & Partial<ThirdPartyProps>
 ): ResultItem {
-  const hasURN =
-    itemAttributes.urn_suffix && dbCollection && isTPCollection(dbCollection)
+  if (
+    !dbCollection.third_party_id ||
+    !dbCollection.urn_suffix ||
+    !itemAttributes.urn_suffix
+  ) {
+    throw new Error('Collection is not a third party collection')
+  }
+  // const hasURN =
+  //   itemAttributes.urn_suffix && dbCollection && isTPCollection(dbCollection)
+  const urn: string = catalystItem
+    ? catalystItem.id
+    : buildTPItemURN(
+        dbCollection.third_party_id,
+        dbCollection.urn_suffix,
+        itemAttributes.urn_suffix
+      )
 
   const resultItem = {
     ...itemAttributes,
@@ -86,17 +106,12 @@ export function toResultTPItem(
     is_approved: !!catalystItem,
     in_catalyst: !!catalystItem,
     is_published: !!catalystItem,
-    urn: hasURN
-      ? buildTPItemURN(
-          dbCollection!.third_party_id!,
-          dbCollection!.urn_suffix!,
-          itemAttributes!.urn_suffix!
-        )
-      : null,
-    blockchain_item_id: itemAttributes.urn_suffix,
+    urn,
+    blockchain_item_id: decodeThirdPartyItemURN(urn).item_urn_suffix,
     total_supply: 0,
     price: '0',
     beneficiary: constants.AddressZero,
+    isMappingComplete: !!catalystItem?.mappings,
     content_hash: null,
     catalyst_content_hash: catalystItem
       ? (catalystItem as any)?.merkleProof.entityHash
@@ -160,6 +175,7 @@ export const dbItemMock: ItemAttributes = {
 export const dbTPItemMock: ThirdPartyItemAttributes = {
   ...dbItemMock,
   id: uuidv4(),
+  beneficiary: constants.AddressZero,
   blockchain_item_id: null,
   collection_id: dbTPCollectionMock.id,
   urn_suffix: '1',

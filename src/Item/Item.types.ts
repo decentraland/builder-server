@@ -60,6 +60,7 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   total_supply: number
   content_hash: string | null
   catalyst_content_hash: string | null
+  isMappingComplete?: boolean
 }
 
 export type DBItemApprovalData = Pick<ItemAttributes, 'id'> &

@@ -1,4 +1,4 @@
-import { Wearable } from '@dcl/schemas'
+import { ThirdPartyProps, Wearable } from '@dcl/schemas'
 import { constants } from 'ethers'
 import { utils } from 'decentraland-commons'
 import {
@@ -127,9 +127,9 @@ export class Bridge {
       itemsByURN[urn] = item
     }
 
-    const tpCatalystItems = await peerAPI.fetchWearables<Wearable>(
-      Object.keys(itemsByURN)
-    )
+    const tpCatalystItems = await peerAPI.fetchWearables<
+      Wearable & ThirdPartyProps
+    >(Object.keys(itemsByURN))
 
     const fullItems: FullItem[] = []
 
@@ -169,7 +169,7 @@ export class Bridge {
   static mergeTPItem(
     dbItem: ItemAttributes,
     dbCollection: ThirdPartyCollectionAttributes,
-    catalystItem?: Wearable
+    catalystItem?: Wearable & ThirdPartyProps
   ): FullItem {
     const data = dbItem.data
     const category = data.category
@@ -180,7 +180,6 @@ export class Bridge {
           dbCollection.urn_suffix,
           dbItem.urn_suffix!
         )
-
     return {
       ...Bridge.toFullItem(dbItem),
       // The total supply for TP items will be 0 as they won't be minted.
@@ -196,6 +195,7 @@ export class Bridge {
       is_published: !!catalystItem,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,
+      isMappingComplete: !!catalystItem?.mappings,
       content_hash: null,
       catalyst_content_hash: catalystItem
         ? (catalystItem as any).merkleProof.entityHash
@@ -422,26 +422,28 @@ export class Bridge {
     dbCollection?: CollectionAttributes
   ): FullItem {
     const hasURN = !!dbItem.urn_suffix
+    const isThirdPartyItem =
+      hasURN && dbCollection && isTPCollection(dbCollection)
 
     return utils.omit(
       {
         ...dbItem,
-        urn:
-          hasURN && dbCollection && isTPCollection(dbCollection)
-            ? buildTPItemURN(
-                dbCollection.third_party_id,
-                dbCollection.urn_suffix,
-                dbItem.urn_suffix!
-              )
-            : dbCollection && !isTPCollection(dbCollection)
-            ? getDecentralandItemURN(dbItem, dbCollection.contract_address!)
-            : null,
+        urn: isThirdPartyItem
+          ? buildTPItemURN(
+              dbCollection.third_party_id,
+              dbCollection.urn_suffix,
+              dbItem.urn_suffix!
+            )
+          : dbCollection && !isTPCollection(dbCollection)
+          ? getDecentralandItemURN(dbItem, dbCollection.contract_address!)
+          : null,
         in_catalyst: false,
         is_approved: false,
         is_published: false,
         content_hash: null,
         catalyst_content_hash: null,
         total_supply: 0,
+        ...(isThirdPartyItem ? { isMappingComplete: false } : {}),
       },
       ['urn_suffix']
     )

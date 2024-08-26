@@ -1,4 +1,4 @@
-import { Wearable } from '@dcl/schemas'
+import { ThirdPartyProps, Wearable } from '@dcl/schemas'
 import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
@@ -376,7 +376,9 @@ export class ItemService {
         ? Bridge.mergeTPCollection(collection, lastItemCuration)
         : collection
 
-      const catalystItems = await peerAPI.fetchWearables<Wearable>([urn])
+      const catalystItems = await peerAPI.fetchWearables<
+        Wearable & ThirdPartyProps
+      >([urn])
       item = Bridge.mergeTPItem(
         dbItem,
         collection as ThirdPartyCollectionAttributes,

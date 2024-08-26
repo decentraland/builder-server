@@ -324,7 +324,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { is_published, sort, q } = req.query
+    const { is_published, sort, q, type } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -347,6 +347,7 @@ export class CollectionRouter extends Router {
         limit,
         address: eth_address,
         sort: (sort as CollectionSort) || CollectionSort.CREATED_AT_DESC,
+        type: type as CollectionTypeFilter,
         isPublished: is_published ? is_published === 'true' : undefined,
         remoteIds: authorizedRemoteCollections.map(
           (remoteCollection) => remoteCollection.id

@@ -382,7 +382,8 @@ export class ItemService {
       item = Bridge.mergeTPItem(
         dbItem,
         collection as ThirdPartyCollectionAttributes,
-        catalystItems[0]
+        catalystItems[0],
+        lastItemCuration
       )
     }
 

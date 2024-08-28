@@ -7,6 +7,7 @@ export type ItemCurationAttributes = {
   status: CurationStatus
   created_at: Date
   updated_at: Date
+  is_mapping_complete: boolean | null
 }
 
 export type ItemCurationWithTotalCount = ItemCurationAttributes & {

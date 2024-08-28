@@ -13,7 +13,9 @@ import {
 import { toUnixTimestamp } from '../../src/utils/parse'
 import { wallet } from './wallet'
 
-export const dbCollectionMock: CollectionAttributes = {
+export const dbCollectionMock: CollectionAttributes & {
+  is_mapping_complete: boolean
+} = {
   id: uuidv4(),
   name: 'Standard Mocked Collection',
   eth_address: wallet.address,
@@ -30,6 +32,7 @@ export const dbCollectionMock: CollectionAttributes = {
   third_party_id: null,
   linked_contract_address: null,
   linked_contract_network: null,
+  is_mapping_complete: false,
   reviewed_at: new Date(),
   created_at: new Date(),
   updated_at: new Date(),

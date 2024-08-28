@@ -10,4 +10,5 @@ export const itemCurationMock: ItemCurationAttributes = {
   created_at: new Date(),
   updated_at: new Date(),
   content_hash: 'aHash',
+  is_mapping_complete: null,
 }

@@ -384,6 +384,7 @@ describe('Collection router', () => {
             lock: null,
             created_at: expectedCollectionToUpsert.created_at,
             updated_at: expectedCollectionToUpsert.updated_at,
+            is_mapping_complete: false,
           }))
         })
 
@@ -483,6 +484,7 @@ describe('Collection router', () => {
               lock: null,
               created_at: expectedCollectionToUpsert.created_at,
               updated_at: expectedCollectionToUpsert.updated_at,
+              is_mapping_complete: false,
             }))
           })
 
@@ -752,6 +754,7 @@ describe('Collection router', () => {
             lock: null,
             created_at: expectedCollectionToUpsert.created_at,
             updated_at: expectedCollectionToUpsert.updated_at,
+            is_mapping_complete: false,
           }))
           ;(Collection.isValidName as jest.Mock).mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
@@ -1450,8 +1453,8 @@ describe('Collection router', () => {
               sort: CollectionSort.CREATED_AT_DESC,
               thirdPartyIds: [],
               remoteIds: [],
-              q: "text",
-              isPublished: undefined
+              q: 'text',
+              isPublished: undefined,
             })
           })
       })
@@ -2245,6 +2248,7 @@ describe('Collection router', () => {
                     created_at: expect.any(Date),
                     updated_at: expect.any(Date),
                     content_hash: item.local_content_hash,
+                    is_mapping_complete: false,
                   },
                 ])
                 expect((ItemCuration.create as jest.Mock).mock.calls).toEqual(

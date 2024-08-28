@@ -209,18 +209,19 @@ export class Collection extends Model<CollectionAttributes> {
    * - The collection has items with migrations but there are items that weren't approved and uploaded.
    */
   static isMappingCompleteTableStatement() {
-    return SQL`SELECT NOT EXISTS (SELECT 1 FROM ${raw(
-      Item.tableName
-    )} as items LEFT JOIN ${raw(ItemCuration.tableName)} ON items.id = ${raw(
-      ItemCuration.tableName
-    )}.item_id WHERE items.collection_id = collections.id AND (${raw(
-      ItemCuration.tableName
-    )}.is_mapping_complete != false OR ${raw(
-      ItemCuration.tableName
-    )}.is_mapping_complete IS NULL)) OR NOT EXISTS (SELECT 1 FROM ${raw(
-      Item.tableName
-    )} items
-        WHERE items.collection_id = collections.id)`
+    return SQL`SELECT NOT EXISTS 
+      (SELECT mappings_info.is_mapping_complete FROM
+        (SELECT DISTINCT ON (items.id) items.id, item_curations.updated_at, item_curations.is_mapping_complete
+          FROM ${raw(Item.tableName)} items
+          LEFT JOIN ${raw(
+            ItemCuration.tableName
+          )} item_curations ON items.id = item_curations.item_id
+          WHERE items.collection_id = collections.id
+          ORDER BY items.id, item_curations.updated_at DESC) mappings_info
+        WHERE mappings_info.is_mapping_complete = false OR mappings_info.is_mapping_complete IS NULL)
+      OR NOT EXISTS (SELECT 1 FROM ${raw(
+        Item.tableName
+      )} items WHERE items.collection_id = collections.id)`
   }
 
   /**

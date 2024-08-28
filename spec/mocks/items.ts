@@ -24,6 +24,7 @@ import { buildTPItemURN } from '../../src/Item/utils'
 import { CollectionAttributes } from '../../src/Collection'
 import { decodeThirdPartyItemURN, isTPCollection } from '../../src/utils/urn'
 import { CatalystItem } from '../../src/ethereum/api/peer'
+import { ItemCurationAttributes } from '../../src/Curation/ItemCuration'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
@@ -80,7 +81,8 @@ export function asResultItem(item: ItemAttributes): ResultItem {
 export function toResultTPItem(
   itemAttributes: ItemAttributes,
   dbCollection: CollectionAttributes,
-  catalystItem?: Wearable & Partial<ThirdPartyProps>
+  catalystItem?: Wearable & Partial<ThirdPartyProps>,
+  curation?: ItemCurationAttributes
 ): ResultItem {
   if (
     !dbCollection.third_party_id ||
@@ -105,7 +107,7 @@ export function toResultTPItem(
     updated_at: itemAttributes.updated_at.toISOString(),
     is_approved: !!catalystItem,
     in_catalyst: !!catalystItem,
-    is_published: !!catalystItem,
+    is_published: !!catalystItem || !!curation,
     urn,
     blockchain_item_id: decodeThirdPartyItemURN(urn).item_urn_suffix,
     total_supply: 0,

@@ -826,11 +826,6 @@ describe('when handling a request', () => {
             .spyOn(service, 'getLatestById')
             .mockResolvedValueOnce({ id: 'curationId' } as any)
 
-          jest.spyOn(Item, 'findOne').mockResolvedValueOnce({
-            id: 'itemId',
-            local_content_hash: 'hash1',
-          } as any)
-
           collectionUpdateSpy = jest
             .spyOn(CollectionCuration, 'updateByItemId')
             .mockResolvedValueOnce({ rowCount: 1 })
@@ -840,26 +835,70 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce(expectedCuration)
         })
 
-        it('should resolve with the updated curation', async () => {
-          await expect(router.updateItemCuration(req)).resolves.toStrictEqual(
-            expectedCuration
-          )
-        })
+        describe('and the item has mappings', () => {
+          beforeEach(() => {
+            jest.spyOn(Item, 'findOne').mockResolvedValueOnce({
+              id: 'itemId',
+              local_content_hash: 'hash1',
+              mappings: { type: 'any' },
+            } as any)
+          })
 
-        it('should call the update method with the right data', async () => {
-          await router.updateItemCuration(req)
+          it('should resolve with the updated curation', async () => {
+            await expect(router.updateItemCuration(req)).resolves.toStrictEqual(
+              expectedCuration
+            )
+          })
 
-          expect(itemUpdateSpy).toHaveBeenCalledWith('curationId', {
-            status: CurationStatus.REJECTED,
-            content_hash: 'hash1',
-            updated_at: expect.any(Date),
+          it('should call the update method with the right data', async () => {
+            await router.updateItemCuration(req)
+
+            expect(itemUpdateSpy).toHaveBeenCalledWith('curationId', {
+              status: CurationStatus.REJECTED,
+              content_hash: 'hash1',
+              updated_at: expect.any(Date),
+              is_mapping_complete: true,
+            })
+          })
+
+          it('should update the updated_at property of the collection curation', async () => {
+            await router.updateItemCuration(req)
+
+            expect(collectionUpdateSpy).toHaveBeenCalledWith(req.params.id)
           })
         })
 
-        it('should update the updated_at property of the collection curation', async () => {
-          await router.updateItemCuration(req)
+        describe('and the item does not have mappings', () => {
+          beforeEach(() => {
+            jest.spyOn(Item, 'findOne').mockResolvedValueOnce({
+              id: 'itemId',
+              local_content_hash: 'hash1',
+              mappings: null,
+            } as any)
+          })
 
-          expect(collectionUpdateSpy).toHaveBeenCalledWith(req.params.id)
+          it('should resolve with the updated curation', async () => {
+            await expect(router.updateItemCuration(req)).resolves.toStrictEqual(
+              expectedCuration
+            )
+          })
+
+          it('should call the update method with the right data', async () => {
+            await router.updateItemCuration(req)
+
+            expect(itemUpdateSpy).toHaveBeenCalledWith('curationId', {
+              status: CurationStatus.REJECTED,
+              content_hash: 'hash1',
+              updated_at: expect.any(Date),
+              is_mapping_complete: false,
+            })
+          })
+
+          it('should update the updated_at property of the collection curation', async () => {
+            await router.updateItemCuration(req)
+
+            expect(collectionUpdateSpy).toHaveBeenCalledWith(req.params.id)
+          })
         })
       })
     })
@@ -1108,6 +1147,7 @@ describe('when handling a request', () => {
             created_at: expect.any(Date),
             updated_at: expect.any(Date),
             content_hash: item.local_content_hash,
+            is_mapping_complete: false,
           })
         })
       })

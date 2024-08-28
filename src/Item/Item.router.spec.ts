@@ -292,7 +292,7 @@ describe('Item router', () => {
                 ),
                 isMappingComplete: false,
               },
-              resultTPItemPublished,
+              { ...resultTPItemPublished, is_published: true },
             ],
             ok: true,
           })
@@ -623,8 +623,11 @@ describe('Item router', () => {
           .then((response: any) => {
             expect(response.body).toEqual({
               data: [
-                { ...resultingTPItem, isMappingComplete: true },
-                resultTPItemPublished,
+                {
+                  ...resultingTPItem,
+                  isMappingComplete: true,
+                },
+                { ...resultTPItemPublished, is_published: true },
                 resultTPItemNotPublished,
               ],
               ok: true,

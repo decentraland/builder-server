@@ -268,6 +268,7 @@ export class CollectionService {
           content_hash: item.local_content_hash,
           created_at: now,
           updated_at: now,
+          is_mapping_complete: item.mappings !== null,
         }
         itemCurationIds.push(itemCuration.id)
         promises.push(ItemCuration.create<ItemCurationAttributes>(itemCuration))

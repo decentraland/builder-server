@@ -147,7 +147,8 @@ export class Bridge {
         fullItem = Bridge.mergeTPItem(
           item,
           collection as ThirdPartyCollectionAttributes,
-          catalystItem
+          catalystItem,
+          itemCuration
         )
       } else {
         fullItem = Bridge.toFullItem(item, collection)
@@ -169,7 +170,8 @@ export class Bridge {
   static mergeTPItem(
     dbItem: ItemAttributes,
     dbCollection: ThirdPartyCollectionAttributes,
-    catalystItem?: Wearable & ThirdPartyProps
+    catalystItem?: Wearable & ThirdPartyProps,
+    lastItemCuration?: ItemCurationAttributes
   ): FullItem {
     const data = dbItem.data
     const category = data.category
@@ -192,7 +194,7 @@ export class Bridge {
       blockchain_item_id: decodeThirdPartyItemURN(urn).item_urn_suffix,
       urn,
       in_catalyst: !!catalystItem,
-      is_published: !!catalystItem,
+      is_published: !!catalystItem || !!lastItemCuration,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,
       isMappingComplete: !!catalystItem?.mappings,

@@ -427,7 +427,7 @@ export class CurationRouter extends Router {
       }
     }
 
-    let fieldsToUpdate: Partial<
+    const fieldsToUpdate: Partial<
       CollectionCurationAttributes & ItemCurationAttributes
     > = {
       ...(curationJSON.assignee !== undefined
@@ -446,10 +446,11 @@ export class CurationRouter extends Router {
     }
 
     if (type === CurationType.ITEM) {
-      fieldsToUpdate = {
-        ...fieldsToUpdate,
-        content_hash: await this.getItemCurationContentHash(id),
-      }
+      const itemData = await this.getItemCurationContentHashAndMappingCompletion(
+        id
+      )
+      fieldsToUpdate.content_hash = itemData.content_hash
+      fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
     }
 
     return curationService.updateById(curation.id, fieldsToUpdate)
@@ -507,14 +508,20 @@ export class CurationRouter extends Router {
       }
     }
     if (type === CurationType.ITEM) {
+      const itemData = await this.getItemCurationContentHashAndMappingCompletion(
+        id
+      )
       attributes.item_id = id
-      attributes.content_hash = await this.getItemCurationContentHash(id)
+      attributes.content_hash = itemData.content_hash
+      attributes.is_mapping_complete = itemData.is_mapping_complete
     }
 
     return curationService.getModel().create(attributes)
   }
 
-  private getItemCurationContentHash = async (id: string) => {
+  private getItemCurationContentHashAndMappingCompletion = async (
+    id: string
+  ) => {
     const dbItem = await Item.findOne<ThirdPartyItemAttributes>(id)
     if (!dbItem)
       throw new HTTPError(
@@ -522,7 +529,10 @@ export class CurationRouter extends Router {
         { id },
         STATUS_CODES.badRequest
       )
-    return dbItem.local_content_hash
+    return {
+      content_hash: dbItem.local_content_hash,
+      is_mapping_complete: dbItem.mappings !== null,
+    }
   }
 
   /* This method updates the video field of smart wearables

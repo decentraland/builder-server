@@ -9,9 +9,15 @@ export const MAX_TAGS_LENGTH = 20
 
 type ItemWithTotalCount = ItemAttributes & { total_count: number }
 
+export enum ItemMappingStatus {
+  MISSING_MAPPING = 'missing_mapping',
+  UNPUBLISHED_MAPPING = 'unpublished_mapping',
+}
+
 type ItemQueryOptions = {
   status?: CurationStatus
   synced?: boolean
+  mappingStatus?: ItemMappingStatus
 }
 
 export class Item extends Model<ItemAttributes> {
@@ -208,19 +214,20 @@ export const ItemQueries = Object.freeze({
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) => {
-    const { status, synced } = options
+    const { status, synced, mappingStatus } = options
     return SQL`
         SELECT items.*, count(*) OVER() AS total_count FROM (
           SELECT DISTINCT ON (items.id) items.id, items.*
             FROM ${raw(Item.tableName)} items
               ${
-                status || synced !== undefined
+                status || mappingStatus || synced !== undefined
                   ? SQL`
                     JOIN (
                       SELECT 
                         DISTINCT ON (item_curations.item_id) item_curations.item_id, 
                           item_curations.content_hash,
-                          item_curations.status
+                          item_curations.status,
+                          item_curations.is_mapping_complete
                         FROM ${raw(ItemCuration.tableName)}
                         ORDER BY item_curations.item_id, item_curations.created_at desc
                       ) item_curations
@@ -242,6 +249,13 @@ export const ItemQueries = Object.freeze({
             WHERE items.collection_id = ANY(${collectionIds})
               AND ${
                 status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`
+              }
+              AND ${
+                mappingStatus === ItemMappingStatus.MISSING_MAPPING
+                  ? SQL`items.mappings IS NULL`
+                  : mappingStatus === ItemMappingStatus.UNPUBLISHED_MAPPING
+                  ? SQL`(item_curations.is_mapping_complete = false OR item_curations.is_mapping_complete IS NULL)`
+                  : SQL`1 = 1`
               }
             ORDER BY items.id
           ) items

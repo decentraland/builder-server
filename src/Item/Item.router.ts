@@ -34,7 +34,7 @@ import {
 } from '../Pagination/utils'
 import { CurationStatus } from '../Curation'
 import { MulterFile } from '../S3/types'
-import { Item } from './Item.model'
+import { Item, ItemMappingStatus } from './Item.model'
 import { ItemAttributes, ItemContents } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
 import { FullItem } from './Item.types'
@@ -365,12 +365,16 @@ export class ItemRouter extends Router {
   ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
     const id = server.extractFromReq(req, 'id')
     let status: CurationStatus | undefined
+    let mappingStatus: ItemMappingStatus | undefined
     let synced: string | undefined
     try {
       status = server.extractFromReq(req, 'status')
     } catch (error) {}
     try {
       synced = server.extractFromReq(req, 'synced')
+    } catch (error) {}
+    try {
+      mappingStatus = server.extractFromReq(req, 'mappingStatus')
     } catch (error) {}
 
     if (status && !Object.values(CurationStatus).includes(status)) {
@@ -392,6 +396,7 @@ export class ItemRouter extends Router {
         limit,
         offset: page && limit ? getOffset(page, limit) : undefined,
         status,
+        mappingStatus,
         synced: synced ? synced === 'true' : undefined,
       })
 

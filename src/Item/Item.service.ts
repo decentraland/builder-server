@@ -36,7 +36,7 @@ import {
   ThirdPartyItemInsertByURNError,
   MaximunAmountOfTagsReachedError,
 } from './Item.errors'
-import { Item, MAX_TAGS_LENGTH } from './Item.model'
+import { Item, ItemMappingStatus, MAX_TAGS_LENGTH } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
@@ -192,6 +192,7 @@ export class ItemService {
     filters: {
       status?: CurationStatus
       synced?: boolean
+      mappingStatus?: ItemMappingStatus
       limit?: number
       offset?: number
     }

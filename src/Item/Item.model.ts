@@ -192,13 +192,14 @@ export class Item extends Model<ItemAttributes> {
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) {
-    const { status, synced } = options
+    const { status, synced, mappingStatus } = options
     return await this.query<ItemWithTotalCount>(
       ItemQueries.selectByCollectionIds(
         [collectionId],
         {
           status,
           synced,
+          mappingStatus,
         },
         limit,
         offset
@@ -222,7 +223,7 @@ export const ItemQueries = Object.freeze({
               ${
                 status || mappingStatus || synced !== undefined
                   ? SQL`
-                    JOIN (
+                    LEFT JOIN (
                       SELECT 
                         DISTINCT ON (item_curations.item_id) item_curations.item_id, 
                           item_curations.content_hash,
@@ -247,6 +248,11 @@ export const ItemQueries = Object.freeze({
                   : SQL``
               }
             WHERE items.collection_id = ANY(${collectionIds})
+              ${
+                synced !== undefined
+                  ? SQL`AND item_curations.status IS NOT NULL`
+                  : SQL``
+              }
               AND ${
                 status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`
               }
@@ -254,7 +260,7 @@ export const ItemQueries = Object.freeze({
                 mappingStatus === ItemMappingStatus.MISSING_MAPPING
                   ? SQL`items.mappings IS NULL`
                   : mappingStatus === ItemMappingStatus.UNPUBLISHED_MAPPING
-                  ? SQL`(item_curations.is_mapping_complete = false OR item_curations.is_mapping_complete IS NULL)`
+                  ? SQL`(item_curations.is_mapping_complete = false OR item_curations.is_mapping_complete IS NULL) AND items.mappings IS NOT NULL`
                   : SQL`1 = 1`
               }
             ORDER BY items.id

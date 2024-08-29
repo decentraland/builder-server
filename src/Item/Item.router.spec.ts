@@ -59,7 +59,7 @@ import {
 } from '../Collection/Collection.types'
 import { VIDEO_PATH, buildTPItemURN } from './utils'
 import { hasPublicAccess } from './access'
-import { Item } from './Item.model'
+import { Item, ItemMappingStatus } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
@@ -579,11 +579,6 @@ describe('Item router', () => {
 
     describe('and the collection is a third party collection', () => {
       beforeEach(() => {
-        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
-          dbTPItem,
-          dbTPItemPublished,
-          dbTPItemNotPublished,
-        ])
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
           dbTPCollectionMock
         )
@@ -612,27 +607,79 @@ describe('Item router', () => {
         ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([
           tpWearableWithMappings,
         ])
-        url = `/collections/${dbCollectionMock.id}/items`
       })
 
-      it('should return all the items of a collection with their URNs and the isMappingComplete property as true for the item with a mapping', () => {
-        return server
-          .get(buildURL(url))
-          .set(createAuthHeaders('get', url))
-          .expect(200)
-          .then((response: any) => {
-            expect(response.body).toEqual({
-              data: [
-                {
-                  ...resultingTPItem,
-                  isMappingComplete: true,
-                },
-                { ...resultTPItemPublished, is_published: true },
-                resultTPItemNotPublished,
-              ],
-              ok: true,
-            })
+      describe('and the mapping status filter is applied', () => {
+        beforeEach(() => {
+          ;(Item.findByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
+            [dbTPItem, dbTPItemPublished, dbTPItemNotPublished]
+          )
+          url = `/collections/${dbTPCollectionMock.id}/items`
+        })
+
+        it('should return all the items of a collection that comply with the mapping status filter', async () => {
+          const response = await server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .query({ mappingStatus: ItemMappingStatus.MISSING_MAPPING })
+            .expect(200)
+
+          expect(response.body).toEqual({
+            data: [
+              {
+                ...resultingTPItem,
+                isMappingComplete: true,
+              },
+              { ...resultTPItemPublished, is_published: true },
+              resultTPItemNotPublished,
+            ],
+            ok: true,
           })
+
+          expect(
+            Item.findByCollectionIdAndStatus as jest.Mock
+          ).toHaveBeenLastCalledWith(
+            dbTPCollectionMock.id,
+            {
+              synced: undefined,
+              status: undefined,
+              mappingStatus: ItemMappingStatus.MISSING_MAPPING,
+            },
+            undefined,
+            undefined
+          )
+        })
+      })
+
+      describe('and there are not filters applied', () => {
+        beforeEach(() => {
+          ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
+            dbTPItem,
+            dbTPItemPublished,
+            dbTPItemNotPublished,
+          ])
+          url = `/collections/${dbTPCollectionMock.id}/items`
+        })
+
+        it('should return all the items of a collection with their URNs and the isMappingComplete property as true for the item with a mapping', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: [
+                  {
+                    ...resultingTPItem,
+                    isMappingComplete: true,
+                  },
+                  { ...resultTPItemPublished, is_published: true },
+                  resultTPItemNotPublished,
+                ],
+                ok: true,
+              })
+            })
+        })
       })
     })
   })

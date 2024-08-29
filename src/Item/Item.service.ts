@@ -36,7 +36,7 @@ import {
   ThirdPartyItemInsertByURNError,
   MaximunAmountOfTagsReachedError,
 } from './Item.errors'
-import { Item, MAX_TAGS_LENGTH } from './Item.model'
+import { Item, ItemMappingStatus, MAX_TAGS_LENGTH } from './Item.model'
 import {
   FullItem,
   ItemAttributes,
@@ -192,6 +192,7 @@ export class ItemService {
     filters: {
       status?: CurationStatus
       synced?: boolean
+      mappingStatus?: ItemMappingStatus
       limit?: number
       offset?: number
     }
@@ -200,18 +201,19 @@ export class ItemService {
     items: FullItem[]
     totalItems: number
   }> {
-    const { synced, status, limit, offset } = filters
+    const { synced, status, mappingStatus, limit, offset } = filters
     const dbCollection = await this.collectionService.getDBCollection(
       collectionId
     )
     const isTP = isTPCollection(dbCollection)
     const dbItemsWithCount =
-      status && isTP
+      (status || mappingStatus) && isTP
         ? await Item.findByCollectionIdAndStatus(
             collectionId,
             {
               synced,
-              status: CurationStatus.PENDING,
+              status: status ? CurationStatus.PENDING : undefined,
+              mappingStatus,
             },
             limit,
             offset
@@ -358,7 +360,7 @@ export class ItemService {
     dbItem: ThirdPartyItemAttributes,
     dbCollection?: CollectionAttributes
   ): Promise<{ item: FullItem; collection?: CollectionAttributes }> {
-    let item: FullItem = Bridge.toFullItem(dbItem)
+    let item: FullItem = Bridge.toFullItem(dbItem, dbCollection)
     let collection =
       dbCollection ?? (await Collection.findOne(dbItem.collection_id))
 

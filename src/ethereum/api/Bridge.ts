@@ -195,8 +195,9 @@ export class Bridge {
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,
       // The mapping is complete if it was a curation and it was marked as complete or if doesn't and has mappings
-      isMappingComplete:
-        !!lastItemCuration?.is_mapping_complete || !!dbItem.mappings,
+      isMappingComplete: lastItemCuration
+        ? !!lastItemCuration?.is_mapping_complete
+        : !!dbItem.mappings,
       content_hash: null,
       catalyst_content_hash: catalystItem
         ? (catalystItem as any).merkleProof.entityHash

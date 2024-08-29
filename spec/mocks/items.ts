@@ -113,7 +113,8 @@ export function toResultTPItem(
     total_supply: 0,
     price: '0',
     beneficiary: constants.AddressZero,
-    isMappingComplete: !!curation?.is_mapping_complete,
+    isMappingComplete:
+      !!curation?.is_mapping_complete || !!itemAttributes.mappings,
     content_hash: null,
     catalyst_content_hash: catalystItem
       ? (catalystItem as any)?.merkleProof.entityHash

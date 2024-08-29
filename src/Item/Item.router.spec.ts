@@ -122,8 +122,7 @@ describe('Item router', () => {
     dbTPItemNotPublished = {
       ...dbTPItem,
       id: uuidv4(),
-      beneficiary: '',
-      urn_suffix: '',
+      urn_suffix: '23',
     }
     dbTPItemPublished = {
       ...dbTPItem,
@@ -269,6 +268,7 @@ describe('Item router', () => {
       ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([tpWearable])
       url = '/items'
     })
+
     it('should return all the items that are published with URN and the ones that are not without it', () => {
       return server
         .get(buildURL(url))
@@ -286,12 +286,14 @@ describe('Item router', () => {
               resultingTPItem,
               {
                 ...resultTPItemNotPublished,
+                price: '0',
                 urn: buildTPItemURN(
                   dbTPCollectionMock.third_party_id,
                   dbTPCollectionMock.urn_suffix,
                   dbTPItemNotPublishedMock.urn_suffix!
                 ),
                 isMappingComplete: false,
+                blockchain_item_id: '2',
               },
               { ...resultTPItemPublished, is_published: true },
             ],
@@ -615,7 +617,7 @@ describe('Item router', () => {
             [dbItemCuration]
           )
           ;(Item.findByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
-            [dbTPItem, dbTPItemPublished, dbTPItemNotPublished]
+            [dbTPItem, dbTPItemPublished]
           )
           url = `/collections/${dbTPCollectionMock.id}/items`
         })
@@ -634,7 +636,6 @@ describe('Item router', () => {
                 isMappingComplete: false,
               },
               { ...resultTPItemPublished, is_published: true },
-              resultTPItemNotPublished,
             ],
             ok: true,
           })
@@ -663,7 +664,6 @@ describe('Item router', () => {
           ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
             dbTPItem,
             dbTPItemPublished,
-            dbTPItemNotPublished,
           ])
           url = `/collections/${dbTPCollectionMock.id}/items`
         })
@@ -682,7 +682,6 @@ describe('Item router', () => {
                     is_published: true,
                     isMappingComplete: true,
                   },
-                  resultTPItemNotPublished,
                 ],
                 ok: true,
               })

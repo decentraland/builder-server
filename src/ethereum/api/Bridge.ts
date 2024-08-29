@@ -143,16 +143,12 @@ export class Bridge {
       )
 
       const collection = dbTPCollectionsIndex[item.collection_id!]
-      if (itemCuration || catalystItem) {
-        fullItem = Bridge.mergeTPItem(
-          item,
-          collection as ThirdPartyCollectionAttributes,
-          catalystItem,
-          itemCuration
-        )
-      } else {
-        fullItem = Bridge.toFullItem(item, collection)
-      }
+      fullItem = Bridge.mergeTPItem(
+        item,
+        collection as ThirdPartyCollectionAttributes,
+        catalystItem,
+        itemCuration
+      )
 
       fullItems.push(fullItem)
     }
@@ -182,6 +178,7 @@ export class Bridge {
           dbCollection.urn_suffix,
           dbItem.urn_suffix!
         )
+
     return {
       ...Bridge.toFullItem(dbItem),
       // The total supply for TP items will be 0 as they won't be minted.
@@ -197,7 +194,9 @@ export class Bridge {
       is_published: !!catalystItem || !!lastItemCuration,
       // For now, items are always approved. Rejecting (or disabling) items will be done at the record level, for all collections that apply.
       is_approved: !!catalystItem,
-      isMappingComplete: !!lastItemCuration?.is_mapping_complete,
+      // The mapping is complete if it was a curation and it was marked as complete or if doesn't and has mappings
+      isMappingComplete:
+        !!lastItemCuration?.is_mapping_complete || !!dbItem.mappings,
       content_hash: null,
       catalyst_content_hash: catalystItem
         ? (catalystItem as any).merkleProof.entityHash

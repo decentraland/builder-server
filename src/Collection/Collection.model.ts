@@ -219,7 +219,7 @@ export class Collection extends Model<CollectionAttributes> {
           WHERE items.collection_id = collections.id
           ORDER BY items.id, item_curations.updated_at DESC) mappings_info
         WHERE mappings_info.is_mapping_complete = false
-          OR (mappings_info.is_mapping_complete IS NULL AND mappings_info.updated_at IS NOT NULL)
+          OR (mappings_info.is_mapping_complete IS NULL AND mappings_info.updated_at IS NOT NULL AND mappings_info.mappings IS NOT NULL)
           OR mappings_info.mappings IS NULL)
       OR NOT EXISTS (SELECT 1 FROM ${raw(
         Item.tableName

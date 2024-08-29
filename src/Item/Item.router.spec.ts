@@ -243,6 +243,7 @@ describe('Item router', () => {
     let dbTPItemNotPublishedMock: ThirdPartyItemAttributes
 
     beforeEach(() => {
+      dbItemCuration.is_mapping_complete = false
       dbTPItemNotPublishedMock = {
         ...dbTPItemNotPublished,
         urn_suffix: '2',
@@ -585,9 +586,6 @@ describe('Item router', () => {
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbTPCollectionMock,
         ])
-        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
-          dbItemCuration,
-        ])
         ;(collectionAPI.buildItemId as jest.Mock).mockImplementation(
           (contractAddress, tokenId) => contractAddress + '-' + tokenId
         )
@@ -602,7 +600,8 @@ describe('Item router', () => {
         resultingTPItem = toResultTPItem(
           dbTPItem,
           dbTPCollectionMock,
-          tpWearableWithMappings
+          tpWearableWithMappings,
+          dbItemCuration
         )
         ;(peerAPI.fetchWearables as jest.Mock).mockResolvedValueOnce([
           tpWearableWithMappings,
@@ -611,6 +610,10 @@ describe('Item router', () => {
 
       describe('and the mapping status filter is applied', () => {
         beforeEach(() => {
+          dbItemCuration = { ...dbItemCuration, is_mapping_complete: false }
+          ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
+            [dbItemCuration]
+          )
           ;(Item.findByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
             [dbTPItem, dbTPItemPublished, dbTPItemNotPublished]
           )
@@ -628,7 +631,7 @@ describe('Item router', () => {
             data: [
               {
                 ...resultingTPItem,
-                isMappingComplete: true,
+                isMappingComplete: false,
               },
               { ...resultTPItemPublished, is_published: true },
               resultTPItemNotPublished,
@@ -653,6 +656,10 @@ describe('Item router', () => {
 
       describe('and there are not filters applied', () => {
         beforeEach(() => {
+          dbItemCuration = { ...dbItemCuration, is_mapping_complete: true }
+          ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
+            [dbItemCuration]
+          )
           ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
             dbTPItem,
             dbTPItemPublished,
@@ -669,11 +676,12 @@ describe('Item router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 data: [
+                  resultingTPItem,
                   {
-                    ...resultingTPItem,
+                    ...resultTPItemPublished,
+                    is_published: true,
                     isMappingComplete: true,
                   },
-                  { ...resultTPItemPublished, is_published: true },
                   resultTPItemNotPublished,
                 ],
                 ok: true,

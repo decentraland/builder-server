@@ -206,19 +206,21 @@ export class Collection extends Model<CollectionAttributes> {
    * Builds the statement to check if the collection requires the mapping migration to be completed.
    * The item migration will be required to be completed if:
    * - The collection has items and any of its items don't have a migration.
-   * - The collection has items with migrations but there are items that weren't approved and uploaded.
+   * - The collection has items with mappings but there are items that weren't approved and uploaded.
    */
   static isMappingCompleteTableStatement() {
     return SQL`SELECT NOT EXISTS 
       (SELECT mappings_info.is_mapping_complete FROM
-        (SELECT DISTINCT ON (items.id) items.id, item_curations.updated_at, item_curations.is_mapping_complete
+        (SELECT DISTINCT ON (items.id) items.id, item_curations.updated_at, item_curations.is_mapping_complete, items.mappings
           FROM ${raw(Item.tableName)} items
           LEFT JOIN ${raw(
             ItemCuration.tableName
           )} item_curations ON items.id = item_curations.item_id
           WHERE items.collection_id = collections.id
           ORDER BY items.id, item_curations.updated_at DESC) mappings_info
-        WHERE mappings_info.is_mapping_complete = false OR mappings_info.is_mapping_complete IS NULL)
+        WHERE mappings_info.is_mapping_complete = false
+          OR (mappings_info.is_mapping_complete IS NULL AND mappings_info.updated_at IS NOT NULL AND mappings_info.mappings IS NOT NULL)
+          OR mappings_info.mappings IS NULL)
       OR NOT EXISTS (SELECT 1 FROM ${raw(
         Item.tableName
       )} items WHERE items.collection_id = collections.id)`

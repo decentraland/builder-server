@@ -65,6 +65,10 @@ export function toDBCollection(
   let eth_address = isTP ? '' : collection.eth_address
   let contract_address = isTP ? null : collection.contract_address
   let salt = isTP ? '' : collection.salt
+  let linked_contract_address =
+    collection.linked_contract_address?.toLowerCase() ?? null
+  let linked_contract_network =
+    collection.linked_contract_network?.toLowerCase() ?? null
 
   return {
     ...utils.omit(collection, ['urn', 'lock', 'created_at', 'updated_at']),
@@ -72,6 +76,8 @@ export function toDBCollection(
     eth_address,
     contract_address,
     third_party_id,
+    linked_contract_address,
+    linked_contract_network,
     salt,
   }
 }

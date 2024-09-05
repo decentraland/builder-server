@@ -39,6 +39,11 @@ export function toFullCollection(
 
   return {
     ...utils.omit(dbCollection, ['urn_suffix', 'third_party_id']),
+    ...(dbCollection.linked_contract_address
+      ? {
+          linked_contract_address: dbCollection.linked_contract_address.toLowerCase(),
+        }
+      : {}),
     urn:
       third_party_id && urn_suffix
         ? getThirdPartyCollectionURN(third_party_id, urn_suffix)

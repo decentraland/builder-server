@@ -111,6 +111,11 @@ export function toResultCollection(
   return omit(
     {
       ...convertCollectionDatesToISO(collection),
+      ...(collection.linked_contract_address
+        ? {
+            linked_contract_address: collection.linked_contract_address.toLowerCase(),
+          }
+        : {}),
       urn,
     },
     ['urn_suffix', 'third_party_id']

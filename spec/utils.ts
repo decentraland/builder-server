@@ -10,13 +10,12 @@ import { CollectionFragment, ItemFragment } from '../src/ethereum/api/fragments'
 import { Collection } from '../src/Collection'
 import { ItemCuration } from '../src/Curation/ItemCuration'
 import { Ownable } from '../src/Ownable/Ownable'
+import { ThirdPartyService } from '../src/ThirdParty/ThirdParty.service'
 import { Item } from '../src/Item/Item.model'
 import { ItemAttributes } from '../src/Item/Item.types'
-// import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
 import { wallet } from './mocks/wallet'
 import { dbCollectionMock } from './mocks/collections'
 import { tpWearableMock } from './mocks/peer'
-import { ThirdPartyService } from '../src/ThirdParty/ThirdParty.service'
 
 export function buildURL(
   uri: string,

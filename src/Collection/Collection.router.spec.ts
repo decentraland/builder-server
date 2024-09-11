@@ -68,6 +68,7 @@ import {
 } from '../SlotUsageCheque'
 import { CurationStatus } from '../Curation'
 import { isCommitteeMember } from '../Committee'
+import * as Warehouse from '../warehouse'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
 import { toFullCollection } from './utils'
@@ -78,6 +79,7 @@ import {
   FullCollection,
   CollectionSort,
   CollectionTypeFilter,
+  TermsOfServiceEvent,
 } from './Collection.types'
 
 const server = supertest(app.getApp())
@@ -93,6 +95,7 @@ jest.mock('../Committee')
 jest.mock('../Item/Item.model')
 jest.mock('./Collection.model')
 jest.mock('./access')
+jest.mock('../warehouse')
 
 const thirdPartyAPIMock = thirdPartyAPI as jest.Mocked<typeof thirdPartyAPI>
 const tpUrnPrefix = 'urn:decentraland:amoy:collections-v2'
@@ -3094,6 +3097,96 @@ describe('Collection router', () => {
               ok: true,
             })
           })
+      })
+    })
+  })
+
+  describe('when saving the ToS', () => {
+    let body: any
+
+    beforeEach(() => {
+      url = `/collections/${dbCollectionMock.id}/tos`
+    })
+
+    describe('and the collection does not exist', () => {
+      beforeEach(() => {
+        ;(Collection.count as jest.Mock).mockResolvedValueOnce(0)
+        body = {
+          email: 'email@company.com',
+        }
+      })
+
+      it('should throw a 404 error', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .send(body)
+          .expect(404)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: dbCollection.id, tableName: Collection.tableName },
+              error: `Couldn't find "${dbCollection.id}" on ${Collection.tableName}`,
+              ok: false,
+            })
+          })
+      })
+    })
+
+    describe('and the collection exists', () => {
+      beforeEach(() => {
+        ;(Collection.count as jest.Mock).mockResolvedValueOnce(1)
+      })
+
+      describe("and the ToS don't follow the schema", () => {
+        beforeEach(() => {
+          body = {
+            email: 'This is not an email',
+          }
+        })
+
+        it('should throw a 400 error', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send(body)
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: expect.any(Object),
+                error: 'Invalid request body',
+                ok: false,
+              })
+            })
+        })
+      })
+
+      describe('and the ToS is correct', () => {
+        beforeEach(() => {
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            dbCollection,
+          ])
+          ;(Warehouse.sendDataToWarehouse as jest.Mock).mockResolvedValueOnce(
+            undefined
+          )
+          body = {
+            email: 'email@company.com',
+            event: TermsOfServiceEvent.PUBLISH_THIRD_PARTY_ITEMS,
+            hashes: ['hash1', 'hash2'],
+          }
+        })
+
+        it('should save the ToS and return a 200', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send(body)
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: true,
+              })
+            })
+        })
       })
     })
   })

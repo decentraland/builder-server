@@ -1,8 +1,8 @@
 import { CollectionAttributes } from '../Collection'
 import { isManager as isCollectionManager } from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Ownable } from '../Ownable'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { isTPCollection } from '../utils/urn'
 import { Item } from './Item.model'
 import { FullItem } from './Item.types'
@@ -45,7 +45,7 @@ export async function hasAccess(
   let isManager = false
   if (collection) {
     if (isTPCollection(collection)) {
-      isManager = await thirdPartyAPI.isManager(
+      isManager = await ThirdPartyService.isManager(
         collection.third_party_id,
         eth_address
       )

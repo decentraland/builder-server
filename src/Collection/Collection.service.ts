@@ -1,7 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
-import { ItemFragment, ThirdPartyFragment } from '../ethereum/api/fragments'
+import { ItemFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
@@ -28,6 +27,7 @@ import {
   CollectionCuration,
   CollectionCurationAttributes,
 } from '../Curation/CollectionCuration'
+import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { CurationStatus } from '../Curation'
 import { decodeTPCollectionURN, isTPCollection } from '../utils/urn'
 import {
@@ -60,7 +60,6 @@ import {
 } from './Collection.errors'
 
 export class CollectionService {
-  public tpService = new ThirdPartyService()
   /**
    * Main Methods
    */
@@ -177,7 +176,7 @@ export class CollectionService {
 
     // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items
 
-    const availableSlots = await this.tpService.getThirdPartyAvailableSlots(
+    const availableSlots = await ThirdPartyService.getThirdPartyAvailableSlots(
       dbCollection.third_party_id
     )
     if (itemIds.length > availableSlots) {
@@ -400,9 +399,18 @@ export class CollectionService {
         )
       }
 
+      // Check that the third party collection is not moved to another third party collection
+      if (collection.third_party_id !== third_party_id) {
+        throw new WrongCollectionError('The third party id cannot be changed', {
+          id,
+          eth_address,
+          third_party_id,
+        })
+      }
+
       // Check that the given collection belongs to a manageable third party
       if (
-        !(await thirdPartyAPI.isManager(
+        !(await ThirdPartyService.isManager(
           collection.third_party_id!,
           eth_address
         ))
@@ -428,8 +436,33 @@ export class CollectionService {
         throw new LockedCollectionError(id, CollectionAction.UPDATE)
       }
     } else {
-      // Check that the given third party id is manageable by the user
-      if (!(await thirdPartyAPI.isManager(third_party_id, eth_address))) {
+      let thirdParty: ThirdParty | undefined
+      try {
+        thirdParty = await ThirdPartyService.getThirdParty(third_party_id)
+      } catch (_) {}
+
+      // When creating the collection, no third party exists, create a virtual one and assign the user as manager
+      if (!thirdParty) {
+        await ThirdPartyService.createVirtualThirdParty(
+          third_party_id,
+          [eth_address],
+          {
+            name: collectionJSON.name,
+            description: '',
+            contracts:
+              collectionJSON.linked_contract_address &&
+              collectionJSON.linked_contract_network
+                ? [
+                    {
+                      network: collectionJSON.linked_contract_network,
+                      address: collectionJSON.linked_contract_address.toLowerCase(),
+                    },
+                  ]
+                : [],
+          }
+        )
+        // Check that the given third party id is manageable by the user
+      } else if (!thirdParty.managers.includes(eth_address.toLowerCase())) {
         throw new UnauthorizedCollectionEditError(id, eth_address)
       }
 
@@ -481,8 +514,8 @@ export class CollectionService {
     )
 
     const [thirdParty, remoteCheque] = await Promise.all([
-      thirdPartyAPI.fetchThirdParty(collection.third_party_id),
-      thirdPartyAPI.fetchReceiptById(slotUsageCheckHash),
+      ThirdPartyService.getThirdParty(collection.third_party_id),
+      ThirdPartyService.fetchReceiptById(slotUsageCheckHash),
     ])
 
     return {
@@ -552,7 +585,7 @@ export class CollectionService {
   ): Promise<boolean> {
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (collection && isTPCollection(collection)) {
-      return thirdPartyAPI.isManager(collection.third_party_id!, ethAddress)
+      return ThirdPartyService.isManager(collection.third_party_id!, ethAddress)
     } else if (collection) {
       return (
         collection.eth_address === ethAddress ||
@@ -568,21 +601,21 @@ export class CollectionService {
     manager?: string
   ): Promise<CollectionWithCounts[]> {
     const thirdParties = manager
-      ? await thirdPartyAPI.fetchThirdPartiesByManager(manager)
-      : await thirdPartyAPI.fetchThirdParties()
+      ? await ThirdPartyService.getThirdParties(manager)
+      : await ThirdPartyService.getThirdParties()
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
     return Collection.findAll({ ...params, thirdPartyIds })
   }
 
   public async getDbTPCollections(): Promise<CollectionAttributes[]> {
-    const thirdParties = await thirdPartyAPI.fetchThirdParties()
+    const thirdParties = await ThirdPartyService.getThirdParties()
     return this.getDbTPCollectionsByThirdParties(thirdParties)
   }
 
   public async getDbTPCollectionsByManager(
     manager: string
   ): Promise<CollectionAttributes[]> {
-    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(manager)
+    const thirdParties = await ThirdPartyService.getThirdParties(manager)
     return this.getDbTPCollectionsByThirdParties(thirdParties)
   }
 
@@ -602,7 +635,7 @@ export class CollectionService {
    */
 
   private async getDbTPCollectionsByThirdParties(
-    thirdParties: ThirdPartyFragment[]
+    thirdParties: ThirdParty[]
   ): Promise<CollectionAttributes[]> {
     if (thirdParties.length <= 0) {
       return []

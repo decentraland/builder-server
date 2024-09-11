@@ -6,8 +6,8 @@ import {
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
 import { CollectionAttributes } from '../Collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { isManager as isCollectionManager } from '../Collection/access'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
 import { hasPublicAccess, hasAccess } from './access'
@@ -16,6 +16,7 @@ import { FullItem } from './Item.types'
 jest.mock('../Committee')
 jest.mock('../Collection/access')
 jest.mock('../ethereum/api/thirdParty')
+jest.mock('../ThirdParty/ThirdParty.service')
 
 const isOwnedBySpy = jest.spyOn(Ownable.prototype, 'isOwnedBy')
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
@@ -117,7 +118,9 @@ describe('when getting access for an item', () => {
         beforeEach(() => {
           isOwnedBySpy.mockResolvedValueOnce(false)
           mockIsCommitteeMember.mockResolvedValueOnce(false)
-          ;(thirdPartyAPI.isManager as jest.Mock).mockResolvedValueOnce(false)
+          ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(
+            false
+          )
         })
 
         it('should return false', async () => {
@@ -131,7 +134,9 @@ describe('when getting access for an item', () => {
         beforeEach(() => {
           isOwnedBySpy.mockResolvedValueOnce(false)
           mockIsCommitteeMember.mockResolvedValueOnce(false)
-          ;(thirdPartyAPI.isManager as jest.Mock).mockResolvedValueOnce(true)
+          ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(
+            true
+          )
         })
 
         it('should return true', async () => {

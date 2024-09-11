@@ -12,10 +12,11 @@ import { ItemCuration } from '../src/Curation/ItemCuration'
 import { Ownable } from '../src/Ownable/Ownable'
 import { Item } from '../src/Item/Item.model'
 import { ItemAttributes } from '../src/Item/Item.types'
-import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
+// import { thirdPartyAPI } from '../src/ethereum/api/thirdParty'
 import { wallet } from './mocks/wallet'
 import { dbCollectionMock } from './mocks/collections'
 import { tpWearableMock } from './mocks/peer'
+import { ThirdPartyService } from '../src/ThirdParty/ThirdParty.service'
 
 export function buildURL(
   uri: string,
@@ -146,8 +147,8 @@ export function mockCollectionAuthorizationMiddleware(
 }
 
 /**
- * Mocks the "isManager" method of the thirdPartyAPI module.
- * This mock requires the thirdPartyAPI's isManager method to be mocked first.
+ * Mocks the "isManager" method of the ThirdPartyService module.
+ * This mock requires the ThirdPartyService's isManager method to be mocked first.
  *
  * @param ethAddress - The ethAddress of the user that will be requesting authorization to the collection.
  * @param isManager - If the user is a manager or not.
@@ -156,14 +157,14 @@ export function mockIsThirdPartyManager(
   ethAddress: string,
   isManager: boolean
 ) {
-  if (!(thirdPartyAPI.isManager as jest.Mock).mock) {
+  if (!(ThirdPartyService.isManager as jest.Mock).mock) {
     throw new Error(
       "isManager should be mocked to mock the withModelExists middleware but it isn't"
     )
   }
 
-  ;(thirdPartyAPI.isManager as jest.MockedFunction<
-    typeof thirdPartyAPI.isManager
+  ;(ThirdPartyService.isManager as jest.MockedFunction<
+    typeof ThirdPartyService.isManager
   >).mockImplementationOnce((_, manager) =>
     Promise.resolve(manager === ethAddress && isManager)
   )
@@ -386,7 +387,7 @@ export function mockThirdPartyCollectionURNExists(
 ): void {
   if (!(Collection.isURNRepeated as jest.Mock).mock) {
     throw new Error(
-      "thirdPartyAPI.isPublished should be mocked to mock the isPublished method but it isn't"
+      "Collection.isURNRepeated should be mocked to mock the thirdPartyCollectionExists method but it isn't"
     )
   }
   ;(Collection.isURNRepeated as jest.MockedFunction<

@@ -11,7 +11,7 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+// import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { Ownable } from '../Ownable'
 import { buildModelDates } from '../utils/dates'
@@ -49,6 +49,7 @@ import {
   isTPItem,
   toDBItem,
 } from './utils'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -244,7 +245,7 @@ export class ItemService {
       offset?: number
     }
   ): Promise<(ItemAttributes & { total_count: number })[]> {
-    const thirdParties = await thirdPartyAPI.fetchThirdPartiesByManager(address)
+    const thirdParties = await ThirdPartyService.getThirdParties(address)
     const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
 
     return Item.findItemsByAddress(address, thirdPartyIds, params)
@@ -734,7 +735,7 @@ export class ItemService {
     // Check if the collection being used in this update or insert process is accessible by the user
     if (dbCollection) {
       if (
-        !(await thirdPartyAPI.isManager(
+        !(await ThirdPartyService.isManager(
           dbCollection.third_party_id!,
           eth_address
         ))

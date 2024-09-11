@@ -4,13 +4,11 @@ import { Router } from '../common/Router'
 import { withCors } from '../middleware/cors'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { AuthRequest, withAuthentication } from '../middleware/authentication'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ThirdParty } from './ThirdParty.types'
 import { ThirdPartyService } from './ThirdParty.service'
 import { NonExistentThirdPartyError } from './ThirdParty.errors'
 
 export class ThirdPartyRouter extends Router {
-  private thirdPartyService = new ThirdPartyService()
   mount() {
     /**
      * CORS for the OPTIONS header
@@ -54,13 +52,13 @@ export class ThirdPartyRouter extends Router {
     } catch (e) {
       // We support empty manager filters on the query string
     }
-    return this.thirdPartyService.getThirdParties(manager)
+    return ThirdPartyService.getThirdParties(manager)
   }
 
   getThirdParty = async (req: AuthRequest): Promise<ThirdParty> => {
     const thirdPartyId = server.extractFromReq(req, 'id')
     try {
-      return await this.thirdPartyService.getThirdParty(thirdPartyId)
+      return await ThirdPartyService.getThirdParty(thirdPartyId)
     } catch (error) {
       if (error instanceof NonExistentThirdPartyError) {
         throw new HTTPError(
@@ -77,7 +75,7 @@ export class ThirdPartyRouter extends Router {
   getThirdPartyAvailableSlots = async (req: AuthRequest): Promise<number> => {
     const thirdPartyId = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
-    if (!(await thirdPartyAPI.isManager(thirdPartyId, eth_address))) {
+    if (!(await ThirdPartyService.isManager(thirdPartyId, eth_address))) {
       throw new HTTPError(
         'Unauthorized access. Account is not manager of the collection',
         { eth_address },
@@ -85,7 +83,7 @@ export class ThirdPartyRouter extends Router {
       )
     }
 
-    const availableSlots = await this.thirdPartyService.getThirdPartyAvailableSlots(
+    const availableSlots = await ThirdPartyService.getThirdPartyAvailableSlots(
       thirdPartyId
     )
     return availableSlots

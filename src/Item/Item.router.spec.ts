@@ -52,7 +52,6 @@ import { CatalystItem, peerAPI } from '../ethereum/api/peer'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { STATUS_CODES } from '../common/HTTPError'
 import { Bridge } from '../ethereum/api/Bridge'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
   CollectionAttributes,
   ThirdPartyCollectionAttributes,
@@ -66,10 +65,11 @@ import {
   ItemType,
   ThirdPartyItemAttributes,
 } from './Item.types'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
-jest.mock('../ethereum/api/thirdParty')
+jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../utils/eth')
 jest.mock('../Collection/Collection.model')
 jest.mock('../Curation/ItemCuration')
@@ -326,7 +326,7 @@ describe('Item router', () => {
             total_count: allAddressItems.length,
           }))
         )
-        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
           []
         )
         ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(
@@ -378,7 +378,7 @@ describe('Item router', () => {
             total_count: allAddressItems.length,
           }))
         )
-        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
           [thirdPartyFragmentMock]
         )
         ;(collectionAPI.fetchItemsByAuthorizedUser as jest.Mock).mockResolvedValueOnce(

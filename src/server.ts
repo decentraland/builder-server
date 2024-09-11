@@ -17,7 +17,6 @@ import { RarityRouter } from './Rarity'
 import { ForumRouter } from './Forum'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
-import { TiersRouter } from './Tiers'
 import { S3Router } from './S3'
 import { ShareRouter } from './Share'
 import { AnalyticsRouter } from './Analytics'
@@ -59,7 +58,6 @@ new DeploymentRouter(app).mount()
 new S3Router(app).mount()
 new ShareRouter(app).mount()
 new AnalyticsRouter(app).mount()
-new TiersRouter(app).mount()
 new NFTRouter(app).mount()
 new LANDRouter(app).mount()
 new NewsletterRouter(app).mount()

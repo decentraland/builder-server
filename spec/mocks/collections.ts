@@ -10,6 +10,7 @@ import {
   ThirdPartyFragment,
   ThirdPartyMetadataType,
 } from '../../src/ethereum/api/fragments'
+import { ThirdParty } from '../../src/ThirdParty/ThirdParty.types'
 import { toUnixTimestamp } from '../../src/utils/parse'
 import { wallet } from './wallet'
 
@@ -73,6 +74,18 @@ export const thirdPartyFragmentMock: ThirdPartyFragment = {
     type: ThirdPartyMetadataType.THIRD_PARTY_V1,
     thirdParty: null,
   },
+}
+
+export const thirdPartyMock: ThirdParty = {
+  id: thirdPartyFragmentMock.id,
+  root: thirdPartyFragmentMock.root,
+  managers: thirdPartyFragmentMock.managers,
+  isApproved: thirdPartyFragmentMock.isApproved,
+  maxItems: thirdPartyFragmentMock.maxItems,
+  name: '',
+  description: '',
+  contracts: [],
+  published: false,
 }
 
 export type ResultCollection = Omit<

@@ -6,7 +6,6 @@ import { withAuthentication, AuthRequest } from '../middleware'
 import { isCommitteeMember } from '../Committee'
 import { withCors } from '../middleware/cors'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { getValidator } from '../utils/validator'
 import { Collection, CollectionService } from '../Collection'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
@@ -16,7 +15,6 @@ import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
-import { isTPCollection } from '../utils/urn'
 import { createAssigneeEventPost } from '../Forum'
 import { ForumNewPost } from '../Forum'
 import {
@@ -46,7 +44,6 @@ export class CurationRouter extends Router {
      * CORS for the OPTIONS header
      */
     this.router.options('/curations', withCors)
-    this.router.options('/collectionCuration/:id/itemsStats', withCors)
     this.router.options('/collections/:id/itemCurations', withCors)
     this.router.options('/collections/:id/curation', withCors)
     this.router.options('/collections/:id/curation/post', withCors)
@@ -57,13 +54,6 @@ export class CurationRouter extends Router {
       withCors,
       withAuthentication,
       server.handleRequest(this.getCollectionCurations)
-    )
-
-    this.router.get(
-      '/collectionCuration/:id/itemsStats',
-      withCors,
-      withAuthentication,
-      server.handleRequest(this.getCollectionCurationItemStats)
     )
 
     this.router.get(
@@ -155,55 +145,6 @@ export class CurationRouter extends Router {
       .map((collection) => collection.id)
 
     return curationService.getLatestByIds(collectionIds)
-  }
-
-  getCollectionCurationItemStats = async (req: AuthRequest) => {
-    const collectionId = server.extractFromReq(req, 'id')
-    const ethAddress = req.auth.ethAddress
-    const curationService = CurationService.byType(CurationType.COLLECTION)
-
-    await this.validateAccessToCuration(
-      curationService,
-      ethAddress,
-      collectionId
-    )
-
-    const collection = await Collection.findOne(collectionId)
-    if (!isTPCollection(collection)) {
-      throw new HTTPError(
-        'Collection is not a third party collection',
-        { id: collectionId },
-        STATUS_CODES.badRequest
-      )
-    }
-
-    // TODO: This request could be huge. The method should work, as it's fetching page after page of items but this endpoint should probably be paginated.
-    const publishedItems = await thirdPartyAPI.fetchItemsByCollection(
-      collection.third_party_id,
-      collectionId
-    )
-
-    const total = publishedItems.length
-    let approved = 0
-    let rejected = 0
-    let needsReview = 0
-
-    for (const item of publishedItems) {
-      if (item.isApproved) {
-        approved += 1
-      } else if (item.createdAt === item.reviewedAt) {
-        needsReview += 1
-      } else {
-        rejected += 1
-      }
-    }
-
-    return {
-      total,
-      approved,
-      rejected,
-      needsReview,
-    }
   }
 
   getCollectionCuration = async (req: AuthRequest) => {

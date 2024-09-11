@@ -39,6 +39,7 @@ describe('toThirdParty', () => {
         name: name,
         description: description,
         contracts: [{ network: 'amoy', address: '0x0' }],
+        published: true,
       }
       expect(toThirdParty(fragment)).toEqual(thirdParty)
     })
@@ -71,6 +72,7 @@ describe('toThirdParty', () => {
         name: '',
         description: '',
         contracts: [],
+        published: true,
       }
       expect(toThirdParty(fragment)).toEqual(thirdParty)
     })

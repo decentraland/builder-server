@@ -4,7 +4,6 @@ import { omit } from 'decentraland-commons/dist/utils'
 import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { getValidator } from '../utils/validator'
 import { InvalidRequestError } from '../utils/errors'
 import {
   withModelAuthorization,
@@ -39,7 +38,11 @@ import {
 } from '../Pagination/utils'
 import { CurationStatusFilter } from '../Curation'
 import { addCustomMaxAgeCacheControlHeader } from '../common/headers'
-import { hasTPCollectionURN, isTPCollection } from '../utils/urn'
+import {
+  getThirdPartyCollectionURN,
+  hasTPCollectionURN,
+  isTPCollection,
+} from '../utils/urn'
 import { ForumService } from '../Forum/Forum.service'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -49,6 +52,7 @@ import {
   FullCollection,
   CollectionTypeFilter,
   CollectionSort,
+  TermsOfServiceEvent,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { hasPublicAccess } from './access'
@@ -63,8 +67,6 @@ import {
   URNAlreadyInUseError,
   WrongCollectionError,
 } from './Collection.errors'
-
-const validator = getValidator()
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
@@ -150,6 +152,7 @@ export class CollectionRouter extends Router {
       withCors,
       withAuthentication,
       withCollectionExists,
+      withSchemaValidation(saveTOSSchema),
       server.handleRequest(this.saveTOS)
     )
 
@@ -478,23 +481,45 @@ export class CollectionRouter extends Router {
   }
 
   saveTOS = async (req: AuthRequest): Promise<void> => {
-    const tosValidator = validator.compile(saveTOSSchema)
-    tosValidator(req.body)
-    if (tosValidator.errors) {
-      throw new HTTPError(
-        'Invalid request',
-        tosValidator.errors,
-        STATUS_CODES.badRequest
-      )
+    const id = server.extractFromReq(req, 'id')
+    const collection = await this.service.getCollection(id)
+    const collection_address = collection.contract_address ?? 'Unknown address'
+    const eth_address = req.auth.ethAddress
+    const urn =
+      collection.third_party_id && collection.urn_suffix
+        ? getThirdPartyCollectionURN(
+            collection.third_party_id,
+            collection.urn_suffix
+          )
+        : 'Unknown urn'
+    const event = req.body.event ?? TermsOfServiceEvent.PUBLISH_COLLECTION
+
+    let body:
+      | ({ email: string; eth_address: string } & {
+          collection_address: string
+        })
+      | { urn: string; hashes: string[] }
+
+    switch (event) {
+      case TermsOfServiceEvent.PUBLISH_THIRD_PARTY_ITEMS:
+        body = {
+          email: req.body.email,
+          urn,
+          hashes: req.body.hashes,
+        }
+        break
+      case TermsOfServiceEvent.PUBLISH_COLLECTION:
+      default:
+        body = {
+          email: req.body.email,
+          eth_address,
+          collection_address,
+        }
+        break
     }
 
-    const eth_address = req.auth.ethAddress
     try {
-      await sendDataToWarehouse('builder', 'publish_collection_tos', {
-        email: req.body.email,
-        eth_address: eth_address,
-        collection_address: req.body.collection_address,
-      })
+      await sendDataToWarehouse('builder', event, body)
     } catch (e) {
       throw new HTTPError(
         "The TOS couldn't be recorded",

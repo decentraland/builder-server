@@ -28,6 +28,11 @@ export type CollectionAttributes = {
   updated_at: Date
 }
 
+export enum TermsOfServiceEvent {
+  PUBLISH_COLLECTION = 'publish_collection_tos',
+  PUBLISH_THIRD_PARTY_ITEMS = 'publish_third_party_items_tos',
+}
+
 export type ThirdPartyCollectionAttributes = CollectionAttributes & {
   third_party_id: string
   urn_suffix: string

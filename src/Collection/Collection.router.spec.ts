@@ -1906,7 +1906,7 @@ describe('Collection router', () => {
             { ...dbTPItemMock, id: 'yetAnotherId' },
           ]
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
-          availableSlots = 4
+          availableSlots = 2
           ThirdPartyServiceMock.getThirdPartyAvailableSlots.mockResolvedValueOnce(
             availableSlots
           )

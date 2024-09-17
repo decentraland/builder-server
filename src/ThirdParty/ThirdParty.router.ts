@@ -6,7 +6,11 @@ import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { AuthRequest, withAuthentication } from '../middleware/authentication'
 import { ThirdParty } from './ThirdParty.types'
 import { ThirdPartyService } from './ThirdParty.service'
-import { NonExistentThirdPartyError } from './ThirdParty.errors'
+import {
+  NonExistentThirdPartyError,
+  OnlyDeletableIfOnGraphError,
+  UnauthorizedThirdPartyManagerError,
+} from './ThirdParty.errors'
 
 export class ThirdPartyRouter extends Router {
   mount() {
@@ -42,6 +46,15 @@ export class ThirdPartyRouter extends Router {
       '/thirdParties/:id',
       withCors,
       server.handleRequest(this.getThirdParty)
+    )
+    /**
+     * Remove a virtual third party that has already been added to the graph
+     */
+    this.router.delete(
+      '/thirdParties/:id',
+      withCors,
+      withAuthentication,
+      server.handleRequest(this.removeVirtualThirdParty)
     )
   }
 
@@ -87,5 +100,35 @@ export class ThirdPartyRouter extends Router {
       thirdPartyId
     )
     return availableSlots
+  }
+
+  removeVirtualThirdParty = async (req: AuthRequest): Promise<void> => {
+    const thirdPartyId = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
+    try {
+      await ThirdPartyService.removeVirtualThirdParty(thirdPartyId, eth_address)
+    } catch (error) {
+      if (error instanceof NonExistentThirdPartyError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof UnauthorizedThirdPartyManagerError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.unauthorized
+        )
+      } else if (error instanceof OnlyDeletableIfOnGraphError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.badRequest
+        )
+      }
+
+      throw error
+    }
   }
 }

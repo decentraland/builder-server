@@ -3,7 +3,11 @@ import { createAuthHeaders, buildURL } from '../../spec/utils'
 import { app } from '../server'
 import { ThirdParty } from './ThirdParty.types'
 import { ThirdPartyService } from './ThirdParty.service'
-import { NonExistentThirdPartyError } from './ThirdParty.errors'
+import {
+  NonExistentThirdPartyError,
+  OnlyDeletableIfOnGraphError,
+  UnauthorizedThirdPartyManagerError,
+} from './ThirdParty.errors'
 
 const server = supertest(app.getApp())
 
@@ -168,6 +172,81 @@ describe('ThirdParty router', () => {
           .expect(200)
           .then((response: any) => {
             expect(response.body).toEqual({ data: thirdParties[0], ok: true })
+          })
+      })
+    })
+  })
+
+  describe('when removing a virtual third party', () => {
+    let url: string
+    let thirdPartyId: string
+
+    beforeEach(() => {
+      thirdPartyId = 'aThirdPartyId'
+      url = `/thirdParties/${thirdPartyId}`
+    })
+
+    describe('and the virtual third party does not exist', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.removeVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new NonExistentThirdPartyError(thirdPartyId)
+        )
+      })
+
+      it('should return a 404 status code and an error message', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(404)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error: "The Third Party doesn't exists.",
+            })
+          })
+      })
+    })
+    describe('and the user is not a manager of the virtual third party', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.removeVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new UnauthorizedThirdPartyManagerError(thirdPartyId)
+        )
+      })
+
+      it('should return a 401 status code and an error message', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(401)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error: 'You are not the manager of this Third Party.',
+            })
+          })
+      })
+    })
+    describe('and the virtual third party does not has its graph version', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.removeVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new OnlyDeletableIfOnGraphError(thirdPartyId)
+        )
+      })
+
+      it('should return a 400 status code and an error message', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error:
+                "The Third Party can only be deleted if it's already on the graph.",
+            })
           })
       })
     })

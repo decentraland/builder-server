@@ -51,10 +51,13 @@ export function convertThirdPartyMetadataToRawMetadata(
 }
 
 export function convertVirtualThirdPartyToThirdParty(
-  dbVirtualThirdParty: VirtualThirdPartyAttributes
+  dbVirtualThirdParty: Omit<
+    VirtualThirdPartyAttributes,
+    'created_at' | 'updated_at'
+  >
 ): ThirdParty {
   const { name, description, contracts } = parseRawMetadata(
-    dbVirtualThirdParty.rawMetadata
+    dbVirtualThirdParty.raw_metadata
   )
 
   return {

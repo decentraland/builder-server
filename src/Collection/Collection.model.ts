@@ -252,7 +252,7 @@ export class Collection extends Model<CollectionAttributes> {
         Item.tableName
       )} 
         WHERE items.collection_id = collections.id) as item_count,
-        (${SQL`${this.isMappingCompleteTableStatement()}`}) as is_mapping_complete
+        (${raw(this.isMappingCompleteTableStatement())}) as is_mapping_complete
         FROM (
           SELECT DISTINCT on (c.id) c.* FROM ${raw(Collection.tableName)} c
             ${SQL`${this.getPublishedJoinStatement(isPublished)}`}  
@@ -289,7 +289,9 @@ export class Collection extends Model<CollectionAttributes> {
 
   static findByIds(ids: string[]) {
     return this.query<CollectionWithItemCount>(SQL`
-    SELECT *, (${SQL`${this.isMappingCompleteTableStatement()}`}) as is_mapping_complete, (SELECT COUNT(*) FROM ${raw(
+    SELECT *, (${raw(
+      this.isMappingCompleteTableStatement()
+    )}) as is_mapping_complete, (SELECT COUNT(*) FROM ${raw(
       Item.tableName
     )} WHERE items.collection_id = collections.id) as item_count
       FROM ${raw(this.tableName)}

@@ -11,7 +11,6 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
-// import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { Ownable } from '../Ownable'
 import { buildModelDates } from '../utils/dates'
@@ -20,6 +19,7 @@ import {
   getDecentralandItemURN,
   isTPCollection,
 } from '../utils/urn'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { calculateItemContentHash } from './hashes'
 import {
   CollectionForItemLockedError,
@@ -49,7 +49,6 @@ import {
   isTPItem,
   toDBItem,
 } from './utils'
-import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 
 export class ItemService {
   private collectionService = new CollectionService()

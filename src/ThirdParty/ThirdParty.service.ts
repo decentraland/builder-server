@@ -75,7 +75,6 @@ export class ThirdPartyService {
         : ([] as ThirdParty[]),
     ])
     const graphThirdParties = fragments.map(toThirdParty)
-    console.log({ graphThirdParties, virtualThirdParties })
     const virtualThirdPartiesNotInTheGraph = virtualThirdParties.filter(
       (virtualThirdParty) =>
         !graphThirdParties.some(

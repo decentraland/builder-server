@@ -1,4 +1,4 @@
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { Collection } from './Collection.model'
 import { CollectionAttributes } from './Collection.types'
 import { isCommitteeMember } from '../Committee'
@@ -24,7 +24,7 @@ export async function hasAccess(
     new Ownable(Collection).isOwnedBy(collection.id, eth_address),
     isCommitteeMember(eth_address),
     isTPCollection(collection)
-      ? thirdPartyAPI.isManager(collection.third_party_id, eth_address)
+      ? ThirdPartyService.isManager(collection.third_party_id, eth_address)
       : // The function isManager only works for collections that were merged with a remote collection.
         // The is_published property exists only in merged collections.
         !!collection.is_published && isManager(eth_address, collection),

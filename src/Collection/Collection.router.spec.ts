@@ -21,6 +21,7 @@ import {
   ResultCollection,
   dbTPCollectionMock,
   toResultCollection,
+  thirdPartyMock,
 } from '../../spec/mocks/collections'
 import { createIdentity, fakePrivateKey, wallet } from '../../spec/mocks/wallet'
 import {
@@ -30,15 +31,13 @@ import {
   itemFragmentMock,
 } from '../../spec/mocks/items'
 import { itemCurationMock } from '../../spec/mocks/itemCuration'
-import { mockedCheque } from '../../spec/mocks/cheque'
+import { generateCheque } from '../../spec/mocks/cheque'
 import {
   ItemFragment,
   CollectionFragment,
   ReceiptFragment,
-  ThirdPartyFragment,
 } from '../ethereum/api/fragments'
 import { collectionAPI } from '../ethereum/api/collection'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
 import { ItemCuration } from '../Curation/ItemCuration'
@@ -67,11 +66,13 @@ import {
   SlotUsageChequeAttributes,
 } from '../SlotUsageCheque'
 import { CurationStatus } from '../Curation'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
+import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { isCommitteeMember } from '../Committee'
 import * as Warehouse from '../warehouse'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
-import { toFullCollection } from './utils'
+import { getChequeMessageHash, toFullCollection } from './utils'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -85,19 +86,21 @@ import {
 const server = supertest(app.getApp())
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
-jest.mock('../ethereum/api/thirdParty')
 jest.mock('../utils/eth')
 jest.mock('../Forum/client')
 jest.mock('../SlotUsageCheque')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Curation/CollectionCuration')
+jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Committee')
 jest.mock('../Item/Item.model')
 jest.mock('./Collection.model')
 jest.mock('./access')
 jest.mock('../warehouse')
 
-const thirdPartyAPIMock = thirdPartyAPI as jest.Mocked<typeof thirdPartyAPI>
+const ThirdPartyServiceMock = ThirdPartyService as jest.Mocked<
+  typeof ThirdPartyService
+>
 const tpUrnPrefix = 'urn:decentraland:amoy:collections-v2'
 
 describe('Collection router', () => {
@@ -209,7 +212,7 @@ describe('Collection router', () => {
 
       describe("and the upserted collection wasn't a third party collection before", () => {
         beforeEach(() => {
-          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
+          ThirdPartyServiceMock.isManager.mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
             urn_suffix: null,
@@ -243,7 +246,7 @@ describe('Collection router', () => {
             urn_suffix: 'old-urn-suffix',
             third_party_id,
           }
-          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
+          ThirdPartyServiceMock.isManager.mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )
@@ -309,7 +312,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           const currentDate = Date.now()
           mockAuthenticationSignatureValidationDate()
-          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
+          ThirdPartyServiceMock.isManager.mockResolvedValueOnce(true)
           jest.spyOn(Date, 'now').mockReturnValueOnce(currentDate)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
@@ -348,7 +351,7 @@ describe('Collection router', () => {
 
       describe('and the collection exists and the user is not a manager of the third party registry', () => {
         beforeEach(() => {
-          thirdPartyAPIMock.isManager.mockResolvedValueOnce(false)
+          ThirdPartyServiceMock.isManager.mockResolvedValueOnce(false)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )
@@ -375,7 +378,7 @@ describe('Collection router', () => {
 
       describe('and the collection exists and is not locked', () => {
         beforeEach(() => {
-          thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
+          ThirdPartyServiceMock.isManager.mockResolvedValueOnce(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )
@@ -415,69 +418,19 @@ describe('Collection router', () => {
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(null)
         })
 
-        describe('and the user is not a manager of the third party registry given in the URN', () => {
+        describe('and the third party assigned to the collection does not exist', () => {
           beforeEach(() => {
-            thirdPartyAPIMock.isManager.mockResolvedValueOnce(false)
-          })
-
-          it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
-            return server
-              .put(buildURL(url))
-              .set(createAuthHeaders('put', url))
-              .send({ collection: collectionToUpsert })
-              .expect(401)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  ok: false,
-                  data: {
-                    id: collectionToUpsert.id,
-                    eth_address: wallet.address,
-                  },
-                  error: 'Unauthorized to upsert collection',
-                })
-              })
-          })
-        })
-
-        describe('and there are items already published with the collection id', () => {
-          beforeEach(() => {
-            thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
-            mockThirdPartyCollectionURNExists(
-              collectionToUpsert.id,
-              third_party_id,
-              urn_suffix,
-              true
+            ThirdPartyServiceMock.getThirdParty.mockRejectedValueOnce(
+              new Error('TP does not exist')
             )
-          })
-
-          it('should respond with a 409 and a message saying that the there is a collection with that urn already published', () => {
-            return server
-              .put(buildURL(url))
-              .set(createAuthHeaders('put', url))
-              .send({ collection: collectionToUpsert })
-              .expect(409)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  ok: false,
-                  data: {
-                    id: dbTPCollection.id,
-                    urn: collectionToUpsert.urn,
-                  },
-                  error:
-                    "The URN provided already belongs to a collection. The collection can't be updated or inserted.",
-                })
-              })
-          })
-        })
-
-        describe("and there aren't any items published with the collection id", () => {
-          beforeEach(() => {
-            thirdPartyAPIMock.isManager.mockResolvedValueOnce(true)
             mockThirdPartyCollectionURNExists(
               collectionToUpsert.id,
               third_party_id,
               urn_suffix,
               false
+            )
+            ThirdPartyServiceMock.createVirtualThirdParty.mockResolvedValueOnce(
+              { id: 'someId' } as ThirdParty
             )
             ;(Collection.upsertWithItemCount as jest.MockedFunction<
               typeof Collection.upsertWithItemCount
@@ -491,21 +444,119 @@ describe('Collection router', () => {
             }))
           })
 
-          it('should respond with a 200, the inserted collection and have upserted the collection with the sent collection', () => {
-            return server
-              .put(buildURL(url))
-              .set(createAuthHeaders('put', url))
-              .send({ collection: collectionToUpsert })
-              .expect(200)
-              .then((response: any) => {
-                expect(response.body).toEqual({
-                  ok: true,
-                  data: convertCollectionDatesToISO({
-                    ...expectedCollectionToUpsert,
-                    item_count: 0,
-                  }),
+          it('should respond with a 200 and create a virtual third party based on the URN', () => {
+            return
+          })
+        })
+
+        describe('and the third party assigned to the collection exists', () => {
+          let mockedThirdParty: ThirdParty
+          beforeEach(() => {
+            mockedThirdParty = { ...thirdPartyMock }
+          })
+
+          describe('and the user is not a manager of the third party registry given in the URN', () => {
+            beforeEach(() => {
+              mockedThirdParty.managers = ['0x0']
+              ThirdPartyServiceMock.getThirdParty.mockResolvedValueOnce(
+                mockedThirdParty
+              )
+            })
+
+            it('should respond with a 401 and a message signaling that the user is not authorized to upsert the collection', () => {
+              return server
+                .put(buildURL(url))
+                .set(createAuthHeaders('put', url))
+                .send({ collection: collectionToUpsert })
+                .expect(401)
+                .then((response: any) => {
+                  expect(response.body).toEqual({
+                    ok: false,
+                    data: {
+                      id: collectionToUpsert.id,
+                      eth_address: wallet.address,
+                    },
+                    error: 'Unauthorized to upsert collection',
+                  })
                 })
+            })
+          })
+
+          describe('and the user is a manger of the third party registry given in the URN', () => {
+            beforeEach(() => {
+              mockedThirdParty.managers = [wallet.address]
+              ThirdPartyServiceMock.getThirdParty.mockResolvedValueOnce(
+                mockedThirdParty
+              )
+            })
+
+            describe('and there are items already published with the collection id', () => {
+              beforeEach(() => {
+                mockThirdPartyCollectionURNExists(
+                  collectionToUpsert.id,
+                  third_party_id,
+                  urn_suffix,
+                  true
+                )
               })
+
+              it('should respond with a 409 and a message saying that the there is a collection with that urn already published', () => {
+                return server
+                  .put(buildURL(url))
+                  .set(createAuthHeaders('put', url))
+                  .send({ collection: collectionToUpsert })
+                  .expect(409)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      ok: false,
+                      data: {
+                        id: dbTPCollection.id,
+                        urn: collectionToUpsert.urn,
+                      },
+                      error:
+                        "The URN provided already belongs to a collection. The collection can't be updated or inserted.",
+                    })
+                  })
+              })
+            })
+
+            describe("and there aren't any items published with the collection id", () => {
+              beforeEach(() => {
+                mockThirdPartyCollectionURNExists(
+                  collectionToUpsert.id,
+                  third_party_id,
+                  urn_suffix,
+                  false
+                )
+                ;(Collection.upsertWithItemCount as jest.MockedFunction<
+                  typeof Collection.upsertWithItemCount
+                >).mockImplementationOnce(async (attributes) => ({
+                  ...attributes,
+                  item_count: 0,
+                  lock: null,
+                  created_at: expectedCollectionToUpsert.created_at,
+                  updated_at: expectedCollectionToUpsert.updated_at,
+                  is_mapping_complete: false,
+                }))
+              })
+
+              it('should respond with a 200, the inserted collection and have upserted the collection with the sent collection', () => {
+                return server
+                  .put(buildURL(url))
+                  .set(createAuthHeaders('put', url))
+                  .send({ collection: collectionToUpsert })
+                  .expect(200)
+                  .then((response: any) => {
+                    expect(response.body).toEqual({
+                      ok: true,
+                      data: convertCollectionDatesToISO({
+                        ...expectedCollectionToUpsert,
+                        item_count: 0,
+                      }),
+                    })
+                  })
+              })
+            })
           })
         })
       })
@@ -863,7 +914,7 @@ describe('Collection router', () => {
           []
         )
         ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
-        thirdPartyAPIMock.fetchThirdParties.mockResolvedValueOnce([])
+        ThirdPartyServiceMock.getThirdParties.mockResolvedValueOnce([])
       })
       describe('and sending pagination params', () => {
         let page: number, limit: number
@@ -1083,7 +1134,7 @@ describe('Collection router', () => {
           []
         )
         ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
-        thirdPartyAPIMock.fetchThirdParties.mockResolvedValueOnce([])
+        ThirdPartyServiceMock.getThirdParties.mockResolvedValueOnce([])
       })
       describe('and sending pagination params', () => {
         let page: number, limit: number
@@ -1323,7 +1374,7 @@ describe('Collection router', () => {
           { ...dbCollection, collection_count: totalCollectionsFromDb },
         ])
         ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([])
-        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockReturnValueOnce(
           []
         )
       })
@@ -1376,9 +1427,9 @@ describe('Collection router', () => {
         ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
           dbTPCollection,
         ])
-        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
-          [{ id: dbTPCollection.third_party_id }]
-        )
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockReturnValueOnce([
+          { id: dbTPCollection.third_party_id },
+        ])
         ;(ItemCuration.findLastByCollectionId as jest.Mock).mockReturnValueOnce(
           itemCurationMock
         )
@@ -1429,7 +1480,7 @@ describe('Collection router', () => {
           { ...dbCollection, collection_count: 1 },
         ])
         ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([])
-        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockReturnValueOnce(
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockReturnValueOnce(
           []
         )
       })
@@ -1846,8 +1897,7 @@ describe('Collection router', () => {
 
       describe('when sending more items than the available slots in the tp registry', () => {
         let items: ItemAttributes[]
-        let tpRegistryMaxItems: number
-        let tpCurationsAmonut: number
+        let availableSlots: number
 
         beforeEach(() => {
           ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
@@ -1859,13 +1909,9 @@ describe('Collection router', () => {
             { ...dbTPItemMock, id: 'yetAnotherId' },
           ]
           ;(Item.findByIds as jest.Mock).mockResolvedValueOnce(items)
-          tpRegistryMaxItems = 4
-          tpCurationsAmonut = 2 // so there are only 2 available slots
-          thirdPartyAPIMock.fetchMaxItemsByThirdParty.mockResolvedValueOnce(
-            tpRegistryMaxItems
-          )
-          ;(ItemCuration.countByThirdPartyId as jest.Mock).mockResolvedValueOnce(
-            tpCurationsAmonut
+          availableSlots = 2
+          ThirdPartyServiceMock.getThirdPartyAvailableSlots.mockResolvedValueOnce(
+            availableSlots
           )
         })
 
@@ -2160,12 +2206,15 @@ describe('Collection router', () => {
         let authHeaders: Record<string, string>
         let mockedWallet
         let cheque: Cheque
-        let tpRegistryMaxItems: number
-        let tpCurationsAmonut: number
+        let availableSlots: number
 
         beforeEach(async () => {
           mockedWallet = new ethers.Wallet(fakePrivateKey)
-          cheque = { ...mockedCheque }
+          cheque = await generateCheque(
+            dbTPCollection.third_party_id,
+            3,
+            mockedWallet
+          )
           authHeaders = createAuthHeaders(
             'post',
             url,
@@ -2194,13 +2243,9 @@ describe('Collection router', () => {
           jest
             .spyOn(Bridge, 'consolidateTPItems')
             .mockResolvedValueOnce(items as any)
-          tpRegistryMaxItems = 5
-          tpCurationsAmonut = 2 // so there are only 3 available slots and 3 items being published
-          thirdPartyAPIMock.fetchMaxItemsByThirdParty.mockResolvedValueOnce(
-            tpRegistryMaxItems
-          )
-          ;(ItemCuration.countByThirdPartyId as jest.Mock).mockResolvedValueOnce(
-            tpCurationsAmonut
+          availableSlots = 3
+          ThirdPartyServiceMock.getThirdPartyAvailableSlots.mockResolvedValueOnce(
+            availableSlots
           )
         })
 
@@ -2210,6 +2255,7 @@ describe('Collection router', () => {
               dbTPCollection,
             ])
           })
+
           it('should create a SlotUsageCheque record with the request data', () => {
             return server
               .post(buildURL(url))
@@ -2736,10 +2782,12 @@ describe('Collection router', () => {
             ;(SlotUsageCheque.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
               {}
             )
-            thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce({
+            ThirdPartyServiceMock.getThirdParty.mockResolvedValueOnce({
               root: 'aRootValue',
-            } as ThirdPartyFragment)
-            thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce(undefined)
+            } as ThirdParty)
+            ThirdPartyServiceMock.fetchReceiptById.mockResolvedValueOnce(
+              undefined
+            )
           })
 
           it('should respond with a 500 saying that the item is missing some properties', () => {
@@ -2763,7 +2811,7 @@ describe('Collection router', () => {
         describe('when the approval data and permissions are correct', () => {
           let slotUsageCheque: SlotUsageChequeAttributes
 
-          beforeEach(() => {
+          beforeEach(async () => {
             itemApprovalData = [
               {
                 id: uuid(),
@@ -2778,9 +2826,12 @@ describe('Collection router', () => {
                 content_hash: 'Qm3rererer',
               },
             ]
-
             slotUsageCheque = {
-              ...mockedCheque,
+              ...(await generateCheque(
+                dbTPCollection.third_party_id,
+                3,
+                ethers.Wallet.createRandom()
+              )),
               third_party_id: dbTPCollection.third_party_id,
             } as SlotUsageChequeAttributes
             ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
@@ -2797,12 +2848,12 @@ describe('Collection router', () => {
 
           describe("and the cheque doesn't exist in the blockcahin", () => {
             beforeEach(() => {
-              thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce(
+              ThirdPartyServiceMock.fetchReceiptById.mockResolvedValueOnce(
                 undefined
               )
-              thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce({
+              ThirdPartyServiceMock.getThirdParty.mockResolvedValueOnce({
                 root: 'aRootValue',
-              } as ThirdPartyFragment)
+              } as ThirdParty)
             })
 
             it('should return an array with the data for pending curations, indicating that the cheque was not used', () => {
@@ -2833,14 +2884,16 @@ describe('Collection router', () => {
           })
 
           describe('and the cheque exists in the blockchain', () => {
-            beforeEach(() => {
-              thirdPartyAPIMock.fetchReceiptById.mockResolvedValueOnce({
-                id:
-                  '0x80a6f1bdeaeccc9caec3f8fcf7bde7cf1219735b0fa8dd058d0a8a8b81b8ea16',
+            beforeEach(async () => {
+              ThirdPartyServiceMock.fetchReceiptById.mockResolvedValueOnce({
+                id: await getChequeMessageHash(
+                  slotUsageCheque,
+                  dbTPCollection.third_party_id
+                ),
               } as ReceiptFragment)
-              thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce({
+              ThirdPartyServiceMock.getThirdParty.mockResolvedValueOnce({
                 root: 'aRootValue',
-              } as ThirdPartyFragment)
+              } as ThirdParty)
             })
 
             it('should return an array with the data for pending curations, indicating that the cheque was used', () => {
@@ -2910,7 +2963,7 @@ describe('Collection router', () => {
         []
       )
       ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
-      thirdPartyAPIMock.fetchThirdParties.mockResolvedValueOnce([])
+      ThirdPartyServiceMock.getThirdParties.mockResolvedValueOnce([])
     })
 
     describe('and sending pagination params', () => {

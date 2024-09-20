@@ -1,15 +1,15 @@
-import { ThirdPartyFragment } from '../ethereum/api/fragments'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
   dbTPCollectionMock,
-  thirdPartyFragmentMock,
+  thirdPartyMock,
 } from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
+import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
+import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 
-jest.mock('../ethereum/api/thirdParty')
 jest.mock('./Collection.model')
+jest.mock('../ThirdParty/ThirdParty.service')
 
 describe('Collection service', () => {
   let service: CollectionService
@@ -66,13 +66,10 @@ describe('Collection service', () => {
   })
 
   describe('when getting the database TP collections', () => {
-    let thirdPartyFragments: ThirdPartyFragment[]
+    let thirdParties: ThirdParty[]
 
     beforeEach(() => {
-      thirdPartyFragments = [
-        thirdPartyFragmentMock,
-        { ...thirdPartyFragmentMock, id: 'nonsense-id' },
-      ]
+      thirdParties = [thirdPartyMock, { ...thirdPartyMock, id: 'nonsense-id' }]
       ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([
         dbTPCollectionMock,
       ])
@@ -80,8 +77,8 @@ describe('Collection service', () => {
 
     describe('when searching all collections', () => {
       beforeEach(() => {
-        ;(thirdPartyAPI.fetchThirdParties as jest.Mock).mockResolvedValueOnce(
-          thirdPartyFragments
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
+          thirdParties
         )
       })
 
@@ -92,15 +89,15 @@ describe('Collection service', () => {
       it('should try to fetch db collections with all the ids', async () => {
         await service.getDbTPCollections()
 
-        const ids = thirdPartyFragments.map((fragment) => fragment.id)
+        const ids = thirdParties.map((fragment) => fragment.id)
         expect(Collection.findByThirdPartyIds).toHaveBeenCalledWith(ids)
       })
     })
 
     describe('when searching by a specific manager', () => {
       beforeEach(() => {
-        ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
-          thirdPartyFragments
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
+          thirdParties
         )
       })
 
@@ -113,7 +110,7 @@ describe('Collection service', () => {
       it('should try to fetch db collections for the manager the ids', async () => {
         await service.getDbTPCollectionsByManager(wallet.address)
 
-        const ids = thirdPartyFragments.map((fragment) => fragment.id)
+        const ids = thirdParties.map((fragment) => fragment.id)
         expect(Collection.findByThirdPartyIds).toHaveBeenCalledWith(ids)
       })
     })

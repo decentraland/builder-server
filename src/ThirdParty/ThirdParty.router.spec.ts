@@ -1,41 +1,35 @@
 import supertest from 'supertest'
 import { createAuthHeaders, buildURL } from '../../spec/utils'
-import { ItemCuration } from '../Curation/ItemCuration'
-import {
-  ThirdPartyFragment,
-  ThirdPartyMetadataType,
-} from '../ethereum/api/fragments'
-import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { app } from '../server'
 import { ThirdParty } from './ThirdParty.types'
-import { toThirdParty } from './utils'
+import { ThirdPartyService } from './ThirdParty.service'
+import {
+  NonExistentThirdPartyError,
+  OnlyDeletableIfOnGraphError,
+  UnauthorizedThirdPartyManagerError,
+} from './ThirdParty.errors'
 
 const server = supertest(app.getApp())
 
 jest.mock('../ethereum/api/thirdParty')
 jest.mock('../Curation/ItemCuration')
+jest.mock('./ThirdParty.service')
 
 describe('ThirdParty router', () => {
-  let fragments: ThirdPartyFragment[]
   let thirdParties: ThirdParty[]
 
   beforeEach(() => {
-    let metadata = {
-      type: ThirdPartyMetadataType.THIRD_PARTY_V1,
-      thirdParty: {
-        name: 'a name',
-        description: 'a description',
-        contracts: [{ network: 'amoy', address: '0x0' }],
-      },
-    }
-    fragments = [
+    thirdParties = [
       {
         id: '1',
         root: 'aRoot',
         isApproved: true,
         managers: ['0x1'],
         maxItems: '3',
-        metadata,
+        name: 'a name',
+        description: 'a description',
+        contracts: [{ network: 'amoy', address: '0x0' }],
+        published: true,
       },
       {
         id: '2',
@@ -43,10 +37,12 @@ describe('ThirdParty router', () => {
         isApproved: true,
         managers: ['0x2', '0x3'],
         maxItems: '2',
-        metadata,
+        name: 'another name',
+        description: 'another description',
+        contracts: [{ network: 'amoy', address: '0x1' }],
+        published: true,
       },
     ]
-    thirdParties = fragments.map(toThirdParty)
   })
 
   afterEach(() => {
@@ -57,8 +53,8 @@ describe('ThirdParty router', () => {
     let url: string
 
     beforeEach(() => {
-      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
-        fragments
+      ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
+        thirdParties
       )
       url = '/thirdParties'
     })
@@ -77,16 +73,12 @@ describe('ThirdParty router', () => {
   describe('when using a query string to filter', () => {
     let url: string
     let manager: string
-    let managerFragments: ThirdPartyFragment[]
-    let managerThirdParties: ThirdParty[]
 
     beforeEach(() => {
       manager = '0x1'
-      managerFragments = fragments.slice(0, 1)
-      ;(thirdPartyAPI.fetchThirdPartiesByManager as jest.Mock).mockResolvedValueOnce(
-        managerFragments
+      ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
+        thirdParties
       )
-      managerThirdParties = managerFragments.map(toThirdParty)
       url = '/thirdParties'
     })
 
@@ -98,10 +90,10 @@ describe('ThirdParty router', () => {
         .expect(200)
         .then((response: any) => {
           expect(response.body).toEqual({
-            data: managerThirdParties,
+            data: thirdParties,
             ok: true,
           })
-          expect(thirdPartyAPI.fetchThirdPartiesByManager).toHaveBeenCalledWith(
+          expect(ThirdPartyService.getThirdParties).toHaveBeenCalledWith(
             manager
           )
         })
@@ -110,19 +102,14 @@ describe('ThirdParty router', () => {
 
   describe('when retrieving the available slots for a third party', () => {
     let url: string
-    let maxSlots: number
-    let itemsInCuration: number
+    let availableSlots: number
 
     beforeEach(() => {
-      maxSlots = 10
-      itemsInCuration = 6
-      ;(thirdPartyAPI.fetchMaxItemsByThirdParty as jest.Mock).mockResolvedValueOnce(
-        maxSlots
+      availableSlots = 10
+      ;(ThirdPartyService.getThirdPartyAvailableSlots as jest.Mock).mockResolvedValueOnce(
+        availableSlots
       )
-      ;(thirdPartyAPI.isManager as jest.Mock).mockResolvedValueOnce(true)
-      ;(ItemCuration.countByThirdPartyId as jest.Mock).mockResolvedValueOnce(
-        itemsInCuration
-      )
+      ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
       url = '/thirdParties/aThirdPartyId/slots'
     })
 
@@ -133,7 +120,7 @@ describe('ThirdParty router', () => {
         .expect(200)
         .then((response: any) => {
           expect(response.body).toEqual({
-            data: maxSlots - itemsInCuration,
+            data: availableSlots,
             ok: true,
           })
         })
@@ -151,8 +138,8 @@ describe('ThirdParty router', () => {
 
     describe('and the third party does not exist', () => {
       beforeEach(() => {
-        ;(thirdPartyAPI.fetchThirdParty as jest.Mock).mockResolvedValueOnce(
-          undefined
+        ;(ThirdPartyService.getThirdParty as jest.Mock).mockRejectedValueOnce(
+          new NonExistentThirdPartyError(thirdPartyId)
         )
       })
 
@@ -173,8 +160,8 @@ describe('ThirdParty router', () => {
 
     describe('and the third party exists', () => {
       beforeEach(() => {
-        ;(thirdPartyAPI.fetchThirdParty as jest.Mock).mockResolvedValueOnce(
-          fragments[0]
+        ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValueOnce(
+          thirdParties[0]
         )
       })
 
@@ -185,6 +172,81 @@ describe('ThirdParty router', () => {
           .expect(200)
           .then((response: any) => {
             expect(response.body).toEqual({ data: thirdParties[0], ok: true })
+          })
+      })
+    })
+  })
+
+  describe('when removing a virtual third party', () => {
+    let url: string
+    let thirdPartyId: string
+
+    beforeEach(() => {
+      thirdPartyId = 'aThirdPartyId'
+      url = `/thirdParties/${thirdPartyId}`
+    })
+
+    describe('and the virtual third party does not exist', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.removeVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new NonExistentThirdPartyError(thirdPartyId)
+        )
+      })
+
+      it('should return a 404 status code and an error message', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(404)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error: "The Third Party doesn't exists.",
+            })
+          })
+      })
+    })
+    describe('and the user is not a manager of the virtual third party', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.removeVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new UnauthorizedThirdPartyManagerError(thirdPartyId)
+        )
+      })
+
+      it('should return a 401 status code and an error message', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(401)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error: 'You are not the manager of this Third Party.',
+            })
+          })
+      })
+    })
+    describe('and the virtual third party does not has its graph version', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.removeVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new OnlyDeletableIfOnGraphError(thirdPartyId)
+        )
+      })
+
+      it('should return a 400 status code and an error message', () => {
+        return server
+          .delete(buildURL(url))
+          .set(createAuthHeaders('delete', url))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error:
+                "The Third Party can only be deleted if it's already on the graph.",
+            })
           })
       })
     })

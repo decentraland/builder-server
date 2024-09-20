@@ -122,7 +122,7 @@ export async function getMergedCollection(
   return mergedCollection
 }
 
-async function buildChequeSignatureData(
+export async function buildChequeSignatureData(
   cheque: Cheque,
   thirdPartyId: string
 ): Promise<{

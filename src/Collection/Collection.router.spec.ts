@@ -31,7 +31,7 @@ import {
   itemFragmentMock,
 } from '../../spec/mocks/items'
 import { itemCurationMock } from '../../spec/mocks/itemCuration'
-import { mockedCheque } from '../../spec/mocks/cheque'
+import { generateCheque } from '../../spec/mocks/cheque'
 import {
   ItemFragment,
   CollectionFragment,
@@ -72,7 +72,7 @@ import { isCommitteeMember } from '../Committee'
 import * as Warehouse from '../warehouse'
 import { app } from '../server'
 import { hasPublicAccess } from './access'
-import { toFullCollection } from './utils'
+import { getChequeMessageHash, toFullCollection } from './utils'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -2210,7 +2210,11 @@ describe('Collection router', () => {
 
         beforeEach(async () => {
           mockedWallet = new ethers.Wallet(fakePrivateKey)
-          cheque = { ...mockedCheque }
+          cheque = await generateCheque(
+            dbTPCollection.third_party_id,
+            3,
+            mockedWallet
+          )
           authHeaders = createAuthHeaders(
             'post',
             url,
@@ -2251,6 +2255,7 @@ describe('Collection router', () => {
               dbTPCollection,
             ])
           })
+
           it('should create a SlotUsageCheque record with the request data', () => {
             return server
               .post(buildURL(url))
@@ -2806,7 +2811,7 @@ describe('Collection router', () => {
         describe('when the approval data and permissions are correct', () => {
           let slotUsageCheque: SlotUsageChequeAttributes
 
-          beforeEach(() => {
+          beforeEach(async () => {
             itemApprovalData = [
               {
                 id: uuid(),
@@ -2821,9 +2826,12 @@ describe('Collection router', () => {
                 content_hash: 'Qm3rererer',
               },
             ]
-
             slotUsageCheque = {
-              ...mockedCheque,
+              ...(await generateCheque(
+                dbTPCollection.third_party_id,
+                3,
+                ethers.Wallet.createRandom()
+              )),
               third_party_id: dbTPCollection.third_party_id,
             } as SlotUsageChequeAttributes
             ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
@@ -2876,10 +2884,12 @@ describe('Collection router', () => {
           })
 
           describe('and the cheque exists in the blockchain', () => {
-            beforeEach(() => {
+            beforeEach(async () => {
               ThirdPartyServiceMock.fetchReceiptById.mockResolvedValueOnce({
-                id:
-                  '0x80a6f1bdeaeccc9caec3f8fcf7bde7cf1219735b0fa8dd058d0a8a8b81b8ea16',
+                id: await getChequeMessageHash(
+                  slotUsageCheque,
+                  dbTPCollection.third_party_id
+                ),
               } as ReceiptFragment)
               ThirdPartyServiceMock.getThirdParty.mockResolvedValueOnce({
                 root: 'aRootValue',

@@ -18,7 +18,7 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
       notNull: true,
     },
     managers: {
-      type: 'TEXT',
+      type: 'TEXT[]',
       notNull: true,
     },
     raw_metadata: {

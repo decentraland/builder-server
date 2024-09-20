@@ -21,16 +21,16 @@ export class ThirdPartyService {
     managers: string[],
     metadata: ThirdPartyMetadata
   ): Promise<ThirdParty> {
-    const rawMetadata = convertThirdPartyMetadataToRawMetadata(
+    const raw_metadata = convertThirdPartyMetadataToRawMetadata(
       metadata.name,
       metadata.description,
       metadata.contracts
     )
-    await VirtualThirdParty.create({ id, managers, rawMetadata })
+    await VirtualThirdParty.create({ id, managers, raw_metadata })
     return convertVirtualThirdPartyToThirdParty({
       id,
       managers,
-      raw_metadata: rawMetadata,
+      raw_metadata: raw_metadata,
     })
   }
 
@@ -58,11 +58,15 @@ export class ThirdPartyService {
   static async getThirdPartyAvailableSlots(
     thirdPartyId: ThirdParty['id']
   ): Promise<number> {
-    const [maxItems, itemCurationsCount] = await Promise.all([
-      thirdPartyAPI.fetchMaxItemsByThirdParty(thirdPartyId),
-      ItemCuration.countByThirdPartyId(thirdPartyId),
-    ])
-    return maxItems - itemCurationsCount
+    try {
+      const [thirdParty, itemCurationsCount] = await Promise.all([
+        this.getThirdParty(thirdPartyId),
+        ItemCuration.countByThirdPartyId(thirdPartyId),
+      ])
+      return Number(thirdParty.maxItems) - itemCurationsCount
+    } catch (_) {
+      return 0
+    }
   }
 
   // All third parties methods

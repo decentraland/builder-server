@@ -156,7 +156,7 @@ describe('when getting the cheque hash', () => {
 
   it('should return the correct hash', () => {
     return expect(getChequeMessageHash(cheque, thirdPartyId)).resolves.toEqual(
-      '0x507e4d6eb5ec23efbfdc3c2fdb46176f71657ca7443f76ae5701dc58c7d0c57e'
+      '0x96f6844148bdeac5fa9c947bc253e634545e97400780485ab9c8ef409414e562'
     )
   })
 })

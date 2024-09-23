@@ -32,6 +32,7 @@ beforeEach(() => {
   virtualThirdParty = {
     id: thirdPartyFragment.id,
     managers: thirdPartyFragment.managers,
+    isProgrammatic: false,
     raw_metadata: convertThirdPartyMetadataToRawMetadata(
       'name',
       'description',

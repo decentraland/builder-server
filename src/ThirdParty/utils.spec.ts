@@ -24,6 +24,7 @@ describe('when converting a third party fragment into a third party', () => {
         managers: ['0x1', '0x2'],
         maxItems: '1',
         isApproved: true,
+        isProgrammatic: false,
         metadata: {
           type: ThirdPartyMetadataType.THIRD_PARTY_V1,
           thirdParty: {
@@ -43,6 +44,7 @@ describe('when converting a third party fragment into a third party', () => {
         root: fragment.root,
         managers: fragment.managers,
         maxItems: fragment.maxItems,
+        isProgrammatic: false,
         isApproved: true,
         name: name,
         description: description,
@@ -63,6 +65,7 @@ describe('when converting a third party fragment into a third party', () => {
         managers: ['0x2'],
         maxItems: '2',
         isApproved: true,
+        isProgrammatic: false,
         metadata: {
           type: ThirdPartyMetadataType.THIRD_PARTY_V1,
           thirdParty: null,
@@ -81,6 +84,7 @@ describe('when converting a third party fragment into a third party', () => {
         description: '',
         contracts: [],
         published: true,
+        isProgrammatic: false,
       }
       expect(toThirdParty(fragment)).toEqual(thirdParty)
     })
@@ -96,6 +100,7 @@ describe('when converting a virtual third party into a third party', () => {
     virtualThirdParty = {
       id: thirdParty.id,
       managers: thirdParty.managers,
+      isProgrammatic: false,
       raw_metadata: convertThirdPartyMetadataToRawMetadata(
         thirdParty.name,
         thirdParty.description,

@@ -69,6 +69,7 @@ export function convertVirtualThirdPartyToThirdParty(
     maxItems: '0',
     isApproved: false,
     published: false,
+    isProgrammatic: dbVirtualThirdParty.isProgrammatic,
     root: '',
   }
 }

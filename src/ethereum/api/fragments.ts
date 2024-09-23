@@ -55,6 +55,7 @@ export const thirdPartyFragment = () => gql`
     managers
     maxItems
     isApproved
+    isProgrammatic
     metadata {
       type
       thirdParty {
@@ -170,6 +171,7 @@ export type ThirdPartyFragment = {
   id: string
   root: string
   isApproved: boolean
+  isProgrammatic: boolean
   managers: string[]
   maxItems: string
   metadata: ThirdPartyMetadata

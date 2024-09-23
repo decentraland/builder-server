@@ -1,4 +1,5 @@
 import { server } from 'decentraland-server'
+import { ILoggerComponent } from '@well-known-components/interfaces'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { getValidator } from '../utils/validator'
@@ -16,6 +17,7 @@ import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { Item } from '../Item'
 import { Bridge } from '../ethereum/api/Bridge'
 import { OwnableModel } from '../Ownable'
+import { ExpressApp } from '../common/ExpressApp'
 import { createPost } from './client'
 import { ForumService } from './Forum.service'
 import { ForumPost, forumPostSchema } from './Forum.types'
@@ -25,6 +27,12 @@ const validator = getValidator()
 export class ForumRouter extends Router {
   public service = new ForumService()
   public collectionService = new CollectionService()
+  private logger: ILoggerComponent.ILogger
+
+  constructor(router: ExpressApp, logger: ILoggerComponent) {
+    super(router)
+    this.logger = logger.getLogger('ForumRouter')
+  }
 
   private modelAuthorizationCheck = (
     _: OwnableModel,
@@ -68,9 +76,10 @@ export class ForumRouter extends Router {
     validate(forumPostJSON)
 
     if (validate.errors) {
-      console.error(
-        `Error trying to create the forum post for ${collectionId}, invalid schema`,
-        validate.errors
+      this.logger.error(
+        `Error trying to create the forum post for ${collectionId}, invalid schema: ${JSON.stringify(
+          validate.errors
+        )}`
       )
       throw new HTTPError('Invalid schema', validate.errors)
     }
@@ -79,7 +88,7 @@ export class ForumRouter extends Router {
     const collection = await Collection.findOne(collectionId)
 
     if (collection.forum_link) {
-      console.error(
+      this.logger.error(
         `Error trying to create the forum post for ${collectionId}, forum post already exists`
       )
       throw new HTTPError('Forum post already exists', { id: collectionId })
@@ -106,9 +115,10 @@ export class ForumRouter extends Router {
         return link
       }
     } catch (error) {
-      console.error(
-        `Error trying to create the forum post for ${collectionId}`,
-        isErrorWithMessage(error) ? error.message : 'Unknown'
+      this.logger.error(
+        `Error trying to create the forum post for ${collectionId}: ${
+          isErrorWithMessage(error) ? error.message : 'Unknown'
+        }`
       )
       throw new HTTPError(
         'Error creating forum post',

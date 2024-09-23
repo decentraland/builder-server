@@ -68,6 +68,10 @@ export class ForumRouter extends Router {
     validate(forumPostJSON)
 
     if (validate.errors) {
+      console.error(
+        `Error trying to create the forum post for ${collectionId}, invalid schema`,
+        validate.errors
+      )
       throw new HTTPError('Invalid schema', validate.errors)
     }
     const forumPost: ForumPost = forumPostJSON as ForumPost
@@ -75,6 +79,9 @@ export class ForumRouter extends Router {
     const collection = await Collection.findOne(collectionId)
 
     if (collection.forum_link) {
+      console.error(
+        `Error trying to create the forum post for ${collectionId}, forum post already exists`
+      )
       throw new HTTPError('Forum post already exists', { id: collectionId })
     }
 
@@ -99,6 +106,10 @@ export class ForumRouter extends Router {
         return link
       }
     } catch (error) {
+      console.error(
+        `Error trying to create the forum post for ${collectionId}`,
+        isErrorWithMessage(error) ? error.message : 'Unknown'
+      )
       throw new HTTPError(
         'Error creating forum post',
         { errors: isErrorWithMessage(error) ? error.message : 'Unknown' },

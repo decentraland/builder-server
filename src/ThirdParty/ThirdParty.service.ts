@@ -19,7 +19,8 @@ export class ThirdPartyService {
   static async createVirtualThirdParty(
     id: string,
     managers: string[],
-    metadata: ThirdPartyMetadata
+    metadata: ThirdPartyMetadata,
+    isProgrammatic?: boolean
   ): Promise<ThirdParty> {
     const raw_metadata = convertThirdPartyMetadataToRawMetadata(
       metadata.name,
@@ -31,6 +32,7 @@ export class ThirdPartyService {
       id,
       managers,
       raw_metadata: raw_metadata,
+      isProgrammatic: isProgrammatic ?? false,
     })
   }
 

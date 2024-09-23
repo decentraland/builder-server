@@ -30,6 +30,7 @@ describe('ThirdParty router', () => {
         description: 'a description',
         contracts: [{ network: 'amoy', address: '0x0' }],
         published: true,
+        isProgrammatic: false,
       },
       {
         id: '2',
@@ -41,6 +42,7 @@ describe('ThirdParty router', () => {
         description: 'another description',
         contracts: [{ network: 'amoy', address: '0x1' }],
         published: true,
+        isProgrammatic: false,
       },
     ]
   })

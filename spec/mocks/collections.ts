@@ -69,6 +69,7 @@ export const thirdPartyFragmentMock: ThirdPartyFragment = {
   root: 'aRoot',
   managers: [wallet.address],
   isApproved: true,
+  isProgrammatic: false,
   maxItems: '10',
   metadata: {
     type: ThirdPartyMetadataType.THIRD_PARTY_V1,
@@ -82,6 +83,7 @@ export const thirdPartyMock: ThirdParty = {
   managers: thirdPartyFragmentMock.managers,
   isApproved: thirdPartyFragmentMock.isApproved,
   maxItems: thirdPartyFragmentMock.maxItems,
+  isProgrammatic: false,
   name: '',
   description: '',
   contracts: [],

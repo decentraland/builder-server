@@ -32,7 +32,7 @@ export class ThirdPartyService {
       id,
       managers,
       raw_metadata: raw_metadata,
-      isProgrammatic: isProgrammatic ?? false,
+      isProgrammatic: !!isProgrammatic,
     })
   }
 

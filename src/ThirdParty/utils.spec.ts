@@ -15,7 +15,7 @@ import { VirtualThirdPartyAttributes } from './VirtualThirdParty.types'
 
 describe('when converting a third party fragment into a third party', () => {
   describe('when a complete fragment is supplied', () => {
-    let fragment: ThirdPartyFragment
+    let fragment: ThirdPartyFragment & { isProgrammatic: boolean }
 
     beforeEach(() => {
       fragment = {
@@ -56,7 +56,7 @@ describe('when converting a third party fragment into a third party', () => {
   })
 
   describe('when the third party metadata is null', () => {
-    let fragment: ThirdPartyFragment
+    let fragment: ThirdPartyFragment & { isProgrammatic: boolean }
 
     beforeEach(() => {
       fragment = {

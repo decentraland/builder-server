@@ -64,7 +64,9 @@ export const collectionFragmentMock: CollectionFragment = {
   createdAt: toUnixTimestamp(dbCollectionMock.created_at),
 }
 
-export const thirdPartyFragmentMock: ThirdPartyFragment = {
+export const thirdPartyFragmentMock: ThirdPartyFragment & {
+  isProgrammatic: boolean
+} = {
   id: dbTPCollectionMock.third_party_id,
   root: 'aRoot',
   managers: [wallet.address],

@@ -48,7 +48,7 @@ export const collectionFragment = () => gql`
   }
 `
 
-export const thirdPartyFragment = () => gql`
+export const thirdPartyWithProgrammaticFragment = () => gql`
   fragment thirdPartyFragment on ThirdParty {
     id
     root
@@ -56,6 +56,27 @@ export const thirdPartyFragment = () => gql`
     maxItems
     isApproved
     isProgrammatic
+    metadata {
+      type
+      thirdParty {
+        name
+        description
+        contracts {
+          address
+          network
+        }
+      }
+    }
+  }
+`
+
+export const thirdPartyFragment = () => gql`
+  fragment thirdPartyFragment on ThirdParty {
+    id
+    root
+    managers
+    maxItems
+    isApproved
     metadata {
       type
       thirdParty {
@@ -171,7 +192,6 @@ export type ThirdPartyFragment = {
   id: string
   root: string
   isApproved: boolean
-  isProgrammatic: boolean
   managers: string[]
   maxItems: string
   metadata: ThirdPartyMetadata

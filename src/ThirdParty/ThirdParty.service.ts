@@ -1,3 +1,4 @@
+import { env } from 'decentraland-commons'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { ThirdParty, ThirdPartyMetadata } from './ThirdParty.types'
@@ -74,8 +75,10 @@ export class ThirdPartyService {
   // All third parties methods
 
   static async getThirdParties(manager?: string): Promise<ThirdParty[]> {
+    const includeProgrammatic = env.isDevelopment()
+
     const [fragments, virtualThirdParties] = await Promise.all([
-      thirdPartyAPI.fetchThirdPartiesByManager(manager),
+      thirdPartyAPI.fetchThirdPartiesByManager(includeProgrammatic, manager),
       manager
         ? this.getVirtualThirdPartiesByManager(manager)
         : ([] as ThirdParty[]),

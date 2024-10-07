@@ -1,4 +1,3 @@
-import { env } from 'decentraland-commons'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ItemCuration } from '../Curation/ItemCuration'
 import {

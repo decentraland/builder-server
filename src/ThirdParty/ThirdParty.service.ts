@@ -1,7 +1,11 @@
 import { env } from 'decentraland-commons'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { ThirdParty, ThirdPartyMetadata } from './ThirdParty.types'
+import {
+  ThirdParty,
+  ThirdPartyMetadata,
+  UpdateVirtualThirdPartyBody,
+} from './ThirdParty.types'
 import {
   convertThirdPartyMetadataToRawMetadata,
   convertVirtualThirdPartyToThirdParty,
@@ -142,5 +146,25 @@ export class ThirdPartyService {
     } else {
       throw new OnlyDeletableIfOnGraphError(thirdPartyId)
     }
+  }
+
+  static async updateVirtualThirdParty(
+    thirdPartyId: string,
+    manager: string,
+    updateParameters: UpdateVirtualThirdPartyBody
+  ) {
+    const virtualThirdParty = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
+      { id: thirdPartyId }
+    )
+    if (!virtualThirdParty) {
+      throw new NonExistentThirdPartyError(thirdPartyId)
+    }
+    if (!virtualThirdParty.managers.includes(manager)) {
+      throw new UnauthorizedThirdPartyManagerError(thirdPartyId)
+    }
+    await VirtualThirdParty.update(
+      { isProgrammatic: updateParameters.isProgrammatic },
+      { id: thirdPartyId }
+    )
   }
 }

@@ -8,3 +8,7 @@ export type ThirdPartyMetadata = {
   description: string
   contracts: LinkedContract[]
 }
+
+export type UpdateVirtualThirdPartyBody = {
+  isProgrammatic: boolean
+}

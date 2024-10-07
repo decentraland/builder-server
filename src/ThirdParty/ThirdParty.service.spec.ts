@@ -378,3 +378,57 @@ describe('when getting all third parties of a manager', () => {
     })
   })
 })
+
+describe('when updating a virtual third party', () => {
+  describe('and the virtual third party does not exist', () => {
+    beforeEach(() => {
+      VirtualThirdPartyMock.findOne.mockResolvedValue(undefined)
+    })
+
+    it('should reject with the NonExistentThirdPartyError error', () => {
+      return expect(
+        ThirdPartyService.updateVirtualThirdParty(virtualThirdParty.id, '0x2', {
+          isProgrammatic: true,
+        })
+      ).rejects.toThrow(NonExistentThirdPartyError)
+    })
+  })
+
+  describe('and the virtual third party exists', () => {
+    beforeEach(() => {
+      VirtualThirdPartyMock.findOne.mockResolvedValue(virtualThirdParty)
+    })
+
+    describe('and the user is not a manager of the virtual third party', () => {
+      beforeEach(() => {
+        virtualThirdParty.managers = []
+      })
+
+      it('should reject with the UnauthorizedThirdPartyManagerError error', () => {
+        return expect(
+          ThirdPartyService.updateVirtualThirdParty(
+            virtualThirdParty.id,
+            '0x2',
+            { isProgrammatic: true }
+          )
+        ).rejects.toThrow(UnauthorizedThirdPartyManagerError)
+      })
+    })
+
+    describe('and the user is a manager of the virtual third party', () => {
+      beforeEach(() => {
+        virtualThirdParty.managers.push('0x2')
+      })
+
+      it('should update the virtual third party and resolve', () => {
+        return expect(
+          ThirdPartyService.updateVirtualThirdParty(
+            virtualThirdParty.id,
+            '0x2',
+            { isProgrammatic: true }
+          )
+        ).resolves.toBeUndefined()
+      })
+    })
+  })
+})

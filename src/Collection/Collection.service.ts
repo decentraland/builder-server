@@ -603,8 +603,27 @@ export class CollectionService {
     const thirdParties = manager
       ? await ThirdPartyService.getThirdParties(manager)
       : await ThirdPartyService.getThirdParties()
-    const thirdPartyIds = thirdParties.map((thirdParty) => thirdParty.id)
-    return Collection.findAll({ ...params, thirdPartyIds })
+    const thirdPartyById = thirdParties.reduce((acc, thirdParty) => {
+      acc[thirdParty.id] = thirdParty
+      return acc
+    }, {} as Record<string, ThirdParty>)
+    const thirdPartyIds = Object.keys(thirdPartyById)
+    const allCollections = await Collection.findAll({
+      ...params,
+      thirdPartyIds,
+    })
+
+    // Set if the collection is programmatic
+    for (const collection of allCollections) {
+      if (
+        collection.third_party_id &&
+        thirdPartyById[collection.third_party_id]
+      ) {
+        collection.is_programmatic =
+          thirdPartyById[collection.third_party_id].isProgrammatic
+      }
+    }
+    return allCollections
   }
 
   public async getDbTPCollections(): Promise<CollectionAttributes[]> {
@@ -647,13 +666,22 @@ export class CollectionService {
 
   private async getTPCollection(
     dbCollection: ThirdPartyCollectionAttributes
-  ): Promise<CollectionAttributes> {
+  ): Promise<CollectionAttributes & { is_programmatic: boolean }> {
     const lastItemCuration = await ItemCuration.findLastByCollectionId(
       dbCollection.id
     )
-    return lastItemCuration
+
+    const thirdParty = await ThirdPartyService.getThirdParty(
+      dbCollection.third_party_id
+    )
+
+    const collection = lastItemCuration
       ? Bridge.mergeTPCollection(dbCollection, lastItemCuration)
       : dbCollection
+    return {
+      ...collection,
+      is_programmatic: thirdParty?.isProgrammatic ?? false,
+    }
   }
 
   private async getDCLCollection(

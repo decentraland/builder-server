@@ -253,4 +253,80 @@ describe('ThirdParty router', () => {
       })
     })
   })
+
+  describe('when updating a virtual third party', () => {
+    let url: string
+    let thirdPartyId: string
+    let updateParameters: any
+
+    beforeEach(() => {
+      thirdPartyId = 'aThirdPartyId'
+      updateParameters = { isProgrammatic: true }
+      url = `/thirdParties/${thirdPartyId}`
+    })
+
+    describe('and the virtual third party does not exist', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.updateVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new NonExistentThirdPartyError(thirdPartyId)
+        )
+      })
+
+      it('should return a 404 status code and an error message', () => {
+        return server
+          .patch(buildURL(url))
+          .set(createAuthHeaders('patch', url))
+          .send(updateParameters)
+          .expect(404)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error: "The Third Party doesn't exists.",
+            })
+          })
+      })
+    })
+    describe('and the user is not a manager of the virtual third party', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.updateVirtualThirdParty as jest.Mock).mockRejectedValueOnce(
+          new UnauthorizedThirdPartyManagerError(thirdPartyId)
+        )
+      })
+
+      it('should return a 401 status code and an error message', () => {
+        return server
+          .patch(buildURL(url))
+          .set(createAuthHeaders('patch', url))
+          .send(updateParameters)
+          .expect(401)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: { id: thirdPartyId },
+              ok: false,
+              error: 'You are not the manager of this Third Party.',
+            })
+          })
+      })
+    })
+
+    describe('and the virtual third party exists', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.updateVirtualThirdParty as jest.Mock).mockResolvedValueOnce(
+          thirdParties[0]
+        )
+      })
+
+      it('should return a 200 status code', () => {
+        return server
+          .patch(buildURL(url))
+          .set(createAuthHeaders('patch', url))
+          .send(updateParameters)
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({ data: undefined, ok: true })
+          })
+      })
+    })
+  })
 })

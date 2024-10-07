@@ -45,6 +45,7 @@ export type FullCollection = Omit<
   'urn_suffix' | 'third_party_id'
 > & {
   urn: string | null
+  isProgrammatic?: boolean
 }
 
 export type PublishCollectionResponse<T> = {

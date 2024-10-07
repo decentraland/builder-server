@@ -4,12 +4,15 @@ import {
 } from '../../spec/mocks/collections'
 import { wallet } from '../../spec/mocks/wallet'
 import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
+import { ItemCuration } from '../Curation/ItemCuration'
+import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
-import { ThirdParty } from '../ThirdParty/ThirdParty.types'
+import { CollectionAttributes } from './Collection.types'
 
 jest.mock('./Collection.model')
 jest.mock('../ThirdParty/ThirdParty.service')
+jest.mock('../Curation/ItemCuration/ItemCuration.model')
 
 describe('Collection service', () => {
   let service: CollectionService
@@ -112,6 +115,96 @@ describe('Collection service', () => {
 
         const ids = thirdParties.map((fragment) => fragment.id)
         expect(Collection.findByThirdPartyIds).toHaveBeenCalledWith(ids)
+      })
+    })
+  })
+
+  describe('when getting a collection by id', () => {
+    let thirdParty: ThirdParty
+    let collection: CollectionAttributes
+
+    describe('and the collection is a third party collection', () => {
+      beforeEach(() => {
+        collection = { ...dbTPCollectionMock }
+        thirdParty = {
+          ...thirdPartyMock,
+          id: dbTPCollectionMock.third_party_id,
+        }
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([collection])
+      })
+
+      beforeEach(() => {
+        ;(ItemCuration.findLastByCollectionId as jest.Mock).mockResolvedValueOnce(
+          undefined
+        )
+        ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValueOnce(
+          thirdParty
+        )
+      })
+
+      describe('and the third party is programmatic', () => {
+        beforeEach(() => {
+          thirdParty.isProgrammatic = true
+        })
+
+        it('should return the collection with the isProgrammatic property set', () => {
+          return expect(service.getCollection(collection.id)).resolves.toEqual({
+            ...collection,
+            is_programmatic: true,
+          })
+        })
+      })
+
+      describe('and the third party is not programmatic', () => {
+        beforeEach(() => {
+          thirdParty.isProgrammatic = false
+        })
+
+        it('should return the collection with the isProgrammatic property set', () => {
+          return expect(service.getCollection(collection.id)).resolves.toEqual({
+            ...collection,
+            is_programmatic: false,
+          })
+        })
+      })
+    })
+  })
+
+  describe('when getting all collections', () => {
+    let collections: CollectionAttributes[]
+    let thirdParties: ThirdParty[]
+
+    describe('and the collections are third party collections', () => {
+      beforeEach(() => {
+        collections = [
+          dbTPCollectionMock,
+          { ...dbTPCollectionMock, third_party_id: 'another-db-tp-collection' },
+        ]
+        thirdParties = [
+          {
+            ...thirdPartyMock,
+            id: dbTPCollectionMock.third_party_id,
+            isProgrammatic: false,
+          },
+          {
+            ...thirdPartyMock,
+            id: 'another-db-tp-collection',
+            isProgrammatic: true,
+          },
+        ]
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce(collections)
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
+          thirdParties
+        )
+      })
+
+      it('should return the collections with its is programmatic property set', () => {
+        return expect(
+          service.getCollections({}, wallet.address)
+        ).resolves.toEqual([
+          { ...collections[0], is_programmatic: false },
+          { ...collections[1], is_programmatic: true },
+        ])
       })
     })
   })

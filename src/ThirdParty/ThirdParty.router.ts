@@ -4,13 +4,15 @@ import { Router } from '../common/Router'
 import { withCors } from '../middleware/cors'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { AuthRequest, withAuthentication } from '../middleware/authentication'
-import { ThirdParty } from './ThirdParty.types'
+import { withSchemaValidation } from '../middleware'
+import { ThirdParty, UpdateVirtualThirdPartyBody } from './ThirdParty.types'
 import { ThirdPartyService } from './ThirdParty.service'
 import {
   NonExistentThirdPartyError,
   OnlyDeletableIfOnGraphError,
   UnauthorizedThirdPartyManagerError,
 } from './ThirdParty.errors'
+import { UpdateVirtualThirdPartyBodySchema } from './ThirdParty.schema'
 
 export class ThirdPartyRouter extends Router {
   mount() {
@@ -55,6 +57,16 @@ export class ThirdPartyRouter extends Router {
       withCors,
       withAuthentication,
       server.handleRequest(this.removeVirtualThirdParty)
+    )
+    /**
+     * Updates a virtual third party
+     */
+    this.router.patch(
+      '/thirdParties/:id',
+      withCors,
+      withAuthentication,
+      withSchemaValidation(UpdateVirtualThirdPartyBodySchema),
+      server.handleRequest(this.updateThirdParty)
     )
   }
 
@@ -125,6 +137,35 @@ export class ThirdPartyRouter extends Router {
           error.message,
           { id: error.id },
           STATUS_CODES.badRequest
+        )
+      }
+
+      throw error
+    }
+  }
+
+  updateThirdParty = async (req: AuthRequest): Promise<void> => {
+    const thirdPartyId = server.extractFromReq(req, 'id')
+    const eth_address = req.auth.ethAddress
+    const updateThirdPartyBody = req.body as UpdateVirtualThirdPartyBody
+    try {
+      await ThirdPartyService.updateVirtualThirdParty(
+        thirdPartyId,
+        eth_address,
+        updateThirdPartyBody
+      )
+    } catch (error) {
+      if (error instanceof NonExistentThirdPartyError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.notFound
+        )
+      } else if (error instanceof UnauthorizedThirdPartyManagerError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id },
+          STATUS_CODES.unauthorized
         )
       }
 

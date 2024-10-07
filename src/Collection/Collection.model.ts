@@ -17,6 +17,7 @@ type CollectionWithItemCount = CollectionAttributes & {
 
 export type CollectionWithCounts = CollectionWithItemCount & {
   collection_count: number
+  is_programmatic?: boolean
 }
 
 export type FindCollectionParams = {

@@ -79,10 +79,8 @@ export class ThirdPartyService {
   // All third parties methods
 
   static async getThirdParties(manager?: string): Promise<ThirdParty[]> {
-    const includeProgrammatic = env.isDevelopment()
-
     const [fragments, virtualThirdParties] = await Promise.all([
-      thirdPartyAPI.fetchThirdPartiesByManager(includeProgrammatic, manager),
+      thirdPartyAPI.fetchThirdPartiesByManager(manager),
       manager
         ? this.getVirtualThirdPartiesByManager(manager)
         : ([] as ThirdParty[]),

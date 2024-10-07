@@ -6,7 +6,6 @@ import {
   thirdPartyItemFragment,
   ReceiptFragment,
   receiptsFragment,
-  thirdPartyWithProgrammaticFragment,
 } from './fragments'
 import {
   BaseGraphAPI,
@@ -33,17 +32,13 @@ const getThirdPartyQuery = () => gql`
   ${thirdPartyFragment()}
 `
 
-const getThirdPartiesByManagerQuery = (includeProgrammatic: boolean) => gql`
+const getThirdPartiesByManagerQuery = () => gql`
   query getThirdPartiesByManager(${PAGINATION_VARIABLES}, $managers: [String!]) {
     thirdParties(${PAGINATION_ARGUMENTS}, where: { managers_contains_nocase: $managers }) {
       ...thirdPartyFragment
     }
   }
-  ${
-    includeProgrammatic
-      ? thirdPartyWithProgrammaticFragment()
-      : thirdPartyFragment()
-  }
+  ${thirdPartyFragment()}
 `
 
 const getThirdPartyMaxItems = () => gql`
@@ -97,11 +92,10 @@ export class ThirdPartyAPI extends BaseGraphAPI {
   }
 
   fetchThirdPartiesByManager = async (
-    includeProgrammatic: boolean,
     manager?: string
   ): Promise<ThirdPartyFragment[]> => {
     return this.paginate(['thirdParties'], {
-      query: getThirdPartiesByManagerQuery(includeProgrammatic),
+      query: getThirdPartiesByManagerQuery(),
       variables: { managers: manager ? [manager.toLowerCase()] : [] },
     })
   }

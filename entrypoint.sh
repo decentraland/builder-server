@@ -8,12 +8,16 @@ if [[ -z "${CONNECTION_STRING}" ]]; then
   export CONNECTION_STRING=postgres://${PG_COMPONENT_PSQL_USER}:${PG_COMPONENT_PSQL_PASSWORD}@${PG_COMPONENT_PSQL_HOST}:${PG_COMPONENT_PSQL_PORT}/${PG_COMPONENT_PSQL_DATABASE}
 fi
 
-for i in {1..10}; do
-  npm run migrate:docker up && break || echo "Migration failed, retrying... ($i)" && sleep 30;
+MAX_RETRIES=10
+RETRY_DELAY=30
+
+for i in $(seq 1 $MAX_RETRIES); do
+  npm run migrate:docker up && break || echo "Migration failed, retrying... ($i/$MAX_RETRIES)"
+  sleep $RETRY_DELAY
 done
 
-if [ $i -eq 5 ]; then
-  echo "Migration failed after 5 attempts, exiting..."
+if [ $i -eq $MAX_RETRIES ]; then
+  echo "Migration failed after $MAX_RETRIES attempts, exiting..."
   exit 1
 fi
 

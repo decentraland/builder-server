@@ -8,5 +8,13 @@ if [[ -z "${CONNECTION_STRING}" ]]; then
   export CONNECTION_STRING=postgres://${PG_COMPONENT_PSQL_USER}:${PG_COMPONENT_PSQL_PASSWORD}@${PG_COMPONENT_PSQL_HOST}:${PG_COMPONENT_PSQL_PORT}/${PG_COMPONENT_PSQL_DATABASE}
 fi
 
-npm run migrate:docker up || exit 1
+for i in {1..5}; do
+  npm run migrate:docker up && break || echo "Migration failed, retrying... ($i)" && sleep 60;
+done
+
+if [ $i -eq 5 ]; then
+  echo "Migration failed after 5 attempts, exiting..."
+  exit 1
+fi
+
 node --inspect="0.0.0.0:9229" ./dist/src/server.js || exit 1

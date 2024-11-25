@@ -372,7 +372,7 @@ describe('Item Service', () => {
           video: 'videoHash',
         }
         ;(Item.upsert as jest.Mock).mockRestore()
-        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([dbItem])
+        ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce([dbItem])
       })
 
       describe('and the item has an updated video', () => {
@@ -381,8 +381,8 @@ describe('Item Service', () => {
             ...dbItem,
             video: '',
           }
-          ;(Item.findByCollectionIds as jest.Mock).mockRestore()
-          ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
+          ;(Item.findByCollectionId as jest.Mock).mockRestore()
+          ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce([
             dbItem,
           ])
         })
@@ -416,7 +416,7 @@ describe('Item Service', () => {
       beforeEach(() => {
         dbItem = { ...dbItemMock }
         ;(Item.upsert as jest.Mock).mockRestore()
-        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([dbItem])
+        ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce([dbItem])
       })
 
       it('should not update the item', async () => {

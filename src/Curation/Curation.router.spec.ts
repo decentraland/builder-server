@@ -550,7 +550,7 @@ describe('when handling a request', () => {
                 .spyOn(service, 'updateById')
                 .mockResolvedValueOnce(expectedCuration)
               jest
-                .spyOn(Item, 'findByCollectionIds')
+                .spyOn(Item, 'findByCollectionId')
                 .mockResolvedValueOnce([mockItemsWithCount])
               updateItemSpy = jest
                 .spyOn(Item, 'upsert')

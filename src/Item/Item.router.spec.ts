@@ -481,7 +481,7 @@ describe('Item router', () => {
       let itemsForCollection: ItemAttributes[]
       beforeEach(() => {
         itemsForCollection = [dbItemMock, dbItemNotPublished]
-        ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce(
+        ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce(
           itemsForCollection.map((item) => ({
             ...item,
             total_count: itemsForCollection.length,
@@ -522,11 +522,15 @@ describe('Item router', () => {
                 ],
                 ok: true,
               })
-              expect(Item.findByCollectionIds).toHaveBeenCalledWith(
-                [dbCollectionMock.id],
-                undefined,
-                undefined,
-                undefined
+              expect(Item.findByCollectionId).toHaveBeenCalledWith(
+                dbCollectionMock.id,
+                {
+                  synced: undefined,
+                  status: undefined,
+                  mappingStatus: undefined,
+                  limit: undefined,
+                  offset: undefined,
+                }
               )
             })
         })
@@ -569,11 +573,13 @@ describe('Item router', () => {
                 },
                 ok: true,
               })
-              expect(Item.findByCollectionIds).toHaveBeenCalledWith(
-                [dbCollectionMock.id],
-                synced,
-                limit,
-                limit * (page - 1)
+              expect(Item.findByCollectionId).toHaveBeenCalledWith(
+                dbCollectionMock.id,
+                {
+                  synced,
+                  limit,
+                  offset: limit * (page - 1),
+                }
               )
             })
         })
@@ -616,9 +622,10 @@ describe('Item router', () => {
           ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
             [dbItemCuration]
           )
-          ;(Item.findByCollectionIdAndStatus as jest.Mock).mockResolvedValueOnce(
-            [dbTPItem, dbTPItemPublished]
-          )
+          ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+            dbTPItem,
+            dbTPItemPublished,
+          ])
           url = `/collections/${dbTPCollectionMock.id}/items`
         })
 
@@ -640,17 +647,15 @@ describe('Item router', () => {
             ok: true,
           })
 
-          expect(
-            Item.findByCollectionIdAndStatus as jest.Mock
-          ).toHaveBeenLastCalledWith(
+          expect(Item.findByCollectionId as jest.Mock).toHaveBeenLastCalledWith(
             dbTPCollectionMock.id,
             {
               synced: undefined,
               status: undefined,
               mappingStatus: ItemMappingStatus.MISSING_MAPPING,
-            },
-            undefined,
-            undefined
+              limit: undefined,
+              offset: undefined,
+            }
           )
         })
       })
@@ -661,7 +666,7 @@ describe('Item router', () => {
           ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce(
             [dbItemCuration]
           )
-          ;(Item.findByCollectionIds as jest.Mock).mockResolvedValueOnce([
+          ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce([
             dbTPItem,
             dbTPItemPublished,
           ])

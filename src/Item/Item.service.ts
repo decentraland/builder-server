@@ -192,6 +192,7 @@ export class ItemService {
     filters: {
       status?: CurationStatus
       synced?: boolean
+      name?: string
       mappingStatus?: ItemMappingStatus
       limit?: number
       offset?: number
@@ -201,24 +202,19 @@ export class ItemService {
     items: FullItem[]
     totalItems: number
   }> {
-    const { synced, status, mappingStatus, limit, offset } = filters
+    const { synced, name, status, mappingStatus, limit, offset } = filters
     const dbCollection = await this.collectionService.getDBCollection(
       collectionId
     )
     const isTP = isTPCollection(dbCollection)
-    const dbItemsWithCount =
-      (status || mappingStatus) && isTP
-        ? await Item.findByCollectionIdAndStatus(
-            collectionId,
-            {
-              synced,
-              status: status ? CurationStatus.PENDING : undefined,
-              mappingStatus,
-            },
-            limit,
-            offset
-          )
-        : await Item.findByCollectionIds([collectionId], synced, limit, offset)
+    const dbItemsWithCount = await Item.findByCollectionId(collectionId, {
+      synced,
+      status: status && isTP ? CurationStatus.PENDING : undefined,
+      mappingStatus: isTP ? mappingStatus : undefined,
+      name,
+      limit,
+      offset,
+    })
 
     const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
     const dbItems = dbItemsWithCount.map((dbItemWithCount) =>
@@ -844,7 +840,7 @@ export class ItemService {
    * that has an updated video content
    */
   public async updateDCLItemsContent(collectionId: string) {
-    const dbItemsWithCount = await Item.findByCollectionIds([collectionId])
+    const dbItemsWithCount = await Item.findByCollectionId(collectionId)
     const dbItems = dbItemsWithCount.map((dbItemWithCount) =>
       omit<ItemAttributes>(dbItemWithCount, ['total_count'])
     )

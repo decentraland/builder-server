@@ -367,6 +367,7 @@ export class ItemRouter extends Router {
     let status: CurationStatus | undefined
     let mappingStatus: ItemMappingStatus | undefined
     let synced: string | undefined
+    let name: string | undefined
     try {
       status = server.extractFromReq(req, 'status')
     } catch (error) {}
@@ -375,6 +376,9 @@ export class ItemRouter extends Router {
     } catch (error) {}
     try {
       mappingStatus = server.extractFromReq(req, 'mappingStatus')
+    } catch (error) {}
+    try {
+      name = server.extractFromReq(req, 'name')
     } catch (error) {}
 
     if (status && !Object.values(CurationStatus).includes(status)) {
@@ -393,6 +397,7 @@ export class ItemRouter extends Router {
         items,
         totalItems,
       } = await this.itemService.getCollectionItems(id, {
+        name,
         limit,
         offset: page && limit ? getOffset(page, limit) : undefined,
         status,

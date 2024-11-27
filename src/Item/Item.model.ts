@@ -17,7 +17,10 @@ export enum ItemMappingStatus {
 type ItemQueryOptions = {
   status?: CurationStatus
   synced?: boolean
+  name?: string
   mappingStatus?: ItemMappingStatus
+  limit?: number
+  offset?: number
 }
 
 export class Item extends Model<ItemAttributes> {
@@ -169,40 +172,21 @@ export class Item extends Model<ItemAttributes> {
     `)
   }
 
-  static async findByCollectionIds(
-    collectionIds: string[],
-    synced?: boolean,
-    limit: number = DEFAULT_LIMIT,
-    offset: number = 0
-  ) {
-    const query = ItemQueries.selectByCollectionIds(
-      collectionIds,
-      {
-        synced,
-      },
-      limit,
-      offset
-    )
-    return await this.query<ItemWithTotalCount>(query)
-  }
-
-  static async findByCollectionIdAndStatus(
+  static async findByCollectionId(
     collectionId: string,
-    options: ItemQueryOptions,
-    limit: number = DEFAULT_LIMIT,
-    offset: number = 0
+    options?: ItemQueryOptions
   ) {
-    const { status, synced, mappingStatus } = options
     return await this.query<ItemWithTotalCount>(
       ItemQueries.selectByCollectionIds(
         [collectionId],
         {
-          status,
-          synced,
-          mappingStatus,
+          status: options?.status,
+          synced: options?.synced,
+          mappingStatus: options?.mappingStatus,
+          name: options?.name,
         },
-        limit,
-        offset
+        options?.limit ?? DEFAULT_LIMIT,
+        options?.offset ?? 0
       )
     )
   }
@@ -215,7 +199,7 @@ export const ItemQueries = Object.freeze({
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) => {
-    const { status, synced, mappingStatus } = options
+    const { status, synced, mappingStatus, name } = options
     return SQL`
         SELECT items.*, count(*) OVER() AS total_count FROM (
           SELECT DISTINCT ON (items.id) items.id, items.*
@@ -253,6 +237,7 @@ export const ItemQueries = Object.freeze({
                   ? SQL`AND item_curations.status IS NOT NULL`
                   : SQL``
               }
+              ${name ? SQL`AND items.name ILIKE ${`%${name}%`}` : SQL``}
               AND ${
                 status ? SQL`item_curations.status = ${status}` : SQL`1 = 1`
               }

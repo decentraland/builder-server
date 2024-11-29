@@ -98,10 +98,10 @@ export class ItemService {
 
     const [dbItemCollection, itemCollection] = await Promise.all([
       collectionId
-        ? this.collectionService.getDBCollection(collectionId)
+        ? this.collectionService.getCollection(collectionId)
         : undefined,
       isMovingItemFromACollectionToAnother || isMovingOrphanItemIntoACollection
-        ? this.collectionService.getDBCollection(item.collection_id!)
+        ? this.collectionService.getCollection(item.collection_id!)
         : undefined,
     ])
 

@@ -406,6 +406,7 @@ export class Bridge {
       in_catalyst,
       is_published: true,
       is_approved: remoteCollection.isApproved,
+      eth_address: remoteCollection.creator,
       price: remoteItem.price,
       beneficiary: remoteItem.beneficiary,
       blockchain_item_id: remoteItem.blockchainId,

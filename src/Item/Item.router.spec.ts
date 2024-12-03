@@ -181,7 +181,8 @@ describe('Item router', () => {
                 beneficiary: itemFragment.beneficiary,
                 collection_id: dbItem.collection_id,
                 blockchain_item_id: dbItem.blockchain_item_id,
-                urn: itemFragmentMock.urn,
+                urn: itemFragment.urn,
+                eth_address: itemFragment.collection.creator,
               },
               ok: true,
             })
@@ -280,7 +281,8 @@ describe('Item router', () => {
               {
                 ...resultingItem,
                 beneficiary: itemFragment.beneficiary,
-                urn: itemFragmentMock.urn,
+                urn: itemFragment.urn,
+                eth_address: itemFragment.collection.creator,
               },
               resultItemNotPublished,
               resultingTPItem,
@@ -348,7 +350,8 @@ describe('Item router', () => {
                     beneficiary: itemFragment.beneficiary,
                     collection_id: dbItem.collection_id,
                     blockchain_item_id: dbItem.blockchain_item_id,
-                    urn: itemFragmentMock.urn,
+                    urn: itemFragment.urn,
+                    eth_address: itemFragment.collection.creator,
                   },
                   resultItemNotPublished,
                 ],
@@ -403,7 +406,8 @@ describe('Item router', () => {
                     beneficiary: itemFragment.beneficiary,
                     collection_id: dbItem.collection_id,
                     blockchain_item_id: dbItem.blockchain_item_id,
-                    urn: itemFragmentMock.urn,
+                    urn: itemFragment.urn,
+                    eth_address: itemFragment.collection.creator,
                   },
                   resultItemNotPublished,
                   resultingTPItem,
@@ -453,7 +457,8 @@ describe('Item router', () => {
                       beneficiary: itemFragment.beneficiary,
                       collection_id: dbItem.collection_id,
                       blockchain_item_id: dbItem.blockchain_item_id,
-                      urn: itemFragmentMock.urn,
+                      urn: itemFragment.urn,
+                      eth_address: itemFragment.collection.creator,
                     },
                     resultItemNotPublished,
                     resultingTPItem,
@@ -516,7 +521,8 @@ describe('Item router', () => {
                     beneficiary: itemFragment.beneficiary,
                     collection_id: dbItem.collection_id,
                     blockchain_item_id: dbItem.blockchain_item_id,
-                    urn: itemFragmentMock.urn,
+                    urn: itemFragment.urn,
+                    eth_address: itemFragment.collection.creator,
                   },
                   resultItemNotPublished,
                 ],
@@ -567,6 +573,7 @@ describe('Item router', () => {
                       collection_id: dbItem.collection_id,
                       blockchain_item_id: dbItem.blockchain_item_id,
                       urn: itemFragmentMock.urn,
+                      eth_address: itemFragmentMock.collection.creator,
                     },
                     resultItemNotPublished,
                   ],
@@ -1418,6 +1425,8 @@ describe('Item router', () => {
         })
 
         describe('and is being moved into a published collection', () => {
+          let mockCollectionApi: jest.Mock
+
           beforeEach(() => {
             mockItem.findOne.mockReset()
             mockItem.findOne.mockResolvedValueOnce({
@@ -1427,7 +1436,7 @@ describe('Item router', () => {
             mockCollection.findByIds
               .mockResolvedValueOnce([{ ...dbCollectionMock, item_count: 1 }])
               .mockResolvedValueOnce([{ ...dbCollectionMock, item_count: 1 }])
-            ;(collectionAPI.fetchCollection as jest.Mock).mockImplementationOnce(
+            mockCollectionApi = (collectionAPI.fetchCollection as jest.Mock).mockImplementation(
               () =>
                 Promise.resolve({
                   ...itemFragment.collection,
@@ -1435,6 +1444,10 @@ describe('Item router', () => {
                 })
             )
             mockOwnableCanUpsert(Item, itemToUpsert.id, wallet.address, true)
+          })
+
+          afterEach(() => {
+            mockCollectionApi.mockClear()
           })
 
           it('should fail with can not add the item to a published collection message', async () => {
@@ -2081,8 +2094,8 @@ describe('Item router', () => {
               data: {
                 ...Bridge.toFullItem(dbItem),
                 local_content_hash: expect.any(String),
-                eth_address: ethAddress,
-                beneficiary: 'aBeneficiary',
+                eth_address: itemFragment.collection.creator,
+                beneficiary: itemFragment.beneficiary,
                 in_catalyst: true,
                 is_published: true,
                 urn: wearable.id,
@@ -2222,7 +2235,7 @@ describe('Item router', () => {
                 is_published: true,
                 urn: wearable.id,
                 local_content_hash: expect.any(String),
-                eth_address: wallet.address,
+                eth_address: itemFragment.collection.creator,
                 created_at: dbItem.created_at.toISOString(),
                 updated_at: currentDate.toISOString(),
               },

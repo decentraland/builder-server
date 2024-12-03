@@ -1,6 +1,7 @@
 import {
   dbCollectionMock as baseDbCollectionMock,
   dbTPCollectionMock as baseDbTPCollectionMock,
+  thirdPartyFragmentMock,
 } from '../../spec/mocks/collections'
 import {
   dbItemMock,
@@ -19,6 +20,7 @@ import { CollectionService } from '../Collection/Collection.service'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { peerAPI } from '../ethereum/api/peer'
+import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
   ItemCantBeMovedFromCollectionError,
   MaximunAmountOfTagsReachedError,
@@ -32,7 +34,12 @@ import { VIDEO_PATH } from './utils'
 jest.mock('../ethereum/api/collection')
 jest.mock('../Collection/Collection.model')
 jest.mock('../ethereum/api/peer')
+jest.mock('../ethereum/api/thirdParty')
 jest.mock('./Item.model')
+jest.mock('../Curation/ItemCuration/ItemCuration.model')
+jest.mock('../ThirdParty/VirtualThirdParty.model')
+
+const thirdPartyAPIMock = thirdPartyAPI as jest.Mocked<typeof thirdPartyAPI>
 
 describe('Item Service', () => {
   let dbItem: ItemAttributes
@@ -91,6 +98,9 @@ describe('Item Service', () => {
             ids.includes(collection.id)
           )
         )
+        thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce(
+          thirdPartyFragmentMock
+        )
       })
 
       it('should throw the ItemCantBeMovedFromCollectionError error', () => {
@@ -112,6 +122,9 @@ describe('Item Service', () => {
           [dbCollectionMock, dbTPCollectionMock].filter((collection) =>
             ids.includes(collection.id)
           )
+        )
+        thirdPartyAPIMock.fetchThirdParty.mockResolvedValueOnce(
+          thirdPartyFragmentMock
         )
       })
 

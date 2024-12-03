@@ -608,10 +608,34 @@ export class CollectionService {
       return acc
     }, {} as Record<string, ThirdParty>)
     const thirdPartyIds = Object.keys(thirdPartyById)
-    const allCollections = await Collection.findAll({
+    let allCollections = await Collection.findAll({
       ...params,
       thirdPartyIds,
     })
+
+    // Verify collections ownership
+    if (params.address !== undefined) {
+      const collectionsIds = allCollections.map(
+        (collection) => collection.contract_address!
+      )
+      const remoteCollections = await collectionAPI.fetchCollections({
+        ids: collectionsIds,
+      })
+
+      if (remoteCollections.length > 0) {
+        // Create a map of remote collections for fast lookup
+        const remoteCollectionMap = Object.fromEntries(
+          remoteCollections.map(({ id, creator }) => [id, creator])
+        )
+
+        // If exists the remote collection, filter by the creator field
+        allCollections = allCollections.filter(
+          ({ contract_address }) =>
+            !remoteCollectionMap[contract_address!] ||
+            remoteCollectionMap[contract_address!] === params.address
+        )
+      }
+    }
 
     // Set if the collection is programmatic
     for (const collection of allCollections) {

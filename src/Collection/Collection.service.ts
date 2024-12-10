@@ -625,14 +625,21 @@ export class CollectionService {
       if (remoteCollections.length > 0) {
         // Create a map of remote collections for fast lookup
         const remoteCollectionMap = Object.fromEntries(
-          remoteCollections.map(({ id, creator }) => [id, creator])
+          remoteCollections.map(({ id, creator, managers }) => [
+            id,
+            { creator, managers },
+          ])
         )
 
-        // If exists the remote collection, filter by the creator field
+        // If exists the remote collection, filter by the creator field or the managers field
         allCollections = allCollections.filter(
           ({ contract_address }) =>
             !remoteCollectionMap[contract_address!] ||
-            remoteCollectionMap[contract_address!] === params.address
+            remoteCollectionMap[contract_address!].creator ===
+              params.address! ||
+            remoteCollectionMap[contract_address!].managers.includes(
+              params.address!
+            )
         )
       }
     }

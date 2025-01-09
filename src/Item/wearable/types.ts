@@ -16,6 +16,7 @@ export type WearableData = {
   removesDefaultHiding?: HideableWearableCategory[]
   tags: string[]
   blockVrmExport?: boolean
+  outlineCompatible?: boolean
 }
 
 export type SmartWearableData = WearableData & {
@@ -82,6 +83,10 @@ export const wearableSchema = Object.freeze({
       items: { type: 'string' },
     },
     blockVrmExport: {
+      type: 'boolean',
+      nullable: true
+    },
+    outlineCompatible: {
       type: 'boolean',
       nullable: true
     }

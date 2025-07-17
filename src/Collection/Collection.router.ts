@@ -270,7 +270,7 @@ export class CollectionRouter extends Router {
     } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections =
-      (await isCommitteeMember(eth_address)) || isAdminUser(eth_address)
+      isAdminUser(eth_address) || (await isCommitteeMember(eth_address))
 
     // If the request is not coming from a committee member, it can only request the collections that are already published and using a search term
     if (!canRequestCollections && !(q && isPublished === 'true')) {

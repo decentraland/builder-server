@@ -41,3 +41,10 @@ export function isManager(
     (manager: string) => manager.toLowerCase() === eth_address
   )
 }
+
+export function isAdminUser(eth_address: string): boolean {
+  return (
+    (process.env.ADMIN_ADDRESSES || '').split(',').includes(eth_address) ||
+    false
+  )
+}

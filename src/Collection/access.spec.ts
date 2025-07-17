@@ -6,7 +6,7 @@ import {
 import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
-import { hasAccess, hasPublicAccess } from './access'
+import { hasAccess, hasPublicAccess, isAdminUser } from './access'
 import { CollectionAttributes } from './Collection.types'
 
 jest.mock('../Committee')
@@ -133,5 +133,19 @@ describe('when getting access for a collection', () => {
         expect(await hasAccess(wallet.address, collection)).toBe(true)
       })
     })
+  })
+})
+
+describe('when checking if the user is an admin user', () => {
+  beforeEach(() => {
+    process.env.ADMIN_ADDRESSES = '0x0'
+  })
+
+  it('should return true if the user is an admin user', () => {
+    expect(isAdminUser('0x0')).toBe(true)
+  })
+
+  it('should return false if the user is not an admin user', () => {
+    expect(isAdminUser('0x1')).toBe(false)
   })
 })

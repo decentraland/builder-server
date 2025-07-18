@@ -55,7 +55,7 @@ import {
   TermsOfServiceEvent,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
-import { hasPublicAccess } from './access'
+import { hasPublicAccess, isAdminUser } from './access'
 import { toFullCollection, toRemoteWhereCondition } from './utils'
 import {
   AlreadyPublishedCollectionError,
@@ -269,7 +269,8 @@ export class CollectionRouter extends Router {
       type,
     } = req.query
     const eth_address = req.auth.ethAddress
-    const canRequestCollections = await isCommitteeMember(eth_address)
+    const canRequestCollections =
+      isAdminUser(eth_address) || (await isCommitteeMember(eth_address))
 
     // If the request is not coming from a committee member, it can only request the collections that are already published and using a search term
     if (!canRequestCollections && !(q && isPublished === 'true')) {

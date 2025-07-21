@@ -385,8 +385,11 @@ export class CollectionRouter extends Router {
 
     try {
       const collection = await this.service.getCollection(id)
+      const canRequestCollection =
+        isAdminUser(eth_address) ||
+        (await hasPublicAccess(eth_address, collection))
 
-      if (!(await hasPublicAccess(eth_address, collection))) {
+      if (!canRequestCollection) {
         throw new HTTPError(
           'Unauthorized',
           { id, eth_address },

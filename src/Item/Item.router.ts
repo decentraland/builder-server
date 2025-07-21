@@ -21,7 +21,10 @@ import {
 import { OwnableModel } from '../Ownable'
 import { getUploader, S3Content } from '../S3'
 import { Collection, CollectionService } from '../Collection'
-import { hasPublicAccess as hasCollectionAccess } from '../Collection/access'
+import {
+  hasPublicAccess as hasCollectionAccess,
+  isAdminUser,
+} from '../Collection/access'
 import { NonExistentCollectionError } from '../Collection/Collection.errors'
 import { isCommitteeMember } from '../Committee'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
@@ -405,7 +408,11 @@ export class ItemRouter extends Router {
         synced: synced ? synced === 'true' : undefined,
       })
 
-      if (!(await hasCollectionAccess(eth_address, collection))) {
+      const canRequestItemsCollection =
+        isAdminUser(eth_address) ||
+        (await hasCollectionAccess(eth_address, collection))
+
+      if (!canRequestItemsCollection) {
         throw new HTTPError(
           'Unauthorized',
           { eth_address },

@@ -23,6 +23,21 @@ jest.mock('../middleware', () => {
     withModelExists: jest
       .fn()
       .mockImplementation(() => jest.fn((_req, _res, next) => next())),
+    withModelAuthorization: jest
+      .fn()
+      .mockImplementation(() => jest.fn((_req, _res, next) => next())),
+    withLowercasedParams: jest
+      .fn()
+      .mockImplementation(() => jest.fn((_req, _res, next) => next())),
+    withPermissiveAuthentication: jest
+      .fn()
+      .mockImplementation(() => jest.fn((_req, _res, next) => next())),
+    withAuthentication: jest
+      .fn()
+      .mockImplementation(() => jest.fn((_req, _res, next) => next())),
+    withSchemaValidation: jest
+      .fn()
+      .mockImplementation(() => jest.fn((_req, _res, next) => next())),
   }
 })
 

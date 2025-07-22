@@ -12,6 +12,7 @@ import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
+  withCollectionExists as withCollectionExistsMiddleware,
   AuthRequest,
   withLowercasedParams,
   withSchemaValidation,
@@ -20,7 +21,7 @@ import {
 } from '../middleware'
 import { OwnableModel } from '../Ownable'
 import { getUploader, S3Content } from '../S3'
-import { Collection, CollectionService } from '../Collection'
+import { CollectionService } from '../Collection'
 import {
   hasPublicAccess as hasCollectionAccess,
   isAdminUser,
@@ -81,7 +82,7 @@ export class ItemRouter extends Router {
 
   mount() {
     const withItemExists = withModelExists(Item, 'id')
-    const withCollectionExist = withModelExists(Collection, 'id')
+    const withCollectionExist = withCollectionExistsMiddleware('id')
     const withItemAuthorization = withModelAuthorization(
       Item,
       'id',

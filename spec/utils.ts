@@ -2,6 +2,7 @@ import { Authenticator, AuthIdentity } from '@dcl/crypto'
 import { Wearable } from '@dcl/schemas'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
+import { ethers } from 'ethers'
 import { collectionAPI } from '../src/ethereum/api/collection'
 import { peerAPI } from '../src/ethereum/api/peer'
 import { isPublished } from '../src/utils/eth'
@@ -73,6 +74,35 @@ export function mockExistsMiddleware(Table: typeof GenericModel, id: string) {
         : 0
     }
   )
+}
+
+export function mockCollectionExistsMiddleware(id: string) {
+  if (!(Collection.count as jest.Mock).mock) {
+    throw new Error(
+      "Collection.count should be mocked to mock the withModelExists middleware but it isn't"
+    )
+  }
+  if (!(Collection.findOne as jest.Mock).mock) {
+    throw new Error(
+      "Collection.findOne should be mocked to mock the withCollectionExists middleware but isn't"
+    )
+  }
+
+  if (ethers.utils.isAddress(id)) {
+    ;(Collection.findOne as jest.Mock).mockImplementationOnce((conditions) => {
+      if (conditions['contract_address'] === id.toLowerCase()) {
+        return Promise.resolve(dbCollectionMock)
+      } else {
+        return Promise.resolve(null)
+      }
+    })
+  } else {
+    ;(Collection.count as jest.Mock).mockImplementationOnce((conditions) => {
+      return conditions['id'] === id && Object.keys(conditions).length === 1
+        ? 1
+        : 0
+    })
+  }
 }
 
 // Takes in a mocked (jest.mock()) Model class

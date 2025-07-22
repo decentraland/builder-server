@@ -71,7 +71,7 @@ import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { isCommitteeMember } from '../Committee'
 import * as Warehouse from '../warehouse'
 import { app } from '../server'
-import { hasPublicAccess, isAdminUser } from './access'
+import { hasPublicAccess } from './access'
 import { getChequeMessageHash, toFullCollection } from './utils'
 import { Collection } from './Collection.model'
 import {
@@ -1318,43 +1318,6 @@ describe('Collection router', () => {
               })
             })
         })
-      })
-
-      describe('and not sending any pagination params ', () => {
-        beforeEach(() => {
-          url = `/collections`
-          ;(Collection.findAll as jest.Mock)
-            .mockResolvedValueOnce([dbCollection])
-            .mockResolvedValueOnce([])
-        })
-        it('should respond with all the collections with the URN and the legacy response', () => {
-          return server
-            .get(buildURL(url))
-            .set(createAuthHeaders('get', url))
-            .expect(200)
-            .then((response: any) => {
-              expect(response.body).toEqual({
-                data: [
-                  {
-                    ...resultingCollectionAttributes,
-                    urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
-                  },
-                ],
-                ok: true,
-              })
-            })
-        })
-      })
-    })
-
-    describe('and its a request from an admin user', () => {
-      beforeEach(() => {
-        ;(isAdminUser as jest.Mock).mockResolvedValueOnce(true)
-        ;(Collection.findByContractAddresses as jest.Mock).mockResolvedValueOnce(
-          []
-        )
-        ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
-        ThirdPartyServiceMock.getThirdParties.mockResolvedValueOnce([])
       })
 
       describe('and not sending any pagination params ', () => {

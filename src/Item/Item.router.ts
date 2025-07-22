@@ -12,7 +12,7 @@ import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
-  withCollectionExists,
+  withCollectionExists as withCollectionExistsMiddleware,
   AuthRequest,
   withLowercasedParams,
   withSchemaValidation,
@@ -82,7 +82,7 @@ export class ItemRouter extends Router {
 
   mount() {
     const withItemExists = withModelExists(Item, 'id')
-    const withCollectionExist = withCollectionExists('id')
+    const withCollectionExist = withCollectionExistsMiddleware('id')
     const withItemAuthorization = withModelAuthorization(
       Item,
       'id',

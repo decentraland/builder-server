@@ -23,6 +23,7 @@ import {
   isoDateStringMatcher,
   mockFetchCollectionWithItem,
   mockFetchCatalystItems,
+  mockCollectionExistsMiddleware,
 } from '../../spec/utils'
 import {
   dbCollectionMock,
@@ -2785,6 +2786,124 @@ describe('Item router', () => {
             expect(response.body).toEqual({
               data: { id: `${contractAddress}-${blockchainItemId}` },
               error: "The item doesn't exist.",
+              ok: false,
+            })
+          })
+      })
+    })
+  })
+
+  describe('when getting collection items with contract address', () => {
+    describe('and using a valid collection contract address', () => {
+      let contractAddress: string
+      let itemsForCollection: ItemAttributes[]
+
+      beforeEach(() => {
+        contractAddress = '0x1234567890123456789012345678901234567890'
+        itemsForCollection = [dbItemMock, dbItemNotPublished]
+        mockCollectionExistsMiddleware(contractAddress)
+        ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce(
+          itemsForCollection.map((item) => ({
+            ...item,
+            total_count: itemsForCollection.length,
+          }))
+        )
+        ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
+          { collection: itemFragment.collection, items: [itemFragment] }
+        )
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollectionMock,
+        ])
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbCollectionMock
+        )
+        mockItemConsolidation([wearable])
+
+        url = `/collections/${contractAddress}/items`
+      })
+
+      it('should successfully retrieve items using collection contract address', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: [
+                {
+                  ...resultingItem,
+                  beneficiary: itemFragment.beneficiary,
+                  collection_id: dbItem.collection_id,
+                  blockchain_item_id: dbItem.blockchain_item_id,
+                  urn: itemFragment.urn,
+                  eth_address: itemFragment.collection.creator,
+                },
+                resultItemNotPublished,
+              ],
+              ok: true,
+            })
+            expect(Item.findByCollectionId).toHaveBeenCalledWith(
+              dbCollectionMock.id,
+              {
+                synced: undefined,
+                status: undefined,
+                mappingStatus: undefined,
+                name: undefined,
+                limit: undefined,
+                offset: undefined,
+              }
+            )
+          })
+      })
+    })
+
+    describe('and using an invalid collection ID format', () => {
+      let invalidId: string
+
+      beforeEach(() => {
+        invalidId = 'not-a-uuid-or-address'
+        url = `/collections/${invalidId}/items`
+      })
+
+      it('should return a 400 error for invalid collection ID format', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                idOrContractAddress: invalidId,
+              },
+              error: `Invalid collection ID or contract address format: ${invalidId}`,
+              ok: false,
+            })
+          })
+      })
+    })
+
+    describe('and using a non-existent contract address', () => {
+      let nonExistentContractAddress: string
+
+      beforeEach(() => {
+        nonExistentContractAddress =
+          '0x9999999999999999999999999999999999999999'
+        url = `/collections/${nonExistentContractAddress}/items`
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(null)
+        mockCollectionExistsMiddleware(nonExistentContractAddress)
+      })
+
+      it('should return a 404 error for non-existent contract address', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(404)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              data: {
+                contractAddress: nonExistentContractAddress.toLowerCase(),
+              },
+              error: `Collection not found for the provided contract address: ${nonExistentContractAddress}`,
               ok: false,
             })
           })

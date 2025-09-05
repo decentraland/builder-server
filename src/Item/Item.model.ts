@@ -6,6 +6,7 @@ import { DEFAULT_LIMIT } from '../Pagination/utils'
 import { DBItemApprovalData, ItemAttributes } from './Item.types'
 
 export const MAX_TAGS_LENGTH = 20
+export const MAX_OUTCOMES_LENGTH = 4
 
 type ItemWithTotalCount = ItemAttributes & { total_count: number }
 

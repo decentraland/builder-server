@@ -6,10 +6,20 @@ export type EmoteRepresentation = {
   contents: string[]
 }
 
+export type EmoteOutcome = {
+  animation: string
+  loop: boolean
+  randomize: boolean
+}
+
 export type EmoteData = {
   category: EmoteCategory
   representations: EmoteRepresentation[]
   tags: string[]
+}
+
+export type EmoteDataADR287 = EmoteData & {
+  outcomes: EmoteOutcome[]
 }
 
 export const emoteSchema = Object.freeze({
@@ -41,6 +51,19 @@ export const emoteSchema = Object.freeze({
     tags: {
       type: 'array',
       items: { type: 'string' },
+    },
+    outcomes: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          animation: { type: 'string' },
+          loop: { type: 'boolean' },
+          randomize: { type: 'boolean' },
+        },
+        additionalProperties: false,
+        required: ['animation', 'loop', 'randomize'],
+      },
     },
   },
   additionalProperties: false,

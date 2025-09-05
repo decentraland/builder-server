@@ -6,6 +6,7 @@ import {
 import {
   dbItemMock,
   dbTPItemMock,
+  dbItemEmoteMock,
   itemFragmentMock,
 } from '../../spec/mocks/items'
 import { wearableMock } from '../../spec/mocks/peer'
@@ -24,11 +25,12 @@ import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
   ItemCantBeMovedFromCollectionError,
   MaximunAmountOfTagsReachedError,
+  MaximumAmountOfOutcomesReachedError,
   ThirdPartyItemInsertByURNError,
 } from './Item.errors'
-import { Item, MAX_TAGS_LENGTH } from './Item.model'
+import { Item, MAX_TAGS_LENGTH, MAX_OUTCOMES_LENGTH } from './Item.model'
 import { ItemService } from './Item.service'
-import { ItemAttributes } from './Item.types'
+import { ItemAttributes, ItemType } from './Item.types'
 import { VIDEO_PATH } from './utils'
 
 jest.mock('../ethereum/api/collection')
@@ -271,6 +273,192 @@ describe('Item Service', () => {
             )
             return expect(result).resolves.toEqual(
               Bridge.toFullItem(dbItem, dbCollectionMock)
+            )
+          })
+        })
+      })
+    })
+
+    describe('and the item being upserted is an emote with outcomes', () => {
+      let dbEmoteItem: ItemAttributes<ItemType.EMOTE>
+
+      describe('and it is an insert operation', () => {
+        beforeEach(() => {
+          ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(undefined)
+        })
+
+        describe('and it is inserting less than the maximum amount of outcomes', () => {
+          beforeEach(() => {
+            dbEmoteItem = {
+              ...dbItemEmoteMock,
+              eth_address: '0xAddress',
+              data: {
+                ...dbItemEmoteMock.data,
+                outcomes: Array(MAX_OUTCOMES_LENGTH - 1).fill({
+                  animation: 'animation',
+                  loop: true,
+                  randomize: false,
+                }),
+              },
+            }
+            dbCollectionMock.eth_address = dbEmoteItem.eth_address
+            mockOwnableCanUpsert(
+              Item,
+              dbEmoteItem.id,
+              dbEmoteItem.eth_address,
+              true
+            )
+            mockOwnableCanUpsert(
+              Collection,
+              dbCollectionMock.id,
+              dbEmoteItem.eth_address,
+              true
+            )
+            jest
+              .spyOn(CollectionService.prototype, 'getDBCollection')
+              .mockResolvedValueOnce(dbCollectionMock)
+            ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbEmoteItem)
+            jest
+              .spyOn(CollectionService.prototype, 'isDCLPublished')
+              .mockResolvedValueOnce(false)
+            // Mock get item
+            mockFetchCollectionWithItem(null, null)
+            mockFetchCatalystItems([])
+          })
+
+          it('should not throw any errors and return the inserted item', () => {
+            const result = service.upsertItem(
+              Bridge.toFullItem(
+                (dbEmoteItem as unknown) as ItemAttributes,
+                dbCollectionMock
+              ),
+              dbEmoteItem.eth_address
+            )
+            return expect(result).resolves.toEqual(
+              Bridge.toFullItem(
+                (dbEmoteItem as unknown) as ItemAttributes,
+                dbCollectionMock
+              )
+            )
+          })
+        })
+
+        describe('and it is inserting more than the maximum amount of outcomes', () => {
+          beforeEach(() => {
+            dbEmoteItem = {
+              ...dbItemEmoteMock,
+              data: {
+                ...dbItemEmoteMock.data,
+                outcomes: Array(MAX_OUTCOMES_LENGTH + 1).fill({
+                  animation: 'animation',
+                  loop: true,
+                  randomize: false,
+                }),
+              },
+            }
+          })
+
+          it('should throw the MaximumAmountOfOutcomesReachedError error', () => {
+            return expect(
+              service.upsertItem(
+                Bridge.toFullItem(
+                  (dbEmoteItem as unknown) as ItemAttributes,
+                  dbCollectionMock
+                ),
+                dbEmoteItem.eth_address
+              )
+            ).rejects.toThrowError(MaximumAmountOfOutcomesReachedError)
+          })
+        })
+      })
+
+      describe('and it is an update operation', () => {
+        beforeEach(() => {
+          ;(Item.findByURNSuffix as jest.Mock).mockResolvedValueOnce(
+            dbEmoteItem
+          )
+        })
+
+        describe('and the emote already has the maximum amount of outcomes', () => {
+          beforeEach(() => {
+            dbEmoteItem = {
+              ...dbItemEmoteMock,
+              data: {
+                ...dbItemEmoteMock.data,
+                outcomes: Array(MAX_OUTCOMES_LENGTH + 1).fill({
+                  animation: 'animation',
+                  loop: true,
+                  randomize: false,
+                }),
+              },
+            }
+          })
+
+          it('should throw the MaximumAmountOfOutcomesReachedError error', () => {
+            return expect(
+              service.upsertItem(
+                Bridge.toFullItem(
+                  (dbEmoteItem as unknown) as ItemAttributes,
+                  dbCollectionMock
+                ),
+                dbEmoteItem.eth_address
+              )
+            ).rejects.toThrowError(MaximumAmountOfOutcomesReachedError)
+          })
+        })
+
+        describe('and the emote has less than the maximum amount of outcomes', () => {
+          beforeEach(() => {
+            dbEmoteItem = {
+              ...dbItemEmoteMock,
+              eth_address: '0xAddress',
+              data: {
+                ...dbItemEmoteMock.data,
+                outcomes: Array(MAX_OUTCOMES_LENGTH - 1).fill({
+                  animation: 'start_loop',
+                  loop: true,
+                  randomize: false,
+                }),
+              },
+            }
+            dbCollectionMock.eth_address = dbEmoteItem.eth_address
+            mockOwnableCanUpsert(
+              Item,
+              dbEmoteItem.id,
+              dbEmoteItem.eth_address,
+              true
+            )
+            mockOwnableCanUpsert(
+              Collection,
+              dbCollectionMock.id,
+              dbEmoteItem.eth_address,
+              true
+            )
+            jest
+              .spyOn(CollectionService.prototype, 'getDBCollection')
+              .mockResolvedValueOnce(dbCollectionMock)
+            jest
+              .spyOn(CollectionService.prototype, 'isDCLPublished')
+              .mockResolvedValueOnce(false)
+            ;(Item.upsert as jest.Mock).mockResolvedValueOnce(dbEmoteItem)
+            // Mock get item
+            mockFetchCollectionWithItem(null, null)
+            mockFetchCatalystItems([])
+          })
+
+          it('should not throw any error and return the updated item', () => {
+            const result = service.upsertItem(
+              Bridge.toFullItem(
+                (dbEmoteItem as unknown) as ItemAttributes,
+                dbCollectionMock
+              ),
+              dbEmoteItem.eth_address
+            )
+            return expect(result).resolves.toEqual(
+              Bridge.toFullItem(
+                (dbEmoteItem as unknown) as ItemAttributes,
+                dbCollectionMock
+              )
             )
           })
         })

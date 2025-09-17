@@ -1,15 +1,9 @@
-import { BodyShape, EmoteCategory, EmoteClip, OutcomeGroup } from '@dcl/schemas'
+import { BodyShape, EmoteCategory } from '@dcl/schemas'
 
 export type EmoteRepresentation = {
   bodyShapes: BodyShape[]
   mainFile: string
   contents: string[]
-}
-
-export type EmoteOutcome = {
-  animation: string
-  loop: boolean
-  randomize: boolean
 }
 
 export type EmoteData = {
@@ -18,11 +12,62 @@ export type EmoteData = {
   tags: string[]
 }
 
+// TODO: Replace these types using the ones from @dcl/schemas
+export type EmoteOutcome = {
+  animation: string
+  loop: boolean
+  randomize: boolean
+}
+
+type EmoteClip = {
+  armature: string
+  animation: string
+  loop: boolean
+}
+
+type OutcomeGroup = {
+  title: string
+  clips: EmoteClip[]
+}
+
 export type EmoteDataADR287 = EmoteData & {
   startAnimation: EmoteClip[]
   randomizeOutcomes: boolean
   outcomes: OutcomeGroup[]
 }
+
+const emoteClipSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    armature: 'string',
+    animation: {
+      type: 'string',
+      minLength: 1,
+    },
+    loop: {
+      type: 'boolean',
+    },
+  },
+  required: ['armature', 'animation', 'loop'],
+  additionalProperties: false,
+})
+
+const outcomeGroupSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    title: {
+      type: 'string',
+      minLength: 1,
+    },
+    clips: {
+      type: 'array',
+      items: emoteClipSchema,
+      minItems: 1,
+    },
+  },
+  required: ['title', 'clips'],
+  additionalProperties: false,
+})
 
 export const emoteSchema = Object.freeze({
   type: 'object',
@@ -56,7 +101,7 @@ export const emoteSchema = Object.freeze({
     },
     startAnimation: {
       type: 'array',
-      items: EmoteClip.schema,
+      items: emoteClipSchema,
       minItems: 1,
     },
     randomizeOutcomes: {
@@ -64,7 +109,7 @@ export const emoteSchema = Object.freeze({
     },
     outcomes: {
       type: 'array',
-      items: OutcomeGroup.schema,
+      items: outcomeGroupSchema,
       minItems: 1,
       maxItems: 4,
     },

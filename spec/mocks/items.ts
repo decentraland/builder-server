@@ -202,14 +202,35 @@ export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
       },
     ],
     tags: ['dance', 'fun'],
+    startAnimation: [
+      {
+        armature: 'Armature',
+        animation: 'HighFive_Start',
+        loop: true,
+      },
+    ],
+    randomizeOutcomes: false,
     outcomes: [
       {
-        animation: 'start_loop',
-        loop: true,
-        randomize: false,
+        title: 'High Five',
+        clips: [
+          {
+            armature: 'Armature',
+            animation: 'HighFive_Avatar',
+            loop: true,
+          },
+        ],
       },
     ],
   } as EmoteDataADR287,
+  metrics: {
+    sequences: 1,
+    duration: 1,
+    frames: 10,
+    fps: 30,
+    props: 0,
+    additionalArmatures: 1,
+  },
 }
 
 export const itemFragmentMock = {

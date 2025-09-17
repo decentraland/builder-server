@@ -39,7 +39,7 @@ export type EmoteDataADR287 = EmoteData & {
 const emoteClipSchema = Object.freeze({
   type: 'object',
   properties: {
-    armature: 'string',
+    armature: { type: 'string', minLength: 1 },
     animation: {
       type: 'string',
       minLength: 1,

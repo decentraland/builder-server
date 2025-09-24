@@ -1,4 +1,11 @@
-import { BodyShape, EmoteCategory } from '@dcl/schemas'
+import {
+  BodyShape,
+  EmoteCategory,
+  EmoteDataADR74,
+  EmoteDataADR287,
+  StartAnimation,
+  OutcomeGroup,
+} from '@dcl/schemas'
 
 export type EmoteRepresentation = {
   bodyShapes: BodyShape[]
@@ -6,65 +13,7 @@ export type EmoteRepresentation = {
   contents: string[]
 }
 
-export type EmoteData = {
-  category: EmoteCategory
-  representations: EmoteRepresentation[]
-  tags: string[]
-}
-
-// TODO: Replace these types using the ones from @dcl/schemas
-type EmoteClip = {
-  armature: string
-  animation: string
-  loop: boolean
-}
-
-type OutcomeGroup = {
-  title: string
-  clips: EmoteClip[]
-}
-
-export type EmoteDataADR287 = EmoteData & {
-  startAnimation: {
-    avatar: EmoteClip
-    prop?: EmoteClip
-  }
-  randomizeOutcomes: boolean
-  outcomes: OutcomeGroup[]
-}
-
-const emoteClipSchema = Object.freeze({
-  type: 'object',
-  properties: {
-    armature: { type: 'string', minLength: 1 },
-    animation: {
-      type: 'string',
-      minLength: 1,
-    },
-    loop: {
-      type: 'boolean',
-    },
-  },
-  required: ['armature', 'animation', 'loop'],
-  additionalProperties: false,
-})
-
-const outcomeGroupSchema = Object.freeze({
-  type: 'object',
-  properties: {
-    title: {
-      type: 'string',
-      minLength: 1,
-    },
-    clips: {
-      type: 'array',
-      items: emoteClipSchema,
-      minItems: 1,
-    },
-  },
-  required: ['title', 'clips'],
-  additionalProperties: false,
-})
+export type EmoteData = EmoteDataADR74 | EmoteDataADR287
 
 export const emoteSchema = Object.freeze({
   type: 'object',
@@ -96,26 +45,15 @@ export const emoteSchema = Object.freeze({
       type: 'array',
       items: { type: 'string' },
     },
-    startAnimation: {
-      type: 'object',
-      properties: {
-        avatar: emoteClipSchema,
-        prop: {
-          ...emoteClipSchema,
-          nullable: true,
-        },
-      },
-      required: ['avatar'],
-      additionalProperties: true,
-    },
+    startAnimation: StartAnimation.schema,
     randomizeOutcomes: {
       type: 'boolean',
     },
     outcomes: {
       type: 'array',
-      items: outcomeGroupSchema,
+      items: OutcomeGroup.schema,
       minItems: 1,
-      maxItems: 4,
+      maxItems: 3,
     },
   },
   additionalProperties: false,

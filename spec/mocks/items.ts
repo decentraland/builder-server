@@ -6,6 +6,8 @@ import {
   WearableCategory,
   EmoteCategory,
   ThirdPartyProps,
+  EmoteDataADR287,
+  ArmatureId,
 } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
 import {
@@ -26,7 +28,6 @@ import { CollectionAttributes } from '../../src/Collection'
 import { decodeThirdPartyItemURN, isTPCollection } from '../../src/utils/urn'
 import { CatalystItem } from '../../src/ethereum/api/peer'
 import { ItemCurationAttributes } from '../../src/Curation/ItemCuration'
-import { EmoteDataADR287 } from '../../src/Item/emote/types'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
@@ -203,8 +204,7 @@ export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
     ],
     tags: ['dance', 'fun'],
     startAnimation: {
-      avatar: {
-        armature: 'Armature',
+      [ArmatureId.Armature]: {
         animation: 'HighFive_Start',
         loop: true,
       },
@@ -213,13 +213,12 @@ export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
     outcomes: [
       {
         title: 'High Five',
-        clips: [
-          {
-            armature: 'Armature',
+        clips: {
+          [ArmatureId.Armature]: {
             animation: 'HighFive_Avatar',
             loop: true,
           },
-        ],
+        },
       },
     ],
   } as EmoteDataADR287,

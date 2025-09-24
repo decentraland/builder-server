@@ -3,7 +3,7 @@ import { ItemCurationAttributes } from '../Curation/ItemCuration'
 import { AnimationMetricsAttributes, MetricsAttributes } from '../Metrics'
 import { Cheque } from '../SlotUsageCheque'
 import { SmartWearableData, WearableData } from './wearable/types'
-import { EmoteData, EmoteDataADR287 } from './emote/types'
+import { EmoteData } from './emote/types'
 
 export enum ItemType {
   WEARABLE = 'wearable',
@@ -34,7 +34,7 @@ export type ItemAttributes<T = ItemType.WEARABLE> = {
   type: ItemType
   data: T extends ItemType.WEARABLE
     ? WearableData | SmartWearableData
-    : EmoteData | EmoteDataADR287
+    : EmoteData
   metrics: T extends ItemType.WEARABLE
     ? MetricsAttributes
     : AnimationMetricsAttributes

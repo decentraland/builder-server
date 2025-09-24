@@ -1,4 +1,4 @@
-import { ThirdPartyProps, Wearable } from '@dcl/schemas'
+import { EmoteDataADR287, ThirdPartyProps, Wearable } from '@dcl/schemas'
 import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
@@ -57,7 +57,6 @@ import {
   isTPItem,
   toDBItem,
 } from './utils'
-import { EmoteDataADR287 } from './emote/types'
 
 export class ItemService {
   private collectionService = new CollectionService()

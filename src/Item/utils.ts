@@ -1,3 +1,4 @@
+import { EmoteDataADR287 } from '@dcl/schemas'
 import { utils } from 'decentraland-commons'
 import { decodeThirdPartyItemURN, isTPItemURN } from '../utils/urn'
 import {
@@ -6,7 +7,7 @@ import {
   ItemType,
   ThirdPartyItemAttributes,
 } from './Item.types'
-import { EmoteData, EmoteDataADR287 } from './emote/types'
+import { EmoteData } from './emote/types'
 import { WearableData } from './wearable/types'
 
 export const MAX_FORUM_ITEMS = 20
@@ -53,7 +54,7 @@ export function isSmartWearable(item: ItemAttributes | FullItem): boolean {
 }
 
 export function isEmoteDataADR287(
-  data: WearableData | EmoteData | EmoteDataADR287
+  data: WearableData | EmoteData
 ): data is EmoteDataADR287 {
   return (data as EmoteDataADR287).outcomes !== undefined
 }

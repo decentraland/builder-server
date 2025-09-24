@@ -202,13 +202,13 @@ export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
       },
     ],
     tags: ['dance', 'fun'],
-    startAnimation: [
-      {
+    startAnimation: {
+      avatar: {
         armature: 'Armature',
         animation: 'HighFive_Start',
         loop: true,
       },
-    ],
+    },
     randomizeOutcomes: false,
     outcomes: [
       {

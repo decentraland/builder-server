@@ -13,12 +13,6 @@ export type EmoteData = {
 }
 
 // TODO: Replace these types using the ones from @dcl/schemas
-export type EmoteOutcome = {
-  animation: string
-  loop: boolean
-  randomize: boolean
-}
-
 type EmoteClip = {
   armature: string
   animation: string
@@ -31,7 +25,10 @@ type OutcomeGroup = {
 }
 
 export type EmoteDataADR287 = EmoteData & {
-  startAnimation: EmoteClip[]
+  startAnimation: {
+    avatar: EmoteClip
+    prop?: EmoteClip
+  }
   randomizeOutcomes: boolean
   outcomes: OutcomeGroup[]
 }
@@ -100,9 +97,16 @@ export const emoteSchema = Object.freeze({
       items: { type: 'string' },
     },
     startAnimation: {
-      type: 'array',
-      items: emoteClipSchema,
-      minItems: 1,
+      type: 'object',
+      properties: {
+        avatar: emoteClipSchema,
+        prop: {
+          ...emoteClipSchema,
+          nullable: true,
+        },
+      },
+      required: ['avatar'],
+      additionalProperties: true,
     },
     randomizeOutcomes: {
       type: 'boolean',

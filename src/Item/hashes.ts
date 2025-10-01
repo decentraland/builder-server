@@ -79,6 +79,7 @@ function buildEmoteEntityMetadata(
     collectionAddress: collection.contract_address!,
     rarity: item.rarity!,
     i18n: [{ code: Locale.EN, text: item.name }],
+    // TODO: ADR287
     ...(isEmoteDataADR287(data)
       ? {
           emoteDataADR287: {

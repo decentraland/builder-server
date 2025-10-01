@@ -206,8 +206,8 @@ export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
     startAnimation: {
       [ArmatureId.Armature]: {
         animation: 'HighFive_Start',
-        loop: true,
       },
+      loop: true,
     },
     randomizeOutcomes: false,
     outcomes: [
@@ -216,9 +216,9 @@ export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
         clips: {
           [ArmatureId.Armature]: {
             animation: 'HighFive_Avatar',
-            loop: true,
           },
         },
+        loop: true,
       },
     ],
   } as EmoteDataADR287,

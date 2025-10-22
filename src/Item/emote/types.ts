@@ -45,15 +45,18 @@ export const emoteSchema = Object.freeze({
       type: 'array',
       items: { type: 'string' },
     },
-    startAnimation: StartAnimation.schema,
+    startAnimation: {
+      ...StartAnimation.schema,
+      nullable: true,
+    },
     randomizeOutcomes: {
       type: 'boolean',
+      nullable: true,
     },
     outcomes: {
       type: 'array',
       items: OutcomeGroup.schema,
-      minItems: 1,
-      maxItems: 3,
+      nullable: true,
     },
   },
   additionalProperties: false,

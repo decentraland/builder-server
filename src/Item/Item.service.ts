@@ -1,4 +1,4 @@
-import { ThirdPartyProps, Wearable } from '@dcl/schemas'
+import { EmoteDataADR287, ThirdPartyProps, Wearable } from '@dcl/schemas'
 import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
@@ -35,16 +35,24 @@ import {
   URNAlreadyInUseError,
   ThirdPartyItemInsertByURNError,
   MaximunAmountOfTagsReachedError,
+  MaximumAmountOfOutcomesReachedError,
 } from './Item.errors'
-import { Item, ItemMappingStatus, MAX_TAGS_LENGTH } from './Item.model'
+import {
+  Item,
+  ItemMappingStatus,
+  MAX_OUTCOMES_LENGTH,
+  MAX_TAGS_LENGTH,
+} from './Item.model'
 import {
   FullItem,
   ItemAttributes,
+  ItemType,
   ThirdPartyItemAttributes,
 } from './Item.types'
 import {
   VIDEO_PATH,
   buildTPItemURN,
+  isEmoteDataADR287,
   isSmartWearable,
   isTPItem,
   toDBItem,
@@ -82,6 +90,14 @@ export class ItemService {
       if (!dbItem || (isAlreadyExceeded && isAddingMoreTags)) {
         throw new MaximunAmountOfTagsReachedError(item.id)
       }
+    }
+
+    if (
+      item.type === ItemType.EMOTE &&
+      isEmoteDataADR287(item.data) &&
+      (item.data as EmoteDataADR287).outcomes.length > MAX_OUTCOMES_LENGTH
+    ) {
+      throw new MaximumAmountOfOutcomesReachedError(item.id)
     }
 
     // Inserting by URN is not allowed

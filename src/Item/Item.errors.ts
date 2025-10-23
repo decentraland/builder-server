@@ -1,4 +1,4 @@
-import { MAX_TAGS_LENGTH } from './Item.model'
+import { MAX_OUTCOMES_LENGTH, MAX_TAGS_LENGTH } from './Item.model'
 
 export enum ItemAction {
   DELETE = 'deleted',
@@ -48,6 +48,14 @@ export class MaximunAmountOfTagsReachedError extends Error {
   constructor(public id: string) {
     super(
       `You hace exceeded the maximun amount of tags allowed (${MAX_TAGS_LENGTH}).`
+    )
+  }
+}
+
+export class MaximumAmountOfOutcomesReachedError extends Error {
+  constructor(public id: string) {
+    super(
+      `You have exceeded the maximum amount of outcomes allowed (${MAX_OUTCOMES_LENGTH}).`
     )
   }
 }

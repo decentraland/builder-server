@@ -1,6 +1,7 @@
 import Ajv from 'ajv'
 import { Mappings, RangeMapping } from '@dcl/schemas'
 import addFormats from 'ajv-formats'
+import addErrors from 'ajv-errors'
 
 // Patch the mappings validator to accept mappings that are null
 const mappingsValidator = (...args: any[]): Promise<any> | boolean =>
@@ -15,6 +16,7 @@ export function getValidator() {
   const ajv = new Ajv({
     removeAdditional: true,
     discriminator: true,
+    allErrors: true,
   })
   ajv
     .addKeyword({
@@ -23,5 +25,6 @@ export function getValidator() {
     })
     .addKeyword({ ...Mappings._isMappingsValid, validate: mappingsValidator })
   addFormats(ajv)
+  addErrors(ajv)
   return ajv
 }

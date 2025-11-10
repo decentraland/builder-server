@@ -35,20 +35,29 @@ import {
   URNAlreadyInUseError,
   ThirdPartyItemInsertByURNError,
   MaximunAmountOfTagsReachedError,
+  MaximumAmountOfOutcomesReachedError,
 } from './Item.errors'
-import { Item, ItemMappingStatus, MAX_TAGS_LENGTH } from './Item.model'
+import {
+  Item,
+  ItemMappingStatus,
+  MAX_OUTCOMES_LENGTH,
+  MAX_TAGS_LENGTH,
+} from './Item.model'
 import {
   FullItem,
   ItemAttributes,
+  ItemType,
   ThirdPartyItemAttributes,
 } from './Item.types'
 import {
   VIDEO_PATH,
   buildTPItemURN,
+  isSocialEmoteData,
   isSmartWearable,
   isTPItem,
   toDBItem,
 } from './utils'
+import { EmoteData } from './emote/types'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -82,6 +91,16 @@ export class ItemService {
       if (!dbItem || (isAlreadyExceeded && isAddingMoreTags)) {
         throw new MaximunAmountOfTagsReachedError(item.id)
       }
+    }
+
+    if (
+      item.type === ItemType.EMOTE &&
+      isSocialEmoteData(item.data) &&
+      ((item.data as unknown) as EmoteData).outcomes &&
+      ((item.data as unknown) as EmoteData).outcomes!.length >
+        MAX_OUTCOMES_LENGTH
+    ) {
+      throw new MaximumAmountOfOutcomesReachedError(item.id)
     }
 
     // Inserting by URN is not allowed

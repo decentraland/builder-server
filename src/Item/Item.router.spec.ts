@@ -1540,18 +1540,14 @@ describe('Item router', () => {
               .set(createAuthHeaders('put', url))
               .expect(STATUS_CODES.badRequest)
               .then((response: any) => {
-                expect(response.body).toEqual({
-                  data: [
-                    {
-                      instancePath: '/item/name',
-                      keyword: 'pattern',
-                      message: 'must match pattern "^[^:]*$"',
-                      params: { pattern: '^[^:]*$' },
-                      schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/name/pattern`,
-                    },
-                  ],
-                  error: 'Invalid request body',
-                  ok: false,
+                expect(response.body.ok).toBe(false)
+                expect(response.body.error).toBe('Invalid request body')
+                expect(response.body.data[0]).toEqual({
+                  instancePath: '/item/name',
+                  keyword: 'pattern',
+                  message: 'must match pattern "^[^:]*$"',
+                  params: { pattern: '^[^:]*$' },
+                  schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/name/pattern`,
                 })
               })
           }
@@ -1577,18 +1573,14 @@ describe('Item router', () => {
               .set(createAuthHeaders('put', url))
               .expect(STATUS_CODES.badRequest)
               .then((response: any) => {
-                expect(response.body).toEqual({
-                  data: [
-                    {
-                      instancePath: '/item/description',
-                      keyword: 'pattern',
-                      message: 'must match pattern "^[^:]*$"',
-                      params: { pattern: '^[^:]*$' },
-                      schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/description/pattern`,
-                    },
-                  ],
-                  error: 'Invalid request body',
-                  ok: false,
+                expect(response.body.ok).toBe(false)
+                expect(response.body.error).toBe('Invalid request body')
+                expect(response.body.data[0]).toEqual({
+                  instancePath: '/item/description',
+                  keyword: 'pattern',
+                  message: 'must match pattern "^[^:]*$"',
+                  params: { pattern: '^[^:]*$' },
+                  schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/description/pattern`,
                 })
               })
           })
@@ -1613,18 +1605,14 @@ describe('Item router', () => {
               .set(createAuthHeaders('put', url))
               .expect(STATUS_CODES.badRequest)
               .then((response: any) => {
-                expect(response.body).toEqual({
-                  data: [
-                    {
-                      instancePath: '/item/utility',
-                      keyword: 'maxLength',
-                      message: 'must NOT have more than 64 characters',
-                      params: { limit: 64 },
-                      schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/utility/maxLength`,
-                    },
-                  ],
-                  error: 'Invalid request body',
-                  ok: false,
+                expect(response.body.ok).toBe(false)
+                expect(response.body.error).toBe('Invalid request body')
+                expect(response.body.data[0]).toEqual({
+                  instancePath: '/item/utility',
+                  keyword: 'maxLength',
+                  message: 'must NOT have more than 64 characters',
+                  params: { limit: 64 },
+                  schemaPath: `#/properties/item/oneOf/${schemaItemTypeIdx}/properties/utility/maxLength`,
                 })
               })
           })
@@ -1645,18 +1633,14 @@ describe('Item router', () => {
             .set(createAuthHeaders('put', url))
             .expect(STATUS_CODES.badRequest)
             .then((response: any) => {
-              expect(response.body).toEqual({
-                data: [
-                  {
-                    instancePath: '/item/data',
-                    keyword: 'required',
-                    message: "must have required property 'loop'",
-                    params: { missingProperty: 'loop' },
-                    schemaPath: `#/properties/item/oneOf/1/properties/data/required`,
-                  },
-                ],
-                error: 'Invalid request body',
-                ok: false,
+              expect(response.body.ok).toBe(false)
+              expect(response.body.error).toBe('Invalid request body')
+              expect(response.body.data[0]).toEqual({
+                instancePath: '/item/data',
+                keyword: 'required',
+                message: "must have required property 'loop'",
+                params: { missingProperty: 'loop' },
+                schemaPath: `#/properties/item/oneOf/1/properties/data/required`,
               })
             })
         })

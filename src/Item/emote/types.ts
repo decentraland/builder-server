@@ -1,4 +1,10 @@
-import { BodyShape, EmoteCategory } from '@dcl/schemas'
+import {
+  BodyShape,
+  EmoteCategory,
+  EmoteDataADR74,
+  StartAnimation,
+  OutcomeGroup,
+} from '@dcl/schemas'
 
 export type EmoteRepresentation = {
   bodyShapes: BodyShape[]
@@ -6,11 +12,7 @@ export type EmoteRepresentation = {
   contents: string[]
 }
 
-export type EmoteData = {
-  category: EmoteCategory
-  representations: EmoteRepresentation[]
-  tags: string[]
-}
+export type EmoteData = EmoteDataADR74
 
 export const emoteSchema = Object.freeze({
   type: 'object',
@@ -41,6 +43,19 @@ export const emoteSchema = Object.freeze({
     tags: {
       type: 'array',
       items: { type: 'string' },
+    },
+    startAnimation: {
+      ...StartAnimation.schema,
+      nullable: true,
+    },
+    randomizeOutcomes: {
+      type: 'boolean',
+      nullable: true,
+    },
+    outcomes: {
+      type: 'array',
+      items: OutcomeGroup.schema,
+      nullable: true,
     },
   },
   additionalProperties: false,

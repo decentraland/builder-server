@@ -6,6 +6,8 @@ import {
   ItemType,
   ThirdPartyItemAttributes,
 } from './Item.types'
+import { EmoteData } from './emote/types'
+import { WearableData } from './wearable/types'
 
 export const MAX_FORUM_ITEMS = 20
 export const VIDEO_PATH = 'video.mp4'
@@ -47,5 +49,12 @@ export function isSmartWearable(item: ItemAttributes | FullItem): boolean {
   return (
     item.type === ItemType.WEARABLE &&
     Object.keys(item.contents).some((path) => path.endsWith('.js'))
+  )
+}
+
+export function isSocialEmoteData(data: WearableData | EmoteData): boolean {
+  return (
+    ((data as unknown) as EmoteData).startAnimation !== undefined &&
+    ((data as unknown) as EmoteData).outcomes !== undefined
   )
 }

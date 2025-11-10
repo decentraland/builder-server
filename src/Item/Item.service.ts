@@ -1,4 +1,4 @@
-import { EmoteDataADR287, ThirdPartyProps, Wearable } from '@dcl/schemas'
+import { ThirdPartyProps, Wearable } from '@dcl/schemas'
 import { omit } from 'decentraland-commons/dist/utils'
 import {
   Collection,
@@ -52,11 +52,12 @@ import {
 import {
   VIDEO_PATH,
   buildTPItemURN,
-  isEmoteDataADR287,
+  isSocialEmoteData,
   isSmartWearable,
   isTPItem,
   toDBItem,
 } from './utils'
+import { EmoteData } from './emote/types'
 
 export class ItemService {
   private collectionService = new CollectionService()
@@ -94,8 +95,10 @@ export class ItemService {
 
     if (
       item.type === ItemType.EMOTE &&
-      isEmoteDataADR287(item.data) &&
-      (item.data as EmoteDataADR287).outcomes.length > MAX_OUTCOMES_LENGTH
+      isSocialEmoteData(item.data) &&
+      ((item.data as unknown) as EmoteData).outcomes &&
+      ((item.data as unknown) as EmoteData).outcomes!.length >
+        MAX_OUTCOMES_LENGTH
     ) {
       throw new MaximumAmountOfOutcomesReachedError(item.id)
     }

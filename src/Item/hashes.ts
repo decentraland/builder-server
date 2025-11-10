@@ -6,7 +6,7 @@ import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import { ItemAttributes, ItemType } from './Item.types'
 import {
   buildTPItemURN,
-  isEmoteDataADR287,
+  isSocialEmoteData,
   isTPItem,
   VIDEO_PATH,
 } from './utils'
@@ -79,27 +79,19 @@ function buildEmoteEntityMetadata(
     collectionAddress: collection.contract_address!,
     rarity: item.rarity!,
     i18n: [{ code: Locale.EN, text: item.name }],
-    // TODO: ADR287
-    ...(isEmoteDataADR287(data)
-      ? {
-          emoteDataADR287: {
-            category: data.category,
-            representations: data.representations,
-            tags: data.tags,
-            loop: data.loop,
+    emoteDataADR74: {
+      category: data.category,
+      representations: data.representations,
+      tags: data.tags,
+      loop: data.loop,
+      ...(isSocialEmoteData(data)
+        ? {
             startAnimation: data.startAnimation,
             randomizeOutcomes: data.randomizeOutcomes,
             outcomes: data.outcomes,
-          },
-        }
-      : {
-          emoteDataADR74: {
-            category: data.category,
-            representations: data.representations,
-            tags: data.tags,
-            loop: data.loop,
-          },
-        }),
+          }
+        : {}),
+    },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,
     metrics: ANIMATION_EMPTY_METRICS,

@@ -6,7 +6,6 @@ import {
   WearableCategory,
   EmoteCategory,
   ThirdPartyProps,
-  EmoteDataADR287,
   ArmatureId,
 } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
@@ -28,6 +27,7 @@ import { CollectionAttributes } from '../../src/Collection'
 import { decodeThirdPartyItemURN, isTPCollection } from '../../src/utils/urn'
 import { CatalystItem } from '../../src/ethereum/api/peer'
 import { ItemCurationAttributes } from '../../src/Curation/ItemCuration'
+import { EmoteData } from '../../src/Item/emote/types'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
@@ -221,7 +221,7 @@ export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
         loop: true,
       },
     ],
-  } as EmoteDataADR287,
+  } as EmoteData,
   metrics: {
     sequences: 1,
     duration: 1,

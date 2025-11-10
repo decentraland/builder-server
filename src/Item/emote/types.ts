@@ -2,7 +2,6 @@ import {
   BodyShape,
   EmoteCategory,
   EmoteDataADR74,
-  EmoteDataADR287,
   StartAnimation,
   OutcomeGroup,
 } from '@dcl/schemas'
@@ -13,7 +12,7 @@ export type EmoteRepresentation = {
   contents: string[]
 }
 
-export type EmoteData = EmoteDataADR74 | EmoteDataADR287
+export type EmoteData = EmoteDataADR74
 
 export const emoteSchema = Object.freeze({
   type: 'object',

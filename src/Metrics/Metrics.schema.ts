@@ -26,7 +26,8 @@ export const animationMetricsSchema = Object.freeze({
     duration: { type: 'number', minimum: 0 },
     frames: { type: 'number', minimum: 0 },
     fps: { type: 'number', minimum: 0 },
-    props: { type: 'number', minimum: 0 }
+    props: { type: 'number', minimum: 0 },
+    additionalArmatures: { type: 'number', minimum: 0 },
   },
   additionalProperties: false,
   required: ['sequences', 'duration', 'frames', 'fps'],

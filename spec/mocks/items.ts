@@ -4,7 +4,9 @@ import {
   Wearable,
   BodyShape,
   WearableCategory,
+  EmoteCategory,
   ThirdPartyProps,
+  ArmatureId,
 } from '@dcl/schemas'
 import { v4 as uuidv4 } from 'uuid'
 import {
@@ -25,6 +27,7 @@ import { CollectionAttributes } from '../../src/Collection'
 import { decodeThirdPartyItemURN, isTPCollection } from '../../src/utils/urn'
 import { CatalystItem } from '../../src/ethereum/api/peer'
 import { ItemCurationAttributes } from '../../src/Curation/ItemCuration'
+import { EmoteData } from '../../src/Item/emote/types'
 import { dbCollectionMock, dbTPCollectionMock } from './collections'
 
 export type ResultItem = Omit<FullItem, 'created_at' | 'updated_at'> & {
@@ -183,6 +186,50 @@ export const dbTPItemMock: ThirdPartyItemAttributes = {
   collection_id: dbTPCollectionMock.id,
   urn_suffix: '1',
   local_content_hash: 'aHash',
+}
+
+export const dbItemEmoteMock: ItemAttributes<ItemType.EMOTE> = {
+  ...dbItemMock,
+  id: uuidv4(),
+  type: ItemType.EMOTE,
+  data: {
+    category: EmoteCategory.DANCE,
+    loop: false,
+    representations: [
+      {
+        bodyShapes: [BodyShape.MALE, BodyShape.FEMALE],
+        mainFile: 'emote.glb',
+        contents: ['emote.glb'],
+      },
+    ],
+    tags: ['dance', 'fun'],
+    startAnimation: {
+      [ArmatureId.Armature]: {
+        animation: 'HighFive_Start',
+      },
+      loop: true,
+    },
+    randomizeOutcomes: false,
+    outcomes: [
+      {
+        title: 'High Five',
+        clips: {
+          [ArmatureId.Armature]: {
+            animation: 'HighFive_Avatar',
+          },
+        },
+        loop: true,
+      },
+    ],
+  } as EmoteData,
+  metrics: {
+    sequences: 1,
+    duration: 1,
+    frames: 10,
+    fps: 30,
+    props: 0,
+    additionalArmatures: 1,
+  },
 }
 
 export const itemFragmentMock = {

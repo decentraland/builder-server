@@ -6,6 +6,8 @@ import { DEFAULT_LIMIT } from '../Pagination/utils'
 import { DBItemApprovalData, ItemAttributes } from './Item.types'
 
 export const MAX_TAGS_LENGTH = 20
+// Allow up to 10 outcomes per emote during development, then the hard limit is 3 when trying to publish
+export const MAX_OUTCOMES_LENGTH = 10
 
 type ItemWithTotalCount = ItemAttributes & { total_count: number }
 

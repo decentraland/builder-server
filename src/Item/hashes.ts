@@ -1,16 +1,16 @@
 import { calculateMultipleHashesADR32, keccak256Hash } from '@dcl/hashing'
-import {
-  Locale,
-  Wearable,
-  Emote,
-  ThirdPartyProps,
-  EmoteDataADR74,
-} from '@dcl/schemas'
+import { Locale, Wearable, Emote, ThirdPartyProps } from '@dcl/schemas'
 import { CollectionAttributes } from '../Collection'
 import { isStandardItemPublished } from '../ItemAndCollection/utils'
 import { getDecentralandItemURN, isTPCollection } from '../utils/urn'
 import { ItemAttributes, ItemType } from './Item.types'
-import { buildTPItemURN, isTPItem, VIDEO_PATH } from './utils'
+import {
+  buildTPItemURN,
+  isSocialEmoteData,
+  isTPItem,
+  VIDEO_PATH,
+} from './utils'
+import { EmoteData } from './emote/types'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
 const IMAGE_PATH = 'image.png'
@@ -70,7 +70,7 @@ function buildEmoteEntityMetadata(
     )
   }
 
-  const data = (item.data as unknown) as EmoteDataADR74
+  const data = (item.data as unknown) as EmoteData
 
   const entity: Emote = {
     id: getDecentralandItemURN(item, collection.contract_address!),
@@ -84,6 +84,13 @@ function buildEmoteEntityMetadata(
       representations: data.representations,
       tags: data.tags,
       loop: data.loop,
+      ...(isSocialEmoteData(data)
+        ? {
+            startAnimation: data.startAnimation,
+            randomizeOutcomes: data.randomizeOutcomes,
+            outcomes: data.outcomes,
+          }
+        : {}),
     },
     image: IMAGE_PATH,
     thumbnail: THUMBNAIL_PATH,

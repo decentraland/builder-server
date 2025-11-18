@@ -1,6 +1,6 @@
 import { Mappings, Rarity } from '@dcl/schemas'
 import { ItemCurationAttributes } from '../Curation/ItemCuration'
-import { MetricsAttributes } from '../Metrics'
+import { AnimationMetricsAttributes, MetricsAttributes } from '../Metrics'
 import { Cheque } from '../SlotUsageCheque'
 import { SmartWearableData, WearableData } from './wearable/types'
 import { EmoteData } from './emote/types'
@@ -35,7 +35,9 @@ export type ItemAttributes<T = ItemType.WEARABLE> = {
   data: T extends ItemType.WEARABLE
     ? WearableData | SmartWearableData
     : EmoteData
-  metrics: MetricsAttributes
+  metrics: T extends ItemType.WEARABLE
+    ? MetricsAttributes
+    : AnimationMetricsAttributes
   utility: string | null
   contents: ItemContents
   mappings: Mappings | null

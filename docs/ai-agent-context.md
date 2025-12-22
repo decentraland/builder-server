@@ -18,7 +18,7 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 **Communication Pattern:**
 
 - HTTP REST API with JSON payloads
-- Authentication via Decentraland Signed Fetch (ADR-44) using `X-Identity-Auth-Chain-*` headers
+- Authentication via Decentraland Signed Fetch [ADR-44](https://adr.decentraland.org/adr/ADR-44) using `X-Identity-Auth-Chain-*` headers
 - API versioning through URL prefix (default: `/v1/`)
 - CORS-enabled for browser clients
 

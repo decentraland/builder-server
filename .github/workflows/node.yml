@@ -13,7 +13,7 @@ jobs:
         with:
           node-version: '24.x'
       - name: Install
-        run: npm install
+        run: npm ci
       - name: Test
         run: npm run test:coverage
         if: ${{ always() }}

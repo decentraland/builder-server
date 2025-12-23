@@ -1,0 +1,2351 @@
+openapi: 3.0.3
+info:
+  title: Builder Server API
+  version: 2.10.0
+  description: |
+    ## Overview
+
+    The Builder Server API provides backend services for the Decentraland Builder application.
+    It enables management of scene projects, wearable/emote collections, asset packs, and more.
+
+    ## Authentication
+
+    Most endpoints require authentication using Decentraland's Signed Fetch mechanism (ADR-44).
+    Authentication is provided via the `X-Identity-Auth-Chain-*` headers.
+
+    ## Base URL
+
+    The API version prefix is configurable via the `API_VERSION` environment variable (default: `v1`).
+    All endpoints are prefixed with `/{API_VERSION}/`.
+
+  contact:
+    name: Decentraland Foundation
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+
+servers:
+  - url: http://localhost:5000/v1
+    description: Local development server
+
+tags:
+  - name: App
+    description: Application info and health check
+  - name: Projects
+    description: Scene project management
+  - name: Pools
+    description: Public scene pools for community sharing
+  - name: Pool Groups
+    description: Pool categorization and grouping
+  - name: Pool Likes
+    description: Pool like management
+  - name: Collections
+    description: Wearable and emote collection management
+  - name: Items
+    description: Wearable and emote item management
+  - name: Curations
+    description: Collection and item curation workflow
+  - name: Committee
+    description: Committee member operations
+  - name: Third Party
+    description: Third-party collection management
+  - name: Rarities
+    description: Item rarity definitions
+  - name: Forum
+    description: Discourse forum integration
+  - name: Asset Packs
+    description: Asset pack management
+  - name: Assets
+    description: Individual 3D asset management
+  - name: Manifest
+    description: Project manifest operations
+  - name: Deployments
+    description: Scene deployment tracking
+  - name: Storage
+    description: S3 storage proxy endpoints
+  - name: Share
+    description: Share link generation
+  - name: Analytics
+    description: Analytics endpoints
+  - name: NFT
+    description: NFT-related operations
+  - name: LAND
+    description: LAND parcel operations
+  - name: Newsletter
+    description: Newsletter subscription management
+
+security:
+  - SignedFetch: []
+
+paths:
+  # App endpoints
+  /info:
+    get:
+      tags: [App]
+      summary: Get server version
+      description: Returns the current server version
+      security: []
+      responses:
+        '200':
+          description: Server version information
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      version:
+                        type: string
+
+  # Project endpoints
+  /templates:
+    get:
+      tags: [Projects]
+      summary: Get all project templates
+      description: Returns all public project templates
+      security: []
+      responses:
+        '200':
+          description: List of project templates
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+
+  /projects:
+    get:
+      tags: [Projects]
+      summary: Get all projects
+      description: Returns all projects for the authenticated user
+      responses:
+        '200':
+          description: List of projects
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /projects/{id}:
+    get:
+      tags: [Projects]
+      summary: Get a project
+      description: Returns a specific project by ID
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Projects]
+      summary: Create or update a project
+      description: Creates a new project or updates an existing one
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProjectInput'
+      responses:
+        '200':
+          description: Project created/updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      tags: [Projects]
+      summary: Delete a project
+      description: Soft deletes a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Project deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{id}/public:
+    get:
+      tags: [Projects]
+      summary: Get a public project
+      description: Returns a public project by ID (no authentication required)
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Public project details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{id}/media:
+    post:
+      tags: [Projects]
+      summary: Upload project media
+      description: Uploads media files (thumbnails, previews) for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                thumbnail:
+                  type: string
+                  format: binary
+                preview:
+                  type: string
+                  format: binary
+                north:
+                  type: string
+                  format: binary
+                east:
+                  type: string
+                  format: binary
+                south:
+                  type: string
+                  format: binary
+                west:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Media uploaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /projects/{id}/media/{filename}:
+    get:
+      tags: [Projects]
+      summary: Get project media file
+      description: Redirects to the S3 URL for the media file
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '301':
+          description: Redirect to S3 URL
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{id}/contents/{content}:
+    get:
+      tags: [Projects]
+      summary: Get project content
+      description: Returns project content by hash
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+        - name: content
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '301':
+          description: Redirect to content URL
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /projects/{id}/about:
+    get:
+      tags: [Projects]
+      summary: Get project preview info
+      description: Returns realm configuration for project preview
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Preview configuration
+          content:
+            application/json:
+              schema:
+                type: object
+
+  /projects/{id}/crdt:
+    get:
+      tags: [Projects]
+      summary: Get project CRDT
+      description: Returns the CRDT file for the project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '302':
+          description: Redirect to CRDT file
+    put:
+      tags: [Projects]
+      summary: Upload project CRDT
+      description: Uploads the CRDT file for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: CRDT uploaded successfully
+
+  /projects/{coords}/coords:
+    delete:
+      tags: [Projects]
+      summary: Remove coords from projects
+      description: Removes creation coordinates from all projects with the given coords
+      parameters:
+        - name: coords
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Coordinates removed successfully
+
+  # Pool endpoints
+  /pools:
+    get:
+      tags: [Pools]
+      summary: Get all pools
+      description: Returns all public scene pools with filtering and pagination
+      security: []
+      parameters:
+        - name: eth_address
+          in: query
+          schema:
+            type: string
+        - name: group
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortOrder'
+        - $ref: '#/components/parameters/Limit'
+        - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: List of pools
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolListResponse'
+
+  /projects/{id}/pool:
+    get:
+      tags: [Pools]
+      summary: Get a pool
+      description: Returns a pool by project ID
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Pool details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PoolResponse'
+    put:
+      tags: [Pools]
+      summary: Create or update a pool
+      description: Creates a pool from a project or updates an existing pool
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                groups:
+                  type: array
+                  items:
+                    type: string
+                    format: uuid
+      responses:
+        '200':
+          description: Pool created/updated successfully
+
+  # Pool Group endpoints
+  /pool-groups:
+    get:
+      tags: [Pool Groups]
+      summary: Get all pool groups
+      description: Returns all pool groups
+      security: []
+      responses:
+        '200':
+          description: List of pool groups
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PoolGroup'
+
+  # Pool Like endpoints
+  /pool-likes/{poolId}:
+    put:
+      tags: [Pool Likes]
+      summary: Like a pool
+      description: Adds a like to a pool
+      parameters:
+        - name: poolId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pool liked successfully
+    delete:
+      tags: [Pool Likes]
+      summary: Unlike a pool
+      description: Removes a like from a pool
+      parameters:
+        - name: poolId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Pool unliked successfully
+
+  # Collection endpoints
+  /collections:
+    get:
+      tags: [Collections]
+      summary: Get all collections
+      description: Returns collections with filtering and pagination (committee members only for full access)
+      parameters:
+        - name: q
+          in: query
+          schema:
+            type: string
+          description: Search query
+        - name: assignee
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CurationStatus'
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [standard, third_party]
+        - name: is_published
+          in: query
+          schema:
+            type: string
+            enum: ['true', 'false']
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                MOST_RELEVANT,
+                CREATED_AT_DESC,
+                CREATED_AT_ASC,
+                NAME_DESC,
+                NAME_ASC,
+                UPDATED_AT_DESC,
+                UPDATED_AT_ASC,
+              ]
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of collections
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionListResponse'
+
+  /{address}/collections:
+    get:
+      tags: [Collections]
+      summary: Get collections by address
+      description: Returns collections for a specific address
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: is_published
+          in: query
+          schema:
+            type: string
+        - name: sort
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of collections
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionListResponse'
+
+  /collections/{id}:
+    get:
+      tags: [Collections]
+      summary: Get a collection
+      description: Returns a collection by ID
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Collection details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Collections]
+      summary: Create or update a collection
+      description: Creates a new collection or updates an existing one
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CollectionInput'
+      responses:
+        '200':
+          description: Collection created/updated successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    delete:
+      tags: [Collections]
+      summary: Delete a collection
+      description: Deletes a collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Collection deleted successfully
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /collections/{id}/publish:
+    post:
+      tags: [Collections]
+      summary: Publish a collection
+      description: Publishes a collection to the blockchain
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                itemIds:
+                  type: array
+                  items:
+                    type: string
+                cheque:
+                  $ref: '#/components/schemas/Cheque'
+      responses:
+        '200':
+          description: Collection published successfully
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /collections/{id}/lock:
+    post:
+      tags: [Collections]
+      summary: Lock a collection
+      description: Locks a collection until publication
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Collection locked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: string
+                    format: date-time
+
+  /collections/{id}/tos:
+    post:
+      tags: [Collections]
+      summary: Save Terms of Service
+      description: Records Terms of Service acceptance for collection publication
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+                event:
+                  type: string
+                  enum: [publish_collection_tos, publish_third_party_items_tos]
+                hashes:
+                  type: array
+                  items:
+                    type: string
+      responses:
+        '200':
+          description: TOS recorded successfully
+
+  /collections/{id}/approvalData:
+    get:
+      tags: [Collections]
+      summary: Get approval data
+      description: Returns data needed to approve a third-party collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Approval data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemApprovalData'
+
+  /addresses:
+    get:
+      tags: [Collections]
+      summary: Get collection addresses
+      description: Returns collection contract addresses with filtering
+      security: []
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CurationStatus'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of addresses
+
+  # Item endpoints
+  /items:
+    get:
+      tags: [Items]
+      summary: Get all items
+      description: Returns all items (committee members only)
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
+
+  /{address}/items:
+    get:
+      tags: [Items]
+      summary: Get items by address
+      description: Returns items for a specific address
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: collectionId
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
+
+  /items/{id}:
+    get:
+      tags: [Items]
+      summary: Get an item
+      description: Returns an item by ID
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Item details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemResponse'
+    delete:
+      tags: [Items]
+      summary: Delete an item
+      description: Deletes an item
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Item deleted successfully
+
+  /items/{idOrURN}:
+    put:
+      tags: [Items]
+      summary: Create or update an item
+      description: Creates a new item or updates an existing one (by ID or URN)
+      parameters:
+        - name: idOrURN
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ItemInput'
+      responses:
+        '200':
+          description: Item created/updated successfully
+        '409':
+          $ref: '#/components/responses/Conflict'
+
+  /collections/{id}/items:
+    get:
+      tags: [Items]
+      summary: Get collection items
+      description: Returns items for a specific collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/CurationStatus'
+        - name: synced
+          in: query
+          schema:
+            type: string
+        - name: mappingStatus
+          in: query
+          schema:
+            type: string
+            enum: [missing_mapping, unpublished_mapping]
+        - name: name
+          in: query
+          schema:
+            type: string
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/Limit'
+      responses:
+        '200':
+          description: List of items
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemListResponse'
+
+  /items/{id}/files:
+    post:
+      tags: [Items]
+      summary: Upload item files
+      description: Uploads content files for an item
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Files uploaded successfully
+
+  /items/{id}/videos:
+    post:
+      tags: [Items]
+      summary: Upload item video
+      description: Uploads a video file for an item (max 250MB)
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Video uploaded successfully
+
+  /items/{collectionAddress}/{itemId}/contents:
+    get:
+      tags: [Items]
+      summary: Get item contents
+      description: Returns item contents by contract address and item ID
+      security: []
+      parameters:
+        - name: collectionAddress
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: itemId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item contents
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties:
+                  type: string
+
+  /published-collections/{address}/items/{id}/utility:
+    get:
+      tags: [Items]
+      summary: Get item utility
+      description: Returns the utility field for a published item
+      security: []
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Item utility
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  utility:
+                    type: string
+                    nullable: true
+
+  # Curation endpoints
+  /curations:
+    get:
+      tags: [Curations]
+      summary: Get all collection curations
+      description: Returns all collection curations
+      responses:
+        '200':
+          description: List of curations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/CollectionCuration'
+
+  /collections/{id}/curation:
+    get:
+      tags: [Curations]
+      summary: Get collection curation
+      description: Returns the curation for a collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Collection curation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionCurationResponse'
+    post:
+      tags: [Curations]
+      summary: Create collection curation
+      description: Creates a new curation for a collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                assignee:
+                  type: string
+      responses:
+        '200':
+          description: Curation created successfully
+    patch:
+      tags: [Curations]
+      summary: Update collection curation
+      description: Updates a collection curation
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/CurationStatus'
+                assignee:
+                  type: string
+      responses:
+        '200':
+          description: Curation updated successfully
+
+  /collections/{id}/curation/post:
+    post:
+      tags: [Curations]
+      summary: Create curation forum post
+      description: Creates a forum post for curation assignee change
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Forum post created successfully
+
+  /collections/{id}/itemCurations:
+    get:
+      tags: [Curations]
+      summary: Get collection item curations
+      description: Returns item curations for a collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - name: itemIds
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+      responses:
+        '200':
+          description: List of item curations
+
+  /items/{id}/curation:
+    get:
+      tags: [Curations]
+      summary: Get item curation
+      description: Returns the curation for an item
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Item curation
+    post:
+      tags: [Curations]
+      summary: Create item curation
+      description: Creates a new curation for an item
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Curation created successfully
+    patch:
+      tags: [Curations]
+      summary: Update item curation
+      description: Updates an item curation
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                status:
+                  $ref: '#/components/schemas/CurationStatus'
+      responses:
+        '200':
+          description: Curation updated successfully
+
+  # Committee endpoints
+  /committee/{address}:
+    get:
+      tags: [Committee]
+      summary: Check committee membership
+      description: Checks if an address is a committee member
+      security: []
+      parameters:
+        - name: address
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Committee membership status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: boolean
+
+  # Third Party endpoints
+  /thirdParties:
+    get:
+      tags: [Third Party]
+      summary: Get third parties
+      description: Returns all third-party providers
+      parameters:
+        - name: manager
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of third parties
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ThirdParty'
+
+  /thirdParties/{id}:
+    get:
+      tags: [Third Party]
+      summary: Get a third party
+      description: Returns a third party by ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Third party details
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Third Party]
+      summary: Remove virtual third party
+      description: Removes a virtual third party after it's on the graph
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Third party removed successfully
+    patch:
+      tags: [Third Party]
+      summary: Update third party
+      description: Updates a virtual third party
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Third party updated successfully
+
+  /thirdParties/{id}/slots:
+    get:
+      tags: [Third Party]
+      summary: Get available slots
+      description: Returns the number of available slots for a third party
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Available slots count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: integer
+
+  # Rarity endpoints
+  /rarities:
+    get:
+      tags: [Rarities]
+      summary: Get all rarities
+      description: Returns all available item rarities with prices
+      security: []
+      responses:
+        '200':
+          description: List of rarities
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Rarity'
+
+  /rarities/{name}:
+    get:
+      tags: [Rarities]
+      summary: Get a rarity
+      description: Returns a specific rarity by name
+      security: []
+      parameters:
+        - name: name
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Rarity details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RarityResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  # Forum endpoints
+  /collections/{id}/post:
+    get:
+      tags: [Forum]
+      summary: Get collection forum post
+      description: Returns the forum post for a collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Forum post details
+    put:
+      tags: [Forum]
+      summary: Update collection forum post
+      description: Updates or creates the forum post for a collection
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Forum post updated successfully
+
+  # Asset Pack endpoints
+  /assetPacks:
+    get:
+      tags: [Asset Packs]
+      summary: Get all asset packs
+      description: Returns asset packs for the user or default packs
+      security: []
+      parameters:
+        - name: owner
+          in: query
+          schema:
+            type: string
+            description: 'Use "default" for default packs or user address'
+      responses:
+        '200':
+          description: List of asset packs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/AssetPack'
+
+  /assetPacks/{id}:
+    get:
+      tags: [Asset Packs]
+      summary: Get an asset pack
+      description: Returns an asset pack by ID
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Asset pack details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetPackResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Asset Packs]
+      summary: Create or update an asset pack
+      description: Creates a new asset pack or updates an existing one
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AssetPackInput'
+      responses:
+        '200':
+          description: Asset pack created/updated successfully
+    delete:
+      tags: [Asset Packs]
+      summary: Delete an asset pack
+      description: Deletes an asset pack
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Asset pack deleted successfully
+
+  /assetPacks/{id}/thumbnail:
+    post:
+      tags: [Asset Packs]
+      summary: Upload asset pack thumbnail
+      description: Uploads a thumbnail for an asset pack
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                thumbnail:
+                  type: string
+                  format: binary
+      responses:
+        '200':
+          description: Thumbnail uploaded successfully
+
+  # Asset endpoints
+  /assetPacks/{id}/assets:
+    get:
+      tags: [Assets]
+      summary: Get assets for an asset pack
+      description: Returns all assets in an asset pack
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: List of assets
+
+  # Manifest endpoints
+  /projects/{id}/manifest:
+    get:
+      tags: [Manifest]
+      summary: Get project manifest
+      description: Returns the manifest for a project
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '301':
+          description: Redirect to S3 manifest URL
+
+  /pools/{id}/manifest:
+    get:
+      tags: [Manifest]
+      summary: Get pool manifest
+      description: Returns the manifest for a pool
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '301':
+          description: Redirect to S3 manifest URL
+
+  # Deployment endpoints
+  /projects/{id}/deployment:
+    get:
+      tags: [Deployments]
+      summary: Get project deployment
+      description: Returns deployment info for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Deployment details
+    put:
+      tags: [Deployments]
+      summary: Create or update deployment
+      description: Creates or updates deployment info for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Deployment updated successfully
+
+  # Storage endpoints
+  /storage/assetPacks/{filename}:
+    get:
+      tags: [Storage]
+      summary: Get asset pack file
+      description: Redirects to S3 URL for asset pack file
+      security: []
+      parameters:
+        - name: filename
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '301':
+          description: Redirect to S3 URL
+
+  /storage/contents/{hash}:
+    get:
+      tags: [Storage]
+      summary: Get content by hash
+      description: Redirects to S3 URL for content file
+      security: []
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '301':
+          description: Redirect to S3 URL
+
+  # Share endpoints
+  /share/{type}/{id}:
+    get:
+      tags: [Share]
+      summary: Get share page
+      description: Returns an HTML share page for a project or pool
+      security: []
+      parameters:
+        - name: type
+          in: path
+          required: true
+          schema:
+            type: string
+            enum: [project, pool]
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Share HTML page
+          content:
+            text/html:
+              schema:
+                type: string
+
+  # Analytics endpoints
+  /analytics:
+    post:
+      tags: [Analytics]
+      summary: Track analytics event
+      description: Sends an analytics event
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Event tracked successfully
+
+  # NFT endpoints
+  /nfts/collections:
+    get:
+      tags: [NFT]
+      summary: Get NFT collections
+      description: Returns NFT collections for an address
+      parameters:
+        - name: owner
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of NFT collections
+
+  # LAND endpoints
+  /lands/redirectionHashes:
+    get:
+      tags: [LAND]
+      summary: Get redirection hashes
+      description: Returns IPFS hashes for LAND redirection files
+      security: []
+      parameters:
+        - name: coords
+          in: query
+          required: true
+          schema:
+            oneOf:
+              - type: string
+              - type: array
+                items:
+                  type: string
+      responses:
+        '200':
+          description: Redirection hashes
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        x:
+                          type: integer
+                        y:
+                          type: integer
+                        ipfsHash:
+                          type: string
+                        contentHash:
+                          type: string
+
+  /lands/{coords}/redirection:
+    post:
+      tags: [LAND]
+      summary: Upload LAND redirection
+      description: Uploads a redirection file to IPFS
+      security: []
+      parameters:
+        - name: coords
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^-?[0-9]+,-?[0-9]+$'
+      responses:
+        '200':
+          description: Redirection uploaded
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      ipfsHash:
+                        type: string
+                      contentHash:
+                        type: string
+
+  # Newsletter endpoints
+  /newsletter:
+    post:
+      tags: [Newsletter]
+      summary: Subscribe to newsletter
+      description: Subscribes an email to the newsletter
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+              properties:
+                email:
+                  type: string
+                  format: email
+      responses:
+        '200':
+          description: Subscribed successfully
+
+components:
+  securitySchemes:
+    SignedFetch:
+      type: apiKey
+      in: header
+      name: X-Identity-Auth-Chain-*
+      description: |
+        Signed fetch authentication using Decentraland's ADR-44 specification.
+        Multiple headers are used to provide the authentication chain.
+
+  parameters:
+    ProjectId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Project UUID
+
+    CollectionId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Collection UUID
+
+    ItemId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: Item UUID
+
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+      description: Page number for pagination
+
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Number of items per page
+
+    Offset:
+      name: offset
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+      description: Offset for pagination
+
+    SortBy:
+      name: sort_by
+      in: query
+      schema:
+        type: string
+      description: Field to sort by
+
+    SortOrder:
+      name: sort_order
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+      description: Sort order
+
+  responses:
+    BadRequest:
+      description: Bad request - invalid input
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Unauthorized:
+      description: Unauthorized - authentication required or insufficient permissions
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Conflict:
+      description: Conflict - resource already exists or is in an invalid state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          example: false
+        error:
+          type: string
+        data:
+          type: object
+
+    Project:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+        scene_id:
+          type: string
+          format: uuid
+        eth_address:
+          type: string
+        cols:
+          type: integer
+        rows:
+          type: integer
+        parcels:
+          type: integer
+        transforms:
+          type: integer
+        gltf_shapes:
+          type: integer
+        nft_shapes:
+          type: integer
+        scripts:
+          type: integer
+        entities:
+          type: integer
+        is_deleted:
+          type: boolean
+        is_public:
+          type: boolean
+        is_template:
+          type: boolean
+        creation_coords:
+          type: string
+        template_status:
+          type: string
+          enum: [active, coming_soon]
+        video:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ProjectInput:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - scene_id
+        - cols
+        - rows
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+        scene_id:
+          type: string
+          format: uuid
+        cols:
+          type: integer
+        rows:
+          type: integer
+        is_public:
+          type: boolean
+        creation_coords:
+          type: string
+        is_template:
+          type: boolean
+        template_status:
+          type: string
+          enum: [active, coming_soon]
+        video:
+          type: string
+
+    ProjectResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Project'
+
+    ProjectListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Project'
+
+    Pool:
+      type: object
+      allOf:
+        - $ref: '#/components/schemas/Project'
+        - type: object
+          properties:
+            groups:
+              type: array
+              items:
+                type: string
+                format: uuid
+            likes:
+              type: integer
+            like:
+              type: boolean
+
+    PoolResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Pool'
+
+    PoolListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/Pool'
+
+    PoolGroup:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Collection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        eth_address:
+          type: string
+        salt:
+          type: string
+        contract_address:
+          type: string
+        urn:
+          type: string
+        is_published:
+          type: boolean
+        is_approved:
+          type: boolean
+        minters:
+          type: array
+          items:
+            type: string
+        managers:
+          type: array
+          items:
+            type: string
+        forum_link:
+          type: string
+        forum_id:
+          type: integer
+        lock:
+          type: string
+          format: date-time
+        reviewed_at:
+          type: string
+          format: date-time
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CollectionInput:
+      type: object
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        urn:
+          type: string
+
+    CollectionResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Collection'
+
+    CollectionListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Collection'
+            - $ref: '#/components/schemas/PaginatedResponse'
+
+    Item:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        urn:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        thumbnail:
+          type: string
+        video:
+          type: string
+        eth_address:
+          type: string
+        collection_id:
+          type: string
+          format: uuid
+        blockchain_item_id:
+          type: string
+        price:
+          type: string
+        beneficiary:
+          type: string
+        rarity:
+          type: string
+          enum: [common, uncommon, rare, epic, legendary, mythic, unique]
+        type:
+          type: string
+          enum: [wearable, emote]
+        data:
+          type: object
+        metrics:
+          type: object
+        utility:
+          type: string
+        contents:
+          type: object
+          additionalProperties:
+            type: string
+        mappings:
+          type: object
+        is_published:
+          type: boolean
+        is_approved:
+          type: boolean
+        in_catalyst:
+          type: boolean
+        total_supply:
+          type: integer
+        content_hash:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ItemInput:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - rarity
+        - type
+        - data
+        - contents
+      properties:
+        id:
+          type: string
+          format: uuid
+        urn:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        collection_id:
+          type: string
+          format: uuid
+        rarity:
+          type: string
+        type:
+          type: string
+          enum: [wearable, emote]
+        data:
+          type: object
+        contents:
+          type: object
+        utility:
+          type: string
+        mappings:
+          type: object
+
+    ItemResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Item'
+
+    ItemListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Item'
+            - $ref: '#/components/schemas/PaginatedResponse'
+
+    ItemApprovalData:
+      type: object
+      properties:
+        cheque:
+          $ref: '#/components/schemas/Cheque'
+        content_hashes:
+          type: object
+          additionalProperties:
+            type: string
+        chequeWasConsumed:
+          type: boolean
+        root:
+          type: string
+
+    Cheque:
+      type: object
+      properties:
+        qty:
+          type: integer
+        salt:
+          type: string
+        signature:
+          type: string
+
+    CurationStatus:
+      type: string
+      enum: [pending, approved, rejected, to_review, under_review]
+
+    CollectionCuration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        collection_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/CurationStatus'
+        assignee:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    CollectionCurationResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/CollectionCuration'
+
+    ItemCuration:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        item_id:
+          type: string
+          format: uuid
+        status:
+          $ref: '#/components/schemas/CurationStatus'
+        content_hash:
+          type: string
+        is_mapping_complete:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ThirdParty:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+        managers:
+          type: array
+          items:
+            type: string
+        maxItems:
+          type: string
+        totalItems:
+          type: string
+        contracts:
+          type: array
+          items:
+            type: object
+
+    Rarity:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: string
+        maxSupply:
+          type: string
+        prices:
+          type: object
+          properties:
+            MANA:
+              type: string
+            USD:
+              type: string
+
+    RarityResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/Rarity'
+
+    AssetPack:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        thumbnail:
+          type: string
+        eth_address:
+          type: string
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/Asset'
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    AssetPackInput:
+      type: object
+      required:
+        - id
+        - title
+        - assets
+      properties:
+        id:
+          type: string
+          format: uuid
+        title:
+          type: string
+        assets:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetInput'
+
+    AssetPackResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/AssetPack'
+
+    Asset:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        asset_pack_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        model:
+          type: string
+        script:
+          type: string
+        thumbnail:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+        contents:
+          type: object
+        metrics:
+          type: object
+        parameters:
+          type: array
+        actions:
+          type: array
+
+    AssetInput:
+      type: object
+      required:
+        - id
+        - name
+        - model
+      properties:
+        id:
+          type: string
+          format: uuid
+        asset_pack_id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        model:
+          type: string
+        script:
+          type: string
+        thumbnail:
+          type: string
+        tags:
+          type: array
+          items:
+            type: string
+        category:
+          type: string
+        contents:
+          type: object
+        metrics:
+          type: object
+
+    PaginatedResponse:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            type: object
+        total:
+          type: integer
+        page:
+          type: integer
+        pages:
+          type: integer
+        limit:
+          type: integer

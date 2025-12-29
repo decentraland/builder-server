@@ -619,3 +619,4 @@ Stores third-party slot usage cheques for item publication.
 
 - **One cheque per collection**: Each collection has at most one active cheque
 - **Signature verification**: Signature is verified against third-party manager
+

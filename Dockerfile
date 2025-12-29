@@ -6,7 +6,7 @@ WORKDIR /app
 
 # The catalyst client lib is using a dependency installed by using git
 RUN apk update
-RUN apk add git
+RUN apk add git python3 build-base
 
 COPY package.json /app/package.json
 COPY package-lock.json /app/package-lock.json

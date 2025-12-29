@@ -37,9 +37,6 @@ This service interacts with the following services:
 - **[Decentraland Builder](https://github.com/decentraland/builder)**: Frontend application that consumes this API
 - **[Catalyst](https://github.com/decentraland/catalyst)**: Content server for deployed scenes and wearables
 - **[Subgraph APIs](https://subgraph.decentraland.org)**: Blockchain data for collections, items, and third parties
-
-External dependencies:
-
 - **PostgreSQL**: Primary database for all service data
 - **AWS S3 / MinIO**: Object storage for projects, assets, and content files
 - **Discourse Forum API**: Forum integration for collection submissions
@@ -140,18 +137,7 @@ The service uses environment variables for configuration. Create a `.env` file i
 cp .env.example .env
 ```
 
-Key environment variables:
-
-| Variable            | Description                            |
-| ------------------- | -------------------------------------- |
-| `SERVER_PORT`       | Port to run the server (default: 5000) |
-| `API_VERSION`       | API version prefix (default: v1)       |
-| `CONNECTION_STRING` | PostgreSQL connection string           |
-| `DEFAULT_USER_ID`   | Default user ID for seeding            |
-| `AWS_ACCESS_KEY`    | AWS/MinIO access key                   |
-| `AWS_ACCESS_SECRET` | AWS/MinIO secret key                   |
-| `AWS_BUCKET_NAME`   | S3 bucket name                         |
-| `AWS_STORAGE_URL`   | S3-compatible storage URL              |
+See `.env.example` for all available configuration options with descriptions.
 
 ### Running the Service
 
@@ -204,14 +190,6 @@ Or with auto-reload:
 
 ```bash
 npm run watch:start
-```
-
-#### Windows Subsystem for Linux (WSL)
-
-If using WSL, start PostgreSQL service before running:
-
-```bash
-sudo service postgresql start
 ```
 
 ## S3 Storage Structure

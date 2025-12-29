@@ -25,8 +25,12 @@ info:
     url: https://www.apache.org/licenses/LICENSE-2.0.html
 
 servers:
-  - url: http://localhost:5000/v1
-    description: Local development server
+  - url: https://builder-api.decentraland.org/v1
+    description: Production environment
+    variables: {}
+  - url: https://builder-api.decentraland.zone/v1
+    description: Development environment
+    variables: {}
 
 tags:
   - name: App
@@ -81,6 +85,7 @@ paths:
   # App endpoints
   /info:
     get:
+      operationId: getServerInfo
       tags: [App]
       summary: Get server version
       description: Returns the current server version
@@ -104,6 +109,7 @@ paths:
   # Project endpoints
   /templates:
     get:
+      operationId: getProjectTemplates
       tags: [Projects]
       summary: Get all project templates
       description: Returns all public project templates
@@ -118,6 +124,7 @@ paths:
 
   /projects:
     get:
+      operationId: getProjects
       tags: [Projects]
       summary: Get all projects
       description: Returns all projects for the authenticated user
@@ -133,6 +140,7 @@ paths:
 
   /projects/{id}:
     get:
+      operationId: getProject
       tags: [Projects]
       summary: Get a project
       description: Returns a specific project by ID
@@ -150,6 +158,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
     put:
+      operationId: upsertProject
       tags: [Projects]
       summary: Create or update a project
       description: Creates a new project or updates an existing one
@@ -173,6 +182,7 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
     delete:
+      operationId: deleteProject
       tags: [Projects]
       summary: Delete a project
       description: Soft deletes a project
@@ -188,6 +198,7 @@ paths:
 
   /projects/{id}/public:
     get:
+      operationId: getPublicProject
       tags: [Projects]
       summary: Get a public project
       description: Returns a public project by ID (no authentication required)
@@ -206,6 +217,7 @@ paths:
 
   /projects/{id}/media:
     post:
+      operationId: uploadProjectMedia
       tags: [Projects]
       summary: Upload project media
       description: Uploads media files (thumbnails, previews) for a project
@@ -244,6 +256,7 @@ paths:
 
   /projects/{id}/media/{filename}:
     get:
+      operationId: getProjectMediaFile
       tags: [Projects]
       summary: Get project media file
       description: Redirects to the S3 URL for the media file
@@ -263,9 +276,10 @@ paths:
 
   /projects/{id}/contents/{content}:
     get:
+      operationId: getProjectContent
       tags: [Projects]
       summary: Get project content
-      description: Returns project content by hash
+      description: Returns project content by hash. For preview hash, returns entity object. For CRDT hash, redirects to CRDT file.
       security: []
       parameters:
         - $ref: '#/components/parameters/ProjectId'
@@ -275,13 +289,24 @@ paths:
           schema:
             type: string
       responses:
+        '200':
+          description: Entity object (for preview hash)
+          content:
+            application/json:
+              schema:
+                type: object
         '301':
           description: Redirect to content URL
+        '302':
+          description: Redirect to CRDT file
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '404':
           $ref: '#/components/responses/NotFound'
 
   /projects/{id}/about:
     get:
+      operationId: getProjectPreviewInfo
       tags: [Projects]
       summary: Get project preview info
       description: Returns realm configuration for project preview
@@ -298,6 +323,7 @@ paths:
 
   /projects/{id}/crdt:
     get:
+      operationId: getProjectCrdt
       tags: [Projects]
       summary: Get project CRDT
       description: Returns the CRDT file for the project
@@ -306,7 +332,12 @@ paths:
       responses:
         '302':
           description: Redirect to CRDT file
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
+      operationId: uploadProjectCrdt
       tags: [Projects]
       summary: Upload project CRDT
       description: Uploads the CRDT file for a project
@@ -325,9 +356,14 @@ paths:
       responses:
         '200':
           description: CRDT uploaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /projects/{coords}/coords:
     delete:
+      operationId: removeProjectCoords
       tags: [Projects]
       summary: Remove coords from projects
       description: Removes creation coordinates from all projects with the given coords
@@ -340,10 +376,13 @@ paths:
       responses:
         '200':
           description: Coordinates removed successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # Pool endpoints
   /pools:
     get:
+      operationId: getPools
       tags: [Pools]
       summary: Get all pools
       description: Returns all public scene pools with filtering and pagination
@@ -371,6 +410,7 @@ paths:
 
   /projects/{id}/pool:
     get:
+      operationId: getPool
       tags: [Pools]
       summary: Get a pool
       description: Returns a pool by project ID
@@ -385,6 +425,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/PoolResponse'
     put:
+      operationId: upsertPool
       tags: [Pools]
       summary: Create or update a pool
       description: Creates a pool from a project or updates an existing pool
@@ -404,14 +445,26 @@ paths:
       responses:
         '200':
           description: Pool created/updated successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # Pool Group endpoints
-  /pool-groups:
+  /pools/groups:
     get:
+      operationId: getPoolGroups
       tags: [Pool Groups]
       summary: Get all pool groups
       description: Returns all pool groups
       security: []
+      parameters:
+        - name: active_only
+          in: query
+          schema:
+            type: boolean
+            default: false
+          description: Filter to only active groups
       responses:
         '200':
           description: List of pool groups
@@ -428,13 +481,46 @@ paths:
                       $ref: '#/components/schemas/PoolGroup'
 
   # Pool Like endpoints
-  /pool-likes/{poolId}:
+  /pools/{id}/likes:
+    get:
+      operationId: getPoolLikes
+      tags: [Pool Likes]
+      summary: Get pool likes count
+      description: Returns the total number of likes for a pool
+      security: []
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: address
+          in: query
+          schema:
+            type: string
+          description: Filter by user address (use "me" for current user)
+      responses:
+        '200':
+          description: Pool likes count
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: integer
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
+      operationId: likePool
       tags: [Pool Likes]
       summary: Like a pool
       description: Adds a like to a pool
       parameters:
-        - name: poolId
+        - name: id
           in: path
           required: true
           schema:
@@ -443,12 +529,27 @@ paths:
       responses:
         '200':
           description: Pool liked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: integer
+                    description: New total likes count
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     delete:
+      operationId: unlikePool
       tags: [Pool Likes]
       summary: Unlike a pool
       description: Removes a like from a pool
       parameters:
-        - name: poolId
+        - name: id
           in: path
           required: true
           schema:
@@ -457,10 +558,25 @@ paths:
       responses:
         '200':
           description: Pool unliked successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: integer
+                    description: New total likes count
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # Collection endpoints
   /collections:
     get:
+      operationId: getCollections
       tags: [Collections]
       summary: Get all collections
       description: Returns collections with filtering and pagination (committee members only for full access)
@@ -511,9 +627,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /{address}/collections:
     get:
+      operationId: getCollectionsByAddress
       tags: [Collections]
       summary: Get collections by address
       description: Returns collections for a specific address
@@ -540,9 +659,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /collections/{id}:
     get:
+      operationId: getCollection
       tags: [Collections]
       summary: Get a collection
       description: Returns a collection by ID
@@ -555,9 +677,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
     put:
+      operationId: upsertCollection
       tags: [Collections]
       summary: Create or update a collection
       description: Creates a new collection or updates an existing one
@@ -572,11 +697,16 @@ paths:
       responses:
         '200':
           description: Collection created/updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
+        '423':
+          $ref: '#/components/responses/Locked'
     delete:
+      operationId: deleteCollection
       tags: [Collections]
       summary: Delete a collection
       description: Deletes a collection
@@ -585,11 +715,16 @@ paths:
       responses:
         '200':
           description: Collection deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
+        '423':
+          $ref: '#/components/responses/Locked'
 
   /collections/{id}/publish:
     post:
+      operationId: publishCollection
       tags: [Collections]
       summary: Publish a collection
       description: Publishes a collection to the blockchain
@@ -610,11 +745,16 @@ paths:
       responses:
         '200':
           description: Collection published successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '409':
           $ref: '#/components/responses/Conflict'
 
   /collections/{id}/lock:
     post:
+      operationId: lockCollection
       tags: [Collections]
       summary: Lock a collection
       description: Locks a collection until publication
@@ -633,9 +773,16 @@ paths:
                   data:
                     type: string
                     format: date-time
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /collections/{id}/tos:
     post:
+      operationId: saveCollectionTos
       tags: [Collections]
       summary: Save Terms of Service
       description: Records Terms of Service acceptance for collection publication
@@ -663,9 +810,16 @@ paths:
       responses:
         '200':
           description: TOS recorded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /collections/{id}/approvalData:
     get:
+      operationId: getCollectionApprovalData
       tags: [Collections]
       summary: Get approval data
       description: Returns data needed to approve a third-party collection
@@ -678,9 +832,18 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemApprovalData'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /addresses:
     get:
+      operationId: getCollectionAddresses
       tags: [Collections]
       summary: Get collection addresses
       description: Returns collection contract addresses with filtering
@@ -699,6 +862,7 @@ paths:
   # Item endpoints
   /items:
     get:
+      operationId: getItems
       tags: [Items]
       summary: Get all items
       description: Returns all items (committee members only)
@@ -709,9 +873,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /{address}/items:
     get:
+      operationId: getItemsByAddress
       tags: [Items]
       summary: Get items by address
       description: Returns items for a specific address
@@ -734,9 +901,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemListResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /items/{id}:
     get:
+      operationId: getItem
       tags: [Items]
       summary: Get an item
       description: Returns an item by ID
@@ -749,27 +919,28 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemResponse'
-    delete:
-      tags: [Items]
-      summary: Delete an item
-      description: Deletes an item
-      parameters:
-        - $ref: '#/components/parameters/ItemId'
-      responses:
-        '200':
-          description: Item deleted successfully
-
-  /items/{idOrURN}:
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
     put:
+      operationId: upsertItem
       tags: [Items]
       summary: Create or update an item
       description: Creates a new item or updates an existing one (by ID or URN)
       parameters:
-        - name: idOrURN
+        - name: id
+          description: Item UUID or URN
           in: path
           required: true
           schema:
-            type: string
+            oneOf:
+              - type: string
+                format: uuid
+              - type: string
+                pattern: '^(urn:decentraland:(mainnet|goerli|sepolia|matic|mumbai|amoy):collections-thirdparty:[^:|\\s]+):([^:|\\s]+):([^:|\\s]+)$'
       requestBody:
         required: true
         content:
@@ -779,11 +950,40 @@ paths:
       responses:
         '200':
           description: Item created/updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
         '409':
           $ref: '#/components/responses/Conflict'
+        '423':
+          $ref: '#/components/responses/Locked'
+    delete:
+      operationId: deleteItem
+      tags: [Items]
+      summary: Delete an item
+      description: Deletes an item
+      parameters:
+        - $ref: '#/components/parameters/ItemId'
+      responses:
+        '200':
+          description: Item deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+        '423':
+          $ref: '#/components/responses/Locked'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /collections/{id}/items:
     get:
+      operationId: getCollectionItems
       tags: [Items]
       summary: Get collection items
       description: Returns items for a specific collection
@@ -815,9 +1015,16 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ItemListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /items/{id}/files:
     post:
+      operationId: uploadItemFiles
       tags: [Items]
       summary: Upload item files
       description: Uploads content files for an item
@@ -832,9 +1039,14 @@ paths:
       responses:
         '200':
           description: Files uploaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /items/{id}/videos:
     post:
+      operationId: uploadItemVideo
       tags: [Items]
       summary: Upload item video
       description: Uploads a video file for an item (max 250MB)
@@ -849,9 +1061,14 @@ paths:
       responses:
         '200':
           description: Video uploaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /items/{collectionAddress}/{itemId}/contents:
     get:
+      operationId: getItemContents
       tags: [Items]
       summary: Get item contents
       description: Returns item contents by contract address and item ID
@@ -876,9 +1093,14 @@ paths:
                 type: object
                 additionalProperties:
                   type: string
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   /published-collections/{address}/items/{id}/utility:
     get:
+      operationId: getItemUtility
       tags: [Items]
       summary: Get item utility
       description: Returns the utility field for a published item
@@ -905,10 +1127,13 @@ paths:
                   utility:
                     type: string
                     nullable: true
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # Curation endpoints
   /curations:
     get:
+      operationId: getCollectionCurations
       tags: [Curations]
       summary: Get all collection curations
       description: Returns all collection curations
@@ -926,9 +1151,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/CollectionCuration'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /collections/{id}/curation:
     get:
+      operationId: getCollectionCuration
       tags: [Curations]
       summary: Get collection curation
       description: Returns the curation for a collection
@@ -941,7 +1169,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionCurationResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
     post:
+      operationId: createCollectionCuration
       tags: [Curations]
       summary: Create collection curation
       description: Creates a new curation for a collection
@@ -958,7 +1193,14 @@ paths:
       responses:
         '200':
           description: Curation created successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     patch:
+      operationId: updateCollectionCuration
       tags: [Curations]
       summary: Update collection curation
       description: Updates a collection curation
@@ -978,9 +1220,16 @@ paths:
       responses:
         '200':
           description: Curation updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /collections/{id}/curation/post:
     post:
+      operationId: createCurationForumPost
       tags: [Curations]
       summary: Create curation forum post
       description: Creates a forum post for curation assignee change
@@ -995,9 +1244,12 @@ paths:
       responses:
         '200':
           description: Forum post created successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /collections/{id}/itemCurations:
     get:
+      operationId: getCollectionItemCurations
       tags: [Curations]
       summary: Get collection item curations
       description: Returns item curations for a collection
@@ -1012,9 +1264,16 @@ paths:
       responses:
         '200':
           description: List of item curations
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /items/{id}/curation:
     get:
+      operationId: getItemCuration
       tags: [Curations]
       summary: Get item curation
       description: Returns the curation for an item
@@ -1023,7 +1282,12 @@ paths:
       responses:
         '200':
           description: Item curation
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     post:
+      operationId: createItemCuration
       tags: [Curations]
       summary: Create item curation
       description: Creates a new curation for an item
@@ -1032,7 +1296,16 @@ paths:
       responses:
         '200':
           description: Curation created successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
     patch:
+      operationId: updateItemCuration
       tags: [Curations]
       summary: Update item curation
       description: Updates an item curation
@@ -1050,23 +1323,24 @@ paths:
       responses:
         '200':
           description: Curation updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # Committee endpoints
-  /committee/{address}:
+  /committee:
     get:
+      operationId: getCommittee
       tags: [Committee]
       summary: Check committee membership
-      description: Checks if an address is a committee member
+      description: Returns the committee members
       security: []
-      parameters:
-        - name: address
-          in: path
-          required: true
-          schema:
-            type: string
       responses:
         '200':
-          description: Committee membership status
+          description: Committee members
           content:
             application/json:
               schema:
@@ -1075,11 +1349,19 @@ paths:
                   ok:
                     type: boolean
                   data:
-                    type: boolean
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        address:
+                          type: string
 
   # Third Party endpoints
   /thirdParties:
     get:
+      operationId: getThirdParties
       tags: [Third Party]
       summary: Get third parties
       description: Returns all third-party providers
@@ -1102,9 +1384,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/ThirdParty'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /thirdParties/{id}:
     get:
+      operationId: getThirdParty
       tags: [Third Party]
       summary: Get a third party
       description: Returns a third party by ID
@@ -1118,9 +1403,19 @@ paths:
       responses:
         '200':
           description: Third party details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    $ref: '#/components/schemas/ThirdParty'
         '404':
           $ref: '#/components/responses/NotFound'
     delete:
+      operationId: deleteThirdParty
       tags: [Third Party]
       summary: Remove virtual third party
       description: Removes a virtual third party after it's on the graph
@@ -1133,7 +1428,14 @@ paths:
       responses:
         '200':
           description: Third party removed successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     patch:
+      operationId: updateThirdParty
       tags: [Third Party]
       summary: Update third party
       description: Updates a virtual third party
@@ -1152,9 +1454,14 @@ paths:
       responses:
         '200':
           description: Third party updated successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /thirdParties/{id}/slots:
     get:
+      operationId: getThirdPartySlots
       tags: [Third Party]
       summary: Get available slots
       description: Returns the number of available slots for a third party
@@ -1176,10 +1483,13 @@ paths:
                     type: boolean
                   data:
                     type: integer
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # Rarity endpoints
   /rarities:
     get:
+      operationId: getRarities
       tags: [Rarities]
       summary: Get all rarities
       description: Returns all available item rarities with prices
@@ -1201,6 +1511,7 @@ paths:
 
   /rarities/{name}:
     get:
+      operationId: getRarity
       tags: [Rarities]
       summary: Get a rarity
       description: Returns a specific rarity by name
@@ -1223,28 +1534,51 @@ paths:
 
   # Forum endpoints
   /collections/{id}/post:
-    get:
+    post:
+      operationId: createCollectionForumPost
       tags: [Forum]
-      summary: Get collection forum post
-      description: Returns the forum post for a collection
+      summary: Create collection forum post
+      description: Creates a forum post for a collection
       parameters:
         - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                forumPost:
+                  type: object
+                  properties:
+                    title:
+                      type: string
+                    raw:
+                      type: string
       responses:
         '200':
-          description: Forum post details
-    put:
-      tags: [Forum]
-      summary: Update collection forum post
-      description: Updates or creates the forum post for a collection
-      parameters:
-        - $ref: '#/components/parameters/CollectionId'
-      responses:
-        '200':
-          description: Forum post updated successfully
+          description: Forum post created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: string
+                    description: Forum link
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # Asset Pack endpoints
   /assetPacks:
     get:
+      operationId: getAssetPacks
       tags: [Asset Packs]
       summary: Get all asset packs
       description: Returns asset packs for the user or default packs
@@ -1269,9 +1603,12 @@ paths:
                     type: array
                     items:
                       $ref: '#/components/schemas/AssetPack'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   /assetPacks/{id}:
     get:
+      operationId: getAssetPack
       tags: [Asset Packs]
       summary: Get an asset pack
       description: Returns an asset pack by ID
@@ -1290,9 +1627,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/AssetPackResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
     put:
+      operationId: upsertAssetPack
       tags: [Asset Packs]
       summary: Create or update an asset pack
       description: Creates a new asset pack or updates an existing one
@@ -1312,7 +1652,12 @@ paths:
       responses:
         '200':
           description: Asset pack created/updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
     delete:
+      operationId: deleteAssetPack
       tags: [Asset Packs]
       summary: Delete an asset pack
       description: Deletes an asset pack
@@ -1326,9 +1671,14 @@ paths:
       responses:
         '200':
           description: Asset pack deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /assetPacks/{id}/thumbnail:
     post:
+      operationId: uploadAssetPackThumbnail
       tags: [Asset Packs]
       summary: Upload asset pack thumbnail
       description: Uploads a thumbnail for an asset pack
@@ -1352,13 +1702,49 @@ paths:
       responses:
         '200':
           description: Thumbnail uploaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # Asset endpoints
-  /assetPacks/{id}/assets:
-    get:
+  /assetPacks/{assetPackId}/assets/{id}/files:
+    post:
+      operationId: uploadAssetFiles
       tags: [Assets]
-      summary: Get assets for an asset pack
-      description: Returns all assets in an asset pack
+      summary: Upload asset files
+      description: Uploads files for an asset in an asset pack
+      parameters:
+        - name: assetPackId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: Files uploaded successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /assets/{id}:
+    get:
+      operationId: getAsset
+      tags: [Assets]
+      summary: Get a single asset
+      description: Returns an asset by ID
       security: []
       parameters:
         - name: id
@@ -1369,23 +1755,160 @@ paths:
             format: uuid
       responses:
         '200':
+          description: Asset details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetPackResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /assets:
+    get:
+      operationId: getAssets
+      tags: [Assets]
+      summary: Get multiple assets
+      description: Returns multiple assets by IDs
+      security: []
+      parameters:
+        - name: id
+          in: query
+          required: true
+          schema:
+            oneOf:
+              - type: string
+                format: uuid
+              - type: array
+                items:
+                  type: string
+                  format: uuid
+      responses:
+        '200':
           description: List of assets
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Asset'
 
   # Manifest endpoints
   /projects/{id}/manifest:
     get:
+      operationId: getProjectManifest
       tags: [Manifest]
       summary: Get project manifest
       description: Returns the manifest for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '301':
+          description: Redirect to S3 manifest URL
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      operationId: upsertProjectManifest
+      tags: [Manifest]
+      summary: Upsert project manifest
+      description: Creates or updates the manifest for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                manifest:
+                  type: object
+      responses:
+        '200':
+          description: Manifest upserted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProjectResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+    delete:
+      operationId: deleteProjectManifest
+      tags: [Manifest]
+      summary: Delete project manifest
+      description: Deletes the manifest for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Manifest deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /manifests:
+    get:
+      operationId: getManifests
+      tags: [Manifest]
+      summary: Get all manifests
+      description: Returns all manifests for the authenticated user
+      responses:
+        '200':
+          description: List of manifests
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
+  /publics/{id}/manifest:
+    get:
+      operationId: getPublicProjectManifest
+      tags: [Manifest]
+      summary: Get public project manifest
+      description: Returns the manifest for a public project
       security: []
       parameters:
         - $ref: '#/components/parameters/ProjectId'
       responses:
         '301':
           description: Redirect to S3 manifest URL
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /templates/{id}/manifest:
+    get:
+      operationId: getTemplateManifest
+      tags: [Manifest]
+      summary: Get template manifest
+      description: Returns the manifest for a template project
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '301':
+          description: Redirect to S3 manifest URL
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   /pools/{id}/manifest:
     get:
+      operationId: getPoolManifest
       tags: [Manifest]
       summary: Get pool manifest
       description: Returns the manifest for a pool
@@ -1400,10 +1923,36 @@ paths:
       responses:
         '301':
           description: Redirect to S3 manifest URL
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # Deployment endpoints
+  /deployments:
+    get:
+      operationId: getDeployments
+      tags: [Deployments]
+      summary: Get all deployments
+      description: Returns all deployments for the authenticated user
+      responses:
+        '200':
+          description: List of deployments
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: array
+                    items:
+                      type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+
   /projects/{id}/deployment:
     get:
+      operationId: getProjectDeployment
       tags: [Deployments]
       summary: Get project deployment
       description: Returns deployment info for a project
@@ -1412,7 +1961,21 @@ paths:
       responses:
         '200':
           description: Deployment details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
     put:
+      operationId: upsertProjectDeployment
       tags: [Deployments]
       summary: Create or update deployment
       description: Creates or updates deployment info for a project
@@ -1424,13 +1987,37 @@ paths:
           application/json:
             schema:
               type: object
+              properties:
+                deployment:
+                  type: object
       responses:
         '200':
           description: Deployment updated successfully
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      operationId: deleteProjectDeployment
+      tags: [Deployments]
+      summary: Delete deployment
+      description: Deletes deployment info for a project
+      parameters:
+        - $ref: '#/components/parameters/ProjectId'
+      responses:
+        '200':
+          description: Deployment deleted successfully
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
 
   # Storage endpoints
   /storage/assetPacks/{filename}:
     get:
+      operationId: getAssetPackFile
       tags: [Storage]
       summary: Get asset pack file
       description: Redirects to S3 URL for asset pack file
@@ -1447,6 +2034,7 @@ paths:
 
   /storage/contents/{hash}:
     get:
+      operationId: getContentByHash
       tags: [Storage]
       summary: Get content by hash
       description: Redirects to S3 URL for content file
@@ -1460,13 +2048,78 @@ paths:
       responses:
         '301':
           description: Redirect to S3 URL
+    head:
+      operationId: getContentHeaders
+      tags: [Storage]
+      summary: Get content headers
+      description: Returns headers for content file without body
+      security: []
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '301':
+          description: Redirect to S3 URL
+
+  /storage/contents/{hash}/exists:
+    get:
+      operationId: checkContentExists
+      tags: [Storage]
+      summary: Check if content exists
+      description: Returns whether a file exists in storage without downloading it
+      security: []
+      parameters:
+        - name: hash
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: File exists
+        '404':
+          description: File does not exist
+
+  /storage/upload:
+    post:
+      operationId: uploadContent
+      tags: [Storage]
+      summary: Upload content file
+      description: Uploads a file to storage
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+      responses:
+        '200':
+          description: File uploaded successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+                    properties:
+                      hash:
+                        type: string
+        '401':
+          $ref: '#/components/responses/Unauthorized'
 
   # Share endpoints
   /share/{type}/{id}:
     get:
+      operationId: getSharePage
       tags: [Share]
       summary: Get share page
-      description: Returns an HTML share page for a project or pool
+      description: Returns an HTML share page for a project or pool. Redirects to Builder if not a social agent.
       security: []
       parameters:
         - name: type
@@ -1474,7 +2127,7 @@ paths:
           required: true
           schema:
             type: string
-            enum: [project, pool]
+            enum: [scene, pool]
         - name: id
           in: path
           required: true
@@ -1487,43 +2140,146 @@ paths:
             text/html:
               schema:
                 type: string
+        '301':
+          description: Redirect to Builder URL
+        '404':
+          description: Resource not found
 
   # Analytics endpoints
-  /analytics:
-    post:
-      tags: [Analytics]
-      summary: Track analytics event
-      description: Sends an analytics event
-      security: []
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Event tracked successfully
-
-  # NFT endpoints
-  /nfts/collections:
+  /analytics/weekly:
     get:
-      tags: [NFT]
-      summary: Get NFT collections
-      description: Returns NFT collections for an address
+      operationId: getWeeklyAnalytics
+      tags: [Analytics]
+      summary: Get weekly analytics
+      description: Returns weekly statistics
+      security: []
       parameters:
-        - name: owner
+        - name: base
           in: query
           required: true
           schema:
             type: string
       responses:
         '200':
-          description: List of NFT collections
+          description: Weekly analytics data
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+
+  /analytics/status:
+    get:
+      operationId: getAnalyticsStatus
+      tags: [Analytics]
+      summary: Get analytics status
+      description: Returns current analytics status
+      security: []
+      responses:
+        '200':
+          description: Analytics status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+
+  # NFT endpoints
+  /nfts:
+    get:
+      operationId: getNfts
+      tags: [NFT]
+      summary: Get NFTs
+      description: Returns NFTs for an address
+      security: []
+      parameters:
+        - name: owner
+          in: query
+          required: true
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+        - name: first
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+        - name: skip
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+        - name: cursor
+          in: query
+          schema:
+            type: string
+      responses:
+        '200':
+          description: List of NFTs
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
+
+  /nfts/{contractAddress}/{tokenId}:
+    get:
+      operationId: getNft
+      tags: [NFT]
+      summary: Get single NFT
+      description: Returns a specific NFT by contract address and token ID
+      security: []
+      parameters:
+        - name: contractAddress
+          in: path
+          required: true
+          schema:
+            type: string
+            pattern: '^0x[a-fA-F0-9]{40}$'
+        - name: tokenId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: NFT details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # LAND endpoints
   /lands/redirectionHashes:
     get:
+      operationId: getRedirectionHashes
       tags: [LAND]
       summary: Get redirection hashes
       description: Returns IPFS hashes for LAND redirection files
@@ -1561,9 +2317,12 @@ paths:
                           type: string
                         contentHash:
                           type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   /lands/{coords}/redirection:
     post:
+      operationId: uploadLandRedirection
       tags: [LAND]
       summary: Upload LAND redirection
       description: Uploads a redirection file to IPFS
@@ -1592,10 +2351,15 @@ paths:
                         type: string
                       contentHash:
                         type: string
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InternalServerError'
 
   # Newsletter endpoints
   /newsletter:
     post:
+      operationId: subscribeToNewsletter
       tags: [Newsletter]
       summary: Subscribe to newsletter
       description: Subscribes an email to the newsletter
@@ -1612,9 +2376,52 @@ paths:
                 email:
                   type: string
                   format: email
+                source:
+                  type: string
       responses:
         '200':
           description: Subscribed successfully
+
+  /newsletter/{subscriptionId}:
+    get:
+      operationId: getNewsletterSubscription
+      tags: [Newsletter]
+      summary: Get subscription
+      description: Returns a newsletter subscription by ID
+      security: []
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  ok:
+                    type: boolean
+                  data:
+                    type: object
+    delete:
+      operationId: deleteNewsletterSubscription
+      tags: [Newsletter]
+      summary: Delete subscription
+      description: Deletes a newsletter subscription
+      security: []
+      parameters:
+        - name: subscriptionId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Subscription deleted successfully
 
 components:
   securitySchemes:
@@ -1720,6 +2527,20 @@ components:
 
     Conflict:
       description: Conflict - resource already exists or is in an invalid state
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    Locked:
+      description: Resource is locked and cannot be modified
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+    InternalServerError:
+      description: Internal server error
       content:
         application/json:
           schema:

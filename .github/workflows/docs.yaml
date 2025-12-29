@@ -2,7 +2,7 @@ name: build-app-docs
 
 on:
   push:
-    branches: [main]
+    branches: [master]
     paths:
       - 'docs/**'
   pull_request:

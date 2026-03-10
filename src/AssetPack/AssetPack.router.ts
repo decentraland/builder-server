@@ -315,7 +315,11 @@ export class AssetPackRouter extends Router {
     }
 
     const upsertResult = await new AssetPack(attributes).upsert()
-    await Promise.all(assets.map((asset) => new Asset(asset).upsert()))
+    await Promise.all(
+      assets.map((asset) =>
+        new Asset({ ...asset, asset_pack_id: id }).upsert()
+      )
+    )
 
     return upsertResult
   }

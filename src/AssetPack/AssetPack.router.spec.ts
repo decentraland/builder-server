@@ -2,9 +2,11 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { ExpressApp } from '../common/ExpressApp'
 import { AssetPackRouter } from './AssetPack.router'
 import { AssetPack } from './AssetPack.model'
+import { Asset } from '../Asset'
 import { getDefaultEthAddress } from './utils'
 
 jest.mock('./AssetPack.model')
+jest.mock('../Asset/Asset.model')
 
 const anAssetPack = {
   id: 'anId',
@@ -372,6 +374,84 @@ describe('AssetPack router', () => {
           data: [aSanitizedAssetPack, anotherSanitizedAssetPack],
           ok: true,
         })
+      })
+    })
+  })
+
+  describe('when upserting an asset pack', () => {
+    const anAssetPackId = '8c251928-fb34-40e9-86d2-868a60d2fa78'
+    const anotherAssetPackId = '49c9ae13-6779-4ced-b208-dd352c9b7541'
+    const anOwnerAddress = 'anOwnerAddress'
+    let upsertReq: any
+    let assetUpsertSpy: jest.SpyInstance
+    let upsertedAssetAttrs: any[]
+
+    beforeEach(() => {
+      upsertedAssetAttrs = []
+      const mockUpsert = jest.fn().mockResolvedValue({})
+      ;((Asset as unknown) as jest.Mock).mockImplementation((attrs: any) => {
+        upsertedAssetAttrs.push(attrs)
+        return { upsert: mockUpsert, attributes: attrs }
+      })
+      assetUpsertSpy = mockUpsert
+      ;(AssetPack.count as jest.Mock).mockResolvedValue(0)
+      ;(Asset.existsAnyWithADifferentEthAddress as jest.Mock).mockResolvedValue(
+        false
+      )
+      ;(AssetPack.findOneWithAssets as jest.Mock).mockResolvedValue(null)
+      ;((AssetPack as unknown) as jest.Mock).mockImplementation(
+        (attrs: any) => ({
+          upsert: jest.fn().mockResolvedValue(attrs),
+          attributes: attrs,
+        })
+      )
+    })
+
+    describe('when an asset has a different asset_pack_id than the request id', () => {
+      beforeEach(() => {
+        upsertReq = {
+          params: { id: anAssetPackId },
+          body: {
+            assetPack: {
+              id: anAssetPackId,
+              title: 'an-asset-pack',
+              assets: [
+                {
+                  id: '1e27cbda-5582-4219-8f83-2db817344cc1',
+                  asset_pack_id: anotherAssetPackId,
+                  name: 'an-asset',
+                  model: 'model.glb',
+                  category: 'decorations',
+                  contents: {},
+                  tags: ['test'],
+                  metrics: {
+                    triangles: 0,
+                    materials: 0,
+                    textures: 0,
+                    meshes: 0,
+                    bodies: 0,
+                    entities: 0,
+                  },
+                },
+              ],
+            },
+          },
+          auth: { ethAddress: anOwnerAddress },
+        }
+      })
+
+      it('should use the asset_pack_id with the request id, not the body value', async () => {
+        await router.upsertAssetPack(upsertReq)
+
+        expect(assetUpsertSpy).toHaveBeenCalled()
+        expect(upsertedAssetAttrs).toHaveLength(1)
+        expect(upsertedAssetAttrs[0].asset_pack_id).toBe(anAssetPackId)
+      })
+
+      it('should never persist the body-supplied asset_pack_id', async () => {
+        await router.upsertAssetPack(upsertReq)
+
+        expect(upsertedAssetAttrs[0].asset_pack_id).not.toBe(anotherAssetPackId)
       })
     })
   })

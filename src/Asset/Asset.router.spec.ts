@@ -6,11 +6,6 @@ import { getDefaultEthAddress } from '../AssetPack/utils'
 jest.mock('./Asset.model')
 jest.mock('../AssetPack/utils')
 
-const mockGetDefaultEthAddress = getDefaultEthAddress as jest.MockedFunction<
-  typeof getDefaultEthAddress
->
-
-const DEFAULT_ETH_ADDRESS = 'defaultEthAddress'
 const anOwnerAddress = 'anOwnerAddress'
 
 const anAsset = {
@@ -51,10 +46,13 @@ const anotherAsset = {
 
 describe('Asset router', () => {
   let router: AssetRouter
-  let req: { params: Record<string, string>; query: Record<string, unknown>; auth: { ethAddress: string } }
+  let req: {
+    params: Record<string, string>
+    query: Record<string, unknown>
+    auth: { ethAddress: string }
+  }
 
   beforeEach(() => {
-    mockGetDefaultEthAddress.mockReturnValue(DEFAULT_ETH_ADDRESS)
     router = new AssetRouter(new ExpressApp())
     req = { params: {}, query: {}, auth: { ethAddress: anOwnerAddress } }
   })
@@ -77,7 +75,7 @@ describe('Asset router', () => {
         await (router as any).getAsset(req)
         expect(Asset.findByIds).toHaveBeenCalledWith(
           [anAsset.id],
-          [anOwnerAddress, DEFAULT_ETH_ADDRESS]
+          [anOwnerAddress, getDefaultEthAddress()]
         )
       })
 
@@ -116,7 +114,7 @@ describe('Asset router', () => {
         await (router as any).getAssets(req)
         expect(Asset.findByIds).toHaveBeenCalledWith(
           [anAsset.id, anotherAsset.id],
-          [anOwnerAddress, DEFAULT_ETH_ADDRESS]
+          [anOwnerAddress, getDefaultEthAddress()]
         )
       })
 

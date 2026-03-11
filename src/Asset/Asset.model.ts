@@ -32,11 +32,22 @@ export class Asset extends Model<AssetAttributes> {
     return counts[0].count > 0
   }
 
-  static findByIds(ids: string[]) {
-    return this.query<AssetAttributes>(SQL`
-    SELECT *
-      FROM ${SQL.raw(this.tableName)}
-      WHERE id = ANY(${ids})`)
+  static findByIds(ids: string[], ethAddresses?: string[]) {
+    const query = SQL`
+    SELECT a.* FROM ${SQL.raw(this.tableName)} a`
+
+    if (ethAddresses) {
+      query.append(SQL`
+      INNER JOIN ${SQL.raw(AssetPack.tableName)} ap ON a.asset_pack_id = ap.id
+      WHERE a.id = ANY(${ids})
+        AND ap.eth_address = ANY(${ethAddresses})
+        AND ap.is_deleted = FALSE`)
+    } else {
+      query.append(SQL`
+      WHERE a.id = ANY(${ids})`)
+    }
+
+    return this.query<AssetAttributes>(query)
   }
 
   static findByAssetPackId(assetPackId: string, limit: number | null = null) {

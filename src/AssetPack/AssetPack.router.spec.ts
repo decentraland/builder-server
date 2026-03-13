@@ -398,6 +398,9 @@ describe('AssetPack router', () => {
       ;(Asset.existsAnyWithADifferentEthAddress as jest.Mock).mockResolvedValue(
         false
       )
+      ;(Asset.existsAnyWithADifferentAssetPackId as jest.Mock).mockResolvedValue(
+        false
+      )
       ;(AssetPack.findOneWithAssets as jest.Mock).mockResolvedValue(null)
       ;((AssetPack as unknown) as jest.Mock).mockImplementation(
         (attrs: any) => ({
@@ -407,8 +410,11 @@ describe('AssetPack router', () => {
       )
     })
 
-    describe('when an asset has a different asset_pack_id than the request id', () => {
+    describe('when an asset already belongs to a different asset pack', () => {
       beforeEach(() => {
+        ;(Asset.existsAnyWithADifferentAssetPackId as jest.Mock).mockResolvedValue(
+          true
+        )
         upsertReq = {
           params: { id: anAssetPackId },
           body: {
@@ -440,18 +446,15 @@ describe('AssetPack router', () => {
         }
       })
 
-      it('should use the asset_pack_id with the request id, not the body value', async () => {
-        await router.upsertAssetPack(upsertReq)
-
-        expect(assetUpsertSpy).toHaveBeenCalled()
-        expect(upsertedAssetAttrs).toHaveLength(1)
-        expect(upsertedAssetAttrs[0].asset_pack_id).toBe(anAssetPackId)
+      it('should throw an error', async () => {
+        await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow(
+          "One of the assets you're trying to upload is invalid"
+        )
       })
 
-      it('should never persist the body-supplied asset_pack_id', async () => {
-        await router.upsertAssetPack(upsertReq)
-
-        expect(upsertedAssetAttrs[0].asset_pack_id).not.toBe(anotherAssetPackId)
+      it('should not upsert any assets', async () => {
+        await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow()
+        expect(assetUpsertSpy).not.toHaveBeenCalled()
       })
     })
   })

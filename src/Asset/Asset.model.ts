@@ -44,10 +44,25 @@ export class Asset extends Model<AssetAttributes> {
         AND ap.is_deleted = FALSE`)
     } else {
       query.append(SQL`
-      WHERE a.id = ANY(${ids})`)
+      INNER JOIN ${SQL.raw(AssetPack.tableName)} ap ON a.asset_pack_id = ap.id
+      WHERE a.id = ANY(${ids})
+        AND ap.is_deleted = FALSE`)
     }
 
     return this.query<AssetAttributes>(query)
+  }
+
+  static async existsAnyWithADifferentAssetPackId(
+    ids: string[],
+    assetPackId: string
+  ): Promise<boolean> {
+    const counts = await this.query(SQL`
+    SELECT COUNT(*) as count
+      FROM ${SQL.raw(this.tableName)}
+      WHERE id = ANY(${ids})
+        AND asset_pack_id != ${assetPackId}`)
+
+    return counts[0].count > 0
   }
 
   static findByAssetPackId(assetPackId: string, limit: number | null = null) {

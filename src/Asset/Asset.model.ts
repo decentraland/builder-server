@@ -32,11 +32,37 @@ export class Asset extends Model<AssetAttributes> {
     return counts[0].count > 0
   }
 
-  static findByIds(ids: string[]) {
-    return this.query<AssetAttributes>(SQL`
-    SELECT *
+  static findByIds(ids: string[], ethAddresses?: string[]) {
+    const query = SQL`
+    SELECT a.* FROM ${SQL.raw(this.tableName)} a`
+
+    if (ethAddresses) {
+      query.append(SQL`
+      INNER JOIN ${SQL.raw(AssetPack.tableName)} ap ON a.asset_pack_id = ap.id
+      WHERE a.id = ANY(${ids})
+        AND ap.eth_address = ANY(${ethAddresses})
+        AND ap.is_deleted = FALSE`)
+    } else {
+      query.append(SQL`
+      INNER JOIN ${SQL.raw(AssetPack.tableName)} ap ON a.asset_pack_id = ap.id
+      WHERE a.id = ANY(${ids})
+        AND ap.is_deleted = FALSE`)
+    }
+
+    return this.query<AssetAttributes>(query)
+  }
+
+  static async existsAnyWithADifferentAssetPackId(
+    ids: string[],
+    assetPackId: string
+  ): Promise<boolean> {
+    const counts = await this.query(SQL`
+    SELECT COUNT(*) as count
       FROM ${SQL.raw(this.tableName)}
-      WHERE id = ANY(${ids})`)
+      WHERE id = ANY(${ids})
+        AND asset_pack_id != ${assetPackId}`)
+
+    return counts[0].count > 0
   }
 
   static findByAssetPackId(assetPackId: string, limit: number | null = null) {

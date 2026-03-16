@@ -10,8 +10,11 @@ import {
 } from '../middleware'
 import { getUploader, S3Content } from '../S3'
 import { AssetPack } from '../AssetPack'
+import { getDefaultEthAddress } from '../AssetPack/utils'
 import { Asset } from './Asset.model'
-import { withAuthentication } from '../middleware/authentication'
+import { withAuthentication, AuthRequest } from '../middleware/authentication'
+
+const DEFAULT_ETH_ADDRESS = getDefaultEthAddress()
 
 export class AssetRouter extends Router {
   mount() {
@@ -54,6 +57,7 @@ export class AssetRouter extends Router {
     this.router.get(
       '/assets/:id',
       withCors,
+      withAuthentication,
       withAssetExists,
       server.handleRequest(this.getAsset)
     )
@@ -61,7 +65,12 @@ export class AssetRouter extends Router {
     /**
      * Get a multiple assets
      */
-    this.router.get('/assets', withCors, server.handleRequest(this.getAssets))
+    this.router.get(
+      '/assets',
+      withCors,
+      withAuthentication,
+      server.handleRequest(this.getAssets)
+    )
   }
 
   async assetBelongsToPackMiddleware(req: Request) {
@@ -80,14 +89,20 @@ export class AssetRouter extends Router {
     // This handler is only here so `server.handleRequest` has a valid callback and it can return the appropiate formated response
   }
 
-  private getAsset(req: Request) {
+  private async getAsset(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
-    return Asset.findOne(id)
+    const eth_address = req.auth.ethAddress
+    const [asset] = await Asset.findByIds(
+      [id],
+      [eth_address, DEFAULT_ETH_ADDRESS]
+    )
+    return asset ?? null
   }
 
-  private getAssets(req: Request) {
+  private async getAssets(req: AuthRequest) {
     const reqIds = server.extractFromReq<string | string[]>(req, 'id')
     const ids: string[] = Array.isArray(reqIds) ? reqIds : [reqIds]
-    return Asset.findByIds(ids)
+    const eth_address = req.auth.ethAddress
+    return Asset.findByIds(ids, [eth_address, DEFAULT_ETH_ADDRESS])
   }
 }

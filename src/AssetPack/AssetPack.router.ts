@@ -279,8 +279,17 @@ export class AssetPackRouter extends Router {
     const assetIds = assets.map((asset) => asset.id)
     if (await Asset.existsAnyWithADifferentEthAddress(assetIds, eth_address)) {
       throw new HTTPError(
-        "One of the assets you're trying to upload belongs to a different address. Check the ids",
-        { eth_address, assetIds }
+        "One of the assets you're trying to upload is invalid",
+        {},
+        STATUS_CODES.badRequest
+      )
+    }
+
+    if (await Asset.existsAnyWithADifferentAssetPackId(assetIds, id)) {
+      throw new HTTPError(
+        "One of the assets you're trying to upload is invalid",
+        {},
+        STATUS_CODES.badRequest
       )
     }
 

@@ -17,6 +17,10 @@ export type WearableData = {
   tags: string[]
   blockVrmExport?: boolean
   outlineCompatible?: boolean
+  springBones?: {
+    version: number
+    models: Record<string, Record<string, { stiffness: number; gravityPower: number; gravityDir: [number, number, number]; drag: number; center?: string }>>
+  }
 }
 
 export type SmartWearableData = WearableData & {
@@ -89,6 +93,37 @@ export const wearableSchema = Object.freeze({
     outlineCompatible: {
       type: 'boolean',
       nullable: true
+    },
+    springBones: {
+      type: 'object',
+      properties: {
+        version: { type: 'integer' },
+        models: {
+          type: 'object',
+          additionalProperties: {
+            type: 'object',
+            additionalProperties: {
+              type: 'object',
+              properties: {
+                stiffness: { type: 'number' },
+                gravityPower: { type: 'number' },
+                gravityDir: {
+                  type: 'array',
+                  items: { type: 'number' },
+                  minItems: 3,
+                  maxItems: 3
+                },
+                drag: { type: 'number' },
+                center: { type: 'string' }
+              },
+              required: ['stiffness', 'gravityPower', 'gravityDir', 'drag'],
+              additionalProperties: false
+            }
+          }
+        }
+      },
+      required: ['version', 'models'],
+      additionalProperties: false
     }
   },
   additionalProperties: false,

@@ -19,7 +19,7 @@ export type WearableData = {
   outlineCompatible?: boolean
   springBones?: {
     version: number
-    models: Record<string, Record<string, { stiffness: number; gravityPower: number; gravityDir: [number, number, number]; drag: number; center?: string }>>
+    models: Record<string, Record<string, { stiffness: number; gravityPower: number; gravityDir: [number, number, number]; drag: number; center?: string; isRoot: boolean }>>
   }
 }
 
@@ -114,9 +114,10 @@ export const wearableSchema = Object.freeze({
                   maxItems: 3
                 },
                 drag: { type: 'number' },
-                center: { type: 'string' }
+                center: { type: 'string' },
+                isRoot: { type: 'boolean' }
               },
-              required: ['stiffness', 'gravityPower', 'gravityDir', 'drag'],
+              required: ['stiffness', 'gravityPower', 'gravityDir', 'drag', 'isRoot'],
               additionalProperties: false
             }
           }

@@ -1,4 +1,9 @@
-import { WearableCategory, BodyShape, HideableWearableCategory } from '@dcl/schemas'
+import {
+  WearableCategory,
+  BodyShape,
+  HideableWearableCategory,
+  SpringBonesData,
+} from '@dcl/schemas'
 
 export type WearableRepresentation = {
   bodyShapes: BodyShape[]
@@ -17,10 +22,7 @@ export type WearableData = {
   tags: string[]
   blockVrmExport?: boolean
   outlineCompatible?: boolean
-  springBones?: {
-    version: number
-    models: Record<string, Record<string, { stiffness: number; gravityPower: number; gravityDir: [number, number, number]; drag: number; center?: string; isRoot: boolean }>>
-  }
+  springBones?: SpringBonesData
 }
 
 export type SmartWearableData = WearableData & {
@@ -76,7 +78,7 @@ export const wearableSchema = Object.freeze({
     },
     removesDefaultHiding: {
       type: 'array',
-      items: HideableWearableCategory.schema
+      items: HideableWearableCategory.schema,
     },
     tags: {
       type: 'array',
@@ -88,44 +90,16 @@ export const wearableSchema = Object.freeze({
     },
     blockVrmExport: {
       type: 'boolean',
-      nullable: true
+      nullable: true,
     },
     outlineCompatible: {
       type: 'boolean',
-      nullable: true
+      nullable: true,
     },
     springBones: {
-      type: 'object',
-      properties: {
-        version: { type: 'integer' },
-        models: {
-          type: 'object',
-          additionalProperties: {
-            type: 'object',
-            additionalProperties: {
-              type: 'object',
-              properties: {
-                stiffness: { type: 'number' },
-                gravityPower: { type: 'number' },
-                gravityDir: {
-                  type: 'array',
-                  items: { type: 'number' },
-                  minItems: 3,
-                  maxItems: 3
-                },
-                drag: { type: 'number' },
-                center: { type: 'string' },
-                isRoot: { type: 'boolean' }
-              },
-              required: ['stiffness', 'gravityPower', 'gravityDir', 'drag', 'isRoot'],
-              additionalProperties: false
-            }
-          }
-        }
-      },
-      required: ['version', 'models'],
-      additionalProperties: false
-    }
+      ...SpringBonesData.schema,
+      nullable: true,
+    },
   },
   additionalProperties: false,
   required: ['category', 'representations', 'replaces', 'hides', 'tags'],

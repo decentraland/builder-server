@@ -1,4 +1,9 @@
-import { WearableCategory, BodyShape, HideableWearableCategory } from '@dcl/schemas'
+import {
+  WearableCategory,
+  BodyShape,
+  HideableWearableCategory,
+  SpringBonesData,
+} from '@dcl/schemas'
 
 export type WearableRepresentation = {
   bodyShapes: BodyShape[]
@@ -17,6 +22,7 @@ export type WearableData = {
   tags: string[]
   blockVrmExport?: boolean
   outlineCompatible?: boolean
+  springBones?: SpringBonesData
 }
 
 export type SmartWearableData = WearableData & {
@@ -72,7 +78,7 @@ export const wearableSchema = Object.freeze({
     },
     removesDefaultHiding: {
       type: 'array',
-      items: HideableWearableCategory.schema
+      items: HideableWearableCategory.schema,
     },
     tags: {
       type: 'array',
@@ -84,12 +90,16 @@ export const wearableSchema = Object.freeze({
     },
     blockVrmExport: {
       type: 'boolean',
-      nullable: true
+      nullable: true,
     },
     outlineCompatible: {
       type: 'boolean',
-      nullable: true
-    }
+      nullable: true,
+    },
+    springBones: {
+      ...SpringBonesData.schema,
+      nullable: true,
+    },
   },
   additionalProperties: false,
   required: ['category', 'representations', 'replaces', 'hides', 'tags'],

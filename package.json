@@ -76,7 +76,7 @@
     "uuid": "^8.3.2"
   },
   "overrides": {
-    "decentrand-transactions": {
+    "decentraland-transactions": {
       "@dcl/schemas": "https://sdk-team-cdn.decentraland.org/@dcl/schemas/branch/feat/spring-bones-metadata/dcl-schemas-26.1.1-24994305798.commit-9523ab7.tgz"
     }
   },

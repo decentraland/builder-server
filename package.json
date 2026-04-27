@@ -33,7 +33,7 @@
     "@dcl/crypto": "^3.0.1",
     "@dcl/hashing": "^1.1.0",
     "@dcl/platform-crypto-middleware": "^1.0.2",
-    "@dcl/schemas": "https://sdk-team-cdn.decentraland.org/@dcl/schemas/branch/feat/spring-bones-metadata/dcl-schemas-26.1.1-24916710914.commit-36d6b81.tgz",
+    "@dcl/schemas": "https://sdk-team-cdn.decentraland.org/@dcl/schemas/branch/feat/spring-bones-metadata/dcl-schemas-26.1.1-24994305798.commit-9523ab7.tgz",
     "@ethersproject/solidity": "^5.7.0",
     "@types/escape-html": "0.0.20",
     "@types/express": "^4.17.11",

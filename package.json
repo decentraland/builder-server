@@ -75,6 +75,11 @@
     "tslint": "^6.1.3",
     "uuid": "^8.3.2"
   },
+  "overrides": {
+    "decentrand-transactions": {
+      "@dcl/schemas": "https://sdk-team-cdn.decentraland.org/@dcl/schemas/branch/feat/spring-bones-metadata/dcl-schemas-26.1.1-24994305798.commit-9523ab7.tgz"
+    }
+  },
   "devDependencies": {
     "@swc/core": "^1.2.102",
     "@swc/jest": "^0.2.22",

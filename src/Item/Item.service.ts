@@ -57,6 +57,7 @@ import {
   isTPItem,
   toDBItem,
 } from './utils'
+import { sanitizeItemContents } from './sanitize'
 import { EmoteData } from './emote/types'
 
 export class ItemService {
@@ -679,10 +680,15 @@ export class ItemService {
       }
     }
 
-    const attributes = toDBItem({
-      ...item,
-      eth_address: dbItem?.eth_address ?? eth_address,
-    })
+    // Sanitize on the write path so new/updated items are persisted clean.
+    // A second sanitize call exists inside `calculateItemContentHash` to also
+    // protect existing dirty rows still in the DB.
+    const attributes = sanitizeItemContents(
+      toDBItem({
+        ...item,
+        eth_address: dbItem?.eth_address ?? eth_address,
+      })
+    )
 
     attributes.blockchain_item_id = dbItem ? dbItem.blockchain_item_id : null
 
@@ -808,11 +814,15 @@ export class ItemService {
       )
     }
 
-    const attributes = toDBItem({
-      ...item,
-      eth_address,
-      ...(dbItem ? { id: dbItem.id } : {}), // if it is not receiving the id in the body but the item exists
-    })
+    // See note on the standard upsert path above: write-path sanitize is paired
+    // with the read-path sanitize in `calculateItemContentHash`.
+    const attributes = sanitizeItemContents(
+      toDBItem({
+        ...item,
+        eth_address,
+        ...(dbItem ? { id: dbItem.id } : {}), // if it is not receiving the id in the body but the item exists
+      })
+    )
 
     attributes.local_content_hash = !isMovingItemOutOfACollection
       ? await calculateItemContentHash(attributes, dbCollection)

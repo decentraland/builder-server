@@ -10,6 +10,7 @@ import {
   isTPItem,
   VIDEO_PATH,
 } from './utils'
+import { sanitizeItemContents } from './sanitize'
 import { EmoteData } from './emote/types'
 
 const THUMBNAIL_PATH = 'thumbnail.png'
@@ -150,7 +151,12 @@ async function calculateTPItemContentHash(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): Promise<string> {
-  const metadata = await buildTPWearableEntityMetadata(item, collection)
+  // Sanitize item contents before building metadata so directory entries
+  // and 0-byte files are excluded from the hash computation. This protects
+  // pre-existing dirty rows in the DB; can be removed once a backfill
+  // migration cleans all stored items.
+  const cleanItem = sanitizeItemContents(item)
+  const metadata = await buildTPWearableEntityMetadata(cleanItem, collection)
   return keccak256Hash(metadata, Object.keys(metadata))
 }
 
@@ -158,17 +164,22 @@ async function calculateStandardItemContentHash(
   item: ItemAttributes,
   collection: CollectionAttributes
 ): Promise<string> {
+  // Sanitize item contents before building metadata so directory entries
+  // and 0-byte files are excluded from the hash computation. This protects
+  // pre-existing dirty rows in the DB; can be removed once a backfill
+  // migration cleans all stored items.
+  const cleanItem = sanitizeItemContents(item)
   const buildMetadata =
-    item.type === ItemType.EMOTE
+    cleanItem.type === ItemType.EMOTE
       ? buildEmoteEntityMetadata
       : buildStandardWearableEntityMetadata
-  const metadata = await buildMetadata(item, collection)
+  const metadata = await buildMetadata(cleanItem, collection)
   // Skip computing the file's hash that won't be sent to the content server
-  const content = Object.keys(item.contents)
+  const content = Object.keys(cleanItem.contents)
     .filter((file) => !IGNORE_CONTENTS_FILES.includes(file))
     .map((file) => ({
       file,
-      hash: item.contents[file],
+      hash: cleanItem.contents[file],
     }))
 
   const { hash } = await calculateMultipleHashesADR32(content, metadata)

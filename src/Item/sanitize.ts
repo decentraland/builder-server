@@ -1,6 +1,10 @@
+import { WearableRepresentation } from '@dcl/schemas'
 import { ItemAttributes, ItemContents } from './Item.types'
 
-// CIDv1 base32 hash of empty (0-byte) content.
+// CIDv1 of empty (0-byte) content — multibase base32 (prefix 'b'),
+// raw codec (0x55), SHA-256 multihash. This is the CID that
+// `calculateMultipleHashesADR32` from `@dcl/hashing` produces for an empty
+// buffer; if the upstream encoding ever changes, this constant must change too.
 // makeContentFiles in the builder app drops Blobs with size === 0,
 // and the Catalyst content-validator rejects entities that reference
 // files not present in the content payload.
@@ -35,12 +39,13 @@ export function sanitizeItemContents<
     'representations' in cleanData &&
     Array.isArray(cleanData.representations)
   ) {
-    cleanData.representations = cleanData.representations.map((rep: any) => ({
+    const filterContents = <R extends WearableRepresentation>(rep: R): R => ({
       ...rep,
       contents: Array.isArray(rep.contents)
-        ? rep.contents.filter((f: string) => validFiles.has(f))
+        ? rep.contents.filter((f) => validFiles.has(f))
         : rep.contents,
-    }))
+    })
+    cleanData.representations = cleanData.representations.map(filterContents)
   }
 
   return {

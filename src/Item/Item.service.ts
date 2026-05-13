@@ -680,6 +680,9 @@ export class ItemService {
       }
     }
 
+    // Sanitize on the write path so new/updated items are persisted clean.
+    // A second sanitize call exists inside `calculateItemContentHash` to also
+    // protect existing dirty rows still in the DB.
     const attributes = sanitizeItemContents(
       toDBItem({
         ...item,
@@ -811,6 +814,8 @@ export class ItemService {
       )
     }
 
+    // See note on the standard upsert path above: write-path sanitize is paired
+    // with the read-path sanitize in `calculateItemContentHash`.
     const attributes = sanitizeItemContents(
       toDBItem({
         ...item,

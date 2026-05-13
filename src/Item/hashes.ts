@@ -152,7 +152,9 @@ async function calculateTPItemContentHash(
   collection: CollectionAttributes
 ): Promise<string> {
   // Sanitize item contents before building metadata so directory entries
-  // and 0-byte files are excluded from the hash computation.
+  // and 0-byte files are excluded from the hash computation. This protects
+  // pre-existing dirty rows in the DB; can be removed once a backfill
+  // migration cleans all stored items.
   const cleanItem = sanitizeItemContents(item)
   const metadata = await buildTPWearableEntityMetadata(cleanItem, collection)
   return keccak256Hash(metadata, Object.keys(metadata))
@@ -163,7 +165,9 @@ async function calculateStandardItemContentHash(
   collection: CollectionAttributes
 ): Promise<string> {
   // Sanitize item contents before building metadata so directory entries
-  // and 0-byte files are excluded from the hash computation.
+  // and 0-byte files are excluded from the hash computation. This protects
+  // pre-existing dirty rows in the DB; can be removed once a backfill
+  // migration cleans all stored items.
   const cleanItem = sanitizeItemContents(item)
   const buildMetadata =
     cleanItem.type === ItemType.EMOTE

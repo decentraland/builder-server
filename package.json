@@ -11,7 +11,7 @@
     "start": "ts-node ./src/server.ts",
     "watch:start": "nodemon src/server.ts",
     "migrate": "ts-node ./migrations/migrate.ts",
-    "migrate:docker": "./migrations/node-pg-migrate --database-url-var CONNECTION_STRING --migration-file-language ts --migrations-dir /app/migrations --ignore-pattern '\\..*|.*migrate(.ts)?'",
+    "migrate:docker": "NODE_OPTIONS=\"--max-old-space-size=768\" ./migrations/node-pg-migrate --database-url-var CONNECTION_STRING --migration-file-language ts --migrations-dir /app/migrations --ignore-pattern '\\..*|.*migrate(.ts)?'",
     "seed": "cp -r ./scripts/seed/*_data ./dist/scripts/seed && node ./dist/scripts/seed/index.js",
     "migrate-assetpacks": "node ./dist/scripts/migrate-assetpacks.js",
     "test": "jest",

@@ -11,6 +11,11 @@ fi
 MAX_RETRIES=10
 RETRY_DELAY=30
 
+# Give migrations the same explicit heap ceiling as the server below (they run
+# in the same 2 GB container). Node 24's cgroup-aware default would otherwise
+# auto-size old-space to ~512 MB, which the migration step can exceed.
+export NODE_OPTIONS="--max-old-space-size=1536"
+
 for i in $(seq 1 $MAX_RETRIES); do
   npm run migrate:docker up && break || echo "Migration failed, retrying... ($i/$MAX_RETRIES)"
   sleep $RETRY_DELAY

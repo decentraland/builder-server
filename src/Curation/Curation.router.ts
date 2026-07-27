@@ -219,15 +219,6 @@ export class CurationRouter extends Router {
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
 
-    const { rowCount } = await CollectionCuration.updateByItemId(itemId)
-    if (rowCount === 0) {
-      throw new HTTPError(
-        'Could not find a valid collection curation for the item',
-        { itemId },
-        STATUS_CODES.notFound
-      )
-    }
-
     return this.updateCuration(
       itemId,
       ethAddress,
@@ -327,6 +318,7 @@ export class CurationRouter extends Router {
   ) => {
     const curationService = CurationService.byType(type)
     await this.validateAccessToCuration(curationService, ethAddress, id)
+
     const validate = validator.compile(patchCurationSchema)
     validate(curationJSON)
 
@@ -364,6 +356,29 @@ export class CurationRouter extends Router {
           'The assignee must be a committee member',
           { id },
           STATUS_CODES.unauthorized
+        )
+      }
+    }
+
+    if (
+      (curationJSON.status === CurationStatus.APPROVED ||
+        curationJSON.status === CurationStatus.REJECTED) &&
+      !(await isCommitteeMember(ethAddress))
+    ) {
+      throw new HTTPError(
+        'Only committee members can approve or reject a curation',
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    if (type === CurationType.ITEM) {
+      const { rowCount } = await CollectionCuration.updateByItemId(id)
+      if (rowCount === 0) {
+        throw new HTTPError(
+          'Could not find a valid collection curation for the item',
+          { itemId: id },
+          STATUS_CODES.notFound
         )
       }
     }
@@ -435,6 +450,13 @@ export class CurationRouter extends Router {
     if (type === CurationType.COLLECTION) {
       attributes.collection_id = id
       if (curationJSON?.assignee) {
+        if (!(await isCommitteeMember(ethAddress))) {
+          throw new HTTPError(
+            'Only committee members can modify the assignee',
+            { id },
+            STATUS_CODES.unauthorized
+          )
+        }
         const isAssigneeCommitteeMember = await isCommitteeMember(
           curationJSON.assignee.toLowerCase()
         )

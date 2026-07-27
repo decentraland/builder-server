@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from 'express'
 import { server } from 'decentraland-server'
 
 import { AuthRequest } from '../authentication'
+import { guardAsync } from '../asMiddleware'
 import { Ownable, OwnableModel } from '../../Ownable'
 import { STATUS_CODES } from '../../common/HTTPError'
 
@@ -18,7 +19,7 @@ export function withModelAuthorization(
   param = 'id',
   checkOwnership = defaultOwnershipCheck
 ) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return guardAsync(async (req: Request, res: Response, next: NextFunction) => {
     const id = server.extractFromReq(req, param)
     const ethAddress = (req as AuthRequest).auth.ethAddress
 
@@ -42,5 +43,5 @@ export function withModelAuthorization(
     }
 
     next()
-  }
+  })
 }

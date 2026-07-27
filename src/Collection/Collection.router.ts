@@ -50,13 +50,20 @@ import {
   PublishCollectionResponse,
   CollectionAttributes,
   FullCollection,
+  PublicCollection,
+  PublicCollectionDetail,
   CollectionTypeFilter,
   CollectionSort,
   TermsOfServiceEvent,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
-import { hasPublicAccess } from './access'
-import { toFullCollection, toRemoteWhereCondition } from './utils'
+import { canSeeCollection, hasPublicAccess } from './access'
+import {
+  toFullCollection,
+  toPublicCollection,
+  toPublicCollectionDetail,
+  toRemoteWhereCondition,
+} from './utils'
 import {
   AlreadyPublishedCollectionError,
   InsufficientSlotsError,
@@ -141,6 +148,7 @@ export class CollectionRouter extends Router {
       withCors,
       withAuthentication,
       withCollectionExists,
+      withCollectionAuthorization,
       server.handleRequest(this.publishCollection)
     )
 
@@ -152,6 +160,7 @@ export class CollectionRouter extends Router {
       withCors,
       withAuthentication,
       withCollectionExists,
+      withCollectionAuthorization,
       withSchemaValidation(saveTOSSchema),
       server.handleRequest(this.saveTOS)
     )
@@ -257,7 +266,10 @@ export class CollectionRouter extends Router {
 
   getCollections = async (
     req: AuthRequest
-  ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
+  ): Promise<
+    | PaginatedResponse<FullCollection | PublicCollection>
+    | (FullCollection | PublicCollection)[]
+  > => {
     const { page, limit } = getPaginationParams(req)
     const {
       assignee,
@@ -314,9 +326,16 @@ export class CollectionRouter extends Router {
       omit<CollectionAttributes>(collectionWithCount, ['collection_count'])
     )
 
-    const consolidated = (
+    const fullCollections = (
       await Bridge.consolidateAllCollections(dbCollections, remoteCollections)
     ).map(toFullCollection)
+
+    const consolidated: (
+      | FullCollection
+      | PublicCollection
+    )[] = canRequestCollections
+      ? fullCollections
+      : fullCollections.map(toPublicCollection)
 
     return page && limit
       ? generatePaginatedResponse(consolidated, totalCollections, limit, page)
@@ -378,7 +397,9 @@ export class CollectionRouter extends Router {
       : consolidated
   }
 
-  getCollection = async (req: AuthRequest): Promise<FullCollection> => {
+  getCollection = async (
+    req: AuthRequest
+  ): Promise<FullCollection | PublicCollectionDetail> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
@@ -397,7 +418,10 @@ export class CollectionRouter extends Router {
         )
       }
 
-      return toFullCollection(collection)
+      const fullCollection = toFullCollection(collection)
+      return (await canSeeCollection(eth_address, collection))
+        ? fullCollection
+        : toPublicCollectionDetail(fullCollection)
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
@@ -477,6 +501,12 @@ export class CollectionRouter extends Router {
           error.message,
           { id: error.id },
           STATUS_CODES.conflict
+        )
+      } else if (error instanceof UnauthorizedCollectionEditError) {
+        throw new HTTPError(
+          error.message,
+          { id: error.id, eth_address: error.eth_address },
+          STATUS_CODES.unauthorized
         )
       }
 

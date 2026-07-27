@@ -33,12 +33,32 @@ export async function hasAccess(
   return isOwner || isCommittee || hasManagerAccess
 }
 
+export function isMinter(
+  eth_address: string,
+  collection: CollectionAttributes
+): boolean {
+  return (collection.minters || []).some(
+    (minter: string) => minter.toLowerCase() === eth_address.toLowerCase()
+  )
+}
+
+export async function canSeeCollection(
+  eth_address: string,
+  collection: CollectionAttributes
+): Promise<boolean> {
+  return (
+    isAdminUser(eth_address) ||
+    isMinter(eth_address, collection) ||
+    (await hasAccess(eth_address, collection))
+  )
+}
+
 export function isManager(
   eth_address: string,
   collection: CollectionAttributes
 ): boolean {
   return collection.managers.some(
-    (manager: string) => manager.toLowerCase() === eth_address
+    (manager: string) => manager.toLowerCase() === eth_address.toLowerCase()
   )
 }
 

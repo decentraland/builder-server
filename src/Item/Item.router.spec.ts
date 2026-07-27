@@ -58,7 +58,7 @@ import {
   ThirdPartyCollectionAttributes,
 } from '../Collection/Collection.types'
 import { VIDEO_PATH, buildTPItemURN } from './utils'
-import { hasPublicAccess } from './access'
+import { canSeeItem, hasPublicAccess } from './access'
 import { Item, ItemMappingStatus } from './Item.model'
 import {
   FullItem,
@@ -148,6 +148,7 @@ describe('Item router', () => {
     beforeEach(() => {
       mockExistsMiddleware(Item, dbItem.id)
       ;(hasPublicAccess as jest.Mock).mockResolvedValueOnce(true)
+      ;(canSeeItem as jest.Mock).mockResolvedValue(true)
       ;(Item.findOne as jest.Mock).mockResolvedValueOnce(dbItem)
       url = `/items/${dbItem.id}`
     })
@@ -486,6 +487,7 @@ describe('Item router', () => {
     describe('and the collection is a DCL collection', () => {
       let itemsForCollection: ItemAttributes[]
       beforeEach(() => {
+        ;(isCommitteeMember as jest.Mock).mockResolvedValue(true)
         itemsForCollection = [dbItemMock, dbItemNotPublished]
         ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce(
           itemsForCollection.map((item) => ({
@@ -594,8 +596,114 @@ describe('Item router', () => {
       })
     })
 
+    describe('and the caller is only a minter of the collection', () => {
+      beforeEach(() => {
+        ;(isCommitteeMember as jest.Mock).mockResolvedValue(false)
+        ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce(
+          [dbItemMock, dbItemNotPublished].map((item) => ({
+            ...item,
+            total_count: 2,
+          }))
+        )
+        ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValueOnce(
+          {
+            collection: {
+              ...itemFragment.collection,
+              creator: '0x0000000000000000000000000000000000000bad',
+              minters: [wallet.address],
+            },
+            items: [itemFragment],
+          }
+        )
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbCollectionMock
+        )
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollectionMock,
+        ])
+        mockItemConsolidation([wearable])
+        url = `/collections/${dbCollectionMock.id}/items`
+      })
+
+      it('should return every item, drafts included, keeping the internal ids', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body.data).toHaveLength(2)
+            for (const item of response.body.data) {
+              expect(item).toHaveProperty('id')
+              expect(item).toHaveProperty('collection_id')
+            }
+          })
+      })
+    })
+
+    describe('and the caller is not a privileged member of the collection', () => {
+      beforeEach(() => {
+        ;(isCommitteeMember as jest.Mock).mockResolvedValue(false)
+        ;(Item.findByCollectionId as jest.Mock)
+          .mockResolvedValueOnce(
+            [dbItemMock, dbItemNotPublished].map((item) => ({
+              ...item,
+              total_count: 2,
+            }))
+          )
+          .mockResolvedValueOnce([{ ...dbItemMock, total_count: 1 }])
+        ;(collectionAPI.fetchCollectionWithItemsByContractAddress as jest.Mock).mockResolvedValue(
+          { collection: itemFragment.collection, items: [itemFragment] }
+        )
+        ;(Collection.findOne as jest.Mock).mockResolvedValue(dbCollectionMock)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValue([
+          dbCollectionMock,
+        ])
+        ;(peerAPI.fetchItems as jest.Mock).mockResolvedValue([wearable])
+        ;(collectionAPI.buildItemId as jest.Mock).mockImplementation(
+          (contractAddress, tokenId) => contractAddress + '-' + tokenId
+        )
+        url = `/collections/${dbCollectionMock.id}/items`
+      })
+
+      it('should return only published items, keeping ids but stripping internal fields', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body.data).toHaveLength(1)
+            const [item] = response.body.data
+            expect(item.is_published).toBe(true)
+            expect(item).toHaveProperty('id')
+            expect(item).toHaveProperty('collection_id')
+            expect(item).not.toHaveProperty('local_content_hash')
+          })
+      })
+
+      it('should query published-only items and report a published-only total', () => {
+        const paginatedUrl = `${url}?limit=5&page=1`
+        return server
+          .get(buildURL(paginatedUrl))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            const { data } = response.body
+            expect(data.total).toBe(1)
+            expect(data.results).toHaveLength(1)
+            expect(data.results[0].is_published).toBe(true)
+            expect(data.results[0]).toHaveProperty('id')
+            expect(data.results[0]).not.toHaveProperty('local_content_hash')
+            expect(Item.findByCollectionId).toHaveBeenLastCalledWith(
+              dbCollectionMock.id,
+              expect.objectContaining({ onlyPublished: true })
+            )
+          })
+      })
+    })
+
     describe('and the collection is a third party collection', () => {
       beforeEach(() => {
+        ;(isCommitteeMember as jest.Mock).mockResolvedValue(true)
         ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
           dbTPCollectionMock
         )
@@ -760,6 +868,38 @@ describe('Item router', () => {
                 error: 'The user is unauthorized to upsert the collection.',
                 ok: false,
               })
+            })
+        })
+      })
+
+      describe('and the collection the item belongs to is locked', () => {
+        beforeEach(() => {
+          url = `/items/${dbTPItem.id}`
+          itemToUpsert = {
+            ...itemToUpsert,
+            collection_id: tpCollectionMock.id,
+            urn: buildTPItemURN(
+              tpCollectionMock.third_party_id,
+              tpCollectionMock.urn_suffix,
+              dbTPItem.urn_suffix
+            ),
+          }
+          mockItem.findOne.mockResolvedValueOnce(itemToUpsert)
+          ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+            { ...tpCollectionMock, lock: new Date() },
+          ])
+          mockIsThirdPartyManager(wallet.address, true)
+        })
+
+        it('should respond with a 423 signaling that the collection is locked', () => {
+          return server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.locked)
+            .then((response: any) => {
+              expect(response.body.ok).toBe(false)
+              expect(mockItem.upsert).not.toHaveBeenCalled()
             })
         })
       })
@@ -2785,6 +2925,7 @@ describe('Item router', () => {
       beforeEach(() => {
         contractAddress = '0x1234567890123456789012345678901234567890'
         itemsForCollection = [dbItemMock, dbItemNotPublished]
+        ;(isCommitteeMember as jest.Mock).mockResolvedValue(true)
         mockCollectionExistsMiddleware(contractAddress)
         ;(Item.findByCollectionId as jest.Mock).mockResolvedValueOnce(
           itemsForCollection.map((item) => ({

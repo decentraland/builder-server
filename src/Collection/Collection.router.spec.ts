@@ -71,8 +71,12 @@ import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { isCommitteeMember } from '../Committee'
 import * as Warehouse from '../warehouse'
 import { app } from '../server'
-import { hasPublicAccess } from './access'
-import { getChequeMessageHash, toFullCollection } from './utils'
+import { canSeeCollection, hasPublicAccess } from './access'
+import {
+  getChequeMessageHash,
+  toFullCollection,
+  toPublicCollection,
+} from './utils'
 import { Collection } from './Collection.model'
 import {
   CollectionAttributes,
@@ -942,10 +946,10 @@ describe('Collection router', () => {
                   page,
                   limit,
                   results: [
-                    {
+                    toPublicCollection(({
                       ...resultingCollectionAttributes,
                       urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
-                    },
+                    } as unknown) as FullCollection),
                   ],
                 },
 
@@ -1006,10 +1010,10 @@ describe('Collection router', () => {
                   page,
                   limit,
                   results: [
-                    {
+                    toPublicCollection(({
                       ...resultingCollectionAttributes,
                       urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
-                    },
+                    } as unknown) as FullCollection),
                   ],
                 },
 
@@ -1075,10 +1079,10 @@ describe('Collection router', () => {
                   page,
                   limit,
                   results: [
-                    {
+                    toPublicCollection(({
                       ...resultingCollectionAttributes,
                       urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
-                    },
+                    } as unknown) as FullCollection),
                   ],
                 },
                 ok: true,
@@ -1115,10 +1119,10 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 data: [
-                  {
+                  toPublicCollection(({
                     ...resultingCollectionAttributes,
                     urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
-                  },
+                  } as unknown) as FullCollection),
                 ],
                 ok: true,
               })
@@ -1519,9 +1523,31 @@ describe('Collection router', () => {
     beforeEach(() => {
       mockExistsMiddleware(Collection, dbCollection.id)
       ;(hasPublicAccess as jest.Mock).mockResolvedValueOnce(true)
+      ;(canSeeCollection as jest.Mock).mockResolvedValue(true)
       ;(Collection.findByIds as jest.Mock).mockReturnValueOnce([dbCollection])
       ;(collectionAPI.fetchCollection as jest.Mock).mockReturnValueOnce(null)
       url = `/collections/${dbCollection.id}`
+    })
+
+    describe('and the caller is a public reader without a relationship to the collection', () => {
+      beforeEach(() => {
+        ;(canSeeCollection as jest.Mock).mockResolvedValue(false)
+      })
+
+      it('should keep the id but strip internal fields', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body.data).toHaveProperty('id')
+            expect(response.body.data).not.toHaveProperty('salt')
+            expect(response.body.data).not.toHaveProperty('forum_link')
+            expect(response.body.data).not.toHaveProperty('forum_id')
+            expect(response.body.data).not.toHaveProperty('lock')
+            expect(response.body.data.urn).toBeDefined()
+          })
+      })
     })
 
     it('should return the requested collection with the URN', () => {
@@ -1858,10 +1884,70 @@ describe('Collection router', () => {
   })
 
   describe('when publishing a collection', () => {
+    describe('and the caller is not authorized to manage the collection', () => {
+      describe('and the collection is a TP collection', () => {
+        beforeEach(() => {
+          url = `/collections/${dbTPCollection.id}/publish`
+          mockExistsMiddleware(Collection, dbTPCollection.id)
+          mockCollectionAuthorizationMiddleware(
+            dbTPCollection.id,
+            wallet.address,
+            true,
+            false
+          )
+        })
+
+        it('should respond with a 401 and not create any publication records', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [dbTPItemMock.id],
+              cheque: { signature: 'signature', qty: 1, salt: '0xsalt' },
+            })
+            .expect(401)
+            .then(() => {
+              expect(SlotUsageCheque.create).not.toHaveBeenCalled()
+              expect(ItemCuration.create).not.toHaveBeenCalled()
+              expect(CollectionCuration.create).not.toHaveBeenCalled()
+            })
+        })
+      })
+
+      describe('and the collection is a Standard collection', () => {
+        beforeEach(() => {
+          url = `/collections/${dbCollection.id}/publish`
+          mockExistsMiddleware(Collection, dbCollection.id)
+          mockCollectionAuthorizationMiddleware(
+            dbCollection.id,
+            wallet.address,
+            false,
+            false
+          )
+        })
+
+        it('should respond with a 401 and not update any items', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({
+              itemIds: [],
+              cheque: { signature: 'signature', qty: 1, salt: '0xsalt' },
+            })
+            .expect(401)
+            .then(() => {
+              expect(Item.update).not.toHaveBeenCalled()
+            })
+        })
+      })
+    })
+
     describe('and the collection is a TP collection', () => {
       beforeEach(() => {
         url = `/collections/${dbTPCollection.id}/publish`
         mockExistsMiddleware(Collection, dbTPCollection.id)
+        ;(Collection.findOne as jest.Mock).mockResolvedValue(dbTPCollection)
+        ThirdPartyServiceMock.isManager.mockResolvedValue(true)
       })
 
       describe('when sending an empty item ids array', () => {
@@ -2494,6 +2580,12 @@ describe('Collection router', () => {
           dbCollection,
         ])
         mockExistsMiddleware(Collection, dbCollection.id)
+        mockCollectionAuthorizationMiddleware(
+          dbCollection.id,
+          wallet.address,
+          false,
+          true
+        )
       })
 
       describe("and the remote collection doesn't exist yet", () => {
@@ -3185,9 +3277,43 @@ describe('Collection router', () => {
       })
     })
 
+    describe('and the caller is not authorized for the collection', () => {
+      beforeEach(() => {
+        ;(Collection.count as jest.Mock).mockResolvedValueOnce(1)
+        mockCollectionAuthorizationMiddleware(
+          dbCollectionMock.id,
+          wallet.address,
+          false,
+          false
+        )
+        body = {
+          email: 'email@company.com',
+          event: TermsOfServiceEvent.PUBLISH_THIRD_PARTY_ITEMS,
+          hashes: ['hash1', 'hash2'],
+        }
+      })
+
+      it('should respond with a 401 and not send data to the warehouse', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .send(body)
+          .expect(401)
+          .then(() => {
+            expect(Warehouse.sendDataToWarehouse).not.toHaveBeenCalled()
+          })
+      })
+    })
+
     describe('and the collection exists', () => {
       beforeEach(() => {
         ;(Collection.count as jest.Mock).mockResolvedValueOnce(1)
+        mockCollectionAuthorizationMiddleware(
+          dbCollectionMock.id,
+          wallet.address,
+          false,
+          true
+        )
       })
 
       describe("and the ToS don't follow the schema", () => {

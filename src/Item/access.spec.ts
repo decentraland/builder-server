@@ -10,7 +10,7 @@ import { isManager as isCollectionManager } from '../Collection/access'
 import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { Ownable } from '../Ownable'
 import { isCommitteeMember } from '../Committee'
-import { hasPublicAccess, hasAccess } from './access'
+import { canSeeItem, hasPublicAccess, hasAccess } from './access'
 import { FullItem } from './Item.types'
 
 jest.mock('../Committee')
@@ -145,6 +145,40 @@ describe('when getting access for an item', () => {
           ).toBe(true)
         })
       })
+    })
+  })
+})
+
+describe('when checking whether the caller can see the full item', () => {
+  let item: FullItem
+
+  beforeEach(() => {
+    item = Bridge.toFullItem(dbItemMock)
+  })
+
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  describe('and the item is an orphan (no collection) and the caller is a committee member', () => {
+    beforeEach(() => {
+      isOwnedBySpy.mockResolvedValueOnce(false)
+      mockIsCommitteeMember.mockResolvedValueOnce(true)
+    })
+
+    it('should return true', async () => {
+      expect(await canSeeItem(wallet.address, item)).toBe(true)
+    })
+  })
+
+  describe('and the item is an orphan and the caller is neither owner nor committee', () => {
+    beforeEach(() => {
+      isOwnedBySpy.mockResolvedValueOnce(false)
+      mockIsCommitteeMember.mockResolvedValueOnce(false)
+    })
+
+    it('should return false', async () => {
+      expect(await canSeeItem(wallet.address, item)).toBe(false)
     })
   })
 })

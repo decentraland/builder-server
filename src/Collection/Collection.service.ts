@@ -176,6 +176,15 @@ export class CollectionService {
 
     // There'll always be a publish before a PUSH CHANGES, so this method also creates or updates the virtual CollectionCuration for the items
 
+    if (
+      !(await ThirdPartyService.isManager(
+        dbCollection.third_party_id,
+        signerAddress
+      ))
+    ) {
+      throw new UnauthorizedCollectionEditError(dbCollection.id, signerAddress)
+    }
+
     const availableSlots = await ThirdPartyService.getThirdPartyAvailableSlots(
       dbCollection.third_party_id
     )
@@ -576,7 +585,9 @@ export class CollectionService {
     collection: CollectionAttributes,
     ethAddress: string
   ): boolean {
-    return collection.managers.some((manager) => manager === ethAddress)
+    return collection.managers.some(
+      (manager) => manager.toLowerCase() === ethAddress.toLowerCase()
+    )
   }
 
   public async isOwnedOrManagedBy(

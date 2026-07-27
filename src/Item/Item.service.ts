@@ -216,13 +216,22 @@ export class ItemService {
       mappingStatus?: ItemMappingStatus
       limit?: number
       offset?: number
+      onlyPublished?: boolean
     }
   ): Promise<{
     collection: CollectionAttributes
     items: FullItem[]
     totalItems: number
   }> {
-    const { synced, name, status, mappingStatus, limit, offset } = filters
+    const {
+      synced,
+      name,
+      status,
+      mappingStatus,
+      limit,
+      offset,
+      onlyPublished,
+    } = filters
     const dbCollection = await this.collectionService.getDBCollection(
       collectionId
     )
@@ -234,6 +243,7 @@ export class ItemService {
       name,
       limit,
       offset,
+      onlyPublished,
     })
 
     const totalItems = Number(dbItemsWithCount[0]?.total_count ?? 0)
@@ -761,6 +771,10 @@ export class ItemService {
         ))
       ) {
         throw new UnauthorizedToUpsertError(item.id, eth_address)
+      }
+
+      if (this.collectionService.isLockActive(dbCollection.lock)) {
+        throw new CollectionForItemLockedError(item.id, ItemAction.UPSERT)
       }
     }
     const decodedURN = decodeThirdPartyItemURN(item.urn)

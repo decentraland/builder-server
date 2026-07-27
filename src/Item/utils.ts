@@ -4,6 +4,7 @@ import {
   FullItem,
   ItemAttributes,
   ItemType,
+  PublicItem,
   ThirdPartyItemAttributes,
 } from './Item.types'
 import { EmoteData } from './emote/types'
@@ -11,6 +12,10 @@ import { WearableData } from './wearable/types'
 
 export const MAX_FORUM_ITEMS = 20
 export const VIDEO_PATH = 'video.mp4'
+
+export function toPublicItem(item: FullItem): PublicItem {
+  return utils.omit(item, ['local_content_hash']) as PublicItem
+}
 
 export function toDBItem(item: FullItem): ItemAttributes {
   const attributes = {

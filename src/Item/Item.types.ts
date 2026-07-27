@@ -65,6 +65,8 @@ export type FullItem = Omit<ItemAttributes, 'urn_suffix'> & {
   isMappingComplete?: boolean
 }
 
+export type PublicItem = Omit<FullItem, 'local_content_hash'>
+
 export type DBItemApprovalData = Pick<ItemAttributes, 'id'> &
   Pick<FullItem, 'content_hash'>
 

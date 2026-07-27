@@ -23,6 +23,7 @@ type ItemQueryOptions = {
   mappingStatus?: ItemMappingStatus
   limit?: number
   offset?: number
+  onlyPublished?: boolean
 }
 
 export class Item extends Model<ItemAttributes> {
@@ -186,6 +187,7 @@ export class Item extends Model<ItemAttributes> {
           synced: options?.synced,
           mappingStatus: options?.mappingStatus,
           name: options?.name,
+          onlyPublished: options?.onlyPublished,
         },
         options?.limit ?? DEFAULT_LIMIT,
         options?.offset ?? 0
@@ -201,7 +203,7 @@ export const ItemQueries = Object.freeze({
     limit: number = DEFAULT_LIMIT,
     offset: number = 0
   ) => {
-    const { status, synced, mappingStatus, name } = options
+    const { status, synced, mappingStatus, name, onlyPublished } = options
     return SQL`
         SELECT items.*, count(*) OVER() AS total_count FROM (
           SELECT DISTINCT ON (items.id) items.id, items.*
@@ -249,6 +251,19 @@ export const ItemQueries = Object.freeze({
                   : mappingStatus === ItemMappingStatus.UNPUBLISHED_MAPPING
                   ? SQL`(item_curations.is_mapping_complete = false OR item_curations.is_mapping_complete IS NULL) AND items.mappings IS NOT NULL`
                   : SQL`1 = 1`
+              }
+              ${
+                onlyPublished
+                  ? SQL`AND (
+                      items.blockchain_item_id IS NOT NULL
+                      OR EXISTS (
+                        SELECT 1 FROM ${raw(
+                          ItemCuration.tableName
+                        )} published_curations
+                        WHERE published_curations.item_id = items.id
+                      )
+                    )`
+                  : SQL``
               }
             ORDER BY items.id
           ) items

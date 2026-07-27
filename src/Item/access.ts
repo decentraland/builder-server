@@ -1,5 +1,9 @@
 import { CollectionAttributes } from '../Collection'
-import { isManager as isCollectionManager } from '../Collection/access'
+import {
+  canSeeCollection,
+  isAdminUser,
+  isManager as isCollectionManager,
+} from '../Collection/access'
 import { isCommitteeMember } from '../Committee'
 import { Ownable } from '../Ownable'
 import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
@@ -23,6 +27,26 @@ export async function hasPublicAccess(
   }
 
   return hasAccess(eth_address, item.id, collection)
+}
+
+export async function canSeeItem(
+  eth_address: string,
+  item: FullItem,
+  collection?: CollectionAttributes
+): Promise<boolean> {
+  if (isAdminUser(eth_address)) {
+    return true
+  }
+
+  const [isOwner, isCommittee] = await Promise.all([
+    new Ownable(Item).isOwnedBy(item.id, eth_address),
+    isCommitteeMember(eth_address),
+  ])
+  if (isOwner || isCommittee) {
+    return true
+  }
+
+  return collection ? canSeeCollection(eth_address, collection) : false
 }
 
 /**

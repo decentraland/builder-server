@@ -2,11 +2,12 @@ import { Request, Response, NextFunction } from 'express'
 import { validate as validateUuid } from 'uuid'
 import { ethers } from 'ethers'
 import { server } from 'decentraland-server'
+import { guardAsync } from './asMiddleware'
 import { STATUS_CODES } from '../common/HTTPError'
 import { Collection, CollectionAttributes } from '../Collection'
 
 export function withCollectionExists(param = 'id') {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return guardAsync(async (req: Request, res: Response, next: NextFunction) => {
     const idOrContractAddress = server.extractFromReq(req, param)
 
     // Validate that the parameter is either a UUID or a valid Ethereum address
@@ -69,5 +70,5 @@ export function withCollectionExists(param = 'id') {
     }
 
     next()
-  }
+  })
 }

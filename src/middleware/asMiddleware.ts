@@ -13,3 +13,14 @@ export function asMiddleware(callback: Function) {
     next(nextValue)
   }
 }
+
+export function guardAsync(
+  middleware: (
+    req: Request,
+    res: Response,
+    next: NextFunction
+  ) => Promise<unknown>
+) {
+  return (req: Request, res: Response, next: NextFunction) =>
+    middleware(req, res, next).catch(next)
+}

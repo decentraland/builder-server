@@ -2,6 +2,7 @@ import { validate as validateUuid } from 'uuid'
 import { Request, Response, NextFunction } from 'express'
 import { server } from 'decentraland-server'
 
+import { guardAsync } from './asMiddleware'
 import { STATUS_CODES } from '../common/HTTPError'
 import { Project } from '../Project'
 import { Pool } from '../Pool'
@@ -25,7 +26,7 @@ export function withModelExists(
   param = 'id',
   enforce: { [key: string]: any } = {}
 ) {
-  return async (req: Request, res: Response, next: NextFunction) => {
+  return guardAsync(async (req: Request, res: Response, next: NextFunction) => {
     const id = server.extractFromReq(req, param)
 
     if (!validateUuid(id)) {
@@ -49,5 +50,5 @@ export function withModelExists(
     }
 
     next()
-  }
+  })
 }

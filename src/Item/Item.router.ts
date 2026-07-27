@@ -23,6 +23,7 @@ import { OwnableModel } from '../Ownable'
 import { getUploader, S3Content } from '../S3'
 import { CollectionService } from '../Collection'
 import {
+  canSeeCollection,
   hasPublicAccess as hasCollectionAccess,
   isAdminUser,
 } from '../Collection/access'
@@ -41,8 +42,8 @@ import { MulterFile } from '../S3/types'
 import { Item, ItemMappingStatus } from './Item.model'
 import { ItemAttributes, ItemContents } from './Item.types'
 import { areItemRepresentationsValid, upsertItemSchema } from './Item.schema'
-import { FullItem } from './Item.types'
-import { hasPublicAccess } from './access'
+import { FullItem, PublicItem } from './Item.types'
+import { canSeeItem, hasPublicAccess } from './access'
 import { ItemService } from './Item.service'
 import {
   CollectionForItemLockedError,
@@ -57,7 +58,7 @@ import {
   UnauthorizedToUpsertError,
   URNAlreadyInUseError,
 } from './Item.errors'
-import { VIDEO_PATH, isSmartWearable } from './utils'
+import { VIDEO_PATH, isSmartWearable, toPublicItem } from './utils'
 
 export const MAX_VIDEO_SIZE =
   parseInt(env.get('AWS_MAX_VIDEO_SIZE', ''), 10) || 250e6 // 250MB
@@ -329,7 +330,7 @@ export class ItemRouter extends Router {
     }
   }
 
-  getItem = async (req: AuthRequest): Promise<FullItem> => {
+  getItem = async (req: AuthRequest): Promise<FullItem | PublicItem> => {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
 
@@ -345,7 +346,9 @@ export class ItemRouter extends Router {
         )
       }
 
-      return item
+      return (await canSeeItem(eth_address, item, collection))
+        ? item
+        : toPublicItem(item)
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
@@ -366,7 +369,9 @@ export class ItemRouter extends Router {
 
   getCollectionItems = async (
     req: AuthRequest
-  ): Promise<PaginatedResponse<FullItem> | FullItem[]> => {
+  ): Promise<
+    PaginatedResponse<FullItem | PublicItem> | (FullItem | PublicItem)[]
+  > => {
     const id = server.extractFromReq(req, 'id')
     let status: CurationStatus | undefined
     let mappingStatus: ItemMappingStatus | undefined
@@ -421,9 +426,30 @@ export class ItemRouter extends Router {
         )
       }
 
+      if (await canSeeCollection(eth_address, collection)) {
+        return page && limit
+          ? generatePaginatedResponse(items, totalItems, limit, page)
+          : items
+      }
+
+      const {
+        items: publishedItems,
+        totalItems: publishedTotal,
+      } = await this.itemService.getCollectionItems(id, {
+        name,
+        limit,
+        offset: page && limit ? getOffset(page, limit) : undefined,
+        status,
+        mappingStatus,
+        synced: synced ? synced === 'true' : undefined,
+        onlyPublished: true,
+      })
+
+      const resultItems: PublicItem[] = publishedItems.map(toPublicItem)
+
       return page && limit
-        ? generatePaginatedResponse(items, totalItems, limit, page)
-        : items
+        ? generatePaginatedResponse(resultItems, publishedTotal, limit, page)
+        : resultItems
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(

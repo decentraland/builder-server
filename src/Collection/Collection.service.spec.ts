@@ -1,4 +1,5 @@
 import {
+  dbCollectionMock,
   dbTPCollectionMock,
   thirdPartyMock,
 } from '../../spec/mocks/collections'
@@ -23,6 +24,34 @@ describe('Collection service', () => {
 
   afterEach(() => {
     jest.restoreAllMocks()
+  })
+
+  describe('when checking if an address is a DCL manager of a collection', () => {
+    const lowercased = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9'
+    const checksummed = '0xC6d2000A7a1DdCA92941f4E2b41360Fe4Ee2ABd9'
+
+    it('should match the address against the managers case-insensitively', () => {
+      const collection = {
+        ...dbCollectionMock,
+        managers: [lowercased],
+      } as CollectionAttributes
+      expect(service.isDCLManagerOfCollection(collection, checksummed)).toBe(
+        true
+      )
+    })
+
+    it('should return false when the address is not a manager', () => {
+      const collection = {
+        ...dbCollectionMock,
+        managers: [lowercased],
+      } as CollectionAttributes
+      expect(
+        service.isDCLManagerOfCollection(
+          collection,
+          '0x1111111111111111111111111111111111111111'
+        )
+      ).toBe(false)
+    })
   })
 
   describe('when checking if the lock is active', () => {

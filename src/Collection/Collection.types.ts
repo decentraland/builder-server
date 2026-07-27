@@ -48,6 +48,16 @@ export type FullCollection = Omit<
   isProgrammatic?: boolean
 }
 
+export type PublicCollection = Omit<
+  FullCollection,
+  'id' | 'salt' | 'forum_link' | 'forum_id' | 'lock'
+>
+
+export type PublicCollectionDetail = Omit<
+  FullCollection,
+  'salt' | 'forum_link' | 'forum_id' | 'lock'
+>
+
 export type PublishCollectionResponse<T> = {
   collection: T
   items: FullItem[]

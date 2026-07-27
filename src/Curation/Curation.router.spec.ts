@@ -266,10 +266,11 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce({ rowCount: 1 })
         })
 
-        it('should reject with an unauthorized message', async () => {
+        it('should reject with an unauthorized message without touching the collection curation', async () => {
           await expect(router.updateItemCuration(req)).rejects.toThrowError(
             'Unauthorized'
           )
+          expect(CollectionCuration.updateByItemId).not.toHaveBeenCalled()
         })
       })
     })
@@ -346,6 +347,62 @@ describe('when handling a request', () => {
       })
     })
 
+    describe('when setting the status to approved/rejected and the caller is not a committee member', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: { curation: { status: CurationStatus.APPROVED } },
+        } as any
+      })
+
+      describe('when updating a collection curation', () => {
+        let updateSpy: jest.SpyInstance
+        beforeEach(() => {
+          service = mockServiceWithAccess(CollectionCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(false)
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ id: 'curationId' } as any)
+          updateSpy = jest.spyOn(service, 'updateById')
+        })
+
+        it('should reject with an unauthorized message and not update the curation', async () => {
+          await expect(
+            router.updateCollectionCuration(req)
+          ).rejects.toThrowError(
+            'Only committee members can approve or reject a curation'
+          )
+          expect(updateSpy).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('when updating an item curation', () => {
+        let updateSpy: jest.SpyInstance
+        beforeEach(() => {
+          service = mockServiceWithAccess(ItemCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(false)
+          jest
+            .spyOn(CollectionCuration, 'updateByItemId')
+            .mockResolvedValueOnce({ rowCount: 1 })
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ id: 'curationId' } as any)
+          updateSpy = jest.spyOn(service, 'updateById')
+        })
+
+        it('should reject with an unauthorized message and not update the curation nor touch the collection curation', async () => {
+          await expect(router.updateItemCuration(req)).rejects.toThrowError(
+            'Only committee members can approve or reject a curation'
+          )
+          expect(updateSpy).not.toHaveBeenCalled()
+          expect(CollectionCuration.updateByItemId).not.toHaveBeenCalled()
+        })
+      })
+    })
+
     describe('when the payload is invalid', () => {
       let req: AuthRequest
 
@@ -401,6 +458,10 @@ describe('when handling a request', () => {
         } as any
 
         service = mockServiceWithAccess(ItemCuration, true)
+        mockIsCommitteeMember.mockResolvedValueOnce(true)
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockResolvedValueOnce({ id: 'curationId' } as any)
 
         jest
           .spyOn(CollectionCuration, 'updateByItemId')
@@ -477,6 +538,7 @@ describe('when handling a request', () => {
               },
             } as any
             service = mockServiceWithAccess(CollectionCuration, true)
+            mockIsCommitteeMember.mockResolvedValueOnce(true)
             expectedCuration = {
               id: 'uuid-123123-123123',
             } as CollectionCurationAttributes
@@ -629,12 +691,29 @@ describe('when handling a request', () => {
 
           describe('and the assignee is not a committee member', () => {
             beforeEach(() => {
-              mockIsCommitteeMember.mockResolvedValueOnce(false)
+              mockIsCommitteeMember
+                .mockResolvedValueOnce(true)
+                .mockResolvedValueOnce(false)
             })
             it('should throw an error saying the assignee is not a committee member', async () => {
               await expect(
                 router.insertCollectionCuration(req)
               ).rejects.toThrowError('The assignee must be a committee member')
+            })
+          })
+
+          describe('and the caller is not a committee member', () => {
+            beforeEach(() => {
+              mockIsCommitteeMember.mockResolvedValueOnce(false)
+            })
+            it('should reject and not create a curation with the assignee', async () => {
+              const createSpy = jest.spyOn(CollectionCuration, 'create')
+              await expect(
+                router.insertCollectionCuration(req)
+              ).rejects.toThrowError(
+                'Only committee members can modify the assignee'
+              )
+              expect(createSpy).not.toHaveBeenCalled()
             })
           })
 
@@ -687,6 +766,7 @@ describe('when handling a request', () => {
             mockIsCommitteeMember
               .mockResolvedValueOnce(true)
               .mockResolvedValueOnce(true)
+              .mockResolvedValueOnce(true)
 
             updateSpy = jest
               .spyOn(service, 'updateById')
@@ -727,6 +807,7 @@ describe('when handling a request', () => {
             },
           } as any
           service = mockServiceWithAccess(ItemCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(true)
           expectedCuration = {
             id: 'uuid-123123-123123',
           } as ItemCurationAttributes
@@ -813,6 +894,44 @@ describe('when handling a request', () => {
             expect(collectionUpdateSpy).toHaveBeenCalledWith(req.params.id)
           })
         })
+      })
+    })
+
+    describe('and a non-committee owner sets the status of an item curation to pending', () => {
+      let req: AuthRequest
+      let collectionUpdateSpy: jest.SpyInstance
+      let itemUpdateSpy: jest.SpyInstance
+
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: { curation: { status: CurationStatus.PENDING } },
+        } as any
+        service = mockServiceWithAccess(ItemCuration, true)
+        mockIsCommitteeMember.mockResolvedValue(false)
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockResolvedValueOnce({ id: 'curationId' } as any)
+        collectionUpdateSpy = jest
+          .spyOn(CollectionCuration, 'updateByItemId')
+          .mockResolvedValueOnce({ rowCount: 1 })
+        itemUpdateSpy = jest
+          .spyOn(service, 'updateById')
+          .mockResolvedValueOnce({ id: 'curationId' } as any)
+        jest.spyOn(Item, 'findOne').mockResolvedValueOnce({
+          id: 'itemId',
+          local_content_hash: 'hash1',
+          mappings: null,
+        } as any)
+      })
+
+      it('should touch the collection curation and update the item curation without a committee check', async () => {
+        await router.updateItemCuration(req)
+
+        expect(collectionUpdateSpy).toHaveBeenCalledWith('some id')
+        expect(itemUpdateSpy).toHaveBeenCalled()
+        expect(mockIsCommitteeMember).not.toHaveBeenCalled()
       })
     })
   })
@@ -1008,7 +1127,9 @@ describe('when handling a request', () => {
           } as CollectionCurationAttributes
 
           service = mockServiceWithAccess(CollectionCuration, true)
-          mockIsCommitteeMember.mockResolvedValueOnce(true)
+          mockIsCommitteeMember
+            .mockResolvedValueOnce(true)
+            .mockResolvedValueOnce(true)
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
         })
 

@@ -24,7 +24,12 @@ import {
 } from '../utils/urn'
 import { CurationStatusFilter } from '../Curation'
 import { Cheque } from '../SlotUsageCheque'
-import { CollectionAttributes, FullCollection } from './Collection.types'
+import {
+  CollectionAttributes,
+  FullCollection,
+  PublicCollection,
+  PublicCollectionDetail,
+} from './Collection.types'
 import { UnpublishedCollectionError } from './Collection.errors'
 
 /**
@@ -49,6 +54,29 @@ export function toFullCollection(
         ? getThirdPartyCollectionURN(third_party_id, urn_suffix)
         : getDecentralandCollectionURN(contract_address!),
   }
+}
+
+export function toPublicCollection(
+  collection: FullCollection
+): PublicCollection {
+  return utils.omit(collection, [
+    'id',
+    'salt',
+    'forum_link',
+    'forum_id',
+    'lock',
+  ]) as PublicCollection
+}
+
+export function toPublicCollectionDetail(
+  collection: FullCollection
+): PublicCollectionDetail {
+  return utils.omit(collection, [
+    'salt',
+    'forum_link',
+    'forum_id',
+    'lock',
+  ]) as PublicCollectionDetail
 }
 
 /**

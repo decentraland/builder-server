@@ -1,6 +1,7 @@
 ARG RUN
+ARG NODE_IMAGE=node:24.18.0-alpine3.24@sha256:a0b9bf06e4e6193cf7a0f58816cc935ff8c2a908f81e6f1a95432d679c54fbfd
 
-FROM node:24-alpine@sha256:5fa278c599dbba0c8f873d8717d50ecbb57c5ae6a53b7ab240c25135e0b65995 as builder
+FROM ${NODE_IMAGE} AS builder
 
 WORKDIR /app
 
@@ -18,7 +19,7 @@ COPY . /app
 
 RUN npm run build
 
-FROM node:24-alpine@sha256:5fa278c599dbba0c8f873d8717d50ecbb57c5ae6a53b7ab240c25135e0b65995
+FROM ${NODE_IMAGE}
 
 WORKDIR /app
 

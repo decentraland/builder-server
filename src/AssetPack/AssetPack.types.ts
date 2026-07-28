@@ -21,7 +21,7 @@ export const assetPackSchema = Object.freeze({
     title: { type: 'string', minLength: 3, maxLength: 20 },
     thumbnail: { type: ['string', 'null'] },
     eth_address: { type: ['string', 'null'] },
-    assets: { items: assetSchema, additionalProperties: false },
+    assets: { type: 'array', items: assetSchema, additionalProperties: false },
     created_at: { type: ['string', 'null'] },
     updated_at: { type: ['string', 'null'] },
   },

@@ -6,65 +6,68 @@ import {
   buildURL,
   createAuthHeaders,
   mockExistsMiddleware,
-} from '../spec/utils'
-import { createIdentity, fakePrivateKey } from '../spec/mocks/wallet'
-import { dbCollectionMock, dbTPCollectionMock } from '../spec/mocks/collections'
-import { dbTPItemMock } from '../spec/mocks/items'
-import { itemCurationMock } from '../spec/mocks/itemCuration'
-import { app } from './server'
-import { Collection } from './Collection/Collection.model'
-import { CollectionService } from './Collection/Collection.service'
-import { ThirdPartyCollectionAttributes } from './Collection/Collection.types'
-import { Item } from './Item/Item.model'
-import { ItemService } from './Item/Item.service'
-import { ItemAttributes } from './Item/Item.types'
-import { SlotUsageCheque } from './SlotUsageCheque'
-import { ItemCuration } from './Curation/ItemCuration'
-import { CollectionCuration } from './Curation/CollectionCuration'
-import { ThirdPartyService } from './ThirdParty/ThirdParty.service'
-import { isCommitteeMember } from './Committee'
-import { CurationStatus } from './Curation'
-import * as warehouse from './warehouse'
-import { buildTPItemURN } from './Item/utils'
+} from '../../spec/utils'
+import { createIdentity, fakePrivateKey } from '../../spec/mocks/wallet'
+import {
+  dbCollectionMock,
+  dbTPCollectionMock,
+} from '../../spec/mocks/collections'
+import { dbTPItemMock } from '../../spec/mocks/items'
+import { itemCurationMock } from '../../spec/mocks/itemCuration'
+import { app } from '../../src/server'
+import { Collection } from '../../src/Collection/Collection.model'
+import { CollectionService } from '../../src/Collection/Collection.service'
+import { ThirdPartyCollectionAttributes } from '../../src/Collection/Collection.types'
+import { Item } from '../../src/Item/Item.model'
+import { ItemService } from '../../src/Item/Item.service'
+import { ItemAttributes } from '../../src/Item/Item.types'
+import { SlotUsageCheque } from '../../src/SlotUsageCheque'
+import { ItemCuration } from '../../src/Curation/ItemCuration'
+import { CollectionCuration } from '../../src/Curation/CollectionCuration'
+import { ThirdPartyService } from '../../src/ThirdParty/ThirdParty.service'
+import { isCommitteeMember } from '../../src/Committee'
+import { CurationStatus } from '../../src/Curation'
+import * as warehouse from '../../src/warehouse'
+import { buildTPItemURN } from '../../src/Item/utils'
 
-jest.mock('./ethereum/api/collection')
-jest.mock('./ethereum/api/peer')
-jest.mock('./utils/eth')
-jest.mock('./Forum/client')
-jest.mock('./SlotUsageCheque')
-jest.mock('./Curation/ItemCuration')
-jest.mock('./Curation/CollectionCuration')
-jest.mock('./ThirdParty/ThirdParty.service')
-jest.mock('./Committee')
-jest.mock('./Item/Item.model')
-jest.mock('./Collection/Collection.model')
-// ./Collection/access intentionally NOT mocked: the curation cases must hit the
+jest.mock('../../src/ethereum/api/collection')
+jest.mock('../../src/ethereum/api/peer')
+jest.mock('../../src/utils/eth')
+jest.mock('../../src/Forum/client')
+jest.mock('../../src/SlotUsageCheque')
+jest.mock('../../src/Curation/ItemCuration')
+jest.mock('../../src/Curation/CollectionCuration')
+jest.mock('../../src/ThirdParty/ThirdParty.service')
+jest.mock('../../src/Committee')
+jest.mock('../../src/Item/Item.model')
+jest.mock('../../src/Collection/Collection.model')
+// src/Collection/access intentionally NOT mocked: the curation cases must hit the
 // real CurationService.hasAccess, not an auto-mock (which made them vacuous).
-jest.mock('./warehouse')
+jest.mock('../../src/warehouse')
 
 const server = supertest(app.getApp())
 
-describe('unauthorized attacker with a valid auth chain of its own', () => {
-  let attackerIdentity: AuthIdentity
-  let attackerAddress: string
+describe('when a signed request targets a collection the caller does not own', () => {
+  let nonOwnerIdentity: AuthIdentity
+  let nonOwnerAddress: string
   let url: string
 
   beforeAll(async () => {
-    const attackerWallet = new ethers.Wallet(fakePrivateKey)
-    attackerAddress = attackerWallet.address.toLowerCase()
-    attackerIdentity = await createIdentity(attackerWallet, attackerWallet, 1)
+    const nonOwnerWallet = new ethers.Wallet(fakePrivateKey)
+    nonOwnerAddress = nonOwnerWallet.address.toLowerCase()
+    nonOwnerIdentity = await createIdentity(nonOwnerWallet, nonOwnerWallet, 1)
   })
 
   afterEach(() => {
     jest.resetAllMocks()
   })
 
-  const attackerHeaders = (method: string, path: string) =>
-    createAuthHeaders(method, path, attackerIdentity)
+  const nonOwnerHeaders = (method: string, path: string) =>
+    createAuthHeaders(method, path, nonOwnerIdentity)
 
-  it('is not the owner of the collections it attacks', () => {
-    expect(attackerAddress).not.toBe(dbCollectionMock.eth_address)
-    expect(attackerAddress).not.toBe(dbTPCollectionMock.eth_address)
+  it('uses an identity that owns none of the collections under test', () => {
+    expect(nonOwnerAddress).not.toBe(dbCollectionMock.eth_address)
+    expect(nonOwnerAddress).not.toBe(dbTPCollectionMock.eth_address)
   })
 
   describe('when publishing a third party collection it does not manage', () => {
@@ -80,7 +83,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
     it('should be rejected without creating a cheque or any curation', () => {
       return server
         .post(buildURL(url))
-        .set(attackerHeaders('post', url))
+        .set(nonOwnerHeaders('post', url))
         .send({
           itemIds: [dbTPItemMock.id],
           cheque: { signature: 'signature', qty: 1, salt: '0xsalt' },
@@ -104,7 +107,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
     it('should be rejected without touching any item', () => {
       return server
         .post(buildURL(url))
-        .set(attackerHeaders('post', url))
+        .set(nonOwnerHeaders('post', url))
         .send({ itemIds: [] })
         .expect(401)
         .then(() => {
@@ -127,7 +130,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
     it('should be rejected without creating a collection curation', () => {
       return server
         .post(buildURL(url))
-        .set(attackerHeaders('post', url))
+        .set(nonOwnerHeaders('post', url))
         .send({})
         .expect(401)
         .then(() => {
@@ -150,7 +153,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
     it('should be rejected without updating the curation', () => {
       return server
         .patch(buildURL(url))
-        .set(attackerHeaders('patch', url))
+        .set(nonOwnerHeaders('patch', url))
         .send({ curation: { status: CurationStatus.APPROVED } })
         .expect(401)
         .then(() => {
@@ -188,7 +191,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
 
       return server
         .put(buildURL(url))
-        .set(attackerHeaders('put', url))
+        .set(nonOwnerHeaders('put', url))
         .send({ item: itemToUpsert })
         .expect(401)
         .then(() => {
@@ -197,7 +200,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
     })
   })
 
-  describe('when reaching the publish service directly, bypassing the route', () => {
+  describe('when calling the publish service directly rather than through the route', () => {
     it('should refuse a non-manager without writing anything', async () => {
       ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValue(false)
 
@@ -205,7 +208,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
         new CollectionService().publishTPCollection(
           [dbTPItemMock.id],
           dbTPCollectionMock as ThirdPartyCollectionAttributes,
-          attackerAddress,
+          nonOwnerAddress,
           { signature: 'signature', qty: 1, salt: '0xsalt' }
         )
       ).rejects.toThrow('Unauthorized to upsert collection')
@@ -238,7 +241,7 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
     it('should be rejected by the committee gate without approving or deploying', () => {
       return server
         .patch(buildURL(url))
-        .set(attackerHeaders('patch', url))
+        .set(nonOwnerHeaders('patch', url))
         .send({ curation: { status: CurationStatus.APPROVED } })
         .expect(401)
         .then((response) => {
@@ -260,8 +263,8 @@ describe('unauthorized attacker with a valid auth chain of its own', () => {
     it('should be rejected without sending anything to the warehouse', () => {
       return server
         .post(buildURL(url))
-        .set(attackerHeaders('post', url))
-        .send({ email: 'attacker@example.com' })
+        .set(nonOwnerHeaders('post', url))
+        .send({ email: 'non.owner@example.com' })
         .expect(401)
         .then(() => {
           expect(warehouse.sendDataToWarehouse).not.toHaveBeenCalled()

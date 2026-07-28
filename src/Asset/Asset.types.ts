@@ -28,7 +28,7 @@ export const assetSchema = Object.freeze({
     model: { type: 'string' },
     script: { type: ['string', 'null'] },
     thumbnail: { type: ['string', 'null'] },
-    tags: { items: { type: 'string' } },
+    tags: { type: 'array', items: { type: 'string' } },
     category: { type: 'string' },
     contents: {
       type: 'object',

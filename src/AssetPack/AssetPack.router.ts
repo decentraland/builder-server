@@ -22,8 +22,8 @@ import {
 import { getUploader, S3AssetPack } from '../S3'
 import { ExpressApp } from '../common/ExpressApp'
 import { asyncHandler } from '../common/asyncHandler'
-import { Ownable } from '../Ownable'
-import { Asset, MAX_ASSETS_COUNT } from '../Asset'
+import { Asset, AssetAttributes, MAX_ASSETS_COUNT } from '../Asset'
+import { buildModelDates } from '../utils/dates'
 import { AssetPack } from './AssetPack.model'
 import {
   AssetPackAttributes,
@@ -252,29 +252,42 @@ export class AssetPackRouter extends Router {
     validate(assetPackJSON)
 
     if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
+      throw new HTTPError(
+        'Invalid schema',
+        validate.errors,
+        STATUS_CODES.badRequest
+      )
     }
 
-    const canUpsert = await new Ownable(AssetPack).canUpsert(id, eth_address)
-    if (!canUpsert) {
-      throw new HTTPError('Unauthorized user', { id, eth_address })
+    // Read without `AssetPack.count`, which filters out soft-deleted rows and so
+    // reports a deleted pack as unclaimed, authorizing any caller for it.
+    const existingAssetPack = await AssetPack.findOne<AssetPackAttributes>(id)
+    if (existingAssetPack && existingAssetPack.eth_address !== eth_address) {
+      throw new HTTPError(
+        'Unauthorized user',
+        { id, eth_address },
+        STATUS_CODES.unauthorized
+      )
     }
 
-    const { assets } = utils.pick<Pick<FullAssetPackAttributes, 'assets'>>(
-      assetPackJSON,
-      ['assets']
+    if (id !== assetPackJSON.id) {
+      throw new HTTPError(
+        'The body and URL assetPack ids do not match',
+        { urlId: id, bodyId: assetPackJSON.id },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    // The parent id comes from the URL, authorized above. A client-supplied
+    // `asset_pack_id` is dropped so it cannot aim the write at another pack: the
+    // two checks below are keyed on the asset id, so they match nothing for an
+    // asset that does not exist yet.
+    const assets = ((assetPackJSON.assets ?? []) as AssetAttributes[]).map(
+      (asset) =>
+        utils.omit<Omit<AssetAttributes, 'asset_pack_id'>>(asset, [
+          'asset_pack_id',
+        ])
     )
-    const attributes = {
-      ...utils.omit(assetPackJSON, ['assets']),
-      eth_address,
-    } as AssetPackAttributes
-
-    if (id !== attributes.id) {
-      throw new HTTPError('The body and URL assetPack ids do not match', {
-        urlId: id,
-        bodyId: attributes.id,
-      })
-    }
 
     const assetIds = assets.map((asset) => asset.id)
     if (await Asset.existsAnyWithADifferentEthAddress(assetIds, eth_address)) {
@@ -294,6 +307,15 @@ export class AssetPackRouter extends Router {
     }
 
     const currentAssetPack = await AssetPack.findOneWithAssets(id)
+
+    // Dates are derived server-side: a client-supplied `created_at` could be set
+    // before `getLimitSplitDate()`, which switches off the asset count limit below.
+    const attributes = {
+      ...utils.omit(assetPackJSON, ['assets', 'created_at', 'updated_at']),
+      eth_address,
+      ...buildModelDates(existingAssetPack?.created_at),
+    } as AssetPackAttributes
+
     if (currentAssetPack) {
       // Only delete assets that no longer exist
       const assetIdsToDelete: string[] = []
@@ -311,20 +333,26 @@ export class AssetPackRouter extends Router {
         isAfterLimitSplitDate(currentAssetPack.created_at) &&
         finalAssetsCount > MAX_ASSETS_COUNT
       ) {
-        throw new Error(
-          `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`
+        throw new HTTPError(
+          `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`,
+          { assetPackId: id, count: finalAssetsCount },
+          STATUS_CODES.badRequest
         )
       }
 
       await Asset.deleteForAssetPackByIds(id, assetIdsToDelete)
     } else if (assets.length > MAX_ASSETS_COUNT) {
-      throw new Error(
-        `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`
+      throw new HTTPError(
+        `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`,
+        { assetPackId: id, count: assets.length },
+        STATUS_CODES.badRequest
       )
     }
 
     const upsertResult = await new AssetPack(attributes).upsert()
-    await Promise.all(assets.map((asset) => new Asset(asset).upsert()))
+    await Promise.all(
+      assets.map((asset) => new Asset({ ...asset, asset_pack_id: id }).upsert())
+    )
 
     return upsertResult
   }

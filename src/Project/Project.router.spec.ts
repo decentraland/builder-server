@@ -64,6 +64,9 @@ describe('Project Router', () => {
   let url = ''
 
   afterEach(() => {
+    // clearAllMocks resets call records but leaves queued `...Once` implementations
+    // in place, so this file uses persistent mocks: an implementation a test never
+    // consumes would otherwise be picked up by the next one.
     jest.clearAllMocks()
   })
 
@@ -79,7 +82,7 @@ describe('Project Router', () => {
         jest.spyOn(SearchableProject.prototype, 'searchByEthAddress')
         jest
           .spyOn(SearchableModel.prototype, 'search')
-          .mockResolvedValueOnce(mockResult)
+          .mockResolvedValue(mockResult)
       })
 
       it('should return the projects', async () => {
@@ -104,7 +107,7 @@ describe('Project Router', () => {
         jest.spyOn(SearchableProject.prototype, 'searchByEthAddress')
         jest
           .spyOn(SearchableModel.prototype, 'search')
-          .mockResolvedValueOnce(mockEmptyResult)
+          .mockResolvedValue(mockEmptyResult)
       })
 
       it('should return an empty array', async () => {
@@ -140,7 +143,7 @@ describe('Project Router', () => {
         jest.spyOn(SearchableProject.prototype, 'searchByIsTemplate')
         jest
           .spyOn(SearchableModel.prototype, 'search')
-          .mockResolvedValueOnce(mockResult)
+          .mockResolvedValue(mockResult)
       })
 
       it('should return the templates', async () => {
@@ -163,7 +166,7 @@ describe('Project Router', () => {
       beforeEach(() => {
         jest
           .spyOn(SearchableModel.prototype, 'search')
-          .mockResolvedValueOnce(mockEmptyResult)
+          .mockResolvedValue(mockEmptyResult)
       })
 
       it('should return an empty array', async () => {
@@ -189,7 +192,7 @@ describe('Project Router', () => {
     describe('and getting project preview', () => {
       describe('and project scene is in sdk6', () => {
         beforeEach(() => {
-          ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce(({
+          ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValue(({
             version: 1,
             project: {},
             scene: { sdk6: { id: 'scene-id' }, sdk7: null },
@@ -206,14 +209,14 @@ describe('Project Router', () => {
       describe('and project scene is in sdk7', () => {
         const entity = { id: 'entity-id', content: [] as ContentMapping[] }
         beforeEach(() => {
-          ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce(({
+          ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValue(({
             version: 1,
             project: {},
             scene: { sdk6: null, sdk7: { id: 'scene-id' } },
           } as unknown) as ManifestAttributes)
           jest
             .spyOn(SDK7Scene.prototype, 'getEntity')
-            .mockResolvedValueOnce(entity as Entity)
+            .mockResolvedValue(entity as Entity)
         })
 
         it('should return entity object', async () => {
@@ -228,7 +231,7 @@ describe('Project Router', () => {
     describe('and getting scene main.crdt file', () => {
       const composite = { components: [] }
       beforeEach(() => {
-        ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValueOnce(({
+        ;(s3Module.getProjectManifest as jest.Mock).mockResolvedValue(({
           version: 1,
           project: {},
           scene: { sdk6: null, sdk7: { id: 'scene-id', composite } },

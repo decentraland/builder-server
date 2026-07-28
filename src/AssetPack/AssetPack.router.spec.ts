@@ -2,7 +2,7 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { ExpressApp } from '../common/ExpressApp'
 import { AssetPackRouter } from './AssetPack.router'
 import { AssetPack } from './AssetPack.model'
-import { Asset } from '../Asset'
+import { Asset, MAX_ASSETS_COUNT } from '../Asset'
 import { getDefaultEthAddress } from './utils'
 
 jest.mock('./AssetPack.model')
@@ -385,16 +385,79 @@ describe('AssetPack router', () => {
     let upsertReq: any
     let assetUpsertSpy: jest.SpyInstance
     let upsertedAssetAttrs: any[]
+    let upsertedPackAttrs: any[]
+
+    const buildAsset = (id: string, assetPackId: string) => ({
+      id,
+      asset_pack_id: assetPackId,
+      name: 'an-asset',
+      model: 'model.glb',
+      category: 'decorations',
+      contents: {},
+      tags: ['test'],
+      metrics: {
+        triangles: 0,
+        materials: 0,
+        textures: 0,
+        meshes: 0,
+        bodies: 0,
+        entities: 0,
+      },
+    })
+
+    const buildAssets = (count: number) =>
+      Array.from({ length: count }, (_, index) =>
+        buildAsset(
+          `1e27cbda-5582-4219-8f83-${(index + 1)
+            .toString(16)
+            .padStart(12, '0')}`,
+          anAssetPackId
+        )
+      )
+
+    const buildUpsertReq = (
+      assets: unknown[],
+      extraPackAttributes: Record<string, unknown> = {},
+      ethAddress: string = anOwnerAddress
+    ) => ({
+      params: { id: anAssetPackId },
+      body: {
+        assetPack: {
+          id: anAssetPackId,
+          title: 'an-asset-pack',
+          assets,
+          ...extraPackAttributes,
+        },
+      },
+      auth: { ethAddress },
+    })
+
+    const mockStoredAssetPack = (
+      createdAt: Date,
+      ethAddress: string = anOwnerAddress
+    ) => {
+      const storedAssetPack = {
+        id: anAssetPackId,
+        eth_address: ethAddress,
+        created_at: createdAt,
+      }
+      ;(AssetPack.findOne as jest.Mock).mockResolvedValue(storedAssetPack)
+      ;(AssetPack.findOneWithAssets as jest.Mock).mockResolvedValue({
+        ...storedAssetPack,
+        assets: [],
+      })
+    }
 
     beforeEach(() => {
       upsertedAssetAttrs = []
+      upsertedPackAttrs = []
       const mockUpsert = jest.fn().mockResolvedValue({})
       ;((Asset as unknown) as jest.Mock).mockImplementation((attrs: any) => {
         upsertedAssetAttrs.push(attrs)
         return { upsert: mockUpsert, attributes: attrs }
       })
       assetUpsertSpy = mockUpsert
-      ;(AssetPack.count as jest.Mock).mockResolvedValue(0)
+      ;(AssetPack.findOne as jest.Mock).mockResolvedValue(undefined)
       ;(Asset.existsAnyWithADifferentEthAddress as jest.Mock).mockResolvedValue(
         false
       )
@@ -403,10 +466,13 @@ describe('AssetPack router', () => {
       )
       ;(AssetPack.findOneWithAssets as jest.Mock).mockResolvedValue(null)
       ;((AssetPack as unknown) as jest.Mock).mockImplementation(
-        (attrs: any) => ({
-          upsert: jest.fn().mockResolvedValue(attrs),
-          attributes: attrs,
-        })
+        (attrs: any) => {
+          upsertedPackAttrs.push(attrs)
+          return {
+            upsert: jest.fn().mockResolvedValue(attrs),
+            attributes: attrs,
+          }
+        }
       )
     })
 
@@ -455,6 +521,251 @@ describe('AssetPack router', () => {
       it('should not upsert any assets', async () => {
         await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow()
         expect(assetUpsertSpy).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('when a new asset names an asset pack other than the one in the URL', () => {
+      const aNewAssetId = '1e27cbda-5582-4219-8f83-2db817344cc1'
+
+      beforeEach(() => {
+        upsertReq = buildUpsertReq([
+          buildAsset(aNewAssetId, anotherAssetPackId),
+        ])
+      })
+
+      it('should store the asset under the asset pack from the URL', async () => {
+        await router.upsertAssetPack(upsertReq)
+
+        expect(upsertedAssetAttrs).toHaveLength(1)
+        expect(upsertedAssetAttrs[0].asset_pack_id).toBe(anAssetPackId)
+      })
+
+      it('should not store the asset under the asset pack named in the body', async () => {
+        await router.upsertAssetPack(upsertReq)
+
+        expect(upsertedAssetAttrs[0].asset_pack_id).not.toBe(anotherAssetPackId)
+      })
+    })
+
+    describe('when only some of the assets name the asset pack from the URL', () => {
+      beforeEach(() => {
+        upsertReq = buildUpsertReq([
+          buildAsset('1e27cbda-5582-4219-8f83-2db817344cc1', anAssetPackId),
+          buildAsset(
+            '2f38dceb-6693-4320-9094-3ec928455dd2',
+            anotherAssetPackId
+          ),
+        ])
+      })
+
+      it('should store every asset under the asset pack from the URL', async () => {
+        await router.upsertAssetPack(upsertReq)
+
+        expect(upsertedAssetAttrs).toHaveLength(2)
+        expect(upsertedAssetAttrs.map((asset) => asset.asset_pack_id)).toEqual([
+          anAssetPackId,
+          anAssetPackId,
+        ])
+      })
+    })
+
+    describe('when the body supplies created_at and updated_at', () => {
+      const aPastDate = '2020-01-01T00:00:00.000Z'
+
+      beforeEach(() => {
+        upsertReq = buildUpsertReq([], {
+          created_at: aPastDate,
+          updated_at: aPastDate,
+        })
+      })
+
+      describe('and the asset pack does not exist yet', () => {
+        it('should store server generated dates instead of the supplied ones', async () => {
+          await router.upsertAssetPack(upsertReq)
+
+          expect(upsertedPackAttrs).toHaveLength(1)
+          expect(upsertedPackAttrs[0].created_at).not.toEqual(aPastDate)
+          expect(upsertedPackAttrs[0].created_at).toBeInstanceOf(Date)
+          expect(upsertedPackAttrs[0].updated_at).toBeInstanceOf(Date)
+        })
+      })
+
+      describe('and the asset pack already exists', () => {
+        const anExistingCreationDate = new Date('2023-06-15T10:00:00.000Z')
+
+        beforeEach(() => {
+          const storedAssetPack = {
+            id: anAssetPackId,
+            eth_address: anOwnerAddress,
+            created_at: anExistingCreationDate,
+          }
+          ;(AssetPack.findOne as jest.Mock).mockResolvedValue(storedAssetPack)
+          ;(AssetPack.findOneWithAssets as jest.Mock).mockResolvedValue({
+            ...storedAssetPack,
+            assets: [],
+          })
+        })
+
+        it('should keep the stored creation date and refresh the update date', async () => {
+          await router.upsertAssetPack(upsertReq)
+
+          expect(upsertedPackAttrs[0].created_at).toEqual(
+            anExistingCreationDate
+          )
+          expect(upsertedPackAttrs[0].updated_at).not.toEqual(
+            anExistingCreationDate
+          )
+        })
+      })
+    })
+
+    describe('when the asset pack belongs to a different address', () => {
+      const anotherOwnerAddress = 'anotherOwnerAddress'
+      const aStoredAssetPack = {
+        id: anAssetPackId,
+        eth_address: anotherOwnerAddress,
+        created_at: new Date('2023-06-15T10:00:00.000Z'),
+      }
+
+      beforeEach(() => {
+        upsertReq = buildUpsertReq([
+          buildAsset('1e27cbda-5582-4219-8f83-2db817344cc1', anAssetPackId),
+        ])
+      })
+
+      describe('and the asset pack is not deleted', () => {
+        beforeEach(() => {
+          ;(AssetPack.findOne as jest.Mock).mockResolvedValue({
+            ...aStoredAssetPack,
+            is_deleted: false,
+          })
+        })
+
+        it('should be rejected without upserting the pack or any asset', async () => {
+          await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow(
+            'Unauthorized user'
+          )
+          expect(upsertedPackAttrs).toHaveLength(0)
+          expect(assetUpsertSpy).not.toHaveBeenCalled()
+        })
+      })
+
+      // A soft-deleted pack is invisible to `AssetPack.count`, so ownership has to
+      // be read off the row itself.
+      describe('and the asset pack is soft deleted', () => {
+        beforeEach(() => {
+          ;(AssetPack.findOne as jest.Mock).mockResolvedValue({
+            ...aStoredAssetPack,
+            is_deleted: true,
+          })
+        })
+
+        it('should be rejected without upserting the pack or any asset', async () => {
+          await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow(
+            'Unauthorized user'
+          )
+          expect(upsertedPackAttrs).toHaveLength(0)
+          expect(assetUpsertSpy).not.toHaveBeenCalled()
+        })
+      })
+    })
+
+    // The limit is what the client-supplied `created_at` was able to switch off:
+    // `isAfterLimitSplitDate` reads the stored date, so it must never come from the body.
+    describe('when the assets exceed the limit', () => {
+      const anAfterSplitDate = new Date('2023-06-15T10:00:00.000Z')
+      const aBeforeSplitDate = new Date('2021-01-01T00:00:00.000Z')
+
+      describe('and the asset pack does not exist yet', () => {
+        beforeEach(() => {
+          upsertReq = buildUpsertReq(buildAssets(MAX_ASSETS_COUNT + 1))
+        })
+
+        it('should be rejected without upserting the pack or any asset', async () => {
+          await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow(
+            'Too many assets'
+          )
+          expect(upsertedPackAttrs).toHaveLength(0)
+          expect(assetUpsertSpy).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and the asset pack was created after the limit split date', () => {
+        beforeEach(() => {
+          mockStoredAssetPack(anAfterSplitDate)
+          upsertReq = buildUpsertReq(buildAssets(MAX_ASSETS_COUNT + 1))
+        })
+
+        it('should be rejected without upserting the pack or any asset', async () => {
+          await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow(
+            'Too many assets'
+          )
+          expect(upsertedPackAttrs).toHaveLength(0)
+          expect(assetUpsertSpy).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and the body claims a date before the limit split date', () => {
+        beforeEach(() => {
+          mockStoredAssetPack(anAfterSplitDate)
+          upsertReq = buildUpsertReq(buildAssets(MAX_ASSETS_COUNT + 1), {
+            created_at: '2021-01-01T00:00:00.000Z',
+          })
+        })
+
+        it('should still be rejected, ignoring the date from the body', async () => {
+          await expect(router.upsertAssetPack(upsertReq)).rejects.toThrow(
+            'Too many assets'
+          )
+          expect(assetUpsertSpy).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and the stored asset pack predates the limit split date', () => {
+        beforeEach(() => {
+          mockStoredAssetPack(aBeforeSplitDate)
+          upsertReq = buildUpsertReq(buildAssets(MAX_ASSETS_COUNT + 1))
+        })
+
+        it('should be exempt from the limit', async () => {
+          await router.upsertAssetPack(upsertReq)
+
+          expect(upsertedAssetAttrs).toHaveLength(MAX_ASSETS_COUNT + 1)
+        })
+      })
+
+      describe('and the caller is the default address', () => {
+        beforeEach(() => {
+          mockStoredAssetPack(anAfterSplitDate, getDefaultEthAddress())
+          upsertReq = buildUpsertReq(
+            buildAssets(MAX_ASSETS_COUNT + 1),
+            {},
+            getDefaultEthAddress()
+          )
+        })
+
+        it('should be exempt from the limit', async () => {
+          await router.upsertAssetPack(upsertReq)
+
+          expect(upsertedAssetAttrs).toHaveLength(MAX_ASSETS_COUNT + 1)
+        })
+      })
+    })
+
+    describe('when the asset pack does not exist', () => {
+      beforeEach(() => {
+        ;(AssetPack.findOne as jest.Mock).mockResolvedValue(undefined)
+        upsertReq = buildUpsertReq([
+          buildAsset('1e27cbda-5582-4219-8f83-2db817344cc1', anAssetPackId),
+        ])
+      })
+
+      it('should create it for the caller', async () => {
+        await router.upsertAssetPack(upsertReq)
+
+        expect(upsertedPackAttrs).toHaveLength(1)
+        expect(upsertedPackAttrs[0].eth_address).toBe(anOwnerAddress)
+        expect(assetUpsertSpy).toHaveBeenCalled()
       })
     })
   })

@@ -85,14 +85,14 @@ function legacySignedRequest(
   return requestSignedOver(payload, metadata, identity, Date.now())
 }
 
-describe('decodeAuthChain with a real signature', () => {
+describe('when decoding an authentication chain with a real signature', () => {
   let identity: Identity
 
   beforeEach(async () => {
     identity = await createTestIdentity()
   })
 
-  describe('when the canonical scene signer was signed but a mixed-case spelling is delivered', () => {
+  describe('and a mixed-case scene signer is delivered', () => {
     it('should reject the request instead of accepting it as a directly user-signed one', async () => {
       const request = signedRequest(
         { signer: 'Decentraland-Kernel-Scene' },
@@ -105,7 +105,7 @@ describe('decodeAuthChain with a real signature', () => {
     })
   })
 
-  describe('when a pre-ADR-44 signature arrives', () => {
+  describe('and a pre-ADR-44 signature arrives', () => {
     it('should authenticate through the temporary legacy fallback', async () => {
       const request = legacySignedRequest({}, identity)
 
@@ -115,7 +115,7 @@ describe('decodeAuthChain with a real signature', () => {
     })
   })
 
-  describe('when the canonical scene signer is delivered exactly as signed', () => {
+  describe('and the canonical scene signer is delivered exactly as signed', () => {
     it('should keep rejecting it as a scene-originated request', async () => {
       const request = signedRequest({ signer: SCENE_SIGNER }, identity)
 
@@ -125,7 +125,7 @@ describe('decodeAuthChain with a real signature', () => {
     })
   })
 
-  describe('when the request carries no signer at all', () => {
+  describe('and the request carries no signer', () => {
     it('should resolve to the verified owner address', async () => {
       const request = signedRequest({}, identity)
 
@@ -135,7 +135,7 @@ describe('decodeAuthChain with a real signature', () => {
     })
   })
 
-  describe('when a padded scene signer is delivered', () => {
+  describe('and a padded scene signer is delivered', () => {
     it('should reject it as non-canonical metadata', async () => {
       const request = signedRequest({ signer: ` ${SCENE_SIGNER}` }, identity)
 

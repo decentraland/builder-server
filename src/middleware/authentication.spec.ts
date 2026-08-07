@@ -6,65 +6,75 @@ import { decodeAuthChain, SCENE_SIGNER } from './authentication'
 jest.mock('@dcl/crypto-middleware')
 jest.mock('@dcl/crypto')
 
-describe('decodeAuthChain', () => {
+describe('when decoding an authentication chain', () => {
   let mockRequest: Request
 
-  beforeEach(() => {
-    mockRequest = {
-      headers: {},
-      method: 'GET',
-      path: '/',
-    } as Request
-    const isValidAuthChain = Authenticator.isValidAuthChain as jest.Mock
-    const ownerAddress = Authenticator.ownerAddress as jest.Mock
-    isValidAuthChain.mockReturnValue(true)
-    ownerAddress.mockReturnValue('0x12345')
-  })
-
-  it('returns the verified address', async () => {
-    const verifyMock = verify as jest.Mock
-    verifyMock.mockResolvedValue({
-      auth: '0x12345',
-      authMetadata: {},
+  describe('and the authentication chain is valid', () => {
+    beforeEach(() => {
+      mockRequest = {
+        headers: {},
+        method: 'GET',
+        path: '/',
+      } as Request
+      const isValidAuthChain = Authenticator.isValidAuthChain as jest.Mock
+      const ownerAddress = Authenticator.ownerAddress as jest.Mock
+      isValidAuthChain.mockReturnValue(true)
+      ownerAddress.mockReturnValue('0x12345')
     })
 
-    await expect(decodeAuthChain(mockRequest)).resolves.toBe('0x12345')
-  })
+    describe('and ADR-44 verification succeeds without a scene signer', () => {
+      it('should return the verified address', async () => {
+        const verifyMock = verify as jest.Mock
+        verifyMock.mockResolvedValue({
+          auth: '0x12345',
+          authMetadata: {},
+        })
 
-  it('rejects scene-signed requests after verification', async () => {
-    const verifyMock = verify as jest.Mock
-    verifyMock.mockResolvedValue({
-      auth: '0x12345',
-      authMetadata: { signer: SCENE_SIGNER },
+        await expect(decodeAuthChain(mockRequest)).resolves.toBe('0x12345')
+      })
     })
 
-    await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
-      'Invalid signature'
-    )
-  })
+    describe('and ADR-44 verification identifies a scene signer', () => {
+      it('should reject the request', async () => {
+        const verifyMock = verify as jest.Mock
+        verifyMock.mockResolvedValue({
+          auth: '0x12345',
+          authMetadata: { signer: SCENE_SIGNER },
+        })
 
-  it('accepts a legacy signature when verify rejects it', async () => {
-    const verifyMock = verify as jest.Mock
-    const validateSignatureMock = Authenticator.validateSignature as jest.Mock
-    verifyMock.mockRejectedValue(new Error('Expired signature'))
-    validateSignatureMock.mockResolvedValue({
-      ok: true,
+        await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
+          'Invalid signature'
+        )
+      })
     })
 
-    await expect(decodeAuthChain(mockRequest)).resolves.toBe('0x12345')
-  })
+    describe('and ADR-44 verification fails but the legacy signature is valid', () => {
+      it('should return the legacy verified address', async () => {
+        const verifyMock = verify as jest.Mock
+        const validateSignatureMock = Authenticator.validateSignature as jest.Mock
+        verifyMock.mockRejectedValue(new Error('Expired signature'))
+        validateSignatureMock.mockResolvedValue({
+          ok: true,
+        })
 
-  it('reports both failures when neither signature scheme validates', async () => {
-    const verifyMock = verify as jest.Mock
-    const validateSignatureMock = Authenticator.validateSignature as jest.Mock
-    verifyMock.mockRejectedValue(new Error('Expired signature'))
-    validateSignatureMock.mockResolvedValue({
-      ok: false,
-      message: 'Invalid legacy signature',
+        await expect(decodeAuthChain(mockRequest)).resolves.toBe('0x12345')
+      })
     })
 
-    await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
-      'Expired signature'
-    )
+    describe('and ADR-44 and legacy verification both fail', () => {
+      it('should report the ADR-44 failure', async () => {
+        const verifyMock = verify as jest.Mock
+        const validateSignatureMock = Authenticator.validateSignature as jest.Mock
+        verifyMock.mockRejectedValue(new Error('Expired signature'))
+        validateSignatureMock.mockResolvedValue({
+          ok: false,
+          message: 'Invalid legacy signature',
+        })
+
+        await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
+          'Expired signature'
+        )
+      })
+    })
   })
 })

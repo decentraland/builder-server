@@ -1,4 +1,5 @@
 import { Authenticator, AuthIdentity } from '@dcl/crypto'
+import { createAuthChainHeaders } from '@dcl/crypto-middleware'
 import { Wearable } from '@dcl/schemas'
 import { Model, QueryPart } from 'decentraland-server'
 import { env } from 'decentraland-commons'
@@ -6,7 +7,6 @@ import { ethers } from 'ethers'
 import { collectionAPI } from '../src/ethereum/api/collection'
 import { peerAPI } from '../src/ethereum/api/peer'
 import { isPublished } from '../src/utils/eth'
-import { AUTH_CHAIN_HEADER_PREFIX } from '../src/middleware/authentication'
 import { CollectionFragment, ItemFragment } from '../src/ethereum/api/fragments'
 import { Collection } from '../src/Collection'
 import { ItemCuration } from '../src/Curation/ItemCuration'
@@ -39,18 +39,24 @@ export function createAuthHeaders(
   path: string = '',
   identity: AuthIdentity = wallet.identity
 ) {
-  const headers: Record<string, string> = {}
-  const endpoint = (method + ':' + path).toLowerCase()
+  const timestamp = new Date().getTime()
+  const metadata = {}
+  const endpoint = [
+    method,
+    buildURL(path).split('?')[0],
+    timestamp,
+    JSON.stringify(metadata),
+  ]
+    .join(':')
+    .toLowerCase()
   const authChain = Authenticator.signPayload(identity, endpoint)
-  for (let i = 0; i < authChain.length; i++) {
-    headers[AUTH_CHAIN_HEADER_PREFIX + i] = JSON.stringify(authChain[i])
-  }
-  return headers
+
+  return createAuthChainHeaders(authChain, timestamp, metadata)
 }
 
 /**
- * Mocks the "Date.now()" call done in the authentication middleware for tests that
- * require mocking the "Date.now" call.
+ * Mocks the expiration check's `Date.now()` call in the authentication middleware for tests that
+ * require controlling later `Date.now()` calls.
  */
 export function mockAuthenticationSignatureValidationDate() {
   const currentDate = Date.now()

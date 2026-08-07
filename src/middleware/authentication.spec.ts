@@ -1,164 +1,79 @@
 import { Request } from 'express'
 import { Authenticator } from '@dcl/crypto'
-import { verify } from '@dcl/platform-crypto-middleware'
-import {
-  INVALID_AUTH_CHAIN_MESSAGE,
-  MISSING_ETH_ADDRESS_ERROR,
-  decodeAuthChain,
-} from './authentication'
+import { verify } from '@dcl/crypto-middleware'
+import { decodeAuthChain, SCENE_SIGNER } from './authentication'
 
+jest.mock('@dcl/crypto-middleware')
 jest.mock('@dcl/crypto')
-jest.mock('@dcl/platform-crypto-middleware')
 
-describe('decodeAuthChain', () => {
+describe('when decoding an authentication chain', () => {
   let mockRequest: Request
 
-  beforeEach(() => {
-    mockRequest = {
-      headers: {},
-      method: 'GET',
-      path: '/',
-    } as Request
-  })
-
-  describe('when the auth chain is invalid', () => {
-    it('should throw an error for an invalid auth chain', async () => {
-      mockRequest.headers = {
-        'x-identity-auth-chain-0': '{"invalidPart": "data"}',
-      }
-
-      await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
-        INVALID_AUTH_CHAIN_MESSAGE
-      )
-    })
-  })
-
-  describe('when the auth chain is valid', () => {
+  describe('and the authentication chain is valid', () => {
     beforeEach(() => {
-      ;(Authenticator.isValidAuthChain as jest.Mock).mockReturnValue(true)
+      mockRequest = {
+        headers: {},
+        method: 'GET',
+        path: '/',
+      } as Request
+      const isValidAuthChain = Authenticator.isValidAuthChain as jest.Mock
+      const ownerAddress = Authenticator.ownerAddress as jest.Mock
+      isValidAuthChain.mockReturnValue(true)
+      ownerAddress.mockReturnValue('0x12345')
     })
 
-    afterEach(() => {
-      ;(Authenticator.isValidAuthChain as jest.Mock).mockRestore()
+    describe('and ADR-44 verification succeeds without a scene signer', () => {
+      it('should return the verified address', async () => {
+        const verifyMock = verify as jest.Mock
+        verifyMock.mockResolvedValue({
+          auth: '0x12345',
+          authMetadata: {},
+        })
+
+        await expect(decodeAuthChain(mockRequest)).resolves.toBe('0x12345')
+      })
     })
 
-    describe('and it is missing an ETH address', () => {
-      it('should throw an error with the missing ETH address message', async () => {
+    describe('and ADR-44 verification identifies a scene signer', () => {
+      it('should reject the request', async () => {
+        const verifyMock = verify as jest.Mock
+        verifyMock.mockResolvedValue({
+          auth: '0x12345',
+          authMetadata: { signer: SCENE_SIGNER },
+        })
+
         await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
-          MISSING_ETH_ADDRESS_ERROR
+          'Invalid signature'
         )
       })
     })
 
-    describe('and it has the ETH address defined', () => {
-      let validAddress = '0x12345'
-      beforeEach(() => {
-        ;(Authenticator.ownerAddress as jest.Mock).mockReturnValue(validAddress)
+    describe('and ADR-44 verification fails but the legacy signature is valid', () => {
+      it('should return the legacy verified address', async () => {
+        const verifyMock = verify as jest.Mock
+        const validateSignatureMock = Authenticator.validateSignature as jest.Mock
+        verifyMock.mockRejectedValue(new Error('Expired signature'))
+        validateSignatureMock.mockResolvedValue({
+          ok: true,
+        })
+
+        await expect(decodeAuthChain(mockRequest)).resolves.toBe('0x12345')
       })
+    })
 
-      afterEach(() => {
-        ;(Authenticator.isValidAuthChain as jest.Mock).mockRestore()
-      })
-
-      describe('and the verify method does not throw an error', () => {
-        describe('and the auth metadata is not defined', () => {
-          beforeEach(() => {
-            ;(verify as jest.Mock).mockReturnValue(validAddress)
-          })
-
-          afterEach(() => {
-            ;(verify as jest.Mock).mockRestore()
-          })
-
-          it('should return the eth address without throwing an error', async () => {
-            const result = await decodeAuthChain(mockRequest)
-            expect(result).toBe(validAddress)
-            await expect(decodeAuthChain(mockRequest)).resolves.not.toThrow()
-          })
+    describe('and ADR-44 and legacy verification both fail', () => {
+      it('should report the ADR-44 failure', async () => {
+        const verifyMock = verify as jest.Mock
+        const validateSignatureMock = Authenticator.validateSignature as jest.Mock
+        verifyMock.mockRejectedValue(new Error('Expired signature'))
+        validateSignatureMock.mockResolvedValue({
+          ok: false,
+          message: 'Invalid legacy signature',
         })
 
-        describe('and the auth metadata is defined', () => {
-          describe('and the signer is decentraland-kernel-scene', () => {
-            beforeEach(() => {
-              ;(verify as jest.Mock).mockReturnValue({
-                authMetadata: { signer: 'decentraland-kernel-scene' },
-              })
-            })
-
-            afterEach(() => {
-              ;(verify as jest.Mock).mockRestore()
-            })
-
-            it('should throw an error with the invalid signature message', async () => {
-              await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
-                'Invalid signature'
-              )
-            })
-          })
-
-          describe('and the signer is not decentraland-kernel-scene', () => {
-            beforeEach(() => {
-              ;(verify as jest.Mock).mockReturnValue({
-                authMetadata: { signer: 'another signer' },
-              })
-            })
-
-            afterEach(() => {
-              ;(verify as jest.Mock).mockRestore()
-            })
-
-            it('should return the eth address without throwing an error', async () => {
-              const result = await decodeAuthChain(mockRequest)
-              expect(result).toBe(validAddress)
-              await expect(decodeAuthChain(mockRequest)).resolves.not.toThrow()
-            })
-          })
-        })
-      })
-
-      describe('and the verify method throws an error', () => {
-        beforeEach(() => {
-          ;(verify as jest.Mock).mockRejectedValue('Error')
-        })
-
-        afterEach(() => {
-          ;(verify as jest.Mock).mockRestore()
-        })
-
-        describe('and the validateSignature function does not throw an error', () => {
-          beforeEach(() => {
-            ;(Authenticator.validateSignature as jest.Mock).mockReturnValue({
-              ok: true,
-            })
-          })
-
-          afterEach(() => {
-            ;(Authenticator.validateSignature as jest.Mock).mockRestore()
-          })
-          it('should return the eth address without throwing an error', async () => {
-            const result = await decodeAuthChain(mockRequest)
-            expect(result).toBe(validAddress)
-            await expect(decodeAuthChain(mockRequest)).resolves.not.toThrow()
-          })
-        })
-
-        describe('and the validateSignature method throws an error', () => {
-          let error: string
-          beforeEach(() => {
-            error = 'validateSignature failed'
-            ;(Authenticator.validateSignature as jest.Mock).mockReturnValue({
-              ok: false,
-              message: error,
-            })
-          })
-
-          afterEach(() => {
-            ;(Authenticator.validateSignature as jest.Mock).mockRestore()
-          })
-          it('should throw the error', async () => {
-            await expect(decodeAuthChain(mockRequest)).rejects.toThrow(error)
-          })
-        })
+        await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
+          'Expired signature'
+        )
       })
     })
   })

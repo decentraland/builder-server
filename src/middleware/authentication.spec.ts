@@ -3,7 +3,13 @@ import { Authenticator } from '@dcl/crypto'
 import { verify } from '@dcl/crypto-middleware'
 import { decodeAuthChain, SCENE_SIGNER } from './authentication'
 
-jest.mock('@dcl/crypto-middleware')
+// Only `verify` is mocked. A bare jest.mock auto-mocks every export, which would leave
+// `rejectIfSigner` returning undefined — the predicate built at import time would then be undefined
+// and the scene check would throw instead of running.
+jest.mock('@dcl/crypto-middleware', () => ({
+  ...jest.requireActual('@dcl/crypto-middleware'),
+  verify: jest.fn(),
+}))
 jest.mock('@dcl/crypto')
 
 describe('when decoding an authentication chain', () => {
@@ -40,6 +46,28 @@ describe('when decoding an authentication chain', () => {
         verifyMock.mockResolvedValue({
           auth: '0x12345',
           authMetadata: { signer: SCENE_SIGNER },
+        })
+
+        await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
+          'Invalid signature'
+        )
+      })
+    })
+
+    // A client that signs a non-canonical scene signer itself produces a valid signature, so no
+    // byte binding can refuse it and only the gate can. The previous exact comparison could not:
+    // `'Decentraland-Kernel-Scene' === SCENE_SIGNER` is false, so a scene request was accepted as
+    // directly user-signed. `rejectIfSigner` refuses a signer that is not already canonical.
+    describe.each([
+      ['re-cased', 'Decentraland-Kernel-Scene'],
+      ['upper-cased', 'DECENTRALAND-KERNEL-SCENE'],
+      ['whitespace-padded', ' decentraland-kernel-scene'],
+    ])('and ADR-44 verification returns a %s scene signer', (_case, signer) => {
+      it('should reject the request', async () => {
+        const verifyMock = verify as jest.Mock
+        verifyMock.mockResolvedValue({
+          auth: '0x12345',
+          authMetadata: { signer },
         })
 
         await expect(decodeAuthChain(mockRequest)).rejects.toThrow(

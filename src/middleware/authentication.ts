@@ -1,7 +1,11 @@
 import { Request, Response, NextFunction } from 'express'
 import { env } from 'decentraland-commons'
 import { AuthLink, Authenticator } from '@dcl/crypto'
-import { AUTH_CHAIN_HEADER_PREFIX, verify } from '@dcl/crypto-middleware'
+import {
+  AUTH_CHAIN_HEADER_PREFIX,
+  rejectIfSigner,
+  verify,
+} from '@dcl/crypto-middleware'
 import { isEIP1654AuthChain } from '@dcl/crypto-middleware/dist/verify'
 import { server } from 'decentraland-server'
 import { STATUS_CODES } from '../common/HTTPError'
@@ -13,6 +17,15 @@ export { AUTH_CHAIN_HEADER_PREFIX }
 export const AUTH_METADATA_HEADER = 'x-identity-metadata'
 /** The `signer` an explorer sets on an auth chain signed on a scene's behalf. */
 export const SCENE_SIGNER = 'decentraland-kernel-scene'
+
+/**
+ * Refuses a scene signer on `verify()`'s parsed metadata.
+ *
+ * Also refuses a `signer` that is not already canonical, which an exact match could not: a client
+ * that signs `Decentraland-Kernel-Scene` itself produces a valid signature, so no byte binding can
+ * catch it and only a gate can. Nothing is folded — the value reaching handlers is what was signed.
+ */
+const isNotSceneSigner = rejectIfSigner(SCENE_SIGNER)
 
 export type AuthRequest = Request & {
   auth: Record<string, string | number | boolean> & {
@@ -111,7 +124,7 @@ export async function decodeAuthChain(req: Request): Promise<string> {
       }
     )
 
-    if (data.authMetadata.signer === SCENE_SIGNER) {
+    if (!isNotSceneSigner(data.authMetadata)) {
       throw new Error('Invalid signature')
     }
 

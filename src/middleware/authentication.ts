@@ -19,7 +19,7 @@ export const AUTH_METADATA_HEADER = 'x-identity-metadata'
 export const SCENE_SIGNER = 'decentraland-kernel-scene'
 
 /**
- * Refuses a scene signer on `verify()`'s parsed metadata.
+ * Refuses a scene signer on the metadata a request delivers.
  *
  * Also refuses a `signer` that is not already canonical, which an exact match could not: a client
  * that signs `Decentraland-Kernel-Scene` itself produces a valid signature, so no byte binding can
@@ -76,26 +76,37 @@ const getAuthenticationMiddleware = <
 }
 
 /**
- * Checks for a scene signer before entering the legacy signature fallback.
+ * Applies the signer gate to the delivered metadata header, before any signature is checked.
  *
- * Legacy `method:path` signatures do not bind metadata, so this must read and normalize the raw
- * header rather than relying on `verify()`'s parsed result.
+ * This runs on the raw header rather than on `verify()`'s parsed result because of what sits below:
+ * the legacy `method:path` fallback binds no metadata at all. A refusal raised inside the `verify()`
+ * attempt would be caught by that fallback and cleared by a legacy signature that never covered the
+ * metadata, so the gate has to refuse before the fallback is reachable.
+ *
+ * Delegates to `isNotSceneSigner` rather than comparing by hand, so one predicate decides. That is
+ * strictly stricter than the normalizing comparison it replaces: it refuses the scene signer, any
+ * non-canonical spelling of any signer, and a re-cased or duplicated `signer` key. Nothing is
+ * folded — a value that is not already canonical is refused, never rewritten.
  */
-function declaresSceneSigner(req: Request): boolean {
+function declaresRejectedSigner(req: Request): boolean {
   const raw = req.headers[AUTH_METADATA_HEADER]
   if (typeof raw !== 'string') {
     return false
   }
 
+  let metadata: unknown
   try {
-    const metadata = JSON.parse(raw) as { signer?: unknown } | null
-    return (
-      typeof metadata?.signer === 'string' &&
-      metadata.signer.trim().toLowerCase() === SCENE_SIGNER
-    )
+    metadata = JSON.parse(raw)
   } catch {
+    // Unparseable metadata cannot name a signer. `verify()` fails it on its own terms below.
     return false
   }
+
+  if (typeof metadata !== 'object' || metadata === null) {
+    return false
+  }
+
+  return !isNotSceneSigner(metadata as Record<string, unknown>)
 }
 
 export async function decodeAuthChain(req: Request): Promise<string> {
@@ -110,7 +121,7 @@ export async function decodeAuthChain(req: Request): Promise<string> {
     throw new Error('Missing ETH address in auth chain')
   }
 
-  if (declaresSceneSigner(req)) {
+  if (declaresRejectedSigner(req)) {
     throw new Error('Invalid signature')
   }
 
@@ -123,10 +134,6 @@ export async function decodeAuthChain(req: Request): Promise<string> {
         expiration: 1000 * 60 * 30, // 30 minutes
       }
     )
-
-    if (!isNotSceneSigner(data.authMetadata)) {
-      throw new Error('Invalid signature')
-    }
 
     return data.auth
   } catch (error) {

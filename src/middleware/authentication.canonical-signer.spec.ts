@@ -135,6 +135,49 @@ describe('when decoding an authentication chain with a real signature', () => {
     })
   })
 
+  // The legacy fallback validates only `method:path`, which binds no metadata at all. These pin that
+  // a request the signer gate refuses cannot be waved through by holding a valid legacy signature —
+  // before the gate moved ahead of the fallback, the non-canonical case below resolved to an address.
+  describe('and a valid pre-ADR-44 signature arrives with metadata the signer gate refuses', () => {
+    let request: Request
+
+    describe('and the metadata names the scene signer', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({ signer: SCENE_SIGNER }, identity)
+      })
+
+      it('should reject it instead of letting the legacy signature clear the refusal', async () => {
+        await expect(decodeAuthChain(request)).rejects.toThrow(
+          'Invalid signature'
+        )
+      })
+    })
+
+    describe('and the metadata names a non-canonical signer', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({ signer: 'Dcl:Explorer' }, identity)
+      })
+
+      it('should reject it instead of letting the legacy signature clear the refusal', async () => {
+        await expect(decodeAuthChain(request)).rejects.toThrow(
+          'Invalid signature'
+        )
+      })
+    })
+
+    describe('and the metadata names a canonical signer the gate allows', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({ signer: 'dcl:builder' }, identity)
+      })
+
+      it('should still authenticate, so the gate does not break legacy callers', async () => {
+        await expect(decodeAuthChain(request)).resolves.toBe(
+          Authenticator.ownerAddress(identity.authChain.authChain).toLowerCase()
+        )
+      })
+    })
+  })
+
   describe('and a padded scene signer is delivered', () => {
     it('should reject it as non-canonical metadata', async () => {
       const request = signedRequest({ signer: ` ${SCENE_SIGNER}` }, identity)

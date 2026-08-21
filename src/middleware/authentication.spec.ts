@@ -1,7 +1,11 @@
 import { Request } from 'express'
 import { Authenticator } from '@dcl/crypto'
 import { verify } from '@dcl/crypto-middleware'
-import { decodeAuthChain, SCENE_SIGNER } from './authentication'
+import {
+  AUTH_METADATA_HEADER,
+  decodeAuthChain,
+  SCENE_SIGNER,
+} from './authentication'
 
 // Only `verify` is mocked. A bare jest.mock auto-mocks every export, which would leave
 // `rejectIfSigner` returning undefined — the predicate built at import time would then be undefined
@@ -28,48 +32,41 @@ describe('when decoding an authentication chain', () => {
       ownerAddress.mockReturnValue('0x12345')
     })
 
-    describe('and ADR-44 verification succeeds without a scene signer', () => {
-      it('should return the verified address', async () => {
+    describe('and the request delivers no signer', () => {
+      beforeEach(() => {
         const verifyMock = verify as jest.Mock
         verifyMock.mockResolvedValue({
           auth: '0x12345',
           authMetadata: {},
         })
+      })
 
+      it('should return the verified address', async () => {
         await expect(decodeAuthChain(mockRequest)).resolves.toBe('0x12345')
       })
     })
 
-    describe('and ADR-44 verification identifies a scene signer', () => {
-      it('should reject the request', async () => {
-        const verifyMock = verify as jest.Mock
-        verifyMock.mockResolvedValue({
-          auth: '0x12345',
-          authMetadata: { signer: SCENE_SIGNER },
-        })
-
-        await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
-          'Invalid signature'
-        )
-      })
-    })
-
-    // A client that signs a non-canonical scene signer itself produces a valid signature, so no
-    // byte binding can refuse it and only the gate can. The previous exact comparison could not:
-    // `'Decentraland-Kernel-Scene' === SCENE_SIGNER` is false, so a scene request was accepted as
-    // directly user-signed. `rejectIfSigner` refuses a signer that is not already canonical.
+    // The gate reads the metadata the request delivers, not `verify()`'s return, because the legacy
+    // fallback below binds no metadata: a refusal raised after `verify()` would be caught by that
+    // fallback and cleared. So these deliver the header and let `verify()` succeed, which is the
+    // arrangement that would wave a scene signer through if the gate sat on the wrong side.
     describe.each([
-      ['re-cased', 'Decentraland-Kernel-Scene'],
-      ['upper-cased', 'DECENTRALAND-KERNEL-SCENE'],
-      ['whitespace-padded', ' decentraland-kernel-scene'],
-    ])('and ADR-44 verification returns a %s scene signer', (_case, signer) => {
-      it('should reject the request', async () => {
+      ['the canonical scene signer', SCENE_SIGNER],
+      ['a re-cased scene signer', 'Decentraland-Kernel-Scene'],
+      ['an upper-cased scene signer', 'DECENTRALAND-KERNEL-SCENE'],
+      ['a whitespace-padded scene signer', ' decentraland-kernel-scene'],
+      ['a non-canonical signer of any kind', 'Dcl:Explorer'],
+    ])('and the request delivers %s', (_case, signer) => {
+      beforeEach(() => {
+        mockRequest.headers[AUTH_METADATA_HEADER] = JSON.stringify({ signer })
         const verifyMock = verify as jest.Mock
         verifyMock.mockResolvedValue({
           auth: '0x12345',
           authMetadata: { signer },
         })
+      })
 
+      it('should reject the request', async () => {
         await expect(decodeAuthChain(mockRequest)).rejects.toThrow(
           'Invalid signature'
         )

@@ -346,7 +346,7 @@ export class CollectionRouter extends Router {
     req: AuthRequest
   ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { is_published, sort, q, type } = req.query
+    const { is_published, sort, q, type, status } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -362,6 +362,18 @@ export class CollectionRouter extends Router {
       eth_address
     )
 
+    // When filtering by status, the query expects only the remote ids whose on-chain approval
+    // state matches that status (as getCollections does via the filtered graph query).
+    const { isApproved } = toRemoteWhereCondition({
+      status: status as CurationStatusFilter,
+    })
+    const remoteCollectionsForQuery =
+      isApproved === undefined
+        ? authorizedRemoteCollections
+        : authorizedRemoteCollections.filter(
+            (remoteCollection) => remoteCollection.isApproved === isApproved
+          )
+
     const allCollectionsWithCount = await this.service.getCollections(
       {
         q: q as string,
@@ -370,8 +382,9 @@ export class CollectionRouter extends Router {
         address: eth_address,
         sort: (sort as CollectionSort) || CollectionSort.CREATED_AT_DESC,
         type: type as CollectionTypeFilter,
+        status: status as CurationStatusFilter,
         isPublished: is_published ? is_published === 'true' : undefined,
-        remoteIds: authorizedRemoteCollections.map(
+        remoteIds: remoteCollectionsForQuery.map(
           (remoteCollection) => remoteCollection.id
         ),
       },

@@ -76,34 +76,55 @@ const getAuthenticationMiddleware = <
 }
 
 /**
- * Applies the signer gate to the delivered metadata header, before any signature is checked.
+ * Refuses the delivered metadata header, before any signature is checked.
  *
  * This runs on the raw header rather than on `verify()`'s parsed result because of what sits below:
  * the legacy `method:path` fallback binds no metadata at all. A refusal raised inside the `verify()`
  * attempt would be caught by that fallback and cleared by a legacy signature that never covered the
  * metadata, so the gate has to refuse before the fallback is reachable.
  *
- * Delegates to `isNotSceneSigner` rather than comparing by hand, so one predicate decides. That is
- * strictly stricter than the normalizing comparison it replaces: it refuses the scene signer, any
- * non-canonical spelling of any signer, and a re-cased or duplicated `signer` key. Nothing is
- * folded — a value that is not already canonical is refused, never rewritten.
+ * Delegates the signer decision to `isNotSceneSigner` rather than comparing by hand, so one
+ * predicate decides. That is strictly stricter than the normalizing comparison it replaces: it
+ * refuses the scene signer, any non-canonical spelling of any signer, and a re-cased or duplicated
+ * `signer` key. Nothing is folded — a value that is not already canonical is refused, never
+ * rewritten.
+ *
+ * A metadata header that is present but unusable — unparseable, primitive, or duplicated across
+ * headers — is refused here for the same reason, not merely left to `verify()`. `verify()` would
+ * indeed reject it, but that rejection lands in the fallback below and is cleared by a legacy
+ * signature that binds no metadata, so the malformed header would be ignored rather than refused.
+ * An absent header is not refused: that is the pre-ADR-44 shape the fallback exists to serve.
  */
-function declaresRejectedSigner(req: Request): boolean {
+function declaresRefusedMetadata(req: Request): boolean {
   const raw = req.headers[AUTH_METADATA_HEADER]
-  if (typeof raw !== 'string') {
+
+  // Absent is the pre-ADR-44 shape: no metadata to bind, and the legacy fallback is what serves it.
+  if (raw === undefined) {
     return false
+  }
+
+  // Present but not a single header value: duplicate `x-identity-metadata` headers arrive as an
+  // array, and there is no way to tell which one a handler would have read.
+  if (typeof raw !== 'string') {
+    return true
   }
 
   let metadata: unknown
   try {
     metadata = JSON.parse(raw)
   } catch {
-    // Unparseable metadata cannot name a signer. `verify()` fails it on its own terms below.
-    return false
+    // Present but unparseable. `verify()` would refuse this on its own terms -- but that refusal
+    // lands in the catch below, which retries against the legacy `method:path` signature. That
+    // signature binds no metadata at all, so the malformed header would simply be ignored and the
+    // request served, having skipped v6 metadata verification entirely. Refuse it here instead,
+    // where the fallback cannot reach.
+    return true
   }
 
+  // Present but not an object: a primitive or null cannot carry the fields handlers read, and would
+  // reach the fallback the same way.
   if (typeof metadata !== 'object' || metadata === null) {
-    return false
+    return true
   }
 
   return !isNotSceneSigner(metadata as Record<string, unknown>)
@@ -121,7 +142,7 @@ export async function decodeAuthChain(req: Request): Promise<string> {
     throw new Error('Missing ETH address in auth chain')
   }
 
-  if (declaresRejectedSigner(req)) {
+  if (declaresRefusedMetadata(req)) {
     throw new Error('Invalid signature')
   }
 

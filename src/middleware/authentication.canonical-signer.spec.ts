@@ -178,6 +178,61 @@ describe('when decoding an authentication chain with a real signature', () => {
     })
   })
 
+  // A legacy-signed request carries a signature over `method:path` alone, so the fallback cannot
+  // refuse anything about the metadata. If the gate lets a malformed header through, the request is
+  // served with v6 metadata verification skipped entirely and the bad header simply ignored.
+  describe('and a valid pre-ADR-44 signature arrives with metadata that cannot be read', () => {
+    let request: Request
+
+    describe('and the metadata header is not valid JSON', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({}, identity)
+        request.headers[AUTH_METADATA_HEADER] = '{not json'
+      })
+
+      it('should reject it rather than ignore the header and serve the request', async () => {
+        await expect(decodeAuthChain(request)).rejects.toThrow('Invalid signature')
+      })
+    })
+
+    describe('and the metadata header is a JSON primitive', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({}, identity)
+        request.headers[AUTH_METADATA_HEADER] = '"just-a-string"'
+      })
+
+      it('should reject it, since a primitive cannot carry the fields handlers read', async () => {
+        await expect(decodeAuthChain(request)).rejects.toThrow('Invalid signature')
+      })
+    })
+
+    describe('and the metadata header is delivered twice', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({}, identity)
+        // Duplicate headers arrive as an array; there is no telling which one a handler would read.
+        ;(request.headers as Record<string, unknown>)[AUTH_METADATA_HEADER] = ['{}', '{"signer":"x"}']
+      })
+
+      it('should reject it rather than pick one of them', async () => {
+        await expect(decodeAuthChain(request)).rejects.toThrow('Invalid signature')
+      })
+    })
+
+    describe('and no metadata header is sent at all', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({}, identity)
+        delete request.headers[AUTH_METADATA_HEADER]
+      })
+
+      // Absent is the shape the fallback exists for, so it must stay served.
+      it('should still authenticate through the legacy fallback', async () => {
+        await expect(decodeAuthChain(request)).resolves.toBe(
+          Authenticator.ownerAddress(identity.authChain.authChain).toLowerCase()
+        )
+      })
+    })
+  })
+
   describe('and a padded scene signer is delivered', () => {
     it('should reject it as non-canonical metadata', async () => {
       const request = signedRequest({ signer: ` ${SCENE_SIGNER}` }, identity)

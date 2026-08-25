@@ -34,7 +34,7 @@
   "dependencies": {
     "@apollo/client": "^3.3.9",
     "@dcl/crypto": "^3.0.1",
-    "@dcl/crypto-middleware": "^6.2.0",
+    "@dcl/crypto-middleware": "^6.3.0",
     "@dcl/hashing": "^1.1.0",
     "@dcl/schemas": "^26.2.0",
     "@ethersproject/solidity": "^5.7.0",

@@ -75,6 +75,31 @@ function signedRequest(
   return requestSignedOver(payload, metadata, identity, timestamp)
 }
 
+/**
+ * Signs the payload @dcl/crypto-middleware 6.x actually verifies: method, path and timestamp
+ * lowercased, metadata joined VERBATIM.
+ *
+ * `signedRequest` above folds the whole string, which is byte-identical only while the metadata has
+ * no uppercase of its own. A re-spelled KEY does have some, so it needs this: signed the folded way
+ * the signature would genuinely fail, and the request would be refused for the wrong reason on every
+ * version. Signing it verbatim is what puts the request on the strict path, where only the gate can
+ * turn it away — which is precisely what a scene-driven client can do for itself.
+ */
+function currentFormatSignedRequest(
+  metadata: Record<string, unknown>,
+  identity: Identity
+): Request {
+  const timestamp = Date.now()
+  const payload = [
+    'GET'.toLowerCase(),
+    `/v1${PATH}`.toLowerCase(),
+    String(timestamp).toLowerCase(),
+    JSON.stringify(metadata),
+  ].join(':')
+
+  return requestSignedOver(payload, metadata, identity, timestamp)
+}
+
 /** Signs the pre-ADR-44 `method:path` payload, without a timestamp or metadata. */
 function legacySignedRequest(
   metadata: Record<string, unknown>,
@@ -121,6 +146,43 @@ describe('when decoding an authentication chain with a real signature', () => {
 
       await expect(decodeAuthChain(request)).rejects.toThrow(
         'Invalid signature'
+      )
+    })
+  })
+
+  // The signer KEY rather than its value. `isNotSceneSigner` reads the exact `signer` key, so up to
+  // @dcl/crypto-middleware 6.2.0 `{"Signer":...}` presented no `signer` at all and the gate read the
+  // metadata as "not claiming to be a scene" — fail-open on metadata that visibly names the signer
+  // the gate exists to refuse. Reachable on the strict path because re-spelling the key changes the
+  // signed bytes, so the request must be signed that way, which a scene-driven client can simply do.
+  // 6.3.0 treats a key that folds to `signer` without being spelled that way as a rejection rather
+  // than an absence, and the gate inherits that by delegating instead of comparing by hand.
+  describe('and the scene signer is delivered under a re-cased key', () => {
+    it('should reject it rather than read the metadata as carrying no signer', async () => {
+      const request = currentFormatSignedRequest(
+        { Signer: SCENE_SIGNER },
+        identity
+      )
+
+      // On 6.2.0 this resolved to the owner address: a scene-signed request authenticating as the
+      // visitor, with the scene gate never having seen a signer to refuse.
+      await expect(decodeAuthChain(request)).rejects.toThrow(
+        'Invalid signature'
+      )
+    })
+  })
+
+  // Positive control for the helper above. Without it a broken strict signature would make the case
+  // above pass for the wrong reason — refused on the signature rather than by the gate.
+  describe('and a canonical signer the gate allows is signed with the current payload', () => {
+    it('should verify the signature and resolve to the owner address', async () => {
+      const request = currentFormatSignedRequest(
+        { signer: 'dcl:builder' },
+        identity
+      )
+
+      await expect(decodeAuthChain(request)).resolves.toBe(
+        Authenticator.ownerAddress(identity.authChain.authChain).toLowerCase()
       )
     })
   })

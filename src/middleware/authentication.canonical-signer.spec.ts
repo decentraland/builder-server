@@ -206,6 +206,39 @@ describe('when decoding an authentication chain with a real signature', () => {
       })
     })
 
+    describe.each([['[]'], ['[{"signer":"decentraland-kernel-scene"}]']])(
+      'and the metadata header is the JSON array %s',
+      (arrayMetadata) => {
+        beforeEach(() => {
+          request = legacySignedRequest({}, identity)
+          request.headers[AUTH_METADATA_HEADER] = arrayMetadata
+        })
+
+        // The shape that reads as an object and is not null, so it reaches the signer gate, which
+        // finds no `signer` on it and allows it. `verifyMetadata()` refuses arrays outright, and
+        // without this that refusal is what the legacy signature would clear.
+        it('should reject it rather than let it read as metadata carrying no signer', async () => {
+          await expect(decodeAuthChain(request)).rejects.toThrow('Invalid signature')
+        })
+      }
+    )
+
+    describe('and the metadata header is explicit JSON null', () => {
+      beforeEach(() => {
+        request = legacySignedRequest({}, identity)
+        request.headers[AUTH_METADATA_HEADER] = 'null'
+      })
+
+      // Not a refusal, deliberately: `verifyMetadata()` maps null to `{}` for callers migrating
+      // from @dcl/platform-crypto-middleware, so `verify()` would have served this. The gate exists
+      // to preserve that check's refusals, not to add its own.
+      it('should authenticate, since verify() would have read it as empty metadata', async () => {
+        await expect(decodeAuthChain(request)).resolves.toBe(
+          Authenticator.ownerAddress(identity.authChain.authChain).toLowerCase()
+        )
+      })
+    })
+
     describe('and the metadata header is delivered twice', () => {
       beforeEach(() => {
         request = legacySignedRequest({}, identity)

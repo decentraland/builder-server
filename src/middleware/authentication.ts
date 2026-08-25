@@ -89,11 +89,24 @@ const getAuthenticationMiddleware = <
  * `signer` key. Nothing is folded — a value that is not already canonical is refused, never
  * rewritten.
  *
- * A metadata header that is present but unusable — unparseable, primitive, or duplicated across
- * headers — is refused here for the same reason, not merely left to `verify()`. `verify()` would
- * indeed reject it, but that rejection lands in the fallback below and is cleared by a legacy
- * signature that binds no metadata, so the malformed header would be ignored rather than refused.
- * An absent header is not refused: that is the pre-ADR-44 shape the fallback exists to serve.
+ * A metadata header that is present but unusable is refused here for the same reason, not merely
+ * left to `verify()`. `verify()` would indeed reject it, but that rejection lands in the fallback
+ * below and is cleared by a legacy signature that binds no metadata, so the malformed header would
+ * be ignored rather than refused.
+ *
+ * Which shapes those are is not decided here: this mirrors what `verifyMetadata()` in
+ * @dcl/crypto-middleware refuses — unparseable JSON, a primitive, and a JSON array — so the gate
+ * cannot come to refuse more or less than the check it exists to preserve. Two deliberate
+ * differences, both about the fallback rather than about metadata:
+ *
+ *   duplicated header  `verify()` reads the first value; there is no telling which one a handler
+ *                      would have read, so the ambiguity is refused rather than resolved
+ *   explicit `null`    NOT refused. `verifyMetadata()` maps it to `{}` by design, for callers
+ *                      migrating from @dcl/platform-crypto-middleware, so there is no rejection
+ *                      here to preserve — and refusing it would turn this gate into a stricter
+ *                      rule than the one it guards, breaking a caller `verify()` would have served
+ *
+ * An absent header is not refused either: that is the pre-ADR-44 shape the fallback exists to serve.
  */
 function declaresRefusedMetadata(req: Request): boolean {
   const raw = req.headers[AUTH_METADATA_HEADER]
@@ -121,9 +134,18 @@ function declaresRefusedMetadata(req: Request): boolean {
     return true
   }
 
-  // Present but not an object: a primitive or null cannot carry the fields handlers read, and would
-  // reach the fallback the same way.
-  if (typeof metadata !== 'object' || metadata === null) {
+  // Explicit `null` is not a refusal: `verifyMetadata()` maps it to `{}`, so `verify()` would have
+  // served this. Run the signer gate against that same empty object rather than inventing a
+  // stricter rule than the one being preserved.
+  if (metadata === null) {
+    metadata = {}
+  }
+
+  // Present but not a usable object. An array is the one that is easy to miss -- `typeof []` is
+  // 'object' and it is not null, so it reaches `isNotSceneSigner`, which finds no `signer` and
+  // allows it. `verifyMetadata()` refuses arrays explicitly, and that refusal would otherwise be
+  // cleared by the fallback exactly like the others.
+  if (typeof metadata !== 'object' || Array.isArray(metadata)) {
     return true
   }
 

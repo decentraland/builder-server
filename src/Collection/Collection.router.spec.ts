@@ -1518,7 +1518,7 @@ describe('Collection router', () => {
       })
     })
 
-    describe('and sending a status query param', () => {
+    describe('and the user has approved and not approved remote collections', () => {
       let approvedRemoteCollection: CollectionFragment
       let notApprovedRemoteCollection: CollectionFragment
 
@@ -1548,6 +1548,30 @@ describe('Collection router', () => {
         )
       })
 
+      describe('and not sending a status query param', () => {
+        it('should call the findAll method with all the authorized remote ids', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith({
+                address: wallet.address,
+                limit: undefined,
+                offset: undefined,
+                sort: CollectionSort.CREATED_AT_DESC,
+                thirdPartyIds: [],
+                status: undefined,
+                remoteIds: [
+                  approvedRemoteCollection.id,
+                  notApprovedRemoteCollection.id,
+                ],
+                isPublished: undefined,
+              })
+            })
+        })
+      })
+
       describe('and the status maps to non-approved collections', () => {
         it('should call the findAll method with the status and only the non-approved remote ids', () => {
           return server
@@ -1562,6 +1586,25 @@ describe('Collection router', () => {
                 sort: CollectionSort.CREATED_AT_DESC,
                 thirdPartyIds: [],
                 status: CurationStatusFilter.REJECTED,
+                remoteIds: [notApprovedRemoteCollection.id],
+                isPublished: undefined,
+              })
+            })
+        })
+
+        it('should treat under_review as non-approved and only pass the non-approved remote ids', () => {
+          return server
+            .get(buildURL(`${url}?status=${CurationStatusFilter.UNDER_REVIEW}`))
+            .set(createAuthHeaders('get', url))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith({
+                address: wallet.address,
+                limit: undefined,
+                offset: undefined,
+                sort: CollectionSort.CREATED_AT_DESC,
+                thirdPartyIds: [],
+                status: CurationStatusFilter.UNDER_REVIEW,
                 remoteIds: [notApprovedRemoteCollection.id],
                 isPublished: undefined,
               })

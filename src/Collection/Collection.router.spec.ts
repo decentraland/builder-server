@@ -1610,6 +1610,25 @@ describe('Collection router', () => {
               })
             })
         })
+
+        it('should treat pending as non-approved and only pass the non-approved remote ids', () => {
+          return server
+            .get(buildURL(`${url}?status=${CurationStatusFilter.PENDING}`))
+            .set(createAuthHeaders('get', url))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith({
+                address: wallet.address,
+                limit: undefined,
+                offset: undefined,
+                sort: CollectionSort.CREATED_AT_DESC,
+                thirdPartyIds: [],
+                status: CurationStatusFilter.PENDING,
+                remoteIds: [notApprovedRemoteCollection.id],
+                isPublished: undefined,
+              })
+            })
+        })
       })
 
       describe('and the status is approved', () => {

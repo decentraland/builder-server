@@ -3,7 +3,12 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { withCors } from '../middleware/cors'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { AuthRequest, withAuthentication } from '../middleware/authentication'
+import {
+  AuthRequest,
+  PermissiveAuthRequest,
+  withAuthentication,
+  withPermissiveAuthentication,
+} from '../middleware/authentication'
 import { withSchemaValidation } from '../middleware'
 import { ThirdParty, UpdateVirtualThirdPartyBody } from './ThirdParty.types'
 import { ThirdPartyService } from './ThirdParty.service'
@@ -47,6 +52,7 @@ export class ThirdPartyRouter extends Router {
     this.router.get(
       '/thirdParties/:id',
       withCors,
+      withPermissiveAuthentication,
       server.handleRequest(this.getThirdParty)
     )
     /**
@@ -71,19 +77,27 @@ export class ThirdPartyRouter extends Router {
   }
 
   getThirdParties = async (req: AuthRequest): Promise<ThirdParty[]> => {
-    let manager: string | undefined
-    try {
-      manager = server.extractFromReq(req, 'manager')
-    } catch (e) {
-      // We support empty manager filters on the query string
-    }
-    return ThirdPartyService.getThirdParties(manager)
+    return ThirdPartyService.getThirdParties(req.auth.ethAddress)
   }
 
-  getThirdParty = async (req: AuthRequest): Promise<ThirdParty> => {
+  getThirdParty = async (req: PermissiveAuthRequest): Promise<ThirdParty> => {
     const thirdPartyId = server.extractFromReq(req, 'id')
     try {
-      return await ThirdPartyService.getThirdParty(thirdPartyId)
+      const thirdParty = await ThirdPartyService.getThirdParty(thirdPartyId)
+      if (!thirdParty.published) {
+        const eth_address = req.auth.ethAddress
+        if (
+          !eth_address ||
+          !(await ThirdPartyService.isManager(thirdPartyId, eth_address))
+        ) {
+          throw new HTTPError(
+            'Unauthorized access. Account is not manager of the third party',
+            { id: thirdPartyId },
+            STATUS_CODES.unauthorized
+          )
+        }
+      }
+      return thirdParty
     } catch (error) {
       if (error instanceof NonExistentThirdPartyError) {
         throw new HTTPError(

@@ -9,7 +9,9 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
-import { CollectionAttributes } from './Collection.types'
+import { CollectionAttributes, FullCollection } from './Collection.types'
+import { UnauthorizedCollectionEditError } from './Collection.errors'
+import { toFullCollection } from './utils'
 
 jest.mock('./Collection.model')
 jest.mock('../ThirdParty/ThirdParty.service')
@@ -234,6 +236,56 @@ describe('Collection service', () => {
           { ...collections[0], is_programmatic: false },
           { ...collections[1], is_programmatic: true },
         ])
+      })
+    })
+  })
+
+  describe('when upserting a collection under an existing third party', () => {
+    let fullCollection: FullCollection
+    let ethAddress: string
+
+    beforeEach(() => {
+      ethAddress = wallet.address
+      fullCollection = toFullCollection(dbTPCollectionMock)
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(undefined)
+      ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValueOnce(
+        thirdPartyMock
+      )
+      ;(Collection.isURNRepeated as jest.Mock).mockResolvedValueOnce(false)
+      ;(Collection.upsertWithItemCount as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+    })
+
+    describe('and the wallet is a manager of the third party', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
+      })
+
+      it('should upsert the collection', () => {
+        return expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            ethAddress,
+            fullCollection
+          )
+        ).resolves.toEqual(dbTPCollectionMock)
+      })
+    })
+
+    describe('and the wallet is not a manager of the third party', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(false)
+      })
+
+      it('should reject with the UnauthorizedCollectionEditError error', () => {
+        return expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            ethAddress,
+            fullCollection
+          )
+        ).rejects.toThrow(UnauthorizedCollectionEditError)
       })
     })
   })

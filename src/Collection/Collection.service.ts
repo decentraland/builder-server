@@ -470,8 +470,9 @@ export class CollectionService {
                 : [],
           }
         )
-        // Check that the given third party id is manageable by the user
-      } else if (!thirdParty.managers.includes(eth_address.toLowerCase())) {
+      } else if (
+        !(await ThirdPartyService.isManager(third_party_id, eth_address))
+      ) {
         throw new UnauthorizedCollectionEditError(id, eth_address)
       }
 

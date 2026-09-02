@@ -8,6 +8,7 @@ import {
 import {
   convertThirdPartyMetadataToRawMetadata,
   convertVirtualThirdPartyToThirdParty,
+  hasManager,
   toThirdParty,
 } from './utils'
 import {
@@ -84,7 +85,19 @@ export class ThirdPartyService {
         ? this.getVirtualThirdPartiesByManager(manager)
         : ([] as ThirdParty[]),
     ])
-    const graphThirdParties = fragments.map(toThirdParty)
+    const managerAddress = manager?.toLowerCase()
+    const virtualById = managerAddress
+      ? await VirtualThirdParty.findByIds(fragments.map((f) => f.id))
+      : new Map<string, VirtualThirdPartyAttributes>()
+    const graphThirdParties = fragments
+      .filter((fragment) => {
+        const virtual = virtualById.get(fragment.id)
+        if (!virtual) {
+          return true
+        }
+        return hasManager(virtual.managers, managerAddress)
+      })
+      .map(toThirdParty)
     const virtualThirdPartiesNotInTheGraph = virtualThirdParties.filter(
       (virtualThirdParty) =>
         !graphThirdParties.some(
@@ -119,12 +132,12 @@ export class ThirdPartyService {
     thirdPartyId: string,
     address: string
   ): Promise<boolean> {
-    const thirdPartyFragment = await thirdPartyAPI.fetchThirdParty(thirdPartyId)
-    if (thirdPartyFragment) {
-      return thirdPartyFragment.managers.includes(address)
+    const virtual = await this.getVirtualThirdParty(thirdPartyId)
+    if (virtual) {
+      return hasManager(virtual.managers, address)
     }
-    const virtualThirdParty = await this.getVirtualThirdParty(thirdPartyId)
-    return !!virtualThirdParty?.managers.includes(address)
+    const fragment = await thirdPartyAPI.fetchThirdParty(thirdPartyId)
+    return hasManager(fragment?.managers ?? [], address)
   }
 
   static async removeVirtualThirdParty(thirdPartyId: string, manager: string) {
@@ -134,7 +147,7 @@ export class ThirdPartyService {
     if (!virtualThirdParty) {
       throw new NonExistentThirdPartyError(thirdPartyId)
     }
-    if (!virtualThirdParty.managers.includes(manager)) {
+    if (!hasManager(virtualThirdParty.managers, manager)) {
       throw new UnauthorizedThirdPartyManagerError(thirdPartyId)
     }
     const graphThirdParty = await thirdPartyAPI.fetchThirdParty(thirdPartyId)
@@ -156,7 +169,7 @@ export class ThirdPartyService {
     if (!virtualThirdParty) {
       throw new NonExistentThirdPartyError(thirdPartyId)
     }
-    if (!virtualThirdParty.managers.includes(manager)) {
+    if (!hasManager(virtualThirdParty.managers, manager)) {
       throw new UnauthorizedThirdPartyManagerError(thirdPartyId)
     }
     await VirtualThirdParty.update(

@@ -3,6 +3,14 @@ import { LinkedContract, ThirdPartyFragment } from '../ethereum/api/fragments'
 import { ThirdParty } from './ThirdParty.types'
 import { VirtualThirdPartyAttributes } from './VirtualThirdParty.types'
 
+export function hasManager(managers: string[], address?: string): boolean {
+  if (!address) {
+    return false
+  }
+  const normalized = address.toLowerCase()
+  return managers.some((manager) => manager.toLowerCase() === normalized)
+}
+
 export function toThirdParty(fragment: ThirdPartyFragment): ThirdParty {
   const { thirdParty } = fragment.metadata
 

@@ -29,6 +29,7 @@ import {
   FullCollection,
   PublicCollection,
   PublicCollectionDetail,
+  UpsertableCollectionAttributes,
 } from './Collection.types'
 import { UnpublishedCollectionError } from './Collection.errors'
 
@@ -87,7 +88,7 @@ export function toPublicCollectionDetail(
  */
 export function toDBCollection(
   collection: FullCollection
-): CollectionAttributes {
+): UpsertableCollectionAttributes {
   const isTP = hasTPCollectionURN(collection)
   const decodedURN = isTP
     ? decodeTPCollectionURN(collection.urn!)
@@ -104,7 +105,17 @@ export function toDBCollection(
     collection.linked_contract_network?.toLowerCase() ?? null
 
   return {
-    ...utils.omit(collection, ['urn', 'lock', 'created_at', 'updated_at']),
+    ...utils.omit(collection, [
+      'urn',
+      'lock',
+      'created_at',
+      'updated_at',
+      'forum_link',
+      'forum_id',
+      'reviewed_at',
+      'is_published',
+      'is_approved',
+    ]),
     urn_suffix,
     eth_address,
     contract_address,

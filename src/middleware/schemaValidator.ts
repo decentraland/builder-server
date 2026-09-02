@@ -14,7 +14,7 @@ export const withSchemaValidation = (schema: Schema) => (
   const valid = validate(req.body)
 
   if (!valid) {
-    next(
+    return next(
       new HTTPError(
         'Invalid request body',
         validate.errors,

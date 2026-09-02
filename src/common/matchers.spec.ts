@@ -26,4 +26,27 @@ describe('matchers', () => {
       expect(new RegExp(matchers.urn).test(thirdPartyURN)).toBe(true)
     })
   })
+
+  describe('when matching an https url', () => {
+    describe('and the value uses the https protocol', () => {
+      it('should match', () => {
+        expect(
+          new RegExp(matchers.httpsUrl).test(
+            'https://forum.decentraland.org/t/a/1'
+          )
+        ).toBe(true)
+      })
+    })
+
+    describe('and the value does not use the https protocol', () => {
+      it.each([
+        'http://forum.decentraland.org/t/a/1',
+        'data:text/html,something',
+        'javascript:doSomething()',
+        'forum.decentraland.org',
+      ])('should not match the value %s', (value) => {
+        expect(new RegExp(matchers.httpsUrl).test(value)).toBe(false)
+      })
+    })
+  })
 })

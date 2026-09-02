@@ -28,4 +28,6 @@ export const matchers = {
   tpSuffix,
 
   urn: `${baseURN}:(?:${tpSuffix}|${dclSuffix})`,
+
+  httpsUrl: '^https:\\/\\/',
 }

@@ -9,9 +9,14 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import { decodeTPCollectionURN } from '../utils/urn'
 import { Cheque } from '../SlotUsageCheque'
 import { UnpublishedCollectionError } from './Collection.errors'
-import { CollectionAttributes } from './Collection.types'
+import { CollectionAttributes, FullCollection } from './Collection.types'
 import { Collection } from './Collection.model'
-import { getChequeMessageHash, getMergedCollection } from './utils'
+import {
+  getChequeMessageHash,
+  getMergedCollection,
+  toDBCollection,
+  toFullCollection,
+} from './utils'
 
 describe('when decoding the TP collection URN', () => {
   const collectionNetwork = 'goerli'
@@ -157,6 +162,40 @@ describe('when getting the cheque hash', () => {
   it('should return the correct hash', () => {
     return expect(getChequeMessageHash(cheque, thirdPartyId)).resolves.toEqual(
       '0x96f6844148bdeac5fa9c947bc253e634545e97400780485ab9c8ef409414e562'
+    )
+  })
+})
+
+describe('when converting a full collection into a DB collection', () => {
+  let collection: FullCollection
+
+  beforeEach(() => {
+    collection = {
+      ...toFullCollection(dbCollectionMock),
+      forum_link: 'https://forum.decentraland.org/t/a/1',
+      forum_id: 100,
+      reviewed_at: new Date(),
+      is_published: true,
+      is_approved: true,
+    }
+  })
+
+  it('should not include the server managed properties', () => {
+    expect(toDBCollection(collection)).not.toHaveProperty('forum_link')
+    expect(toDBCollection(collection)).not.toHaveProperty('forum_id')
+    expect(toDBCollection(collection)).not.toHaveProperty('reviewed_at')
+    expect(toDBCollection(collection)).not.toHaveProperty('is_published')
+    expect(toDBCollection(collection)).not.toHaveProperty('is_approved')
+  })
+
+  it('should include the properties authored by the creator', () => {
+    expect(toDBCollection(collection)).toEqual(
+      expect.objectContaining({
+        id: collection.id,
+        name: collection.name,
+        minters: collection.minters,
+        managers: collection.managers,
+      })
     )
   })
 })

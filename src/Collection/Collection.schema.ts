@@ -21,7 +21,11 @@ export const collectionSchema = Object.freeze({
       type: 'array',
       items: { type: 'string' },
     },
-    forum_link: { type: ['string', 'null'] },
+    forum_link: {
+      type: ['string', 'null'],
+      maxLength: 512,
+      pattern: matchers.httpsUrl,
+    },
     forum_id: { type: ['integer', 'null'] },
     reviewed_at: { type: ['string', 'null'] },
     created_at: { type: 'string' },
@@ -33,14 +37,7 @@ export const collectionSchema = Object.freeze({
     },
   },
   additionalProperties: false,
-  required: [
-    'id',
-    'name',
-    'eth_address',
-    'salt',
-    'contract_address',
-    'reviewed_at',
-  ],
+  required: ['id', 'name', 'eth_address', 'salt', 'contract_address'],
 })
 
 export const upsertCollectionSchema = Object.freeze({

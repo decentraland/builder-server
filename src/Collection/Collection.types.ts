@@ -28,6 +28,11 @@ export type CollectionAttributes = {
   updated_at: Date
 }
 
+export type UpsertableCollectionAttributes = Omit<
+  CollectionAttributes,
+  'forum_link' | 'forum_id' | 'reviewed_at' | 'is_published' | 'is_approved'
+>
+
 export enum TermsOfServiceEvent {
   PUBLISH_COLLECTION = 'publish_collection_tos',
   PUBLISH_THIRD_PARTY_ITEMS = 'publish_third_party_items_tos',

@@ -1694,6 +1694,35 @@ describe('Item router', () => {
         )
       })
 
+      describe('and the item inserted has a property that does not match its format', () => {
+        it.each([
+          ['thumbnail', 'a:thumbnail'],
+          ['video', 'a:video'],
+          ['utility', 'a:utility'],
+          ['beneficiary', 'aBeneficiary'],
+          ['price', 'aPrice'],
+        ])(
+          "should fail with a message indicating that the %s doesn't match the pattern",
+          (property, value) => {
+            return server
+              .put(buildURL(url))
+              .send({ item: { ...itemToUpsert, [property]: value } })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.badRequest)
+              .then((response: any) => {
+                expect(response.body.ok).toBe(false)
+                expect(response.body.error).toBe('Invalid request body')
+                expect(response.body.data[0]).toEqual(
+                  expect.objectContaining({
+                    instancePath: `/item/${property}`,
+                    keyword: 'pattern',
+                  })
+                )
+              })
+          }
+        )
+      })
+
       describe.each([
         { schemaItemTypeIdx: 0, type: ItemType.WEARABLE },
         { schemaItemTypeIdx: 1, type: ItemType.EMOTE },

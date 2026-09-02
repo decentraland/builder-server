@@ -389,6 +389,7 @@ describe('Collection router', () => {
           ;(Collection.upsertWithItemCount as jest.MockedFunction<
             typeof Collection.upsertWithItemCount
           >).mockImplementationOnce(async (attributes) => ({
+            ...dbTPCollection,
             ...attributes,
             item_count: 0,
             lock: null,
@@ -417,6 +418,48 @@ describe('Collection router', () => {
         })
       })
 
+      describe('and the collection to upsert has the is_published property set', () => {
+        beforeEach(() => {
+          ThirdPartyServiceMock.isManager.mockResolvedValueOnce(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
+          )
+          ;(Collection.upsertWithItemCount as jest.MockedFunction<
+            typeof Collection.upsertWithItemCount
+          >).mockImplementationOnce(async (attributes) => ({
+            ...dbTPCollection,
+            ...attributes,
+            item_count: 0,
+            is_mapping_complete: false,
+          }))
+          collectionToUpsert = {
+            ...collectionToUpsert,
+            is_published: true,
+            is_approved: true,
+          }
+        })
+
+        it('should ignore it and keep the collection as unpublished', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert })
+            .expect(200)
+            .then((response: any) => {
+              const attributes = (Collection.upsertWithItemCount as jest.Mock)
+                .mock.calls[0][0]
+              expect(attributes).not.toHaveProperty('is_published')
+              expect(attributes).not.toHaveProperty('is_approved')
+              expect(response.body.data).toEqual(
+                expect.objectContaining({
+                  is_published: false,
+                  is_approved: false,
+                })
+              )
+            })
+        })
+      })
+
       describe("and the collection doesn't exist", () => {
         beforeEach(() => {
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(null)
@@ -439,6 +482,7 @@ describe('Collection router', () => {
             ;(Collection.upsertWithItemCount as jest.MockedFunction<
               typeof Collection.upsertWithItemCount
             >).mockImplementationOnce(async (attributes) => ({
+              ...dbTPCollection,
               ...attributes,
               item_count: 0,
               lock: null,
@@ -535,6 +579,7 @@ describe('Collection router', () => {
                 ;(Collection.upsertWithItemCount as jest.MockedFunction<
                   typeof Collection.upsertWithItemCount
                 >).mockImplementationOnce(async (attributes) => ({
+                  ...dbTPCollection,
                   ...attributes,
                   item_count: 0,
                   lock: null,
@@ -782,6 +827,29 @@ describe('Collection router', () => {
         })
       })
 
+      describe('and the collection to upsert has a forum link that is not an https url', () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            forum_link: 'javascript:doSomething()',
+            urn,
+          }
+        })
+
+        it('should respond with a 400 and not store the collection', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: collectionDataMock })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body.ok).toBe(false)
+              expect(response.body.error).toBe('Invalid request body')
+              expect(Collection.upsertWithItemCount).not.toHaveBeenCalled()
+            })
+        })
+      })
+
       describe('and the collection is upserted', () => {
         beforeEach(() => {
           collectionToUpsert = {
@@ -807,6 +875,7 @@ describe('Collection router', () => {
           ;(Collection.upsertWithItemCount as jest.MockedFunction<
             typeof Collection.upsertWithItemCount
           >).mockImplementationOnce(async (attributes) => ({
+            ...dbCollection,
             ...attributes,
             item_count: 0,
             lock: null,
@@ -847,6 +916,73 @@ describe('Collection router', () => {
                 }),
               })
             })
+        })
+
+        describe('and the collection to upsert has the server managed properties set', () => {
+          beforeEach(() => {
+            ;(Collection.upsertWithItemCount as jest.Mock).mockReset()
+            ;(Collection.upsertWithItemCount as jest.MockedFunction<
+              typeof Collection.upsertWithItemCount
+            >).mockImplementationOnce(async (attributes) => ({
+              ...dbCollection,
+              ...attributes,
+              item_count: 0,
+              is_mapping_complete: false,
+            }))
+            collectionToUpsert = {
+              ...collectionToUpsert,
+              forum_link: 'https://forum.decentraland.org/t/a-collection/1',
+              forum_id: 1234,
+              reviewed_at: new Date(0),
+            }
+          })
+
+          it('should ignore them and keep the values stored in the database', () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({
+                collection: collectionToUpsert,
+                data: collectionDataMock,
+              })
+              .expect(200)
+              .then((response: any) => {
+                const attributes = (Collection.upsertWithItemCount as jest.Mock)
+                  .mock.calls[0][0]
+                expect(attributes).not.toHaveProperty('forum_link')
+                expect(attributes).not.toHaveProperty('forum_id')
+                expect(attributes).not.toHaveProperty('reviewed_at')
+                expect(attributes).not.toHaveProperty('is_published')
+                expect(attributes).not.toHaveProperty('is_approved')
+                expect(response.body.data).toEqual(
+                  expect.objectContaining({
+                    forum_link: dbCollection.forum_link,
+                    forum_id: dbCollection.forum_id,
+                    reviewed_at: dbCollection.reviewed_at!.toISOString(),
+                  })
+                )
+              })
+          })
+        })
+
+        describe('and the collection to upsert omits the reviewed_at property', () => {
+          beforeEach(() => {
+            collectionToUpsert = utils.omit(collectionToUpsert, ['reviewed_at'])
+          })
+
+          it('should not require it and upsert the collection with a 200', () => {
+            return server
+              .put(buildURL(url))
+              .set(createAuthHeaders('put', url))
+              .send({
+                collection: collectionToUpsert,
+                data: collectionDataMock,
+              })
+              .expect(200)
+              .then(() => {
+                expect(Collection.upsertWithItemCount).toHaveBeenCalled()
+              })
+          })
         })
 
         describe('and the urn supplied is null', () => {

@@ -9,6 +9,7 @@ import {
   CollectionAttributes,
   CollectionTypeFilter,
   CollectionSort,
+  UpsertableCollectionAttributes,
 } from './Collection.types'
 
 type CollectionWithItemCount = CollectionAttributes & {
@@ -365,7 +366,7 @@ export class Collection extends Model<CollectionAttributes> {
   }
 
   static async upsertWithItemCount(
-    collection: CollectionAttributes
+    collection: UpsertableCollectionAttributes
   ): Promise<CollectionWithItemCount> {
     const { id, ...attributes } = collection
     const columnValues = [id, ...Object.values(attributes)]

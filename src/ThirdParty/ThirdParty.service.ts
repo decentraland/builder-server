@@ -136,12 +136,12 @@ export class ThirdPartyService {
     address: string
   ): Promise<boolean> {
     const fragment = await thirdPartyAPI.fetchThirdParty(thirdPartyId)
-    if (fragment?.root) {
-      return hasManager(fragment.managers, address)
-    }
-    const virtual = await this.getVirtualThirdParty(thirdPartyId)
-    if (virtual) {
-      return hasManager(virtual.managers, address)
+    const isApprovedOnChain = !!fragment?.root
+    if (!isApprovedOnChain) {
+      const virtual = await this.getVirtualThirdParty(thirdPartyId)
+      if (virtual) {
+        return hasManager(virtual.managers, address)
+      }
     }
     return hasManager(fragment?.managers ?? [], address)
   }

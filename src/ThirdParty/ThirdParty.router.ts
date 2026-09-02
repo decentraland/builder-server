@@ -3,12 +3,7 @@ import { server } from 'decentraland-server'
 import { Router } from '../common/Router'
 import { withCors } from '../middleware/cors'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import {
-  AuthRequest,
-  PermissiveAuthRequest,
-  withAuthentication,
-  withPermissiveAuthentication,
-} from '../middleware/authentication'
+import { AuthRequest, withAuthentication } from '../middleware/authentication'
 import { withSchemaValidation } from '../middleware'
 import { ThirdParty, UpdateVirtualThirdPartyBody } from './ThirdParty.types'
 import { ThirdPartyService } from './ThirdParty.service'
@@ -18,6 +13,7 @@ import {
   UnauthorizedThirdPartyManagerError,
 } from './ThirdParty.errors'
 import { UpdateVirtualThirdPartyBodySchema } from './ThirdParty.schema'
+import { hasManager } from './utils'
 
 export class ThirdPartyRouter extends Router {
   mount() {
@@ -52,7 +48,7 @@ export class ThirdPartyRouter extends Router {
     this.router.get(
       '/thirdParties/:id',
       withCors,
-      withPermissiveAuthentication,
+      withAuthentication,
       server.handleRequest(this.getThirdParty)
     )
     /**
@@ -80,18 +76,15 @@ export class ThirdPartyRouter extends Router {
     return ThirdPartyService.getThirdParties(req.auth.ethAddress)
   }
 
-  getThirdParty = async (req: PermissiveAuthRequest): Promise<ThirdParty> => {
+  getThirdParty = async (req: AuthRequest): Promise<ThirdParty> => {
     const thirdPartyId = server.extractFromReq(req, 'id')
     try {
       const thirdParty = await ThirdPartyService.getThirdParty(thirdPartyId)
-      if (!thirdParty.published) {
-        const eth_address = req.auth.ethAddress
-        if (
-          !eth_address ||
-          !(await ThirdPartyService.isManager(thirdPartyId, eth_address))
-        ) {
-          throw new NonExistentThirdPartyError(thirdPartyId)
-        }
+      if (
+        !thirdParty.published &&
+        !hasManager(thirdParty.managers, req.auth.ethAddress)
+      ) {
+        throw new NonExistentThirdPartyError(thirdPartyId)
       }
       return thirdParty
     } catch (error) {

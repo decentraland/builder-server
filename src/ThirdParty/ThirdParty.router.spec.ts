@@ -168,9 +168,10 @@ describe('ThirdParty router', () => {
         })
       })
 
-      it('should respond with the requested third party without requiring a manager', () => {
+      it('should respond with the requested third party for any authenticated wallet', () => {
         return server
           .get(buildURL(url))
+          .set(createAuthHeaders('get', url))
           .expect(200)
           .then((response: any) => {
             expect(response.body).toEqual({
@@ -190,16 +191,18 @@ describe('ThirdParty router', () => {
       })
 
       describe('and the request is not authenticated', () => {
-        it('should respond with a 404', () => {
-          return server.get(buildURL(url)).expect(404)
+        it('should respond with a 401', () => {
+          return server.get(buildURL(url)).expect(401)
         })
       })
 
       describe('and the authenticated wallet is not a manager', () => {
         beforeEach(() => {
-          ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(
-            false
-          )
+          ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValue({
+            ...thirdParties[0],
+            published: false,
+            managers: ['0x1'],
+          })
         })
 
         it('should respond with a 404', () => {
@@ -212,9 +215,11 @@ describe('ThirdParty router', () => {
 
       describe('and the authenticated wallet is a manager', () => {
         beforeEach(() => {
-          ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(
-            true
-          )
+          ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValue({
+            ...thirdParties[0],
+            published: false,
+            managers: [wallet.address],
+          })
         })
 
         it('should respond with the requested third party', () => {
@@ -224,7 +229,11 @@ describe('ThirdParty router', () => {
             .expect(200)
             .then((response: any) => {
               expect(response.body).toEqual({
-                data: { ...thirdParties[0], published: false },
+                data: {
+                  ...thirdParties[0],
+                  published: false,
+                  managers: [wallet.address],
+                },
                 ok: true,
               })
             })

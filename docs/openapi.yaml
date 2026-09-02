@@ -1364,12 +1364,7 @@ paths:
       operationId: getThirdParties
       tags: [Third Party]
       summary: Get third parties
-      description: Returns all third-party providers
-      parameters:
-        - name: manager
-          in: query
-          schema:
-            type: string
+      description: Returns the third parties managed by the authenticated wallet
       responses:
         '200':
           description: List of third parties
@@ -1392,8 +1387,10 @@ paths:
       operationId: getThirdParty
       tags: [Third Party]
       summary: Get a third party
-      description: Returns a third party by ID
-      security: []
+      description: >-
+        Returns a third party by ID. Requires authentication. An unpublished
+        (draft) third party is only returned to one of its managers; otherwise
+        the response is 404.
       parameters:
         - name: id
           in: path
@@ -1412,6 +1409,8 @@ paths:
                     type: boolean
                   data:
                     $ref: '#/components/schemas/ThirdParty'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
     delete:

@@ -1,5 +1,6 @@
 import supertest from 'supertest'
 import { createAuthHeaders, buildURL } from '../../spec/utils'
+import { wallet } from '../../spec/mocks/wallet'
 import { app } from '../server'
 import { ThirdParty } from './ThirdParty.types'
 import { ThirdPartyService } from './ThirdParty.service'
@@ -72,32 +73,31 @@ describe('ThirdParty router', () => {
     })
   })
 
-  describe('when using a query string to filter', () => {
+  describe('when a manager is supplied on the query string', () => {
     let url: string
-    let manager: string
+    let anotherManager: string
 
     beforeEach(() => {
-      manager = '0x1'
+      anotherManager = '0x9999999999999999999999999999999999999999'
       ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
         thirdParties
       )
       url = '/thirdParties'
     })
 
-    it('should return the third parties for a particular manager', () => {
-      const queryString = { manager }
+    it('should ignore the query string manager and use the authenticated wallet', () => {
+      const queryString = { manager: anotherManager }
       return server
         .get(buildURL(url, queryString))
         .set(createAuthHeaders('get', url))
         .expect(200)
-        .then((response: any) => {
-          expect(response.body).toEqual({
-            data: thirdParties,
-            ok: true,
-          })
-          expect(ThirdPartyService.getThirdParties).toHaveBeenCalledWith(
-            manager
+        .then(() => {
+          expect(ThirdPartyService.getThirdParties).not.toHaveBeenCalledWith(
+            anotherManager
           )
+          expect(
+            (ThirdPartyService.getThirdParties as jest.Mock).mock.calls[0][0].toLowerCase()
+          ).toBe(wallet.address.toLowerCase())
         })
     })
   })
@@ -160,21 +160,84 @@ describe('ThirdParty router', () => {
       })
     })
 
-    describe('and the third party exists', () => {
+    describe('and the third party is an indexed record', () => {
       beforeEach(() => {
-        ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValueOnce(
-          thirdParties[0]
-        )
+        ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValue({
+          ...thirdParties[0],
+          published: true,
+        })
       })
 
-      it('should respond with the requested third party', () => {
+      it('should respond with the requested third party for any authenticated wallet', () => {
         return server
           .get(buildURL(url))
           .set(createAuthHeaders('get', url))
           .expect(200)
           .then((response: any) => {
-            expect(response.body).toEqual({ data: thirdParties[0], ok: true })
+            expect(response.body).toEqual({
+              data: { ...thirdParties[0], published: true },
+              ok: true,
+            })
           })
+      })
+    })
+
+    describe('and the third party is a virtual-only record', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValue({
+          ...thirdParties[0],
+          published: false,
+        })
+      })
+
+      describe('and the request is not authenticated', () => {
+        it('should respond with a 401', () => {
+          return server.get(buildURL(url)).expect(401)
+        })
+      })
+
+      describe('and the authenticated wallet is not a manager', () => {
+        beforeEach(() => {
+          ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValue({
+            ...thirdParties[0],
+            published: false,
+            managers: ['0x1'],
+          })
+        })
+
+        it('should respond with a 404', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(404)
+        })
+      })
+
+      describe('and the authenticated wallet is a manager', () => {
+        beforeEach(() => {
+          ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValue({
+            ...thirdParties[0],
+            published: false,
+            managers: [wallet.address],
+          })
+        })
+
+        it('should respond with the requested third party', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                data: {
+                  ...thirdParties[0],
+                  published: false,
+                  managers: [wallet.address],
+                },
+                ok: true,
+              })
+            })
+        })
       })
     })
   })

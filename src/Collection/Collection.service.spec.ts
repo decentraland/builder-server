@@ -9,7 +9,9 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
-import { CollectionAttributes } from './Collection.types'
+import { CollectionAttributes, FullCollection } from './Collection.types'
+import { UnauthorizedCollectionEditError } from './Collection.errors'
+import { toFullCollection } from './utils'
 
 jest.mock('./Collection.model')
 jest.mock('../ThirdParty/ThirdParty.service')
@@ -235,6 +237,83 @@ describe('Collection service', () => {
           { ...collections[1], is_programmatic: true },
         ])
       })
+    })
+  })
+
+  describe('when upserting a collection under an existing third party', () => {
+    let fullCollection: FullCollection
+    let ethAddress: string
+
+    beforeEach(() => {
+      ethAddress = wallet.address
+      fullCollection = toFullCollection(dbTPCollectionMock)
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(undefined)
+      ;(ThirdPartyService.getThirdParty as jest.Mock).mockResolvedValueOnce(
+        thirdPartyMock
+      )
+      ;(Collection.isURNRepeated as jest.Mock).mockResolvedValueOnce(false)
+      ;(Collection.upsertWithItemCount as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+    })
+
+    describe('and the wallet is a manager of the third party', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
+      })
+
+      it('should upsert the collection', () => {
+        return expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            ethAddress,
+            fullCollection
+          )
+        ).resolves.toEqual(dbTPCollectionMock)
+      })
+    })
+
+    describe('and the wallet is not a manager of the third party', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(false)
+      })
+
+      it('should reject with the UnauthorizedCollectionEditError error', () => {
+        return expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            ethAddress,
+            fullCollection
+          )
+        ).rejects.toThrow(UnauthorizedCollectionEditError)
+      })
+    })
+  })
+
+  describe('when upserting a collection and the third-party lookup fails transiently', () => {
+    let fullCollection: FullCollection
+    let ethAddress: string
+    let lookupError: Error
+
+    beforeEach(() => {
+      ethAddress = wallet.address
+      fullCollection = toFullCollection(dbTPCollectionMock)
+      lookupError = new Error('third party graph unavailable')
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(undefined)
+      ;(ThirdPartyService.getThirdParty as jest.Mock).mockRejectedValueOnce(
+        lookupError
+      )
+    })
+
+    it('should propagate the error and not create a virtual third party', async () => {
+      await expect(
+        service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          ethAddress,
+          fullCollection
+        )
+      ).rejects.toThrow('third party graph unavailable')
+      expect(ThirdPartyService.createVirtualThirdParty).not.toHaveBeenCalled()
     })
   })
 })

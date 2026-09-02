@@ -536,6 +536,7 @@ describe('Collection router', () => {
               ThirdPartyServiceMock.getThirdParty.mockResolvedValueOnce(
                 mockedThirdParty
               )
+              ThirdPartyServiceMock.isManager.mockResolvedValue(true)
             })
 
             describe('and there are items already published with the collection id', () => {

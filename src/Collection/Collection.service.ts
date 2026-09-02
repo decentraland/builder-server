@@ -6,6 +6,7 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
 import { InvalidRequestError } from '../utils/errors'
 import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
+import { NonExistentThirdPartyError } from '../ThirdParty/ThirdParty.errors'
 import { Ownable } from '../Ownable'
 import {
   Item,
@@ -448,9 +449,12 @@ export class CollectionService {
       let thirdParty: ThirdParty | undefined
       try {
         thirdParty = await ThirdPartyService.getThirdParty(third_party_id)
-      } catch (_) {}
+      } catch (error) {
+        if (!(error instanceof NonExistentThirdPartyError)) {
+          throw error
+        }
+      }
 
-      // When creating the collection, no third party exists, create a virtual one and assign the user as manager
       if (!thirdParty) {
         await ThirdPartyService.createVirtualThirdParty(
           third_party_id,
@@ -470,8 +474,9 @@ export class CollectionService {
                 : [],
           }
         )
-        // Check that the given third party id is manageable by the user
-      } else if (!thirdParty.managers.includes(eth_address.toLowerCase())) {
+      } else if (
+        !(await ThirdPartyService.isManager(third_party_id, eth_address))
+      ) {
         throw new UnauthorizedCollectionEditError(id, eth_address)
       }
 

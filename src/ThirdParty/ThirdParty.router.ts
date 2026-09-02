@@ -13,6 +13,7 @@ import {
   UnauthorizedThirdPartyManagerError,
 } from './ThirdParty.errors'
 import { UpdateVirtualThirdPartyBodySchema } from './ThirdParty.schema'
+import { hasManager } from './utils'
 
 export class ThirdPartyRouter extends Router {
   mount() {
@@ -47,6 +48,7 @@ export class ThirdPartyRouter extends Router {
     this.router.get(
       '/thirdParties/:id',
       withCors,
+      withAuthentication,
       server.handleRequest(this.getThirdParty)
     )
     /**
@@ -71,19 +73,20 @@ export class ThirdPartyRouter extends Router {
   }
 
   getThirdParties = async (req: AuthRequest): Promise<ThirdParty[]> => {
-    let manager: string | undefined
-    try {
-      manager = server.extractFromReq(req, 'manager')
-    } catch (e) {
-      // We support empty manager filters on the query string
-    }
-    return ThirdPartyService.getThirdParties(manager)
+    return ThirdPartyService.getThirdParties(req.auth.ethAddress)
   }
 
   getThirdParty = async (req: AuthRequest): Promise<ThirdParty> => {
     const thirdPartyId = server.extractFromReq(req, 'id')
     try {
-      return await ThirdPartyService.getThirdParty(thirdPartyId)
+      const thirdParty = await ThirdPartyService.getThirdParty(thirdPartyId)
+      if (
+        !thirdParty.published &&
+        !hasManager(thirdParty.managers, req.auth.ethAddress)
+      ) {
+        throw new NonExistentThirdPartyError(thirdPartyId)
+      }
+      return thirdParty
     } catch (error) {
       if (error instanceof NonExistentThirdPartyError) {
         throw new HTTPError(

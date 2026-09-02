@@ -3,6 +3,7 @@ import { ThirdPartyFragment } from '../ethereum/api/fragments'
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
 import {
   NonExistentThirdPartyError,
+  OnlyDeletableIfOnGraphError,
   UnauthorizedThirdPartyManagerError,
 } from './ThirdParty.errors'
 import { ThirdPartyService } from './ThirdParty.service'
@@ -130,6 +131,58 @@ describe('when checking if an address is a manager', () => {
       })
     })
   })
+
+  describe('and a virtual third party exists', () => {
+    let virtualManager: string
+    let indexedOnlyWallet: string
+
+    beforeEach(() => {
+      virtualManager = '0xaaa'
+      indexedOnlyWallet = '0xbbb'
+      virtualThirdParty.managers = [virtualManager]
+      VirtualThirdPartyMock.findOne.mockResolvedValue(virtualThirdParty)
+    })
+
+    describe('and the indexed record is approved', () => {
+      beforeEach(() => {
+        thirdPartyFragment.isApproved = true
+        thirdPartyFragment.managers = [indexedOnlyWallet]
+        thirdPartyAPIMock.fetchThirdParty.mockResolvedValue(thirdPartyFragment)
+      })
+
+      it('should resolve to true for a wallet listed by the indexed record', () => {
+        return expect(
+          ThirdPartyService.isManager(thirdPartyFragment.id, indexedOnlyWallet)
+        ).resolves.toBe(true)
+      })
+
+      it('should resolve to false for a wallet listed only by the virtual record', () => {
+        return expect(
+          ThirdPartyService.isManager(thirdPartyFragment.id, virtualManager)
+        ).resolves.toBe(false)
+      })
+    })
+
+    describe('and the indexed record is not yet approved', () => {
+      beforeEach(() => {
+        thirdPartyFragment.isApproved = false
+        thirdPartyFragment.managers = [indexedOnlyWallet]
+        thirdPartyAPIMock.fetchThirdParty.mockResolvedValue(thirdPartyFragment)
+      })
+
+      it('should resolve to true for a wallet listed by the virtual record', () => {
+        return expect(
+          ThirdPartyService.isManager(thirdPartyFragment.id, virtualManager)
+        ).resolves.toBe(true)
+      })
+
+      it('should resolve to false for a wallet present only in the indexed record', () => {
+        return expect(
+          ThirdPartyService.isManager(thirdPartyFragment.id, indexedOnlyWallet)
+        ).resolves.toBe(false)
+      })
+    })
+  })
 })
 
 describe('when creating a virtual third party', () => {
@@ -215,12 +268,6 @@ describe('when getting a third party', () => {
 })
 
 describe('when removing a virtual third party', () => {
-  let address: string
-
-  beforeEach(() => {
-    address = '0x01'
-  })
-
   describe('and the virtual third party does not exist', () => {
     beforeEach(() => {
       VirtualThirdPartyMock.findOne.mockResolvedValue(undefined)
@@ -257,33 +304,49 @@ describe('when removing a virtual third party', () => {
     })
 
     describe('and the user is a manager of the virtual third party', () => {
-      beforeEach(() => {
-        virtualThirdParty.managers.push(address)
+      describe('and there is no indexed record', () => {
+        beforeEach(() => {
+          thirdPartyAPIMock.fetchThirdParty.mockResolvedValue(undefined)
+        })
+
+        it('should reject with the OnlyDeletableIfOnGraphError error', () => {
+          return expect(
+            ThirdPartyService.removeVirtualThirdParty(
+              virtualThirdParty.id,
+              virtualThirdParty.managers[0]
+            )
+          ).rejects.toThrow(OnlyDeletableIfOnGraphError)
+        })
       })
 
-      it('should delete the virtual third party and resolve', () => {
-        return expect(
-          ThirdPartyService.removeVirtualThirdParty(
-            virtualThirdParty.id,
-            virtualThirdParty.managers[0]
+      describe('and an indexed record exists', () => {
+        beforeEach(() => {
+          thirdPartyAPIMock.fetchThirdParty.mockResolvedValue(
+            thirdPartyFragment
           )
-        ).resolves.toBeUndefined()
+        })
+
+        it('should delete the virtual third party and resolve', () => {
+          return expect(
+            ThirdPartyService.removeVirtualThirdParty(
+              virtualThirdParty.id,
+              virtualThirdParty.managers[0]
+            )
+          ).resolves.toBeUndefined()
+        })
+
+        it('should authorize the manager regardless of address casing and resolve', () => {
+          virtualThirdParty.managers = [
+            '0xAbCdEf0000000000000000000000000000000001',
+          ]
+          return expect(
+            ThirdPartyService.removeVirtualThirdParty(
+              virtualThirdParty.id,
+              '0xabcdef0000000000000000000000000000000001'
+            )
+          ).resolves.toBeUndefined()
+        })
       })
-    })
-  })
-
-  describe('and the virtual third party does not exist', () => {
-    beforeEach(() => {
-      VirtualThirdPartyMock.findOne.mockResolvedValue(undefined)
-    })
-
-    it('should reject with the NonExistentThirdPartyError error', () => {
-      return expect(
-        ThirdPartyService.removeVirtualThirdParty(
-          virtualThirdParty.id,
-          virtualThirdParty.managers[0]
-        )
-      ).rejects.toThrow(NonExistentThirdPartyError)
     })
   })
 })
@@ -293,6 +356,7 @@ describe('when getting all third parties of a manager', () => {
 
   beforeEach(() => {
     address = '0x01'
+    VirtualThirdPartyMock.findByIds.mockResolvedValue(new Map())
   })
 
   describe('and there are no third parties', () => {
@@ -335,6 +399,26 @@ describe('when getting all third parties of a manager', () => {
       return expect(
         ThirdPartyService.getThirdParties(address)
       ).resolves.toEqual([toThirdParty(thirdPartyFragment)])
+    })
+  })
+
+  describe('and an unapproved indexed record has a virtual record that does not list the querying manager', () => {
+    beforeEach(() => {
+      thirdPartyFragment.isApproved = false
+      virtualThirdParty.managers = ['0xother']
+      VirtualThirdPartyMock.findByManager.mockResolvedValue([])
+      VirtualThirdPartyMock.findByIds.mockResolvedValue(
+        new Map([[thirdPartyFragment.id, virtualThirdParty]])
+      )
+      thirdPartyAPIMock.fetchThirdPartiesByManager.mockResolvedValue([
+        thirdPartyFragment,
+      ])
+    })
+
+    it('should exclude the indexed record from the result', () => {
+      return expect(
+        ThirdPartyService.getThirdParties(address)
+      ).resolves.toEqual([])
     })
   })
 
@@ -418,6 +502,7 @@ describe('when updating a virtual third party', () => {
     describe('and the user is a manager of the virtual third party', () => {
       beforeEach(() => {
         virtualThirdParty.managers.push('0x2')
+        VirtualThirdPartyMock.update.mockClear()
       })
 
       it('should update the virtual third party and resolve', () => {
@@ -428,6 +513,31 @@ describe('when updating a virtual third party', () => {
             { isProgrammatic: true }
           )
         ).resolves.toBeUndefined()
+      })
+
+      it('should authorize the manager regardless of address casing and resolve', () => {
+        virtualThirdParty.managers = [
+          '0xAbCdEf0000000000000000000000000000000001',
+        ]
+        return expect(
+          ThirdPartyService.updateVirtualThirdParty(
+            virtualThirdParty.id,
+            '0xabcdef0000000000000000000000000000000001',
+            { isProgrammatic: true }
+          )
+        ).resolves.toBeUndefined()
+      })
+
+      it('should only change the isProgrammatic flag and never the managers', async () => {
+        await ThirdPartyService.updateVirtualThirdParty(
+          virtualThirdParty.id,
+          '0x2',
+          { isProgrammatic: true }
+        )
+        expect(VirtualThirdPartyMock.update).toHaveBeenCalledWith(
+          { isProgrammatic: true },
+          { id: virtualThirdParty.id }
+        )
       })
     })
   })

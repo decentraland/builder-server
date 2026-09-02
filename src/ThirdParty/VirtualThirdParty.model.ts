@@ -10,6 +10,21 @@ export class VirtualThirdParty extends Model<VirtualThirdPartyAttributes> {
     return this.query<VirtualThirdPartyAttributes>(SQL`
       SELECT *
         FROM ${raw(this.tableName)} vtp
-        WHERE ${address} = ANY(vtp.managers)`)
+        WHERE ${address.toLowerCase()} = ANY(
+          SELECT LOWER(m) FROM unnest(vtp.managers) AS m
+        )`)
+  }
+
+  static async findByIds(
+    ids: string[]
+  ): Promise<Map<string, VirtualThirdPartyAttributes>> {
+    if (ids.length === 0) {
+      return new Map()
+    }
+    const rows = await this.query<VirtualThirdPartyAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)} vtp
+        WHERE vtp.id = ANY(${ids})`)
+    return new Map(rows.map((row) => [row.id, row]))
   }
 }

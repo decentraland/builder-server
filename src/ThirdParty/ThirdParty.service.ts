@@ -91,7 +91,7 @@ export class ThirdPartyService {
       : new Map<string, VirtualThirdPartyAttributes>()
     const graphThirdParties = fragments
       .filter((fragment) => {
-        if (fragment.root) {
+        if (fragment.isApproved) {
           return true
         }
         const virtual = virtualById.get(fragment.id)
@@ -136,7 +136,7 @@ export class ThirdPartyService {
     address: string
   ): Promise<boolean> {
     const fragment = await thirdPartyAPI.fetchThirdParty(thirdPartyId)
-    const isApprovedOnChain = !!fragment?.root
+    const isApprovedOnChain = !!fragment?.isApproved
     if (!isApprovedOnChain) {
       const virtual = await this.getVirtualThirdParty(thirdPartyId)
       if (virtual) {

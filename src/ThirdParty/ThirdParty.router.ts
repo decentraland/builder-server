@@ -90,11 +90,7 @@ export class ThirdPartyRouter extends Router {
           !eth_address ||
           !(await ThirdPartyService.isManager(thirdPartyId, eth_address))
         ) {
-          throw new HTTPError(
-            'Unauthorized access. Account is not manager of the third party',
-            { id: thirdPartyId },
-            STATUS_CODES.unauthorized
-          )
+          throw new NonExistentThirdPartyError(thirdPartyId)
         }
       }
       return thirdParty

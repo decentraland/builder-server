@@ -143,9 +143,30 @@ describe('when checking if an address is a manager', () => {
       VirtualThirdPartyMock.findOne.mockResolvedValue(virtualThirdParty)
     })
 
-    describe('and the indexed record lists other wallets alongside the virtual manager', () => {
+    describe('and the indexed record is approved with a root', () => {
       beforeEach(() => {
-        thirdPartyFragment.managers = [virtualManager, indexedOnlyWallet]
+        thirdPartyFragment.root = 'aRoot'
+        thirdPartyFragment.managers = [indexedOnlyWallet]
+        thirdPartyAPIMock.fetchThirdParty.mockResolvedValue(thirdPartyFragment)
+      })
+
+      it('should resolve to true for a wallet listed by the indexed record', () => {
+        return expect(
+          ThirdPartyService.isManager(thirdPartyFragment.id, indexedOnlyWallet)
+        ).resolves.toBe(true)
+      })
+
+      it('should resolve to false for a wallet listed only by the virtual record', () => {
+        return expect(
+          ThirdPartyService.isManager(thirdPartyFragment.id, virtualManager)
+        ).resolves.toBe(false)
+      })
+    })
+
+    describe('and the indexed record is not yet approved with an empty root', () => {
+      beforeEach(() => {
+        thirdPartyFragment.root = ''
+        thirdPartyFragment.managers = [indexedOnlyWallet]
         thirdPartyAPIMock.fetchThirdParty.mockResolvedValue(thirdPartyFragment)
       })
 
@@ -381,8 +402,9 @@ describe('when getting all third parties of a manager', () => {
     })
   })
 
-  describe('and an indexed record has a virtual record that does not list the querying manager', () => {
+  describe('and an unapproved indexed record has a virtual record that does not list the querying manager', () => {
     beforeEach(() => {
+      thirdPartyFragment.root = ''
       virtualThirdParty.managers = ['0xother']
       VirtualThirdPartyMock.findByManager.mockResolvedValue([])
       VirtualThirdPartyMock.findByIds.mockResolvedValue(

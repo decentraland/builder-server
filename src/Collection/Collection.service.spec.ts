@@ -289,4 +289,31 @@ describe('Collection service', () => {
       })
     })
   })
+
+  describe('when upserting a collection and the third-party lookup fails transiently', () => {
+    let fullCollection: FullCollection
+    let ethAddress: string
+    let lookupError: Error
+
+    beforeEach(() => {
+      ethAddress = wallet.address
+      fullCollection = toFullCollection(dbTPCollectionMock)
+      lookupError = new Error('third party graph unavailable')
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(undefined)
+      ;(ThirdPartyService.getThirdParty as jest.Mock).mockRejectedValueOnce(
+        lookupError
+      )
+    })
+
+    it('should propagate the error and not create a virtual third party', async () => {
+      await expect(
+        service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          ethAddress,
+          fullCollection
+        )
+      ).rejects.toThrow('third party graph unavailable')
+      expect(ThirdPartyService.createVirtualThirdParty).not.toHaveBeenCalled()
+    })
+  })
 })

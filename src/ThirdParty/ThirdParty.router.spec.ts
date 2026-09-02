@@ -190,8 +190,8 @@ describe('ThirdParty router', () => {
       })
 
       describe('and the request is not authenticated', () => {
-        it('should respond with a 401', () => {
-          return server.get(buildURL(url)).expect(401)
+        it('should respond with a 404', () => {
+          return server.get(buildURL(url)).expect(404)
         })
       })
 
@@ -202,11 +202,11 @@ describe('ThirdParty router', () => {
           )
         })
 
-        it('should respond with a 401', () => {
+        it('should respond with a 404', () => {
           return server
             .get(buildURL(url))
             .set(createAuthHeaders('get', url))
-            .expect(401)
+            .expect(404)
         })
       })
 

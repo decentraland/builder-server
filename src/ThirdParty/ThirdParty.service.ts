@@ -91,6 +91,9 @@ export class ThirdPartyService {
       : new Map<string, VirtualThirdPartyAttributes>()
     const graphThirdParties = fragments
       .filter((fragment) => {
+        if (fragment.root) {
+          return true
+        }
         const virtual = virtualById.get(fragment.id)
         if (!virtual) {
           return true
@@ -132,11 +135,14 @@ export class ThirdPartyService {
     thirdPartyId: string,
     address: string
   ): Promise<boolean> {
+    const fragment = await thirdPartyAPI.fetchThirdParty(thirdPartyId)
+    if (fragment?.root) {
+      return hasManager(fragment.managers, address)
+    }
     const virtual = await this.getVirtualThirdParty(thirdPartyId)
     if (virtual) {
       return hasManager(virtual.managers, address)
     }
-    const fragment = await thirdPartyAPI.fetchThirdParty(thirdPartyId)
     return hasManager(fragment?.managers ?? [], address)
   }
 

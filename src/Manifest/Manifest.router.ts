@@ -74,9 +74,6 @@ export class ManifestRouter extends Router {
       this.getProjectManifest
     )
 
-    /**
-     * Deletes the manifest of a project
-     */
     this.router.delete(
       '/projects/:id/manifest',
       withPermissiveCors,

@@ -22,6 +22,12 @@ const REMOVED_ROUTES: [HttpMethod, string][] = [
   ['get', '/pools/:id/manifest'],
   ['get', '/share/scene/:id'],
   ['get', '/share/pool/:id'],
+  ['put', '/projects/:id'],
+  ['post', '/projects/:id/media'],
+  ['put', '/projects/:id/crdt'],
+  ['put', '/projects/:id/manifest'],
+  ['put', '/projects/:id/deployment'],
+  ['post', '/storage/upload'],
 ]
 
 describe('when requesting a route removed by the read-only migration', () => {

@@ -60,4 +60,37 @@ describe('Manifest Router', () => {
       })
     })
   })
+
+  describe('when getting the manifest of a public project', () => {
+    beforeEach(() => {
+      url = `/publics/${uuid()}/manifest`
+    })
+
+    afterEach(() => {
+      jest.resetAllMocks()
+    })
+
+    describe('and the project is public', () => {
+      beforeEach(() => {
+        ;(Project.count as jest.Mock).mockResolvedValueOnce(1)
+      })
+
+      it('should redirect to the manifest with a 301', async () => {
+        await server.get(buildURL(url)).expect(301)
+      })
+    })
+
+    describe('and the project exists but is private', () => {
+      beforeEach(() => {
+        ;(Project.count as jest.Mock).mockImplementationOnce(
+          async (conditions: Record<string, unknown>) =>
+            conditions.is_public === true ? 0 : 1
+        )
+      })
+
+      it('should respond with a 404 without redirecting to the manifest', async () => {
+        await server.get(buildURL(url)).expect(404)
+      })
+    })
+  })
 })

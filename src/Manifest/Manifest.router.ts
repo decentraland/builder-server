@@ -20,6 +20,10 @@ export class ManifestRouter extends Router {
     const withProjectExists = withModelExists(Project, 'id', {
       is_deleted: false,
     })
+    const withPublicProjectExists = withModelExists(Project, 'id', {
+      is_public: true,
+      is_deleted: false,
+    })
     const withProjectAuthorization = withModelAuthorization(Project)
     const withTemplateExists = withModelExists(Project, 'id', {
       is_deleted: false,
@@ -60,7 +64,7 @@ export class ManifestRouter extends Router {
     this.router.get(
       '/publics/:id/manifest',
       withPermissiveCors,
-      withProjectExists,
+      withPublicProjectExists,
       this.getProjectManifest
     )
 

@@ -7,7 +7,6 @@ import { ILoggerComponent } from '@well-known-components/interfaces'
 import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { getValidator } from '../utils/validator'
 import { logExecutionTime } from '../utils/logging'
 import {
   withModelExists,
@@ -19,26 +18,15 @@ import {
   withAuthentication,
   AuthRequest,
 } from '../middleware/authentication'
-import { getUploader, S3AssetPack } from '../S3'
 import { ExpressApp } from '../common/ExpressApp'
 import { asyncHandler } from '../common/asyncHandler'
-import { Asset, AssetAttributes, MAX_ASSETS_COUNT } from '../Asset'
-import { buildModelDates } from '../utils/dates'
 import { AssetPack } from './AssetPack.model'
-import {
-  AssetPackAttributes,
-  FullAssetPackAttributes,
-  assetPackSchema,
-} from './AssetPack.types'
-import { getDefaultEthAddress, isAfterLimitSplitDate } from './utils'
+import { FullAssetPackAttributes } from './AssetPack.types'
+import { getDefaultEthAddress } from './utils'
 
 const BLACKLISTED_PROPERTIES = ['is_deleted']
-const THUMBNAIL_FILE_NAME = 'thumbnail'
-const THUMBNAIL_MIME_TYPES = ['image/png', 'image/jpeg']
 const DEFAULT_ETH_ADDRESS = getDefaultEthAddress()
 const DEFAULT_ASSET_PACK_CACHE = env.get('DEFAULT_ASSET_PACK_CACHE', 86400000)
-
-const validator = getValidator()
 
 export class AssetPackRouter extends Router {
   private defaultAssetPacks: FullAssetPackAttributes[] = []
@@ -64,7 +52,6 @@ export class AssetPackRouter extends Router {
      */
     this.router.options('/assetPacks', withCors)
     this.router.options('/assetPacks/:id', withCors)
-    this.router.options('/assetPacks/:id/thumbnail', withCors)
 
     /**
      * Get all asset packs
@@ -88,16 +75,6 @@ export class AssetPackRouter extends Router {
     )
 
     /**
-     * Upsert an asset pack and its assets
-     */
-    this.router.put(
-      '/assetPacks/:id',
-      withCors,
-      withAuthentication,
-      server.handleRequest(this.upsertAssetPack)
-    )
-
-    /**
      * Delete asset pack
      */
     this.router.delete(
@@ -107,27 +84,6 @@ export class AssetPackRouter extends Router {
       withAssetPackExists,
       withAssetPackAuthorization,
       server.handleRequest(this.deleteAssetPack)
-    )
-
-    /**
-     * Upload asset pack thumbnail
-     */
-    this.router.post(
-      '/assetPacks/:id/thumbnail',
-      withCors,
-      withAuthentication,
-      withAssetPackExists,
-      withAssetPackAuthorization,
-      getUploader({
-        mimeTypes: THUMBNAIL_MIME_TYPES,
-        getFileKey: async (_, req) => {
-          const id = server.extractFromReq(req, 'id')
-          const s3AssetPack = new S3AssetPack(id)
-          const filename = s3AssetPack.getThumbnailFilename()
-          return s3AssetPack.getFileKey(filename)
-        },
-      }).single(THUMBNAIL_FILE_NAME),
-      server.handleRequest(this.uploadThumbnail)
     )
   }
 
@@ -243,136 +199,10 @@ export class AssetPackRouter extends Router {
     return this.sanitize([assetPack])[0]
   }
 
-  async upsertAssetPack(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const assetPackJSON: any = server.extractFromReq(req, 'assetPack')
-    const eth_address = req.auth.ethAddress
-
-    const validate = validator.compile(assetPackSchema)
-    validate(assetPackJSON)
-
-    if (validate.errors) {
-      throw new HTTPError(
-        'Invalid schema',
-        validate.errors,
-        STATUS_CODES.badRequest
-      )
-    }
-
-    // Read without `AssetPack.count`, which filters out soft-deleted rows and so
-    // reports a deleted pack as unclaimed, authorizing any caller for it.
-    const existingAssetPack = await AssetPack.findOne<AssetPackAttributes>(id)
-    if (existingAssetPack && existingAssetPack.eth_address !== eth_address) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    if (id !== assetPackJSON.id) {
-      throw new HTTPError(
-        'The body and URL assetPack ids do not match',
-        { urlId: id, bodyId: assetPackJSON.id },
-        STATUS_CODES.badRequest
-      )
-    }
-
-    // The parent id comes from the URL, authorized above. A client-supplied
-    // `asset_pack_id` is dropped so it cannot aim the write at another pack: the
-    // two checks below are keyed on the asset id, so they match nothing for an
-    // asset that does not exist yet.
-    const assets = ((assetPackJSON.assets ?? []) as AssetAttributes[]).map(
-      (asset) =>
-        utils.omit<Omit<AssetAttributes, 'asset_pack_id'>>(asset, [
-          'asset_pack_id',
-        ])
-    )
-
-    const assetIds = assets.map((asset) => asset.id)
-    if (await Asset.existsAnyWithADifferentEthAddress(assetIds, eth_address)) {
-      throw new HTTPError(
-        "One of the assets you're trying to upload is invalid",
-        {},
-        STATUS_CODES.badRequest
-      )
-    }
-
-    if (await Asset.existsAnyWithADifferentAssetPackId(assetIds, id)) {
-      throw new HTTPError(
-        "One of the assets you're trying to upload is invalid",
-        {},
-        STATUS_CODES.badRequest
-      )
-    }
-
-    const currentAssetPack = await AssetPack.findOneWithAssets(id)
-
-    // Dates are derived server-side: a client-supplied `created_at` could be set
-    // before `getLimitSplitDate()`, which switches off the asset count limit below.
-    const attributes = {
-      ...utils.omit(assetPackJSON, ['assets', 'created_at', 'updated_at']),
-      eth_address,
-      ...buildModelDates(existingAssetPack?.created_at),
-    } as AssetPackAttributes
-
-    if (currentAssetPack) {
-      // Only delete assets that no longer exist
-      const assetIdsToDelete: string[] = []
-      for (const currentAsset of currentAssetPack.assets) {
-        if (!assets.find((asset) => asset.id === currentAsset.id)) {
-          assetIdsToDelete.push(currentAsset.id)
-        }
-      }
-
-      const finalAssetsCount =
-        assets.length + currentAssetPack.assets.length - assetIdsToDelete.length
-
-      if (
-        eth_address !== DEFAULT_ETH_ADDRESS &&
-        isAfterLimitSplitDate(currentAssetPack.created_at) &&
-        finalAssetsCount > MAX_ASSETS_COUNT
-      ) {
-        throw new HTTPError(
-          `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`,
-          { assetPackId: id, count: finalAssetsCount },
-          STATUS_CODES.badRequest
-        )
-      }
-
-      await Asset.deleteForAssetPackByIds(id, assetIdsToDelete)
-    } else if (assets.length > MAX_ASSETS_COUNT) {
-      throw new HTTPError(
-        `Too many assets for Asset Pack. The max amount is ${MAX_ASSETS_COUNT}`,
-        { assetPackId: id, count: assets.length },
-        STATUS_CODES.badRequest
-      )
-    }
-
-    const upsertResult = await new AssetPack(attributes).upsert()
-    await Promise.all(
-      assets.map((asset) => new Asset({ ...asset, asset_pack_id: id }).upsert())
-    )
-
-    return upsertResult
-  }
-
   async deleteAssetPack(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
     await AssetPack.delete({ id, eth_address })
-    return true
-  }
-
-  async uploadThumbnail(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const thumbnail = req.file as Express.Multer.File // using `single` on getFileUploaderMiddleware
-
-    if (thumbnail) {
-      const filename = new S3AssetPack(id).getThumbnailFilename()
-      await AssetPack.update({ thumbnail: filename }, { id })
-    }
-
     return true
   }
 

@@ -8,30 +8,6 @@ import { Actions } from './Actions'
 export class Asset extends Model<AssetAttributes> {
   static tableName = 'assets'
 
-  static async deleteForAssetPackByIds(assetPackId: string, ids: string[]) {
-    return this.query(
-      SQL`DELETE
-        FROM ${SQL.raw(this.tableName)}
-        WHERE asset_pack_id = ${assetPackId}
-          AND id = ANY(${ids})`
-    )
-  }
-
-  static async existsAnyWithADifferentEthAddress(
-    ids: string[],
-    ethAddress: string
-  ): Promise<boolean> {
-    const counts = await this.query(SQL`
-    SELECT COUNT(a.*) as count
-      FROM ${SQL.raw(this.tableName)} a
-      INNER JOIN ${SQL.raw(AssetPack.tableName)} ap ON a.asset_pack_id = ap.id
-      WHERE a.id = ANY(${ids})
-        AND ap.eth_address != ${ethAddress}
-        AND ap.is_deleted = FALSE`)
-
-    return counts[0].count > 0
-  }
-
   static findByIds(ids: string[], ethAddresses?: string[]) {
     const query = SQL`
     SELECT a.* FROM ${SQL.raw(this.tableName)} a`
@@ -50,19 +26,6 @@ export class Asset extends Model<AssetAttributes> {
     }
 
     return this.query<AssetAttributes>(query)
-  }
-
-  static async existsAnyWithADifferentAssetPackId(
-    ids: string[],
-    assetPackId: string
-  ): Promise<boolean> {
-    const counts = await this.query(SQL`
-    SELECT COUNT(*) as count
-      FROM ${SQL.raw(this.tableName)}
-      WHERE id = ANY(${ids})
-        AND asset_pack_id != ${assetPackId}`)
-
-    return counts[0].count > 0
   }
 
   static findByAssetPackId(assetPackId: string, limit: number | null = null) {

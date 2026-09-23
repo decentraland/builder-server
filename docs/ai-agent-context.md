@@ -10,7 +10,7 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 - **Wearable/Emote Collections**: Manage collections of wearables and emotes with full lifecycle support
 - **Item Curation Workflow**: Complete approval workflow with committee review for publishing items
 - **Third-Party Collections**: Support for external providers to create and manage collections
-- **Asset Pack Management**: Create and share reusable 3D asset packs for scene building
+- **Asset Pack Management**: Read and delete reusable 3D asset packs for scene building (read-only: no create or upload)
 - **Pool System**: Public scene pools for community sharing with likes and categorization
 - **S3 Storage Integration**: Manage project files, thumbnails, and content through S3-compatible storage
 - **Forum Integration**: Automatic forum post creation for collection submissions
@@ -78,7 +78,7 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 
   - Reusable collections of 3D assets for scene building
   - Default packs are available to all users
-  - Users can create custom packs (max 80 assets)
+  - Existing user packs can be read and deleted; creating packs or uploading assets is not supported
 
 - **Slot Usage Cheques**:
   - Third-party collections require "slots" to publish items

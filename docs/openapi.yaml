@@ -1865,31 +1865,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertAssetPack
-      tags: [Asset Packs]
-      summary: Create or update an asset pack
-      description: Creates a new asset pack or updates an existing one
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssetPackInput'
-      responses:
-        '200':
-          description: Asset pack created/updated successfully
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
     delete:
       operationId: deleteAssetPack
       tags: [Asset Packs]
@@ -1910,69 +1885,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /assetPacks/{id}/thumbnail:
-    post:
-      operationId: uploadAssetPackThumbnail
-      tags: [Asset Packs]
-      summary: Upload asset pack thumbnail
-      description: Uploads a thumbnail for an asset pack
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                thumbnail:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: Thumbnail uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   # Asset endpoints
-  /assetPacks/{assetPackId}/assets/{id}/files:
-    post:
-      operationId: uploadAssetFiles
-      tags: [Assets]
-      summary: Upload asset files
-      description: Uploads files for an asset in an asset pack
-      parameters:
-        - name: assetPackId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Files uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
   /assets/{id}:
     get:
       operationId: getAsset
@@ -3350,23 +3263,6 @@ components:
           type: string
           format: date-time
 
-    AssetPackInput:
-      type: object
-      required:
-        - id
-        - title
-        - assets
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        assets:
-          type: array
-          items:
-            $ref: '#/components/schemas/AssetInput'
-
     AssetPackResponse:
       type: object
       properties:
@@ -3406,38 +3302,6 @@ components:
           type: array
         actions:
           type: array
-
-    AssetInput:
-      type: object
-      required:
-        - id
-        - name
-        - model
-      properties:
-        id:
-          type: string
-          format: uuid
-        asset_pack_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        model:
-          type: string
-        script:
-          type: string
-        thumbnail:
-          type: string
-        tags:
-          type: array
-          items:
-            type: string
-        category:
-          type: string
-        contents:
-          type: object
-        metrics:
-          type: object
 
     PaginatedResponse:
       type: object

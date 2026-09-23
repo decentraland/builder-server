@@ -6,17 +6,3 @@ export type PoolGroupAttributes = {
   active_until: Date
   created_at: Date
 }
-
-export const poolGroupSchema = {}
-export const searchablePoolGroupProperties = ['active']
-
-export type GetOnePoolGroupFilters = {
-  id?: string
-  activeOnly?: boolean
-}
-
-export type GetPoolGroupsFilters = {
-  ids?: string[]
-  activeOnly?: boolean
-  limit?: number
-}

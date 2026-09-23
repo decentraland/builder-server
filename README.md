@@ -24,7 +24,6 @@ Backend service for the Decentraland Builder application. Exposes endpoints for 
 - **Scene Projects**: Create, manage, and deploy scene projects to Decentraland parcels
 - **Collections & Items**: Manage wearable and emote collections with full curation workflow
 - **Asset Packs**: Read reusable 3D asset packs for scene building (read-only: no create, upload or delete)
-- **Pools & Pool Groups**: Public scene pools for community sharing and categorization
 - **Third Party Integration**: Support for third-party wearable and emote collections
 - **S3 Storage**: Manage project files, thumbnails, and content through S3-compatible storage
 - **Curation Workflow**: Full approval workflow for collections and items with committee review
@@ -58,7 +57,6 @@ The following endpoints proxy requests to S3 storage:
 These endpoints require authentication:
 
 - `GET /v1/projects/:id/manifest` → Project manifest JSON
-- `GET /v1/pools/:id/manifest` → Pool manifest JSON
 - `GET /v1/projects/:id/media/:filename` → Project media files
 
 > **Note**: `/v1/` corresponds to the version specified in `.env` with `API_VERSION`
@@ -176,7 +174,6 @@ npm run migrate up
 npm run seed
 
 # Optional: Run one-time scripts
-npx ts-node ./scripts/parseS3Pools.ts
 npx ts-node ./scripts/updateProjectThumbnails.ts
 ```
 
@@ -198,7 +195,6 @@ npm run watch:start
 projects/
 ├── PROJECT_ID/
 │   ├── manifest.json
-│   ├── pool.json
 │   ├── east.png
 │   ├── north.png
 │   ├── preview.png

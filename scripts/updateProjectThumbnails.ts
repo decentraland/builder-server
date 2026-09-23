@@ -1,28 +1,24 @@
 import { db } from '../src/database'
 import { Project, THUMBNAIL_FILE_NAME } from '../src/Project'
-import { Pool } from '../src/Pool'
-import { S3Project, ACL, MANIFEST_FILENAME, POOL_FILENAME } from '../src/S3'
+import { S3Project, ACL, MANIFEST_FILENAME } from '../src/S3'
 
 const thumbnail = `${THUMBNAIL_FILE_NAME}.png`
 
 export async function updateProjectThumbnails() {
   console.log('==== Projects ====')
-  await updateThumbnails(Project)
-
-  console.log('==== Pools ====')
-  await updateThumbnails(Pool)
+  await updateThumbnails()
 
   console.log('==== S3 ====')
   await updateS3()
 }
 
-async function updateThumbnails(Model: typeof Project | typeof Pool) {
-  const resources = await Model.find()
+async function updateThumbnails() {
+  const resources = await Project.find()
 
   const updates = []
   for (const resource of resources) {
     console.log(`Updating project ${resource.id} with thumbnail "${thumbnail}"`)
-    updates.push(Model.update({ thumbnail }, { id: resource.id }))
+    updates.push(Project.update({ thumbnail }, { id: resource.id }))
   }
 
   return Promise.all(updates)
@@ -36,20 +32,11 @@ async function updateS3() {
   for (const project of projects) {
     const s3Project = new S3Project(project.id)
 
-    const [manifest, poolManifest] = await Promise.all([
-      s3Project.readFileBody(MANIFEST_FILENAME),
-      s3Project.readFileBody(POOL_FILENAME),
-    ])
+    const manifest = await s3Project.readFileBody(MANIFEST_FILENAME)
 
     if (manifest) {
       updates.push(
         updateManifestThumbnail(manifest.toString(), MANIFEST_FILENAME)
-      )
-    }
-
-    if (poolManifest) {
-      updates.push(
-        updateManifestThumbnail(poolManifest.toString(), POOL_FILENAME)
       )
     }
   }

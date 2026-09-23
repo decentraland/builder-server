@@ -37,12 +37,6 @@ tags:
     description: Application info and health check
   - name: Projects
     description: Scene project management
-  - name: Pools
-    description: Public scene pools for community sharing
-  - name: Pool Groups
-    description: Pool categorization and grouping
-  - name: Pool Likes
-    description: Pool like management
   - name: Collections
     description: Wearable and emote collection management
   - name: Items
@@ -67,8 +61,6 @@ tags:
     description: Scene deployment tracking
   - name: Storage
     description: S3 storage proxy endpoints
-  - name: Share
-    description: Share link generation
   - name: Analytics
     description: Analytics endpoints
   - name: NFT
@@ -378,200 +370,6 @@ paths:
           description: Coordinates removed successfully
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  # Pool endpoints
-  /pools:
-    get:
-      operationId: getPools
-      tags: [Pools]
-      summary: Get all pools
-      description: Returns all public scene pools with filtering and pagination
-      security: []
-      parameters:
-        - name: eth_address
-          in: query
-          schema:
-            type: string
-        - name: group
-          in: query
-          schema:
-            type: string
-        - $ref: '#/components/parameters/SortBy'
-        - $ref: '#/components/parameters/SortOrder'
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Offset'
-      responses:
-        '200':
-          description: List of pools
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PoolListResponse'
-
-  /projects/{id}/pool:
-    get:
-      operationId: getPool
-      tags: [Pools]
-      summary: Get a pool
-      description: Returns a pool by project ID
-      security: []
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      responses:
-        '200':
-          description: Pool details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PoolResponse'
-    put:
-      operationId: upsertPool
-      tags: [Pools]
-      summary: Create or update a pool
-      description: Creates a pool from a project or updates an existing pool
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                groups:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-      responses:
-        '200':
-          description: Pool created/updated successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  # Pool Group endpoints
-  /pools/groups:
-    get:
-      operationId: getPoolGroups
-      tags: [Pool Groups]
-      summary: Get all pool groups
-      description: Returns all pool groups
-      security: []
-      parameters:
-        - name: active_only
-          in: query
-          schema:
-            type: boolean
-            default: false
-          description: Filter to only active groups
-      responses:
-        '200':
-          description: List of pool groups
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PoolGroup'
-
-  # Pool Like endpoints
-  /pools/{id}/likes:
-    get:
-      operationId: getPoolLikes
-      tags: [Pool Likes]
-      summary: Get pool likes count
-      description: Returns the total number of likes for a pool
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: address
-          in: query
-          schema:
-            type: string
-          description: Filter by user address (use "me" for current user)
-      responses:
-        '200':
-          description: Pool likes count
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: integer
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      operationId: likePool
-      tags: [Pool Likes]
-      summary: Like a pool
-      description: Adds a like to a pool
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Pool liked successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: integer
-                    description: New total likes count
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      operationId: unlikePool
-      tags: [Pool Likes]
-      summary: Unlike a pool
-      description: Removes a like from a pool
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Pool unliked successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: integer
-                    description: New total likes count
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   # Collection endpoints
   /collections:
@@ -2034,26 +1832,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /pools/{id}/manifest:
-    get:
-      operationId: getPoolManifest
-      tags: [Manifest]
-      summary: Get pool manifest
-      description: Returns the manifest for a pool
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '301':
-          description: Redirect to S3 manifest URL
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   # Deployment endpoints
   /deployments:
     get:
@@ -2240,38 +2018,6 @@ paths:
                         type: string
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  # Share endpoints
-  /share/{type}/{id}:
-    get:
-      operationId: getSharePage
-      tags: [Share]
-      summary: Get share page
-      description: Returns an HTML share page for a project or pool. Redirects to Builder if not a social agent.
-      security: []
-      parameters:
-        - name: type
-          in: path
-          required: true
-          schema:
-            type: string
-            enum: [scene, pool]
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Share HTML page
-          content:
-            text/html:
-              schema:
-                type: string
-        '301':
-          description: Redirect to Builder URL
-        '404':
-          description: Resource not found
 
   # Analytics endpoints
   /analytics/weekly:
@@ -2794,57 +2540,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Project'
-
-    Pool:
-      type: object
-      allOf:
-        - $ref: '#/components/schemas/Project'
-        - type: object
-          properties:
-            groups:
-              type: array
-              items:
-                type: string
-                format: uuid
-            likes:
-              type: integer
-            like:
-              type: boolean
-
-    PoolResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-        data:
-          $ref: '#/components/schemas/Pool'
-
-    PoolListResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Pool'
-
-    PoolGroup:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        is_active:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
 
     Collection:
       type: object

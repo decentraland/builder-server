@@ -11,7 +11,6 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 - **Item Curation Workflow**: Complete approval workflow with committee review for publishing items
 - **Third-Party Collections**: Support for external providers to create and manage collections
 - **Asset Pack Management**: Read reusable 3D asset packs for scene building (read-only: no create, upload or delete)
-- **Pool System**: Public scene pools for community sharing with likes and categorization
 - **S3 Storage Integration**: Manage project files, thumbnails, and content through S3-compatible storage
 - **Forum Integration**: Automatic forum post creation for collection submissions
 
@@ -69,11 +68,6 @@ The Builder Server is the backend service for the Decentraland Builder applicati
   - Collections can be locked (`lock` timestamp) before publication
   - Locked collections cannot be modified until published
 
-- **Pools vs Projects**:
-
-  - Projects are user-owned scene configurations
-  - Pools are public copies of projects shared with the community
-
 - **Asset Packs**:
 
   - Reusable collections of 3D assets for scene building
@@ -96,7 +90,6 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 
 - **Curation History**: Both `collection_curations` and `item_curations` tables store history; the latest record (by `created_at`) is the active curation
 
-- **Composite Keys**: `pool_likes` uses composite primary key (`pool_id`, `eth_address`) to enforce one like per user
 
 - **Third-Party Items**: Items with `urn_suffix` set belong to third-party collections; standard items have `urn_suffix = NULL`
 

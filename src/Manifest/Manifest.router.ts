@@ -14,13 +14,7 @@ import {
 } from '../middleware'
 import { Ownable } from '../Ownable'
 import { Project, TemplateStatus } from '../Project'
-import {
-  S3Project,
-  MANIFEST_FILENAME,
-  POOL_FILENAME,
-  ACL,
-  getBucketURL,
-} from '../S3'
+import { S3Project, MANIFEST_FILENAME, ACL, getBucketURL } from '../S3'
 import { SearchableProject } from '../Project/SearchableProject'
 import { ManifestAttributes, manifestSchema } from './Manifest.types'
 import { collectStatistics } from './utils'
@@ -32,7 +26,6 @@ export class ManifestRouter extends Router {
     const withProjectExists = withModelExists(Project, 'id', {
       is_deleted: false,
     })
-    const withPublishedProjectExists = withModelExists(Project)
     const withProjectAuthorization = withModelAuthorization(Project)
     const withTemplateExists = withModelExists(Project, 'id', {
       is_deleted: false,
@@ -47,7 +40,6 @@ export class ManifestRouter extends Router {
     this.router.options('/manifests', withCors)
     this.router.options('/publics/:id/manifest', withPermissiveCors)
     this.router.options('/templates/:id/manifest', withPermissiveCors)
-    this.router.options('/pools/:id/manifest', withPermissiveCors)
 
     /**
      * Returns the manifest of a project
@@ -89,16 +81,6 @@ export class ManifestRouter extends Router {
       withPermissiveCors,
       withTemplateExists,
       this.getProjectManifest
-    )
-
-    /**
-     * Returns the manifest of a pool
-     */
-    this.router.get(
-      '/pools/:id/manifest',
-      withPermissiveCors,
-      withPublishedProjectExists,
-      this.getPoolManifest
     )
 
     /**
@@ -154,16 +136,6 @@ export class ManifestRouter extends Router {
       if (manifests) return manifests
     }
     return manifests
-  }
-
-  getPoolManifest = (req: Request, res: Response) => {
-    const id = server.extractFromReq(req, 'id')
-    const project = new S3Project(id)
-    addInmutableCacheControlHeader(res)
-    return res.redirect(
-      `${getBucketURL()}/${project.getFileKey(POOL_FILENAME)}`,
-      301
-    )
   }
 
   async upsertManifest(req: AuthRequest) {

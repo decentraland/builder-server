@@ -63,9 +63,6 @@ export class ManifestRouter extends Router {
       server.handleRequest(this.getManifests)
     )
 
-    /**
-     * Returns the manifest of a pool
-     */
     this.router.get(
       '/publics/:id/manifest',
       withPermissiveCors,

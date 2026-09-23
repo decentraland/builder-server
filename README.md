@@ -172,9 +172,6 @@ npm run migrate up
 
 # Seed initial data (only once, after asset pack changes)
 npm run seed
-
-# Optional: Run one-time scripts
-npx ts-node ./scripts/updateProjectThumbnails.ts
 ```
 
 #### Running in Development Mode

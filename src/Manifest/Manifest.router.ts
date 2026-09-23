@@ -4,22 +4,16 @@ import { Request, Response } from 'express'
 import { Router } from '../common/Router'
 import { withCors, withPermissiveCors } from '../middleware/cors'
 import { addInmutableCacheControlHeader } from '../common/headers'
-import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
   withAuthentication,
   withModelExists,
   AuthRequest,
 } from '../middleware'
-import { Ownable } from '../Ownable'
 import { Project, TemplateStatus } from '../Project'
-import { S3Project, MANIFEST_FILENAME, ACL, getBucketURL } from '../S3'
+import { S3Project, MANIFEST_FILENAME, getBucketURL } from '../S3'
 import { SearchableProject } from '../Project/SearchableProject'
-import { ManifestAttributes, manifestSchema } from './Manifest.types'
-import { collectStatistics } from './utils'
-
-const validator = getValidator()
+import { ManifestAttributes } from './Manifest.types'
 
 export class ManifestRouter extends Router {
   mount() {
@@ -81,18 +75,7 @@ export class ManifestRouter extends Router {
     )
 
     /**
-     * Upserts the manifest and the project inside of it
-     * Important! Project authorization is done inside the handler because the manifest upserts the project
-     */
-    this.router.put(
-      '/projects/:id/manifest',
-      withPermissiveCors,
-      withAuthentication,
-      server.handleRequest(this.upsertManifest)
-    )
-
-    /**
-     * Upserts the manifest and the project inside of it
+     * Deletes the manifest of a project
      */
     this.router.delete(
       '/projects/:id/manifest',
@@ -133,45 +116,6 @@ export class ManifestRouter extends Router {
       if (manifests) return manifests
     }
     return manifests
-  }
-
-  async upsertManifest(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const manifestJSONMaybe: any = server.extractFromReq(req, 'manifest')
-    const eth_address = req.auth.ethAddress
-    const validate = validator.compile(manifestSchema)
-    validate(manifestJSONMaybe)
-    const manifestJSON: ManifestAttributes = manifestJSONMaybe
-
-    if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
-    }
-
-    const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
-    if (!canUpsert) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    const manifest = {
-      ...manifestJSON,
-      project: { ...manifestJSON.project, id, eth_address },
-    } as ManifestAttributes
-
-    const statistics = collectStatistics(manifest)
-
-    const [project] = await Promise.all([
-      new Project({ ...manifest.project, ...statistics }).upsert(),
-      new S3Project(id).saveFile(
-        MANIFEST_FILENAME,
-        JSON.stringify(manifest),
-        ACL.private
-      ),
-    ])
-    return project
   }
 
   async deleteManifest(req: AuthRequest) {

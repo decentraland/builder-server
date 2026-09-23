@@ -2,8 +2,6 @@ import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
 import { withCors } from '../middleware/cors'
-import { HTTPError } from '../common/HTTPError'
-import { getValidator } from '../utils/validator'
 import {
   withModelAuthorization,
   withAuthentication,
@@ -12,9 +10,7 @@ import {
 } from '../middleware'
 import { Project } from '../Project'
 import { Deployment } from './Deployment.model'
-import { DeploymentAttributes, deploymentSchema } from './Deployment.types'
-
-const validator = getValidator()
+import { DeploymentAttributes } from './Deployment.types'
 
 const withProjectExists = withModelExists(Project, 'id', {
   is_deleted: false,
@@ -53,18 +49,6 @@ export class DeploymentRouter extends Router {
     )
 
     /**
-     * Upsert a project deployment
-     */
-    this.router.put(
-      '/projects/:id/deployment',
-      withCors,
-      withAuthentication,
-      withProjectExists,
-      withProjectAuthorization,
-      server.handleRequest(this.upsertDeployment)
-    )
-
-    /**
      * Delete project deployment
      */
     this.router.delete(
@@ -87,33 +71,6 @@ export class DeploymentRouter extends Router {
     const id = server.extractFromReq(req, 'id')
     const eth_address = req.auth.ethAddress
     return Deployment.findOne<DeploymentAttributes>({ id, eth_address })
-  }
-
-  async upsertDeployment(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const deploymentJSON: any = server.extractFromReq(req, 'deployment')
-    const eth_address = req.auth.ethAddress
-
-    const validate = validator.compile(deploymentSchema)
-    validate(deploymentJSON)
-
-    if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
-    }
-
-    const attributes = {
-      ...deploymentJSON,
-      eth_address,
-    } as DeploymentAttributes
-
-    if (id !== attributes.id) {
-      throw new HTTPError('The body and URL deployment ids do not match', {
-        urlId: id,
-        bodyId: attributes.id,
-      })
-    }
-
-    return new Deployment(attributes).upsert()
   }
 
   async deleteDeployment(req: AuthRequest) {

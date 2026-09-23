@@ -2,11 +2,11 @@
 
 **Service Purpose:**
 
-The Builder Server is the backend service for the Decentraland Builder application. It provides APIs for creating and managing scene projects, wearable and emote collections, asset packs, and facilitates the publication workflow to the Decentraland platform.
+The Builder Server is the backend service for the Decentraland Builder application. It provides APIs for reading scene projects and asset packs, managing wearable and emote collections, and facilitates the publication workflow to the Decentraland platform.
 
 **Key Capabilities:**
 
-- **Scene Project Management**: Create, edit, and deploy scene projects to Decentraland LAND parcels
+- **Scene Project Management**: Read and delete scene projects, their manifests and deployments (read-only: no create or upload)
 - **Wearable/Emote Collections**: Manage collections of wearables and emotes with full lifecycle support
 - **Item Curation Workflow**: Complete approval workflow with committee review for publishing items
 - **Third-Party Collections**: Support for external providers to create and manage collections

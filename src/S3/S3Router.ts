@@ -1,6 +1,5 @@
 import { Request, Response } from 'express'
 import fetch from 'node-fetch'
-import { hashV1 } from '@dcl/hashing'
 import { server } from 'decentraland-server'
 
 import { Router } from '../common/Router'
@@ -10,8 +9,6 @@ import { getBucketURL } from './s3'
 import { S3AssetPack } from './S3AssetPack'
 import { S3Content } from './S3Content'
 import { S3Model } from './S3Model'
-import { withAuthentication } from '../middleware'
-import { getUploader } from './uploads'
 
 export class S3Router extends Router {
   mount() {
@@ -21,7 +18,6 @@ export class S3Router extends Router {
     this.router.options('/storage/assetPacks/:filename', withPermissiveCors)
     this.router.options('/storage/contents/:filename', withPermissiveCors)
     this.router.options('/storage/contents/:filename/exists', withCors)
-    this.router.options('/storage/upload', withCors)
 
     /**
      * Get an asset pack file by file id
@@ -57,22 +53,6 @@ export class S3Router extends Router {
       '/storage/contents/:filename/exists',
       withCors,
       server.handleRequest(this.handleExists)
-    )
-
-    /**
-     * Upload a file
-     */
-    this.router.post(
-      '/storage/upload',
-      withCors,
-      withAuthentication,
-      getUploader({
-        getFileStreamKey: async (file) => {
-          const hash = await hashV1(file.stream)
-          return new S3Content().getFileKey(hash)
-        },
-      }).any(),
-      server.handleRequest(this.handleUpload)
     )
   }
 
@@ -116,11 +96,5 @@ export class S3Router extends Router {
       }
     } catch (error) {}
     res.status(404) // it does not exist
-  }
-
-  private handleUpload(req: Request, _res: Response) {
-    return {
-      hash: (req.files as { fieldname: string }[])[0]!.fieldname.split('/')[1],
-    }
   }
 }

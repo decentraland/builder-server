@@ -149,30 +149,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertProject
-      tags: [Projects]
-      summary: Create or update a project
-      description: Creates a new project or updates an existing one
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectInput'
-      responses:
-        '200':
-          description: Project created/updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProjectResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
     delete:
       operationId: deleteProject
       tags: [Projects]
@@ -206,45 +182,6 @@ paths:
                 $ref: '#/components/schemas/ProjectResponse'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  /projects/{id}/media:
-    post:
-      operationId: uploadProjectMedia
-      tags: [Projects]
-      summary: Upload project media
-      description: Uploads media files (thumbnails, previews) for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                thumbnail:
-                  type: string
-                  format: binary
-                preview:
-                  type: string
-                  format: binary
-                north:
-                  type: string
-                  format: binary
-                east:
-                  type: string
-                  format: binary
-                south:
-                  type: string
-                  format: binary
-                west:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: Media uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /projects/{id}/media/{filename}:
     get:
@@ -328,31 +265,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: uploadProjectCrdt
-      tags: [Projects]
-      summary: Upload project CRDT
-      description: Uploads the CRDT file for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: CRDT uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /projects/{coords}/coords:
     delete:
       operationId: removeProjectCoords
@@ -1739,33 +1651,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertProjectManifest
-      tags: [Manifest]
-      summary: Upsert project manifest
-      description: Creates or updates the manifest for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                manifest:
-                  type: object
-      responses:
-        '200':
-          description: Manifest upserted successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProjectResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
     delete:
       operationId: deleteProjectManifest
       tags: [Manifest]
@@ -1880,31 +1765,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertProjectDeployment
-      tags: [Deployments]
-      summary: Create or update deployment
-      description: Creates or updates deployment info for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                deployment:
-                  type: object
-      responses:
-        '200':
-          description: Deployment updated successfully
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
     delete:
       operationId: deleteProjectDeployment
       tags: [Deployments]
@@ -1988,36 +1848,6 @@ paths:
           description: File exists
         '404':
           description: File does not exist
-
-  /storage/upload:
-    post:
-      operationId: uploadContent
-      tags: [Storage]
-      summary: Upload content file
-      description: Uploads a file to storage
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: File uploaded successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      hash:
-                        type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   # Analytics endpoints
   /analytics/weekly:
@@ -2484,44 +2314,6 @@ components:
         updated_at:
           type: string
           format: date-time
-
-    ProjectInput:
-      type: object
-      required:
-        - id
-        - title
-        - description
-        - scene_id
-        - cols
-        - rows
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        description:
-          type: string
-        thumbnail:
-          type: string
-        scene_id:
-          type: string
-          format: uuid
-        cols:
-          type: integer
-        rows:
-          type: integer
-        is_public:
-          type: boolean
-        creation_coords:
-          type: string
-        is_template:
-          type: boolean
-        template_status:
-          type: string
-          enum: [active, coming_soon]
-        video:
-          type: string
 
     ProjectResponse:
       type: object

@@ -11,21 +11,42 @@ const BUILDER_URL = env.get('BUILDER_URL', '')
 const BUILDER_SERVER_URL = env.get('BUILDER_SERVER_URL', '')
 const API_VERSION = env.get('API_VERSION', 'v1')
 
-export function buildCollectionForumPost(
+function buildForumPostBody(
   collection: CollectionAttributes,
   items: FullItem[]
-): ForumPost {
-  // We only post in English
-  return {
-    title: `Third Party collection ${collection.name} with URN: ${collection.third_party_id}`,
-    raw: `# ${collection.name}
+): ForumPost['raw'] {
+  return `# ${collection.name}
 
   [View entire collection](${getItemEditorUrl({ collectionId: collection.id })})
 
   ## Wearables
 
-  ${items.map(toRawItem).join('\n\n')}`,
+  ${items.map(toRawItem).join('\n\n')}`
+}
+
+export function buildCollectionForumPost(
+  collection: CollectionAttributes,
+  items: FullItem[]
+): ForumPost {
+  return {
+    title: `Third Party collection ${collection.name} with URN: ${collection.third_party_id}`,
+    raw: buildForumPostBody(collection, items),
   }
+}
+
+export function buildStandardCollectionForumPost(
+  collection: CollectionAttributes,
+  items: FullItem[],
+  createdBy: string
+): Pick<ForumPost, 'title' | 'raw'> {
+  return {
+    title: `Collection '${collection.name}' created by ${createdBy} is ready for review!`,
+    raw: buildForumPostBody(collection, items),
+  }
+}
+
+export function shortenAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
 export function buildCollectionForumUpdateReply(

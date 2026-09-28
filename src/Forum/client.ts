@@ -3,7 +3,6 @@ import { env } from 'decentraland-commons'
 import {
   CreateResponse,
   CreateSuccess,
-  ForumNewPost,
   ForumPost,
   UpsertPostResult,
 } from './Forum.types'
@@ -16,10 +15,24 @@ const FORUM_CATEGORY = env.get('FORUM_CATEGORY')
 const postLink = ({ topic_slug, topic_id }: CreateSuccess) =>
   `${FORUM_URL}/t/${topic_slug}/${topic_id}`
 
-export async function createPost(post: ForumPost): Promise<UpsertPostResult> {
+async function readForumResponse(response: Response): Promise<CreateResponse> {
+  const body = await response.text()
+  try {
+    return JSON.parse(body)
+  } catch {
+    return {
+      action: 'error',
+      errors: [body.slice(0, 200) || response.statusText],
+    }
+  }
+}
+
+export async function createPost(
+  post: Pick<ForumPost, 'title' | 'raw'>
+): Promise<UpsertPostResult> {
   const forumPost = {
-    ...post,
-    title: sanitizeTitle(post.title!),
+    title: sanitizeTitle(post.title),
+    raw: post.raw,
     category: FORUM_CATEGORY,
   }
 
@@ -32,13 +45,13 @@ export async function createPost(post: ForumPost): Promise<UpsertPostResult> {
     body: JSON.stringify(forumPost),
   })
 
-  const result: CreateResponse = await response.json()
+  const result = await readForumResponse(response)
 
-  if (result.errors !== undefined) {
+  if (!response.ok || result.errors !== undefined) {
     throw new Error(
-      `Error creating the post ${JSON.stringify(post)}: ${result.errors.join(
-        ', '
-      )}`
+      `Error creating the post ${JSON.stringify(post)}: ${
+        result.errors?.join(', ') ?? response.statusText
+      }`
     )
   }
 
@@ -46,7 +59,8 @@ export async function createPost(post: ForumPost): Promise<UpsertPostResult> {
 }
 
 export async function createAssigneeEventPost(
-  forumPost: ForumNewPost
+  topicId: number,
+  raw: string
 ): Promise<void> {
   const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
     headers: {
@@ -54,16 +68,16 @@ export async function createAssigneeEventPost(
       'Content-Type': 'application/json',
     },
     method: 'POST',
-    body: JSON.stringify(forumPost),
+    body: JSON.stringify({ topic_id: topicId, raw }),
   })
 
-  const result: CreateResponse = await response.json()
+  const result = await readForumResponse(response)
 
-  if (result.errors !== undefined) {
+  if (!response.ok || result.errors !== undefined) {
     throw new Error(
-      `Error creating the post ${JSON.stringify(
-        forumPost
-      )}: ${result.errors.join(', ')}`
+      `Error creating the assignee post for topic ${topicId}: ${
+        result.errors?.join(', ') ?? response.statusText
+      }`
     )
   }
 }
@@ -76,6 +90,10 @@ export async function getPost(id: number): Promise<ForumPost> {
       'Content-Type': 'application/json',
     },
   })
+
+  if (!response.ok) {
+    throw new Error(`Error fetching the post ${id}: ${response.statusText}`)
+  }
 
   const result: ForumPost = await response.json()
   return result
@@ -95,13 +113,13 @@ export async function updatePost(
     body: JSON.stringify({ raw: rawPost }),
   })
 
-  const result: CreateResponse = await response.json()
+  const result = await readForumResponse(response)
 
-  if (result.errors !== undefined) {
+  if (!response.ok || result.errors !== undefined) {
     throw new Error(
-      `Error updating the post ${JSON.stringify(id)}: ${result.errors.join(
-        ', '
-      )}`
+      `Error updating the post ${JSON.stringify(id)}: ${
+        result.errors?.join(', ') ?? response.statusText
+      }`
     )
   }
 

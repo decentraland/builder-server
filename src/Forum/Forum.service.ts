@@ -8,10 +8,26 @@ import { createPost, getPost, updatePost } from './client'
 import {
   buildCollectionForumPost,
   buildCollectionForumUpdateReply,
+  buildStandardCollectionForumPost,
 } from './utils'
 import { UpsertPostResult } from './Forum.types'
 
 export class ForumService {
+  async upsertStandardCollectionForumPost(
+    collection: CollectionAttributes,
+    items: FullItem[],
+    createdBy: string
+  ): Promise<string | undefined> {
+    const result = await createPost(
+      buildStandardCollectionForumPost(collection, items, createdBy)
+    )
+    await Collection.update<CollectionAttributes>(
+      { forum_link: result.link, forum_id: result.id },
+      { id: collection.id }
+    )
+    return result.link
+  }
+
   async upsertThirdPartyCollectionForumPost(
     collection: ThirdPartyCollectionAttributes,
     items: FullItem[]

@@ -332,13 +332,21 @@ describe('Forum router', () => {
           })
         })
 
-        it('should respond with a 409 and not post to the forum', () => {
+        it('should respond with a 409 including the existing forum_link and not post to the forum', () => {
           return server
             .post(buildURL(url))
             .set(authHeaders)
             .send({})
             .expect(409)
-            .then(() => {
+            .then((response) => {
+              expect(response.body).toEqual({
+                ok: false,
+                error: 'Forum post already exists',
+                data: {
+                  id: dbCollection.id,
+                  forum_link: 'https://forum.com/some/forum/link',
+                },
+              })
               expect(createPost).not.toHaveBeenCalled()
             })
         })

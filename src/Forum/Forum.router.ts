@@ -87,12 +87,12 @@ export class ForumRouter extends Router {
     }
 
     if (collection.forum_link) {
-      this.logger.error(
-        `Error trying to create the forum post for ${collectionId}, forum post already exists`
+      this.logger.warn(
+        `Forum post already exists for ${collectionId}, returning the existing link`
       )
       throw new HTTPError(
         'Forum post already exists',
-        { id: collectionId },
+        { id: collectionId, forum_link: collection.forum_link },
         STATUS_CODES.conflict
       )
     }

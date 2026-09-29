@@ -7,7 +7,11 @@ import { isCommitteeMember } from '../Committee'
 import { withCors } from '../middleware/cors'
 import { collectionAPI } from '../ethereum/api/collection'
 import { getValidator } from '../utils/validator'
-import { Collection, CollectionService } from '../Collection'
+import {
+  Collection,
+  CollectionAttributes,
+  CollectionService,
+} from '../Collection'
 import { NonExistentItemError, UnpublishedItemError } from '../Item/Item.errors'
 import { Item, ThirdPartyItemAttributes } from '../Item'
 import { ItemService } from '../Item/Item.service'
@@ -15,8 +19,7 @@ import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
-import { createAssigneeEventPost } from '../Forum'
-import { ForumNewPost } from '../Forum'
+import { createAssigneeEventPost, getPost } from '../Forum'
 import {
   CurationStatus,
   CurationType,
@@ -30,6 +33,8 @@ import {
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 
 const validator = getValidator()
+
+const MAX_FORUM_POST_LENGTH = 10000
 
 export class CurationRouter extends Router {
   public collectionService = new CollectionService()
@@ -306,8 +311,41 @@ export class CurationRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
-    const forumPostJSON: ForumNewPost = server.extractFromReq(req, 'forumPost')
-    await createAssigneeEventPost(forumPostJSON)
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+    if (!collection) {
+      throw new HTTPError('Collection not found', { id }, STATUS_CODES.notFound)
+    }
+    if (!collection.forum_id) {
+      throw new HTTPError(
+        'The collection does not have a forum post yet',
+        { id },
+        STATUS_CODES.conflict
+      )
+    }
+
+    const forumPostJSON = server.extractFromReq<{ raw?: unknown }>(
+      req,
+      'forumPost'
+    )
+    const raw = forumPostJSON?.raw
+    if (
+      typeof raw !== 'string' ||
+      raw.length === 0 ||
+      raw.length > MAX_FORUM_POST_LENGTH
+    ) {
+      throw new HTTPError('Invalid forum post', { id }, STATUS_CODES.badRequest)
+    }
+
+    const { topic_id } = await getPost(collection.forum_id)
+    if (!topic_id) {
+      throw new HTTPError(
+        'The collection forum post has no topic',
+        { id, forumId: collection.forum_id },
+        STATUS_CODES.conflict
+      )
+    }
+
+    await createAssigneeEventPost(topic_id, raw)
   }
 
   private updateCuration = async (
@@ -486,12 +524,13 @@ export class CurationRouter extends Router {
     id: string
   ) => {
     const dbItem = await Item.findOne<ThirdPartyItemAttributes>(id)
-    if (!dbItem)
+    if (!dbItem) {
       throw new HTTPError(
         'There is no curation associated to that item',
         { id },
         STATUS_CODES.badRequest
       )
+    }
     return {
       content_hash: dbItem.local_content_hash,
       is_mapping_complete: dbItem.mappings !== null,

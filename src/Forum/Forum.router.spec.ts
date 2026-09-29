@@ -1,5 +1,6 @@
 import supertest from 'supertest'
 import { v4 as uuid } from 'uuid'
+import { ethers } from 'ethers'
 import {
   dbCollectionMock,
   dbTPCollectionMock,
@@ -9,6 +10,8 @@ import {
   createAuthHeaders,
   mockExistsMiddleware,
 } from '../../spec/utils'
+import { createIdentity, fakePrivateKey, wallet } from '../../spec/mocks/wallet'
+import { dbItemMock, dbTPItemMock } from '../../spec/mocks/items'
 import { app } from '../server'
 import {
   Collection,
@@ -16,17 +19,19 @@ import {
   CollectionService,
   ThirdPartyCollectionAttributes,
 } from '../Collection'
-import { Item, ThirdPartyItemAttributes } from '../Item'
-import { ForumPost } from './Forum.types'
-import { createIdentity, fakePrivateKey, wallet } from '../../spec/mocks/wallet'
-import { ethers } from 'ethers'
-import { dbTPItemMock } from '../../spec/mocks/items'
-import { createPost, getPost, updatePost } from './client'
-import {
-  buildCollectionForumPost,
-  buildCollectionForumUpdateReply,
-} from './utils'
+import { Item, ItemAttributes, ThirdPartyItemAttributes } from '../Item'
+import { Bridge } from '../ethereum/api/Bridge'
+import { peerAPI } from '../ethereum/api/peer'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
+import { createPost, getPost, updatePost } from './client'
+import { DuplicatedForumPostTitleError } from './Forum.errors'
+import { ForumPost } from './Forum.types'
+import {
+  buildCollectionForumUpdateReply,
+  buildThirdPartyCollectionForumPost,
+  buildStandardCollectionForumPost,
+  shortenAddress,
+} from './utils'
 
 const server = supertest(app.getApp())
 
@@ -42,11 +47,15 @@ describe('Forum router', () => {
   let dbCollection: CollectionAttributes
   let url: string
   let authHeaders: Record<string, string>
-  let mockedWallet
+  let mockedWallet: ethers.Wallet
+  let forumId: number
+  let forumLink: string
 
   beforeEach(() => {
     dbTPCollection = { ...dbTPCollectionMock }
     dbCollection = { ...dbCollectionMock }
+    forumId = 1234
+    forumLink = 'https://forum.com/some/forum/link'
     jest.spyOn(ethers.utils, 'verifyTypedData').mockReturnValue(wallet.address)
     jest
       .spyOn(CollectionService.prototype, 'isOwnedOrManagedBy')
@@ -58,15 +67,9 @@ describe('Forum router', () => {
   })
 
   describe('when posting a new forum post', () => {
-    let forumId: number
-    let forumLink: string
-
-    beforeEach(async () => {
-      forumId = 1234
-      forumLink = 'https://forum.com/some/forum/link'
-    })
-
     describe('and the collection is a TP collection', () => {
+      let items: ThirdPartyItemAttributes[]
+
       beforeEach(async () => {
         url = `/collections/${dbTPCollection.id}/post`
         mockedWallet = new ethers.Wallet(fakePrivateKey)
@@ -76,140 +79,124 @@ describe('Forum router', () => {
           await createIdentity(mockedWallet, mockedWallet, 1)
         )
         mockExistsMiddleware(Collection, dbTPCollection.id)
-        // Mocking the function that is used in the custom modelAuthorizationCheck
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbTPCollection,
         ])
+        items = [
+          { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash1' },
+          { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash2' },
+          { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash3' },
+        ]
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValue(items)
       })
 
-      describe('when the supplied data and signature are correct', () => {
-        let items: ThirdPartyItemAttributes[]
-
-        beforeEach(async () => {
-          items = [
-            { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash1' },
-            { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash2' },
-            { ...dbTPItemMock, id: uuid(), local_content_hash: 'hash3' },
-          ]
-          ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce(
-            items
+      describe('and the forum post is being created for the first time', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbTPCollection
           )
+          ;(createPost as jest.Mock).mockResolvedValueOnce({
+            id: forumId,
+            link: forumLink,
+          })
         })
 
-        describe('and the server responds correctly', () => {
-          let post: ForumPost
-
-          beforeEach(async () => {
-            post = {
-              title: 'The title of the post',
-              raw: 'The raw text from the post',
-            } as ForumPost
-            ;(getPost as jest.Mock).mockResolvedValueOnce(post)
-          })
-
-          describe('and the forum post is being created for the first time', () => {
-            beforeEach(() => {
-              ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-                dbTPCollection
+        it('should create the forum post with the server-built content', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .then(() => {
+              expect(createPost).toHaveBeenCalledWith(
+                buildThirdPartyCollectionForumPost(
+                  dbTPCollection,
+                  items
+                    .slice(0, MAX_FORUM_ITEMS)
+                    .map((item) => Bridge.toFullItem(item, dbTPCollection))
+                )
               )
-              ;(createPost as jest.Mock).mockResolvedValueOnce({
-                id: forumId,
-                link: forumLink,
-              })
             })
+        })
 
-            it('should create a forum post with the response data', () => {
-              return server
-                .post(buildURL(url))
-                .set(authHeaders)
-                .send({ forumPost: post })
-                .then(() => {
-                  expect(createPost).toHaveBeenCalledWith(
-                    buildCollectionForumPost(
-                      dbTPCollection,
-                      items.slice(0, MAX_FORUM_ITEMS) as any
-                    )
-                  )
-                })
+        it('should update the collection forum_link property with the post creation', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .expect(200)
+            .then(() => {
+              expect(Collection.update).toHaveBeenCalledWith(
+                { forum_id: forumId, forum_link: forumLink },
+                { id: dbTPCollection.id }
+              )
             })
+        })
 
-            it('should update the collection forum_link property with the post creation', () => {
-              return server
-                .post(buildURL(url))
-                .set(authHeaders)
-                .send({ forumPost: post })
-                .expect(200)
-                .then(() => {
-                  expect(Collection.update).toHaveBeenCalledWith(
-                    { forum_id: forumId, forum_link: forumLink },
-                    { id: dbTPCollection.id }
-                  )
-                })
+        it('should return the link of the forum post', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({ data: forumLink, ok: true })
             })
+        })
+      })
 
-            it('should return the link of the forum post', () => {
-              return server
-                .post(buildURL(url))
-                .set(authHeaders)
-                .send({ forumPost: post })
-                .expect(200)
-                .then((response: any) => {
-                  expect(response.body).toEqual({ data: forumLink, ok: true })
-                })
-            })
+      describe('and the collection already has a forum id', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+            ...dbTPCollection,
+            forum_id: 1,
           })
-
-          describe('and the collection already has a forum id', () => {
-            let forumId: number
-
-            beforeEach(() => {
-              forumId = 1
-              ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
-                ...dbTPCollection,
-                forum_id: forumId,
-              })
-              ;(updatePost as jest.Mock).mockResolvedValueOnce({
-                id: forumId,
-                link: forumLink,
-              })
-            })
-
-            it('should update the forum post with the response data', () => {
-              return server
-                .post(buildURL(url))
-                .set(authHeaders)
-                .send({
-                  forumPost: post,
-                })
-                .expect(200)
-                .then(() => {
-                  expect(updatePost).toHaveBeenCalledWith(
-                    forumId,
-                    buildCollectionForumUpdateReply(
-                      post.raw,
-                      items.slice(0, MAX_FORUM_ITEMS) as any
-                    )
-                  )
-                })
-            })
-
-            it('should return the link of the forum post', () => {
-              return server
-                .post(buildURL(url))
-                .set(authHeaders)
-                .send({ forumPost: post })
-                .expect(200)
-                .then((response: any) => {
-                  expect(response.body).toEqual({ data: forumLink, ok: true })
-                })
-            })
+          ;(getPost as jest.Mock).mockResolvedValueOnce({
+            topic_id: 10,
+            raw: 'The raw text from the post',
           })
+          ;(updatePost as jest.Mock).mockResolvedValueOnce({
+            id: 1,
+            link: forumLink,
+          })
+        })
+
+        it('should append the new items to the existing forum post', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .expect(200)
+            .then(() => {
+              expect(updatePost).toHaveBeenCalledWith(
+                1,
+                buildCollectionForumUpdateReply(
+                  'The raw text from the post',
+                  items.slice(0, MAX_FORUM_ITEMS).map((item) =>
+                    Bridge.toFullItem(item, {
+                      ...dbTPCollection,
+                      forum_id: 1,
+                    })
+                  )
+                )
+              )
+            })
+        })
+
+        it('should not create a new forum post', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .expect(200)
+            .then(() => {
+              expect(createPost).not.toHaveBeenCalled()
+            })
         })
       })
     })
 
     describe('and the collection is a Standard collection', () => {
-      let post: ForumPost
+      let items: ItemAttributes[]
 
       beforeEach(async () => {
         url = `/collections/${dbCollection.id}/post`
@@ -219,57 +206,246 @@ describe('Forum router', () => {
           url,
           await createIdentity(mockedWallet, mockedWallet, 1)
         )
-
-        // Mocking the function that is used in the custom modelAuthorizationCheck
+        mockExistsMiddleware(Collection, dbCollection.id)
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
           dbCollection,
         ])
-        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(dbCollection)
+        ;(Collection.findOne as jest.Mock).mockResolvedValue(dbCollection)
+        items = [
+          { ...dbItemMock, id: uuid() },
+          { ...dbItemMock, id: uuid() },
+        ]
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValue(items)
+      })
 
-        post = {
-          title: 'The title of the post',
-          raw: 'The raw text from the post',
-        } as ForumPost
-        ;(createPost as jest.Mock).mockResolvedValueOnce({
-          id: forumId,
-          link: forumLink,
+      describe('and the collection is published', () => {
+        beforeEach(() => {
+          ;(CollectionService.prototype
+            .isDCLPublished as jest.Mock).mockResolvedValue(true)
+          ;(createPost as jest.Mock).mockResolvedValueOnce({
+            id: forumId,
+            link: forumLink,
+          })
         })
-        mockExistsMiddleware(Collection, dbCollection.id)
-      })
 
-      it('should create a forum post with the response data', () => {
-        return server
-          .post(buildURL(url))
-          .set(authHeaders)
-          .send({ forumPost: post })
-          .then(() => {
-            expect(createPost).toHaveBeenCalledWith(post)
+        describe('and the profile has an avatar name', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(peerAPI, 'getProfileName')
+              .mockResolvedValue('AvatarName')
           })
-      })
 
-      it('should update the collection forum_link property with the post creation', () => {
-        return server
-          .post(buildURL(url))
-          .set(authHeaders)
-          .send({ forumPost: post })
-          .expect(200)
-          .then(() => {
-            expect(Collection.update).toHaveBeenCalledWith(
-              { forum_id: forumId, forum_link: forumLink },
-              { id: dbCollection.id }
+          it('should create the forum post with the server-built content using the avatar name', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then(() => {
+                expect(createPost).toHaveBeenCalledWith(
+                  buildStandardCollectionForumPost(
+                    dbCollection,
+                    items
+                      .slice(0, MAX_FORUM_ITEMS)
+                      .map((item) => Bridge.toFullItem(item, dbCollection)),
+                    'AvatarName'
+                  )
+                )
+              })
+          })
+
+          it('should ignore client-supplied title, raw, topic_id and archetype', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({
+                forumPost: {
+                  title: 'attacker title',
+                  raw: 'attacker body',
+                  topic_id: 7,
+                  archetype: 'banner',
+                },
+              })
+              .expect(200)
+              .then(() => {
+                const [postArg] = (createPost as jest.Mock).mock.calls[0]
+                expect(postArg).not.toHaveProperty('topic_id')
+                expect(postArg).not.toHaveProperty('archetype')
+                expect(postArg.raw).not.toBe('attacker body')
+                expect(postArg.title).toContain(dbCollection.name)
+              })
+          })
+
+          it('should update the collection forum_link property with the post creation', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then(() => {
+                expect(Collection.update).toHaveBeenCalledWith(
+                  { forum_id: forumId, forum_link: forumLink },
+                  { id: dbCollection.id }
+                )
+              })
+          })
+
+          it('should return the link of the forum post', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({ data: forumLink, ok: true })
+              })
+          })
+        })
+
+        describe('and the forum post title is already in use', () => {
+          let basePost: Pick<ForumPost, 'title' | 'raw'>
+
+          beforeEach(() => {
+            jest
+              .spyOn(peerAPI, 'getProfileName')
+              .mockResolvedValue('AvatarName')
+            basePost = buildStandardCollectionForumPost(
+              dbCollection,
+              items
+                .slice(0, MAX_FORUM_ITEMS)
+                .map((item) => Bridge.toFullItem(item, dbCollection)),
+              'AvatarName'
             )
+            ;(createPost as jest.Mock)
+              .mockReset()
+              .mockRejectedValueOnce(
+                new DuplicatedForumPostTitleError(basePost.title)
+              )
+              .mockResolvedValueOnce({ id: forumId, link: forumLink })
           })
+
+          it('should retry with the shortened contract address appended to the title', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then(() => {
+                expect(createPost).toHaveBeenLastCalledWith({
+                  ...basePost,
+                  title: `${basePost.title} ${shortenAddress(
+                    dbCollection.contract_address!
+                  )}`,
+                })
+              })
+          })
+
+          it('should return the link of the retried forum post', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({ data: forumLink, ok: true })
+              })
+          })
+
+          describe('and the retried title is also in use', () => {
+            beforeEach(() => {
+              const duplicatedTitleError = new DuplicatedForumPostTitleError(
+                basePost.title
+              )
+              ;(createPost as jest.Mock)
+                .mockReset()
+                .mockRejectedValue(duplicatedTitleError)
+            })
+
+            it('should respond with a 500 after a single retry', () => {
+              return server
+                .post(buildURL(url))
+                .set(authHeaders)
+                .send({})
+                .expect(500)
+                .then(() => {
+                  expect(createPost).toHaveBeenCalledTimes(2)
+                })
+            })
+          })
+        })
+
+        describe('and the profile has no avatar name', () => {
+          beforeEach(() => {
+            jest.spyOn(peerAPI, 'getProfileName').mockResolvedValue(undefined)
+          })
+
+          it('should build the title with the shortened owner address', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then(() => {
+                expect(createPost).toHaveBeenCalledWith(
+                  buildStandardCollectionForumPost(
+                    dbCollection,
+                    items
+                      .slice(0, MAX_FORUM_ITEMS)
+                      .map((item) => Bridge.toFullItem(item, dbCollection)),
+                    shortenAddress(dbCollection.eth_address)
+                  )
+                )
+              })
+          })
+        })
       })
 
-      it('should return the link of the forum post', () => {
-        return server
-          .post(buildURL(url))
-          .set(authHeaders)
-          .send({ forumPost: post })
-          .expect(200)
-          .then((response: any) => {
-            expect(response.body).toEqual({ data: forumLink, ok: true })
+      describe('and the collection is not published', () => {
+        beforeEach(() => {
+          ;(CollectionService.prototype
+            .isDCLPublished as jest.Mock).mockResolvedValue(false)
+        })
+
+        it('should respond with a 409 and not post to the forum', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .expect(409)
+            .then(() => {
+              expect(createPost).not.toHaveBeenCalled()
+            })
+        })
+      })
+
+      describe('and the collection already has a forum post', () => {
+        beforeEach(() => {
+          ;(CollectionService.prototype
+            .isDCLPublished as jest.Mock).mockResolvedValue(true)
+          ;(Collection.findOne as jest.Mock).mockResolvedValue({
+            ...dbCollection,
+            forum_link: 'https://forum.com/some/forum/link',
           })
+        })
+
+        it('should respond with a 409 including the existing forum_link and not post to the forum', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .expect(409)
+            .then((response) => {
+              expect(response.body).toEqual({
+                ok: false,
+                error: 'Forum post already exists',
+                data: {
+                  id: dbCollection.id,
+                  forum_link: 'https://forum.com/some/forum/link',
+                },
+              })
+              expect(createPost).not.toHaveBeenCalled()
+            })
+        })
       })
     })
   })

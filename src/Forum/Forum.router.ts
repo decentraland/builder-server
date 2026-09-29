@@ -2,7 +2,6 @@ import { server } from 'decentraland-server'
 import { ILoggerComponent } from '@well-known-components/interfaces'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { getValidator } from '../utils/validator'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import { withCors } from '../middleware/cors'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
@@ -16,13 +15,11 @@ import { isTPCollection } from '../utils/urn'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { Item } from '../Item'
 import { Bridge } from '../ethereum/api/Bridge'
+import { peerAPI } from '../ethereum/api/peer'
 import { OwnableModel } from '../Ownable'
 import { ExpressApp } from '../common/ExpressApp'
-import { createPost } from './client'
 import { ForumService } from './Forum.service'
-import { ForumPost, forumPostSchema } from './Forum.types'
-
-const validator = getValidator()
+import { shortenAddress } from './utils'
 
 export class ForumRouter extends Router {
   public service = new ForumService()
@@ -34,14 +31,6 @@ export class ForumRouter extends Router {
     this.logger = logger.getLogger('ForumRouter')
   }
 
-  private modelAuthorizationCheck = (
-    _: OwnableModel,
-    id: string,
-    ethAddress: string
-  ): Promise<boolean> => {
-    return this.collectionService.isOwnedOrManagedBy(id, ethAddress)
-  }
-
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(
@@ -50,14 +39,8 @@ export class ForumRouter extends Router {
       this.modelAuthorizationCheck
     )
 
-    /**
-     * CORS for the OPTIONS header
-     */
     this.router.options('/collections/:id/post', withCors)
 
-    /**
-     * Post a new thread to the forum
-     */
     this.router.post(
       '/collections/:id/post',
       withCors,
@@ -70,50 +53,69 @@ export class ForumRouter extends Router {
 
   post = async (req: AuthRequest) => {
     const collectionId: string = server.extractFromReq(req, 'id')
-    const forumPostJSON: any = server.extractFromReq(req, 'forumPost')
-
-    const validate = validator.compile(forumPostSchema)
-    validate(forumPostJSON)
-
-    if (validate.errors) {
+    const collection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
+    if (!collection) {
       this.logger.error(
-        `Error trying to create the forum post for ${collectionId}, invalid schema: ${JSON.stringify(
-          validate.errors
-        )}`
+        `Error trying to create the forum post for ${collectionId}, collection not found`
       )
-      throw new HTTPError('Invalid schema', validate.errors)
+      throw new HTTPError(
+        'Collection not found',
+        { id: collectionId },
+        STATUS_CODES.notFound
+      )
     }
-    const forumPost: ForumPost = forumPostJSON as ForumPost
+    const isTP = isTPCollection(collection)
 
-    const collection = await Collection.findOne(collectionId)
+    if (!isTP) {
+      const isPublished =
+        !!collection.contract_address &&
+        (await this.collectionService.isDCLPublished(
+          collection.contract_address
+        ))
+      if (!isPublished) {
+        this.logger.error(
+          `Error trying to create the forum post for ${collectionId}, collection is not published`
+        )
+        throw new HTTPError(
+          'The collection is not published',
+          { id: collectionId },
+          STATUS_CODES.conflict
+        )
+      }
+    }
 
     if (collection.forum_link) {
-      this.logger.error(
-        `Error trying to create the forum post for ${collectionId}, forum post already exists`
+      this.logger.warn(`Forum post already exists for ${collectionId}`)
+      throw new HTTPError(
+        'Forum post already exists',
+        { id: collectionId, forum_link: collection.forum_link },
+        STATUS_CODES.conflict
       )
-      throw new HTTPError('Forum post already exists', { id: collectionId })
     }
 
     try {
-      if (isTPCollection(collection)) {
-        // This logic is repeated in the Collection.router, we should generalize this behavior.
-        const items = await Item.findOrderedByCollectionId(collectionId)
+      const items = (await Item.findOrderedByCollectionId(collectionId))
+        .slice(0, MAX_FORUM_ITEMS)
+        .map((item) => Bridge.toFullItem(item, collection))
 
-        const link = await this.service.upsertThirdPartyCollectionForumPost(
+      if (isTP) {
+        return await this.service.upsertThirdPartyCollectionForumPost(
           collection,
           items
-            .slice(0, MAX_FORUM_ITEMS)
-            .map((item) => Bridge.toFullItem(item, collection))
         )
-        return link
-      } else {
-        const { id, link } = await createPost(forumPost)
-        await Collection.update<CollectionAttributes>(
-          { forum_id: id, forum_link: link },
-          { id: collectionId }
-        )
-        return link
       }
+
+      const createdBy =
+        (await peerAPI.getProfileName(collection.eth_address)) ??
+        shortenAddress(collection.eth_address)
+
+      return await this.service.upsertStandardCollectionForumPost(
+        collection,
+        items,
+        createdBy
+      )
     } catch (error) {
       this.logger.error(
         `Error trying to create the forum post for ${collectionId}: ${
@@ -126,5 +128,13 @@ export class ForumRouter extends Router {
         STATUS_CODES.error
       )
     }
+  }
+
+  private modelAuthorizationCheck = (
+    _: OwnableModel,
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> => {
+    return this.collectionService.isOwnedOrManagedBy(id, ethAddress)
   }
 }

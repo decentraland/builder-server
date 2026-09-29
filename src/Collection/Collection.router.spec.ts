@@ -53,7 +53,7 @@ import {
   DBItemApprovalData,
 } from '../Item'
 import {
-  buildCollectionForumPost,
+  buildThirdPartyCollectionForumPost,
   buildCollectionForumUpdateReply,
   createPost,
   ForumPost,
@@ -2751,7 +2751,7 @@ describe('Collection router', () => {
                 .expect(200)
                 .then(() => {
                   expect(createPost).toHaveBeenCalledWith(
-                    buildCollectionForumPost(
+                    buildThirdPartyCollectionForumPost(
                       dbTPCollection,
                       items.slice(0, MAX_FORUM_ITEMS) as any
                     )

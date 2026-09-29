@@ -19,7 +19,7 @@ import {
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { CurationService } from './Curation.service'
 import { CurationStatus } from './Curation.types'
-import { createAssigneeEventPost, ForumNewPost } from '../Forum'
+import { createAssigneeEventPost, getPost } from '../Forum'
 import { VIDEO_PATH } from '../Item/utils'
 
 jest.mock('../common/Router')
@@ -30,6 +30,7 @@ jest.mock('../Forum')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockCreateAssigneeEventPost = createAssigneeEventPost as jest.Mock
+const mockGetPost = getPost as jest.Mock
 
 const mockAddress = '0x6D7227d6F36FC997D53B4646132b3B55D751cc7c'
 
@@ -163,7 +164,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is not provided', () => {
       beforeEach(() => {
-        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+        (ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
           itemCuration,
         ])
         req = ({
@@ -180,7 +181,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is provided', () => {
       beforeEach(() => {
-        ;(ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
+        (ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
           [itemCuration]
         )
         req = ({
@@ -1209,23 +1210,118 @@ describe('when handling a request', () => {
 
     describe('and when the caller is a committee member', () => {
       let req: AuthRequest
-      let forumPost: ForumNewPost
+      let raw: string
+      let collectionForumId: number
+      let topicId: number
 
       beforeEach(() => {
-        mockCreateAssigneeEventPost.mockResolvedValue({})
-        forumPost = { raw: '', topic_id: '1' }
+        raw = 'The collection has been assigned'
+        collectionForumId = 42
+        topicId = 30
+        mockCreateAssigneeEventPost.mockResolvedValue(undefined)
+        mockGetPost.mockResolvedValue({ topic_id: topicId, raw: '' })
+        jest.spyOn(Collection, 'findOne').mockResolvedValue({
+          id: 'some id',
+          forum_id: collectionForumId,
+        } as any)
         req = {
           auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id', forumPost },
+          params: { id: 'some id', forumPost: { raw, topic_id: '1' } },
         } as any
         mockIsCommitteeMember.mockResolvedValueOnce(true)
       })
 
-      it('should call the forum api with the forum post received', async () => {
+      it('should resolve the topic from the collection forum post and ignore the client topic_id', async () => {
         await expect(
           router.createCurationNewAssigneePost(req)
         ).resolves.not.toThrow()
-        expect(createAssigneeEventPost).toHaveBeenCalledWith(forumPost)
+        expect(getPost).toHaveBeenCalledWith(collectionForumId)
+        expect(createAssigneeEventPost).toHaveBeenCalledWith(topicId, raw)
+      })
+
+      describe('and the collection forum post has no topic', () => {
+        beforeEach(() => {
+          mockGetPost.mockResolvedValue({ topic_id: undefined, raw: '' })
+        })
+
+        it('should reject with a conflict message', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('The collection forum post has no topic')
+        })
+      })
+
+      describe('and the collection has no forum post yet', () => {
+        beforeEach(() => {
+          jest.spyOn(Collection, 'findOne').mockResolvedValue({
+            id: 'some id',
+            forum_id: null,
+          } as any)
+        })
+
+        it('should reject with a conflict message', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('The collection does not have a forum post yet')
+        })
+      })
+
+      describe('and the forum post has no raw content', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id', forumPost: { raw: '' } },
+          } as any
+        })
+
+        it('should reject with an invalid forum post message', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('Invalid forum post')
+        })
+      })
+
+      describe('and the forum post content exceeds the maximum length', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id', forumPost: { raw: 'a'.repeat(10001) } },
+          } as any
+        })
+
+        it('should reject with an invalid forum post message', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('Invalid forum post')
+        })
+      })
+
+      describe('and the collection does not exist', () => {
+        beforeEach(() => {
+          jest.spyOn(Collection, 'findOne').mockResolvedValue(undefined)
+        })
+
+        it('should reject with a not found message', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('Collection not found')
+        })
+      })
+
+      describe('and the forum rejects the assignee post', () => {
+        beforeEach(() => {
+          mockCreateAssigneeEventPost.mockRejectedValueOnce(
+            new Error(
+              'Error creating the assignee post for topic 30: Forbidden'
+            )
+          )
+        })
+
+        it('should reject with the forum error', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('Error creating the assignee post for topic 30')
+        })
       })
     })
   })

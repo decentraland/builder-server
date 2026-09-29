@@ -11,6 +11,7 @@ import {
 import { ItemAttributes, ItemType } from '../../Item'
 import { CollectionAttributes } from '../../Collection'
 import { logExecutionTime } from '../../utils/logging'
+import { isErrorWithMessage } from '../../utils/errors'
 import { ItemFragment } from './fragments'
 import { collectionAPI } from './collection'
 
@@ -30,6 +31,12 @@ export type SignatureBody = {
 export type CatalystItem = Wearable | Emote
 
 export const PEER_URL = env.get('PEER_URL', '')
+
+type ProfileResponse = {
+  avatars?: Array<{ name?: string; hasClaimedName?: boolean }>
+}
+
+const PROFILE_FETCH_TIMEOUT_MS = 10000
 
 export class PeerAPI {
   contentClient: ContentClient
@@ -136,6 +143,37 @@ export class PeerAPI {
     return (
       await Promise.all([peerWearablesPromises, peerEmotesPromises])
     ).flat() as T[]
+  }
+
+  async getProfileName(address: string): Promise<string | undefined> {
+    const controller = new AbortController()
+    const timeout = setTimeout(
+      () => controller.abort(),
+      PROFILE_FETCH_TIMEOUT_MS
+    )
+    try {
+      const response = await fetch(`${PEER_URL}/lambdas/profiles/${address}`, {
+        headers: { 'Content-Type': 'application/json' },
+        signal: controller.signal,
+      })
+      if (!response.ok) {
+        await response.body?.cancel()
+        return undefined
+      }
+      const data = await response.json()
+      const profile: ProfileResponse = Array.isArray(data) ? data[0] : data
+      const avatar = profile?.avatars?.[0]
+      return avatar?.hasClaimedName && avatar.name ? avatar.name : undefined
+    } catch (error) {
+      this.logger.warn(
+        `Could not fetch the profile name for ${address}: ${
+          isErrorWithMessage(error) ? error.message : 'Unknown'
+        }`
+      )
+      return undefined
+    } finally {
+      clearTimeout(timeout)
+    }
   }
 }
 

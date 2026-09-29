@@ -44,6 +44,7 @@ import {
   isTPCollection,
 } from '../utils/urn'
 import { ForumService } from '../Forum/Forum.service'
+import { AutoCurationService } from '../Curation/AutoCuration.service'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
@@ -78,6 +79,7 @@ import {
 export class CollectionRouter extends Router {
   public service = new CollectionService()
   public forumService = new ForumService()
+  public autoCurationService = new AutoCurationService()
 
   private modelAuthorizationCheck = (
     _: OwnableModel,
@@ -456,6 +458,7 @@ export class CollectionRouter extends Router {
 
     try {
       const dbCollection = await this.service.getDBCollection(id)
+      const isAutoCurationEnabled = await this.autoCurationService.isEnabled()
 
       let result: PublishCollectionResponse<CollectionAttributes>
 
@@ -469,18 +472,32 @@ export class CollectionRouter extends Router {
           server.extractFromReq<Cheque>(req, 'cheque')
         )
 
-        // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)
-        // We should also consider deleteing Forum.router.ts
-        // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
-        // TODO: Should this be halting the response? Retries?
+        if (isAutoCurationEnabled) {
+          await this.autoCurationService.onThirdPartyCollectionPublished(
+            dbCollection
+          )
+        } else {
+          // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)
+          // We should also consider deleteing Forum.router.ts
+          // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
+          // TODO: Should this be halting the response? Retries?
 
-        await this.forumService.upsertThirdPartyCollectionForumPost(
-          dbCollection,
-          result.items.slice(0, MAX_FORUM_ITEMS)
-        )
+          await this.forumService.upsertThirdPartyCollectionForumPost(
+            dbCollection,
+            result.items.slice(0, MAX_FORUM_ITEMS)
+          )
+        }
       } else {
         const dbItems = await Item.findOrderedByCollectionId(id)
         result = await this.service.publishDCLCollection(dbCollection, dbItems)
+
+        if (isAutoCurationEnabled) {
+          await this.autoCurationService.onStandardCollectionPublished(
+            result.collection,
+            eth_address,
+            typeof req.body?.txHash === 'string' ? req.body.txHash : null
+          )
+        }
       }
 
       return {

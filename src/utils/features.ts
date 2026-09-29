@@ -1,5 +1,7 @@
 import fetch from 'node-fetch'
 
+const REQUEST_TIMEOUT_MS = 5 * 1000
+
 export const isFeatureFlagEnabled = async (featureFlag: string) => {
   let isFeatureFlagEnabled = false
 
@@ -7,7 +9,8 @@ export const isFeatureFlagEnabled = async (featureFlag: string) => {
     const response = await fetch(
       // TODO: Provide via env?
       // TODO: Abstract this to be able to use a generic feature flag solution in servers.
-      'https://feature-flags.decentraland.org/builder.json'
+      'https://feature-flags.decentraland.org/builder.json',
+      { timeout: REQUEST_TIMEOUT_MS }
     )
 
     const json = await response.json()

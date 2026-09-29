@@ -2685,6 +2685,9 @@ describe('Collection router', () => {
                   created_at: expect.any(Date),
                   updated_at: expect.any(Date),
                   assignee: null,
+                  reviewed_by: null,
+                  rejection_reasons: null,
+                  rejection_message: null,
                 })
               })
           })

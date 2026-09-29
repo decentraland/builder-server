@@ -41,7 +41,10 @@ jest.mock('../ethereum/api/collection')
 jest.mock('./CollectionEvent/CollectionEvent.model')
 jest.mock('./CollectionCuration/CollectionCuration.model')
 jest.mock('./ccsClient')
-jest.mock('./slack')
+jest.mock('./slack', () => ({
+  ...jest.requireActual('./slack'),
+  notifyCurationSlack: jest.fn(),
+}))
 
 const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
 const mockSendValidation = sendValidation as jest.Mock
@@ -52,6 +55,7 @@ const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndTyp
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
 const mockFindStaleAiStarted = CollectionEvent.findStaleAiStarted as jest.Mock
+const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
 const mockCountSweepStarts = CollectionEvent.countSweepStartsSinceManualStart as jest.Mock
 const mockFindLatestCuration = CollectionCuration.findLatestByCollectionId as jest.Mock
 const mockCreateCuration = CollectionCuration.create as jest.Mock
@@ -129,10 +133,23 @@ describe('AutoCurationService', () => {
   })
 
   describe('when requesting a validation', () => {
+    let previousStart: CollectionEventAttributes
+
     beforeEach(() => {
       jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
+      previousStart = buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+        validationId: 'previousValidation',
+        trigger: 'publish',
+        itemIds: [item.id],
+      })
       mockFindCollection.mockResolvedValue(dbCollectionMock)
       mockFindEventsSince.mockResolvedValue([])
+      mockFindLatestEventByType.mockResolvedValue(previousStart)
+      mockFindVerdict.mockResolvedValue(
+        buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
+          validationId: 'previousValidation',
+        })
+      )
       mockFindLatestCuration.mockResolvedValue({
         id: 'curationId',
         status: CurationStatus.PENDING,
@@ -141,19 +158,52 @@ describe('AutoCurationService', () => {
       mockFindItemsByIds.mockResolvedValue([item])
     })
 
-    describe('and the latest event is a validation start', () => {
+    describe('and the latest validation start has no verdict yet', () => {
       beforeEach(() => {
-        mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED)
-        )
+        mockFindVerdict.mockResolvedValue(undefined)
       })
 
       it('should reject with a validation in progress error and not send anything', async () => {
         await expect(
           service.requestValidation(dbCollectionMock.id, ethAddress)
         ).rejects.toThrow(ValidationInProgressError)
+        expect(mockFindVerdict).toHaveBeenCalledWith(
+          dbCollectionMock.id,
+          'previousValidation'
+        )
         expect(mockSendValidation).not.toHaveBeenCalled()
         expect(mockRecordEvent).not.toHaveBeenCalled()
+      })
+
+      describe('and a curator was assigned after the start', () => {
+        beforeEach(() => {
+          mockFindLatestEvent.mockResolvedValue(
+            buildEvent(CollectionEventType.REVIEW_ASSIGNED, { assignee: 'x' })
+          )
+        })
+
+        it('should still reject with a validation in progress error', async () => {
+          await expect(
+            service.requestValidation(dbCollectionMock.id, ethAddress)
+          ).rejects.toThrow(ValidationInProgressError)
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+        })
+      })
+    })
+
+    describe('and the latest validation ended with an error verdict', () => {
+      beforeEach(() => {
+        mockFindVerdict.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+            validationId: 'previousValidation',
+          })
+        )
+      })
+
+      it('should start a new validation', async () => {
+        await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
       })
     })
 
@@ -223,18 +273,7 @@ describe('AutoCurationService', () => {
     })
 
     describe('and the latest curation is rejected', () => {
-      let previousStart: CollectionEventAttributes
-
       beforeEach(() => {
-        previousStart = buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
-          validationId: 'previousValidation',
-          trigger: 'publish',
-          itemIds: [item.id],
-        })
-        mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
-        )
-        mockFindLatestEventByType.mockResolvedValue(previousStart)
         mockFindLatestCuration.mockResolvedValue({
           id: 'curationId',
           status: CurationStatus.REJECTED,
@@ -371,6 +410,26 @@ describe('AutoCurationService', () => {
           expect.stringContaining('Please look again')
         )
       })
+
+      it('should escape Slack markup in the note and the collection name', async () => {
+        mockFindCollection.mockResolvedValue({
+          ...dbCollectionMock,
+          name: '<b>Hats</b> & co',
+        })
+
+        await service.appeal(
+          dbCollectionMock.id,
+          ethAddress,
+          '<!channel> look at <https://evil.example|Approve in Builder>'
+        )
+
+        const [text] = mockNotifySlack.mock.calls[0]
+        expect(text).toContain('&lt;b&gt;Hats&lt;/b&gt; &amp; co')
+        expect(text).toContain(
+          '&lt;!channel&gt; look at &lt;https://evil.example|Approve in Builder&gt;'
+        )
+        expect(text).not.toContain('<!channel>')
+      })
     })
   })
 
@@ -413,6 +472,27 @@ describe('AutoCurationService', () => {
 
       it('should ignore it without recording anything', async () => {
         await service.handleValidationResult(dbCollectionMock.id, result)
+
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockUpdateCuration).not.toHaveBeenCalled()
+        expect(mockNotifySlack).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and a verdict for the validation was already recorded', () => {
+      beforeEach(() => {
+        mockFindVerdict.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AI_PASSED, {
+            validationId: 'latestValidation',
+          })
+        )
+      })
+
+      it('should ignore the duplicate without recording or notifying', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, {
+          ...result,
+          verdict: 'rejected',
+        })
 
         expect(mockRecordEvent).not.toHaveBeenCalled()
         expect(mockUpdateCuration).not.toHaveBeenCalled()
@@ -566,6 +646,7 @@ describe('AutoCurationService', () => {
         local_content_hash: 'newHash',
       }
       mockFindCollection.mockResolvedValue(dbCollectionMock)
+      mockFindEventsSince.mockResolvedValue([])
       mockFindItemsByCollection.mockResolvedValue([unchangedItem, changedItem])
       mockFetchRemoteItems.mockResolvedValue([
         { ...itemFragmentMock, blockchainId: '0', contentHash: 'localHash' },
@@ -597,6 +678,61 @@ describe('AutoCurationService', () => {
           items: [expect.objectContaining({ itemId: changedItem.id })],
         })
       )
+    })
+
+    describe('and a validation is in progress', () => {
+      beforeEach(() => {
+        mockFindLatestEventByType.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            validationId: 'running',
+          })
+        )
+        mockFindVerdict.mockResolvedValue(undefined)
+      })
+
+      it('should record the changes without starting another validation', async () => {
+        await service.onChangesSubmitted(dbCollectionMock.id, ethAddress)
+
+        expect(mockRecordEvent).toHaveBeenCalledTimes(1)
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.CHANGES_SUBMITTED,
+          })
+        )
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the daily limit was reached', () => {
+      beforeEach(() => {
+        mockFindEventsSince.mockResolvedValue([
+          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+        ])
+      })
+
+      it('should record the changes without starting a validation', async () => {
+        await service.onChangesSubmitted(dbCollectionMock.id, ethAddress)
+
+        expect(mockRecordEvent).toHaveBeenCalledTimes(1)
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and fetching the on-chain items fails', () => {
+      beforeEach(() => {
+        mockFetchRemoteItems.mockRejectedValue(new Error('subgraph down'))
+      })
+
+      it('should resolve without throwing and record nothing', async () => {
+        await expect(
+          service.onChangesSubmitted(dbCollectionMock.id, ethAddress)
+        ).resolves.toBeUndefined()
+
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
     })
   })
 
@@ -690,7 +826,7 @@ describe('AutoCurationService', () => {
         describe('and the creator retries afterwards', () => {
           beforeEach(() => {
             mockFindCollection.mockResolvedValue(dbCollectionMock)
-            mockFindLatestEvent.mockResolvedValue(
+            mockFindVerdict.mockResolvedValue(
               buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
                 reason: 'sweep_exhausted',
                 validationId: 'lost',

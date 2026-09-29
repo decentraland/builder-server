@@ -665,6 +665,8 @@ describe('when handling a request', () => {
                   status: CurationStatus.APPROVED,
                   updated_at: expect.any(Date),
                   reviewed_by: 'ethaddress',
+                  rejection_reasons: null,
+                  rejection_message: null,
                 })
                 expect(updateItemSpy).toHaveBeenCalledWith(mockItem)
               })
@@ -677,6 +679,8 @@ describe('when handling a request', () => {
                   status: CurationStatus.APPROVED,
                   updated_at: expect.any(Date),
                   reviewed_by: 'ethaddress',
+                  rejection_reasons: null,
+                  rejection_message: null,
                 })
                 expect(updateItemSpy).not.toHaveBeenCalled()
               })
@@ -1428,13 +1432,15 @@ describe('when handling a request', () => {
         } as any
       })
 
-      it('should store the reviewer and record a review.approved event', async () => {
+      it('should store the reviewer, clear the rejection fields and record a review.approved event', async () => {
         await router.updateCollectionCuration(req)
 
         expect(updateSpy).toHaveBeenCalledWith('curationId', {
           status: CurationStatus.APPROVED,
           updated_at: expect.any(Date),
           reviewed_by: 'ethaddress',
+          rejection_reasons: null,
+          rejection_message: null,
         })
         expect(mockRecordEvent).toHaveBeenCalledWith({
           collection_id: 'some id',

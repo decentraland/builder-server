@@ -10,6 +10,7 @@ import { dbCollectionMock } from '../../spec/mocks/collections'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
 import { isCommitteeMember } from '../Committee'
+import { isFeatureFlagEnabled } from '../utils/features'
 import { CollectionCuration } from './CollectionCuration'
 import {
   CollectionEvent,
@@ -41,6 +42,8 @@ const server = supertest(app.getApp())
 const callbackToken = 'callback-token-example123'
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
+const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
+const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
 const mockRecordEvent = CollectionEvent.record as jest.Mock
 const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Mock
 const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndType as jest.Mock
@@ -66,8 +69,61 @@ function buildEvent(
 describe('AutoCuration router', () => {
   let url: string
 
+  beforeEach(() => {
+    mockIsFeatureFlagEnabled.mockResolvedValue(true)
+  })
+
   afterEach(() => {
     jest.resetAllMocks()
+  })
+
+  describe('when the auto curation flag is off', () => {
+    beforeEach(() => {
+      mockIsFeatureFlagEnabled.mockResolvedValue(false)
+      process.env.BUILDER_CALLBACK_TOKEN = callbackToken
+      ;(Collection.findOne as jest.Mock).mockResolvedValue(dbCollectionMock)
+    })
+
+    afterEach(() => {
+      delete process.env.BUILDER_CALLBACK_TOKEN
+    })
+
+    it('should answer 404 on the validation request', () => {
+      url = `/collections/${dbCollectionMock.id}/validations`
+      return server
+        .post(buildURL(url))
+        .set(createAuthHeaders('post', url))
+        .expect(404)
+        .then(() => expect(CollectionCuration.create).not.toHaveBeenCalled())
+    })
+
+    it('should answer 404 on the appeal', () => {
+      url = `/collections/${dbCollectionMock.id}/curation/appeal`
+      return server
+        .post(buildURL(url))
+        .set(createAuthHeaders('post', url))
+        .send({ note: 'Please' })
+        .expect(404)
+        .then(() => expect(CollectionCuration.create).not.toHaveBeenCalled())
+    })
+
+    it('should answer 404 on the events', () => {
+      url = `/collections/${dbCollectionMock.id}/events`
+      return server
+        .get(buildURL(url))
+        .set(createAuthHeaders('get', url))
+        .expect(404)
+    })
+
+    it('should answer 404 on the validator callback', () => {
+      url = `/collections/${dbCollectionMock.id}/validation-result`
+      return server
+        .post(buildURL(url))
+        .set('Authorization', `Bearer ${callbackToken}`)
+        .send({ validationId: 'x', verdict: 'passed', items: [] })
+        .expect(404)
+        .then(() => expect(mockRecordEvent).not.toHaveBeenCalled())
+    })
   })
 
   describe('when receiving a validation result', () => {
@@ -296,9 +352,12 @@ describe('AutoCuration router', () => {
 
     describe('and a validation is in progress', () => {
       beforeEach(() => {
-        mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED)
+        mockFindLatestEventByType.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            validationId: 'running',
+          })
         )
+        mockFindVerdict.mockResolvedValue(undefined)
       })
 
       it('should respond with a 409', () => {
@@ -319,9 +378,7 @@ describe('AutoCuration router', () => {
 
     describe('and the daily limit was reached', () => {
       beforeEach(() => {
-        mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
-        )
+        mockFindLatestEventByType.mockResolvedValue(undefined)
         mockFindEventsSince.mockResolvedValue([
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED),

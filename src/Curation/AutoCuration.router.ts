@@ -7,6 +7,7 @@ import { asyncHandler } from '../common/asyncHandler'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import {
   AuthRequest,
+  guardAsync,
   withAuthentication,
   withModelAuthorization,
   withModelExists,
@@ -75,6 +76,18 @@ export class AutoCurationRouter extends Router {
   public collectionService = new CollectionService()
 
   mount() {
+    // With the flag off none of these routes exist, so the legacy flow stays untouched.
+    const withAutoCurationEnabled = guardAsync(
+      async (_: Request, res: Response, next: NextFunction) => {
+        if (await this.service.isEnabled()) {
+          next()
+        } else {
+          res
+            .status(STATUS_CODES.notFound)
+            .json(server.sendError({}, 'Not found'))
+        }
+      }
+    )
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(
       Collection,
@@ -90,6 +103,7 @@ export class AutoCurationRouter extends Router {
     this.router.post(
       '/collections/:id/validations',
       withCors,
+      withAutoCurationEnabled,
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,
@@ -99,6 +113,7 @@ export class AutoCurationRouter extends Router {
     this.router.post(
       '/collections/:id/curation/appeal',
       withCors,
+      withAutoCurationEnabled,
       withAuthentication,
       withCollectionExists,
       withCollectionAuthorization,
@@ -109,6 +124,7 @@ export class AutoCurationRouter extends Router {
     this.router.get(
       '/collections/:id/events',
       withCors,
+      withAutoCurationEnabled,
       withAuthentication,
       withCollectionExists,
       server.handleRequest(this.getEvents)
@@ -116,6 +132,7 @@ export class AutoCurationRouter extends Router {
 
     this.router.post(
       '/collections/:id/validation-result',
+      withAutoCurationEnabled,
       withCallbackToken,
       withCollectionExists,
       withSchemaValidation(validationResultSchema),

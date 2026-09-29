@@ -458,7 +458,11 @@ export class CurationRouter extends Router {
     const { status, rejectionReasons, rejectionMessage } = curationJSON
 
     if (status === CurationStatus.APPROVED) {
-      return { reviewed_by: ethAddress.toLowerCase() }
+      return {
+        reviewed_by: ethAddress.toLowerCase(),
+        rejection_reasons: null,
+        rejection_message: null,
+      }
     }
 
     if (status !== CurationStatus.REJECTED) {

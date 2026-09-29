@@ -19,10 +19,11 @@ import {
   CollectionEventActor,
   CollectionEventAttributes,
   CollectionEventType,
+  SWEEP_EXHAUSTED_REASON,
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
 import { sendValidation } from './ccsClient'
-import { notifyCurationSlack } from './slack'
+import { escapeSlackText, notifyCurationSlack } from './slack'
 import {
   CollectionEventsPage,
   MAX_VALIDATION_ATTEMPTS_PER_DAY,
@@ -148,49 +149,70 @@ export class AutoCurationService {
     }
   }
 
-  /** Validates only the items whose local hash differs from the one on chain. */
+  /** Changes hook. Validates only the items whose local hash differs from the one on chain. Never throws: the curation already exists. */
   async onChangesSubmitted(
     collectionId: string,
     ethAddress: string
   ): Promise<void> {
-    const collection = await Collection.findOne<CollectionAttributes>(
-      collectionId
-    )
-    if (
-      !collection ||
-      isTPCollection(collection) ||
-      !collection.contract_address
-    ) {
-      return
-    }
+    try {
+      const collection = await Collection.findOne<CollectionAttributes>(
+        collectionId
+      )
+      if (
+        !collection ||
+        isTPCollection(collection) ||
+        !collection.contract_address
+      ) {
+        return
+      }
 
-    const [items, remoteItems] = await Promise.all([
-      Item.findOrderedByCollectionId(collectionId),
-      collectionAPI.fetchItemsByContractAddress(collection.contract_address),
-    ])
-    const remoteContentHashes = new Map(
-      remoteItems.map((remoteItem) => [
-        remoteItem.blockchainId,
-        remoteItem.contentHash,
+      const [items, remoteItems] = await Promise.all([
+        Item.findOrderedByCollectionId(collectionId),
+        collectionAPI.fetchItemsByContractAddress(collection.contract_address),
       ])
-    )
-    const changedItems = items.filter(
-      (item) =>
-        item.blockchain_item_id !== null &&
-        remoteContentHashes.get(item.blockchain_item_id) !==
-          item.local_content_hash
-    )
+      const remoteContentHashes = new Map(
+        remoteItems.map((remoteItem) => [
+          remoteItem.blockchainId,
+          remoteItem.contentHash,
+        ])
+      )
+      const changedItems = items.filter(
+        (item) =>
+          item.blockchain_item_id !== null &&
+          remoteContentHashes.get(item.blockchain_item_id) !==
+            item.local_content_hash
+      )
 
-    await CollectionEvent.record({
-      collection_id: collectionId,
-      type: CollectionEventType.CHANGES_SUBMITTED,
-      actor: CollectionEventActor.CREATOR,
-      actor_address: ethAddress.toLowerCase(),
-      payload: { itemIds: changedItems.map((item) => item.id) },
-    })
+      await CollectionEvent.record({
+        collection_id: collectionId,
+        type: CollectionEventType.CHANGES_SUBMITTED,
+        actor: CollectionEventActor.CREATOR,
+        actor_address: ethAddress.toLowerCase(),
+        payload: { itemIds: changedItems.map((item) => item.id) },
+      })
 
-    if (changedItems.length > 0) {
+      if (changedItems.length === 0) {
+        return
+      }
+      if (await this.isValidationInProgress(collectionId)) {
+        console.warn(
+          `Not validating the changes of collection ${collectionId}: a validation is in progress`
+        )
+        return
+      }
+      if (await this.getDailyLimitRetryAt(collectionId)) {
+        console.warn(
+          `Not validating the changes of collection ${collectionId}: the daily limit was reached`
+        )
+        return
+      }
+
       await this.startValidation(collection, changedItems, 'changes')
+    } catch (error) {
+      console.error(
+        `Error starting the validation of the changes of collection ${collectionId}`,
+        (error as Error).message
+      )
     }
   }
 
@@ -200,25 +222,13 @@ export class AutoCurationService {
   ): Promise<CollectionEventAttributes> {
     const collection = await this.getStandardCollection(collectionId)
 
-    const latestEvent = await CollectionEvent.findLatestByCollectionId(
-      collectionId
-    )
-    if (latestEvent?.type === CollectionEventType.REVIEW_AI_STARTED) {
+    if (await this.isValidationInProgress(collectionId)) {
       throw new ValidationInProgressError(collectionId)
     }
 
-    const startOfToday = getStartOfTodayUTC()
-    const todaysEvents = await CollectionEvent.findByCollectionIdSince(
-      collectionId,
-      startOfToday
-    )
-    if (
-      countValidationAttempts(todaysEvents) >= MAX_VALIDATION_ATTEMPTS_PER_DAY
-    ) {
-      throw new ValidationLimitReachedError(
-        collectionId,
-        new Date(startOfToday.getTime() + DAY_MS)
-      )
+    const retryAt = await this.getDailyLimitRetryAt(collectionId)
+    if (retryAt) {
+      throw new ValidationLimitReachedError(collectionId, retryAt)
     }
 
     const latestCuration = await CollectionCuration.findLatestByCollectionId(
@@ -276,13 +286,13 @@ export class AutoCurationService {
       `Human review requested for collection ${describeCollection(
         collection,
         collectionId
-      )}.\nNote: ${note}`
+      )}.\nNote: ${escapeSlackText(note)}`
     )
 
     return curation
   }
 
-  /** Applies a validator callback. Results for anything but the latest validation are ignored. */
+  /** Applies a validator callback. Results for anything but the latest validation, or already recorded, are ignored. */
   async handleValidationResult(
     collectionId: string,
     result: ValidationResult
@@ -297,6 +307,17 @@ export class AutoCurationService {
     ) {
       console.warn(
         `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it is not the latest validation`
+      )
+      return
+    }
+    if (
+      await CollectionEvent.findVerdictByValidationId(
+        collectionId,
+        result.validationId
+      )
+    ) {
+      console.warn(
+        `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
       )
       return
     }
@@ -494,13 +515,44 @@ export class AutoCurationService {
       type: CollectionEventType.REVIEW_AI_ERROR,
       actor: CollectionEventActor.VALIDATOR,
       actor_address: null,
-      payload: { reason: 'sweep_exhausted', validationId },
+      payload: { reason: SWEEP_EXHAUSTED_REASON, validationId },
     })
     await notifyCurationSlack(
       `AI review of collection ${describeCollection(
         collection
       )} got no verdict after ${MAX_SWEEP_RESENDS} re-sends (validation ${validationId}). It needs a curator or a creator retry.`
     )
+  }
+
+  /** A validation is in progress while its latest start has no verdict, whatever was recorded after it. */
+  private async isValidationInProgress(collectionId: string): Promise<boolean> {
+    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      CollectionEventType.REVIEW_AI_STARTED
+    )
+    if (!latestStart) {
+      return false
+    }
+    const verdict = await CollectionEvent.findVerdictByValidationId(
+      collectionId,
+      latestStart.payload.validationId as string
+    )
+    return !verdict
+  }
+
+  /** Returns when validations are allowed again if the daily limit was reached, null otherwise. */
+  private async getDailyLimitRetryAt(
+    collectionId: string
+  ): Promise<Date | null> {
+    const startOfToday = getStartOfTodayUTC()
+    const todaysEvents = await CollectionEvent.findByCollectionIdSince(
+      collectionId,
+      startOfToday
+    )
+    return countValidationAttempts(todaysEvents) >=
+      MAX_VALIDATION_ATTEMPTS_PER_DAY
+      ? new Date(startOfToday.getTime() + DAY_MS)
+      : null
   }
 
   /** A re-run validates the same items the previous run did, or everything if there is no previous run. */
@@ -550,6 +602,6 @@ function describeCollection(
   collectionId = collection?.id ?? ''
 ): string {
   const builderUrl = env.get('BUILDER_URL', '')
-  const name = collection ? `"${collection.name}" ` : ''
+  const name = collection ? `"${escapeSlackText(collection.name)}" ` : ''
   return `${name}(${collectionId}) ${builderUrl}/collections/${collectionId}`
 }

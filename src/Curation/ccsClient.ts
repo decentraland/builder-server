@@ -2,6 +2,8 @@ import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
 import { ValidationManifest } from './AutoCuration.types'
 
+const REQUEST_TIMEOUT_MS = 10 * 1000
+
 export async function sendValidation(
   manifest: ValidationManifest
 ): Promise<void> {
@@ -19,8 +21,10 @@ export async function sendValidation(
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(manifest),
+      timeout: REQUEST_TIMEOUT_MS,
     }
   )
+  await response.text()
 
   if (response.status !== 202) {
     throw new Error(

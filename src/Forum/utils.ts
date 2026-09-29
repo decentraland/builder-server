@@ -24,7 +24,7 @@ function buildForumPostBody(
   ${items.map(toRawItem).join('\n\n')}`
 }
 
-export function buildCollectionForumPost(
+export function buildThirdPartyCollectionForumPost(
   collection: CollectionAttributes,
   items: FullItem[]
 ): ForumPost {

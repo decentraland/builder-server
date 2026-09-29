@@ -49,7 +49,7 @@ export async function createPost(
 
   if (!response.ok || result.errors !== undefined) {
     throw new Error(
-      `Error creating the post ${JSON.stringify(post)}: ${
+      `Error creating the post: ${
         result.errors?.join(', ') ?? response.statusText
       }`
     )
@@ -95,8 +95,11 @@ export async function getPost(id: number): Promise<ForumPost> {
     throw new Error(`Error fetching the post ${id}: ${response.statusText}`)
   }
 
-  const result: ForumPost = await response.json()
-  return result
+  try {
+    return await response.json()
+  } catch {
+    throw new Error(`Error fetching the post ${id}: invalid response body`)
+  }
 }
 
 export async function updatePost(

@@ -25,7 +25,7 @@ import { peerAPI } from '../ethereum/api/peer'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { createPost, getPost, updatePost } from './client'
 import {
-  buildCollectionForumPost,
+  buildThirdPartyCollectionForumPost,
   buildStandardCollectionForumPost,
   shortenAddress,
 } from './utils'
@@ -89,7 +89,7 @@ describe('Forum router', () => {
 
       describe('and the forum post is being created for the first time', () => {
         beforeEach(() => {
-          ;;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
             dbTPCollection
           )
           ;(createPost as jest.Mock).mockResolvedValueOnce({
@@ -105,7 +105,7 @@ describe('Forum router', () => {
             .send({})
             .then(() => {
               expect(createPost).toHaveBeenCalledWith(
-                buildCollectionForumPost(
+                buildThirdPartyCollectionForumPost(
                   dbTPCollection,
                   items
                     .slice(0, MAX_FORUM_ITEMS)
@@ -143,7 +143,7 @@ describe('Forum router', () => {
 
       describe('and the collection already has a forum id', () => {
         beforeEach(() => {
-         ; ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
             ...dbTPCollection,
             forum_id: 1,
           })
@@ -196,8 +196,8 @@ describe('Forum router', () => {
 
       describe('and the collection is published', () => {
         beforeEach(() => {
-        ;(CollectionService.prototype
-            .isDCLPublished as jest.Mock   ).mockResolvedValue(true)
+          ;(CollectionService.prototype
+            .isDCLPublished as jest.Mock).mockResolvedValue(true)
           ;(createPost as jest.Mock).mockResolvedValueOnce({
             id: forumId,
             link: forumLink,
@@ -306,8 +306,8 @@ describe('Forum router', () => {
 
       describe('and the collection is not published', () => {
         beforeEach(() => {
-       ;(CollectionService.prototype
-            .isDCLPublished as jest.Mock    ).mockResolvedValue(false)
+          ;(CollectionService.prototype
+            .isDCLPublished as jest.Mock).mockResolvedValue(false)
         })
 
         it('should respond with a 401 and not post to the forum', () => {
@@ -324,8 +324,8 @@ describe('Forum router', () => {
 
       describe('and the collection already has a forum post', () => {
         beforeEach(() => {
-      ;(CollectionService.prototype
-            .isDCLPublished as jest.Mock     ).mockResolvedValue(true)
+          ;(CollectionService.prototype
+            .isDCLPublished as jest.Mock).mockResolvedValue(true)
           ;(Collection.findOne as jest.Mock).mockResolvedValue({
             ...dbCollection,
             forum_link: 'https://forum.com/some/forum/link',

@@ -6,7 +6,7 @@ import {
 import { FullItem } from '../Item'
 import { createPost, getPost, updatePost } from './client'
 import {
-  buildCollectionForumPost,
+  buildThirdPartyCollectionForumPost,
   buildCollectionForumUpdateReply,
   buildStandardCollectionForumPost,
 } from './utils'
@@ -17,7 +17,7 @@ export class ForumService {
     collection: CollectionAttributes,
     items: FullItem[],
     createdBy: string
-  ): Promise<string | undefined> {
+  ): Promise<string> {
     const result = await createPost(
       buildStandardCollectionForumPost(collection, items, createdBy)
     )
@@ -31,7 +31,7 @@ export class ForumService {
   async upsertThirdPartyCollectionForumPost(
     collection: ThirdPartyCollectionAttributes,
     items: FullItem[]
-  ): Promise<string | undefined> {
+  ): Promise<string> {
     let result: UpsertPostResult
     if (collection.forum_id) {
       const postData = await getPost(collection.forum_id)
@@ -40,7 +40,9 @@ export class ForumService {
         buildCollectionForumUpdateReply(postData.raw, items)
       )
     } else {
-      result = await createPost(buildCollectionForumPost(collection, items))
+      result = await createPost(
+        buildThirdPartyCollectionForumPost(collection, items)
+      )
       const { id: postId, link } = result
       await Collection.update<CollectionAttributes>(
         { forum_link: link, forum_id: postId },

@@ -1,6 +1,12 @@
 import fetch, { Response } from 'node-fetch'
 import { ForumPost } from './Forum.types'
-import { createAssigneeEventPost, createPost, removeEmojis } from './client'
+import {
+  createAssigneeEventPost,
+  createPost,
+  getPost,
+  removeEmojis,
+  updatePost,
+} from './client'
 
 jest.mock('node-fetch')
 jest.mock('decentraland-commons')
@@ -101,6 +107,82 @@ describe('when creating an assignee event post', () => {
       await expect(createAssigneeEventPost(10, 'A reply')).rejects.toThrow(
         'Error creating the assignee post for topic 10'
       )
+    })
+  })
+})
+
+describe('when fetching a forum post', () => {
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  describe('and the forum responds with a non-2xx status', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 404,
+        statusText: 'Not Found',
+      } as Response)
+    })
+
+    it('should reject with the fetch error', async () => {
+      await expect(getPost(42)).rejects.toThrow('Error fetching the post 42')
+    })
+  })
+
+  describe('and the forum responds with a non-JSON body', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValueOnce(({
+        ok: true,
+        status: 200,
+        json: async () => {
+          throw new SyntaxError('Unexpected token < in JSON')
+        },
+      } as unknown) as Response)
+    })
+
+    it('should reject with an invalid response body error', async () => {
+      await expect(getPost(42)).rejects.toThrow(
+        'Error fetching the post 42: invalid response body'
+      )
+    })
+  })
+})
+
+describe('when updating a forum post', () => {
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  describe('and the forum responds with a non-2xx status without an errors array', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 503,
+        statusText: 'Service Unavailable',
+        text: async () => JSON.stringify({ error_type: 'unavailable' }),
+      } as Response)
+    })
+
+    it('should reject with the update error', async () => {
+      await expect(updatePost(7, 'new body')).rejects.toThrow(
+        'Error updating the post 7'
+      )
+    })
+  })
+
+  describe('and the forum responds with a non-JSON body', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 502,
+        statusText: 'Bad Gateway',
+        text: async () => '<html>Bad Gateway</html>',
+      } as Response)
+    })
+
+    it('should reject with the response body instead of throwing a parse error', async () => {
+      await expect(updatePost(7, 'new body')).rejects.toThrow('Bad Gateway')
     })
   })
 })

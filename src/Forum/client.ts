@@ -1,5 +1,6 @@
 import fetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
+import { DuplicatedForumPostTitleError } from './Forum.errors'
 import {
   CreateResponse,
   CreateSuccess,
@@ -11,6 +12,8 @@ const FORUM_URL = env.get('FORUM_URL', '')
 const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
 const FORUM_API_USERNAME = env.get('FORUM_API_USERNAME', '')
 const FORUM_CATEGORY = env.get('FORUM_CATEGORY')
+const FORUM_REQUEST_TIMEOUT_MS = 10000
+const DUPLICATED_TITLE_ERROR = 'Title has already been used'
 
 const postLink = ({ topic_slug, topic_id }: CreateSuccess) =>
   `${FORUM_URL}/t/${topic_slug}/${topic_id}`
@@ -37,6 +40,7 @@ export async function createPost(
   }
 
   const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Content-Type': 'application/json',
@@ -46,6 +50,10 @@ export async function createPost(
   })
 
   const result = await readForumResponse(response)
+
+  if (result.errors?.some((error) => error.includes(DUPLICATED_TITLE_ERROR))) {
+    throw new DuplicatedForumPostTitleError(forumPost.title)
+  }
 
   if (!response.ok || result.errors !== undefined) {
     throw new Error(
@@ -63,6 +71,7 @@ export async function createAssigneeEventPost(
   raw: string
 ): Promise<void> {
   const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Content-Type': 'application/json',
@@ -82,8 +91,11 @@ export async function createAssigneeEventPost(
   }
 }
 
-export async function getPost(id: number): Promise<ForumPost> {
+export async function getPost(
+  id: number
+): Promise<Pick<ForumPost, 'raw' | 'topic_id'>> {
   const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Api-Username': FORUM_API_USERNAME,
@@ -107,6 +119,7 @@ export async function updatePost(
   rawPost: ForumPost['raw']
 ): Promise<UpsertPostResult> {
   const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Api-Username': FORUM_API_USERNAME,

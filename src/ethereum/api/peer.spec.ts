@@ -56,12 +56,47 @@ describe('when getting the profile name for an address', () => {
   })
 
   describe('and the request responds with a non-OK status', () => {
+    let cancelBody: jest.Mock
+
     beforeEach(() => {
-      fetchMock.mockResolvedValueOnce(({ ok: false } as unknown) as Response)
+      cancelBody = jest.fn().mockResolvedValue(undefined)
+      fetchMock.mockResolvedValueOnce(({
+        ok: false,
+        body: { cancel: cancelBody },
+      } as unknown) as Response)
     })
 
     it('should return undefined', async () => {
       expect(await peerAPI.getProfileName(address)).toBeUndefined()
+    })
+
+    it('should release the response body', async () => {
+      await peerAPI.getProfileName(address)
+      expect(cancelBody).toHaveBeenCalled()
+    })
+  })
+
+  describe('and the request does not respond before the timeout', () => {
+    beforeEach(() => {
+      jest.useFakeTimers()
+      fetchMock.mockImplementationOnce(
+        (_url: string, init: { signal: AbortSignal }) =>
+          new Promise((_resolve, reject) => {
+            init.signal.addEventListener('abort', () =>
+              reject(new Error('aborted'))
+            )
+          })
+      )
+    })
+
+    afterEach(() => {
+      jest.useRealTimers()
+    })
+
+    it('should abort the request and return undefined', async () => {
+      const profileName = peerAPI.getProfileName(address)
+      jest.advanceTimersByTime(10000)
+      expect(await profileName).toBeUndefined()
     })
   })
 

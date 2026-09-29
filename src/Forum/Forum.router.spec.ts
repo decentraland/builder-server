@@ -24,7 +24,10 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { peerAPI } from '../ethereum/api/peer'
 import { MAX_FORUM_ITEMS } from '../Item/utils'
 import { createPost, getPost, updatePost } from './client'
+import { DuplicatedForumPostTitleError } from './Forum.errors'
+import { ForumPost } from './Forum.types'
 import {
+  buildCollectionForumUpdateReply,
   buildThirdPartyCollectionForumPost,
   buildStandardCollectionForumPost,
   shortenAddress,
@@ -148,7 +151,7 @@ describe('Forum router', () => {
             forum_id: 1,
           })
           ;(getPost as jest.Mock).mockResolvedValueOnce({
-            title: 'The title of the post',
+            topic_id: 10,
             raw: 'The raw text from the post',
           })
           ;(updatePost as jest.Mock).mockResolvedValueOnce({
@@ -157,14 +160,35 @@ describe('Forum router', () => {
           })
         })
 
-        it('should update the existing forum post instead of creating a new one', () => {
+        it('should append the new items to the existing forum post', () => {
           return server
             .post(buildURL(url))
             .set(authHeaders)
             .send({})
             .expect(200)
             .then(() => {
-              expect(updatePost).toHaveBeenCalledWith(1, expect.any(String))
+              expect(updatePost).toHaveBeenCalledWith(
+                1,
+                buildCollectionForumUpdateReply(
+                  'The raw text from the post',
+                  items.slice(0, MAX_FORUM_ITEMS).map((item) =>
+                    Bridge.toFullItem(item, {
+                      ...dbTPCollection,
+                      forum_id: 1,
+                    })
+                  )
+                )
+              )
+            })
+        })
+
+        it('should not create a new forum post', () => {
+          return server
+            .post(buildURL(url))
+            .set(authHeaders)
+            .send({})
+            .expect(200)
+            .then(() => {
               expect(createPost).not.toHaveBeenCalled()
             })
         })
@@ -278,6 +302,78 @@ describe('Forum router', () => {
           })
         })
 
+        describe('and the forum post title is already in use', () => {
+          let basePost: Pick<ForumPost, 'title' | 'raw'>
+
+          beforeEach(() => {
+            jest
+              .spyOn(peerAPI, 'getProfileName')
+              .mockResolvedValue('AvatarName')
+            basePost = buildStandardCollectionForumPost(
+              dbCollection,
+              items
+                .slice(0, MAX_FORUM_ITEMS)
+                .map((item) => Bridge.toFullItem(item, dbCollection)),
+              'AvatarName'
+            )
+            ;(createPost as jest.Mock)
+              .mockReset()
+              .mockRejectedValueOnce(
+                new DuplicatedForumPostTitleError(basePost.title)
+              )
+              .mockResolvedValueOnce({ id: forumId, link: forumLink })
+          })
+
+          it('should retry with the shortened contract address appended to the title', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then(() => {
+                expect(createPost).toHaveBeenLastCalledWith({
+                  ...basePost,
+                  title: `${basePost.title} ${shortenAddress(
+                    dbCollection.contract_address!
+                  )}`,
+                })
+              })
+          })
+
+          it('should return the link of the retried forum post', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({})
+              .expect(200)
+              .then((response: any) => {
+                expect(response.body).toEqual({ data: forumLink, ok: true })
+              })
+          })
+
+          describe('and the retried title is also in use', () => {
+            beforeEach(() => {
+              const duplicatedTitleError = new DuplicatedForumPostTitleError(
+                basePost.title
+              )
+              ;(createPost as jest.Mock)
+                .mockReset()
+                .mockRejectedValue(duplicatedTitleError)
+            })
+
+            it('should respond with a 500 after a single retry', () => {
+              return server
+                .post(buildURL(url))
+                .set(authHeaders)
+                .send({})
+                .expect(500)
+                .then(() => {
+                  expect(createPost).toHaveBeenCalledTimes(2)
+                })
+            })
+          })
+        })
+
         describe('and the profile has no avatar name', () => {
           beforeEach(() => {
             jest.spyOn(peerAPI, 'getProfileName').mockResolvedValue(undefined)
@@ -310,12 +406,12 @@ describe('Forum router', () => {
             .isDCLPublished as jest.Mock).mockResolvedValue(false)
         })
 
-        it('should respond with a 401 and not post to the forum', () => {
+        it('should respond with a 409 and not post to the forum', () => {
           return server
             .post(buildURL(url))
             .set(authHeaders)
             .send({})
-            .expect(401)
+            .expect(409)
             .then(() => {
               expect(createPost).not.toHaveBeenCalled()
             })

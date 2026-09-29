@@ -81,15 +81,13 @@ export class ForumRouter extends Router {
         throw new HTTPError(
           'The collection is not published',
           { id: collectionId },
-          STATUS_CODES.unauthorized
+          STATUS_CODES.conflict
         )
       }
     }
 
     if (collection.forum_link) {
-      this.logger.warn(
-        `Forum post already exists for ${collectionId}, returning the existing link`
-      )
+      this.logger.warn(`Forum post already exists for ${collectionId}`)
       throw new HTTPError(
         'Forum post already exists',
         { id: collectionId, forum_link: collection.forum_link },

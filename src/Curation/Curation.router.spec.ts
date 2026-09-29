@@ -1280,6 +1280,49 @@ describe('when handling a request', () => {
           ).rejects.toThrow('Invalid forum post')
         })
       })
+
+      describe('and the forum post content exceeds the maximum length', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id', forumPost: { raw: 'a'.repeat(10001) } },
+          } as any
+        })
+
+        it('should reject with an invalid forum post message', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('Invalid forum post')
+        })
+      })
+
+      describe('and the collection does not exist', () => {
+        beforeEach(() => {
+          jest.spyOn(Collection, 'findOne').mockResolvedValue(undefined)
+        })
+
+        it('should reject with a not found message', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('Collection not found')
+        })
+      })
+
+      describe('and the forum rejects the assignee post', () => {
+        beforeEach(() => {
+          mockCreateAssigneeEventPost.mockRejectedValueOnce(
+            new Error(
+              'Error creating the assignee post for topic 30: Forbidden'
+            )
+          )
+        })
+
+        it('should reject with the forum error', async () => {
+          await expect(
+            router.createCurationNewAssigneePost(req)
+          ).rejects.toThrow('Error creating the assignee post for topic 30')
+        })
+      })
     })
   })
 })

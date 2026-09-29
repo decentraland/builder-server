@@ -157,6 +157,7 @@ export class PeerAPI {
         signal: controller.signal,
       })
       if (!response.ok) {
+        await response.body?.cancel()
         return undefined
       }
       const data = await response.json()

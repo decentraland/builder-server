@@ -5,12 +5,14 @@ import {
 } from '../Collection'
 import { FullItem } from '../Item'
 import { createPost, getPost, updatePost } from './client'
+import { DuplicatedForumPostTitleError } from './Forum.errors'
 import {
   buildThirdPartyCollectionForumPost,
   buildCollectionForumUpdateReply,
   buildStandardCollectionForumPost,
+  shortenAddress,
 } from './utils'
-import { UpsertPostResult } from './Forum.types'
+import { ForumPost, UpsertPostResult } from './Forum.types'
 
 export class ForumService {
   async upsertStandardCollectionForumPost(
@@ -18,8 +20,9 @@ export class ForumService {
     items: FullItem[],
     createdBy: string
   ): Promise<string> {
-    const result = await createPost(
-      buildStandardCollectionForumPost(collection, items, createdBy)
+    const result = await this.createPostWithUniqueTitle(
+      buildStandardCollectionForumPost(collection, items, createdBy),
+      collection.contract_address
     )
     await Collection.update<CollectionAttributes>(
       { forum_link: result.link, forum_id: result.id },
@@ -50,5 +53,25 @@ export class ForumService {
       )
     }
     return result.link
+  }
+
+  private async createPostWithUniqueTitle(
+    post: Pick<ForumPost, 'title' | 'raw'>,
+    contractAddress: string | null
+  ): Promise<UpsertPostResult> {
+    try {
+      return await createPost(post)
+    } catch (error) {
+      if (
+        !(error instanceof DuplicatedForumPostTitleError) ||
+        !contractAddress
+      ) {
+        throw error
+      }
+      return createPost({
+        ...post,
+        title: `${post.title} ${shortenAddress(contractAddress)}`,
+      })
+    }
   }
 }

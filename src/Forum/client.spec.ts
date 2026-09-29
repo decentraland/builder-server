@@ -1,4 +1,5 @@
 import fetch, { Response } from 'node-fetch'
+import { DuplicatedForumPostTitleError } from './Forum.errors'
 import { ForumPost } from './Forum.types'
 import {
   createAssigneeEventPost,
@@ -84,6 +85,32 @@ describe('when creating a forum post', () => {
 
     it('should reject with the response body instead of throwing a parse error', async () => {
       await expect(createPost(post)).rejects.toThrow('Bad Gateway')
+    })
+  })
+
+  describe('and the forum rejects the title as already used', () => {
+    beforeEach(() => {
+      mockFetch.mockResolvedValueOnce({
+        ok: false,
+        status: 422,
+        statusText: 'Unprocessable Entity',
+        text: async () =>
+          JSON.stringify({
+            action: 'create_post',
+            errors: ['Title has already been used'],
+          }),
+      } as Response)
+    })
+
+    it('should reject with a duplicated title error', async () => {
+      await expect(createPost(post)).rejects.toBeInstanceOf(
+        DuplicatedForumPostTitleError
+      )
+    })
+
+    it('should reject without the forum message the builder retries on', async () => {
+      const error = await createPost(post).catch((reason) => reason)
+      expect(error.message).not.toContain('Title has already been used')
     })
   })
 })

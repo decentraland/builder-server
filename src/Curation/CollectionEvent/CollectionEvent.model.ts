@@ -78,6 +78,26 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         OFFSET ${offset}`)
   }
 
+  /** Counts sweep re-sends since the last validation started by a publish, retry or change. */
+  static async countSweepStartsSinceManualStart(
+    collectionId: string
+  ): Promise<number> {
+    const counts = await this.query<{ count: string }>(SQL`
+      SELECT COUNT(*) AS count
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ${collectionId}
+          AND type = ${CollectionEventType.REVIEW_AI_STARTED}
+          AND payload->>'trigger' = 'sweep'
+          AND created_at > COALESCE((
+            SELECT MAX(created_at)
+              FROM ${raw(this.tableName)}
+              WHERE collection_id = ${collectionId}
+                AND type = ${CollectionEventType.REVIEW_AI_STARTED}
+                AND payload->>'trigger' <> 'sweep'
+          ), '-infinity')`)
+    return Number(counts[0]?.count ?? 0)
+  }
+
   static findStaleAiStarted(
     olderThan: Date
   ): Promise<CollectionEventAttributes[]> {

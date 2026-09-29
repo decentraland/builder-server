@@ -30,6 +30,7 @@ import {
   AutoCurationService,
   countValidationAttempts,
   getStartOfTodayUTC,
+  MAX_SWEEP_RESENDS,
   VALIDATOR_REVIEWER,
 } from './AutoCuration.service'
 
@@ -51,6 +52,7 @@ const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndTyp
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
 const mockFindStaleAiStarted = CollectionEvent.findStaleAiStarted as jest.Mock
+const mockCountSweepStarts = CollectionEvent.countSweepStartsSinceManualStart as jest.Mock
 const mockFindLatestCuration = CollectionCuration.findLatestByCollectionId as jest.Mock
 const mockCreateCuration = CollectionCuration.create as jest.Mock
 const mockUpdateCuration = CollectionCuration.update as jest.Mock
@@ -628,6 +630,7 @@ describe('AutoCurationService', () => {
     describe('and the feature flag is on', () => {
       beforeEach(() => {
         mockIsFeatureFlagEnabled.mockResolvedValue(true)
+        mockCountSweepStarts.mockResolvedValue(0)
       })
 
       it('should re-send the validation with a new id and the sweep trigger', async () => {
@@ -645,6 +648,108 @@ describe('AutoCurationService', () => {
         )
         expect(mockSendValidation).toHaveBeenCalledTimes(1)
       })
+
+      describe('and the collection was re-sent one time less than the cap', () => {
+        beforeEach(() => {
+          mockCountSweepStarts.mockResolvedValue(MAX_SWEEP_RESENDS - 1)
+        })
+
+        it('should still re-send the validation', async () => {
+          await service.sweepStaleValidations()
+
+          expect(mockSendValidation).toHaveBeenCalledTimes(1)
+          expect(mockRecordEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_AI_ERROR,
+            })
+          )
+          expect(mockNotifySlack).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and the collection reached the re-send cap', () => {
+        beforeEach(() => {
+          mockCountSweepStarts.mockResolvedValue(MAX_SWEEP_RESENDS)
+        })
+
+        it('should record an exhausted error, alert Slack and stop re-sending', async () => {
+          await service.sweepStaleValidations()
+
+          expect(mockRecordEvent).toHaveBeenCalledTimes(1)
+          expect(mockRecordEvent).toHaveBeenCalledWith({
+            collection_id: dbCollectionMock.id,
+            type: CollectionEventType.REVIEW_AI_ERROR,
+            actor: CollectionEventActor.VALIDATOR,
+            actor_address: null,
+            payload: { reason: 'sweep_exhausted', validationId: 'lost' },
+          })
+          expect(mockNotifySlack).toHaveBeenCalledTimes(1)
+          expect(mockSendValidation).not.toHaveBeenCalled()
+        })
+
+        describe('and the creator retries afterwards', () => {
+          beforeEach(() => {
+            mockFindCollection.mockResolvedValue(dbCollectionMock)
+            mockFindLatestEvent.mockResolvedValue(
+              buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+                reason: 'sweep_exhausted',
+                validationId: 'lost',
+              })
+            )
+            mockFindEventsSince.mockResolvedValue([])
+            mockFindLatestEventByType.mockResolvedValue(staleStart)
+            mockFindLatestCuration.mockResolvedValue({
+              id: 'curationId',
+              status: CurationStatus.PENDING,
+            })
+          })
+
+          it('should accept the retry and let the sweep re-send again once the count is reset', async () => {
+            await service.sweepStaleValidations()
+            expect(mockSendValidation).not.toHaveBeenCalled()
+
+            const retry = await service.requestValidation(
+              dbCollectionMock.id,
+              ethAddress
+            )
+            expect(retry.payload.trigger).toBe('retry')
+            expect(mockSendValidation).toHaveBeenCalledTimes(1)
+
+            mockCountSweepStarts.mockResolvedValue(0)
+            await service.sweepStaleValidations()
+            expect(mockSendValidation).toHaveBeenCalledTimes(2)
+          })
+        })
+      })
+    })
+  })
+
+  describe('when a standard collection is published', () => {
+    beforeEach(() => {
+      mockFindLatestCuration.mockResolvedValue(undefined)
+      mockFindItemsByCollection.mockResolvedValue([item])
+    })
+
+    it('should open a pending curation, record the publication with an empty payload and start the validation', async () => {
+      await service.onStandardCollectionPublished(dbCollectionMock, ethAddress)
+
+      expect(mockCreateCuration).toHaveBeenCalledWith(
+        expect.objectContaining({ status: CurationStatus.PENDING })
+      )
+      expect(mockRecordEvent).toHaveBeenCalledWith({
+        collection_id: dbCollectionMock.id,
+        type: CollectionEventType.COLLECTION_PUBLISHED,
+        actor: CollectionEventActor.CREATOR,
+        actor_address: ethAddress.toLowerCase(),
+        payload: {},
+      })
+      expect(mockRecordEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: CollectionEventType.REVIEW_AI_STARTED,
+          payload: expect.objectContaining({ trigger: 'publish' }),
+        })
+      )
+      expect(mockSendValidation).toHaveBeenCalledTimes(1)
     })
   })
 

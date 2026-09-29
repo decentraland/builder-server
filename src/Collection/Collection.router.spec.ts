@@ -3117,17 +3117,16 @@ describe('Collection router', () => {
             .mockResolvedValue(true)
         })
 
-        it('should start the auto curation with the published collection and the tx hash', () => {
+        it('should start the auto curation with the published collection', () => {
           return server
             .post(buildURL(url))
             .set(createAuthHeaders('post', url))
-            .send({ txHash: '0xtx' })
+            .send({})
             .expect(200)
             .then(() => {
               expect(standardHookSpy).toHaveBeenCalledWith(
                 publishedCollection,
-                wallet.address,
-                '0xtx'
+                wallet.address
               )
             })
         })

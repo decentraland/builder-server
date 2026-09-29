@@ -13,6 +13,7 @@ erDiagram
 
     collections ||--o{ items : "contains"
     collections ||--o{ collection_curations : "has"
+    collections ||--o{ collection_events : "logs"
     collections ||--o| slot_usage_cheques : "uses"
 
     items ||--o{ item_curations : "has"
@@ -136,8 +137,21 @@ erDiagram
         UUID collection_id FK
         VARCHAR assignee
         VARCHAR status
+        TEXT reviewed_by
+        TEXT_ARRAY rejection_reasons
+        TEXT rejection_message
         TIMESTAMP created_at
         TIMESTAMP updated_at
+    }
+
+    collection_events {
+        UUID id PK
+        UUID collection_id FK
+        TEXT type
+        TEXT actor
+        TEXT actor_address
+        JSONB payload
+        TIMESTAMP created_at
     }
 
     item_curations {
@@ -218,12 +232,13 @@ The database contains the following main tables:
 5. **`collections`** - Wearable and emote collections
 6. **`items`** - Individual wearables and emotes within collections
 7. **`collection_curations`** - Curation status for collections
-8. **`item_curations`** - Curation status for individual items
-9. **`asset_packs`** - Asset pack definitions
-10. **`assets`** - Individual 3D assets within packs
-11. **`deployments`** - Scene deployment tracking
-12. **`virtual_third_parties`** - Third-party provider definitions
-13. **`slot_usage_cheques`** - Third-party slot usage records
+8. **`collection_events`** - Review timeline of collections
+9. **`item_curations`** - Curation status for individual items
+10. **`asset_packs`** - Asset pack definitions
+11. **`assets`** - Individual 3D assets within packs
+12. **`deployments`** - Scene deployment tracking
+13. **`virtual_third_parties`** - Third-party provider definitions
+14. **`slot_usage_cheques`** - Third-party slot usage records
 
 ---
 
@@ -442,24 +457,79 @@ Stores curation status for collections.
 
 ### Columns
 
-| Column          | Type      | Nullable | Description                          |
-| --------------- | --------- | -------- | ------------------------------------ |
-| `id`            | UUID      | NOT NULL | **Primary Key**. Curation identifier |
-| `collection_id` | UUID      | NOT NULL | **Foreign Key** to collections       |
-| `assignee`      | VARCHAR   | NULL     | Committee member assigned            |
-| `status`        | VARCHAR   | NOT NULL | Status: pending, approved, rejected  |
-| `created_at`    | TIMESTAMP | NOT NULL | Creation timestamp                   |
-| `updated_at`    | TIMESTAMP | NOT NULL | Last update timestamp                |
+| Column              | Type      | Nullable | Description                                                            |
+| ------------------- | --------- | -------- | ---------------------------------------------------------------------- |
+| `id`                | UUID      | NOT NULL | **Primary Key**. Curation identifier                                   |
+| `collection_id`     | UUID      | NOT NULL | **Foreign Key** to collections                                         |
+| `assignee`          | VARCHAR   | NULL     | Committee member assigned                                              |
+| `status`            | VARCHAR   | NOT NULL | Status: pending, approved, rejected                                    |
+| `reviewed_by`       | TEXT      | NULL     | `validator` or the curator's lowercase address. Null while pending     |
+| `rejection_reasons` | TEXT[]    | NULL     | Reject reason codes chosen by a curator. Null for validator rejections |
+| `rejection_message` | TEXT      | NULL     | Free text written by the curator, shown to the creator                 |
+| `created_at`        | TIMESTAMP | NOT NULL | Creation timestamp                                                     |
+| `updated_at`        | TIMESTAMP | NOT NULL | Last update timestamp                                                  |
 
 ### Indexes
 
 - **Primary Key**: `id`
 - Index on `collection_id`
 
+### Constraints
+
+- `collection_curations_rejection_reasons_check`: `rejection_reasons` may only contain `clipping`, `thumbnail`, `category_hides`, `rigging`, `triangle_count`, `emote`, `file_size`, `textures_materials`, `reversed_faces`, `smart_wearable_files`, `content_policy_ip`, `other`
+
 ### Business Rules
 
 - **Latest curation**: The most recent curation (by `created_at`) is the active one
 - **Assignee**: Only committee members can be assigned
+- **Rejection feedback**: When the auto curation is enabled, a curator rejection must carry `rejection_reasons` and `rejection_message`; validator rejections leave them null and keep their findings in the `review.ai_rejected` event
+
+---
+
+## Table: `collection_events`
+
+Append-only review timeline of a collection. Rows are never updated or deleted by the application.
+
+### Columns
+
+| Column          | Type      | Nullable | Description                                                      |
+| --------------- | --------- | -------- | ---------------------------------------------------------------- |
+| `id`            | UUID      | NOT NULL | **Primary Key**. Event identifier                                |
+| `collection_id` | UUID      | NOT NULL | **Foreign Key** to collections (cascade delete)                  |
+| `type`          | TEXT      | NOT NULL | Event type (see below), validated in code                        |
+| `actor`         | TEXT      | NOT NULL | Who produced it: `creator`, `curator`, `validator` or `system`   |
+| `actor_address` | TEXT      | NULL     | Address of the creator or curator; null for validator and system |
+| `payload`       | JSONB     | NOT NULL | Event data, defaults to `{}`                                     |
+| `created_at`    | TIMESTAMP | NOT NULL | Creation timestamp, defaults to `now()`                          |
+
+### Indexes
+
+- **Primary Key**: `id`
+- `collection_events_collection_created_idx` on (`collection_id`, `created_at DESC`): timeline, latest event, stale-callback check and attempt count
+- `collection_events_ai_started_idx` on `created_at` where `type = 'review.ai_started'`: the sweep of validations without a verdict
+
+### Event Types
+
+| Type                      | Actor     | Payload                                                                            |
+| ------------------------- | --------- | ---------------------------------------------------------------------------------- |
+| `collection.published`    | creator   | `{}`                                                                               |
+| `review.human_required`   | system    | `{ reason: 'third_party' }`                                                        |
+| `review.ai_started`       | validator | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds }` |
+| `review.ai_passed`        | validator | The validator callback body                                                        |
+| `review.ai_rejected`      | validator | The validator callback body                                                        |
+| `review.ai_error`         | validator | The validator callback body, or `{ reason: 'sweep_exhausted', validationId }`      |
+| `review.appeal_requested` | creator   | `{ note }`                                                                         |
+| `review.assigned`         | curator   | `{ assignee }`                                                                     |
+| `review.approved`         | curator   | `{}`                                                                               |
+| `review.rejected`         | curator   | `{ rejectionReasons, rejectionMessage }`                                           |
+| `changes.submitted`       | creator   | `{ itemIds }`                                                                      |
+| `collection.disabled`     | curator   | `{ rejectionReasons, rejectionMessage }`                                           |
+
+### Business Rules
+
+- **Latest event**: The most recent event decides the review stage shown to creators together with the latest curation
+- **Attempts**: `review.ai_passed` and `review.ai_rejected` count as AI attempts; creators get 3 per UTC day, reset by a `review.approved` or `review.rejected`
+- **Sweep**: A validation whose latest event is `review.ai_started` for more than 30 minutes is re-sent; after 10 consecutive sweep re-sends a `review.ai_error` with `reason: 'sweep_exhausted'` stops it until someone acts
 
 ---
 

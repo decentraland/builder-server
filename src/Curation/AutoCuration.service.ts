@@ -43,6 +43,7 @@ import {
 // Resolved by isFeatureFlagEnabled as `builder-auto-curation`.
 export const AUTO_CURATION_FEATURE_FLAG = 'auto-curation'
 export const STALE_VALIDATION_MS = 30 * 60 * 1000
+export const MAX_SWEEP_RESENDS = 10
 export const VALIDATOR_REVIEWER = 'validator'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -94,8 +95,7 @@ export class AutoCurationService {
   /** Publish hook for standard collections. Never throws: the publication already happened. */
   async onStandardCollectionPublished(
     collection: CollectionAttributes,
-    ethAddress: string,
-    txHash: string | null
+    ethAddress: string
   ): Promise<void> {
     try {
       const latestCuration = await CollectionCuration.findLatestByCollectionId(
@@ -110,7 +110,7 @@ export class AutoCurationService {
         type: CollectionEventType.COLLECTION_PUBLISHED,
         actor: CollectionEventActor.CREATOR,
         actor_address: ethAddress.toLowerCase(),
-        payload: { txHash },
+        payload: {},
       })
 
       const items = await Item.findOrderedByCollectionId(collection.id)
@@ -404,6 +404,15 @@ export class AutoCurationService {
         if (!collection || isTPCollection(collection)) {
           continue
         }
+
+        const sweepStarts = await CollectionEvent.countSweepStartsSinceManualStart(
+          collection.id
+        )
+        if (sweepStarts >= MAX_SWEEP_RESENDS) {
+          await this.giveUpValidation(collection, staleStart)
+          continue
+        }
+
         const items = await this.findItemsToRevalidate(collection, staleStart)
         await this.startValidation(collection, items, 'sweep')
       } catch (error) {
@@ -472,6 +481,26 @@ export class AutoCurationService {
     }
 
     return event
+  }
+
+  /** Stops the sweep for a collection: the error event keeps it out of the stale query until someone acts on it. */
+  private async giveUpValidation(
+    collection: CollectionAttributes,
+    staleStart: CollectionEventAttributes
+  ): Promise<void> {
+    const validationId = staleStart.payload.validationId
+    await CollectionEvent.record({
+      collection_id: collection.id,
+      type: CollectionEventType.REVIEW_AI_ERROR,
+      actor: CollectionEventActor.VALIDATOR,
+      actor_address: null,
+      payload: { reason: 'sweep_exhausted', validationId },
+    })
+    await notifyCurationSlack(
+      `AI review of collection ${describeCollection(
+        collection
+      )} got no verdict after ${MAX_SWEEP_RESENDS} re-sends (validation ${validationId}). It needs a curator or a creator retry.`
+    )
   }
 
   /** A re-run validates the same items the previous run did, or everything if there is no previous run. */

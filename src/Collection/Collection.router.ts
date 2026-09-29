@@ -494,8 +494,7 @@ export class CollectionRouter extends Router {
         if (isAutoCurationEnabled) {
           await this.autoCurationService.onStandardCollectionPublished(
             result.collection,
-            eth_address,
-            typeof req.body?.txHash === 'string' ? req.body.txHash : null
+            eth_address
           )
         }
       }

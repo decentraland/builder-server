@@ -30,6 +30,8 @@ function nextTimestamp(): Date {
 
 export class CollectionEvent extends Model<CollectionEventAttributes> {
   static tableName = 'collection_events'
+  // Append-only rows: the table has created_at but no updated_at.
+  static withTimestamps = false
 
   static record(event: NewCollectionEvent): Promise<CollectionEventAttributes> {
     return this.create<CollectionEventAttributes>({

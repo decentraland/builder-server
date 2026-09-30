@@ -1,9 +1,9 @@
 import fetch, { Response } from 'node-fetch'
 import { env } from 'decentraland-commons'
+import { DuplicatedForumPostTitleError } from './Forum.errors'
 import {
   CreateResponse,
   CreateSuccess,
-  ForumNewPost,
   ForumPost,
   UpsertPostResult,
 } from './Forum.types'
@@ -12,18 +12,35 @@ const FORUM_URL = env.get('FORUM_URL', '')
 const FORUM_API_KEY = env.get('FORUM_API_KEY', '')
 const FORUM_API_USERNAME = env.get('FORUM_API_USERNAME', '')
 const FORUM_CATEGORY = env.get('FORUM_CATEGORY')
+const FORUM_REQUEST_TIMEOUT_MS = 10000
+const DUPLICATED_TITLE_ERROR = 'Title has already been used'
 
 const postLink = ({ topic_slug, topic_id }: CreateSuccess) =>
   `${FORUM_URL}/t/${topic_slug}/${topic_id}`
 
-export async function createPost(post: ForumPost): Promise<UpsertPostResult> {
+async function readForumResponse(response: Response): Promise<CreateResponse> {
+  const body = await response.text()
+  try {
+    return JSON.parse(body)
+  } catch {
+    return {
+      action: 'error',
+      errors: [body.slice(0, 200) || response.statusText],
+    }
+  }
+}
+
+export async function createPost(
+  post: Pick<ForumPost, 'title' | 'raw'>
+): Promise<UpsertPostResult> {
   const forumPost = {
-    ...post,
-    title: sanitizeTitle(post.title!),
+    title: sanitizeTitle(post.title),
+    raw: post.raw,
     category: FORUM_CATEGORY,
   }
 
   const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Content-Type': 'application/json',
@@ -32,13 +49,17 @@ export async function createPost(post: ForumPost): Promise<UpsertPostResult> {
     body: JSON.stringify(forumPost),
   })
 
-  const result: CreateResponse = await response.json()
+  const result = await readForumResponse(response)
 
-  if (result.errors !== undefined) {
+  if (result.errors?.some((error) => error.includes(DUPLICATED_TITLE_ERROR))) {
+    throw new DuplicatedForumPostTitleError(forumPost.title)
+  }
+
+  if (!response.ok || result.errors !== undefined) {
     throw new Error(
-      `Error creating the post ${JSON.stringify(post)}: ${result.errors.join(
-        ', '
-      )}`
+      `Error creating the post: ${
+        result.errors?.join(', ') ?? response.statusText
+      }`
     )
   }
 
@@ -46,30 +67,35 @@ export async function createPost(post: ForumPost): Promise<UpsertPostResult> {
 }
 
 export async function createAssigneeEventPost(
-  forumPost: ForumNewPost
+  topicId: number,
+  raw: string
 ): Promise<void> {
   const response: Response = await fetch(`${FORUM_URL}/posts.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Content-Type': 'application/json',
     },
     method: 'POST',
-    body: JSON.stringify(forumPost),
+    body: JSON.stringify({ topic_id: topicId, raw }),
   })
 
-  const result: CreateResponse = await response.json()
+  const result = await readForumResponse(response)
 
-  if (result.errors !== undefined) {
+  if (!response.ok || result.errors !== undefined) {
     throw new Error(
-      `Error creating the post ${JSON.stringify(
-        forumPost
-      )}: ${result.errors.join(', ')}`
+      `Error creating the assignee post for topic ${topicId}: ${
+        result.errors?.join(', ') ?? response.statusText
+      }`
     )
   }
 }
 
-export async function getPost(id: number): Promise<ForumPost> {
+export async function getPost(
+  id: number
+): Promise<Pick<ForumPost, 'raw' | 'topic_id'>> {
   const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Api-Username': FORUM_API_USERNAME,
@@ -77,8 +103,15 @@ export async function getPost(id: number): Promise<ForumPost> {
     },
   })
 
-  const result: ForumPost = await response.json()
-  return result
+  if (!response.ok) {
+    throw new Error(`Error fetching the post ${id}: ${response.statusText}`)
+  }
+
+  try {
+    return await response.json()
+  } catch {
+    throw new Error(`Error fetching the post ${id}: invalid response body`)
+  }
 }
 
 export async function updatePost(
@@ -86,6 +119,7 @@ export async function updatePost(
   rawPost: ForumPost['raw']
 ): Promise<UpsertPostResult> {
   const response: Response = await fetch(`${FORUM_URL}/posts/${id}.json`, {
+    timeout: FORUM_REQUEST_TIMEOUT_MS,
     headers: {
       'Api-Key': FORUM_API_KEY,
       'Api-Username': FORUM_API_USERNAME,
@@ -95,13 +129,13 @@ export async function updatePost(
     body: JSON.stringify({ raw: rawPost }),
   })
 
-  const result: CreateResponse = await response.json()
+  const result = await readForumResponse(response)
 
-  if (result.errors !== undefined) {
+  if (!response.ok || result.errors !== undefined) {
     throw new Error(
-      `Error updating the post ${JSON.stringify(id)}: ${result.errors.join(
-        ', '
-      )}`
+      `Error updating the post ${JSON.stringify(id)}: ${
+        result.errors?.join(', ') ?? response.statusText
+      }`
     )
   }
 

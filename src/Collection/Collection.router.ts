@@ -477,11 +477,6 @@ export class CollectionRouter extends Router {
             dbCollection
           )
         } else {
-          // Eventually, posting to the forum will be done from the server for both collection types (https://github.com/decentraland/builder/issues/1754)
-          // We should also consider deleteing Forum.router.ts
-          // DCL Collections posts are being handled by the front-end at the moment and the backend updated using '/collections/:id/post'
-          // TODO: Should this be halting the response? Retries?
-
           await this.forumService.upsertThirdPartyCollectionForumPost(
             dbCollection,
             result.items.slice(0, MAX_FORUM_ITEMS)

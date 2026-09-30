@@ -3,29 +3,56 @@ import { CollectionAttributes } from '../Collection'
 import { FullItem } from '../Item'
 import { ForumPost } from './Forum.types'
 
-// These methods are suspiciously similar to https://github.com/decentraland/builder/blob/master/src/modules/forum/utils.ts
-// It should be deleted from there and used here once we tackle https://github.com/decentraland/builder/issues/1754
-// Keep in mind the TODO above getItemEditorUrl
-
 const BUILDER_URL = env.get('BUILDER_URL', '')
 const BUILDER_SERVER_URL = env.get('BUILDER_SERVER_URL', '')
 const API_VERSION = env.get('API_VERSION', 'v1')
+const MARKDOWN_CONTROL_CHARACTERS = /[\\`*_{}[\]()<>#+\-.!|~&]/g
+const MENTION_AND_LINK_TRIGGERS = /[@#:]/g
+const ZERO_WIDTH_SPACE = '​'
 
-export function buildCollectionForumPost(
+function sanitizeForumText(text: string): string {
+  return text
+    .replace(/\s+/g, ' ')
+    .replace(MARKDOWN_CONTROL_CHARACTERS, '\\$&')
+    .replace(MENTION_AND_LINK_TRIGGERS, `$&${ZERO_WIDTH_SPACE}`)
+}
+
+function buildForumPostBody(
   collection: CollectionAttributes,
   items: FullItem[]
-): ForumPost {
-  // We only post in English
-  return {
-    title: `Third Party collection ${collection.name} with URN: ${collection.third_party_id}`,
-    raw: `# ${collection.name}
+): ForumPost['raw'] {
+  return `# ${sanitizeForumText(collection.name)}
 
   [View entire collection](${getItemEditorUrl({ collectionId: collection.id })})
 
   ## Wearables
 
-  ${items.map(toRawItem).join('\n\n')}`,
+  ${items.map(toRawItem).join('\n\n')}`
+}
+
+export function buildThirdPartyCollectionForumPost(
+  collection: CollectionAttributes,
+  items: FullItem[]
+): ForumPost {
+  return {
+    title: `Third Party collection ${collection.name} with URN: ${collection.third_party_id}`,
+    raw: buildForumPostBody(collection, items),
   }
+}
+
+export function buildStandardCollectionForumPost(
+  collection: CollectionAttributes,
+  items: FullItem[],
+  createdBy: string
+): Pick<ForumPost, 'title' | 'raw'> {
+  return {
+    title: `Collection '${collection.name}' created by ${createdBy} is ready for review!`,
+    raw: buildForumPostBody(collection, items),
+  }
+}
+
+export function shortenAddress(address: string): string {
+  return `${address.slice(0, 6)}...${address.slice(-4)}`
 }
 
 export function buildCollectionForumUpdateReply(
@@ -44,7 +71,7 @@ export function buildCollectionForumUpdateReply(
 function toRawItem(item: FullItem) {
   const sections = []
   if (item.description) {
-    sections.push(`- Description: ${item.description}`)
+    sections.push(`- Description: ${sanitizeForumText(item.description)}`)
   }
   if (item.rarity) {
     sections.push(`- Rarity: ${item.rarity}`)
@@ -52,7 +79,7 @@ function toRawItem(item: FullItem) {
   if (item.data.category) {
     sections.push(`- Category: ${item.data.category}`)
   }
-  return `**${item.name}**
+  return `**${sanitizeForumText(item.name)}**
       ${sections.join('\n')}
       ![](${getThumbnailURL(item)})
       [Link to editor](${getItemEditorUrl({ itemId: item.id })})`

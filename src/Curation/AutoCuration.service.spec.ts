@@ -866,6 +866,21 @@ describe('AutoCurationService', () => {
       mockFindItemsByCollection.mockResolvedValue([item])
     })
 
+    describe('and a validation of the collection is still running', () => {
+      beforeEach(() => {
+        mockFindLatestEventByType.mockResolvedValue({
+          payload: { validationId: 'running' },
+        })
+        mockFindVerdict.mockResolvedValue(undefined)
+      })
+
+      it('should not record anything nor start a second validation', async () => {
+        await service.onStandardCollectionPublished(dbCollectionMock, ethAddress)
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
     it('should open a pending curation, record the publication with an empty payload and start the validation', async () => {
       await service.onStandardCollectionPublished(dbCollectionMock, ethAddress)
 

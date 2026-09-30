@@ -99,6 +99,11 @@ export class AutoCurationService {
     ethAddress: string
   ): Promise<void> {
     try {
+      // The Builder calls /publish more than once per publication; one validation per publish is enough.
+      if (await this.isValidationInProgress(collection.id)) {
+        return
+      }
+
       const latestCuration = await CollectionCuration.findLatestByCollectionId(
         collection.id
       )

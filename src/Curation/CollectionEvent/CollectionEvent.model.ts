@@ -9,15 +9,18 @@ import {
 
 export const SWEEP_EXHAUSTED_REASON = 'sweep_exhausted'
 
+// A human_required carrying a validationId is the validator handing unsupported items to a curator.
 const VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_AI_PASSED,
   CollectionEventType.REVIEW_AI_REJECTED,
   CollectionEventType.REVIEW_AI_ERROR,
+  CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
-// An error verdict is retried by the sweep, so only a pass or a reject ends a validation for it.
+// An error verdict is retried by the sweep, so only a pass, a reject or a hand-off ends a validation for it.
 const FINAL_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_AI_PASSED,
   CollectionEventType.REVIEW_AI_REJECTED,
+  CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
 let lastTimestamp = 0
@@ -128,7 +131,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
     return events[0]
   }
 
-  /** Latest starts older than the threshold with no pass or reject verdict and not given up by the sweep. */
+  /** Latest starts older than the threshold with no pass, reject or hand-off verdict and not given up by the sweep. */
   static findStaleAiStarted(
     olderThan: Date
   ): Promise<CollectionEventAttributes[]> {

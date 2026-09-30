@@ -27,6 +27,7 @@ import { escapeSlackText, notifyCurationSlack } from './slack'
 import {
   CollectionEventsPage,
   MAX_VALIDATION_ATTEMPTS_PER_DAY,
+  UNSUPPORTED_VALIDATION_REASON,
   ValidationManifest,
   ValidationManifestItem,
   ValidationResult,
@@ -375,6 +376,28 @@ export class AutoCurationService {
         break
       }
       case 'error': {
+        if (result.reason === UNSUPPORTED_VALIDATION_REASON) {
+          await CollectionEvent.record({
+            collection_id: collectionId,
+            type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+            actor: CollectionEventActor.SYSTEM,
+            actor_address: null,
+            payload: {
+              reason: 'unsupported_items',
+              validationId: result.validationId,
+              items: result.items,
+            },
+          })
+          await notifyCurationSlack(
+            `Collection ${describeCollection(
+              collection,
+              collectionId
+            )} needs a curator review: the validator cannot check ${
+              result.items.length
+            } item(s) (${result.items.map((item) => item.itemId).join(', ')}).`
+          )
+          break
+        }
         await CollectionEvent.record({
           ...event,
           type: CollectionEventType.REVIEW_AI_ERROR,

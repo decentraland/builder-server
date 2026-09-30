@@ -228,6 +228,28 @@ describe('AutoCuration router', () => {
           })
       })
 
+      describe('and the verdict is an unsupported error', () => {
+        it('should accept the reason field and hand the collection to a curator', () => {
+          return server
+            .post(buildURL(url))
+            .set('Authorization', `Bearer ${callbackToken}`)
+            .send({ ...result, verdict: 'error', reason: 'unsupported' })
+            .expect(204)
+            .then(() => {
+              expect(mockRecordEvent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+                  payload: expect.objectContaining({
+                    reason: 'unsupported_items',
+                    validationId: 'latestValidation',
+                  }),
+                })
+              )
+              expect(CollectionCuration.update).not.toHaveBeenCalled()
+            })
+        })
+      })
+
       describe('and the verdict is rejected', () => {
         it('should reject the curation on behalf of the validator', () => {
           return server

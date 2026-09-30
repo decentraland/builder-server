@@ -510,26 +510,26 @@ Append-only review timeline of a collection. Rows are never updated or deleted b
 
 ### Event Types
 
-| Type                      | Actor     | Payload                                                                            |
-| ------------------------- | --------- | ---------------------------------------------------------------------------------- |
-| `collection.published`    | creator   | `{}`                                                                               |
-| `review.human_required`   | system    | `{ reason: 'third_party' }`                                                        |
-| `review.ai_started`       | validator | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds }` |
-| `review.ai_passed`        | validator | The validator callback body                                                        |
-| `review.ai_rejected`      | validator | The validator callback body                                                        |
-| `review.ai_error`         | validator | The validator callback body, or `{ reason: 'sweep_exhausted', validationId }`      |
-| `review.appeal_requested` | creator   | `{ note }`                                                                         |
-| `review.assigned`         | curator   | `{ assignee }`                                                                     |
-| `review.approved`         | curator   | `{}`                                                                               |
-| `review.rejected`         | curator   | `{ rejectionReasons, rejectionMessage }`                                           |
-| `changes.submitted`       | creator   | `{ itemIds }`                                                                      |
-| `collection.disabled`     | curator   | `{ rejectionReasons, rejectionMessage }`                                           |
+| Type                      | Actor     | Payload                                                                                                                          |
+| ------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| `collection.published`    | creator   | `{}`                                                                                                                             |
+| `review.human_required`   | system    | `{ reason: 'third_party' }`, or `{ reason: 'unsupported_items', validationId, items }` when the validator cannot check the items |
+| `review.ai_started`       | validator | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds }`                                               |
+| `review.ai_passed`        | validator | The validator callback body                                                                                                      |
+| `review.ai_rejected`      | validator | The validator callback body                                                                                                      |
+| `review.ai_error`         | validator | The validator callback body, or `{ reason: 'sweep_exhausted', validationId }`                                                    |
+| `review.appeal_requested` | creator   | `{ note }`                                                                                                                       |
+| `review.assigned`         | curator   | `{ assignee }`                                                                                                                   |
+| `review.approved`         | curator   | `{}`                                                                                                                             |
+| `review.rejected`         | curator   | `{ rejectionReasons, rejectionMessage }`                                                                                         |
+| `changes.submitted`       | creator   | `{ itemIds }`                                                                                                                    |
+| `collection.disabled`     | curator   | `{ rejectionReasons, rejectionMessage }`                                                                                         |
 
 ### Business Rules
 
 - **Latest event**: The most recent event decides the review stage shown to creators together with the latest curation
 - **Attempts**: `review.ai_passed` and `review.ai_rejected` count as AI attempts; creators get 3 per UTC day, reset by a `review.approved` or `review.rejected`
-- **Sweep**: A validation whose latest event is `review.ai_started` for more than 30 minutes is re-sent; after 10 consecutive sweep re-sends a `review.ai_error` with `reason: 'sweep_exhausted'` stops it until someone acts
+- **Sweep**: A validation start with no `review.ai_passed`, `review.ai_rejected` or `review.human_required` for its `validationId` is re-sent after 30 minutes; after 10 consecutive sweep re-sends a `review.ai_error` with `reason: 'sweep_exhausted'` stops it until someone acts
 
 ---
 

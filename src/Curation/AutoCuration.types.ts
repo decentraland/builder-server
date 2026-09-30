@@ -44,7 +44,11 @@ export type ValidationResult = {
   validationId: string
   verdict: ValidationVerdict
   items: ValidationResultItem[]
+  // Only with verdict "error": "unsupported" means every item without a verdict was skipped on purpose.
+  reason?: string
 }
+
+export const UNSUPPORTED_VALIDATION_REASON = 'unsupported'
 
 export type CollectionEventsPage<T> = {
   results: T[]
@@ -58,6 +62,7 @@ export const validationResultSchema = Object.freeze({
   properties: {
     validationId: { type: 'string', minLength: 1 },
     verdict: { type: 'string', enum: ['passed', 'rejected', 'error'] },
+    reason: { type: 'string' },
     items: {
       type: 'array',
       items: {

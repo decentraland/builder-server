@@ -191,6 +191,24 @@ describe('AutoCurationService', () => {
       })
     })
 
+    describe('and the latest validation was handed to a curator as unsupported', () => {
+      beforeEach(() => {
+        mockFindVerdict.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_HUMAN_REQUIRED, {
+            reason: 'unsupported_items',
+            validationId: 'previousValidation',
+            items: [],
+          })
+        )
+      })
+
+      it('should not consider it in progress and start a new validation', async () => {
+        await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+      })
+    })
+
     describe('and the latest validation ended with an error verdict', () => {
       beforeEach(() => {
         mockFindVerdict.mockResolvedValue(
@@ -572,6 +590,71 @@ describe('AutoCurationService', () => {
         expect(mockUpdateCuration).not.toHaveBeenCalled()
         expect(mockNotifySlack).toHaveBeenCalledTimes(1)
       })
+
+      describe('and the reason is not unsupported', () => {
+        beforeEach(() => {
+          result = { ...result, reason: 'validator_down' }
+        })
+
+        it('should still record an error verdict', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
+
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_AI_ERROR,
+            })
+          )
+        })
+      })
+
+      describe('and the reason is unsupported', () => {
+        beforeEach(() => {
+          result = {
+            ...result,
+            reason: 'unsupported',
+            items: [
+              {
+                itemId: item.id,
+                contentHash: 'localHash',
+                passed: null,
+                findings: [],
+              },
+            ],
+          }
+        })
+
+        it('should hand the collection to a curator instead of recording an error', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
+
+          expect(mockRecordEvent).toHaveBeenCalledTimes(1)
+          expect(mockRecordEvent).toHaveBeenCalledWith({
+            collection_id: dbCollectionMock.id,
+            type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+            actor: CollectionEventActor.SYSTEM,
+            actor_address: null,
+            payload: {
+              reason: 'unsupported_items',
+              validationId: 'latestValidation',
+              items: result.items,
+            },
+          })
+          expect(mockRecordEvent).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_AI_ERROR,
+            })
+          )
+        })
+
+        it('should keep the curation pending and notify the curators', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
+
+          expect(mockUpdateCuration).not.toHaveBeenCalled()
+          expect(mockNotifySlack).toHaveBeenCalledTimes(1)
+          expect(mockNotifySlack).toHaveBeenCalledWith(
+            expect.stringContaining(item.id)
+          )
+        })
+      })
     })
   })
 
@@ -875,7 +958,10 @@ describe('AutoCurationService', () => {
       })
 
       it('should not record anything nor start a second validation', async () => {
-        await service.onStandardCollectionPublished(dbCollectionMock, ethAddress)
+        await service.onStandardCollectionPublished(
+          dbCollectionMock,
+          ethAddress
+        )
         expect(mockRecordEvent).not.toHaveBeenCalled()
         expect(mockSendValidation).not.toHaveBeenCalled()
       })

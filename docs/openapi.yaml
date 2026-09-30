@@ -3193,6 +3193,7 @@ components:
             Depends on the type: `review.ai_started` holds `{ validationId, trigger, itemIds }`,
             `review.ai_passed` / `review.ai_rejected` / `review.ai_error` hold the validation result,
             `review.ai_error` may also be `{ reason: "sweep_exhausted", validationId }`,
+            `review.human_required` holds `{ reason: "third_party" }` or `{ reason: "unsupported_items", validationId, items }`,
             `review.appeal_requested` holds `{ note }`, `review.assigned` holds `{ assignee }`,
             `review.rejected` holds `{ rejectionReasons, rejectionMessage }`, `changes.submitted` holds `{ itemIds }`.
         created_at:
@@ -3260,6 +3261,9 @@ components:
         verdict:
           type: string
           enum: [passed, rejected, error]
+        reason:
+          type: string
+          description: Only with verdict `error`. `unsupported` means every item without a verdict was skipped on purpose (for example facial features), so the collection goes to a curator instead of being re-sent
         items:
           type: array
           items:

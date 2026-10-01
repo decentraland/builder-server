@@ -44,6 +44,7 @@ import {
   isTPCollection,
 } from '../utils/urn'
 import { ForumService } from '../Forum/Forum.service'
+import { AutoCurationService } from '../Curation/AutoCuration.service'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
@@ -78,6 +79,7 @@ import {
 export class CollectionRouter extends Router {
   public service = new CollectionService()
   public forumService = new ForumService()
+  public autoCurationService = new AutoCurationService()
 
   private modelAuthorizationCheck = (
     _: OwnableModel,
@@ -456,6 +458,7 @@ export class CollectionRouter extends Router {
 
     try {
       const dbCollection = await this.service.getDBCollection(id)
+      const isAutoCurationEnabled = await this.autoCurationService.isEnabled()
 
       let result: PublishCollectionResponse<CollectionAttributes>
 
@@ -469,13 +472,26 @@ export class CollectionRouter extends Router {
           server.extractFromReq<Cheque>(req, 'cheque')
         )
 
-        await this.forumService.upsertThirdPartyCollectionForumPost(
-          dbCollection,
-          result.items.slice(0, MAX_FORUM_ITEMS)
-        )
+        if (isAutoCurationEnabled) {
+          await this.autoCurationService.onThirdPartyCollectionPublished(
+            dbCollection
+          )
+        } else {
+          await this.forumService.upsertThirdPartyCollectionForumPost(
+            dbCollection,
+            result.items.slice(0, MAX_FORUM_ITEMS)
+          )
+        }
       } else {
         const dbItems = await Item.findOrderedByCollectionId(id)
         result = await this.service.publishDCLCollection(dbCollection, dbItems)
+
+        if (isAutoCurationEnabled) {
+          await this.autoCurationService.onStandardCollectionPublished(
+            result.collection,
+            eth_address
+          )
+        }
       }
 
       return {

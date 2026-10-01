@@ -31,6 +31,12 @@ import {
   CollectionCurationAttributes,
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import {
+  CollectionEvent,
+  CollectionEventActor,
+  CollectionEventType,
+} from './CollectionEvent'
+import { AutoCurationService } from './AutoCuration.service'
 
 const validator = getValidator()
 
@@ -38,6 +44,7 @@ const MAX_FORUM_POST_LENGTH = 10000
 
 export class CurationRouter extends Router {
   public collectionService = new CollectionService()
+  public autoCurationService = new AutoCurationService()
 
   mount() {
     // TODO: we might need to rename all endpoints to their actual entities:
@@ -241,12 +248,21 @@ export class CurationRouter extends Router {
       } catch (error) {}
       const ethAddress = req.auth.ethAddress
 
-      return this.insertCuration(
+      const curation = await this.insertCuration(
         collectionId,
         ethAddress,
         CurationType.COLLECTION,
         curationJSON
       )
+
+      if (await this.autoCurationService.isEnabled()) {
+        await this.autoCurationService.onChangesSubmitted(
+          collectionId,
+          ethAddress
+        )
+      }
+
+      return curation
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
@@ -311,6 +327,11 @@ export class CurationRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
+    // Assignments are recorded as collection events instead once the auto curation is on.
+    if (await this.autoCurationService.isEnabled()) {
+      return
+    }
+
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (!collection) {
       throw new HTTPError('Collection not found', { id }, STATUS_CODES.notFound)
@@ -378,14 +399,19 @@ export class CurationRouter extends Router {
       )
     }
 
+    // Unassigning (null) is a curator action too.
+    if (
+      curationJSON.assignee !== undefined &&
+      !(await isCommitteeMember(ethAddress))
+    ) {
+      throw new HTTPError(
+        'Only committee members can modify the assignee',
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     if (curationJSON.assignee) {
-      if (!(await isCommitteeMember(ethAddress))) {
-        throw new HTTPError(
-          'Only committee members can modify the assignee',
-          { id },
-          STATUS_CODES.unauthorized
-        )
-      }
       const isAssigneeCommitteeMember = await isCommitteeMember(
         curationJSON.assignee.toLowerCase()
       )
@@ -435,6 +461,13 @@ export class CurationRouter extends Router {
       updated_at: new Date(),
     }
 
+    if (type === CurationType.COLLECTION) {
+      Object.assign(
+        fieldsToUpdate,
+        await this.getCollectionReviewFields(id, ethAddress, curationJSON)
+      )
+    }
+
     if (curationJSON.status === CurationStatus.APPROVED) {
       await this.updateCollectionItemsContent(id)
     }
@@ -447,7 +480,100 @@ export class CurationRouter extends Router {
       fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
     }
 
-    return curationService.updateById(curation.id, fieldsToUpdate)
+    const updatedCuration = await curationService.updateById(
+      curation.id,
+      fieldsToUpdate
+    )
+
+    if (type === CurationType.COLLECTION) {
+      await this.recordCollectionReviewEvents(id, ethAddress, curationJSON)
+    }
+
+    return updatedCuration
+  }
+
+  /** Rejections carry the curator's reasons and message; both are mandatory once the auto curation is on. */
+  private getCollectionReviewFields = async (
+    id: string,
+    ethAddress: string,
+    curationJSON: any
+  ): Promise<Partial<CollectionCurationAttributes>> => {
+    const { status, rejectionReasons, rejectionMessage } = curationJSON
+
+    if (status === CurationStatus.APPROVED) {
+      return {
+        reviewed_by: ethAddress.toLowerCase(),
+        rejection_reasons: null,
+        rejection_message: null,
+      }
+    }
+
+    if (status !== CurationStatus.REJECTED) {
+      return {}
+    }
+
+    const hasReasons =
+      Array.isArray(rejectionReasons) && rejectionReasons.length > 0
+    const hasMessage =
+      typeof rejectionMessage === 'string' && rejectionMessage.trim() !== ''
+
+    if (
+      (!hasReasons || !hasMessage) &&
+      (await this.autoCurationService.isEnabled())
+    ) {
+      throw new HTTPError(
+        'Rejecting a collection requires rejectionReasons and rejectionMessage',
+        { id },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    return {
+      reviewed_by: ethAddress.toLowerCase(),
+      ...(hasReasons ? { rejection_reasons: rejectionReasons } : {}),
+      ...(hasMessage ? { rejection_message: rejectionMessage.trim() } : {}),
+    }
+  }
+
+  private recordCollectionReviewEvents = async (
+    collectionId: string,
+    ethAddress: string,
+    curationJSON: any
+  ): Promise<void> => {
+    const base = {
+      collection_id: collectionId,
+      actor: CollectionEventActor.CURATOR,
+      actor_address: ethAddress.toLowerCase(),
+    }
+
+    if (curationJSON.assignee !== undefined) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_ASSIGNED,
+        payload: {
+          assignee: curationJSON.assignee
+            ? curationJSON.assignee.toLowerCase()
+            : null,
+        },
+      })
+    }
+
+    if (curationJSON.status === CurationStatus.APPROVED) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_APPROVED,
+        payload: {},
+      })
+    } else if (curationJSON.status === CurationStatus.REJECTED) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_REJECTED,
+        payload: {
+          rejectionReasons: curationJSON.rejectionReasons ?? [],
+          rejectionMessage: curationJSON.rejectionMessage ?? null,
+        },
+      })
+    }
   }
 
   private insertCuration = async (

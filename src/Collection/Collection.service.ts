@@ -300,6 +300,9 @@ export class CollectionService {
           created_at: now,
           updated_at: now,
           assignee: null,
+          reviewed_by: null,
+          rejection_reasons: null,
+          rejection_message: null,
         })
       }
     } catch (error) {

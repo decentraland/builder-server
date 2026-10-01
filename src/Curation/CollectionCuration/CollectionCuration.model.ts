@@ -7,6 +7,18 @@ export class CollectionCuration extends Model<CollectionCurationAttributes> {
   static tableName = 'collection_curations'
   static type = CurationType.COLLECTION
 
+  static async findLatestByCollectionId(
+    collectionId: string
+  ): Promise<CollectionCurationAttributes | undefined> {
+    const curations = await this.query<CollectionCurationAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ${collectionId}
+        ORDER BY created_at DESC
+        LIMIT 1`)
+    return curations[0]
+  }
+
   static async updateByItemId(itemId: string): Promise<{ rowCount: number }> {
     const columns = await this.query(SQL`
       UPDATE ${raw(CollectionCuration.tableName)} as collection_curations

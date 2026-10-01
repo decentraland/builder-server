@@ -1217,6 +1217,17 @@ paths:
                   $ref: '#/components/schemas/CurationStatus'
                 assignee:
                   type: string
+                rejectionReasons:
+                  type: array
+                  minItems: 1
+                  uniqueItems: true
+                  items:
+                    $ref: '#/components/schemas/RejectionReason'
+                  description: Required together with rejectionMessage when a committee member rejects a collection and the auto curation is enabled
+                rejectionMessage:
+                  type: string
+                  minLength: 1
+                  description: Free text shown to the creator. Required together with rejectionReasons when rejecting
       responses:
         '200':
           description: Curation updated successfully
@@ -1246,6 +1257,184 @@ paths:
           description: Forum post created successfully
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /collections/{id}/curation/appeal:
+    post:
+      operationId: appealCollectionCuration
+      tags: [Curations]
+      summary: Request a human review
+      description: |
+        Appeals a rejected curation. Opens a new pending curation, records a `review.appeal_requested` event
+        and notifies the curation Slack channel. Only the collection creator or a manager can call it.
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [note]
+              properties:
+                note:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+      responses:
+        '200':
+          description: Appeal registered, returns the new pending curation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionCurationResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The latest curation is not rejected or an appeal is already open
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: More than 30 requests per minute from this address
+        '503':
+          description: Another server instance is updating the collection; retry shortly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /collections/{id}/validations:
+    post:
+      operationId: requestCollectionValidation
+      tags: [Curations]
+      summary: Request an AI validation
+      description: |
+        Sends the collection to the automatic validator again. Only the collection creator or a manager can call it.
+        A collection gets 3 AI verdicts per UTC day; a curator decision resets the count. The same content always
+        gets the same verdict, so a retry needs the last run to have ended without one (an AI error) or an item saved
+        since it started; it then validates the previous run's items plus the edited ones. Opens a new pending
+        curation when the latest one is rejected and records a `review.ai_started` event. At most 30 requests per
+        minute per address.
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      responses:
+        '200':
+          description: Validation started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionEventResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: A validation is already in progress, nothing changed since the last verdict, or the collection is not a published standard collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: Daily validation limit reached (`data.retryAt` is the ISO date when validations are allowed again), or more than 30 requests per minute from this address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Another server instance is updating the collection; retry shortly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /collections/{id}/events:
+    get:
+      operationId: getCollectionEvents
+      tags: [Curations]
+      summary: Get collection events
+      description: |
+        Returns the review timeline of a collection, newest first. Creators and managers can read their own
+        collections, committee members any collection. For non-committee callers the `validationId` is omitted
+        from every event payload. At most 120 requests per minute per address.
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - $ref: '#/components/parameters/Page'
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 200
+            default: 50
+          description: Number of events per page
+      responses:
+        '200':
+          description: Paginated collection events
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionEventsResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '429':
+          description: More than 120 requests per minute from this address
+
+  /collections/{id}/validation-result:
+    post:
+      operationId: receiveValidationResult
+      tags: [Curations]
+      summary: Receive a validation result
+      description: |
+        Callback from the wearable validator job with the verdict of a validation. Authenticated with an HMAC
+        signature instead of signed fetch: `x-wearable-validator-signature` is `sha256=` plus the hex HMAC-SHA256,
+        keyed with `WEARABLE_VALIDATOR_CALLBACK_SECRET`, of `<x-wearable-validator-timestamp>.<raw body>`; timestamps
+        more than 5 minutes off are refused. The signature is checked before the feature flag. A body whose
+        `collectionId` is not the path id is answered with 400. Results whose `validationId` is not the latest
+        `review.ai_started` of the collection are ignored and still answered with 204.
+      security:
+        - ValidatorSignature: []
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - name: x-wearable-validator-timestamp
+          in: header
+          required: true
+          description: Milliseconds since the epoch when the job signed the request
+          schema:
+            type: string
+        - name: x-wearable-validator-signature
+          in: header
+          required: true
+          schema:
+            type: string
+            example: sha256=0f1e2d
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ValidationResult'
+      responses:
+        '204':
+          description: Result processed or ignored
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '503':
+          description: Another server instance is updating the collection; retry shortly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /collections/{id}/itemCurations:
     get:
@@ -2432,6 +2621,12 @@ components:
         Signed fetch authentication using Decentraland's ADR-44 specification.
         Multiple headers are used to provide the authentication chain.
 
+    ValidatorSignature:
+      type: apiKey
+      in: header
+      name: x-wearable-validator-signature
+      description: HMAC-SHA256 of `<timestamp>.<raw body>` with the secret shared with the wearable validator job (`WEARABLE_VALIDATOR_CALLBACK_SECRET`).
+
   parameters:
     ProjectId:
       name: id
@@ -2943,6 +3138,22 @@ components:
       type: string
       enum: [pending, approved, rejected, to_review, under_review]
 
+    RejectionReason:
+      type: string
+      enum:
+        - clipping
+        - thumbnail
+        - category_hides
+        - rigging
+        - triangle_count
+        - emote
+        - file_size
+        - textures_materials
+        - reversed_faces
+        - smart_wearable_files
+        - content_policy_ip
+        - other
+
     CollectionCuration:
       type: object
       properties:
@@ -2956,6 +3167,19 @@ components:
           $ref: '#/components/schemas/CurationStatus'
         assignee:
           type: string
+        reviewed_by:
+          type: string
+          nullable: true
+          description: '`validator` or the lowercase address of the curator. Null while pending'
+        rejection_reasons:
+          type: array
+          nullable: true
+          items:
+            $ref: '#/components/schemas/RejectionReason'
+          description: Set by curators only. Validator rejections keep it null
+        rejection_message:
+          type: string
+          nullable: true
         created_at:
           type: string
           format: date-time
@@ -2970,6 +3194,160 @@ components:
           type: boolean
         data:
           $ref: '#/components/schemas/CollectionCuration'
+
+    CollectionEventType:
+      type: string
+      enum:
+        - collection.published
+        - review.human_required
+        - review.ai_started
+        - review.ai_passed
+        - review.ai_rejected
+        - review.ai_error
+        - review.appeal_requested
+        - review.assigned
+        - review.approved
+        - review.rejected
+        - changes.submitted
+        - collection.disabled
+
+    CollectionEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        collection_id:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/CollectionEventType'
+        actor:
+          type: string
+          enum: [creator, curator, validator, system]
+        actor_address:
+          type: string
+          nullable: true
+        payload:
+          type: object
+          description: |
+            Depends on the type: `review.ai_started` holds `{ validationId, trigger, itemIds }`,
+            `review.ai_passed` / `review.ai_rejected` / `review.ai_error` hold the validation result,
+            `review.ai_error` may also be `{ reason: "sweep_exhausted", validationId }`,
+            `review.human_required` holds `{ reason: "third_party" }` or `{ reason: "unsupported_items", validationId, items }`,
+            `review.appeal_requested` holds `{ note }`, `review.assigned` holds `{ assignee }`,
+            `review.rejected` holds `{ rejectionReasons, rejectionMessage }`, `changes.submitted` holds `{ itemIds }`.
+        created_at:
+          type: string
+          format: date-time
+
+    CollectionEventResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          $ref: '#/components/schemas/CollectionEvent'
+
+    CollectionEventsResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          type: object
+          properties:
+            results:
+              type: array
+              items:
+                $ref: '#/components/schemas/CollectionEvent'
+            total:
+              type: integer
+            page:
+              type: integer
+            limit:
+              type: integer
+
+    ValidationFinding:
+      type: object
+      required: [rule, check, severity, message]
+      properties:
+        rule:
+          type: string
+          example: M-03
+        check:
+          type: string
+          example: file-size
+        severity:
+          type: string
+          enum: [error, warning]
+        message:
+          type: string
+        where:
+          type: string
+        bodyShape:
+          type: string
+          enum: [male, female]
+          description: Present when the finding points at one body shape's file
+        measured:
+          type: number
+        limit:
+          type: number
+        fix:
+          type: string
+        docs:
+          type: string
+          format: uri
+
+    ValidationResult:
+      type: object
+      required: [validationId, collectionId, verdict, rulesVersion, items]
+      properties:
+        validationId:
+          type: string
+          description: The id sent in the validation request
+        collectionId:
+          type: string
+          format: uuid
+          description: Must match the path id
+        verdict:
+          type: string
+          enum: [passed, rejected, error]
+        rulesVersion:
+          type: string
+          example: 0.4.0
+        reason:
+          type: string
+          description: Only with verdict `error`. `unsupported` means every undecided item is one the validator cannot judge, so the unsupported items go to a curator instead of being re-sent
+        retryable:
+          type: boolean
+          description: Only with verdict `error`. `true` leaves the validation for the sweep to re-send; otherwise the collection goes to a curator
+        items:
+          type: array
+          items:
+            type: object
+            required: [itemId, contentHash, passed, findings]
+            properties:
+              itemId:
+                type: string
+                format: uuid
+              contentHash:
+                type: string
+              passed:
+                type: boolean
+                nullable: true
+              findings:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ValidationFinding'
+              visualSummary:
+                type: string
+              unsupported:
+                type: boolean
+                description: Undecided because the validator cannot judge this kind of item
+              error:
+                type: string
+                description: Why the item could not be validated
 
     ItemCuration:
       type: object

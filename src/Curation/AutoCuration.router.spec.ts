@@ -19,7 +19,7 @@ import {
   CollectionEventType,
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
-import { sendValidation } from './ccsClient'
+import { requestValidation as sendValidation } from './validationQueue'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
@@ -35,7 +35,10 @@ jest.mock('../Item/Item.model')
 jest.mock('../Collection/Collection.model')
 jest.mock('../warehouse')
 jest.mock('./CollectionEvent/CollectionEvent.model')
-jest.mock('./ccsClient')
+jest.mock('./validationQueue', () => ({
+  ...jest.requireActual('./validationQueue'),
+  requestValidation: jest.fn(),
+}))
 jest.mock('./slack')
 
 const server = supertest(app.getApp())

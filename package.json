@@ -33,6 +33,7 @@
   },
   "dependencies": {
     "@apollo/client": "^3.3.9",
+    "@aws-sdk/client-sns": "^3.1144.0",
     "@dcl/crypto": "^3.0.1",
     "@dcl/crypto-middleware": "^6.3.0",
     "@dcl/hashing": "^1.1.0",

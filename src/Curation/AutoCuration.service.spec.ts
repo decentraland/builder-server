@@ -17,7 +17,10 @@ import {
   CollectionEventType,
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
-import { sendValidation } from './ccsClient'
+import {
+  requestValidation as sendValidation,
+  ValidationTooLargeError,
+} from './validationQueue'
 import { notifyCurationSlack } from './slack'
 import { ValidationResult } from './AutoCuration.types'
 import {
@@ -40,7 +43,10 @@ jest.mock('../Item/Item.model')
 jest.mock('../ethereum/api/collection')
 jest.mock('./CollectionEvent/CollectionEvent.model')
 jest.mock('./CollectionCuration/CollectionCuration.model')
-jest.mock('./ccsClient')
+jest.mock('./validationQueue', () => ({
+  ...jest.requireActual('./validationQueue'),
+  requestValidation: jest.fn(),
+}))
 jest.mock('./slack', () => ({
   ...jest.requireActual('./slack'),
   notifyCurationSlack: jest.fn(),
@@ -108,6 +114,7 @@ describe('AutoCurationService', () => {
 
   afterEach(() => {
     jest.resetAllMocks()
+    jest.restoreAllMocks()
     jest.useRealTimers()
   })
 
@@ -999,6 +1006,64 @@ describe('AutoCurationService', () => {
         expect(mockCreateCuration).not.toHaveBeenCalled()
         expect(mockRecordEvent).not.toHaveBeenCalled()
         expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the validation request is too large to publish', () => {
+      beforeEach(() => {
+        jest.spyOn(console, 'error').mockImplementation(() => undefined)
+        mockSendValidation.mockRejectedValue(
+          new ValidationTooLargeError(300000, 1)
+        )
+      })
+
+      it('should record a final too large error, log the size and alert Slack', async () => {
+        await service.onStandardCollectionPublished(
+          dbCollectionMock,
+          ethAddress
+        )
+
+        const start = mockRecordEvent.mock.calls
+          .map(([event]) => event)
+          .find((event) => event.type === CollectionEventType.REVIEW_AI_STARTED)
+        expect(mockRecordEventOnce).toHaveBeenCalledWith({
+          collection_id: dbCollectionMock.id,
+          type: CollectionEventType.REVIEW_AI_ERROR,
+          actor: CollectionEventActor.SYSTEM,
+          actor_address: null,
+          payload: {
+            reason: 'too_large',
+            validationId: start.payload.validationId,
+            bytes: 300000,
+            itemCount: 1,
+          },
+        })
+        expect(console.error).toHaveBeenCalledWith(
+          expect.stringContaining('300000 bytes')
+        )
+        expect(mockNotifySlack).toHaveBeenCalledWith(
+          expect.stringContaining('too large')
+        )
+      })
+    })
+
+    describe('and publishing the validation request fails', () => {
+      beforeEach(() => {
+        jest.spyOn(console, 'error').mockImplementation(() => undefined)
+        mockSendValidation.mockRejectedValue(new Error('SNS is down'))
+      })
+
+      it('should keep the start for the sweep without recording an error', async () => {
+        await expect(
+          service.onStandardCollectionPublished(dbCollectionMock, ethAddress)
+        ).resolves.toBeUndefined()
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_AI_STARTED,
+          })
+        )
+        expect(mockRecordEventOnce).not.toHaveBeenCalled()
       })
     })
 

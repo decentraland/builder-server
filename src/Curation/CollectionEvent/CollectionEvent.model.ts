@@ -8,6 +8,9 @@ import {
 } from './CollectionEvent.types'
 
 export const SWEEP_EXHAUSTED_REASON = 'sweep_exhausted'
+export const TOO_LARGE_REASON = 'too_large'
+// Error reasons the sweep must not re-send: re-sending cannot change their outcome.
+const FINAL_ERROR_REASONS = [SWEEP_EXHAUSTED_REASON, TOO_LARGE_REASON]
 
 // A human_required carrying a validationId is the validator handing unsupported items to a curator.
 const VERDICT_EVENT_TYPES = [
@@ -191,7 +194,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
                   verdict.type = ANY(${FINAL_VERDICT_EVENT_TYPES})
                   OR (
                     verdict.type = ${CollectionEventType.REVIEW_AI_ERROR}
-                    AND verdict.payload->>'reason' = ${SWEEP_EXHAUSTED_REASON}
+                    AND verdict.payload->>'reason' = ANY(${FINAL_ERROR_REASONS})
                   )
                 )
           )`)

@@ -20,9 +20,13 @@ import {
   CollectionEventAttributes,
   CollectionEventType,
   SWEEP_EXHAUSTED_REASON,
+  TOO_LARGE_REASON,
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
-import { sendValidation } from './ccsClient'
+import {
+  requestValidation as publishValidationRequest,
+  ValidationTooLargeError,
+} from './validationQueue'
 import { escapeSlackText, notifyCurationSlack } from './slack'
 import {
   CollectionEventsPage,
@@ -583,10 +587,14 @@ export class AutoCurationService {
     })
 
     try {
-      await sendValidation(
+      await publishValidationRequest(
         await this.buildManifest(validationId, collection, items)
       )
     } catch (error) {
+      if (error instanceof ValidationTooLargeError) {
+        await this.handOffTooLarge(collection, validationId, error)
+        return event
+      }
       // The start is already recorded, so the sweep re-sends it later.
       console.error(
         `Error sending the validation ${validationId} of collection ${collection.id}`,
@@ -595,6 +603,32 @@ export class AutoCurationService {
     }
 
     return event
+  }
+
+  /** Records a request too large to publish as a final error; splitting it is left to a curator. */
+  private async handOffTooLarge(
+    collection: CollectionAttributes,
+    validationId: string,
+    { bytes, itemCount }: ValidationTooLargeError
+  ): Promise<void> {
+    console.error(
+      `The validation ${validationId} of collection ${collection.id} has ${itemCount} items and ${bytes} bytes and was not sent`
+    )
+    const recorded = await CollectionEvent.recordOnce({
+      collection_id: collection.id,
+      type: CollectionEventType.REVIEW_AI_ERROR,
+      actor: CollectionEventActor.SYSTEM,
+      actor_address: null,
+      payload: { reason: TOO_LARGE_REASON, validationId, bytes, itemCount },
+    })
+    if (!recorded) {
+      return
+    }
+    await notifyCurationSlack(
+      `Collection ${describeCollection(
+        collection
+      )} is too large for the AI review (${itemCount} items, ${bytes} bytes). It needs a curator review.`
+    )
   }
 
   /** Stops the sweep for a collection: the error event keeps it out of the stale query until someone acts on it. */

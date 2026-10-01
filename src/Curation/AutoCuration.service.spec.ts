@@ -34,6 +34,8 @@ import {
   countValidationAttempts,
   getStartOfTodayUTC,
   MAX_SWEEP_RESENDS,
+  STALE_VALIDATION_MS,
+  SWEEP_LOOKBACK_MS,
   VALIDATOR_REVIEWER,
 } from './AutoCuration.service'
 
@@ -909,6 +911,18 @@ describe('AutoCurationService', () => {
         mockCountSweepStarts.mockResolvedValue(0)
       })
 
+      it('should look for starts older than two hours within the last week', async () => {
+        jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
+
+        await service.sweepStaleValidations()
+
+        expect(STALE_VALIDATION_MS).toBe(2 * 60 * 60 * 1000)
+        expect(mockFindStaleAiStarted).toHaveBeenCalledWith(
+          new Date('2026-09-29T13:00:00.000Z'),
+          new Date(Date.now() - SWEEP_LOOKBACK_MS)
+        )
+      })
+
       it('should re-send the validation with a new id and the sweep trigger', async () => {
         await service.sweepStaleValidations()
 
@@ -957,6 +971,47 @@ describe('AutoCurationService', () => {
           })
           expect(mockNotifySlack).toHaveBeenCalledTimes(1)
           expect(mockSendValidation).not.toHaveBeenCalled()
+        })
+
+        it('should give up after three re-sends', () => {
+          expect(MAX_SWEEP_RESENDS).toBe(3)
+        })
+
+        describe('and the stale start already has a retryable error', () => {
+          beforeEach(() => {
+            mockFindVerdict.mockResolvedValue(
+              buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+                validationId: 'lost',
+                verdict: 'error',
+                retryable: true,
+              })
+            )
+          })
+
+          it('should still record the exhausted error under the same validation id', async () => {
+            await service.sweepStaleValidations()
+
+            expect(mockRecordEventOnce).toHaveBeenCalledWith(
+              expect.objectContaining({
+                type: CollectionEventType.REVIEW_AI_ERROR,
+                payload: { reason: 'sweep_exhausted', validationId: 'lost' },
+              })
+            )
+            expect(mockNotifySlack).toHaveBeenCalledTimes(1)
+          })
+        })
+
+        describe('and the exhausted error was already recorded', () => {
+          beforeEach(() => {
+            mockRecordEventOnce.mockResolvedValue(undefined)
+          })
+
+          it('should not alert Slack again', async () => {
+            await service.sweepStaleValidations()
+
+            expect(mockNotifySlack).not.toHaveBeenCalled()
+            expect(mockSendValidation).not.toHaveBeenCalled()
+          })
         })
 
         describe('and the creator retries afterwards', () => {

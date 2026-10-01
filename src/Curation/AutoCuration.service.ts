@@ -48,9 +48,11 @@ import {
 
 // Resolved by isFeatureFlagEnabled as `builder-auto-curation`.
 export const AUTO_CURATION_FEATURE_FLAG = 'auto-curation'
-export const STALE_VALIDATION_MS = 30 * 60 * 1000
+// A job may hold a collection for up to 55 minutes and SQS redelivers it after 30, so a start is lost only well after that.
+export const STALE_VALIDATION_MS = 2 * 60 * 60 * 1000
 export const SWEEP_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
-export const MAX_SWEEP_RESENDS = 10
+// Each re-send renders the whole collection again.
+export const MAX_SWEEP_RESENDS = 3
 export const VALIDATOR_REVIEWER = 'validator'
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -298,7 +300,7 @@ export class AutoCurationService {
     return { results, total, page, limit }
   }
 
-  /** Re-sends validations whose start is older than the stale threshold and got no verdict. */
+  /** Re-sends validations that ended in a retryable error, or whose start is older than the stale threshold and got no verdict. */
   async sweepStaleValidations(): Promise<void> {
     if (!(await this.isEnabled())) {
       return

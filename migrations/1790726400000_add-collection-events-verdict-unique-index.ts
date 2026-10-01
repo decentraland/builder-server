@@ -12,7 +12,13 @@ const verdictTypes = [
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createIndex(
     tableName,
-    ['collection_id', 'type', "(payload->>'validationId')"],
+    // The reason is part of the key so the sweep's give-up can follow a retryable error of the same validation.
+    [
+      'collection_id',
+      'type',
+      "(payload->>'validationId')",
+      "(COALESCE(payload->>'reason', ''))",
+    ],
     {
       name: indexName,
       unique: true,

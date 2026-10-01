@@ -160,7 +160,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
     return events[0]
   }
 
-  /** Latest starts within the window with no pass, reject or hand-off verdict, no later curator decision, and not given up by the sweep. */
+  /** Latest starts within the window that got a retryable error or are older than the threshold, with no final verdict and no later curator decision. */
   static findStaleAiStarted(
     olderThan: Date,
     notBefore: Date
@@ -169,8 +169,17 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
       SELECT started.*
         FROM ${raw(this.tableName)} started
         WHERE started.type = ${CollectionEventType.REVIEW_AI_STARTED}
-          AND started.created_at < ${olderThan}
           AND started.created_at > ${notBefore}
+          AND (
+            started.created_at < ${olderThan}
+            OR EXISTS (
+              SELECT 1
+                FROM ${raw(this.tableName)} error
+                WHERE error.collection_id = started.collection_id
+                  AND error.type = ${CollectionEventType.REVIEW_AI_ERROR}
+                  AND error.payload->>'validationId' = started.payload->>'validationId'
+            )
+          )
           AND NOT EXISTS (
             SELECT 1
               FROM ${raw(this.tableName)} decision

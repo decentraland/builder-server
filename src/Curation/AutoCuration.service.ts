@@ -45,6 +45,7 @@ import {
 // Resolved by isFeatureFlagEnabled as `builder-auto-curation`.
 export const AUTO_CURATION_FEATURE_FLAG = 'auto-curation'
 export const STALE_VALIDATION_MS = 30 * 60 * 1000
+export const SWEEP_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
 export const MAX_SWEEP_RESENDS = 10
 export const VALIDATOR_REVIEWER = 'validator'
 
@@ -83,10 +84,26 @@ export function countValidationAttempts(
 export function redactCollectionEvent(
   event: CollectionEventAttributes
 ): CollectionEventAttributes {
-  if (!event.type.startsWith('review.ai_')) {
-    return event
-  }
   return { ...event, payload: utils.omit(event.payload, ['validationId']) }
+}
+
+const collectionLocks = new Map<string, Promise<unknown>>()
+
+/** Serializes the check-then-write flows of one collection within this process. */
+async function withCollectionLock<T>(
+  collectionId: string,
+  task: () => Promise<T>
+): Promise<T> {
+  const previous = collectionLocks.get(collectionId) ?? Promise.resolve()
+  const current = previous.catch(() => undefined).then(task)
+  collectionLocks.set(collectionId, current)
+  try {
+    return await current
+  } finally {
+    if (collectionLocks.get(collectionId) === current) {
+      collectionLocks.delete(collectionId)
+    }
+  }
 }
 
 export class AutoCurationService {
@@ -100,8 +117,15 @@ export class AutoCurationService {
     ethAddress: string
   ): Promise<void> {
     try {
-      // The Builder calls /publish more than once per publication; one validation per publish is enough.
-      if (await this.isValidationInProgress(collection.id)) {
+      // /publish keeps answering once the collection is on chain; only the first publication opens the review.
+      const alreadyPublished = await CollectionEvent.findLatestByCollectionIdAndType(
+        collection.id,
+        CollectionEventType.COLLECTION_PUBLISHED
+      )
+      if (
+        alreadyPublished ||
+        (await this.isValidationInProgress(collection.id))
+      ) {
         return
       }
 
@@ -222,197 +246,32 @@ export class AutoCurationService {
     }
   }
 
-  async requestValidation(
+  requestValidation(
     collectionId: string,
     ethAddress: string
   ): Promise<CollectionEventAttributes> {
-    const collection = await this.getStandardCollection(collectionId)
-
-    if (await this.isValidationInProgress(collectionId)) {
-      throw new ValidationInProgressError(collectionId)
-    }
-
-    const retryAt = await this.getDailyLimitRetryAt(collectionId)
-    if (retryAt) {
-      throw new ValidationLimitReachedError(collectionId, retryAt)
-    }
-
-    const latestCuration = await CollectionCuration.findLatestByCollectionId(
-      collectionId
+    return withCollectionLock(collectionId, () =>
+      this.doRequestValidation(collectionId, ethAddress)
     )
-    if (!latestCuration) {
-      throw new MissingCurationError(collectionId)
-    }
-    if (latestCuration.status === CurationStatus.REJECTED) {
-      await this.createPendingCuration(collectionId)
-    }
-
-    const items = await this.findItemsToRevalidate(
-      collection,
-      await CollectionEvent.findLatestByCollectionIdAndType(
-        collectionId,
-        CollectionEventType.REVIEW_AI_STARTED
-      )
-    )
-    return this.startValidation(collection, items, 'retry', ethAddress)
   }
 
-  async appeal(
+  appeal(
     collectionId: string,
     ethAddress: string,
     note: string
   ): Promise<CollectionCurationAttributes> {
-    const latestEvent = await CollectionEvent.findLatestByCollectionId(
-      collectionId
+    return withCollectionLock(collectionId, () =>
+      this.doAppeal(collectionId, ethAddress, note)
     )
-    if (latestEvent?.type === CollectionEventType.REVIEW_APPEAL_REQUESTED) {
-      throw new AppealAlreadyOpenError(collectionId)
-    }
-
-    const latestCuration = await CollectionCuration.findLatestByCollectionId(
-      collectionId
-    )
-    if (!latestCuration || latestCuration.status !== CurationStatus.REJECTED) {
-      throw new CurationNotRejectedError(collectionId)
-    }
-
-    const curation = await this.createPendingCuration(collectionId)
-    await CollectionEvent.record({
-      collection_id: collectionId,
-      type: CollectionEventType.REVIEW_APPEAL_REQUESTED,
-      actor: CollectionEventActor.CREATOR,
-      actor_address: ethAddress.toLowerCase(),
-      payload: { note },
-    })
-
-    const collection = await Collection.findOne<CollectionAttributes>(
-      collectionId
-    )
-    await notifyCurationSlack(
-      `Human review requested for collection ${describeCollection(
-        collection,
-        collectionId
-      )}.\nNote: ${escapeSlackText(note)}`
-    )
-
-    return curation
   }
 
-  /** Applies a validator callback. Results for anything but the latest validation, or already recorded, are ignored. */
-  async handleValidationResult(
+  handleValidationResult(
     collectionId: string,
     result: ValidationResult
   ): Promise<void> {
-    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
-      collectionId,
-      CollectionEventType.REVIEW_AI_STARTED
+    return withCollectionLock(collectionId, () =>
+      this.doHandleValidationResult(collectionId, result)
     )
-    if (
-      !latestStart ||
-      latestStart.payload.validationId !== result.validationId
-    ) {
-      console.warn(
-        `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it is not the latest validation`
-      )
-      return
-    }
-    if (
-      await CollectionEvent.findVerdictByValidationId(
-        collectionId,
-        result.validationId
-      )
-    ) {
-      console.warn(
-        `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
-      )
-      return
-    }
-
-    const collection = await Collection.findOne<CollectionAttributes>(
-      collectionId
-    )
-    const event = {
-      collection_id: collectionId,
-      actor: CollectionEventActor.VALIDATOR,
-      actor_address: null,
-      payload: result,
-    }
-
-    switch (result.verdict) {
-      case 'passed': {
-        await CollectionEvent.record({
-          ...event,
-          type: CollectionEventType.REVIEW_AI_PASSED,
-        })
-        await notifyCurationSlack(
-          `AI review passed for collection ${describeCollection(
-            collection,
-            collectionId
-          )}. It is ready for a curator approval.`
-        )
-        break
-      }
-      case 'rejected': {
-        const latestCuration = await CollectionCuration.findLatestByCollectionId(
-          collectionId
-        )
-        if (
-          latestCuration &&
-          latestCuration.status === CurationStatus.PENDING
-        ) {
-          await CollectionCuration.update<CollectionCurationAttributes>(
-            {
-              status: CurationStatus.REJECTED,
-              reviewed_by: VALIDATOR_REVIEWER,
-              updated_at: new Date(),
-            },
-            { id: latestCuration.id }
-          )
-        }
-        await CollectionEvent.record({
-          ...event,
-          type: CollectionEventType.REVIEW_AI_REJECTED,
-        })
-        break
-      }
-      case 'error': {
-        if (result.reason === UNSUPPORTED_VALIDATION_REASON) {
-          await CollectionEvent.record({
-            collection_id: collectionId,
-            type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
-            actor: CollectionEventActor.SYSTEM,
-            actor_address: null,
-            payload: {
-              reason: 'unsupported_items',
-              validationId: result.validationId,
-              items: result.items,
-            },
-          })
-          await notifyCurationSlack(
-            `Collection ${describeCollection(
-              collection,
-              collectionId
-            )} needs a curator review: the validator cannot check ${
-              result.items.length
-            } item(s) (${result.items.map((item) => item.itemId).join(', ')}).`
-          )
-          break
-        }
-        await CollectionEvent.record({
-          ...event,
-          type: CollectionEventType.REVIEW_AI_ERROR,
-        })
-        await notifyCurationSlack(
-          `AI review failed for collection ${describeCollection(
-            collection,
-            collectionId
-          )} (validation ${
-            result.validationId
-          }). It will be re-sent automatically.`
-        )
-        break
-      }
-    }
   }
 
   async getEvents(
@@ -442,7 +301,8 @@ export class AutoCurationService {
     }
 
     const staleStarts = await CollectionEvent.findStaleAiStarted(
-      new Date(Date.now() - STALE_VALIDATION_MS)
+      new Date(Date.now() - STALE_VALIDATION_MS),
+      new Date(Date.now() - SWEEP_LOOKBACK_MS)
     )
 
     for (const staleStart of staleStarts) {
@@ -502,6 +362,211 @@ export class AutoCurationService {
     return { validationId, collectionId: collection.id, items: manifestItems }
   }
 
+  private async doRequestValidation(
+    collectionId: string,
+    ethAddress: string
+  ): Promise<CollectionEventAttributes> {
+    const collection = await this.getStandardCollection(collectionId)
+
+    if (await this.isValidationInProgress(collectionId)) {
+      throw new ValidationInProgressError(collectionId)
+    }
+
+    const retryAt = await this.getDailyLimitRetryAt(collectionId)
+    if (retryAt) {
+      throw new ValidationLimitReachedError(collectionId, retryAt)
+    }
+
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collectionId
+    )
+    if (!latestCuration) {
+      throw new MissingCurationError(collectionId)
+    }
+    if (latestCuration.status === CurationStatus.REJECTED) {
+      await this.createPendingCuration(collectionId)
+    }
+
+    const items = await this.findItemsToRevalidate(
+      collection,
+      await CollectionEvent.findLatestByCollectionIdAndType(
+        collectionId,
+        CollectionEventType.REVIEW_AI_STARTED
+      )
+    )
+    return this.startValidation(collection, items, 'retry', ethAddress)
+  }
+
+  private async doAppeal(
+    collectionId: string,
+    ethAddress: string,
+    note: string
+  ): Promise<CollectionCurationAttributes> {
+    const latestEvent = await CollectionEvent.findLatestByCollectionId(
+      collectionId
+    )
+    if (latestEvent?.type === CollectionEventType.REVIEW_APPEAL_REQUESTED) {
+      throw new AppealAlreadyOpenError(collectionId)
+    }
+
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collectionId
+    )
+    if (!latestCuration || latestCuration.status !== CurationStatus.REJECTED) {
+      throw new CurationNotRejectedError(collectionId)
+    }
+
+    const curation = await this.createPendingCuration(collectionId)
+    await CollectionEvent.record({
+      collection_id: collectionId,
+      type: CollectionEventType.REVIEW_APPEAL_REQUESTED,
+      actor: CollectionEventActor.CREATOR,
+      actor_address: ethAddress.toLowerCase(),
+      payload: { note },
+    })
+
+    const collection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
+    await notifyCurationSlack(
+      `Human review requested for collection ${describeCollection(
+        collection,
+        collectionId
+      )}.\nNote: ${escapeSlackText(note)}`
+    )
+
+    return curation
+  }
+
+  /** Applies a validator callback. Results for anything but the latest validation, or already recorded, are ignored. */
+  private async doHandleValidationResult(
+    collectionId: string,
+    result: ValidationResult
+  ): Promise<void> {
+    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      CollectionEventType.REVIEW_AI_STARTED
+    )
+    if (
+      !latestStart ||
+      latestStart.payload.validationId !== result.validationId
+    ) {
+      console.warn(
+        `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it is not the latest validation`
+      )
+      return
+    }
+    if (
+      await CollectionEvent.findVerdictByValidationId(
+        collectionId,
+        result.validationId
+      )
+    ) {
+      console.warn(
+        `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
+      )
+      return
+    }
+
+    const collection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
+    const event = {
+      collection_id: collectionId,
+      actor: CollectionEventActor.VALIDATOR,
+      actor_address: null,
+      payload: result,
+    }
+
+    switch (result.verdict) {
+      case 'passed': {
+        const recorded = await CollectionEvent.recordOnce({
+          ...event,
+          type: CollectionEventType.REVIEW_AI_PASSED,
+        })
+        if (!recorded) {
+          break
+        }
+        await notifyCurationSlack(
+          `AI review passed for collection ${describeCollection(
+            collection,
+            collectionId
+          )}. It is ready for a curator approval.`
+        )
+        break
+      }
+      case 'rejected': {
+        const recorded = await CollectionEvent.recordOnce({
+          ...event,
+          type: CollectionEventType.REVIEW_AI_REJECTED,
+        })
+        if (!recorded) {
+          break
+        }
+        const latestCuration = await CollectionCuration.findLatestByCollectionId(
+          collectionId
+        )
+        if (
+          latestCuration &&
+          latestCuration.status === CurationStatus.PENDING
+        ) {
+          await CollectionCuration.update<CollectionCurationAttributes>(
+            {
+              status: CurationStatus.REJECTED,
+              reviewed_by: VALIDATOR_REVIEWER,
+              updated_at: new Date(),
+            },
+            { id: latestCuration.id }
+          )
+        }
+        break
+      }
+      case 'error': {
+        if (result.reason === UNSUPPORTED_VALIDATION_REASON) {
+          const handedOff = await CollectionEvent.recordOnce({
+            collection_id: collectionId,
+            type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+            actor: CollectionEventActor.SYSTEM,
+            actor_address: null,
+            payload: {
+              reason: 'unsupported_items',
+              validationId: result.validationId,
+              items: result.items,
+            },
+          })
+          if (!handedOff) {
+            break
+          }
+          await notifyCurationSlack(
+            `Collection ${describeCollection(
+              collection,
+              collectionId
+            )} needs a curator review: the validator cannot check ${
+              result.items.length
+            } item(s) (${result.items.map((item) => item.itemId).join(', ')}).`
+          )
+          break
+        }
+        const recorded = await CollectionEvent.recordOnce({
+          ...event,
+          type: CollectionEventType.REVIEW_AI_ERROR,
+        })
+        if (!recorded) {
+          break
+        }
+        await notifyCurationSlack(
+          `AI review failed for collection ${describeCollection(
+            collection,
+            collectionId
+          )} (validation ${
+            result.validationId
+          }). It will be re-sent automatically.`
+        )
+        break
+      }
+    }
+  }
+
   private async startValidation(
     collection: CollectionAttributes,
     items: ItemAttributes[],
@@ -538,13 +603,16 @@ export class AutoCurationService {
     staleStart: CollectionEventAttributes
   ): Promise<void> {
     const validationId = staleStart.payload.validationId
-    await CollectionEvent.record({
+    const recorded = await CollectionEvent.recordOnce({
       collection_id: collection.id,
       type: CollectionEventType.REVIEW_AI_ERROR,
       actor: CollectionEventActor.VALIDATOR,
       actor_address: null,
       payload: { reason: SWEEP_EXHAUSTED_REASON, validationId },
     })
+    if (!recorded) {
+      return
+    }
     await notifyCurationSlack(
       `AI review of collection ${describeCollection(
         collection

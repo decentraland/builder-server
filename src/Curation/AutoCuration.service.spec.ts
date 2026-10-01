@@ -50,6 +50,7 @@ const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
 const mockSendValidation = sendValidation as jest.Mock
 const mockNotifySlack = notifyCurationSlack as jest.Mock
 const mockRecordEvent = CollectionEvent.record as jest.Mock
+const mockRecordEventOnce = CollectionEvent.recordOnce as jest.Mock
 const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Mock
 const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndType as jest.Mock
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
@@ -98,6 +99,9 @@ describe('AutoCurationService', () => {
     service = new AutoCurationService()
     item = { ...dbItemMock, local_content_hash: 'localHash' }
     mockRecordEvent.mockImplementation((event) =>
+      Promise.resolve({ id: uuidv4(), created_at: new Date(), ...event })
+    )
+    mockRecordEventOnce.mockImplementation((event) =>
       Promise.resolve({ id: uuidv4(), created_at: new Date(), ...event })
     )
   })
@@ -491,7 +495,7 @@ describe('AutoCurationService', () => {
       it('should ignore it without recording anything', async () => {
         await service.handleValidationResult(dbCollectionMock.id, result)
 
-        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockRecordEventOnce).not.toHaveBeenCalled()
         expect(mockUpdateCuration).not.toHaveBeenCalled()
         expect(mockNotifySlack).not.toHaveBeenCalled()
       })
@@ -512,7 +516,7 @@ describe('AutoCurationService', () => {
           verdict: 'rejected',
         })
 
-        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockRecordEventOnce).not.toHaveBeenCalled()
         expect(mockUpdateCuration).not.toHaveBeenCalled()
         expect(mockNotifySlack).not.toHaveBeenCalled()
       })
@@ -522,7 +526,7 @@ describe('AutoCurationService', () => {
       it('should record the pass with the callback body and notify Slack', async () => {
         await service.handleValidationResult(dbCollectionMock.id, result)
 
-        expect(mockRecordEvent).toHaveBeenCalledWith({
+        expect(mockRecordEventOnce).toHaveBeenCalledWith({
           collection_id: dbCollectionMock.id,
           type: CollectionEventType.REVIEW_AI_PASSED,
           actor: CollectionEventActor.VALIDATOR,
@@ -550,13 +554,26 @@ describe('AutoCurationService', () => {
           },
           { id: 'curationId' }
         )
-        expect(mockRecordEvent).toHaveBeenCalledWith(
+        expect(mockRecordEventOnce).toHaveBeenCalledWith(
           expect.objectContaining({
             type: CollectionEventType.REVIEW_AI_REJECTED,
             payload: result,
           })
         )
         expect(mockNotifySlack).not.toHaveBeenCalled()
+      })
+
+      describe('and a concurrent callback already recorded the verdict', () => {
+        beforeEach(() => {
+          mockRecordEventOnce.mockResolvedValue(undefined)
+        })
+
+        it('should not touch the curation nor notify Slack', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
+
+          expect(mockUpdateCuration).not.toHaveBeenCalled()
+          expect(mockNotifySlack).not.toHaveBeenCalled()
+        })
       })
 
       describe('and a curator already decided on the curation', () => {
@@ -571,7 +588,7 @@ describe('AutoCurationService', () => {
           await service.handleValidationResult(dbCollectionMock.id, result)
 
           expect(mockUpdateCuration).not.toHaveBeenCalled()
-          expect(mockRecordEvent).toHaveBeenCalledTimes(1)
+          expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
         })
       })
     })
@@ -584,7 +601,7 @@ describe('AutoCurationService', () => {
       it('should record the error and notify Slack without touching the curation', async () => {
         await service.handleValidationResult(dbCollectionMock.id, result)
 
-        expect(mockRecordEvent).toHaveBeenCalledWith(
+        expect(mockRecordEventOnce).toHaveBeenCalledWith(
           expect.objectContaining({ type: CollectionEventType.REVIEW_AI_ERROR })
         )
         expect(mockUpdateCuration).not.toHaveBeenCalled()
@@ -599,7 +616,7 @@ describe('AutoCurationService', () => {
         it('should still record an error verdict', async () => {
           await service.handleValidationResult(dbCollectionMock.id, result)
 
-          expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect(mockRecordEventOnce).toHaveBeenCalledWith(
             expect.objectContaining({
               type: CollectionEventType.REVIEW_AI_ERROR,
             })
@@ -626,8 +643,8 @@ describe('AutoCurationService', () => {
         it('should hand the collection to a curator instead of recording an error', async () => {
           await service.handleValidationResult(dbCollectionMock.id, result)
 
-          expect(mockRecordEvent).toHaveBeenCalledTimes(1)
-          expect(mockRecordEvent).toHaveBeenCalledWith({
+          expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
+          expect(mockRecordEventOnce).toHaveBeenCalledWith({
             collection_id: dbCollectionMock.id,
             type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
             actor: CollectionEventActor.SYSTEM,
@@ -638,7 +655,7 @@ describe('AutoCurationService', () => {
               items: result.items,
             },
           })
-          expect(mockRecordEvent).not.toHaveBeenCalledWith(
+          expect(mockRecordEventOnce).not.toHaveBeenCalledWith(
             expect.objectContaining({
               type: CollectionEventType.REVIEW_AI_ERROR,
             })
@@ -877,11 +894,7 @@ describe('AutoCurationService', () => {
           await service.sweepStaleValidations()
 
           expect(mockSendValidation).toHaveBeenCalledTimes(1)
-          expect(mockRecordEvent).not.toHaveBeenCalledWith(
-            expect.objectContaining({
-              type: CollectionEventType.REVIEW_AI_ERROR,
-            })
-          )
+          expect(mockRecordEventOnce).not.toHaveBeenCalled()
           expect(mockNotifySlack).not.toHaveBeenCalled()
         })
       })
@@ -894,8 +907,8 @@ describe('AutoCurationService', () => {
         it('should record an exhausted error, alert Slack and stop re-sending', async () => {
           await service.sweepStaleValidations()
 
-          expect(mockRecordEvent).toHaveBeenCalledTimes(1)
-          expect(mockRecordEvent).toHaveBeenCalledWith({
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+          expect(mockRecordEventOnce).toHaveBeenCalledWith({
             collection_id: dbCollectionMock.id,
             type: CollectionEventType.REVIEW_AI_ERROR,
             actor: CollectionEventActor.VALIDATOR,
@@ -962,6 +975,28 @@ describe('AutoCurationService', () => {
           dbCollectionMock,
           ethAddress
         )
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the collection was already published before', () => {
+      beforeEach(() => {
+        mockFindLatestEventByType.mockImplementation((_, type) =>
+          Promise.resolve(
+            type === CollectionEventType.COLLECTION_PUBLISHED
+              ? buildEvent(CollectionEventType.COLLECTION_PUBLISHED)
+              : undefined
+          )
+        )
+      })
+
+      it('should not open another review', async () => {
+        await service.onStandardCollectionPublished(
+          dbCollectionMock,
+          ethAddress
+        )
+        expect(mockCreateCuration).not.toHaveBeenCalled()
         expect(mockRecordEvent).not.toHaveBeenCalled()
         expect(mockSendValidation).not.toHaveBeenCalled()
       })

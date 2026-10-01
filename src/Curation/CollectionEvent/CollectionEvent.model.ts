@@ -23,6 +23,11 @@ const FINAL_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
+const HUMAN_DECISION_EVENT_TYPES = [
+  CollectionEventType.REVIEW_APPROVED,
+  CollectionEventType.REVIEW_REJECTED,
+]
+
 let lastTimestamp = 0
 
 // Events written back to back must keep their insertion order when sorted by created_at.
@@ -42,6 +47,27 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
       created_at: nextTimestamp(),
       ...event,
     })
+  }
+
+  /** Inserts a verdict once per validationId; returns undefined when it was already recorded (unique index). */
+  static async recordOnce(
+    event: NewCollectionEvent
+  ): Promise<CollectionEventAttributes | undefined> {
+    const rows = await this.query<CollectionEventAttributes>(SQL`
+      INSERT INTO ${raw(this.tableName)}
+        (id, collection_id, type, actor, actor_address, payload, created_at)
+        VALUES (
+          ${uuid()},
+          ${event.collection_id},
+          ${event.type},
+          ${event.actor},
+          ${event.actor_address},
+          ${JSON.stringify(event.payload)}::jsonb,
+          ${nextTimestamp()}
+        )
+        ON CONFLICT DO NOTHING
+        RETURNING *`)
+    return rows[0]
   }
 
   static async findLatestByCollectionId(
@@ -131,15 +157,24 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
     return events[0]
   }
 
-  /** Latest starts older than the threshold with no pass, reject or hand-off verdict and not given up by the sweep. */
+  /** Latest starts within the window with no pass, reject or hand-off verdict, no later curator decision, and not given up by the sweep. */
   static findStaleAiStarted(
-    olderThan: Date
+    olderThan: Date,
+    notBefore: Date
   ): Promise<CollectionEventAttributes[]> {
     return this.query<CollectionEventAttributes>(SQL`
       SELECT started.*
         FROM ${raw(this.tableName)} started
         WHERE started.type = ${CollectionEventType.REVIEW_AI_STARTED}
           AND started.created_at < ${olderThan}
+          AND started.created_at > ${notBefore}
+          AND NOT EXISTS (
+            SELECT 1
+              FROM ${raw(this.tableName)} decision
+              WHERE decision.collection_id = started.collection_id
+                AND decision.type = ANY(${HUMAN_DECISION_EVENT_TYPES})
+                AND decision.created_at > started.created_at
+          )
           AND NOT EXISTS (
             SELECT 1
               FROM ${raw(this.tableName)} newer

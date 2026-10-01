@@ -44,7 +44,7 @@ const callbackToken = 'callback-token-example123'
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
 const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
-const mockRecordEvent = CollectionEvent.record as jest.Mock
+const mockRecordEventOnce = CollectionEvent.recordOnce as jest.Mock
 const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Mock
 const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndType as jest.Mock
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
@@ -122,7 +122,7 @@ describe('AutoCuration router', () => {
         .set('Authorization', `Bearer ${callbackToken}`)
         .send({ validationId: 'x', verdict: 'passed', items: [] })
         .expect(404)
-        .then(() => expect(mockRecordEvent).not.toHaveBeenCalled())
+        .then(() => expect(mockRecordEventOnce).not.toHaveBeenCalled())
     })
   })
 
@@ -156,6 +156,7 @@ describe('AutoCuration router', () => {
         id: 'curationId',
         status: CurationStatus.PENDING,
       })
+      mockRecordEventOnce.mockImplementation((event) => Promise.resolve(event))
     })
 
     describe('and the request has no bearer token', () => {
@@ -166,7 +167,7 @@ describe('AutoCuration router', () => {
           .expect(401)
           .then(() => {
             expect(mockFindLatestEventByType).not.toHaveBeenCalled()
-            expect(mockRecordEvent).not.toHaveBeenCalled()
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
           })
       })
     })
@@ -179,7 +180,7 @@ describe('AutoCuration router', () => {
           .send(result)
           .expect(401)
           .then(() => {
-            expect(mockRecordEvent).not.toHaveBeenCalled()
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
           })
       })
     })
@@ -192,7 +193,7 @@ describe('AutoCuration router', () => {
           .send({ validationId: 'latestValidation', verdict: 'maybe' })
           .expect(400)
           .then(() => {
-            expect(mockRecordEvent).not.toHaveBeenCalled()
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
           })
       })
     })
@@ -205,7 +206,7 @@ describe('AutoCuration router', () => {
           .send({ ...result, validationId: 'staleValidation' })
           .expect(204)
           .then(() => {
-            expect(mockRecordEvent).not.toHaveBeenCalled()
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
             expect(CollectionCuration.update).not.toHaveBeenCalled()
           })
       })
@@ -219,7 +220,7 @@ describe('AutoCuration router', () => {
           .send(result)
           .expect(204)
           .then(() => {
-            expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect(mockRecordEventOnce).toHaveBeenCalledWith(
               expect.objectContaining({
                 type: CollectionEventType.REVIEW_AI_PASSED,
                 payload: result,
@@ -236,7 +237,7 @@ describe('AutoCuration router', () => {
             .send({ ...result, verdict: 'error', reason: 'unsupported' })
             .expect(204)
             .then(() => {
-              expect(mockRecordEvent).toHaveBeenCalledWith(
+              expect(mockRecordEventOnce).toHaveBeenCalledWith(
                 expect.objectContaining({
                   type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
                   payload: expect.objectContaining({

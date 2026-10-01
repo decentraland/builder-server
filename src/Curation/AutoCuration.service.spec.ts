@@ -602,84 +602,115 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and the verdict is error', () => {
+    describe('and the verdict is a retryable error', () => {
       beforeEach(() => {
-        result = { ...result, verdict: 'error' }
+        result = { ...result, verdict: 'error', retryable: true }
       })
 
-      it('should record the error and notify Slack without touching the curation', async () => {
+      it('should record an AI error for the sweep and notify Slack without touching the curation', async () => {
         await service.handleValidationResult(dbCollectionMock.id, result)
 
-        expect(mockRecordEventOnce).toHaveBeenCalledWith(
-          expect.objectContaining({ type: CollectionEventType.REVIEW_AI_ERROR })
-        )
+        expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
+        expect(mockRecordEventOnce).toHaveBeenCalledWith({
+          collection_id: dbCollectionMock.id,
+          type: CollectionEventType.REVIEW_AI_ERROR,
+          actor: CollectionEventActor.VALIDATOR,
+          actor_address: null,
+          payload: result,
+        })
         expect(mockUpdateCuration).not.toHaveBeenCalled()
         expect(mockNotifySlack).toHaveBeenCalledTimes(1)
       })
 
-      describe('and the reason is not unsupported', () => {
-        beforeEach(() => {
-          result = { ...result, reason: 'validator_down' }
+      it('should not re-send the validation from the callback', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, result)
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the verdict is a non-retryable error without unsupported items', () => {
+      beforeEach(() => {
+        result = { ...result, verdict: 'error', retryable: false }
+      })
+
+      it('should hand the collection to a curator as a validator error', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, result)
+
+        expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
+        expect(mockRecordEventOnce).toHaveBeenCalledWith({
+          collection_id: dbCollectionMock.id,
+          type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+          actor: CollectionEventActor.SYSTEM,
+          actor_address: null,
+          payload: {
+            reason: 'validator_error',
+            validationId: 'latestValidation',
+            rulesVersion: '0.4.0',
+            items: result.items,
+          },
         })
+        expect(mockUpdateCuration).not.toHaveBeenCalled()
+        expect(mockNotifySlack).toHaveBeenCalledTimes(1)
+      })
+    })
 
-        it('should still record an error verdict', async () => {
-          await service.handleValidationResult(dbCollectionMock.id, result)
+    describe('and the verdict is an unsupported error', () => {
+      let unsupportedItemId: string
 
-          expect(mockRecordEventOnce).toHaveBeenCalledWith(
-            expect.objectContaining({
-              type: CollectionEventType.REVIEW_AI_ERROR,
-            })
-          )
+      beforeEach(() => {
+        unsupportedItemId = uuidv4()
+        result = {
+          ...result,
+          verdict: 'error',
+          reason: 'unsupported',
+          retryable: false,
+          items: [
+            {
+              itemId: item.id,
+              contentHash: 'localHash',
+              passed: true,
+              findings: [],
+            },
+            {
+              itemId: unsupportedItemId,
+              contentHash: 'otherHash',
+              passed: null,
+              findings: [],
+              unsupported: true,
+            },
+          ],
+        }
+      })
+
+      it('should hand only the unsupported items to a curator instead of recording an error', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, result)
+
+        expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
+        expect(mockRecordEventOnce).toHaveBeenCalledWith({
+          collection_id: dbCollectionMock.id,
+          type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+          actor: CollectionEventActor.SYSTEM,
+          actor_address: null,
+          payload: {
+            reason: 'unsupported_items',
+            validationId: 'latestValidation',
+            rulesVersion: '0.4.0',
+            items: [result.items[1]],
+          },
         })
       })
 
-      describe('and the reason is unsupported', () => {
-        beforeEach(() => {
-          result = {
-            ...result,
-            reason: 'unsupported',
-            items: [
-              {
-                itemId: item.id,
-                contentHash: 'localHash',
-                passed: null,
-                findings: [],
-              },
-            ],
-          }
-        })
+      it('should keep the curation pending and notify the curators with the unsupported items only', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, result)
 
-        it('should hand the collection to a curator instead of recording an error', async () => {
-          await service.handleValidationResult(dbCollectionMock.id, result)
-
-          expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
-          expect(mockRecordEventOnce).toHaveBeenCalledWith({
-            collection_id: dbCollectionMock.id,
-            type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
-            actor: CollectionEventActor.SYSTEM,
-            actor_address: null,
-            payload: {
-              reason: 'unsupported_items',
-              validationId: 'latestValidation',
-              items: result.items,
-            },
-          })
-          expect(mockRecordEventOnce).not.toHaveBeenCalledWith(
-            expect.objectContaining({
-              type: CollectionEventType.REVIEW_AI_ERROR,
-            })
-          )
-        })
-
-        it('should keep the curation pending and notify the curators', async () => {
-          await service.handleValidationResult(dbCollectionMock.id, result)
-
-          expect(mockUpdateCuration).not.toHaveBeenCalled()
-          expect(mockNotifySlack).toHaveBeenCalledTimes(1)
-          expect(mockNotifySlack).toHaveBeenCalledWith(
-            expect.stringContaining(item.id)
-          )
-        })
+        expect(mockUpdateCuration).not.toHaveBeenCalled()
+        expect(mockNotifySlack).toHaveBeenCalledTimes(1)
+        const [text] = mockNotifySlack.mock.calls[0]
+        expect(text).toContain('cannot check 1 item(s)')
+        expect(text).toContain(unsupportedItemId)
+        expect(text).not.toContain(item.id)
       })
     })
   })

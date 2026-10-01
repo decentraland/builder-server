@@ -527,6 +527,9 @@ export class AutoCurationService {
       }
       case 'error': {
         if (result.reason === UNSUPPORTED_VALIDATION_REASON) {
+          const unsupportedItems = result.items.filter(
+            (item) => item.unsupported
+          )
           const handedOff = await CollectionEvent.recordOnce({
             collection_id: collectionId,
             type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
@@ -535,7 +538,8 @@ export class AutoCurationService {
             payload: {
               reason: 'unsupported_items',
               validationId: result.validationId,
-              items: result.items,
+              rulesVersion: result.rulesVersion,
+              items: unsupportedItems,
             },
           })
           if (!handedOff) {
@@ -546,8 +550,37 @@ export class AutoCurationService {
               collection,
               collectionId
             )} needs a curator review: the validator cannot check ${
-              result.items.length
-            } item(s) (${result.items.map((item) => item.itemId).join(', ')}).`
+              unsupportedItems.length
+            } item(s) (${unsupportedItems
+              .map((item) => item.itemId)
+              .join(', ')}).`
+          )
+          break
+        }
+        // Only an explicitly retryable error is left for the sweep; anything else would be re-sent forever.
+        if (!result.retryable) {
+          const handedOff = await CollectionEvent.recordOnce({
+            collection_id: collectionId,
+            type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+            actor: CollectionEventActor.SYSTEM,
+            actor_address: null,
+            payload: {
+              reason: 'validator_error',
+              validationId: result.validationId,
+              rulesVersion: result.rulesVersion,
+              items: result.items,
+            },
+          })
+          if (!handedOff) {
+            break
+          }
+          await notifyCurationSlack(
+            `Collection ${describeCollection(
+              collection,
+              collectionId
+            )} needs a curator review: the validator could not validate it (validation ${
+              result.validationId
+            }).`
           )
           break
         }

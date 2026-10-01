@@ -1,7 +1,20 @@
+import { IncomingMessage } from 'http'
 import express from 'express'
 import { collectDefaultMetrics } from 'prom-client'
 import { createTestMetricsComponent } from '@well-known-components/metrics'
 import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
+
+export type RawBodyRequest = express.Request & { rawBody?: string }
+
+// The validator signs the exact bytes it sent, which JSON parsing does not preserve.
+const RAW_BODY_PATH = /\/validation-result$/
+
+function keepRawBody(req: IncomingMessage, _: unknown, buffer: Buffer) {
+  if (RAW_BODY_PATH.test((req.url ?? '').split('?')[0])) {
+    const rawBodyRequest = req as RawBodyRequest
+    rawBodyRequest.rawBody = buffer.toString('utf8')
+  }
+}
 
 export class ExpressApp {
   protected app: express.Application
@@ -15,7 +28,7 @@ export class ExpressApp {
   useJSON() {
     this.app.use(
       express.urlencoded({ extended: false, limit: '2mb' }),
-      express.json({ limit: '5mb' })
+      express.json({ limit: '5mb', verify: keepRawBody })
     )
     return this
   }

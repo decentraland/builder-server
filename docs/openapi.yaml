@@ -1373,13 +1373,28 @@ paths:
       tags: [Curations]
       summary: Receive a validation result
       description: |
-        Callback from the collections curation server with the verdict of a validation. Authenticated with the
-        `BUILDER_CALLBACK_TOKEN` bearer token instead of signed fetch. Results whose `validationId` is not the
-        latest `review.ai_started` of the collection are ignored and still answered with 204.
+        Callback from the wearable validator job with the verdict of a validation. Authenticated with an HMAC
+        signature instead of signed fetch: `x-wearable-validator-signature` is `sha256=` plus the hex HMAC-SHA256,
+        keyed with `WEARABLE_VALIDATOR_CALLBACK_SECRET`, of `<x-wearable-validator-timestamp>.<raw body>`; timestamps
+        more than 5 minutes off are refused. The signature is checked before the feature flag. A body whose
+        `collectionId` is not the path id is answered with 400. Results whose `validationId` is not the latest
+        `review.ai_started` of the collection are ignored and still answered with 204.
       security:
-        - CallbackToken: []
+        - ValidatorSignature: []
       parameters:
         - $ref: '#/components/parameters/CollectionId'
+        - name: x-wearable-validator-timestamp
+          in: header
+          required: true
+          description: Milliseconds since the epoch when the job signed the request
+          schema:
+            type: string
+        - name: x-wearable-validator-signature
+          in: header
+          required: true
+          schema:
+            type: string
+            example: sha256=0f1e2d
       requestBody:
         required: true
         content:
@@ -2581,10 +2596,11 @@ components:
         Signed fetch authentication using Decentraland's ADR-44 specification.
         Multiple headers are used to provide the authentication chain.
 
-    CallbackToken:
-      type: http
-      scheme: bearer
-      description: Shared bearer token (`BUILDER_CALLBACK_TOKEN`) used by the collections curation server callback.
+    ValidatorSignature:
+      type: apiKey
+      in: header
+      name: x-wearable-validator-signature
+      description: HMAC-SHA256 of `<timestamp>.<raw body>` with the secret shared with the wearable validator job (`WEARABLE_VALIDATOR_CALLBACK_SECRET`).
 
   parameters:
     ProjectId:
@@ -3229,11 +3245,14 @@ components:
 
     ValidationFinding:
       type: object
-      required: [rule, severity, message]
+      required: [rule, check, severity, message]
       properties:
         rule:
           type: string
           example: M-03
+        check:
+          type: string
+          example: file-size
         severity:
           type: string
           enum: [error, warning]
@@ -3241,6 +3260,10 @@ components:
           type: string
         where:
           type: string
+        bodyShape:
+          type: string
+          enum: [male, female]
+          description: Present when the finding points at one body shape's file
         measured:
           type: number
         limit:
@@ -3253,17 +3276,27 @@ components:
 
     ValidationResult:
       type: object
-      required: [validationId, verdict, items]
+      required: [validationId, collectionId, verdict, rulesVersion, items]
       properties:
         validationId:
           type: string
-          description: The id sent in the validation manifest
+          description: The id sent in the validation request
+        collectionId:
+          type: string
+          format: uuid
+          description: Must match the path id
         verdict:
           type: string
           enum: [passed, rejected, error]
+        rulesVersion:
+          type: string
+          example: 0.4.0
         reason:
           type: string
-          description: Only with verdict `error`. `unsupported` means every item without a verdict was skipped on purpose (for example facial features), so the collection goes to a curator instead of being re-sent
+          description: Only with verdict `error`. `unsupported` means every undecided item is one the validator cannot judge, so the unsupported items go to a curator instead of being re-sent
+        retryable:
+          type: boolean
+          description: Only with verdict `error`. `true` leaves the validation for the sweep to re-send; otherwise the collection goes to a curator
         items:
           type: array
           items:
@@ -3284,6 +3317,12 @@ components:
                   $ref: '#/components/schemas/ValidationFinding'
               visualSummary:
                 type: string
+              unsupported:
+                type: boolean
+                description: Undecided because the validator cannot judge this kind of item
+              error:
+                type: string
+                description: Why the item could not be validated
 
     ItemCuration:
       type: object

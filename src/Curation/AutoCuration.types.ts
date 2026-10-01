@@ -23,9 +23,11 @@ export type ValidationManifest = {
 
 export type ValidationFinding = {
   rule: string
+  check: string
   severity: 'error' | 'warning'
   message: string
   where?: string
+  bodyShape?: 'male' | 'female'
   measured?: number
   limit?: number
   fix?: string
@@ -38,14 +40,20 @@ export type ValidationResultItem = {
   passed: boolean | null
   findings: ValidationFinding[]
   visualSummary?: string
+  unsupported?: boolean
+  error?: string
 }
 
 export type ValidationResult = {
   validationId: string
+  collectionId: string
   verdict: ValidationVerdict
+  rulesVersion: string
   items: ValidationResultItem[]
-  // Only with verdict "error": "unsupported" means every item without a verdict was skipped on purpose.
+  // Only with verdict "error": "unsupported" means every undecided item is one the validator cannot judge.
   reason?: string
+  // Only with verdict "error": whether sending the collection again may decide it.
+  retryable?: boolean
 }
 
 export const UNSUPPORTED_VALIDATION_REASON = 'unsupported'
@@ -61,8 +69,11 @@ export const validationResultSchema = Object.freeze({
   type: 'object',
   properties: {
     validationId: { type: 'string', minLength: 1 },
+    collectionId: { type: 'string', minLength: 1 },
     verdict: { type: 'string', enum: ['passed', 'rejected', 'error'] },
     reason: { type: 'string' },
+    retryable: { type: 'boolean' },
+    rulesVersion: { type: 'string' },
     items: {
       type: 'array',
       items: {
@@ -77,19 +88,34 @@ export const validationResultSchema = Object.freeze({
               type: 'object',
               properties: {
                 rule: { type: 'string' },
+                check: { type: 'string' },
                 severity: { type: 'string', enum: ['error', 'warning'] },
                 message: { type: 'string' },
+                where: { type: 'string' },
+                bodyShape: { type: 'string', enum: ['male', 'female'] },
+                measured: { type: 'number' },
+                limit: { type: 'number' },
+                fix: { type: 'string' },
+                docs: { type: 'string' },
               },
-              required: ['rule', 'severity', 'message'],
+              required: ['rule', 'check', 'severity', 'message'],
             },
           },
           visualSummary: { type: 'string' },
+          unsupported: { type: 'boolean' },
+          error: { type: 'string' },
         },
         required: ['itemId', 'contentHash', 'passed', 'findings'],
       },
     },
   },
-  required: ['validationId', 'verdict', 'items'],
+  required: [
+    'validationId',
+    'collectionId',
+    'verdict',
+    'rulesVersion',
+    'items',
+  ],
   additionalProperties: false,
 })
 

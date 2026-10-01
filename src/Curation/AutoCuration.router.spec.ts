@@ -20,6 +20,11 @@ import {
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
 import { requestValidation as sendValidation } from './validationQueue'
+import {
+  SIGNATURE_HEADER,
+  signValidatorPayload,
+  TIMESTAMP_HEADER,
+} from './AutoCuration.router'
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
@@ -42,7 +47,7 @@ jest.mock('./validationQueue', () => ({
 jest.mock('./slack')
 
 const server = supertest(app.getApp())
-const callbackToken = 'callback-token-example123'
+const callbackSecret = 'local-secret-example123'
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
@@ -53,6 +58,24 @@ const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndTyp
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
 const mockFindLatestCuration = CollectionCuration.findLatestByCollectionId as jest.Mock
+
+function postSigned(
+  path: string,
+  body: unknown,
+  {
+    secret = callbackSecret,
+    timestamp = String(Date.now()),
+    contentType = 'application/json',
+  } = {}
+) {
+  const rawBody = JSON.stringify(body)
+  return server
+    .post(buildURL(path))
+    .set('Content-Type', contentType)
+    .set(TIMESTAMP_HEADER, timestamp)
+    .set(SIGNATURE_HEADER, signValidatorPayload(secret, timestamp, rawBody))
+    .send(rawBody)
+}
 
 function buildEvent(
   type: CollectionEventType,
@@ -72,6 +95,14 @@ function buildEvent(
 describe('AutoCuration router', () => {
   let url: string
 
+  beforeAll(() => {
+    process.env.WEARABLE_VALIDATOR_CALLBACK_SECRET = callbackSecret
+  })
+
+  afterAll(() => {
+    delete process.env.WEARABLE_VALIDATOR_CALLBACK_SECRET
+  })
+
   beforeEach(() => {
     mockIsFeatureFlagEnabled.mockResolvedValue(true)
   })
@@ -83,12 +114,7 @@ describe('AutoCuration router', () => {
   describe('when the auto curation flag is off', () => {
     beforeEach(() => {
       mockIsFeatureFlagEnabled.mockResolvedValue(false)
-      process.env.BUILDER_CALLBACK_TOKEN = callbackToken
       ;(Collection.findOne as jest.Mock).mockResolvedValue(dbCollectionMock)
-    })
-
-    afterEach(() => {
-      delete process.env.BUILDER_CALLBACK_TOKEN
     })
 
     it('should answer 404 on the validation request', () => {
@@ -118,35 +144,47 @@ describe('AutoCuration router', () => {
         .expect(404)
     })
 
-    it('should answer 404 on the validator callback', () => {
+    it('should answer 404 on a signed validator callback', () => {
+      url = `/collections/${dbCollectionMock.id}/validation-result`
+      return postSigned(url, {
+        validationId: 'x',
+        collectionId: dbCollectionMock.id,
+        verdict: 'passed',
+        rulesVersion: '0.4.0',
+        items: [],
+      })
+        .expect(404)
+        .then(() => expect(mockRecordEventOnce).not.toHaveBeenCalled())
+    })
+
+    it('should answer 401 on an unsigned validator callback so the flag state stays hidden', () => {
       url = `/collections/${dbCollectionMock.id}/validation-result`
       return server
         .post(buildURL(url))
-        .set('Authorization', `Bearer ${callbackToken}`)
         .send({ validationId: 'x', verdict: 'passed', items: [] })
-        .expect(404)
-        .then(() => expect(mockRecordEventOnce).not.toHaveBeenCalled())
+        .expect(401)
+        .then(() => expect(mockIsFeatureFlagEnabled).not.toHaveBeenCalled())
     })
   })
 
   describe('when receiving a validation result', () => {
-    const result = {
-      validationId: 'latestValidation',
-      verdict: 'passed',
-      items: [
-        { itemId: uuidv4(), contentHash: 'aHash', passed: true, findings: [] },
-      ],
-    }
-
-    beforeAll(() => {
-      process.env.BUILDER_CALLBACK_TOKEN = callbackToken
-    })
-
-    afterAll(() => {
-      delete process.env.BUILDER_CALLBACK_TOKEN
-    })
+    let result: Record<string, unknown>
 
     beforeEach(() => {
+      result = {
+        validationId: 'latestValidation',
+        collectionId: dbCollectionMock.id,
+        verdict: 'passed',
+        rulesVersion: '0.4.0',
+        items: [
+          {
+            itemId: uuidv4(),
+            contentHash: 'aHash',
+            passed: true,
+            findings: [],
+          },
+        ],
+      }
       url = `/collections/${dbCollectionMock.id}/validation-result`
       mockExistsMiddleware(Collection, dbCollectionMock.id)
       ;(Collection.findOne as jest.Mock).mockResolvedValue(dbCollectionMock)
@@ -162,7 +200,7 @@ describe('AutoCuration router', () => {
       mockRecordEventOnce.mockImplementation((event) => Promise.resolve(event))
     })
 
-    describe('and the request has no bearer token', () => {
+    describe('and the request is not signed', () => {
       it('should respond with a 401 without touching the events', () => {
         return server
           .post(buildURL(url))
@@ -175,12 +213,9 @@ describe('AutoCuration router', () => {
       })
     })
 
-    describe('and the bearer token is wrong', () => {
+    describe('and the signature was made with another secret', () => {
       it('should respond with a 401 without touching the events', () => {
-        return server
-          .post(buildURL(url))
-          .set('Authorization', 'Bearer not-the-token')
-          .send(result)
+        return postSigned(url, result, { secret: 'another-secret-example123' })
           .expect(401)
           .then(() => {
             expect(mockRecordEventOnce).not.toHaveBeenCalled()
@@ -188,12 +223,71 @@ describe('AutoCuration router', () => {
       })
     })
 
-    describe('and the body is invalid', () => {
-      it('should respond with a 400', () => {
+    describe('and the body was changed after signing', () => {
+      it('should respond with a 401', () => {
+        const timestamp = String(Date.now())
         return server
           .post(buildURL(url))
-          .set('Authorization', `Bearer ${callbackToken}`)
-          .send({ validationId: 'latestValidation', verdict: 'maybe' })
+          .set('Content-Type', 'application/json')
+          .set(TIMESTAMP_HEADER, timestamp)
+          .set(
+            SIGNATURE_HEADER,
+            signValidatorPayload(
+              callbackSecret,
+              timestamp,
+              JSON.stringify(result)
+            )
+          )
+          .send(JSON.stringify({ ...result, verdict: 'rejected' }))
+          .expect(401)
+          .then(() => {
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the timestamp is more than five minutes old', () => {
+      it('should respond with a 401', () => {
+        return postSigned(url, result, {
+          timestamp: String(Date.now() - 6 * 60 * 1000),
+        })
+          .expect(401)
+          .then(() => {
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the body is not JSON so there is no raw body', () => {
+      it('should respond with a 401', () => {
+        return postSigned(url, result, { contentType: 'text/plain' })
+          .expect(401)
+          .then(() => {
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the secret is not configured', () => {
+      beforeEach(() => {
+        delete process.env.WEARABLE_VALIDATOR_CALLBACK_SECRET
+      })
+
+      afterEach(() => {
+        process.env.WEARABLE_VALIDATOR_CALLBACK_SECRET = callbackSecret
+      })
+
+      it('should respond with a 401', () => {
+        return postSigned(url, result).expect(401)
+      })
+    })
+
+    describe('and the body is invalid', () => {
+      it('should respond with a 400', () => {
+        return postSigned(url, {
+          validationId: 'latestValidation',
+          verdict: 'maybe',
+        })
           .expect(400)
           .then(() => {
             expect(mockRecordEventOnce).not.toHaveBeenCalled()
@@ -201,12 +295,32 @@ describe('AutoCuration router', () => {
       })
     })
 
+    describe('and the body has an unknown top level field', () => {
+      it('should drop the field from the recorded result', () => {
+        return postSigned(url, { ...result, unexpected: true })
+          .expect(204)
+          .then(() => {
+            expect(mockRecordEventOnce).toHaveBeenCalledWith(
+              expect.objectContaining({ payload: result })
+            )
+          })
+      })
+    })
+
+    describe('and the body is for another collection', () => {
+      it('should respond with a 400 without touching the events', () => {
+        return postSigned(url, { ...result, collectionId: uuidv4() })
+          .expect(400)
+          .then(() => {
+            expect(mockFindLatestEventByType).not.toHaveBeenCalled()
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
+          })
+      })
+    })
+
     describe('and the validation is not the latest one', () => {
       it('should respond with a 204 and ignore it', () => {
-        return server
-          .post(buildURL(url))
-          .set('Authorization', `Bearer ${callbackToken}`)
-          .send({ ...result, validationId: 'staleValidation' })
+        return postSigned(url, { ...result, validationId: 'staleValidation' })
           .expect(204)
           .then(() => {
             expect(mockRecordEventOnce).not.toHaveBeenCalled()
@@ -217,10 +331,7 @@ describe('AutoCuration router', () => {
 
     describe('and the validation is the latest one', () => {
       it('should respond with a 204 and record the verdict', () => {
-        return server
-          .post(buildURL(url))
-          .set('Authorization', `Bearer ${callbackToken}`)
-          .send(result)
+        return postSigned(url, result)
           .expect(204)
           .then(() => {
             expect(mockRecordEventOnce).toHaveBeenCalledWith(
@@ -232,12 +343,73 @@ describe('AutoCuration router', () => {
           })
       })
 
+      describe('and the result carries every field the validator job sends', () => {
+        beforeEach(() => {
+          result = {
+            ...result,
+            verdict: 'error',
+            retryable: true,
+            items: [
+              {
+                itemId: uuidv4(),
+                contentHash: 'aHash',
+                passed: false,
+                findings: [
+                  {
+                    rule: 'S-05',
+                    check: 'file-size',
+                    severity: 'error',
+                    message: 'The item is too big',
+                    where: 'male/shirt.glb',
+                    bodyShape: 'male',
+                    measured: 4228654,
+                    limit: 3145728,
+                    fix: 'Reduce the textures',
+                    docs: 'https://docs.example.com/s-05',
+                  },
+                ],
+                visualSummary: 'thumbnail-honesty: Looks fine',
+              },
+              {
+                itemId: uuidv4(),
+                contentHash: 'bHash',
+                passed: null,
+                findings: [],
+                error: 'The render server did not answer',
+              },
+              {
+                itemId: uuidv4(),
+                contentHash: 'cHash',
+                passed: null,
+                findings: [],
+                unsupported: true,
+              },
+            ],
+          }
+        })
+
+        it('should accept it and record the whole result', () => {
+          return postSigned(url, result)
+            .expect(204)
+            .then(() => {
+              expect(mockRecordEventOnce).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  type: CollectionEventType.REVIEW_AI_ERROR,
+                  payload: result,
+                })
+              )
+            })
+        })
+      })
+
       describe('and the verdict is an unsupported error', () => {
-        it('should accept the reason field and hand the collection to a curator', () => {
-          return server
-            .post(buildURL(url))
-            .set('Authorization', `Bearer ${callbackToken}`)
-            .send({ ...result, verdict: 'error', reason: 'unsupported' })
+        it('should hand the collection to a curator', () => {
+          return postSigned(url, {
+            ...result,
+            verdict: 'error',
+            reason: 'unsupported',
+            retryable: false,
+          })
             .expect(204)
             .then(() => {
               expect(mockRecordEventOnce).toHaveBeenCalledWith(
@@ -256,10 +428,7 @@ describe('AutoCuration router', () => {
 
       describe('and the verdict is rejected', () => {
         it('should reject the curation on behalf of the validator', () => {
-          return server
-            .post(buildURL(url))
-            .set('Authorization', `Bearer ${callbackToken}`)
-            .send({ ...result, verdict: 'rejected' })
+          return postSigned(url, { ...result, verdict: 'rejected' })
             .expect(204)
             .then(() => {
               expect(CollectionCuration.update).toHaveBeenCalledWith(

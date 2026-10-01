@@ -468,7 +468,9 @@ describe('AutoCurationService', () => {
     beforeEach(() => {
       result = {
         validationId: 'latestValidation',
+        collectionId: dbCollectionMock.id,
         verdict: 'passed',
+        rulesVersion: '0.4.0',
         items: [
           {
             itemId: item.id,

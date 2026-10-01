@@ -1,9 +1,10 @@
-import { timingSafeEqual } from 'crypto'
+import { createHmac, timingSafeEqual } from 'crypto'
 import { Request, Response, NextFunction } from 'express'
 import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 import { Router } from '../common/Router'
 import { asyncHandler } from '../common/asyncHandler'
+import { RawBodyRequest } from '../common/ExpressApp'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import {
   AuthRequest,
@@ -37,30 +38,57 @@ import {
 const DEFAULT_EVENTS_LIMIT = 50
 const MAX_EVENTS_LIMIT = 200
 
-function isSameToken(received: string, expected: string): boolean {
-  const receivedBuffer = Buffer.from(received)
-  const expectedBuffer = Buffer.from(expected)
+export const SIGNATURE_HEADER = 'x-wearable-validator-signature'
+export const TIMESTAMP_HEADER = 'x-wearable-validator-timestamp'
+const SIGNATURE_MAX_AGE_MS = 5 * 60 * 1000
+
+export function signValidatorPayload(
+  secret: string,
+  timestamp: string,
+  rawBody: string
+): string {
+  return `sha256=${createHmac('sha256', secret)
+    .update(`${timestamp}.${rawBody}`)
+    .digest('hex')}`
+}
+
+export function isValidValidatorSignature(
+  secret: string,
+  timestamp: string,
+  rawBody: string,
+  signature: string
+): boolean {
+  const sentAt = Number(timestamp)
+  if (
+    !Number.isFinite(sentAt) ||
+    Math.abs(Date.now() - sentAt) > SIGNATURE_MAX_AGE_MS
+  ) {
+    return false
+  }
+  const expected = Buffer.from(signValidatorPayload(secret, timestamp, rawBody))
+  const received = Buffer.from(signature)
   return (
-    receivedBuffer.length === expectedBuffer.length &&
-    timingSafeEqual(receivedBuffer, expectedBuffer)
+    expected.length === received.length && timingSafeEqual(expected, received)
   )
 }
 
-/** Authenticates the collections curation server callback with its bearer token. */
-export function withCallbackToken(
+/** Authenticates the wearable validator callback by the HMAC of its raw body. */
+export function withValidatorSignature(
   req: Request,
   res: Response,
   next: NextFunction
 ) {
-  const expectedToken = env.get('BUILDER_CALLBACK_TOKEN', '')
-  const [scheme, receivedToken = ''] = (
-    req.header('authorization') ?? ''
-  ).split(' ')
+  const secret = env.get('WEARABLE_VALIDATOR_CALLBACK_SECRET', '')
+  const { rawBody } = req as RawBodyRequest
+  const timestamp = req.header(TIMESTAMP_HEADER)
+  const signature = req.header(SIGNATURE_HEADER)
 
   if (
-    !expectedToken ||
-    scheme !== 'Bearer' ||
-    !isSameToken(receivedToken, expectedToken)
+    !secret ||
+    rawBody === undefined ||
+    !timestamp ||
+    !signature ||
+    !isValidValidatorSignature(secret, timestamp, rawBody, signature)
   ) {
     res
       .status(STATUS_CODES.unauthorized)
@@ -130,10 +158,11 @@ export class AutoCurationRouter extends Router {
       server.handleRequest(this.getEvents)
     )
 
+    // The signature goes first so an unauthenticated caller cannot tell whether the flag is on.
     this.router.post(
       '/collections/:id/validation-result',
+      withValidatorSignature,
       withAutoCurationEnabled,
-      withCallbackToken,
       withCollectionExists,
       withSchemaValidation(validationResultSchema),
       asyncHandler(this.receiveValidationResult)
@@ -209,7 +238,15 @@ export class AutoCurationRouter extends Router {
 
   receiveValidationResult = async (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
-    await this.service.handleValidationResult(id, req.body as ValidationResult)
+    const result = req.body as ValidationResult
+    if (result.collectionId !== id) {
+      throw new HTTPError(
+        'The result belongs to another collection',
+        { id, collectionId: result.collectionId },
+        STATUS_CODES.badRequest
+      )
+    }
+    await this.service.handleValidationResult(id, result)
     res.status(204).end()
   }
 }

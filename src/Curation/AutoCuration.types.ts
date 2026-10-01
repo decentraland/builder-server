@@ -1,6 +1,8 @@
 import { buildEntityMetadata } from '../Item/hashes'
 
 export const MAX_VALIDATION_ATTEMPTS_PER_DAY = 3
+// The validator job drops a request with more items without answering.
+export const MAX_VALIDATION_ITEMS = 50
 
 export type ValidationTrigger = 'publish' | 'retry' | 'changes' | 'sweep'
 
@@ -65,45 +67,51 @@ export type CollectionEventsPage<T> = {
   limit: number
 }
 
+// Generous bounds: the body is signed by the validator, and a 400 makes SQS re-run the whole collection.
+const shortText = { type: 'string', maxLength: 256 }
+const longText = { type: 'string', maxLength: 10000 }
+
 export const validationResultSchema = Object.freeze({
   type: 'object',
   properties: {
-    validationId: { type: 'string', minLength: 1 },
-    collectionId: { type: 'string', minLength: 1 },
+    validationId: { type: 'string', minLength: 1, maxLength: 64 },
+    collectionId: { type: 'string', minLength: 1, maxLength: 64 },
     verdict: { type: 'string', enum: ['passed', 'rejected', 'error'] },
-    reason: { type: 'string' },
+    reason: shortText,
     retryable: { type: 'boolean' },
-    rulesVersion: { type: 'string' },
+    rulesVersion: shortText,
     items: {
       type: 'array',
+      maxItems: MAX_VALIDATION_ITEMS,
       items: {
         type: 'object',
         properties: {
-          itemId: { type: 'string' },
-          contentHash: { type: 'string' },
+          itemId: shortText,
+          contentHash: shortText,
           passed: { type: ['boolean', 'null'] },
           findings: {
             type: 'array',
+            maxItems: 1000,
             items: {
               type: 'object',
               properties: {
-                rule: { type: 'string' },
-                check: { type: 'string' },
+                rule: shortText,
+                check: shortText,
                 severity: { type: 'string', enum: ['error', 'warning'] },
-                message: { type: 'string' },
-                where: { type: 'string' },
+                message: longText,
+                where: { type: 'string', maxLength: 1024 },
                 bodyShape: { type: 'string', enum: ['male', 'female'] },
                 measured: { type: 'number' },
                 limit: { type: 'number' },
-                fix: { type: 'string' },
-                docs: { type: 'string' },
+                fix: longText,
+                docs: { type: 'string', maxLength: 2048 },
               },
               required: ['rule', 'check', 'severity', 'message'],
             },
           },
-          visualSummary: { type: 'string' },
+          visualSummary: { type: 'string', maxLength: 50000 },
           unsupported: { type: 'boolean' },
-          error: { type: 'string' },
+          error: longText,
         },
         required: ['itemId', 'contentHash', 'passed', 'findings'],
       },

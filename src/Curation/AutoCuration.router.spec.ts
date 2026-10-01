@@ -19,6 +19,9 @@ import {
   CollectionEventType,
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
+import { Item } from '../Item/Item.model'
+import { withCollectionLock } from './collectionLock'
+import { CollectionBusyError } from './AutoCuration.errors'
 import { requestValidation as sendValidation } from './validationQueue'
 import {
   SIGNATURE_HEADER,
@@ -45,6 +48,7 @@ jest.mock('./validationQueue', () => ({
   requestValidation: jest.fn(),
 }))
 jest.mock('./slack')
+jest.mock('./collectionLock')
 
 const server = supertest(app.getApp())
 const callbackSecret = 'local-secret-example123'
@@ -105,6 +109,9 @@ describe('AutoCuration router', () => {
 
   beforeEach(() => {
     mockIsFeatureFlagEnabled.mockResolvedValue(true)
+    ;(withCollectionLock as jest.Mock).mockImplementation(
+      (_: string, task: () => Promise<unknown>) => task()
+    )
   })
 
   afterEach(() => {
@@ -591,6 +598,62 @@ describe('AutoCuration router', () => {
               id: dbCollectionMock.id,
               retryAt: expect.stringMatching(/T00:00:00\.000Z$/),
             })
+
+            expect(sendValidation).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and nothing changed since the latest verdict', () => {
+      beforeEach(() => {
+        mockFindLatestEventByType.mockResolvedValue({
+          ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            validationId: 'previous',
+            itemIds: [],
+          }),
+          created_at: new Date(Date.now() - 60 * 1000),
+        })
+        mockFindVerdict.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
+            validationId: 'previous',
+          })
+        )
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValue([
+          {
+            id: uuidv4(),
+            updated_at: new Date(Date.now() - 120 * 1000),
+          },
+        ])
+      })
+
+      it('should respond with a 409 asking for a change or an appeal', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(409)
+          .then((response: any) => {
+            expect(response.body.error).toBe(
+              'Nothing changed since the last validation: edit an item or appeal the decision'
+            )
+            expect(sendValidation).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and another instance is updating the collection', () => {
+      beforeEach(() => {
+        const mockWithCollectionLock = withCollectionLock as jest.Mock
+        mockWithCollectionLock.mockRejectedValueOnce(
+          new CollectionBusyError(dbCollectionMock.id)
+        )
+      })
+
+      it('should respond with a 503 so the caller retries', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(503)
+          .then(() => {
             expect(sendValidation).not.toHaveBeenCalled()
           })
       })

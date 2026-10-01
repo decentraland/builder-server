@@ -399,14 +399,19 @@ export class CurationRouter extends Router {
       )
     }
 
+    // Unassigning (null) is a curator action too.
+    if (
+      curationJSON.assignee !== undefined &&
+      !(await isCommitteeMember(ethAddress))
+    ) {
+      throw new HTTPError(
+        'Only committee members can modify the assignee',
+        { id },
+        STATUS_CODES.unauthorized
+      )
+    }
+
     if (curationJSON.assignee) {
-      if (!(await isCommitteeMember(ethAddress))) {
-        throw new HTTPError(
-          'Only committee members can modify the assignee',
-          { id },
-          STATUS_CODES.unauthorized
-        )
-      }
       const isAssigneeCommitteeMember = await isCommitteeMember(
         curationJSON.assignee.toLowerCase()
       )

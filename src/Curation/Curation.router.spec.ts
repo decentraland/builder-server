@@ -1403,6 +1403,48 @@ describe('when handling a request', () => {
         .mockResolvedValueOnce(expectedCuration)
     })
 
+    describe('and the rejection message is longer than 2000 characters', () => {
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'a'.repeat(2001),
+            },
+          },
+        } as any
+      })
+
+      it('should reject with an invalid schema error and not update the curation', async () => {
+        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+          'Invalid schema'
+        )
+        expect(updateSpy).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and a caller that is not a committee member unassigns the curation', () => {
+      beforeEach(() => {
+        mockIsCommitteeMember.mockReset().mockResolvedValue(false)
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: { curation: { assignee: null } },
+        } as any
+      })
+
+      it('should reject and not record an assignment', async () => {
+        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+          'Only committee members can modify the assignee'
+        )
+        expect(updateSpy).not.toHaveBeenCalled()
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+      })
+    })
+
     describe('and the curation is rejected without reasons', () => {
       beforeEach(() => {
         req = {

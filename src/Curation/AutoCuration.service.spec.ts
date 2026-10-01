@@ -26,6 +26,7 @@ import { ValidationResult } from './AutoCuration.types'
 import {
   AppealAlreadyOpenError,
   CurationNotRejectedError,
+  NothingToRevalidateError,
   ValidationInProgressError,
   ValidationLimitReachedError,
 } from './AutoCuration.errors'
@@ -45,6 +46,9 @@ jest.mock('../Item/Item.model')
 jest.mock('../ethereum/api/collection')
 jest.mock('./CollectionEvent/CollectionEvent.model')
 jest.mock('./CollectionCuration/CollectionCuration.model')
+jest.mock('./collectionLock', () => ({
+  withCollectionLock: (_: string, task: () => Promise<unknown>) => task(),
+}))
 jest.mock('./validationQueue', () => ({
   ...jest.requireActual('./validationQueue'),
   requestValidation: jest.fn(),
@@ -150,11 +154,15 @@ describe('AutoCurationService', () => {
 
     beforeEach(() => {
       jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
-      previousStart = buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
-        validationId: 'previousValidation',
-        trigger: 'publish',
-        itemIds: [item.id],
-      })
+      previousStart = {
+        ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          validationId: 'previousValidation',
+          trigger: 'publish',
+          itemIds: [item.id],
+        }),
+        created_at: new Date('2026-09-29T14:00:00.000Z'),
+      }
+      item = { ...item, updated_at: new Date('2026-09-29T14:30:00.000Z') }
       mockFindCollection.mockResolvedValue(dbCollectionMock)
       mockFindEventsSince.mockResolvedValue([])
       mockFindLatestEventByType.mockResolvedValue(previousStart)
@@ -219,6 +227,91 @@ describe('AutoCurationService', () => {
         await service.requestValidation(dbCollectionMock.id, ethAddress)
 
         expect(mockSendValidation).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    describe('and no item was saved since the latest validation started', () => {
+      beforeEach(() => {
+        item = { ...item, updated_at: new Date('2026-09-29T13:00:00.000Z') }
+        mockFindItemsByCollection.mockResolvedValue([item])
+        mockFindItemsByIds.mockResolvedValue([item])
+      })
+
+      it('should reject with a nothing to revalidate error and not send anything', async () => {
+        await expect(
+          service.requestValidation(dbCollectionMock.id, ethAddress)
+        ).rejects.toThrow(NothingToRevalidateError)
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockCreateCuration).not.toHaveBeenCalled()
+      })
+
+      describe('and the latest validation ended with a retryable error', () => {
+        beforeEach(() => {
+          mockFindVerdict.mockResolvedValue(
+            buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+              validationId: 'previousValidation',
+              reason: 'sweep_exhausted',
+            })
+          )
+        })
+
+        it('should re-run the same items', async () => {
+          await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+          expect(mockSendValidation).toHaveBeenCalledWith(
+            expect.objectContaining({
+              items: [expect.objectContaining({ itemId: item.id })],
+            })
+          )
+        })
+      })
+
+      describe('and the latest validation was too large to send', () => {
+        beforeEach(() => {
+          mockFindVerdict.mockResolvedValue(
+            buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+              validationId: 'previousValidation',
+              reason: 'too_large',
+            })
+          )
+        })
+
+        it('should reject with a nothing to revalidate error', async () => {
+          await expect(
+            service.requestValidation(dbCollectionMock.id, ethAddress)
+          ).rejects.toThrow(NothingToRevalidateError)
+        })
+      })
+    })
+
+    describe('and an item outside the latest validation was saved after it started', () => {
+      let editedItem: ItemAttributes
+
+      beforeEach(() => {
+        const untouchedItem = {
+          ...item,
+          updated_at: new Date('2026-09-29T13:00:00.000Z'),
+        }
+        editedItem = {
+          ...item,
+          id: 'b43f3350-ff47-4766-8b0e-28744b66e4a1',
+          updated_at: new Date('2026-09-29T14:30:00.000Z'),
+        }
+        mockFindItemsByIds.mockResolvedValue([untouchedItem])
+        mockFindItemsByCollection.mockResolvedValue([untouchedItem, editedItem])
+      })
+
+      it('should validate the previous items and the edited one', async () => {
+        await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+        expect(mockSendValidation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            items: [
+              expect.objectContaining({ itemId: item.id }),
+              expect.objectContaining({ itemId: editedItem.id }),
+            ],
+          })
+        )
       })
     })
 
@@ -888,6 +981,7 @@ describe('AutoCurationService', () => {
         itemIds: [item.id],
       })
       mockFindStaleAiStarted.mockResolvedValue([staleStart])
+      mockFindLatestEventByType.mockResolvedValue(staleStart)
       mockFindCollection.mockResolvedValue(dbCollectionMock)
       mockFindItemsByIds.mockResolvedValue([item])
     })

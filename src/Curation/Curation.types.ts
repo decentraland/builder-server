@@ -52,7 +52,7 @@ export const patchCurationSchema = Object.freeze({
       minItems: 1,
       uniqueItems: true,
     },
-    rejectionMessage: { type: 'string', minLength: 1 },
+    rejectionMessage: { type: 'string', minLength: 1, maxLength: 2000 },
   },
   additionalProperties: false,
   anyOf: [{ required: ['assignee'] }, { required: ['status'] }],

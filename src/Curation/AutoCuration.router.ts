@@ -1,5 +1,6 @@
 import { createHmac, timingSafeEqual } from 'crypto'
 import { Request, Response, NextFunction } from 'express'
+import rateLimit from 'express-rate-limit'
 import { server } from 'decentraland-server'
 import { env } from 'decentraland-commons'
 import { Router } from '../common/Router'
@@ -28,8 +29,10 @@ import {
 } from './AutoCuration.types'
 import {
   AppealAlreadyOpenError,
+  CollectionBusyError,
   CurationNotRejectedError,
   MissingCurationError,
+  NothingToRevalidateError,
   NotStandardCollectionError,
   ValidationInProgressError,
   ValidationLimitReachedError,
@@ -37,6 +40,17 @@ import {
 
 const DEFAULT_EVENTS_LIMIT = 50
 const MAX_EVENTS_LIMIT = 200
+const RATE_LIMIT_WINDOW_MS = 60 * 1000
+
+// Keyed by the signed address: there is no trusted proxy config, so every caller would share the balancer's IP.
+const limitPerAddress = (limit: number) =>
+  rateLimit({
+    windowMs: RATE_LIMIT_WINDOW_MS,
+    limit,
+    standardHeaders: 'draft-7',
+    legacyHeaders: false,
+    keyGenerator: (req) => (req as AuthRequest).auth.ethAddress.toLowerCase(),
+  })
 
 export const SIGNATURE_HEADER = 'x-wearable-validator-signature'
 export const TIMESTAMP_HEADER = 'x-wearable-validator-timestamp'
@@ -105,6 +119,7 @@ export class AutoCurationRouter extends Router {
 
   mount() {
     // With the flag off none of these routes exist, so the legacy flow stays untouched.
+    // It runs after auth so anonymous calls never fetch the flag.
     const withAutoCurationEnabled = guardAsync(
       async (_: Request, res: Response, next: NextFunction) => {
         if (await this.service.isEnabled()) {
@@ -116,6 +131,9 @@ export class AutoCurationRouter extends Router {
         }
       }
     )
+    const withWriteRateLimit = limitPerAddress(30)
+    // The timeline polls every 10 seconds while a review runs.
+    const withReadRateLimit = limitPerAddress(120)
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(
       Collection,
@@ -131,8 +149,9 @@ export class AutoCurationRouter extends Router {
     this.router.post(
       '/collections/:id/validations',
       withCors,
-      withAutoCurationEnabled,
       withAuthentication,
+      withWriteRateLimit,
+      withAutoCurationEnabled,
       withCollectionExists,
       withCollectionAuthorization,
       server.handleRequest(this.requestValidation)
@@ -141,8 +160,9 @@ export class AutoCurationRouter extends Router {
     this.router.post(
       '/collections/:id/curation/appeal',
       withCors,
-      withAutoCurationEnabled,
       withAuthentication,
+      withWriteRateLimit,
+      withAutoCurationEnabled,
       withCollectionExists,
       withCollectionAuthorization,
       withSchemaValidation(appealSchema),
@@ -152,8 +172,9 @@ export class AutoCurationRouter extends Router {
     this.router.get(
       '/collections/:id/events',
       withCors,
-      withAutoCurationEnabled,
       withAuthentication,
+      withReadRateLimit,
+      withAutoCurationEnabled,
       withCollectionExists,
       server.handleRequest(this.getEvents)
     )
@@ -185,12 +206,13 @@ export class AutoCurationRouter extends Router {
         )
       } else if (
         error instanceof MissingCurationError ||
-        error instanceof NotStandardCollectionError
+        error instanceof NotStandardCollectionError ||
+        error instanceof NothingToRevalidateError
       ) {
         throw new HTTPError(error.message, { id }, STATUS_CODES.conflict)
       }
 
-      throw error
+      throw toBusyHTTPError(error, id)
     }
   }
 
@@ -207,7 +229,7 @@ export class AutoCurationRouter extends Router {
         throw new HTTPError(error.message, { id }, STATUS_CODES.conflict)
       }
 
-      throw error
+      throw toBusyHTTPError(error, id)
     }
   }
 
@@ -246,7 +268,18 @@ export class AutoCurationRouter extends Router {
         STATUS_CODES.badRequest
       )
     }
-    await this.service.handleValidationResult(id, result)
+    try {
+      await this.service.handleValidationResult(id, result)
+    } catch (error) {
+      throw toBusyHTTPError(error, id)
+    }
     res.status(204).end()
   }
+}
+
+/** Another instance holds the collection: 503 makes the Builder and the validator job retry instead of giving up. */
+function toBusyHTTPError(error: unknown, id: string): unknown {
+  return error instanceof CollectionBusyError
+    ? new HTTPError(error.message, { id }, STATUS_CODES.serviceUnavailable)
+    : error
 }

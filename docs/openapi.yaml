@@ -1299,6 +1299,14 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: More than 30 requests per minute from this address
+        '503':
+          description: Another server instance is updating the collection; retry shortly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /collections/{id}/validations:
     post:
@@ -1307,8 +1315,11 @@ paths:
       summary: Request an AI validation
       description: |
         Sends the collection to the automatic validator again. Only the collection creator or a manager can call it.
-        A collection gets 3 AI verdicts per UTC day; a curator decision resets the count. Opens a new pending
-        curation when the latest one is rejected and records a `review.ai_started` event.
+        A collection gets 3 AI verdicts per UTC day; a curator decision resets the count. The same content always
+        gets the same verdict, so a retry needs the last run to have ended without one (an AI error) or an item saved
+        since it started; it then validates the previous run's items plus the edited ones. Opens a new pending
+        curation when the latest one is rejected and records a `review.ai_started` event. At most 30 requests per
+        minute per address.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       responses:
@@ -1323,13 +1334,19 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: A validation is already in progress, or the collection is not a published standard collection
+          description: A validation is already in progress, nothing changed since the last verdict, or the collection is not a published standard collection
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '429':
-          description: Daily validation limit reached. `data.retryAt` is the ISO date when validations are allowed again
+          description: Daily validation limit reached (`data.retryAt` is the ISO date when validations are allowed again), or more than 30 requests per minute from this address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '503':
+          description: Another server instance is updating the collection; retry shortly
           content:
             application/json:
               schema:
@@ -1343,7 +1360,7 @@ paths:
       description: |
         Returns the review timeline of a collection, newest first. Creators and managers can read their own
         collections, committee members any collection. For non-committee callers the `validationId` is omitted
-        from the payload of `review.ai_*` events.
+        from every event payload. At most 120 requests per minute per address.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
         - $ref: '#/components/parameters/Page'
@@ -1366,6 +1383,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '429':
+          description: More than 120 requests per minute from this address
 
   /collections/{id}/validation-result:
     post:
@@ -1410,6 +1429,12 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '503':
+          description: Another server instance is updating the collection; retry shortly
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /collections/{id}/itemCurations:
     get:

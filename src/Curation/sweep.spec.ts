@@ -62,3 +62,34 @@ describe('when running the auto curation sweep', () => {
     })
   })
 })
+
+describe('when a sweep is still running on this instance', () => {
+  let service: jest.Mocked<AutoCurationService>
+  let finishFirstSweep: () => void
+
+  beforeEach(() => {
+    service = new AutoCurationService() as jest.Mocked<AutoCurationService>
+    mockQuery.mockResolvedValue([{ locked: true }])
+    service.sweepStaleValidations.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          finishFirstSweep = resolve
+        })
+    )
+  })
+
+  afterEach(() => {
+    jest.resetAllMocks()
+  })
+
+  it('should skip the next tick instead of sweeping in parallel', async () => {
+    const firstSweep = runAutoCurationSweep(service)
+    await new Promise(setImmediate)
+
+    await expect(runAutoCurationSweep(service)).resolves.toBe(false)
+    expect(service.sweepStaleValidations).toHaveBeenCalledTimes(1)
+
+    finishFirstSweep()
+    await expect(firstSweep).resolves.toBe(true)
+  })
+})

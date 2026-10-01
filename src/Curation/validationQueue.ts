@@ -1,6 +1,8 @@
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns'
 import { env } from 'decentraland-commons'
-import { ValidationManifest } from './AutoCuration.types'
+import { MAX_VALIDATION_ITEMS, ValidationManifest } from './AutoCuration.types'
+
+export { MAX_VALIDATION_ITEMS }
 
 export const VALIDATION_REQUESTED_EVENT = {
   type: 'builder',
@@ -8,8 +10,6 @@ export const VALIDATION_REQUESTED_EVENT = {
 } as const
 // SNS refuses messages over 256 KB; the margin covers the attributes and the envelope.
 export const MAX_VALIDATION_MESSAGE_BYTES = 240 * 1024
-// The validator job drops a request with more items without answering.
-export const MAX_VALIDATION_ITEMS = 50
 
 export class ValidationTooLargeError extends Error {
   constructor(public bytes: number, public itemCount: number) {

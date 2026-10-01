@@ -5,9 +5,24 @@ export const SWEEP_INTERVAL_MS = 10 * 60 * 1000
 // Session-level advisory lock so only one server instance runs the sweep at a time.
 export const SWEEP_LOCK_KEY = 20260929
 
+// The advisory lock is re-entrant on this process's shared connection, so it can't stop a slow sweep from overlapping the next tick.
+let isSweeping = false
+
 export async function runAutoCurationSweep(
   service: AutoCurationService
 ): Promise<boolean> {
+  if (isSweeping) {
+    return false
+  }
+  isSweeping = true
+  try {
+    return await sweepUnderLock(service)
+  } finally {
+    isSweeping = false
+  }
+}
+
+async function sweepUnderLock(service: AutoCurationService): Promise<boolean> {
   const [lock] = (await db.query('SELECT pg_try_advisory_lock($1) AS locked', [
     SWEEP_LOCK_KEY,
   ])) as { locked: boolean }[]

@@ -7,6 +7,7 @@ export const STATUS_CODES = {
   conflict: 409,
   tooManyRequests: 429,
   error: 500,
+  serviceUnavailable: 503,
 }
 export type StatusCode = typeof STATUS_CODES[keyof typeof STATUS_CODES]
 

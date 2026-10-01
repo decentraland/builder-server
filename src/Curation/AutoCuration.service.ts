@@ -28,6 +28,7 @@ import {
   ValidationTooLargeError,
 } from './validationQueue'
 import { escapeSlackText, notifyCurationSlack } from './slack'
+import { withCollectionLock } from './collectionLock'
 import {
   CollectionEventsPage,
   MAX_VALIDATION_ATTEMPTS_PER_DAY,
@@ -41,6 +42,7 @@ import {
   AppealAlreadyOpenError,
   CurationNotRejectedError,
   MissingCurationError,
+  NothingToRevalidateError,
   NotStandardCollectionError,
   ValidationInProgressError,
   ValidationLimitReachedError,
@@ -93,25 +95,6 @@ export function redactCollectionEvent(
   return { ...event, payload: utils.omit(event.payload, ['validationId']) }
 }
 
-const collectionLocks = new Map<string, Promise<unknown>>()
-
-/** Serializes the check-then-write flows of one collection within this process. */
-async function withCollectionLock<T>(
-  collectionId: string,
-  task: () => Promise<T>
-): Promise<T> {
-  const previous = collectionLocks.get(collectionId) ?? Promise.resolve()
-  const current = previous.catch(() => undefined).then(task)
-  collectionLocks.set(collectionId, current)
-  try {
-    return await current
-  } finally {
-    if (collectionLocks.get(collectionId) === current) {
-      collectionLocks.delete(collectionId)
-    }
-  }
-}
-
 export class AutoCurationService {
   isEnabled(): Promise<boolean> {
     return isFeatureFlagEnabled(AUTO_CURATION_FEATURE_FLAG)
@@ -123,35 +106,9 @@ export class AutoCurationService {
     ethAddress: string
   ): Promise<void> {
     try {
-      // /publish keeps answering once the collection is on chain; only the first publication opens the review.
-      const alreadyPublished = await CollectionEvent.findLatestByCollectionIdAndType(
-        collection.id,
-        CollectionEventType.COLLECTION_PUBLISHED
+      await withCollectionLock(collection.id, () =>
+        this.doOnStandardCollectionPublished(collection, ethAddress)
       )
-      if (
-        alreadyPublished ||
-        (await this.isValidationInProgress(collection.id))
-      ) {
-        return
-      }
-
-      const latestCuration = await CollectionCuration.findLatestByCollectionId(
-        collection.id
-      )
-      if (!latestCuration || latestCuration.status !== CurationStatus.PENDING) {
-        await this.createPendingCuration(collection.id)
-      }
-
-      await CollectionEvent.record({
-        collection_id: collection.id,
-        type: CollectionEventType.COLLECTION_PUBLISHED,
-        actor: CollectionEventActor.CREATOR,
-        actor_address: ethAddress.toLowerCase(),
-        payload: {},
-      })
-
-      const items = await Item.findOrderedByCollectionId(collection.id)
-      await this.startValidation(collection, items, 'publish')
     } catch (error) {
       console.error(
         `Error starting the auto curation of collection ${collection.id}`,
@@ -230,20 +187,23 @@ export class AutoCurationService {
       if (changedItems.length === 0) {
         return
       }
-      if (await this.isValidationInProgress(collectionId)) {
-        console.warn(
-          `Not validating the changes of collection ${collectionId}: a validation is in progress`
-        )
-        return
-      }
-      if (await this.getDailyLimitRetryAt(collectionId)) {
-        console.warn(
-          `Not validating the changes of collection ${collectionId}: the daily limit was reached`
-        )
-        return
-      }
 
-      await this.startValidation(collection, changedItems, 'changes')
+      await withCollectionLock(collectionId, async () => {
+        if (await this.isValidationInProgress(collectionId)) {
+          console.warn(
+            `Not validating the changes of collection ${collectionId}: a validation is in progress`
+          )
+          return
+        }
+        if (await this.getDailyLimitRetryAt(collectionId)) {
+          console.warn(
+            `Not validating the changes of collection ${collectionId}: the daily limit was reached`
+          )
+          return
+        }
+
+        await this.startValidation(collection, changedItems, 'changes')
+      })
     } catch (error) {
       console.error(
         `Error starting the validation of the changes of collection ${collectionId}`,
@@ -320,16 +280,27 @@ export class AutoCurationService {
           continue
         }
 
-        const sweepStarts = await CollectionEvent.countSweepStartsSinceManualStart(
-          collection.id
-        )
-        if (sweepStarts >= MAX_SWEEP_RESENDS) {
-          await this.giveUpValidation(collection, staleStart)
-          continue
-        }
+        await withCollectionLock(collection.id, async () => {
+          // A creator retry may have started a newer validation since the query ran.
+          const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+            collection.id,
+            CollectionEventType.REVIEW_AI_STARTED
+          )
+          if (latestStart?.id !== staleStart.id) {
+            return
+          }
 
-        const items = await this.findItemsToRevalidate(collection, staleStart)
-        await this.startValidation(collection, items, 'sweep')
+          const sweepStarts = await CollectionEvent.countSweepStartsSinceManualStart(
+            collection.id
+          )
+          if (sweepStarts >= MAX_SWEEP_RESENDS) {
+            await this.giveUpValidation(collection, staleStart)
+            return
+          }
+
+          const items = await this.findItemsToRevalidate(collection, staleStart)
+          await this.startValidation(collection, items, 'sweep')
+        })
       } catch (error) {
         console.error(
           `Error re-sending the validation of collection ${staleStart.collection_id}`,
@@ -368,6 +339,41 @@ export class AutoCurationService {
     return { validationId, collectionId: collection.id, items: manifestItems }
   }
 
+  private async doOnStandardCollectionPublished(
+    collection: CollectionAttributes,
+    ethAddress: string
+  ): Promise<void> {
+    // /publish keeps answering once the collection is on chain; only the first publication opens the review.
+    const alreadyPublished = await CollectionEvent.findLatestByCollectionIdAndType(
+      collection.id,
+      CollectionEventType.COLLECTION_PUBLISHED
+    )
+    if (
+      alreadyPublished ||
+      (await this.isValidationInProgress(collection.id))
+    ) {
+      return
+    }
+
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collection.id
+    )
+    if (!latestCuration || latestCuration.status !== CurationStatus.PENDING) {
+      await this.createPendingCuration(collection.id)
+    }
+
+    await CollectionEvent.record({
+      collection_id: collection.id,
+      type: CollectionEventType.COLLECTION_PUBLISHED,
+      actor: CollectionEventActor.CREATOR,
+      actor_address: ethAddress.toLowerCase(),
+      payload: {},
+    })
+
+    const items = await Item.findOrderedByCollectionId(collection.id)
+    await this.startValidation(collection, items, 'publish')
+  }
+
   private async doRequestValidation(
     collectionId: string,
     ethAddress: string
@@ -383,6 +389,15 @@ export class AutoCurationService {
       throw new ValidationLimitReachedError(collectionId, retryAt)
     }
 
+    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      CollectionEventType.REVIEW_AI_STARTED
+    )
+    const itemsToValidate = await this.findItemsToRetry(collection, latestStart)
+    if (!itemsToValidate) {
+      throw new NothingToRevalidateError(collectionId)
+    }
+
     const latestCuration = await CollectionCuration.findLatestByCollectionId(
       collectionId
     )
@@ -393,14 +408,12 @@ export class AutoCurationService {
       await this.createPendingCuration(collectionId)
     }
 
-    const items = await this.findItemsToRevalidate(
+    return this.startValidation(
       collection,
-      await CollectionEvent.findLatestByCollectionIdAndType(
-        collectionId,
-        CollectionEventType.REVIEW_AI_STARTED
-      )
+      itemsToValidate,
+      'retry',
+      ethAddress
     )
-    return this.startValidation(collection, items, 'retry', ethAddress)
   }
 
   private async doAppeal(
@@ -732,6 +745,45 @@ export class AutoCurationService {
     return Item.findOrderedByCollectionId(collection.id)
   }
 
+  /**
+   * The items a creator retry validates, or null when it would repeat the last verdict: the same content always gets
+   * the same result, so a retry needs a run without a verdict, or an item saved since the last run.
+   */
+  private async findItemsToRetry(
+    collection: CollectionAttributes,
+    latestStart?: CollectionEventAttributes
+  ): Promise<ItemAttributes[] | null> {
+    if (!latestStart) {
+      return Item.findOrderedByCollectionId(collection.id)
+    }
+
+    const verdict = await CollectionEvent.findVerdictByValidationId(
+      collection.id,
+      latestStart.payload.validationId as string
+    )
+    const previousItems = await this.findItemsToRevalidate(
+      collection,
+      latestStart
+    )
+    if (isRetryableVerdict(verdict)) {
+      return previousItems
+    }
+
+    const startedAt = new Date(latestStart.created_at).getTime()
+    const editedItems = (
+      await Item.findOrderedByCollectionId(collection.id)
+    ).filter((item) => new Date(item.updated_at).getTime() > startedAt)
+    if (editedItems.length === 0) {
+      return null
+    }
+
+    const previousIds = new Set(previousItems.map((item) => item.id))
+    return [
+      ...previousItems,
+      ...editedItems.filter((item) => !previousIds.has(item.id)),
+    ]
+  }
+
   private async getStandardCollection(
     collectionId: string
   ): Promise<CollectionAttributes> {
@@ -769,4 +821,12 @@ function describeCollection(
   const builderUrl = env.get('BUILDER_URL', '')
   const name = collection ? `"${escapeSlackText(collection.name)}" ` : ''
   return `${name}(${collectionId}) ${builderUrl}/collections/${collectionId}`
+}
+
+/** A run that ended without judging the content (a failure the sweep gave up on) is worth repeating as is. */
+function isRetryableVerdict(verdict?: CollectionEventAttributes): boolean {
+  return (
+    verdict?.type === CollectionEventType.REVIEW_AI_ERROR &&
+    verdict.payload.reason !== TOO_LARGE_REASON
+  )
 }

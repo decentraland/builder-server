@@ -33,3 +33,17 @@ export class CurationNotRejectedError extends Error {
     super('Only rejected collections can be appealed')
   }
 }
+
+export class NothingToRevalidateError extends Error {
+  constructor(public id: string) {
+    super(
+      'Nothing changed since the last validation: edit an item or appeal the decision'
+    )
+  }
+}
+
+export class CollectionBusyError extends Error {
+  constructor(public id: string) {
+    super('The collection is being updated, try again in a moment')
+  }
+}

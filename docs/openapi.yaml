@@ -636,25 +636,18 @@ paths:
       tags: [Collections]
       summary: Get collections by address
       description: |
-        Returns the collections the authenticated address owns or is authorized for. The path address must
-        match the authenticated one.
+        Returns the collections the signed-in address created or collaborates on (the path address must be the
+        signed-in one).
 
-        `status` filters standard collections by the status their creator sees, derived from the latest
-        collection curation and the on-chain state:
-        - `draft`: not among the address's on-chain collections according to the collections subgraph:
-          not published yet, published but not indexed yet, or no longer created or managed by the address
-          on-chain. Every status below only applies to collections the subgraph lists for the address.
-        - `rejected`: the latest curation is rejected, whatever the on-chain approval state.
-        - `published`: approved on-chain, with no pending curation.
-        - `under_review`: approved on-chain with a pending curation (changes sent for review), or not
-          approved and never reviewed, or with a pending curation (a first approval in progress).
-        - `disabled`: not approved on-chain, but a curation approved it, or it has no curation and was touched
-          on-chain since its creation (approved without an assigned curator, then disabled). A first approval
-          that stalls between `rescueItems` and `setApproved` without an assigned curator also reads as disabled.
+        `status` filters standard collections by the status the creator sees:
+        - `draft`: not published yet.
+        - `under_review`: waiting for the curation committee, either its first review or changes sent after approval.
+        - `published`: approved and live, with nothing waiting for review.
+        - `rejected`: the committee rejected its last review.
+        - `disabled`: approved before, then disabled by the committee.
 
-        Third-party collections have no status: they never match `status` and are left out of `counts`.
-        Paginated responses (`page` and `limit`) include `counts` per status. Counts honor `q`, `type` and
-        `is_published` but not `status`; send `type=standard` so they add up to the unfiltered `total`.
+        Paginated responses also include `counts`: how many collections are in each status, following the
+        search and type filters but not the status filter.
       parameters:
         - name: address
           in: path
@@ -683,8 +676,8 @@ paths:
         - name: sort
           in: query
           description: |
-            Defaults to `CREATED_AT_DESC`. `LAST_ACTIVITY_*` orders by the latest change to the collection, any of
-            its items or its latest curation (database timestamps only; on-chain events don't count).
+            Defaults to `CREATED_AT_DESC`. `LAST_ACTIVITY_*` orders by the last time the collection, its items or
+            its review changed.
           schema:
             type: string
             enum:
@@ -2814,11 +2807,11 @@ components:
           type: string
           nullable: true
           enum: [pending, approved, rejected]
-          description: Status of the latest collection curation. Only in authenticated collection lists.
+          description: Status of the collection's latest review. Only in the creator's collection list.
         last_activity_at:
           type: string
           format: date-time
-          description: Latest change to the collection, its items or its latest curation. Only in authenticated collection lists.
+          description: Last time the collection, its items or its review changed. Only in the creator's collection list.
 
     CollectionInput:
       type: object
@@ -2873,7 +2866,7 @@ components:
 
     CollectionStatusCounts:
       type: object
-      description: How many collections match the filters in each status, ignoring the status filter.
+      description: How many collections are in each status.
       properties:
         draft:
           type: integer

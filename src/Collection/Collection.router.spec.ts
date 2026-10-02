@@ -1570,7 +1570,7 @@ describe('Collection router', () => {
               thirdPartyIds: [],
               remoteIds: [],
               approvedRemoteIds: [],
-              disabledRemoteIds: [],
+              reviewedRemoteIds: [],
             })
           })
       })
@@ -1608,8 +1608,9 @@ describe('Collection router', () => {
               thirdPartyIds: [dbTPCollection.third_party_id],
               remoteIds: [],
               approvedRemoteIds: [],
-              disabledRemoteIds: [],
+              reviewedRemoteIds: [],
             })
+            expect(Collection.countByStatus).not.toHaveBeenCalled()
             expect(response.body).toEqual({
               data: [
                 {
@@ -1647,28 +1648,35 @@ describe('Collection router', () => {
 
       it('should search the collections and count their statuses with the same search', () => {
         return server
-          .get(buildURL(`${url}?q=${search}`))
+          .get(buildURL(`${url}?q=${search}&page=1&limit=8`))
           .set(createAuthHeaders('get', url))
           .expect(200)
           .then((response: any) => {
             expect(response.body).toEqual({
-              data: [
-                {
-                  ...resultingCollectionAttributes,
-                  urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
-                },
-              ],
+              data: {
+                total: 1,
+                pages: 1,
+                page: 1,
+                limit: 8,
+                results: [
+                  {
+                    ...resultingCollectionAttributes,
+                    urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
+                  },
+                ],
+                counts: statusCounts,
+              },
               ok: true,
             })
             const expectedParams = {
               address: wallet.address,
-              limit: undefined,
-              offset: undefined,
+              limit: 8,
+              offset: 0,
               sort: CollectionSort.CREATED_AT_DESC,
               thirdPartyIds: [],
               remoteIds: [],
               approvedRemoteIds: [],
-              disabledRemoteIds: [],
+              reviewedRemoteIds: [],
               q: 'text',
               isPublished: undefined,
             }
@@ -1682,7 +1690,7 @@ describe('Collection router', () => {
 
     describe('and the user has approved, disabled and never approved remote collections', () => {
       let approvedRemoteCollection: CollectionFragment
-      let disabledRemoteCollection: CollectionFragment
+      let reviewedRemoteCollection: CollectionFragment
       let neverApprovedRemoteCollection: CollectionFragment
 
       beforeEach(() => {
@@ -1693,9 +1701,9 @@ describe('Collection router', () => {
           reviewedAt: '200',
           createdAt: '100',
         }
-        disabledRemoteCollection = {
+        reviewedRemoteCollection = {
           ...collectionFragmentMock,
-          id: 'disabled-remote-id',
+          id: 'reviewed-remote-id',
           isApproved: false,
           reviewedAt: '200',
           createdAt: '100',
@@ -1711,7 +1719,7 @@ describe('Collection router', () => {
           .mockReset()
           .mockResolvedValueOnce([
             approvedRemoteCollection,
-            disabledRemoteCollection,
+            reviewedRemoteCollection,
             neverApprovedRemoteCollection,
           ])
         ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
@@ -1741,11 +1749,11 @@ describe('Collection router', () => {
                   collectionStatus: status,
                   remoteIds: [
                     approvedRemoteCollection.id,
-                    disabledRemoteCollection.id,
+                    reviewedRemoteCollection.id,
                     neverApprovedRemoteCollection.id,
                   ],
                   approvedRemoteIds: [approvedRemoteCollection.id],
-                  disabledRemoteIds: [disabledRemoteCollection.id],
+                  reviewedRemoteIds: [reviewedRemoteCollection.id],
                   isPublished: undefined,
                 })
               })

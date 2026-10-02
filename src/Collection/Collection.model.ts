@@ -37,14 +37,14 @@ export type FindCollectionParams = {
   remoteIds?: CollectionAttributes['id'][]
   itemTags?: string[]
   collectionStatus?: CollectionStatus
-  /** Subsets of `remoteIds`, needed to tell the collection statuses apart. */
+  /** Subsets of `remoteIds`: approved now, and not approved but touched on-chain since creation. */
   approvedRemoteIds?: CollectionAttributes['id'][]
-  disabledRemoteIds?: CollectionAttributes['id'][]
+  reviewedRemoteIds?: CollectionAttributes['id'][]
 }
 
 type CollectionStatusParams = Pick<
   FindCollectionParams,
-  'remoteIds' | 'approvedRemoteIds' | 'disabledRemoteIds'
+  'remoteIds' | 'approvedRemoteIds' | 'reviewedRemoteIds'
 >
 
 export class Collection extends Model<CollectionAttributes> {
@@ -99,22 +99,36 @@ export class Collection extends Model<CollectionAttributes> {
   }
 
   /**
-   * The standard collection status, from the latest collection curation and the on-chain state.
-   * A rejected curation wins over the on-chain state, and a disabled collection was approved before.
+   * The standard collection status, from the latest collection curation and the on-chain state; NULL for
+   * third-party collections. A rejected curation wins over the on-chain state. A not approved collection is
+   * disabled when a curation approved it, or when it has no curation and was touched on-chain: `reviewedAt`
+   * also moves on `rescueItems`, so a pending curation means a first approval in progress, not a disable.
    */
   static getStatusStatement({
     remoteIds = [],
     approvedRemoteIds = [],
-    disabledRemoteIds = [],
+    reviewedRemoteIds = [],
   }: CollectionStatusParams) {
     return SQL`CASE
+      WHEN collections.third_party_id IS NOT NULL THEN NULL
       WHEN NOT COALESCE(collections.contract_address = ANY(${remoteIds}), false) THEN 'draft'
       WHEN collection_curations.status = 'rejected' THEN 'rejected'
-      WHEN collections.contract_address = ANY(${disabledRemoteIds}) THEN 'disabled'
-      WHEN collections.contract_address = ANY(${approvedRemoteIds})
-        AND collection_curations.status IS DISTINCT FROM 'pending' THEN 'published'
+      WHEN collections.contract_address = ANY(${approvedRemoteIds}) THEN
+        CASE WHEN collection_curations.status = 'pending' THEN 'under_review' ELSE 'published' END
+      WHEN collection_curations.status = 'approved'
+        OR (collection_curations.id IS NULL AND collections.contract_address = ANY(${reviewedRemoteIds}))
+        THEN 'disabled'
       ELSE 'under_review'
     END`
+  }
+
+  /** The collections findAll and countByStatus read from, narrowed to the published or unpublished ones when asked. */
+  static getCollectionsSourceStatement(isPublished: boolean | undefined) {
+    return SQL`(
+      SELECT DISTINCT on (c.id) c.* FROM ${raw(Collection.tableName)} c
+    `
+      .append(this.getPublishedJoinStatement(isPublished))
+      .append(SQL`) collections`)
   }
 
   /** When the collection, any of its items or its latest curation last changed. */
@@ -148,7 +162,7 @@ export class Collection extends Model<CollectionAttributes> {
     remoteIds,
     collectionStatus,
     approvedRemoteIds,
-    disabledRemoteIds,
+    reviewedRemoteIds,
   }: Pick<
     FindCollectionParams,
     | 'q'
@@ -160,7 +174,7 @@ export class Collection extends Model<CollectionAttributes> {
     | 'remoteIds'
     | 'collectionStatus'
     | 'approvedRemoteIds'
-    | 'disabledRemoteIds'
+    | 'reviewedRemoteIds'
   >) {
     if (
       !q &&
@@ -213,7 +227,7 @@ export class Collection extends Model<CollectionAttributes> {
               this.getStatusStatement({
                 remoteIds,
                 approvedRemoteIds,
-                disabledRemoteIds,
+                reviewedRemoteIds,
               })
             )
             .append(SQL`) = ${collectionStatus}`)
@@ -332,10 +346,7 @@ export class Collection extends Model<CollectionAttributes> {
     )} 
         WHERE items.collection_id = collections.id) as item_count,
         (${raw(this.isMappingCompleteTableStatement())}) as is_mapping_complete
-        FROM (
-          SELECT DISTINCT on (c.id) c.* FROM ${raw(Collection.tableName)} c
-            ${SQL`${this.getPublishedJoinStatement(isPublished)}`}  
-        ) collections
+        FROM ${this.getCollectionsSourceStatement(isPublished)}
         ${this.getLatestCurationJoinStatement()}
         ${
           whereFilters.itemTags
@@ -354,14 +365,17 @@ export class Collection extends Model<CollectionAttributes> {
   static async countByStatus(
     params: FindCollectionParams
   ): Promise<CollectionStatusCounts> {
-    const whereFilters = { ...params, collectionStatus: undefined }
+    const { isPublished, itemTags, ...rest } = params
+    const whereFilters = { ...rest, collectionStatus: undefined }
     const rows = await this.query<{ status: CollectionStatus; count: string }>(
       SQL`SELECT status, COUNT(*) as count FROM (SELECT `
         .append(this.getStatusStatement(whereFilters))
-        .append(SQL` as status FROM ${raw(Collection.tableName)} collections`)
+        .append(SQL` as status FROM `)
+        .append(this.getCollectionsSourceStatement(isPublished))
         .append(this.getLatestCurationJoinStatement())
+        .append(itemTags ? this.getItemsTagJoinStatement(itemTags) : SQL``)
         .append(this.getFindAllWhereStatement(whereFilters))
-        .append(SQL`) statuses GROUP BY status`)
+        .append(SQL`) statuses WHERE status IS NOT NULL GROUP BY status`)
     )
     const counts = Object.fromEntries(
       Object.values(CollectionStatus).map((status) => [status, 0])

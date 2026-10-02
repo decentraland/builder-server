@@ -635,11 +635,43 @@ paths:
       operationId: getCollectionsByAddress
       tags: [Collections]
       summary: Get collections by address
-      description: Returns collections for a specific address
+      description: |
+        Returns the collections the authenticated address owns or is authorized for. The path address must
+        match the authenticated one.
+
+        `status` filters standard collections by the status their creator sees, derived from the latest
+        collection curation and the on-chain state:
+        - `draft`: not published on-chain yet.
+        - `rejected`: the latest curation is rejected, whatever the on-chain state.
+        - `published`: approved on-chain, with no pending curation.
+        - `under_review`: approved on-chain with a pending curation (changes sent for review), or not
+          approved and never reviewed, or with a pending curation (a first approval in progress).
+        - `disabled`: not approved on-chain, but a curation approved it, or it has no curation and was touched
+          on-chain since its creation (approved without an assigned curator, then disabled). A first approval
+          that stalls between `rescueItems` and `setApproved` without an assigned curator also reads as disabled.
+
+        Third-party collections have no status: they never match `status` and are left out of `counts`.
+        Paginated responses (`page` and `limit`) include `counts` per status. Counts honor `q`, `type` and
+        `is_published` but not `status`; send `type=standard` so they add up to the unfiltered `total`.
       parameters:
         - name: address
           in: path
           required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, under_review, published, rejected, disabled]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [standard, third_party]
+        - name: q
+          in: query
+          description: Case-insensitive search on the collection name
           schema:
             type: string
         - name: is_published
@@ -648,8 +680,20 @@ paths:
             type: string
         - name: sort
           in: query
+          description: |
+            Defaults to `CREATED_AT_DESC`. `LAST_ACTIVITY_*` orders by the latest change to the collection, any of
+            its items or its latest curation (database timestamps only; on-chain events don't count).
           schema:
             type: string
+            enum:
+              - CREATED_AT_DESC
+              - CREATED_AT_ASC
+              - NAME_DESC
+              - NAME_ASC
+              - UPDATED_AT_DESC
+              - UPDATED_AT_ASC
+              - LAST_ACTIVITY_DESC
+              - LAST_ACTIVITY_ASC
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -658,7 +702,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollectionListResponse'
+                $ref: '#/components/schemas/AddressCollectionListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -2761,6 +2807,15 @@ components:
         updated_at:
           type: string
           format: date-time
+        curation_status:
+          type: string
+          nullable: true
+          enum: [pending, approved, rejected]
+          description: Status of the latest collection curation. Only in authenticated collection lists.
+        last_activity_at:
+          type: string
+          format: date-time
+          description: Latest change to the collection, its items or its latest curation. Only in authenticated collection lists.
 
     CollectionInput:
       type: object
@@ -2795,6 +2850,38 @@ components:
               items:
                 $ref: '#/components/schemas/Collection'
             - $ref: '#/components/schemas/PaginatedResponse'
+
+    AddressCollectionListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Collection'
+            - allOf:
+                - $ref: '#/components/schemas/PaginatedResponse'
+                - type: object
+                  properties:
+                    counts:
+                      $ref: '#/components/schemas/CollectionStatusCounts'
+
+    CollectionStatusCounts:
+      type: object
+      description: How many collections match the filters in each status, ignoring the status filter.
+      properties:
+        draft:
+          type: integer
+        under_review:
+          type: integer
+        published:
+          type: integer
+        rejected:
+          type: integer
+        disabled:
+          type: integer
 
     Item:
       type: object

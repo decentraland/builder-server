@@ -641,8 +641,10 @@ paths:
 
         `status` filters standard collections by the status their creator sees, derived from the latest
         collection curation and the on-chain state:
-        - `draft`: not published on-chain yet.
-        - `rejected`: the latest curation is rejected, whatever the on-chain state.
+        - `draft`: not among the address's on-chain collections according to the collections subgraph:
+          not published yet, published but not indexed yet, or no longer created or managed by the address
+          on-chain. Every status below only applies to collections the subgraph lists for the address.
+        - `rejected`: the latest curation is rejected, whatever the on-chain approval state.
         - `published`: approved on-chain, with no pending curation.
         - `under_review`: approved on-chain with a pending curation (changes sent for review), or not
           approved and never reviewed, or with a pending curation (a first approval in progress).
@@ -686,6 +688,7 @@ paths:
           schema:
             type: string
             enum:
+              - MOST_RELEVANT
               - CREATED_AT_DESC
               - CREATED_AT_ASC
               - NAME_DESC

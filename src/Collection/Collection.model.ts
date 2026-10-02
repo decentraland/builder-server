@@ -345,7 +345,7 @@ export class Collection extends Model<CollectionAttributes> {
     const query = SQL`
       SELECT collections.*, collection_curations.status as curation_status, ${this.getLastActivityStatement()} as last_activity_at, COUNT(*) OVER() as collection_count, (SELECT COUNT(*) FROM ${raw(
       Item.tableName
-    )} 
+    )}
         WHERE items.collection_id = collections.id) as item_count,
         (${raw(this.isMappingCompleteTableStatement())}) as is_mapping_complete
         FROM ${this.getCollectionsSourceStatement(isPublished)}

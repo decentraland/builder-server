@@ -17,33 +17,36 @@ describe('Collection model', () => {
     return queryMock.mock.calls[queryMock.mock.calls.length - 1][0]
   }
 
+  // Compares SQL ignoring whitespace, so reformatting a statement doesn't fail the specs.
+  function normalize(text: string): string {
+    return text.replace(/\s+/g, ' ').trim()
+  }
+
   describe('when building the status statement', () => {
+    let statusStatement: string
+
+    beforeEach(() => {
+      statusStatement = normalize(Collection.getStatusStatement({}).text)
+    })
+
     it('should resolve third party, draft, rejected, approved, disabled and under review in that order', () => {
-      const { text } = Collection.getStatusStatement({})
       const branches = [
-        'third_party_id IS NOT NULL THEN NULL',
-        "THEN 'draft'",
-        "THEN 'rejected'",
-        "THEN 'under_review' ELSE 'published'",
+        'WHEN collections.third_party_id IS NOT NULL THEN NULL',
+        "WHEN NOT COALESCE(collections.contract_address = ANY($1), false) THEN 'draft'",
+        "WHEN collection_curations.status = 'rejected' THEN 'rejected'",
+        "WHEN collections.contract_address = ANY($2) THEN CASE WHEN collection_curations.status = 'pending' THEN 'under_review' ELSE 'published' END",
         "THEN 'disabled'",
-        "ELSE 'under_review'\n",
-      ].map((branch) => text.indexOf(branch))
+        "ELSE 'under_review' END",
+      ].map((branch) => statusStatement.indexOf(branch))
 
       expect(branches.every((index) => index >= 0)).toBe(true)
       expect([...branches].sort((a, b) => a - b)).toEqual(branches)
     })
 
-    it('should only read a not approved collection as disabled with an approved curation or without one', () => {
-      const { text } = Collection.getStatusStatement({})
-      const disabledBranch = text.slice(
-        text.indexOf("ELSE 'published' END"),
-        text.indexOf("THEN 'disabled'")
+    it('should only read a not approved collection as disabled with an approved curation, or without a curation and reviewed on-chain', () => {
+      expect(statusStatement).toContain(
+        "WHEN collection_curations.status = 'approved' OR (collection_curations.id IS NULL AND collections.contract_address = ANY($3)) THEN 'disabled'"
       )
-
-      expect(disabledBranch).toContain(
-        "collection_curations.status = 'approved'"
-      )
-      expect(disabledBranch).toContain('collection_curations.id IS NULL')
     })
 
     it('should bind the remote ids', () => {
@@ -61,7 +64,7 @@ describe('Collection model', () => {
     it('should compare the status statement with the status as a bound value', async () => {
       await Collection.findAll({ collectionStatus: CollectionStatus.DISABLED })
 
-      expect(lastQuery().text).toMatch(/END\) = \$\d+/)
+      expect(normalize(lastQuery().text)).toMatch(/END\) = \$\d+/)
       expect(lastQuery().values).toContain(CollectionStatus.DISABLED)
     })
   })
@@ -73,10 +76,8 @@ describe('Collection model', () => {
     it(`should order by the latest collection, item or curation change ${direction}, breaking ties by id`, async () => {
       await Collection.findAll({ sort })
 
-      expect(lastQuery().text).toMatch(
-        new RegExp(
-          `ORDER BY GREATEST\\([\\s\\S]*\\) ${direction}, collections.id`
-        )
+      expect(normalize(lastQuery().text)).toMatch(
+        new RegExp(`ORDER BY GREATEST\\(.*\\) ${direction}, collections.id`)
       )
     })
   })
@@ -104,7 +105,7 @@ describe('Collection model', () => {
         collectionStatus: CollectionStatus.REJECTED,
       })
 
-      expect(lastQuery().text).toContain(
+      expect(normalize(lastQuery().text)).toContain(
         'WHERE status IS NOT NULL GROUP BY status'
       )
       expect(lastQuery().values).not.toContain(CollectionStatus.REJECTED)
@@ -113,7 +114,9 @@ describe('Collection model', () => {
     it('should read from the same published collections as the list when filtering by them', async () => {
       await Collection.countByStatus({ isPublished: true })
 
-      expect(lastQuery().text).toContain('items.blockchain_item_id is NOT NULL')
+      expect(normalize(lastQuery().text)).toContain(
+        'items.blockchain_item_id is NOT NULL'
+      )
     })
   })
 })

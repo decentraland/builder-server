@@ -1,4 +1,5 @@
 import { ItemCurationAttributes } from '../Curation/ItemCuration'
+import { CurationStatus } from '../Curation/Curation.types'
 import { FullItem } from '../Item'
 
 export type CollectionAttributes = {
@@ -51,16 +52,31 @@ export type FullCollection = Omit<
 > & {
   urn: string | null
   isProgrammatic?: boolean
+  /** Status of the latest collection curation, when the collection was listed. */
+  curation_status?: CurationStatus | null
+  /** Latest change to the collection, its items or its latest curation, when the collection was listed. */
+  last_activity_at?: Date
 }
 
 export type PublicCollection = Omit<
   FullCollection,
-  'id' | 'salt' | 'forum_link' | 'forum_id' | 'lock'
+  | 'id'
+  | 'salt'
+  | 'forum_link'
+  | 'forum_id'
+  | 'lock'
+  | 'curation_status'
+  | 'last_activity_at'
 >
 
 export type PublicCollectionDetail = Omit<
   FullCollection,
-  'salt' | 'forum_link' | 'forum_id' | 'lock'
+  | 'salt'
+  | 'forum_link'
+  | 'forum_id'
+  | 'lock'
+  | 'curation_status'
+  | 'last_activity_at'
 >
 
 export type PublishCollectionResponse<T> = {
@@ -74,6 +90,17 @@ export enum CollectionTypeFilter {
   THIRD_PARTY = 'third_party',
 }
 
+/** A standard collection's status as its creator sees it, used by the `/:address/collections` status filter. */
+export enum CollectionStatus {
+  DRAFT = 'draft',
+  UNDER_REVIEW = 'under_review',
+  PUBLISHED = 'published',
+  REJECTED = 'rejected',
+  DISABLED = 'disabled',
+}
+
+export type CollectionStatusCounts = Record<CollectionStatus, number>
+
 export enum CollectionSort {
   MOST_RELEVANT = 'MOST_RELEVANT',
   CREATED_AT_DESC = 'CREATED_AT_DESC',
@@ -82,4 +109,6 @@ export enum CollectionSort {
   NAME_ASC = 'NAME_ASC',
   UPDATED_AT_DESC = 'UPDATED_AT_DESC',
   UPDATED_AT_ASC = 'UPDATED_AT_ASC',
+  LAST_ACTIVITY_DESC = 'LAST_ACTIVITY_DESC',
+  LAST_ACTIVITY_ASC = 'LAST_ACTIVITY_ASC',
 }

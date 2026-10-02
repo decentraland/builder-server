@@ -38,6 +38,7 @@ import {
 } from './utils'
 import {
   CollectionAttributes,
+  CollectionStatusCounts,
   FullCollection,
   PublishCollectionResponse,
   ThirdPartyCollectionAttributes,
@@ -616,17 +617,74 @@ export class CollectionService {
     params: FindCollectionParams,
     manager?: string
   ): Promise<CollectionWithCounts[]> {
+    return this.findCollections(params, await this.getThirdPartiesById(manager))
+  }
+
+  /** Same as `getCollections`, plus how many collections match the filters in each status. */
+  public async getCollectionsWithStatusCounts(
+    params: FindCollectionParams,
+    manager: string
+  ): Promise<{
+    collections: CollectionWithCounts[]
+    statusCounts: CollectionStatusCounts
+  }> {
+    const thirdPartyById = await this.getThirdPartiesById(manager)
+    const [collections, statusCounts] = await Promise.all([
+      this.findCollections(params, thirdPartyById),
+      Collection.countByStatus({
+        ...params,
+        thirdPartyIds: Object.keys(thirdPartyById),
+      }),
+    ])
+    return { collections, statusCounts }
+  }
+
+  public async getDbTPCollections(): Promise<CollectionAttributes[]> {
+    const thirdParties = await ThirdPartyService.getThirdParties()
+    return this.getDbTPCollectionsByThirdParties(thirdParties)
+  }
+
+  public async getDbTPCollectionsByManager(
+    manager: string
+  ): Promise<CollectionAttributes[]> {
+    const thirdParties = await ThirdPartyService.getThirdParties(manager)
+    return this.getDbTPCollectionsByThirdParties(thirdParties)
+  }
+
+  public async getDBCollection(
+    collectionId: string
+  ): Promise<CollectionAttributes> {
+    const collections = await Collection.findByIds([collectionId])
+    if (!collections.length) {
+      throw new NonExistentCollectionError(collectionId)
+    }
+
+    return collections[0]
+  }
+
+  /**
+   * Private methods
+   */
+
+  private async getThirdPartiesById(
+    manager?: string
+  ): Promise<Record<string, ThirdParty>> {
     const thirdParties = manager
       ? await ThirdPartyService.getThirdParties(manager)
       : await ThirdPartyService.getThirdParties()
-    const thirdPartyById = thirdParties.reduce((acc, thirdParty) => {
+    return thirdParties.reduce((acc, thirdParty) => {
       acc[thirdParty.id] = thirdParty
       return acc
     }, {} as Record<string, ThirdParty>)
-    const thirdPartyIds = Object.keys(thirdPartyById)
+  }
+
+  private async findCollections(
+    params: FindCollectionParams,
+    thirdPartyById: Record<string, ThirdParty>
+  ): Promise<CollectionWithCounts[]> {
     let allCollections = await Collection.findAll({
       ...params,
-      thirdPartyIds,
+      thirdPartyIds: Object.keys(thirdPartyById),
     })
 
     // Verify collections ownership
@@ -675,33 +733,6 @@ export class CollectionService {
     }
     return allCollections
   }
-
-  public async getDbTPCollections(): Promise<CollectionAttributes[]> {
-    const thirdParties = await ThirdPartyService.getThirdParties()
-    return this.getDbTPCollectionsByThirdParties(thirdParties)
-  }
-
-  public async getDbTPCollectionsByManager(
-    manager: string
-  ): Promise<CollectionAttributes[]> {
-    const thirdParties = await ThirdPartyService.getThirdParties(manager)
-    return this.getDbTPCollectionsByThirdParties(thirdParties)
-  }
-
-  public async getDBCollection(
-    collectionId: string
-  ): Promise<CollectionAttributes> {
-    const collections = await Collection.findByIds([collectionId])
-    if (!collections.length) {
-      throw new NonExistentCollectionError(collectionId)
-    }
-
-    return collections[0]
-  }
-
-  /**
-   * Private methods
-   */
 
   private async getDbTPCollectionsByThirdParties(
     thirdParties: ThirdParty[]

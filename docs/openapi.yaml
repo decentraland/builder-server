@@ -635,11 +635,38 @@ paths:
       operationId: getCollectionsByAddress
       tags: [Collections]
       summary: Get collections by address
-      description: Returns collections for a specific address
+      description: |
+        Returns the collections the signed-in address created or collaborates on (the path address must be the
+        signed-in one).
+
+        `status` filters standard collections by the status the creator sees:
+        - `draft`: not published yet.
+        - `under_review`: waiting for the curation committee, either its first review or changes sent after approval.
+        - `published`: approved and live, with nothing waiting for review.
+        - `rejected`: the committee rejected its last review.
+        - `disabled`: approved before, then disabled by the committee.
+
+        Paginated responses also include `counts`: how many collections are in each status, following the
+        search and type filters but not the status filter.
       parameters:
         - name: address
           in: path
           required: true
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, under_review, published, rejected, disabled]
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [standard, third_party]
+        - name: q
+          in: query
+          description: Case-insensitive search on the collection name
           schema:
             type: string
         - name: is_published
@@ -648,8 +675,21 @@ paths:
             type: string
         - name: sort
           in: query
+          description: |
+            Defaults to `CREATED_AT_DESC`. `LAST_ACTIVITY_*` orders by the last time the collection, its items or
+            its review changed.
           schema:
             type: string
+            enum:
+              - MOST_RELEVANT
+              - CREATED_AT_DESC
+              - CREATED_AT_ASC
+              - NAME_DESC
+              - NAME_ASC
+              - UPDATED_AT_DESC
+              - UPDATED_AT_ASC
+              - LAST_ACTIVITY_DESC
+              - LAST_ACTIVITY_ASC
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -658,7 +698,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CollectionListResponse'
+                $ref: '#/components/schemas/AddressCollectionListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -2761,6 +2803,15 @@ components:
         updated_at:
           type: string
           format: date-time
+        curation_status:
+          type: string
+          nullable: true
+          enum: [pending, approved, rejected]
+          description: Status of the collection's latest review. Only in the creator's collection list.
+        last_activity_at:
+          type: string
+          format: date-time
+          description: Last time the collection, its items or its review changed. Only in the creator's collection list.
 
     CollectionInput:
       type: object
@@ -2795,6 +2846,38 @@ components:
               items:
                 $ref: '#/components/schemas/Collection'
             - $ref: '#/components/schemas/PaginatedResponse'
+
+    AddressCollectionListResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+        data:
+          oneOf:
+            - type: array
+              items:
+                $ref: '#/components/schemas/Collection'
+            - allOf:
+                - $ref: '#/components/schemas/PaginatedResponse'
+                - type: object
+                  properties:
+                    counts:
+                      $ref: '#/components/schemas/CollectionStatusCounts'
+
+    CollectionStatusCounts:
+      type: object
+      description: How many collections are in each status.
+      properties:
+        draft:
+          type: integer
+        under_review:
+          type: integer
+        published:
+          type: integer
+        rejected:
+          type: integer
+        disabled:
+          type: integer
 
     Item:
       type: object

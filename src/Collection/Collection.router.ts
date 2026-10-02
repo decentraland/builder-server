@@ -44,7 +44,7 @@ import {
   isTPCollection,
 } from '../utils/urn'
 import { ForumService } from '../Forum/Forum.service'
-import { Collection } from './Collection.model'
+import { Collection, FindCollectionParams } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
   PublishCollectionResponse,
@@ -54,6 +54,8 @@ import {
   PublicCollectionDetail,
   CollectionTypeFilter,
   CollectionSort,
+  CollectionStatus,
+  CollectionStatusCounts,
   TermsOfServiceEvent,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
@@ -344,7 +346,12 @@ export class CollectionRouter extends Router {
 
   getAddressCollections = async (
     req: AuthRequest
-  ): Promise<PaginatedResponse<FullCollection> | FullCollection[]> => {
+  ): Promise<
+    | (PaginatedResponse<FullCollection> & {
+        counts: CollectionStatusCounts
+      })
+    | FullCollection[]
+  > => {
     const { page, limit } = getPaginationParams(req)
     const { is_published, sort, q, type, status } = req.query
     const eth_address = server.extractFromReq(req, 'address')
@@ -358,38 +365,54 @@ export class CollectionRouter extends Router {
       )
     }
 
+    if (
+      status !== undefined &&
+      !Object.values(CollectionStatus).includes(status as CollectionStatus)
+    ) {
+      throw new HTTPError(
+        'Invalid status',
+        { status, validStatuses: Object.values(CollectionStatus) },
+        STATUS_CODES.badRequest
+      )
+    }
+
     const authorizedRemoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
       eth_address
     )
+    const approvedRemoteIds: string[] = []
+    const reviewedRemoteIds: string[] = []
+    for (const remoteCollection of authorizedRemoteCollections) {
+      if (remoteCollection.isApproved) {
+        approvedRemoteIds.push(remoteCollection.id)
+      } else if (remoteCollection.reviewedAt !== remoteCollection.createdAt) {
+        // The graph stamps reviewedAt with createdAt on creation and moves it on every setApproved and rescueItems.
+        reviewedRemoteIds.push(remoteCollection.id)
+      }
+    }
 
-    // When filtering by status, the query expects only the remote ids whose on-chain approval
-    // state matches that status (as getCollections does via the filtered graph query).
-    const { isApproved } = toRemoteWhereCondition({
-      status: status as CurationStatusFilter,
-    })
-    const remoteCollectionsForQuery =
-      isApproved === undefined
-        ? authorizedRemoteCollections
-        : authorizedRemoteCollections.filter(
-            (remoteCollection) => remoteCollection.isApproved === isApproved
-          )
-
-    const allCollectionsWithCount = await this.service.getCollections(
-      {
-        q: q as string,
-        offset: page && limit ? getOffset(page, limit) : undefined,
-        limit,
-        address: eth_address,
-        sort: (sort as CollectionSort) || CollectionSort.CREATED_AT_DESC,
-        type: type as CollectionTypeFilter,
-        status: status as CurationStatusFilter,
-        isPublished: is_published ? is_published === 'true' : undefined,
-        remoteIds: remoteCollectionsForQuery.map(
-          (remoteCollection) => remoteCollection.id
-        ),
-      },
-      eth_address
-    )
+    const params: FindCollectionParams = {
+      q: q as string,
+      offset: page && limit ? getOffset(page, limit) : undefined,
+      limit,
+      address: eth_address,
+      sort: (sort as CollectionSort) || CollectionSort.CREATED_AT_DESC,
+      type: type as CollectionTypeFilter,
+      collectionStatus: status as CollectionStatus | undefined,
+      isPublished: is_published ? is_published === 'true' : undefined,
+      remoteIds: authorizedRemoteCollections.map(
+        (remoteCollection) => remoteCollection.id
+      ),
+      approvedRemoteIds,
+      reviewedRemoteIds,
+    }
+    // Only the paginated envelope carries the counts, so a bare list skips their query.
+    const { collections: allCollectionsWithCount, statusCounts } =
+      page && limit
+        ? await this.service.getCollectionsWithStatusCounts(params, eth_address)
+        : {
+            collections: await this.service.getCollections(params, eth_address),
+            statusCounts: undefined,
+          }
 
     const totalCollections =
       Number(allCollectionsWithCount[0]?.collection_count) || 0
@@ -405,8 +428,16 @@ export class CollectionRouter extends Router {
       )
     ).map(toFullCollection)
 
-    return page && limit
-      ? generatePaginatedResponse(consolidated, totalCollections, limit, page)
+    return page && limit && statusCounts
+      ? {
+          ...generatePaginatedResponse(
+            consolidated,
+            totalCollections,
+            limit,
+            page
+          ),
+          counts: statusCounts,
+        }
       : consolidated
   }
 

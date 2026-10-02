@@ -84,6 +84,8 @@ import {
   FullCollection,
   CollectionSort,
   CollectionTypeFilter,
+  CollectionStatus,
+  CollectionStatusCounts,
   TermsOfServiceEvent,
 } from './Collection.types'
 
@@ -1490,11 +1492,23 @@ describe('Collection router', () => {
   })
 
   describe('when retrieving the collections of an address', () => {
+    let statusCounts: CollectionStatusCounts
+
     beforeEach(() => {
+      statusCounts = {
+        [CollectionStatus.DRAFT]: 1,
+        [CollectionStatus.UNDER_REVIEW]: 0,
+        [CollectionStatus.PUBLISHED]: 0,
+        [CollectionStatus.REJECTED]: 0,
+        [CollectionStatus.DISABLED]: 0,
+      }
       ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock).mockReturnValueOnce(
         []
       )
       ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
+      ;(Collection.countByStatus as jest.Mock).mockResolvedValueOnce(
+        statusCounts
+      )
       url = `/${wallet.address}/collections`
     })
 
@@ -1520,7 +1534,7 @@ describe('Collection router', () => {
         )
       })
 
-      it('should respond with pagination data and should have call the findAll method with the right params', () => {
+      it('should respond with pagination data and the status counts and should have call the findAll method with the right params', () => {
         return server
           .get(
             buildURL(
@@ -1542,6 +1556,7 @@ describe('Collection router', () => {
                     urn: `${tpUrnPrefix}:${dbCollection.contract_address}`,
                   },
                 ],
+                counts: statusCounts,
               },
 
               ok: true,
@@ -1554,6 +1569,8 @@ describe('Collection router', () => {
               isPublished: true,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              disabledRemoteIds: [],
             })
           })
       })
@@ -1590,6 +1607,8 @@ describe('Collection router', () => {
               sort: CollectionSort.CREATED_AT_DESC,
               thirdPartyIds: [dbTPCollection.third_party_id],
               remoteIds: [],
+              approvedRemoteIds: [],
+              disabledRemoteIds: [],
             })
             expect(response.body).toEqual({
               data: [
@@ -1626,7 +1645,7 @@ describe('Collection router', () => {
         )
       })
 
-      it('should respond with pagination data and should have call the findAll method with the right params', () => {
+      it('should search the collections and count their statuses with the same search', () => {
         return server
           .get(buildURL(`${url}?q=${search}`))
           .set(createAuthHeaders('get', url))
@@ -1641,40 +1660,59 @@ describe('Collection router', () => {
               ],
               ok: true,
             })
-            expect(Collection.findAll).toHaveBeenCalledWith({
+            const expectedParams = {
               address: wallet.address,
               limit: undefined,
               offset: undefined,
               sort: CollectionSort.CREATED_AT_DESC,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              disabledRemoteIds: [],
               q: 'text',
               isPublished: undefined,
-            })
+            }
+            expect(Collection.findAll).toHaveBeenCalledWith(expectedParams)
+            expect(Collection.countByStatus).toHaveBeenCalledWith(
+              expectedParams
+            )
           })
       })
     })
 
-    describe('and the user has approved and not approved remote collections', () => {
+    describe('and the user has approved, disabled and never approved remote collections', () => {
       let approvedRemoteCollection: CollectionFragment
-      let notApprovedRemoteCollection: CollectionFragment
+      let disabledRemoteCollection: CollectionFragment
+      let neverApprovedRemoteCollection: CollectionFragment
 
       beforeEach(() => {
         approvedRemoteCollection = {
           ...collectionFragmentMock,
           id: 'approved-remote-id',
           isApproved: true,
+          reviewedAt: '200',
+          createdAt: '100',
         }
-        notApprovedRemoteCollection = {
+        disabledRemoteCollection = {
           ...collectionFragmentMock,
-          id: 'not-approved-remote-id',
+          id: 'disabled-remote-id',
           isApproved: false,
+          reviewedAt: '200',
+          createdAt: '100',
+        }
+        neverApprovedRemoteCollection = {
+          ...collectionFragmentMock,
+          id: 'never-approved-remote-id',
+          isApproved: false,
+          reviewedAt: '100',
+          createdAt: '100',
         }
         ;(collectionAPI.fetchCollectionsByAuthorizedUser as jest.Mock)
           .mockReset()
           .mockResolvedValueOnce([
             approvedRemoteCollection,
-            notApprovedRemoteCollection,
+            disabledRemoteCollection,
+            neverApprovedRemoteCollection,
           ])
         ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
           { ...dbCollection, collection_count: 1 },
@@ -1685,108 +1723,80 @@ describe('Collection router', () => {
         )
       })
 
-      describe('and not sending a status query param', () => {
-        it('should call the findAll method with all the authorized remote ids', () => {
-          return server
-            .get(buildURL(url))
-            .set(createAuthHeaders('get', url))
-            .expect(200)
-            .then(() => {
-              expect(Collection.findAll).toHaveBeenCalledWith({
-                address: wallet.address,
-                limit: undefined,
-                offset: undefined,
-                sort: CollectionSort.CREATED_AT_DESC,
-                thirdPartyIds: [],
-                status: undefined,
-                remoteIds: [
-                  approvedRemoteCollection.id,
-                  notApprovedRemoteCollection.id,
-                ],
-                isPublished: undefined,
+      describe.each(Object.values(CollectionStatus))(
+        'and filtering by the %s status',
+        (status) => {
+          it('should call the findAll method with the status and the remote ids split by on-chain state', () => {
+            return server
+              .get(buildURL(`${url}?status=${status}`))
+              .set(createAuthHeaders('get', url))
+              .expect(200)
+              .then(() => {
+                expect(Collection.findAll).toHaveBeenCalledWith({
+                  address: wallet.address,
+                  limit: undefined,
+                  offset: undefined,
+                  sort: CollectionSort.CREATED_AT_DESC,
+                  thirdPartyIds: [],
+                  collectionStatus: status,
+                  remoteIds: [
+                    approvedRemoteCollection.id,
+                    disabledRemoteCollection.id,
+                    neverApprovedRemoteCollection.id,
+                  ],
+                  approvedRemoteIds: [approvedRemoteCollection.id],
+                  disabledRemoteIds: [disabledRemoteCollection.id],
+                  isPublished: undefined,
+                })
               })
-            })
-        })
+          })
+        }
+      )
+    })
+
+    describe('and sorting by last activity', () => {
+      beforeEach(() => {
+        ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
+          { ...dbCollection, collection_count: 1 },
+        ])
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([])
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockReturnValueOnce(
+          []
+        )
       })
 
-      describe('and the status maps to non-approved collections', () => {
-        it('should call the findAll method with the status and only the non-approved remote ids', () => {
-          return server
-            .get(buildURL(`${url}?status=${CurationStatusFilter.REJECTED}`))
-            .set(createAuthHeaders('get', url))
-            .expect(200)
-            .then(() => {
-              expect(Collection.findAll).toHaveBeenCalledWith({
-                address: wallet.address,
-                limit: undefined,
-                offset: undefined,
-                sort: CollectionSort.CREATED_AT_DESC,
-                thirdPartyIds: [],
-                status: CurationStatusFilter.REJECTED,
-                remoteIds: [notApprovedRemoteCollection.id],
-                isPublished: undefined,
+      it('should call the findAll method with the last activity sort', () => {
+        return server
+          .get(buildURL(`${url}?sort=${CollectionSort.LAST_ACTIVITY_DESC}`))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then(() => {
+            expect(Collection.findAll).toHaveBeenCalledWith(
+              expect.objectContaining({
+                sort: CollectionSort.LAST_ACTIVITY_DESC,
               })
-            })
-        })
-
-        it('should treat under_review as non-approved and only pass the non-approved remote ids', () => {
-          return server
-            .get(buildURL(`${url}?status=${CurationStatusFilter.UNDER_REVIEW}`))
-            .set(createAuthHeaders('get', url))
-            .expect(200)
-            .then(() => {
-              expect(Collection.findAll).toHaveBeenCalledWith({
-                address: wallet.address,
-                limit: undefined,
-                offset: undefined,
-                sort: CollectionSort.CREATED_AT_DESC,
-                thirdPartyIds: [],
-                status: CurationStatusFilter.UNDER_REVIEW,
-                remoteIds: [notApprovedRemoteCollection.id],
-                isPublished: undefined,
-              })
-            })
-        })
-
-        it('should treat pending as non-approved and only pass the non-approved remote ids', () => {
-          return server
-            .get(buildURL(`${url}?status=${CurationStatusFilter.PENDING}`))
-            .set(createAuthHeaders('get', url))
-            .expect(200)
-            .then(() => {
-              expect(Collection.findAll).toHaveBeenCalledWith({
-                address: wallet.address,
-                limit: undefined,
-                offset: undefined,
-                sort: CollectionSort.CREATED_AT_DESC,
-                thirdPartyIds: [],
-                status: CurationStatusFilter.PENDING,
-                remoteIds: [notApprovedRemoteCollection.id],
-                isPublished: undefined,
-              })
-            })
-        })
+            )
+          })
       })
+    })
 
-      describe('and the status is approved', () => {
-        it('should call the findAll method with the status and only the approved remote ids', () => {
-          return server
-            .get(buildURL(`${url}?status=${CurationStatusFilter.APPROVED}`))
-            .set(createAuthHeaders('get', url))
-            .expect(200)
-            .then(() => {
-              expect(Collection.findAll).toHaveBeenCalledWith({
-                address: wallet.address,
-                limit: undefined,
-                offset: undefined,
-                sort: CollectionSort.CREATED_AT_DESC,
-                thirdPartyIds: [],
-                status: CurationStatusFilter.APPROVED,
-                remoteIds: [approvedRemoteCollection.id],
-                isPublished: undefined,
-              })
+    describe('and filtering by an unknown status', () => {
+      it('should respond with a 400 and the valid statuses', () => {
+        return server
+          .get(buildURL(`${url}?status=${CurationStatusFilter.TO_REVIEW}`))
+          .set(createAuthHeaders('get', url))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              error: 'Invalid status',
+              data: {
+                status: CurationStatusFilter.TO_REVIEW,
+                validStatuses: Object.values(CollectionStatus),
+              },
             })
-        })
+            expect(Collection.findAll).not.toHaveBeenCalled()
+          })
       })
     })
   })

@@ -66,6 +66,8 @@ export function toPublicCollection(
     'forum_link',
     'forum_id',
     'lock',
+    'curation_status',
+    'last_activity_at',
   ]) as PublicCollection
 }
 
@@ -77,6 +79,8 @@ export function toPublicCollectionDetail(
     'forum_link',
     'forum_id',
     'lock',
+    'curation_status',
+    'last_activity_at',
   ]) as PublicCollectionDetail
 }
 

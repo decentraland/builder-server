@@ -1,6 +1,6 @@
 import { v4 as uuid } from 'uuid'
 import { collectionAPI } from '../ethereum/api/collection'
-import { ItemFragment } from '../ethereum/api/fragments'
+import { CollectionFragment, ItemFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
 import { Bridge } from '../ethereum/api/Bridge'
 import { isPublished } from '../utils/eth'
@@ -718,6 +718,16 @@ export class CollectionService {
               params.address!
             )
         )
+
+        await Promise.all(
+          allCollections.map((collection) => {
+            const remoteCollection =
+              remoteCollectionMap[collection.contract_address!]
+            return remoteCollection
+              ? this.syncOwnerFromChain(collection, remoteCollection.creator)
+              : undefined
+          })
+        )
       }
     }
 
@@ -772,9 +782,36 @@ export class CollectionService {
       dbCollection.contract_address!
     )
 
-    return remoteCollection
-      ? Bridge.mergeCollection(dbCollection, remoteCollection)
-      : dbCollection
+    if (!remoteCollection) {
+      return dbCollection
+    }
+
+    await this.syncOwnerFromChain(dbCollection, remoteCollection.creator)
+    return Bridge.mergeCollection(dbCollection, remoteCollection)
+  }
+
+  /**
+   * The on-chain creator can change (`transferCreatorship`) without the server hearing about it, while the
+   * permission checks read `eth_address` from the database. Realigns the collection and its items with the
+   * subgraph's creator so the new owner can act and the previous one no longer can.
+   */
+  private async syncOwnerFromChain(
+    dbCollection: CollectionAttributes,
+    creator: CollectionFragment['creator']
+  ): Promise<void> {
+    const ethAddress = creator.toLowerCase()
+    if (dbCollection.eth_address.toLowerCase() === ethAddress) {
+      return
+    }
+
+    await Promise.all([
+      Collection.update({ eth_address: ethAddress }, { id: dbCollection.id }),
+      Item.update(
+        { eth_address: ethAddress },
+        { collection_id: dbCollection.id }
+      ),
+    ])
+    dbCollection.eth_address = ethAddress
   }
 
   private async checkIfNameIsValid(id: string, name: string): Promise<void> {

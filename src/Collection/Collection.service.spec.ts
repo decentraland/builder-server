@@ -1,4 +1,5 @@
 import {
+  collectionFragmentMock,
   dbCollectionMock,
   dbTPCollectionMock,
   thirdPartyMock,
@@ -6,6 +7,9 @@ import {
 import { wallet } from '../../spec/mocks/wallet'
 import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { ItemCuration } from '../Curation/ItemCuration'
+import { Item } from '../Item/Item.model'
+import { collectionAPI } from '../ethereum/api/collection'
+import { Bridge } from '../ethereum/api/Bridge'
 import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -14,6 +18,7 @@ import { UnauthorizedCollectionEditError } from './Collection.errors'
 import { toFullCollection } from './utils'
 
 jest.mock('./Collection.model')
+jest.mock('../Item/Item.model')
 jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Curation/ItemCuration/ItemCuration.model')
 
@@ -199,6 +204,60 @@ describe('Collection service', () => {
         })
       })
     })
+
+    describe('and the collection is a standard collection', () => {
+      const newOwner = '0x00000000000000000000000000000000000000AA'
+
+      beforeEach(() => {
+        collection = { ...dbCollectionMock }
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([collection])
+        ;(Collection.update as jest.Mock).mockResolvedValue(undefined)
+        ;(Item.update as jest.Mock).mockResolvedValue(undefined)
+      })
+
+      describe('and the on-chain creator is the stored owner', () => {
+        beforeEach(() => {
+          jest
+            .spyOn(collectionAPI, 'fetchCollection')
+            .mockResolvedValueOnce({ ...collectionFragmentMock })
+        })
+
+        it('should return the merged collection without touching the database', async () => {
+          await expect(service.getCollection(collection.id)).resolves.toEqual(
+            Bridge.mergeCollection(dbCollectionMock, collectionFragmentMock)
+          )
+          expect(Collection.update).not.toHaveBeenCalled()
+          expect(Item.update).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and the ownership was transferred on-chain', () => {
+        beforeEach(() => {
+          jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+            ...collectionFragmentMock,
+            creator: newOwner,
+          })
+        })
+
+        it('should store the new owner, lowercased, on the collection and its items', async () => {
+          await service.getCollection(collection.id)
+          expect(Collection.update).toHaveBeenCalledWith(
+            { eth_address: newOwner.toLowerCase() },
+            { id: collection.id }
+          )
+          expect(Item.update).toHaveBeenCalledWith(
+            { eth_address: newOwner.toLowerCase() },
+            { collection_id: collection.id }
+          )
+        })
+
+        it('should return the collection owned by the new owner', () => {
+          return expect(service.getCollection(collection.id)).resolves.toEqual(
+            expect.objectContaining({ eth_address: newOwner })
+          )
+        })
+      })
+    })
   })
 
   describe('when getting all collections', () => {
@@ -236,6 +295,46 @@ describe('Collection service', () => {
           { ...collections[0], is_programmatic: false },
           { ...collections[1], is_programmatic: true },
         ])
+      })
+    })
+
+    describe('and a standard collection was transferred on-chain to the requesting address', () => {
+      const newOwner = '0x00000000000000000000000000000000000000aa'
+
+      beforeEach(() => {
+        collections = [{ ...dbCollectionMock }]
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce(collections)
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
+          []
+        )
+        ;(Collection.update as jest.Mock).mockResolvedValue(undefined)
+        ;(Item.update as jest.Mock).mockResolvedValue(undefined)
+        jest.spyOn(collectionAPI, 'fetchCollections').mockResolvedValueOnce([
+          {
+            ...collectionFragmentMock,
+            id: dbCollectionMock.contract_address!,
+            creator: newOwner,
+          },
+        ])
+      })
+
+      it('should keep the collection in the list and store the new owner', async () => {
+        await expect(
+          service.getCollections({ address: newOwner }, newOwner)
+        ).resolves.toEqual([
+          expect.objectContaining({
+            id: dbCollectionMock.id,
+            eth_address: newOwner,
+          }),
+        ])
+        expect(Collection.update).toHaveBeenCalledWith(
+          { eth_address: newOwner },
+          { id: dbCollectionMock.id }
+        )
+        expect(Item.update).toHaveBeenCalledWith(
+          { eth_address: newOwner },
+          { collection_id: dbCollectionMock.id }
+        )
       })
     })
   })

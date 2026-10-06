@@ -622,14 +622,23 @@ export class CollectionService {
     id: string,
     ethAddress: string
   ): Promise<boolean> {
-    if (await this.isOwnedOrManagedBy(id, ethAddress)) {
-      return true
-    }
-    if (!(await isCommitteeMember(ethAddress))) {
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+    if (!collection) {
       return false
     }
-    const collection = await Collection.findOne<CollectionAttributes>(id)
-    return !!collection && !isTPCollection(collection)
+    if (isTPCollection(collection)) {
+      return ThirdPartyService.isManager(collection.third_party_id, ethAddress)
+    }
+    if (
+      collection.eth_address === ethAddress ||
+      (await isCommitteeMember(ethAddress))
+    ) {
+      return true
+    }
+    return this.isDCLManagerOfCollection(
+      await this.getDCLCollection(collection),
+      ethAddress
+    )
   }
 
   public async getCollections(

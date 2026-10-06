@@ -2205,10 +2205,7 @@ describe('Collection router', () => {
 
         describe('and the caller is a committee member', () => {
           beforeEach(() => {
-            ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
-            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-              dbTPCollection
-            )
+            ;(isCommitteeMember as jest.Mock).mockResolvedValue(true)
           })
 
           it('should respond with a 401 and not create any publication records', () => {
@@ -2260,10 +2257,13 @@ describe('Collection router', () => {
 
           beforeEach(() => {
             unsyncedItem = { ...dbItemMock, blockchain_item_id: null }
+            ;(Collection.findOne as jest.Mock)
+              .mockReset()
+              .mockResolvedValueOnce({
+                ...dbCollection,
+                eth_address: '0x1111111111111111111111111111111111111111',
+              })
             ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
-            ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
-              dbCollection
-            )
             ;(Collection.findByIds as jest.Mock)
               .mockResolvedValueOnce([dbCollection])
               .mockResolvedValueOnce([{ ...dbCollection, item_count: 1 }])
@@ -2276,9 +2276,6 @@ describe('Collection router', () => {
             ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
               typeof collectionAPI.fetchItemsByContractAddress
             >).mockResolvedValueOnce([itemFragmentMock])
-            ;(Item.findByBlockchainIdsAndContractAddresses as jest.MockedFunction<
-              typeof Item.findByBlockchainIdsAndContractAddresses
-            >).mockResolvedValueOnce([unsyncedItem])
             ;(peerAPI.fetchItems as jest.MockedFunction<
               typeof peerAPI.fetchItems
             >).mockResolvedValueOnce([])

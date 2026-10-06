@@ -1,4 +1,5 @@
 import {
+  collectionFragmentMock,
   dbCollectionMock,
   dbTPCollectionMock,
   thirdPartyMock,
@@ -12,10 +13,13 @@ import { CollectionService } from './Collection.service'
 import { CollectionAttributes, FullCollection } from './Collection.types'
 import { UnauthorizedCollectionEditError } from './Collection.errors'
 import { toFullCollection } from './utils'
+import { isCommitteeMember } from '../Committee'
+import { collectionAPI } from '../ethereum/api/collection'
 
 jest.mock('./Collection.model')
 jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Curation/ItemCuration/ItemCuration.model')
+jest.mock('../Committee')
 
 describe('Collection service', () => {
   let service: CollectionService
@@ -53,6 +57,140 @@ describe('Collection service', () => {
           '0x1111111111111111111111111111111111111111'
         )
       ).toBe(false)
+    })
+  })
+
+  describe('when checking if an address can sync a collection publication', () => {
+    const otherAddress = '0x1111111111111111111111111111111111111111'
+
+    afterEach(() => {
+      ;(isCommitteeMember as jest.Mock).mockReset()
+    })
+
+    describe('and the collection does not exist', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(undefined)
+      })
+
+      it('should return false', async () => {
+        expect(
+          await service.canSyncPublication(dbCollectionMock.id, wallet.address)
+        ).toBe(false)
+      })
+    })
+
+    describe('and the collection is a standard collection', () => {
+      describe('and the address is the owner', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbCollectionMock
+          )
+        })
+
+        it('should return true', async () => {
+          expect(
+            await service.canSyncPublication(
+              dbCollectionMock.id,
+              dbCollectionMock.eth_address
+            )
+          ).toBe(true)
+        })
+      })
+
+      describe('and the address is a committee member', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbCollectionMock
+          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+        })
+
+        it('should return true', async () => {
+          expect(
+            await service.canSyncPublication(dbCollectionMock.id, otherAddress)
+          ).toBe(true)
+        })
+      })
+
+      describe('and the address is a manager of the published collection', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbCollectionMock
+          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(false)
+          jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+            ...collectionFragmentMock,
+            managers: [otherAddress],
+          })
+        })
+
+        it('should return true', async () => {
+          expect(
+            await service.canSyncPublication(dbCollectionMock.id, otherAddress)
+          ).toBe(true)
+        })
+      })
+
+      describe('and the address is neither the owner, a manager nor a committee member', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbCollectionMock
+          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(false)
+          jest
+            .spyOn(collectionAPI, 'fetchCollection')
+            .mockResolvedValueOnce(collectionFragmentMock)
+        })
+
+        it('should return false', async () => {
+          expect(
+            await service.canSyncPublication(dbCollectionMock.id, otherAddress)
+          ).toBe(false)
+        })
+      })
+    })
+
+    describe('and the collection is a third party collection', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbTPCollectionMock
+        )
+        ;(isCommitteeMember as jest.Mock).mockResolvedValue(true)
+      })
+
+      describe('and the address is a committee member but not a manager', () => {
+        beforeEach(() => {
+          ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(
+            false
+          )
+        })
+
+        it('should return false', async () => {
+          expect(
+            await service.canSyncPublication(
+              dbTPCollectionMock.id,
+              otherAddress
+            )
+          ).toBe(false)
+        })
+      })
+
+      describe('and the address is a manager of the third party', () => {
+        beforeEach(() => {
+          ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(
+            true
+          )
+        })
+
+        it('should return true', async () => {
+          expect(
+            await service.canSyncPublication(
+              dbTPCollectionMock.id,
+              otherAddress
+            )
+          ).toBe(true)
+        })
+      })
     })
   })
 

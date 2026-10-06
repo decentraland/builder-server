@@ -2202,6 +2202,28 @@ describe('Collection router', () => {
               expect(CollectionCuration.create).not.toHaveBeenCalled()
             })
         })
+
+        describe('and the caller is a committee member', () => {
+          beforeEach(() => {
+            ;(isCommitteeMember as jest.Mock).mockResolvedValue(true)
+          })
+
+          it('should respond with a 401 and not create any publication records', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds: [dbTPItemMock.id],
+                cheque: { signature: 'signature', qty: 1, salt: '0xsalt' },
+              })
+              .expect(401)
+              .then(() => {
+                expect(SlotUsageCheque.create).not.toHaveBeenCalled()
+                expect(ItemCuration.create).not.toHaveBeenCalled()
+                expect(CollectionCuration.create).not.toHaveBeenCalled()
+              })
+          })
+        })
       })
 
       describe('and the collection is a Standard collection', () => {
@@ -2228,6 +2250,49 @@ describe('Collection router', () => {
             .then(() => {
               expect(Item.update).not.toHaveBeenCalled()
             })
+        })
+
+        describe('and the caller is a committee member', () => {
+          let unsyncedItem: ItemAttributes
+
+          beforeEach(() => {
+            unsyncedItem = { ...dbItemMock, blockchain_item_id: null }
+            ;(Collection.findOne as jest.Mock)
+              .mockReset()
+              .mockResolvedValueOnce({
+                ...dbCollection,
+                eth_address: '0x1111111111111111111111111111111111111111',
+              })
+            ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+            ;(Collection.findByIds as jest.Mock)
+              .mockResolvedValueOnce([dbCollection])
+              .mockResolvedValueOnce([{ ...dbCollection, item_count: 1 }])
+            ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce(
+              [unsyncedItem]
+            )
+            ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+              collectionFragmentMock
+            )
+            ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
+              typeof collectionAPI.fetchItemsByContractAddress
+            >).mockResolvedValueOnce([itemFragmentMock])
+            ;(peerAPI.fetchItems as jest.MockedFunction<
+              typeof peerAPI.fetchItems
+            >).mockResolvedValueOnce([])
+          })
+
+          it('should respond with a 200 and store the blockchain item id of the items missing it', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(Item.update).toHaveBeenCalledWith(
+                  { blockchain_item_id: itemFragmentMock.blockchainId },
+                  { id: unsyncedItem.id }
+                )
+              })
+          })
         })
       })
     })

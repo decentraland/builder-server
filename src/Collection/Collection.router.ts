@@ -89,12 +89,25 @@ export class CollectionRouter extends Router {
     return this.service.isOwnedOrManagedBy(id, ethAddress)
   }
 
+  private publishAuthorizationCheck = (
+    _: OwnableModel,
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> => {
+    return this.service.canSyncPublication(id, ethAddress)
+  }
+
   mount() {
     const withCollectionExists = withModelExists(Collection, 'id')
     const withCollectionAuthorization = withModelAuthorization(
       Collection,
       'id',
       this.modelAuthorizationCheck
+    )
+    const withPublishAuthorization = withModelAuthorization(
+      Collection,
+      'id',
+      this.publishAuthorizationCheck
     )
     const withLowercasedAddress = withLowercasedParams(['address'])
 
@@ -150,7 +163,7 @@ export class CollectionRouter extends Router {
       withCors,
       withAuthentication,
       withCollectionExists,
-      withCollectionAuthorization,
+      withPublishAuthorization,
       server.handleRequest(this.publishCollection)
     )
 

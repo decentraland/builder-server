@@ -115,14 +115,14 @@ function getLegacyItemEditorUrl(params: {
   const query = new URLSearchParams()
   if (params.collectionId) query.set('collection', params.collectionId)
   if (params.itemId) query.set('item', params.itemId)
-  return `${env.get('BUILDER_URL', '')}/item-editor?${query.toString()}`
+  return `${getBaseUrl('BUILDER_URL')}/item-editor?${query.toString()}`
 }
 
 function getStandardItemEditorUrl(params: {
   collectionId: string
   itemId?: string
 }): string {
-  const creatorsUrl = env.get('CREATORS_URL', '')
+  const creatorsUrl = getBaseUrl('CREATORS_URL')
   if (!creatorsUrl) {
     return getLegacyItemEditorUrl(params)
   }
@@ -130,6 +130,10 @@ function getStandardItemEditorUrl(params: {
   if (params.itemId) query.set('item', params.itemId)
   query.set('reviewing', 'true')
   return `${creatorsUrl}/collections/editor?${query.toString()}`
+}
+
+function getBaseUrl(key: string): string {
+  return env.get(key, '').replace(/\/+$/, '')
 }
 
 function getThumbnailURL(item: FullItem) {

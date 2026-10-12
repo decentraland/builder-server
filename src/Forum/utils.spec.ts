@@ -102,6 +102,20 @@ describe('when building the forum links of a collection', () => {
     })
   })
 
+  describe('and the creators site is configured with a trailing slash', () => {
+    beforeEach(() => {
+      process.env.CREATORS_URL = 'https://example.org/create/'
+    })
+
+    it('should link the editor without a double slash', () => {
+      expect(
+        buildStandardCollectionForumPost(collection, items, 'Creator').raw
+      ).toContain(
+        '[View entire collection](https://example.org/create/collections/editor?collection=collection-id&reviewing=true)'
+      )
+    })
+  })
+
   describe('and the collection is a standard one without the creators site configured', () => {
     let raw: string
 

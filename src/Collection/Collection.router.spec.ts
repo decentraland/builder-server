@@ -1688,6 +1688,56 @@ describe('Collection router', () => {
       })
     })
 
+    describe('and sending a contract address', () => {
+      let contractAddress: string
+
+      beforeEach(() => {
+        contractAddress = '0x1D9FB685C257E74F869BA302E260C0B68F5EBB37'
+        ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
+          { ...dbCollection, collection_count: 1 },
+        ])
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([])
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockReturnValueOnce(
+          []
+        )
+      })
+
+      it("should look the address's collections up by that contract, keeping the pagination", () => {
+        return server
+          .get(
+            buildURL(
+              `${url}?contract_address=${contractAddress}&page=1&limit=1`
+            )
+          )
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body.data.results).toHaveLength(1)
+            expect(Collection.findAll).toHaveBeenCalledWith(
+              expect.objectContaining({
+                address: wallet.address,
+                contractAddress,
+                limit: 1,
+                offset: 0,
+              })
+            )
+          })
+      })
+    })
+
+    describe('and sending the contract address more than once', () => {
+      it('should respond with a 400 without looking the collections up', () => {
+        return server
+          .get(buildURL(`${url}?contract_address=0xaa&contract_address=0xbb`))
+          .set(createAuthHeaders('get', url))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body.error).toBe('Invalid contract address')
+            expect(Collection.findAll).not.toHaveBeenCalled()
+          })
+      })
+    })
+
     describe('and the user has approved, disabled and never approved remote collections', () => {
       let approvedRemoteCollection: CollectionFragment
       let reviewedRemoteCollection: CollectionFragment

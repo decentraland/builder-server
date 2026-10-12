@@ -27,6 +27,7 @@ export type FindCollectionParams = {
   limit?: number
   offset?: number
   q?: string
+  contractAddress?: string
   address?: string
   thirdPartyIds?: string[]
   assignee?: string
@@ -156,6 +157,7 @@ export class Collection extends Model<CollectionAttributes> {
 
   static getFindAllWhereStatement({
     q,
+    contractAddress,
     assignee,
     status,
     type,
@@ -168,6 +170,7 @@ export class Collection extends Model<CollectionAttributes> {
   }: Pick<
     FindCollectionParams,
     | 'q'
+    | 'contractAddress'
     | 'assignee'
     | 'status'
     | 'type'
@@ -180,6 +183,7 @@ export class Collection extends Model<CollectionAttributes> {
   >) {
     if (
       !q &&
+      !contractAddress &&
       !assignee &&
       !status &&
       !type &&
@@ -196,6 +200,9 @@ export class Collection extends Model<CollectionAttributes> {
     const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (${isInRemoteIds} OR (${isThirdParty})))`
     const conditions = [
       q ? SQL`collections.name ILIKE ${search} ` : undefined,
+      contractAddress
+        ? SQL`LOWER(collections.contract_address) = ${contractAddress.toLowerCase()}`
+        : undefined,
       assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
       address
         ? thirdPartyIds?.length

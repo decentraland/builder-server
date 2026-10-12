@@ -366,7 +366,7 @@ export class CollectionRouter extends Router {
     | FullCollection[]
   > => {
     const { page, limit } = getPaginationParams(req)
-    const { is_published, sort, q, type, status } = req.query
+    const { is_published, sort, q, type, status, contract_address } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -375,6 +375,18 @@ export class CollectionRouter extends Router {
         'Unauthorized',
         { eth_address },
         STATUS_CODES.unauthorized
+      )
+    }
+
+    const contractAddress =
+      typeof contract_address === 'string' && contract_address
+        ? contract_address
+        : undefined
+    if (contract_address !== undefined && !contractAddress) {
+      throw new HTTPError(
+        'Invalid contract address',
+        { contract_address },
+        STATUS_CODES.badRequest
       )
     }
 
@@ -405,6 +417,7 @@ export class CollectionRouter extends Router {
 
     const params: FindCollectionParams = {
       q: q as string,
+      contractAddress,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
       address: eth_address,

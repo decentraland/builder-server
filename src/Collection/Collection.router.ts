@@ -4,6 +4,7 @@ import { omit } from 'decentraland-commons/dist/utils'
 import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
+import { matchers } from '../common/matchers'
 import { InvalidRequestError } from '../utils/errors'
 import {
   withModelAuthorization,
@@ -76,6 +77,8 @@ import {
   URNAlreadyInUseError,
   WrongCollectionError,
 } from './Collection.errors'
+
+const CONTRACT_ADDRESS_REGEX = new RegExp(`^${matchers.address}$`)
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
@@ -379,7 +382,8 @@ export class CollectionRouter extends Router {
     }
 
     const contractAddress =
-      typeof contract_address === 'string' && contract_address
+      typeof contract_address === 'string' &&
+      CONTRACT_ADDRESS_REGEX.test(contract_address)
         ? contract_address
         : undefined
     if (contract_address !== undefined && !contractAddress) {

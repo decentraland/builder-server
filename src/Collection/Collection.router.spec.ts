@@ -1725,10 +1725,15 @@ describe('Collection router', () => {
       })
     })
 
-    describe('and sending the contract address more than once', () => {
+    describe.each([
+      ['more than once', 'contract_address=0xaa&contract_address=0xbb'],
+      ['empty', 'contract_address='],
+      ['as an object', 'contract_address[a]=b'],
+      ['in a format that is not an address', 'contract_address=foo'],
+    ])('and sending the contract address %s', (_, query) => {
       it('should respond with a 400 without looking the collections up', () => {
         return server
-          .get(buildURL(`${url}?contract_address=0xaa&contract_address=0xbb`))
+          .get(buildURL(`${url}?${query}`))
           .set(createAuthHeaders('get', url))
           .expect(400)
           .then((response: any) => {

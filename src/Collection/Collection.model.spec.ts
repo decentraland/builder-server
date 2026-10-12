@@ -125,6 +125,18 @@ describe('Collection model', () => {
       expect(lastQuery().values).not.toContain(CollectionStatus.REJECTED)
     })
 
+    it('should count only the collections of the requested contract address', async () => {
+      await Collection.countByStatus({
+        address: '0xowner',
+        contractAddress: '0xAbC',
+      })
+
+      expect(normalize(lastQuery().text)).toMatch(
+        /LOWER\(collections.contract_address\) = \$\d+/
+      )
+      expect(lastQuery().values).toContain('0xabc')
+    })
+
     it('should read from the same published collections as the list when filtering by them', async () => {
       await Collection.countByStatus({ isPublished: true })
 

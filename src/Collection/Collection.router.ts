@@ -4,6 +4,7 @@ import { omit } from 'decentraland-commons/dist/utils'
 import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
+import { matchers } from '../common/matchers'
 import { InvalidRequestError } from '../utils/errors'
 import {
   withModelAuthorization,
@@ -76,6 +77,8 @@ import {
   URNAlreadyInUseError,
   WrongCollectionError,
 } from './Collection.errors'
+
+const CONTRACT_ADDRESS_REGEX = new RegExp(`^${matchers.address}$`)
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
@@ -366,7 +369,7 @@ export class CollectionRouter extends Router {
     | FullCollection[]
   > => {
     const { page, limit } = getPaginationParams(req)
-    const { is_published, sort, q, type, status } = req.query
+    const { is_published, sort, q, type, status, contract_address } = req.query
     const eth_address = server.extractFromReq(req, 'address')
     const auth_address = req.auth.ethAddress
 
@@ -375,6 +378,19 @@ export class CollectionRouter extends Router {
         'Unauthorized',
         { eth_address },
         STATUS_CODES.unauthorized
+      )
+    }
+
+    const contractAddress =
+      typeof contract_address === 'string' &&
+      CONTRACT_ADDRESS_REGEX.test(contract_address)
+        ? contract_address
+        : undefined
+    if (contract_address !== undefined && !contractAddress) {
+      throw new HTTPError(
+        'Invalid contract address',
+        { contract_address },
+        STATUS_CODES.badRequest
       )
     }
 
@@ -405,6 +421,7 @@ export class CollectionRouter extends Router {
 
     const params: FindCollectionParams = {
       q: q as string,
+      contractAddress,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
       address: eth_address,

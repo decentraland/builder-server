@@ -69,6 +69,20 @@ describe('Collection model', () => {
     })
   })
 
+  describe('when finding collections by contract address', () => {
+    it('should match the contract address regardless of its case', async () => {
+      await Collection.findAll({
+        address: '0xowner',
+        contractAddress: '0xAbC',
+      })
+
+      expect(normalize(lastQuery().text)).toMatch(
+        /LOWER\(collections.contract_address\) = \$\d+/
+      )
+      expect(lastQuery().values).toContain('0xabc')
+    })
+  })
+
   describe.each([
     [CollectionSort.LAST_ACTIVITY_DESC, 'DESC'],
     [CollectionSort.LAST_ACTIVITY_ASC, 'ASC'],
@@ -109,6 +123,18 @@ describe('Collection model', () => {
         'WHERE status IS NOT NULL GROUP BY status'
       )
       expect(lastQuery().values).not.toContain(CollectionStatus.REJECTED)
+    })
+
+    it('should count only the collections of the requested contract address', async () => {
+      await Collection.countByStatus({
+        address: '0xowner',
+        contractAddress: '0xAbC',
+      })
+
+      expect(normalize(lastQuery().text)).toMatch(
+        /LOWER\(collections.contract_address\) = \$\d+/
+      )
+      expect(lastQuery().values).toContain('0xabc')
     })
 
     it('should read from the same published collections as the list when filtering by them', async () => {

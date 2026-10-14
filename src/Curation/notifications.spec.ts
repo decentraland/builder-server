@@ -206,16 +206,55 @@ describe('when a committee member opens a review request', () => {
     expect(mockSend).not.toHaveBeenCalled()
   })
 
-  it('should announce it on their own collection', async () => {
-    mockFindOne.mockResolvedValue({ ...dbCollectionMock, eth_address: curator })
+  it('should announce it on their own collection without checking the committee', async () => {
+    mockFindOne.mockResolvedValue({
+      ...dbCollectionMock,
+      eth_address: curator.toUpperCase().replace('0X', '0x'),
+    })
     await curationNotifications.reviewRequested(
       dbCollectionMock.id,
       CurationStatus.REJECTED,
       curator
     )
     expect(sentText()).toMatch(/^🔁 Review requested again for /)
+    expect(mockIsCommitteeMember).not.toHaveBeenCalled()
   })
 })
+
+describe('when the actor address is mixed case', () => {
+  it('should lowercase it in the link and keep the short label as sent', async () => {
+    const mixed = '0xABCDEF0123456789abcdef0123456789ABCDEF01'
+    await curationNotifications.verdictGiven(
+      dbCollectionMock.id,
+      CurationStatus.APPROVED,
+      mixed
+    )
+    expect(sentText()).toContain(
+      `<https://decentraland.org/profile/${mixed.toLowerCase()}|0xABCD...EF01>`
+    )
+  })
+})
+
+describe.each(['', 'not a url', 'mailto:someone@example.com'])(
+  'when CREATORS_URL is %p',
+  (creatorsUrl) => {
+    beforeEach(() => {
+      mockEnvGet.mockImplementation((key: string, fallback = '') =>
+        key === 'CREATORS_URL' ? creatorsUrl : envValues[key] ?? fallback
+      )
+    })
+
+    it('should name the person without a link', async () => {
+      await curationNotifications.verdictGiven(
+        dbCollectionMock.id,
+        CurationStatus.APPROVED,
+        curator
+      )
+      expect(sentText()).toMatch(/was approved by 0x2222\.\.\.2222\.$/)
+      expect(sentText()).not.toContain('|0x2222')
+    })
+  }
+)
 
 describe('when the assignee changes', () => {
   it('should name the curator and who assigned them', async () => {

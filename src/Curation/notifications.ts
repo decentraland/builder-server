@@ -44,10 +44,11 @@ export const curationNotifications = {
 
   /**
    * A creator opened a new review request. `previousStatus` is the request it follows: a rejection
-   * ("request review again") or, for anything else, an approval ("publish changes"), since creators can
-   * only open one on an approved or rejected collection and the first publication is announced on its
-   * own. A committee member opening one on someone else's collection is bookkeeping (assigning or
-   * rejecting a never-requested collection), not a creator asking for a review, so it is not announced.
+   * ("request review again") or, otherwise, an approval ("publish changes"). The clients only offer
+   * those two; the server does not enforce it, so a direct call on a never-reviewed collection is
+   * worded as submitted changes too. A committee member opening one on someone else's collection is
+   * bookkeeping (assigning or rejecting a never-requested collection), not a creator asking for a
+   * review, so it is not announced.
    */
   async reviewRequested(
     collectionId: string,
@@ -163,7 +164,9 @@ async function describeAddress(
 /** The shop and the profiles live on the same site as the creators app. */
 function getSiteOrigin(): string {
   try {
-    return new URL(env.get('CREATORS_URL', '')).origin
+    const { origin } = new URL(env.get('CREATORS_URL', ''))
+    // A non-http(s) URL has the literal origin "null".
+    return origin === 'null' ? '' : origin
   } catch (error) {
     return ''
   }

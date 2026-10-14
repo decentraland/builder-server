@@ -32,6 +32,7 @@ import {
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { curationNotifications, CurationVerdict } from './notifications'
+import { AutoCurationService } from './AutoCuration.service'
 
 const validator = getValidator()
 
@@ -39,6 +40,7 @@ const MAX_FORUM_POST_LENGTH = 10000
 
 export class CurationRouter extends Router {
   public collectionService = new CollectionService()
+  public autoCurationService = new AutoCurationService()
 
   mount() {
     // TODO: we might need to rename all endpoints to their actual entities:
@@ -569,6 +571,7 @@ export class CurationRouter extends Router {
           curation?.status,
           ethAddress
         )
+        void this.autoCurationService.onChangesSubmitted(id)
       }
     }
 

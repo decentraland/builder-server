@@ -90,6 +90,7 @@ import {
 } from './Collection.types'
 
 import { curationNotifications } from '../Curation/notifications'
+import { AutoCurationService } from '../Curation/AutoCuration.service'
 
 const server = supertest(app.getApp())
 
@@ -101,6 +102,7 @@ jest.mock('../SlotUsageCheque')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Curation/CollectionCuration')
 jest.mock('../Curation/notifications')
+jest.mock('../Curation/AutoCuration.service')
 jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Committee')
 jest.mock('../Item/Item.model')
@@ -2377,6 +2379,20 @@ describe('Collection router', () => {
               })
           })
 
+          it('should request the automatic review of the published collection and its items', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(
+                  AutoCurationService.prototype.onStandardCollectionPublished
+                ).toHaveBeenCalledWith(
+                  expect.objectContaining({ id: dbCollection.id })
+                )
+              })
+          })
+
           describe('and the collection was reviewed before', () => {
             beforeEach(() => {
               ;(CollectionCuration.query as jest.Mock).mockResolvedValueOnce([
@@ -2384,7 +2400,7 @@ describe('Collection router', () => {
               ])
             })
 
-            it('should not notify the curators', () => {
+            it('should not notify the curators nor request the automatic review', () => {
               return server
                 .post(buildURL(url))
                 .set(createAuthHeaders('post', url))
@@ -2392,6 +2408,9 @@ describe('Collection router', () => {
                 .then(() => {
                   expect(
                     curationNotifications.collectionPublished
+                  ).not.toHaveBeenCalled()
+                  expect(
+                    AutoCurationService.prototype.onStandardCollectionPublished
                   ).not.toHaveBeenCalled()
                 })
             })
@@ -2418,7 +2437,7 @@ describe('Collection router', () => {
             >).mockResolvedValueOnce([])
           })
 
-          it('should respond with a 200 and not notify the curators again', () => {
+          it('should respond with a 200 and not notify the curators nor request the automatic review again', () => {
             return server
               .post(buildURL(url))
               .set(createAuthHeaders('post', url))
@@ -2426,6 +2445,9 @@ describe('Collection router', () => {
               .then(() => {
                 expect(
                   curationNotifications.collectionPublished
+                ).not.toHaveBeenCalled()
+                expect(
+                  AutoCurationService.prototype.onStandardCollectionPublished
                 ).not.toHaveBeenCalled()
               })
           })

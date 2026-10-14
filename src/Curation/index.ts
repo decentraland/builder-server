@@ -1,3 +1,6 @@
 export * from './Curation.types'
 export * from './Curation.router'
 export * from './Curation.service'
+export * from './AutoCuration.types'
+export * from './AutoCuration.service'
+export * from './AutoCuration.router'

@@ -136,6 +136,20 @@ function buildTPWearableEntityMetadata(
   }
 }
 
+/** Builds the entity metadata the Catalyst would receive for the item. */
+export function buildEntityMetadata(
+  item: ItemAttributes,
+  collection: CollectionAttributes
+) {
+  if (isTPCollection(collection) && isTPItem(item)) {
+    return buildTPWearableEntityMetadata(item, collection)
+  }
+
+  return item.type === ItemType.EMOTE
+    ? buildEmoteEntityMetadata(item, collection)
+    : buildStandardWearableEntityMetadata(item, collection)
+}
+
 export async function calculateItemContentHash(
   item: ItemAttributes,
   collection: CollectionAttributes

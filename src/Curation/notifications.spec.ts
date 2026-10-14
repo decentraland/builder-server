@@ -131,14 +131,14 @@ describe('when Third Party items are published', () => {
 })
 
 describe('when a review is requested', () => {
-  it('should say it is the first request when there was no previous one', async () => {
+  it('should say changes were submitted when there is no previous request', async () => {
     await curationNotifications.reviewRequested(
       dbCollectionMock.id,
       undefined,
       creator
     )
     expect(sentText()).toMatch(
-      /^🔔 Review requested for <.*> by 0x1111\.\.\.1111\.$/
+      /^✏️ Changes submitted for review on <.*> by 0x1111\.\.\.1111\.$/
     )
   })
 

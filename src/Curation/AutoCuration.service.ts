@@ -129,11 +129,6 @@ export class AutoCurationService {
         actor_address: null,
         payload: { reason: 'third_party' },
       })
-      await notifyCurationSlack(
-        `Third Party collection ${describeCollection(
-          collection
-        )} was published and needs a curator review.`
-      )
     } catch (error) {
       console.error(
         `Error recording the human review request of collection ${collection.id}`,

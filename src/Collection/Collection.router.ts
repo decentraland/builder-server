@@ -46,6 +46,9 @@ import {
 } from '../utils/urn'
 import { ForumService } from '../Forum/Forum.service'
 import { AutoCurationService } from '../Curation/AutoCuration.service'
+import { curationNotifications } from '../Curation/notifications'
+import { CurationService } from '../Curation/Curation.service'
+import { CurationType } from '../Curation/Curation.types'
 import { Collection, FindCollectionParams } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
@@ -533,21 +536,43 @@ export class CollectionRouter extends Router {
           server.extractFromReq<Cheque>(req, 'cheque')
         )
 
+        // Third Party items are published by the signing manager, not the collection creator.
+        void curationNotifications.collectionPublished(
+          id,
+          result.items.length,
+          eth_address
+        )
         if (isAutoCurationEnabled) {
           await this.autoCurationService.onThirdPartyCollectionPublished(
             dbCollection
           )
-        } else {
-          await this.forumService.upsertThirdPartyCollectionForumPost(
-            dbCollection,
-            result.items.slice(0, MAX_FORUM_ITEMS)
-          )
         }
+
+        await this.forumService.upsertThirdPartyCollectionForumPost(
+          dbCollection,
+          result.items.slice(0, MAX_FORUM_ITEMS)
+        )
       } else {
         const dbItems = await Item.findOrderedByCollectionId(id)
+        // The client keeps calling /publish until the subgraph indexes the collection and the blockchain
+        // item ids are only stored on the first success; a collection that was never reviewed and holds
+        // items without one is being published for the first time.
+        const isFirstPublication =
+          dbItems.some((item) => item.blockchain_item_id == null) &&
+          !(await CurationService.byType(CurationType.COLLECTION).getLatestById(
+            id
+          ))
         result = await this.service.publishDCLCollection(dbCollection, dbItems)
-
-        if (isAutoCurationEnabled) {
+        if (isFirstPublication && !result.collection.is_approved) {
+          void curationNotifications.collectionPublished(
+            id,
+            dbItems.length,
+            dbCollection.eth_address
+          )
+        }
+        // Only the first publication opens the automatic review: /publish keeps answering once the
+        // collection is on chain, and a legacy collection must not get a new review out of nowhere.
+        if (isFirstPublication && isAutoCurationEnabled) {
           await this.autoCurationService.onStandardCollectionPublished(
             result.collection,
             eth_address

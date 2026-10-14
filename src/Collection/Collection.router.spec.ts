@@ -89,7 +89,10 @@ import {
   TermsOfServiceEvent,
 } from './Collection.types'
 
+import { curationNotifications } from '../Curation/notifications'
+
 const server = supertest(app.getApp())
+
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
 jest.mock('../utils/eth')
@@ -97,6 +100,7 @@ jest.mock('../Forum/client')
 jest.mock('../SlotUsageCheque')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Curation/CollectionCuration')
+jest.mock('../Curation/notifications')
 jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Committee')
 jest.mock('../Item/Item.model')
@@ -119,6 +123,8 @@ describe('Collection router', () => {
     dbCollection = { ...dbCollectionMock }
     dbTPCollection = { ...dbTPCollectionMock }
     resultingCollectionAttributes = toResultCollection(dbCollection)
+    // Publishing looks the latest curation up; no row means the collection was never reviewed.
+    ;(CollectionCuration.query as jest.Mock).mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -2352,6 +2358,81 @@ describe('Collection router', () => {
                 )
               })
           })
+
+          it('should notify the curators about the new collection, crediting its owner', () => {
+            ;(Collection.findByIds as jest.Mock).mockReset().mockResolvedValue([
+              {
+                ...dbCollection,
+                eth_address: '0x1111111111111111111111111111111111111111',
+              },
+            ])
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(
+                  curationNotifications.collectionPublished
+                ).toHaveBeenCalledWith(
+                  dbCollection.id,
+                  1,
+                  '0x1111111111111111111111111111111111111111'
+                )
+              })
+          })
+
+          describe('and the collection was reviewed before', () => {
+            beforeEach(() => {
+              ;(CollectionCuration.query as jest.Mock).mockResolvedValueOnce([
+                { id: 'curationId' },
+              ])
+            })
+
+            it('should not notify the curators', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  expect(
+                    curationNotifications.collectionPublished
+                  ).not.toHaveBeenCalled()
+                })
+            })
+          })
+        })
+
+        describe('and the items already have their blockchain ids', () => {
+          beforeEach(() => {
+            ;(Collection.findOne as jest.Mock)
+              .mockReset()
+              .mockResolvedValueOnce({ ...dbCollection })
+            ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+            ;(Collection.findByIds as jest.Mock)
+              .mockResolvedValueOnce([dbCollection])
+              .mockResolvedValueOnce([{ ...dbCollection, item_count: 1 }])
+            ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce(
+              [{ ...dbItemMock, blockchain_item_id: '0' }]
+            )
+            ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+              collectionFragmentMock
+            )
+            ;(peerAPI.fetchItems as jest.MockedFunction<
+              typeof peerAPI.fetchItems
+            >).mockResolvedValueOnce([])
+          })
+
+          it('should respond with a 200 and not notify the curators again', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(
+                  curationNotifications.collectionPublished
+                ).not.toHaveBeenCalled()
+              })
+          })
         })
       })
     })
@@ -2704,7 +2785,7 @@ describe('Collection router', () => {
         let forumId: number
         let forumLink: string
         let authHeaders: Record<string, string>
-        let mockedWallet
+        let mockedWallet: ethers.Wallet
         let cheque: Cheque
         let availableSlots: number
 
@@ -2776,6 +2857,26 @@ describe('Collection router', () => {
                   qty: cheque.qty,
                   salt: cheque.salt,
                 })
+              })
+          })
+
+          it('should notify the curators about the published items', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({
+                itemIds,
+                cheque,
+              })
+              .expect(200)
+              .then(() => {
+                expect(
+                  curationNotifications.collectionPublished
+                ).toHaveBeenCalledWith(
+                  dbTPCollection.id,
+                  items.length,
+                  mockedWallet.address.toLowerCase()
+                )
               })
           })
 

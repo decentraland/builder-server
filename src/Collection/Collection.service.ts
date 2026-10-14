@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid'
+import { raw, SQL } from 'decentraland-server'
 import { collectionAPI } from '../ethereum/api/collection'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
@@ -150,10 +151,41 @@ export class CollectionService {
       await Promise.all(updates)
     }
 
+    // Only a collection the committee never touched waits for its first review: one approved or disabled
+    // before keeps its state. The graph stamps reviewedAt with createdAt on creation and moves it on
+    // every setApproved and rescueItems.
+    if (
+      !remoteCollection.isApproved &&
+      remoteCollection.reviewedAt === remoteCollection.createdAt
+    ) {
+      await this.openFirstReviewRequest(dbCollection.id)
+    }
+
     return {
       collection: Bridge.mergeCollection(dbCollection!, remoteCollection),
       items: await Bridge.consolidateItems(items, remoteItems),
     }
+  }
+
+  /**
+   * A published collection waits for the committee, so its first review request is opened here instead of
+   * being implied by the absence of one. Overlapping publish calls, even from different instances, open one
+   * at most: the unique index on pending curations rejects the second insert.
+   */
+  private async openFirstReviewRequest(collectionId: string): Promise<void> {
+    const now = new Date()
+    await CollectionCuration.query(SQL`
+      INSERT INTO ${raw(
+        CollectionCuration.tableName
+      )} (id, collection_id, status, assignee, created_at, updated_at)
+      SELECT ${uuid()}, ${collectionId}, ${
+      CurationStatus.PENDING
+    }::curation_status, NULL, ${now}, ${now}
+      WHERE NOT EXISTS (
+        SELECT 1 FROM ${raw(CollectionCuration.tableName)}
+        WHERE collection_id = ${collectionId}
+      )
+      ON CONFLICT (collection_id) WHERE status = 'pending' DO NOTHING`)
   }
 
   /**
@@ -288,11 +320,14 @@ export class CollectionService {
       itemCurations = await Promise.all(promises)
       lastItemCuration = itemCurations.slice(-1)[0]
 
-      const collectionCuration = await CollectionCuration.findOne(collectionId)
-      if (collectionCuration) {
+      const collectionCuration = await CollectionCuration.findOne<CollectionCurationAttributes>(
+        { collection_id: collectionId },
+        { created_at: 'desc' }
+      )
+      if (collectionCuration?.status === CurationStatus.PENDING) {
         await CollectionCuration.update(
-          { id: collectionCuration.id },
-          { updated_at: now }
+          { updated_at: now },
+          { id: collectionCuration.id }
         )
       } else {
         await CollectionCuration.create<CollectionCurationAttributes>({

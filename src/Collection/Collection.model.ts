@@ -104,8 +104,9 @@ export class Collection extends Model<CollectionAttributes> {
    * third-party collections. A rejected curation wins over the on-chain state. A not approved collection is
    * disabled when a curation approved it, or when it has no curation and was touched on-chain: `reviewedAt`
    * also moves on `rescueItems`, so a pending curation means a first approval in progress, not a disable.
-   * Known gap: a first approval without an assigned curator has no curation, so if it stalls between
-   * `rescueItems` and `setApproved` it reads as disabled until the approval lands.
+   * Publishing opens the first pending curation, so a stalled first approval reads as under review; only
+   * collections published before that existed can lack a curation and read as disabled if their first
+   * approval stalls between `rescueItems` and `setApproved`.
    */
   static getStatusStatement({
     remoteIds = [],

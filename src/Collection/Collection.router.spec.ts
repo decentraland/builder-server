@@ -119,6 +119,13 @@ describe('Collection router', () => {
   let resultingCollectionAttributes: ResultCollection
   let url: string
 
+  const reviewRequestInserts = () =>
+    (CollectionCuration.query as jest.Mock).mock.calls
+      .map(([statement]) => statement)
+      .filter((statement) =>
+        /INSERT INTO collection_curations/.test(statement?.text)
+      )
+
   beforeEach(() => {
     dbCollection = { ...dbCollectionMock }
     dbTPCollection = { ...dbTPCollectionMock }
@@ -2932,7 +2939,10 @@ describe('Collection router', () => {
             ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
               dbTPCollection,
             ])
-            collectionCuration = { id: uuid() } as CollectionCurationAttributes
+            collectionCuration = {
+              id: uuid(),
+              status: CurationStatus.PENDING,
+            } as CollectionCurationAttributes
             ;(CollectionCuration.findOne as jest.Mock).mockResolvedValueOnce(
               collectionCuration
             )
@@ -2949,10 +2959,15 @@ describe('Collection router', () => {
               })
               .expect(200)
               .then(() => {
-                expect(CollectionCuration.update).toHaveBeenCalledWith(
-                  { id: collectionCuration.id },
-                  { updated_at: expect.any(Date) }
+                expect(CollectionCuration.findOne).toHaveBeenCalledWith(
+                  { collection_id: dbTPCollection.id },
+                  { created_at: 'desc' }
                 )
+                expect(CollectionCuration.update).toHaveBeenCalledWith(
+                  { updated_at: expect.any(Date) },
+                  { id: collectionCuration.id }
+                )
+                expect(CollectionCuration.create).not.toHaveBeenCalled()
               })
           })
         })
@@ -3120,6 +3135,7 @@ describe('Collection router', () => {
                 data: { id: dbCollection.id },
                 ok: false,
               })
+              expect(reviewRequestInserts()).toHaveLength(0)
             })
         })
       })
@@ -3235,6 +3251,86 @@ describe('Collection router', () => {
                   { id: anotherDBItem.id }
                 )
               })
+          })
+
+          describe('and the collection was never reviewed', () => {
+            beforeEach(() => {
+              ;(collectionAPI.fetchCollection as jest.Mock)
+                .mockReset()
+                .mockResolvedValueOnce({
+                  ...collectionFragmentMock,
+                  isApproved: false,
+                  reviewedAt: collectionFragmentMock.createdAt,
+                })
+            })
+
+            it('should open its first review request, unless one exists already', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  const inserts = reviewRequestInserts()
+                  expect(inserts).toHaveLength(1)
+                  const [statement] = inserts
+                  expect(statement.text).toMatch(
+                    /INSERT INTO collection_curations[\s\S]*WHERE NOT EXISTS[\s\S]*ON CONFLICT \(collection_id\) WHERE status = 'pending' DO NOTHING/
+                  )
+                  expect(statement.values).toEqual([
+                    expect.any(String),
+                    dbCollection.id,
+                    CurationStatus.PENDING,
+                    expect.any(Date),
+                    expect.any(Date),
+                    dbCollection.id,
+                  ])
+                })
+            })
+          })
+
+          describe('and the collection was reviewed before but is not approved', () => {
+            beforeEach(() => {
+              ;(collectionAPI.fetchCollection as jest.Mock)
+                .mockReset()
+                .mockResolvedValueOnce({
+                  ...collectionFragmentMock,
+                  isApproved: false,
+                  reviewedAt: String(
+                    Number(collectionFragmentMock.createdAt) + 1
+                  ),
+                })
+            })
+
+            it('should leave it as it is', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  expect(reviewRequestInserts()).toHaveLength(0)
+                })
+            })
+          })
+
+          describe('and the collection is already approved on chain', () => {
+            beforeEach(() => {
+              ;(collectionAPI.fetchCollection as jest.Mock)
+                .mockReset()
+                .mockResolvedValueOnce({
+                  ...collectionFragmentMock,
+                  isApproved: true,
+                })
+            })
+
+            it('should not open a review request', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  expect(reviewRequestInserts()).toHaveLength(0)
+                })
+            })
           })
         })
       })

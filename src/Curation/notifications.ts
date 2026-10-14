@@ -43,9 +43,11 @@ export const curationNotifications = {
   },
 
   /**
-   * A new review request was opened. `previousStatus` is the request it follows, if any. A committee
-   * member opening one is bookkeeping (assigning or rejecting a never-requested collection), not a
-   * creator asking for a review, so it is not announced.
+   * A creator opened a new review request. `previousStatus` is the request it follows: a rejection
+   * ("request review again") or, for anything else, an approval ("publish changes"), since creators can
+   * only open one on an approved or rejected collection and the first publication is announced on its
+   * own. A committee member opening one is bookkeeping (assigning or rejecting a never-requested
+   * collection), not a creator asking for a review, so it is not announced.
    */
   async reviewRequested(
     collectionId: string,
@@ -57,18 +59,13 @@ export const curationNotifications = {
         return undefined
       }
       const requester = await describeAddress(requesterAddress)
-      switch (previousStatus) {
-        case CurationStatus.REJECTED:
-          return `🔁 Review requested again for ${link(
+      return previousStatus === CurationStatus.REJECTED
+        ? `🔁 Review requested again for ${link(
             collection
           )} by ${requester} after a rejection.`
-        case CurationStatus.APPROVED:
-          return `✏️ Changes submitted for review on ${link(
+        : `✏️ Changes submitted for review on ${link(
             collection
           )} by ${requester}.`
-        default:
-          return `🔔 Review requested for ${link(collection)} by ${requester}.`
-      }
     })
   },
 

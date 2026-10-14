@@ -89,8 +89,9 @@ import {
   TermsOfServiceEvent,
 } from './Collection.types'
 
-const server = supertest(app.getApp())
 import { curationNotifications } from '../Curation/notifications'
+
+const server = supertest(app.getApp())
 
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
@@ -2780,7 +2781,7 @@ describe('Collection router', () => {
         let forumId: number
         let forumLink: string
         let authHeaders: Record<string, string>
-        let mockedWallet
+        let mockedWallet: ethers.Wallet
         let cheque: Cheque
         let availableSlots: number
 
@@ -2870,7 +2871,7 @@ describe('Collection router', () => {
                 ).toHaveBeenCalledWith(
                   dbTPCollection.id,
                   items.length,
-                  dbTPCollection.eth_address
+                  mockedWallet.address.toLowerCase()
                 )
               })
           })

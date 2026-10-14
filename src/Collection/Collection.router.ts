@@ -533,10 +533,11 @@ export class CollectionRouter extends Router {
           server.extractFromReq<Cheque>(req, 'cheque')
         )
 
+        // Third Party items are published by the signing manager, not the collection creator.
         void curationNotifications.collectionPublished(
           id,
           result.items.length,
-          dbCollection.eth_address
+          eth_address
         )
 
         await this.forumService.upsertThirdPartyCollectionForumPost(

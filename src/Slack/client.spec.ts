@@ -14,7 +14,8 @@ function mockSlackResponse(body: unknown, status = 200) {
   mockFetch.mockResolvedValueOnce({
     ok: status < 400,
     status,
-    json: () => Promise.resolve(body),
+    text: () =>
+      Promise.resolve(typeof body === 'string' ? body : JSON.stringify(body)),
   } as any)
 }
 
@@ -78,6 +79,20 @@ describe('when sending a Slack message', () => {
 
       it('should resolve to false without throwing', async () => {
         await expect(sendSlackMessage(message)).resolves.toBe(false)
+      })
+    })
+
+    describe('and Slack answers an HTML error page', () => {
+      beforeEach(() => {
+        mockSlackResponse('<html>Bad Gateway</html>', 502)
+      })
+
+      it('should resolve to false and log the HTTP status', async () => {
+        const stderr = jest
+          .spyOn(process.stderr, 'write')
+          .mockImplementation(() => true)
+        await expect(sendSlackMessage(message)).resolves.toBe(false)
+        expect(stderr).toHaveBeenCalledWith(expect.stringContaining('502'))
       })
     })
 

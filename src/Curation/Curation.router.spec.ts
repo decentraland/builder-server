@@ -377,6 +377,26 @@ describe('when handling a request', () => {
         })
       })
 
+      describe('and an empty assignee is sent while already unassigned', () => {
+        beforeEach(() => {
+          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
+            id: 'curationId',
+            assignee: null,
+          } as any)
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: { curation: { assignee: '' } },
+          } as any
+        })
+
+        it('should not notify the curators', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(curationNotifications.assigneeChanged).not.toHaveBeenCalled()
+        })
+      })
+
       describe('and the assignee does not change', () => {
         beforeEach(() => {
           jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
@@ -398,30 +418,35 @@ describe('when handling a request', () => {
       })
     })
 
-    describe('when unassigning a curation and the caller is not a committee member', () => {
-      let req: AuthRequest
+    describe.each([null, ''])(
+      'when unassigning a curation with %p and the caller is not a committee member',
+      (assignee) => {
+        let req: AuthRequest
 
-      beforeEach(() => {
-        service = mockServiceWithAccess(CollectionCuration, true)
-        mockIsCommitteeMember.mockResolvedValueOnce(false)
-        jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
-          id: 'curationId',
-          assignee: '0xcurator',
-        } as any)
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-          body: { curation: { assignee: null } },
-        } as any
-      })
+        beforeEach(() => {
+          service = mockServiceWithAccess(CollectionCuration, true)
+          mockIsCommitteeMember.mockResolvedValueOnce(false)
+          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
+            id: 'curationId',
+            assignee: '0xcurator',
+          } as any)
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: { curation: { assignee } },
+          } as any
+        })
 
-      it('should reject with an error message saying only committee members can modify the assignee', async () => {
-        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
-          'Only committee members can modify the assignee'
-        )
-        expect(curationNotifications.assigneeChanged).not.toHaveBeenCalled()
-      })
-    })
+        it('should reject with an error message saying only committee members can modify the assignee', async () => {
+          await expect(
+            router.updateCollectionCuration(req)
+          ).rejects.toThrowError(
+            'Only committee members can modify the assignee'
+          )
+          expect(curationNotifications.assigneeChanged).not.toHaveBeenCalled()
+        })
+      }
+    )
 
     describe('when the new assignee is not a committee member', () => {
       let req: AuthRequest

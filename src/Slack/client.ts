@@ -48,11 +48,11 @@ export async function sendSlackMessage(
       body: JSON.stringify(message),
       timeout: REQUEST_TIMEOUT_MS,
     })
-    const result = (await response.json()) as { ok: boolean; error?: string }
-    if (!response.ok || !result.ok) {
+    const result = parseSlackResponse(await response.text())
+    if (!response.ok || !result?.ok) {
       logger.warn(
         `Slack refused the message for ${message.channel}: ${
-          result.error ?? response.status
+          result?.error ?? response.status
         }`
       )
       return false
@@ -65,5 +65,16 @@ export async function sendSlackMessage(
       }`
     )
     return false
+  }
+}
+
+/** Slack answers JSON, but a proxy or outage can answer HTML; that still reads as a refusal. */
+function parseSlackResponse(
+  body: string
+): { ok: boolean; error?: string } | undefined {
+  try {
+    return JSON.parse(body)
+  } catch (error) {
+    return undefined
   }
 }

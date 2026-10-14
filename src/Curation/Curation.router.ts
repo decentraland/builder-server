@@ -223,7 +223,9 @@ export class CurationRouter extends Router {
     const assignee =
       curationJSON.assignee === undefined
         ? undefined
-        : curationJSON.assignee?.toLowerCase() ?? null
+        : curationJSON.assignee
+        ? curationJSON.assignee.toLowerCase()
+        : null
     if (assignee !== undefined && assignee !== (previous.assignee ?? null)) {
       void curationNotifications.assigneeChanged(
         collectionId,

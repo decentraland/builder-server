@@ -197,13 +197,23 @@ describe('when a committee member opens a review request', () => {
     mockIsCommitteeMember.mockResolvedValue(true)
   })
 
-  it('should not announce it as a creator request', async () => {
+  it("should not announce it on someone else's collection", async () => {
     await curationNotifications.reviewRequested(
       dbCollectionMock.id,
       CurationStatus.REJECTED,
       curator
     )
     expect(mockSend).not.toHaveBeenCalled()
+  })
+
+  it('should announce it on their own collection', async () => {
+    mockFindOne.mockResolvedValue({ ...dbCollectionMock, eth_address: curator })
+    await curationNotifications.reviewRequested(
+      dbCollectionMock.id,
+      CurationStatus.REJECTED,
+      curator
+    )
+    expect(sentText()).toMatch(/^🔁 Review requested again for /)
   })
 })
 

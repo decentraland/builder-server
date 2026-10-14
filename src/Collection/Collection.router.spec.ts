@@ -2939,7 +2939,10 @@ describe('Collection router', () => {
             ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
               dbTPCollection,
             ])
-            collectionCuration = { id: uuid() } as CollectionCurationAttributes
+            collectionCuration = {
+              id: uuid(),
+              status: CurationStatus.PENDING,
+            } as CollectionCurationAttributes
             ;(CollectionCuration.findOne as jest.Mock).mockResolvedValueOnce(
               collectionCuration
             )

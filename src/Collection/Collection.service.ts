@@ -324,7 +324,7 @@ export class CollectionService {
         { collection_id: collectionId },
         { created_at: 'desc' }
       )
-      if (collectionCuration) {
+      if (collectionCuration?.status === CurationStatus.PENDING) {
         await CollectionCuration.update(
           { updated_at: now },
           { id: collectionCuration.id }

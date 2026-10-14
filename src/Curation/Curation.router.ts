@@ -33,6 +33,9 @@ import {
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { curationNotifications, CurationVerdict } from './notifications'
 
+const isUniqueViolation = (error: unknown): boolean =>
+  (error as { code?: string })?.code === '23505'
+
 const validator = getValidator()
 
 const MAX_FORUM_POST_LENGTH = 10000
@@ -553,7 +556,21 @@ export class CurationRouter extends Router {
       attributes.is_mapping_complete = itemData.is_mapping_complete
     }
 
-    const created = await curationService.getModel().create(attributes)
+    let created
+    try {
+      created = await curationService.getModel().create(attributes)
+    } catch (error) {
+      // A request that overlapped this one got past the latest-curation check; the unique index on
+      // pending collection curations rejects the second insert.
+      if (isUniqueViolation(error)) {
+        throw new HTTPError(
+          'There is already an ongoing review request',
+          { id },
+          STATUS_CODES.badRequest
+        )
+      }
+      throw error
+    }
 
     if (type === CurationType.COLLECTION) {
       // A request opened with an assignee is a curator picking the collection up, not a creator's request.

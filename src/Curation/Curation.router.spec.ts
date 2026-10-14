@@ -1333,6 +1333,23 @@ describe('when handling a request', () => {
           )
           expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
         })
+
+        describe('and another request was opened in the meantime', () => {
+          beforeEach(() => {
+            jest.spyOn(CollectionCuration, 'create').mockRejectedValueOnce(
+              Object.assign(new Error('duplicate key value'), {
+                code: '23505',
+              })
+            )
+          })
+
+          it('should reject with an ongoing review message', async () => {
+            await expect(
+              router.insertCollectionCuration(req)
+            ).rejects.toThrowError('There is already an ongoing review request')
+            expect(curationNotifications.assigneeChanged).not.toHaveBeenCalled()
+          })
+        })
       })
 
       describe('when updating an item', () => {

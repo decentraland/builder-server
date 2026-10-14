@@ -1226,8 +1226,9 @@ paths:
       summary: Create collection curation
       description: |
         Opens a new review request for a published collection: the creator's "publish changes" or "request review
-        again", or a committee member picking a never-requested collection up. Answers 400 while one is pending.
-        A creator's request is announced in the curators' Slack channel.
+        again". Publishing already opens the first request, so a committee member picks a collection up by
+        assigning that request; only collections published before that behaviour existed can be picked up with this
+        endpoint. Answers 400 while one is pending. A creator's request is announced in the curators' Slack channel.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:

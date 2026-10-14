@@ -96,7 +96,7 @@ describe('when a standard collection is published', () => {
       expect.objectContaining({ channel: 'curators-committee' })
     )
     expect(sentText()).toBe(
-      `🆕 New collection ready for review: <https://decentraland.org/create/collections/editor?collection=${
+      `🎨 New collection ready for review: <https://decentraland.org/create/collections/editor?collection=${
         dbCollectionMock.id
       }&reviewing=true|${dbCollectionMock.name}> by ${creatorLink(
         'creator#1234'

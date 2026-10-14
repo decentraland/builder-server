@@ -36,7 +36,7 @@ export const curationNotifications = {
         ? `📦 New Third Party items ready for review: ${link(
             collection
           )} by ${publisher} (${items}).`
-        : `🆕 New collection ready for review: ${link(
+        : `🎨 New collection ready for review: ${link(
             collection
           )} by ${publisher} (${items}).`
     })

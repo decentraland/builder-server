@@ -108,7 +108,7 @@ function toRawItem(item: FullItem, editorUrl: string) {
 }
 
 // Third-party collections can only be curated in the legacy Builder, which reads `collection` and `item`.
-function getLegacyItemEditorUrl(params: {
+export function getLegacyItemEditorUrl(params: {
   collectionId?: string
   itemId?: string
 }): string {
@@ -118,7 +118,7 @@ function getLegacyItemEditorUrl(params: {
   return `${getBaseUrl('BUILDER_URL')}/item-editor?${query.toString()}`
 }
 
-function getStandardItemEditorUrl(params: {
+export function getStandardItemEditorUrl(params: {
   collectionId: string
   itemId?: string
 }): string {

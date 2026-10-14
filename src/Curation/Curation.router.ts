@@ -31,6 +31,7 @@ import {
   CollectionCurationAttributes,
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import { curationNotifications, CurationVerdict } from './notifications'
 
 const validator = getValidator()
 
@@ -211,12 +212,32 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
-    return this.updateCuration(
+    const curation = await this.updateCuration(
       collectionId,
       ethAddress,
       curationJSON,
       CurationType.COLLECTION
     )
+
+    if (curationJSON.assignee !== undefined) {
+      await curationNotifications.assigneeChanged(
+        collectionId,
+        curationJSON.assignee,
+        ethAddress
+      )
+    }
+    if (
+      curationJSON.status === CurationStatus.APPROVED ||
+      curationJSON.status === CurationStatus.REJECTED
+    ) {
+      await curationNotifications.verdictGiven(
+        collectionId,
+        curationJSON.status as CurationVerdict,
+        ethAddress
+      )
+    }
+
+    return curation
   }
 
   updateItemCuration = async (req: AuthRequest) => {
@@ -517,7 +538,25 @@ export class CurationRouter extends Router {
       attributes.is_mapping_complete = itemData.is_mapping_complete
     }
 
-    return curationService.getModel().create(attributes)
+    const created = await curationService.getModel().create(attributes)
+
+    if (type === CurationType.COLLECTION) {
+      if (attributes.assignee) {
+        await curationNotifications.assigneeChanged(
+          id,
+          attributes.assignee,
+          ethAddress
+        )
+      } else {
+        await curationNotifications.reviewRequested(
+          id,
+          curation?.status,
+          ethAddress
+        )
+      }
+    }
+
+    return created
   }
 
   private getItemCurationContentHashAndMappingCompletion = async (

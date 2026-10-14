@@ -20,6 +20,7 @@ import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { CurationService } from './Curation.service'
 import { CurationStatus } from './Curation.types'
 import { createAssigneeEventPost, getPost } from '../Forum'
+import { curationNotifications } from './notifications'
 import { VIDEO_PATH } from '../Item/utils'
 
 jest.mock('../common/Router')
@@ -27,6 +28,7 @@ jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Forum')
+jest.mock('./notifications')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockCreateAssigneeEventPost = createAssigneeEventPost as jest.Mock
@@ -570,6 +572,16 @@ describe('when handling a request', () => {
               status: CurationStatus.REJECTED,
               updated_at: expect.any(Date),
             })
+          })
+
+          it('should notify the curators about the verdict', async () => {
+            await router.updateCollectionCuration(req)
+
+            expect(curationNotifications.verdictGiven).toHaveBeenCalledWith(
+              'some id',
+              CurationStatus.REJECTED,
+              'ethAddress'
+            )
           })
 
           describe('and the collection contains an smart wearable', () => {
@@ -1151,6 +1163,21 @@ describe('when handling a request', () => {
             updated_at: expect.any(Date),
             assignee: assignee.toLowerCase(),
           })
+        })
+
+        it('should notify the curators about the assignment', async () => {
+          jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(expectedCuration)
+
+          await router.insertCollectionCuration(req)
+
+          expect(curationNotifications.assigneeChanged).toHaveBeenCalledWith(
+            'some id',
+            assignee.toLowerCase(),
+            'ethAddress'
+          )
+          expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
         })
       })
 

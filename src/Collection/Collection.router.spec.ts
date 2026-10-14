@@ -90,6 +90,8 @@ import {
 } from './Collection.types'
 
 const server = supertest(app.getApp())
+import { curationNotifications } from '../Curation/notifications'
+
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
 jest.mock('../utils/eth')
@@ -97,6 +99,7 @@ jest.mock('../Forum/client')
 jest.mock('../SlotUsageCheque')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Curation/CollectionCuration')
+jest.mock('../Curation/notifications')
 jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Committee')
 jest.mock('../Item/Item.model')
@@ -2346,6 +2349,18 @@ describe('Collection router', () => {
                   { blockchain_item_id: itemFragmentMock.blockchainId },
                   { id: unsyncedItem.id }
                 )
+              })
+          })
+
+          it('should notify the curators about the new collection', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(
+                  curationNotifications.collectionPublished
+                ).toHaveBeenCalledWith(dbCollection.id, 1, wallet.address)
               })
           })
         })

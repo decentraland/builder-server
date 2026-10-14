@@ -45,6 +45,7 @@ import {
   isTPCollection,
 } from '../utils/urn'
 import { ForumService } from '../Forum/Forum.service'
+import { curationNotifications } from '../Curation/notifications'
 import { Collection, FindCollectionParams } from './Collection.model'
 import { CollectionService } from './Collection.service'
 import {
@@ -534,9 +535,26 @@ export class CollectionRouter extends Router {
           dbCollection,
           result.items.slice(0, MAX_FORUM_ITEMS)
         )
+        await curationNotifications.collectionPublished(
+          id,
+          result.items.length,
+          eth_address
+        )
       } else {
         const dbItems = await Item.findOrderedByCollectionId(id)
+        // The client keeps calling /publish until the subgraph indexes the collection; the blockchain
+        // item ids are only stored on the first success, so missing ones mean the first publication.
+        const isFirstPublication = dbItems.some(
+          (item) => item.blockchain_item_id == null
+        )
         result = await this.service.publishDCLCollection(dbCollection, dbItems)
+        if (isFirstPublication) {
+          await curationNotifications.collectionPublished(
+            id,
+            dbItems.length,
+            eth_address
+          )
+        }
       }
 
       return {

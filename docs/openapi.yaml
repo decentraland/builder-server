@@ -1221,7 +1221,10 @@ paths:
       operationId: createCollectionCuration
       tags: [Curations]
       summary: Create collection curation
-      description: Creates a new curation for a collection
+      description: |
+        Opens a new review request for a published collection: the creator's "publish changes" or "request review
+        again", or a committee member picking a never-requested collection up. Answers 400 while one is pending.
+        A creator's request is announced in the curators' Slack channel.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1232,6 +1235,7 @@ paths:
               properties:
                 assignee:
                   type: string
+                  description: Committee member to assign. Only committee members may send it.
       responses:
         '200':
           description: Curation created successfully
@@ -1245,7 +1249,10 @@ paths:
       operationId: updateCollectionCuration
       tags: [Curations]
       summary: Update collection curation
-      description: Updates a collection curation
+      description: |
+        Updates the latest curation of a collection. Approving, rejecting and changing the assignee (including
+        clearing it) are committee-only and answer 401 otherwise. A change of assignee or verdict is announced in
+        the curators' Slack channel; repeating the current value is not.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1259,6 +1266,8 @@ paths:
                   $ref: '#/components/schemas/CurationStatus'
                 assignee:
                   type: string
+                  nullable: true
+                  description: Committee member to assign; `null` or an empty string clears the assignment.
       responses:
         '200':
           description: Curation updated successfully
@@ -3039,6 +3048,7 @@ components:
           $ref: '#/components/schemas/CurationStatus'
         assignee:
           type: string
+          nullable: true
         created_at:
           type: string
           format: date-time

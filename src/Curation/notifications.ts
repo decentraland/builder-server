@@ -9,7 +9,7 @@ import {
   getStandardItemEditorUrl,
   shortenAddress,
 } from '../Forum/utils'
-import { escapeSlackText, sendSlackMessage, SlackBlock } from '../Slack'
+import { escapeSlackText, sendSlackMessage } from '../Slack'
 import { isTPCollection } from '../utils/urn'
 import { CurationStatus } from './Curation.types'
 
@@ -125,14 +125,7 @@ async function notify(
     if (!text) {
       return
     }
-    const blocks: SlackBlock[] = [
-      { type: 'section', text: { type: 'mrkdwn', text } },
-      {
-        type: 'context',
-        elements: [{ type: 'mrkdwn', text: `Collection ${collectionId}` }],
-      },
-    ]
-    await sendSlackMessage({ channel, text, blocks })
+    await sendSlackMessage({ channel, text })
   } catch (error) {
     logger.warn(
       `Error sending the curation notification for ${collectionId}: ${

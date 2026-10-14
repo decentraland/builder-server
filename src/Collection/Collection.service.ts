@@ -150,10 +150,36 @@ export class CollectionService {
       await Promise.all(updates)
     }
 
+    if (!remoteCollection.isApproved) {
+      await this.openFirstReviewRequest(dbCollection.id)
+    }
+
     return {
       collection: Bridge.mergeCollection(dbCollection!, remoteCollection),
       items: await Bridge.consolidateItems(items, remoteItems),
     }
+  }
+
+  /**
+   * A published collection waits for the committee, so its first review request is opened here instead of
+   * being implied by the absence of one. Nothing happens once any request exists.
+   */
+  private async openFirstReviewRequest(collectionId: string): Promise<void> {
+    const requests = await CollectionCuration.count({
+      collection_id: collectionId,
+    })
+    if (requests > 0) {
+      return
+    }
+    const now = new Date()
+    await CollectionCuration.create<CollectionCurationAttributes>({
+      id: uuid(),
+      collection_id: collectionId,
+      status: CurationStatus.PENDING,
+      assignee: null,
+      created_at: now,
+      updated_at: now,
+    })
   }
 
   /**

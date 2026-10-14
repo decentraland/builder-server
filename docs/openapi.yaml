@@ -769,7 +769,10 @@ paths:
       operationId: publishCollection
       tags: [Collections]
       summary: Publish a collection
-      description: Publishes a collection to the blockchain
+      description: |
+        Syncs a collection the client has published on chain: stores the blockchain item ids and, for a standard
+        collection that is not approved and has no review request yet, opens its first `pending` request so it
+        enters the committee's queue. Third Party collections store the slots cheque and create their item curations.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:

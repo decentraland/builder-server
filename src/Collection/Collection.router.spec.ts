@@ -3135,6 +3135,67 @@ describe('Collection router', () => {
                 )
               })
           })
+
+          describe('and the collection was never reviewed', () => {
+            beforeEach(() => {
+              ;(CollectionCuration.count as jest.Mock).mockResolvedValueOnce(0)
+            })
+
+            it('should open the first review request as pending and unassigned', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  expect(CollectionCuration.create).toHaveBeenCalledWith({
+                    id: expect.any(String),
+                    collection_id: dbCollection.id,
+                    status: CurationStatus.PENDING,
+                    assignee: null,
+                    created_at: expect.any(Date),
+                    updated_at: expect.any(Date),
+                  })
+                })
+            })
+          })
+
+          describe('and the collection already has a review request', () => {
+            beforeEach(() => {
+              ;(CollectionCuration.count as jest.Mock).mockResolvedValueOnce(1)
+            })
+
+            it('should not open another one', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  expect(CollectionCuration.create).not.toHaveBeenCalled()
+                })
+            })
+          })
+
+          describe('and the collection is already approved on chain', () => {
+            beforeEach(() => {
+              ;(collectionAPI.fetchCollection as jest.Mock)
+                .mockReset()
+                .mockResolvedValueOnce({
+                  ...collectionFragmentMock,
+                  isApproved: true,
+                })
+            })
+
+            it('should not open a review request', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  expect(CollectionCuration.count).not.toHaveBeenCalled()
+                  expect(CollectionCuration.create).not.toHaveBeenCalled()
+                })
+            })
+          })
         })
       })
     })

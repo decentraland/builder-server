@@ -89,7 +89,7 @@ describe('when a standard collection is published', () => {
       expect.objectContaining({ channel: 'curators-committee' })
     )
     expect(sentText()).toBe(
-      `New collection ready for review: <https://decentraland.org/create/collections/editor?collection=${dbCollectionMock.id}&reviewing=true|${dbCollectionMock.name}> by creator#1234 (3 items).`
+      `🆕 New collection ready for review: <https://decentraland.org/create/collections/editor?collection=${dbCollectionMock.id}&reviewing=true|${dbCollectionMock.name}> by creator#1234 (3 items).`
     )
   })
 
@@ -125,7 +125,7 @@ describe('when Third Party items are published', () => {
       creator
     )
     expect(sentText()).toBe(
-      `New Third Party items ready for review: <https://builder.decentraland.org/item-editor?collection=${dbTPCollectionMock.id}|${dbTPCollectionMock.name}> by 0x1111...1111 (2 items).`
+      `📦 New Third Party items ready for review: <https://builder.decentraland.org/item-editor?collection=${dbTPCollectionMock.id}|${dbTPCollectionMock.name}> by 0x1111...1111 (2 items).`
     )
   })
 })
@@ -138,7 +138,7 @@ describe('when a review is requested', () => {
       creator
     )
     expect(sentText()).toMatch(
-      /^Review requested for <.*> by 0x1111\.\.\.1111\.$/
+      /^🔔 Review requested for <.*> by 0x1111\.\.\.1111\.$/
     )
   })
 
@@ -149,7 +149,7 @@ describe('when a review is requested', () => {
       creator
     )
     expect(sentText()).toMatch(
-      /^Changes submitted for review on <.*> by 0x1111\.\.\.1111\.$/
+      /^✏️ Changes submitted for review on <.*> by 0x1111\.\.\.1111\.$/
     )
   })
 
@@ -160,7 +160,7 @@ describe('when a review is requested', () => {
       creator
     )
     expect(sentText()).toMatch(
-      /^Review requested again for <.*> by 0x1111\.\.\.1111 after a rejection\.$/
+      /^🔁 Review requested again for <.*> by 0x1111\.\.\.1111 after a rejection\.$/
     )
   })
 })
@@ -190,7 +190,20 @@ describe('when the assignee changes', () => {
       curator,
       creator
     )
-    expect(sentText()).toMatch(/was assigned to curator by 0x1111\.\.\.1111\.$/)
+    expect(sentText()).toMatch(
+      /^👤 <.*> was assigned to curator by 0x1111\.\.\.1111\.$/
+    )
+  })
+
+  it('should omit the assigner when curators assign themselves', async () => {
+    mockProfileName.mockResolvedValue('curator')
+    await curationNotifications.assigneeChanged(
+      dbCollectionMock.id,
+      curator,
+      curator
+    )
+    expect(sentText()).toMatch(/^👤 <.*> was assigned to curator\.$/)
+    expect(mockProfileName).toHaveBeenCalledTimes(1)
   })
 
   it('should say who unassigned it', async () => {
@@ -199,7 +212,7 @@ describe('when the assignee changes', () => {
       null,
       curator
     )
-    expect(sentText()).toMatch(/was unassigned by 0x2222\.\.\.2222\.$/)
+    expect(sentText()).toMatch(/^👤 <.*> was unassigned by 0x2222\.\.\.2222\.$/)
   })
 })
 
@@ -210,7 +223,7 @@ describe('when a verdict is given', () => {
       CurationStatus.APPROVED,
       curator
     )
-    expect(sentText()).toMatch(/was approved by 0x2222\.\.\.2222\.$/)
+    expect(sentText()).toMatch(/^✅ <.*> was approved by 0x2222\.\.\.2222\.$/)
   })
 
   it('should announce the rejection with the curator', async () => {
@@ -219,7 +232,7 @@ describe('when a verdict is given', () => {
       CurationStatus.REJECTED,
       curator
     )
-    expect(sentText()).toMatch(/was rejected by 0x2222\.\.\.2222\.$/)
+    expect(sentText()).toMatch(/^❌ <.*> was rejected by 0x2222\.\.\.2222\.$/)
   })
 })
 

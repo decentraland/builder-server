@@ -33,10 +33,10 @@ export const curationNotifications = {
       const publisher = await describeAddress(publisherAddress)
       const items = `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
       return isTPCollection(collection)
-        ? `New Third Party items ready for review: ${link(
+        ? `📦 New Third Party items ready for review: ${link(
             collection
           )} by ${publisher} (${items}).`
-        : `New collection ready for review: ${link(
+        : `🆕 New collection ready for review: ${link(
             collection
           )} by ${publisher} (${items}).`
     })
@@ -59,15 +59,15 @@ export const curationNotifications = {
       const requester = await describeAddress(requesterAddress)
       switch (previousStatus) {
         case CurationStatus.REJECTED:
-          return `Review requested again for ${link(
+          return `🔁 Review requested again for ${link(
             collection
           )} by ${requester} after a rejection.`
         case CurationStatus.APPROVED:
-          return `Changes submitted for review on ${link(
+          return `✏️ Changes submitted for review on ${link(
             collection
           )} by ${requester}.`
         default:
-          return `Review requested for ${link(collection)} by ${requester}.`
+          return `🔔 Review requested for ${link(collection)} by ${requester}.`
       }
     })
   },
@@ -80,17 +80,17 @@ export const curationNotifications = {
     await notify(collectionId, async (collection) => {
       if (!assignee) {
         const actor = await describeAddress(actorAddress)
-        return `${link(collection)} was unassigned by ${actor}.`
+        return `👤 ${link(collection)} was unassigned by ${actor}.`
+      }
+      if (assignee.toLowerCase() === actorAddress.toLowerCase()) {
+        const curator = await describeAddress(assignee)
+        return `👤 ${link(collection)} was assigned to ${curator}.`
       }
       const [actor, curator] = await Promise.all([
         describeAddress(actorAddress),
-        assignee.toLowerCase() === actorAddress.toLowerCase()
-          ? undefined
-          : describeAddress(assignee),
+        describeAddress(assignee),
       ])
-      return `${link(collection)} was assigned to ${
-        curator ?? actor
-      } by ${actor}.`
+      return `👤 ${link(collection)} was assigned to ${curator} by ${actor}.`
     })
   },
 
@@ -101,7 +101,8 @@ export const curationNotifications = {
   ): Promise<void> {
     await notify(collectionId, async (collection) => {
       const curator = await describeAddress(curatorAddress)
-      return `${link(collection)} was ${verdict} by ${curator}.`
+      const emoji = verdict === CurationStatus.APPROVED ? '✅' : '❌'
+      return `${emoji} ${link(collection)} was ${verdict} by ${curator}.`
     })
   },
 }

@@ -6,7 +6,9 @@ const indexName = 'collection_curations_collection_id_pending_unique'
 
 export const up = (pgm: MigrationBuilder) => {
   // Every read picks a collection's newest curation, so a pending row behind a newer one is unreachable
-  // and would only block the index. Such rows can only come from past concurrent review requests.
+  // and would only block the index. Most of them come from Third Party publishes, which inserted a new
+  // virtual curation on every publish instead of refreshing the existing one; a few from concurrent
+  // review requests. `down` cannot restore them.
   pgm.sql(`
     DELETE FROM ${tableName} stale
     WHERE stale.status = 'pending'

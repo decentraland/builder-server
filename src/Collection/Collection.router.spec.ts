@@ -2956,10 +2956,15 @@ describe('Collection router', () => {
               })
               .expect(200)
               .then(() => {
-                expect(CollectionCuration.update).toHaveBeenCalledWith(
-                  { id: collectionCuration.id },
-                  { updated_at: expect.any(Date) }
+                expect(CollectionCuration.findOne).toHaveBeenCalledWith(
+                  { collection_id: dbTPCollection.id },
+                  { created_at: 'desc' }
                 )
+                expect(CollectionCuration.update).toHaveBeenCalledWith(
+                  { updated_at: expect.any(Date) },
+                  { id: collectionCuration.id }
+                )
+                expect(CollectionCuration.create).not.toHaveBeenCalled()
               })
           })
         })
@@ -3266,7 +3271,7 @@ describe('Collection router', () => {
                   expect(inserts).toHaveLength(1)
                   const [statement] = inserts
                   expect(statement.text).toMatch(
-                    /INSERT INTO collection_curations[\s\S]*WHERE NOT EXISTS[\s\S]*ON CONFLICT \(collection_id\) WHERE status = \$\d+::curation_status DO NOTHING/
+                    /INSERT INTO collection_curations[\s\S]*WHERE NOT EXISTS[\s\S]*ON CONFLICT \(collection_id\) WHERE status = 'pending' DO NOTHING/
                   )
                   expect(statement.values).toEqual([
                     expect.any(String),
@@ -3275,7 +3280,6 @@ describe('Collection router', () => {
                     expect.any(Date),
                     expect.any(Date),
                     dbCollection.id,
-                    CurationStatus.PENDING,
                   ])
                 })
             })

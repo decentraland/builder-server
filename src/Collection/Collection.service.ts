@@ -185,9 +185,7 @@ export class CollectionService {
         SELECT 1 FROM ${raw(CollectionCuration.tableName)}
         WHERE collection_id = ${collectionId}
       )
-      ON CONFLICT (collection_id) WHERE status = ${
-        CurationStatus.PENDING
-      }::curation_status DO NOTHING`)
+      ON CONFLICT (collection_id) WHERE status = 'pending' DO NOTHING`)
   }
 
   /**
@@ -322,11 +320,14 @@ export class CollectionService {
       itemCurations = await Promise.all(promises)
       lastItemCuration = itemCurations.slice(-1)[0]
 
-      const collectionCuration = await CollectionCuration.findOne(collectionId)
+      const collectionCuration = await CollectionCuration.findOne<CollectionCurationAttributes>(
+        { collection_id: collectionId },
+        { created_at: 'desc' }
+      )
       if (collectionCuration) {
         await CollectionCuration.update(
-          { id: collectionCuration.id },
-          { updated_at: now }
+          { updated_at: now },
+          { id: collectionCuration.id }
         )
       } else {
         await CollectionCuration.create<CollectionCurationAttributes>({

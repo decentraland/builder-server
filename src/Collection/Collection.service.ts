@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid'
+import { raw, SQL } from 'decentraland-server'
 import { collectionAPI } from '../ethereum/api/collection'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
@@ -150,7 +151,13 @@ export class CollectionService {
       await Promise.all(updates)
     }
 
-    if (!remoteCollection.isApproved) {
+    // Only a collection the committee never touched waits for its first review: one approved or disabled
+    // before keeps its state. The graph stamps reviewedAt with createdAt on creation and moves it on
+    // every setApproved and rescueItems.
+    if (
+      !remoteCollection.isApproved &&
+      remoteCollection.reviewedAt === remoteCollection.createdAt
+    ) {
       await this.openFirstReviewRequest(dbCollection.id)
     }
 
@@ -162,24 +169,21 @@ export class CollectionService {
 
   /**
    * A published collection waits for the committee, so its first review request is opened here instead of
-   * being implied by the absence of one. Nothing happens once any request exists.
+   * being implied by the absence of one. One statement, so two overlapping publish calls cannot open two.
    */
   private async openFirstReviewRequest(collectionId: string): Promise<void> {
-    const requests = await CollectionCuration.count({
-      collection_id: collectionId,
-    })
-    if (requests > 0) {
-      return
-    }
     const now = new Date()
-    await CollectionCuration.create<CollectionCurationAttributes>({
-      id: uuid(),
-      collection_id: collectionId,
-      status: CurationStatus.PENDING,
-      assignee: null,
-      created_at: now,
-      updated_at: now,
-    })
+    await CollectionCuration.query(SQL`
+      INSERT INTO ${raw(
+        CollectionCuration.tableName
+      )} (id, collection_id, status, assignee, created_at, updated_at)
+      SELECT ${uuid()}, ${collectionId}, ${
+      CurationStatus.PENDING
+    }::curation_status, NULL, ${now}, ${now}
+      WHERE NOT EXISTS (
+        SELECT 1 FROM ${raw(CollectionCuration.tableName)}
+        WHERE collection_id = ${collectionId}
+      )`)
   }
 
   /**

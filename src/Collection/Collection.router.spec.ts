@@ -2229,6 +2229,10 @@ describe('Collection router', () => {
   })
 
   describe('when publishing a collection', () => {
+    beforeEach(() => {
+      ;(CollectionCuration.query as jest.Mock).mockResolvedValue([])
+    })
+
     describe('and the caller is not authorized to manage the collection', () => {
       describe('and the collection is a TP collection', () => {
         beforeEach(() => {
@@ -3019,6 +3023,7 @@ describe('Collection router', () => {
                 data: { id: dbCollection.id },
                 ok: false,
               })
+              expect(CollectionCuration.query).not.toHaveBeenCalled()
             })
         })
       })
@@ -3138,39 +3143,59 @@ describe('Collection router', () => {
 
           describe('and the collection was never reviewed', () => {
             beforeEach(() => {
-              ;(CollectionCuration.count as jest.Mock).mockResolvedValueOnce(0)
+              ;(collectionAPI.fetchCollection as jest.Mock)
+                .mockReset()
+                .mockResolvedValueOnce({
+                  ...collectionFragmentMock,
+                  isApproved: false,
+                  reviewedAt: collectionFragmentMock.createdAt,
+                })
             })
 
-            it('should open the first review request as pending and unassigned', () => {
+            it('should open its first review request, unless one exists already', () => {
               return server
                 .post(buildURL(url))
                 .set(createAuthHeaders('post', url))
                 .expect(200)
                 .then(() => {
-                  expect(CollectionCuration.create).toHaveBeenCalledWith({
-                    id: expect.any(String),
-                    collection_id: dbCollection.id,
-                    status: CurationStatus.PENDING,
-                    assignee: null,
-                    created_at: expect.any(Date),
-                    updated_at: expect.any(Date),
-                  })
+                  expect(CollectionCuration.query).toHaveBeenCalledTimes(1)
+                  const statement = (CollectionCuration.query as jest.Mock).mock
+                    .calls[0][0]
+                  expect(statement.text).toMatch(
+                    /INSERT INTO collection_curations[\s\S]*WHERE NOT EXISTS/
+                  )
+                  expect(statement.values).toEqual([
+                    expect.any(String),
+                    dbCollection.id,
+                    CurationStatus.PENDING,
+                    expect.any(Date),
+                    expect.any(Date),
+                    dbCollection.id,
+                  ])
                 })
             })
           })
 
-          describe('and the collection already has a review request', () => {
+          describe('and the collection was reviewed before but is not approved', () => {
             beforeEach(() => {
-              ;(CollectionCuration.count as jest.Mock).mockResolvedValueOnce(1)
+              ;(collectionAPI.fetchCollection as jest.Mock)
+                .mockReset()
+                .mockResolvedValueOnce({
+                  ...collectionFragmentMock,
+                  isApproved: false,
+                  reviewedAt: String(
+                    Number(collectionFragmentMock.createdAt) + 1
+                  ),
+                })
             })
 
-            it('should not open another one', () => {
+            it('should leave it as it is', () => {
               return server
                 .post(buildURL(url))
                 .set(createAuthHeaders('post', url))
                 .expect(200)
                 .then(() => {
-                  expect(CollectionCuration.create).not.toHaveBeenCalled()
+                  expect(CollectionCuration.query).not.toHaveBeenCalled()
                 })
             })
           })
@@ -3191,8 +3216,7 @@ describe('Collection router', () => {
                 .set(createAuthHeaders('post', url))
                 .expect(200)
                 .then(() => {
-                  expect(CollectionCuration.count).not.toHaveBeenCalled()
-                  expect(CollectionCuration.create).not.toHaveBeenCalled()
+                  expect(CollectionCuration.query).not.toHaveBeenCalled()
                 })
             })
           })

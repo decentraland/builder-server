@@ -770,9 +770,9 @@ paths:
       tags: [Collections]
       summary: Publish a collection
       description: |
-        Syncs a collection the client has published on chain: stores the blockchain item ids and, for a standard
-        collection that is not approved and has no review request yet, opens its first `pending` request so it
-        enters the committee's queue. Third Party collections store the slots cheque and create their item curations.
+        Completes a publication the creator confirmed on chain. From then on the items are known by their
+        on-chain ids, and a new collection shows up in the curation committee's queue as waiting for its first
+        review. Third Party collections register the published items for review instead.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:

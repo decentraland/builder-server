@@ -169,7 +169,8 @@ export class CollectionService {
 
   /**
    * A published collection waits for the committee, so its first review request is opened here instead of
-   * being implied by the absence of one. One statement, so two overlapping publish calls cannot open two.
+   * being implied by the absence of one. Overlapping publish calls, even from different instances, open one
+   * at most: the unique index on pending curations rejects the second insert.
    */
   private async openFirstReviewRequest(collectionId: string): Promise<void> {
     const now = new Date()
@@ -183,7 +184,10 @@ export class CollectionService {
       WHERE NOT EXISTS (
         SELECT 1 FROM ${raw(CollectionCuration.tableName)}
         WHERE collection_id = ${collectionId}
-      )`)
+      )
+      ON CONFLICT (collection_id) WHERE status = ${
+        CurationStatus.PENDING
+      }::curation_status DO NOTHING`)
   }
 
   /**

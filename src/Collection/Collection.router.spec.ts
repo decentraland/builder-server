@@ -119,6 +119,13 @@ describe('Collection router', () => {
   let resultingCollectionAttributes: ResultCollection
   let url: string
 
+  const reviewRequestInserts = () =>
+    (CollectionCuration.query as jest.Mock).mock.calls
+      .map(([statement]) => statement)
+      .filter((statement) =>
+        /INSERT INTO collection_curations/.test(statement?.text)
+      )
+
   beforeEach(() => {
     dbCollection = { ...dbCollectionMock }
     dbTPCollection = { ...dbTPCollectionMock }
@@ -2235,10 +2242,6 @@ describe('Collection router', () => {
   })
 
   describe('when publishing a collection', () => {
-    beforeEach(() => {
-      ;(CollectionCuration.query as jest.Mock).mockResolvedValue([])
-    })
-
     describe('and the caller is not authorized to manage the collection', () => {
       describe('and the collection is a TP collection', () => {
         beforeEach(() => {
@@ -3124,7 +3127,7 @@ describe('Collection router', () => {
                 data: { id: dbCollection.id },
                 ok: false,
               })
-              expect(CollectionCuration.query).not.toHaveBeenCalled()
+              expect(reviewRequestInserts()).toHaveLength(0)
             })
         })
       })
@@ -3259,11 +3262,11 @@ describe('Collection router', () => {
                 .set(createAuthHeaders('post', url))
                 .expect(200)
                 .then(() => {
-                  expect(CollectionCuration.query).toHaveBeenCalledTimes(1)
-                  const statement = (CollectionCuration.query as jest.Mock).mock
-                    .calls[0][0]
+                  const inserts = reviewRequestInserts()
+                  expect(inserts).toHaveLength(1)
+                  const [statement] = inserts
                   expect(statement.text).toMatch(
-                    /INSERT INTO collection_curations[\s\S]*WHERE NOT EXISTS/
+                    /INSERT INTO collection_curations[\s\S]*WHERE NOT EXISTS[\s\S]*ON CONFLICT \(collection_id\) WHERE status = \$\d+::curation_status DO NOTHING/
                   )
                   expect(statement.values).toEqual([
                     expect.any(String),
@@ -3272,6 +3275,7 @@ describe('Collection router', () => {
                     expect.any(Date),
                     expect.any(Date),
                     dbCollection.id,
+                    CurationStatus.PENDING,
                   ])
                 })
             })
@@ -3296,7 +3300,7 @@ describe('Collection router', () => {
                 .set(createAuthHeaders('post', url))
                 .expect(200)
                 .then(() => {
-                  expect(CollectionCuration.query).not.toHaveBeenCalled()
+                  expect(reviewRequestInserts()).toHaveLength(0)
                 })
             })
           })
@@ -3317,7 +3321,7 @@ describe('Collection router', () => {
                 .set(createAuthHeaders('post', url))
                 .expect(200)
                 .then(() => {
-                  expect(CollectionCuration.query).not.toHaveBeenCalled()
+                  expect(reviewRequestInserts()).toHaveLength(0)
                 })
             })
           })

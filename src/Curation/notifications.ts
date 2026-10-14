@@ -30,7 +30,7 @@ export const curationNotifications = {
     publisherAddress: string
   ): Promise<void> {
     await notify(collectionId, async (collection) => {
-      const publisher = await describeAddress(publisherAddress)
+      const publisher = await describeAddress(publisherAddress, 'creator')
       const items = `${itemCount} ${itemCount === 1 ? 'item' : 'items'}`
       return isTPCollection(collection)
         ? `📦 New Third Party items ready for review: ${link(
@@ -58,7 +58,7 @@ export const curationNotifications = {
       if (await isCommitteeMember(requesterAddress)) {
         return undefined
       }
-      const requester = await describeAddress(requesterAddress)
+      const requester = await describeAddress(requesterAddress, 'creator')
       return previousStatus === CurationStatus.REJECTED
         ? `🔁 Review requested again for ${link(
             collection
@@ -76,16 +76,16 @@ export const curationNotifications = {
   ): Promise<void> {
     await notify(collectionId, async (collection) => {
       if (!assignee) {
-        const actor = await describeAddress(actorAddress)
+        const actor = await describeAddress(actorAddress, 'curator')
         return `👤 ${link(collection)} was unassigned by ${actor}.`
       }
       if (assignee.toLowerCase() === actorAddress.toLowerCase()) {
-        const curator = await describeAddress(assignee)
+        const curator = await describeAddress(assignee, 'curator')
         return `👤 ${link(collection)} was assigned to ${curator}.`
       }
       const [actor, curator] = await Promise.all([
-        describeAddress(actorAddress),
-        describeAddress(assignee),
+        describeAddress(actorAddress, 'curator'),
+        describeAddress(assignee, 'curator'),
       ])
       return `👤 ${link(collection)} was assigned to ${curator} by ${actor}.`
     })
@@ -97,7 +97,7 @@ export const curationNotifications = {
     curatorAddress: string
   ): Promise<void> {
     await notify(collectionId, async (collection) => {
-      const curator = await describeAddress(curatorAddress)
+      const curator = await describeAddress(curatorAddress, 'curator')
       const emoji = verdict === CurationStatus.APPROVED ? '✅' : '❌'
       return `${emoji} ${link(collection)} was ${verdict} by ${curator}.`
     })
@@ -147,7 +147,29 @@ function link(collection: CollectionAttributes): string {
   return `<${url}|${escapeSlackText(collection.name)}>`
 }
 
-async function describeAddress(address: string): Promise<string> {
+/** The person as a link: creators to their shop page, curators to their profile. */
+async function describeAddress(
+  address: string,
+  role: 'creator' | 'curator'
+): Promise<string> {
   const name = await peerAPI.getProfileName(address)
-  return name ? escapeSlackText(name) : shortenAddress(address)
+  const label = name ? escapeSlackText(name) : shortenAddress(address)
+  const origin = getSiteOrigin()
+  if (!origin) {
+    return label
+  }
+  const path =
+    role === 'creator'
+      ? `/shop/items/creator/${address.toLowerCase()}`
+      : `/profile/${address.toLowerCase()}`
+  return `<${origin}${path}|${label}>`
+}
+
+/** The shop and the profiles live on the same site as the creators app. */
+function getSiteOrigin(): string {
+  try {
+    return new URL(env.get('CREATORS_URL', '')).origin
+  } catch (error) {
+    return ''
+  }
 }

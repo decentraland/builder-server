@@ -1,5 +1,7 @@
 import { env } from 'decentraland-commons'
+import { createConsoleLogComponent } from '@well-known-components/logger'
 import { Collection } from '../Collection/Collection.model'
+import { isCommitteeMember } from '../Committee/utils'
 import { CollectionAttributes } from '../Collection/Collection.types'
 import { peerAPI } from '../ethereum/api/peer'
 import {
@@ -12,10 +14,14 @@ import { isTPCollection } from '../utils/urn'
 import { CurationStatus } from './Curation.types'
 
 const CHANNEL_KEY = 'SLACK_CURATION_CHANNEL'
+const logger = createConsoleLogComponent().getLogger('CurationNotifications')
 
 export type CurationVerdict = CurationStatus.APPROVED | CurationStatus.REJECTED
 
-/** Messages for the curators' Slack channel. Every method is best effort and never throws. */
+/**
+ * Messages for the curators' Slack channel. Every method is best effort and never throws, so callers
+ * can fire and forget them.
+ */
 export const curationNotifications = {
   /** A collection (or a batch of Third Party items) was published and waits for its first review. */
   async collectionPublished(
@@ -36,13 +42,20 @@ export const curationNotifications = {
     })
   },
 
-  /** The creator opened a new review request. `previousStatus` is the request it follows, if any. */
+  /**
+   * A new review request was opened. `previousStatus` is the request it follows, if any. A committee
+   * member opening one is bookkeeping (assigning or rejecting a never-requested collection), not a
+   * creator asking for a review, so it is not announced.
+   */
   async reviewRequested(
     collectionId: string,
     previousStatus: CurationStatus | undefined,
     requesterAddress: string
   ): Promise<void> {
     await notify(collectionId, async (collection) => {
+      if (await isCommitteeMember(requesterAddress)) {
+        return undefined
+      }
       const requester = await describeAddress(requesterAddress)
       switch (previousStatus) {
         case CurationStatus.REJECTED:
@@ -65,15 +78,19 @@ export const curationNotifications = {
     actorAddress: string
   ): Promise<void> {
     await notify(collectionId, async (collection) => {
-      const actor = await describeAddress(actorAddress)
       if (!assignee) {
+        const actor = await describeAddress(actorAddress)
         return `${link(collection)} was unassigned by ${actor}.`
       }
-      const curator =
+      const [actor, curator] = await Promise.all([
+        describeAddress(actorAddress),
         assignee.toLowerCase() === actorAddress.toLowerCase()
-          ? actor
-          : await describeAddress(assignee)
-      return `${link(collection)} was assigned to ${curator} by ${actor}.`
+          ? undefined
+          : describeAddress(assignee),
+      ])
+      return `${link(collection)} was assigned to ${
+        curator ?? actor
+      } by ${actor}.`
     })
   },
 
@@ -91,7 +108,7 @@ export const curationNotifications = {
 
 async function notify(
   collectionId: string,
-  buildText: (collection: CollectionAttributes) => Promise<string>
+  buildText: (collection: CollectionAttributes) => Promise<string | undefined>
 ): Promise<void> {
   const channel = env.get(CHANNEL_KEY, '')
   if (!channel) {
@@ -105,6 +122,9 @@ async function notify(
       return
     }
     const text = await buildText(collection)
+    if (!text) {
+      return
+    }
     const blocks: SlackBlock[] = [
       { type: 'section', text: { type: 'mrkdwn', text } },
       {
@@ -114,7 +134,7 @@ async function notify(
     ]
     await sendSlackMessage({ channel, text, blocks })
   } catch (error) {
-    console.warn(
+    logger.warn(
       `Error sending the curation notification for ${collectionId}: ${
         (error as Error).message
       }`

@@ -62,6 +62,7 @@ describe('when handling a request', () => {
 
   afterEach(() => {
     jest.restoreAllMocks()
+    jest.clearAllMocks()
   })
 
   describe('when trying to obtain a list of collection curations', () => {
@@ -166,7 +167,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is not provided', () => {
       beforeEach(() => {
-        (ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
           itemCuration,
         ])
         req = ({
@@ -183,7 +184,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is provided', () => {
       beforeEach(() => {
-        (ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
+        ;(ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
           [itemCuration]
         )
         req = ({
@@ -312,6 +313,113 @@ describe('when handling a request', () => {
             'Only committee members can modify the assignee'
           )
         })
+      })
+    })
+
+    describe('when a committee member changes the assignee', () => {
+      let req: AuthRequest
+      let assignee: string | null
+
+      beforeEach(() => {
+        service = mockServiceWithAccess(CollectionCuration, true)
+        mockIsCommitteeMember.mockResolvedValue(true)
+        jest
+          .spyOn(service, 'updateById')
+          .mockResolvedValueOnce({ id: 'curationId' } as any)
+      })
+
+      describe('and the curation was assigned to someone else', () => {
+        beforeEach(() => {
+          assignee = '0xAnotherCurator'
+          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
+            id: 'curationId',
+            assignee: '0xcurator',
+          } as any)
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: { curation: { assignee } },
+          } as any
+        })
+
+        it('should notify the curators about the new assignee', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(curationNotifications.assigneeChanged).toHaveBeenCalledWith(
+            'some id',
+            '0xanothercurator',
+            'ethAddress'
+          )
+        })
+      })
+
+      describe('and the curation is unassigned', () => {
+        beforeEach(() => {
+          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
+            id: 'curationId',
+            assignee: '0xcurator',
+          } as any)
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: { curation: { assignee: null } },
+          } as any
+        })
+
+        it('should notify the curators about the unassignment', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(curationNotifications.assigneeChanged).toHaveBeenCalledWith(
+            'some id',
+            null,
+            'ethAddress'
+          )
+        })
+      })
+
+      describe('and the assignee does not change', () => {
+        beforeEach(() => {
+          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
+            id: 'curationId',
+            assignee: '0xcurator',
+          } as any)
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: { curation: { assignee: '0xCurator' } },
+          } as any
+        })
+
+        it('should not notify the curators', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(curationNotifications.assigneeChanged).not.toHaveBeenCalled()
+        })
+      })
+    })
+
+    describe('when unassigning a curation and the caller is not a committee member', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        service = mockServiceWithAccess(CollectionCuration, true)
+        mockIsCommitteeMember.mockResolvedValueOnce(false)
+        jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
+          id: 'curationId',
+          assignee: '0xcurator',
+        } as any)
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: { curation: { assignee: null } },
+        } as any
+      })
+
+      it('should reject with an error message saying only committee members can modify the assignee', async () => {
+        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+          'Only committee members can modify the assignee'
+        )
+        expect(curationNotifications.assigneeChanged).not.toHaveBeenCalled()
       })
     })
 
@@ -582,6 +690,27 @@ describe('when handling a request', () => {
               CurationStatus.REJECTED,
               'ethAddress'
             )
+          })
+
+          describe('and the curation already had that status', () => {
+            beforeEach(() => {
+              jest.restoreAllMocks()
+              service = mockServiceWithAccess(CollectionCuration, true)
+              mockIsCommitteeMember.mockResolvedValueOnce(true)
+              jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
+                id: 'curationId',
+                status: CurationStatus.REJECTED,
+              } as any)
+              jest
+                .spyOn(service, 'updateById')
+                .mockResolvedValueOnce(expectedCuration)
+            })
+
+            it('should not notify the curators again', async () => {
+              await router.updateCollectionCuration(req)
+
+              expect(curationNotifications.verdictGiven).not.toHaveBeenCalled()
+            })
           })
 
           describe('and the collection contains an smart wearable', () => {

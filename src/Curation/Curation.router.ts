@@ -212,32 +212,38 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
-    const curation = await this.updateCuration(
+    const { updated, previous } = await this.updateCuration(
       collectionId,
       ethAddress,
       curationJSON,
       CurationType.COLLECTION
     )
 
-    if (curationJSON.assignee !== undefined) {
-      await curationNotifications.assigneeChanged(
+    // Only real changes are announced, so repeating a PATCH cannot flood the channel.
+    const assignee =
+      curationJSON.assignee === undefined
+        ? undefined
+        : curationJSON.assignee?.toLowerCase() ?? null
+    if (assignee !== undefined && assignee !== (previous.assignee ?? null)) {
+      void curationNotifications.assigneeChanged(
         collectionId,
-        curationJSON.assignee,
+        assignee,
         ethAddress
       )
     }
     if (
-      curationJSON.status === CurationStatus.APPROVED ||
-      curationJSON.status === CurationStatus.REJECTED
+      (curationJSON.status === CurationStatus.APPROVED ||
+        curationJSON.status === CurationStatus.REJECTED) &&
+      curationJSON.status !== previous.status
     ) {
-      await curationNotifications.verdictGiven(
+      void curationNotifications.verdictGiven(
         collectionId,
         curationJSON.status as CurationVerdict,
         ethAddress
       )
     }
 
-    return curation
+    return updated
   }
 
   updateItemCuration = async (req: AuthRequest) => {
@@ -245,12 +251,13 @@ export class CurationRouter extends Router {
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
 
-    return this.updateCuration(
+    const { updated } = await this.updateCuration(
       itemId,
       ethAddress,
       curationJSON,
       CurationType.ITEM
     )
+    return updated
   }
 
   insertCollectionCuration = async (req: AuthRequest) => {
@@ -399,7 +406,7 @@ export class CurationRouter extends Router {
       )
     }
 
-    if (curationJSON.assignee) {
+    if (curationJSON.assignee !== undefined) {
       if (!(await isCommitteeMember(ethAddress))) {
         throw new HTTPError(
           'Only committee members can modify the assignee',
@@ -407,15 +414,17 @@ export class CurationRouter extends Router {
           STATUS_CODES.unauthorized
         )
       }
-      const isAssigneeCommitteeMember = await isCommitteeMember(
-        curationJSON.assignee.toLowerCase()
-      )
-      if (!isAssigneeCommitteeMember) {
-        throw new HTTPError(
-          'The assignee must be a committee member',
-          { id },
-          STATUS_CODES.unauthorized
+      if (curationJSON.assignee) {
+        const isAssigneeCommitteeMember = await isCommitteeMember(
+          curationJSON.assignee.toLowerCase()
         )
+        if (!isAssigneeCommitteeMember) {
+          throw new HTTPError(
+            'The assignee must be a committee member',
+            { id },
+            STATUS_CODES.unauthorized
+          )
+        }
       }
     }
 
@@ -468,7 +477,11 @@ export class CurationRouter extends Router {
       fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
     }
 
-    return curationService.updateById(curation.id, fieldsToUpdate)
+    const updated = await curationService.updateById(
+      curation.id,
+      fieldsToUpdate
+    )
+    return { updated, previous: curation }
   }
 
   private insertCuration = async (
@@ -541,14 +554,15 @@ export class CurationRouter extends Router {
     const created = await curationService.getModel().create(attributes)
 
     if (type === CurationType.COLLECTION) {
+      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
       if (attributes.assignee) {
-        await curationNotifications.assigneeChanged(
+        void curationNotifications.assigneeChanged(
           id,
           attributes.assignee,
           ethAddress
         )
       } else {
-        await curationNotifications.reviewRequested(
+        void curationNotifications.reviewRequested(
           id,
           curation?.status,
           ethAddress

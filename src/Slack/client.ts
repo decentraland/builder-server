@@ -1,8 +1,10 @@
 import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
+import { createConsoleLogComponent } from '@well-known-components/logger'
 
 const SLACK_API_URL = 'https://slack.com/api'
 const REQUEST_TIMEOUT_MS = 10 * 1000
+const logger = createConsoleLogComponent().getLogger('Slack')
 
 export type SlackBlock = {
   type: 'section' | 'header' | 'divider' | 'context' | 'actions'
@@ -22,10 +24,6 @@ export type SlackMessage = {
 /** Escapes the characters Slack parses as markup so user text cannot ping channels or disguise links. */
 export function escapeSlackText(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-}
-
-export function isSlackConfigured(): boolean {
-  return env.get('SLACK_BOT_TOKEN', '') !== ''
 }
 
 /**
@@ -52,7 +50,7 @@ export async function sendSlackMessage(
     })
     const result = (await response.json()) as { ok: boolean; error?: string }
     if (!response.ok || !result.ok) {
-      console.warn(
+      logger.warn(
         `Slack refused the message for ${message.channel}: ${
           result.error ?? response.status
         }`
@@ -61,7 +59,7 @@ export async function sendSlackMessage(
     }
     return true
   } catch (error) {
-    console.warn(
+    logger.warn(
       `Error sending the Slack message for ${message.channel}: ${
         (error as Error).message
       }`

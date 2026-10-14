@@ -4,6 +4,7 @@ import {
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
 import { Collection } from '../Collection/Collection.model'
+import { isCommitteeMember } from '../Committee/utils'
 import { peerAPI } from '../ethereum/api/peer'
 import { sendSlackMessage } from '../Slack'
 import { CurationStatus } from './Curation.types'
@@ -14,6 +15,7 @@ jest.mock('../Slack', () => ({
   sendSlackMessage: jest.fn(),
 }))
 jest.mock('../Collection/Collection.model')
+jest.mock('../Committee/utils')
 jest.mock('../ethereum/api/peer')
 
 const mockSend = sendSlackMessage as jest.MockedFunction<
@@ -38,6 +40,9 @@ function sentText(): string {
 }
 
 const mockFindOne = Collection.findOne as jest.Mock
+const mockIsCommitteeMember = isCommitteeMember as jest.MockedFunction<
+  typeof isCommitteeMember
+>
 let mockEnvGet: jest.SpyInstance
 
 beforeEach(() => {
@@ -48,6 +53,7 @@ beforeEach(() => {
     )
   mockProfileName.mockResolvedValue(undefined)
   mockFindOne.mockResolvedValue(dbCollectionMock)
+  mockIsCommitteeMember.mockResolvedValue(false)
 })
 
 afterEach(() => {
@@ -156,6 +162,21 @@ describe('when a review is requested', () => {
     expect(sentText()).toMatch(
       /^Review requested again for <.*> by 0x1111\.\.\.1111 after a rejection\.$/
     )
+  })
+})
+
+describe('when a committee member opens a review request', () => {
+  beforeEach(() => {
+    mockIsCommitteeMember.mockResolvedValue(true)
+  })
+
+  it('should not announce it as a creator request', async () => {
+    await curationNotifications.reviewRequested(
+      dbCollectionMock.id,
+      CurationStatus.REJECTED,
+      curator
+    )
+    expect(mockSend).not.toHaveBeenCalled()
   })
 })
 

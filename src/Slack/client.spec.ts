@@ -1,6 +1,6 @@
 import fetch from 'node-fetch'
 import { env } from 'decentraland-commons'
-import { escapeSlackText, isSlackConfigured, sendSlackMessage } from './client'
+import { escapeSlackText, sendSlackMessage } from './client'
 
 jest.mock('node-fetch')
 jest.mock('decentraland-commons', () => ({
@@ -38,10 +38,6 @@ describe('when sending a Slack message', () => {
       mockEnvGet.mockReturnValue('')
     })
 
-    it('should report Slack as not configured', () => {
-      expect(isSlackConfigured()).toBe(false)
-    })
-
     it('should not call Slack and resolve to false', async () => {
       await expect(sendSlackMessage(message)).resolves.toBe(false)
       expect(mockFetch).not.toHaveBeenCalled()
@@ -53,10 +49,6 @@ describe('when sending a Slack message', () => {
       mockEnvGet.mockImplementation((key: string) =>
         key === 'SLACK_BOT_TOKEN' ? 'xoxb-example123' : ''
       )
-    })
-
-    it('should report Slack as configured', () => {
-      expect(isSlackConfigured()).toBe(true)
     })
 
     describe('and Slack accepts the message', () => {

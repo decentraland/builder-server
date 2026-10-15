@@ -54,8 +54,37 @@ describe('when checking a feature flag against the remote service', () => {
     expect(await isFeatureFlagEnabled('auto-curation')).toBe(true)
   })
 
-  it('should return false when the flags were never fetched', async () => {
+  it('should keep the last known value when the response carries no flags', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(0)
+    respondWith({ 'builder-auto-curation': true })
+    expect(await isFeatureFlagEnabled('auto-curation')).toBe(true)
+
+    now.mockReturnValue(61 * 1000)
+    fetchMock.mockResolvedValueOnce({
+      status: 200,
+      json: () => Promise.resolve({ error: 'maintenance' }),
+    } as any)
+    expect(await isFeatureFlagEnabled('auto-curation')).toBe(true)
+  })
+
+  it('should fetch again once the cache expires', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(0)
+    respondWith({ 'builder-auto-curation': true })
+    expect(await isFeatureFlagEnabled('auto-curation')).toBe(true)
+
+    now.mockReturnValue(61 * 1000)
+    respondWith({ 'builder-auto-curation': false })
+    expect(await isFeatureFlagEnabled('auto-curation')).toBe(false)
+    expect(fetchMock).toHaveBeenCalledTimes(2)
+  })
+
+  it('should return false when the flags were never fetched, without fetching again for one cache period', async () => {
+    const now = jest.spyOn(Date, 'now').mockReturnValue(0)
     fetchMock.mockRejectedValueOnce(new Error('timeout'))
     expect(await isFeatureFlagEnabled('auto-curation')).toBe(false)
+
+    now.mockReturnValue(30 * 1000)
+    expect(await isFeatureFlagEnabled('auto-curation')).toBe(false)
+    expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 })

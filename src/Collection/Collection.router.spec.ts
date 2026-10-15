@@ -2895,6 +2895,9 @@ describe('Collection router', () => {
                   items.length,
                   mockedWallet.address.toLowerCase()
                 )
+                expect(
+                  AutoCurationService.prototype.onStandardCollectionPublished
+                ).not.toHaveBeenCalled()
               })
           })
 

@@ -1311,6 +1311,19 @@ paths:
       security: []
       parameters:
         - $ref: '#/components/parameters/CollectionId'
+        - name: x-wearable-validator-signature
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^sha256=[0-9a-f]{64}$'
+          description: HMAC-SHA256 of `<timestamp>.<raw body>` with the shared secret
+        - name: x-wearable-validator-timestamp
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Epoch milliseconds when the request was signed, at most 5 minutes off the server clock
       requestBody:
         required: true
         content:
@@ -1394,6 +1407,10 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '401':
           description: Missing, stale or invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /collections/{id}/itemCurations:
     get:

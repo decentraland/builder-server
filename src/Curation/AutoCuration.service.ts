@@ -2,6 +2,7 @@ import { v4 as uuid } from 'uuid'
 import { createConsoleLogComponent } from '@well-known-components/logger'
 import { isFeatureFlagEnabled } from '../utils/features'
 import { isTPCollection } from '../utils/urn'
+import { env } from 'decentraland-commons'
 import { Collection } from '../Collection/Collection.model'
 import { CollectionAttributes } from '../Collection/Collection.types'
 import { Item } from '../Item/Item.model'
@@ -25,14 +26,28 @@ import {
 export const AUTO_CURATION_FEATURE_FLAG = 'auto-curation'
 
 const logger = createConsoleLogComponent().getLogger('AutoCuration')
+let warnedMissingTopic = false
 
 /**
  * Sends standard collections to the wearable-validator job. The job posts its findings to the curators' Slack
  * channel and calls back `/collections/:id/validation-result`; nothing is stored here yet.
  */
 export class AutoCurationService {
-  isEnabled(): Promise<boolean> {
-    return isFeatureFlagEnabled(AUTO_CURATION_FEATURE_FLAG)
+  /** The flag, as long as there is a topic to publish on: without one every trigger would only alert curators. */
+  async isEnabled(): Promise<boolean> {
+    if (!(await isFeatureFlagEnabled(AUTO_CURATION_FEATURE_FLAG))) {
+      return false
+    }
+    if (!env.get('AWS_SNS_ARN', '')) {
+      if (!warnedMissingTopic) {
+        warnedMissingTopic = true
+        logger.warn(
+          'The auto curation flag is on but AWS_SNS_ARN is not set: no validation will be requested'
+        )
+      }
+      return false
+    }
+    return true
   }
 
   /**
@@ -87,12 +102,20 @@ export class AutoCurationService {
           remoteItem.contentHash,
         ])
       )
-      const changedItems = items.filter(
-        (item) =>
-          item.blockchain_item_id !== null &&
-          remoteContentHashes.get(item.blockchain_item_id) !==
-            item.local_content_hash
-      )
+      // The stored hash is only computed when an item is saved after its publication, so an item untouched
+      // since then has none and is hashed here.
+      const changedItems: ItemAttributes[] = []
+      for (const item of items) {
+        if (item.blockchain_item_id === null) {
+          continue
+        }
+        const localHash =
+          item.local_content_hash ??
+          (await calculateItemContentHash(item, collection))
+        if (remoteContentHashes.get(item.blockchain_item_id) !== localHash) {
+          changedItems.push(item)
+        }
+      }
       if (changedItems.length === 0) {
         logger.info(
           `No changed items to validate in collection ${collectionId}`

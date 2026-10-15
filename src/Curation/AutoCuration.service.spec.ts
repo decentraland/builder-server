@@ -8,6 +8,7 @@ import { Collection } from '../Collection/Collection.model'
 import { Item } from '../Item/Item.model'
 import { ItemAttributes } from '../Item/Item.types'
 import { collectionAPI } from '../ethereum/api/collection'
+import { calculateItemContentHash } from '../Item/hashes'
 import { isFeatureFlagEnabled } from '../utils/features'
 import { curationNotifications } from './notifications'
 import {
@@ -21,6 +22,10 @@ jest.mock('../Collection/Collection.model')
 jest.mock('../Item/Item.model')
 jest.mock('../ethereum/api/collection')
 jest.mock('./notifications')
+jest.mock('../Item/hashes', () => ({
+  ...jest.requireActual('../Item/hashes'),
+  calculateItemContentHash: jest.fn(),
+}))
 jest.mock('./validationQueue', () => ({
   ...jest.requireActual('./validationQueue'),
   requestValidation: jest.fn(),
@@ -32,6 +37,7 @@ const mockNotify = curationNotifications.validationNotRequested as jest.Mock
 const mockFindCollection = Collection.findOne as jest.Mock
 const mockFindItemsByCollection = Item.findOrderedByCollectionId as jest.Mock
 const mockFetchRemoteItems = collectionAPI.fetchItemsByContractAddress as jest.Mock
+const mockCalculateHash = calculateItemContentHash as jest.Mock
 
 describe('AutoCurationService', () => {
   let service: AutoCurationService
@@ -39,10 +45,12 @@ describe('AutoCurationService', () => {
 
   beforeAll(() => {
     process.env.CHAIN_NAME = 'Sepolia'
+    process.env.AWS_SNS_ARN = 'arn:aws:sns:us-east-1:000000000000:events'
   })
 
   afterAll(() => {
     delete process.env.CHAIN_NAME
+    delete process.env.AWS_SNS_ARN
   })
 
   beforeEach(() => {
@@ -98,6 +106,34 @@ describe('AutoCurationService', () => {
         await service.onStandardCollectionPublished(dbCollectionMock)
 
         expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the topic is not configured', () => {
+      let warnSpy: jest.SpyInstance
+
+      beforeEach(() => {
+        delete process.env.AWS_SNS_ARN
+        warnSpy = jest
+          .spyOn(process.stderr, 'write')
+          .mockImplementation(() => true)
+      })
+
+      afterEach(() => {
+        process.env.AWS_SNS_ARN = 'arn:aws:sns:us-east-1:000000000000:events'
+      })
+
+      it('should not request anything and warn once', async () => {
+        await service.onStandardCollectionPublished(dbCollectionMock)
+        await service.onStandardCollectionPublished(dbCollectionMock)
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockNotify).not.toHaveBeenCalled()
+        expect(
+          warnSpy.mock.calls.filter((call) =>
+            String(call[0]).includes('AWS_SNS_ARN is not set')
+          )
+        ).toHaveLength(1)
       })
     })
 
@@ -187,12 +223,55 @@ describe('AutoCurationService', () => {
       expect(mockFetchRemoteItems).toHaveBeenCalledWith(
         dbCollectionMock.contract_address
       )
+      expect(mockCalculateHash).not.toHaveBeenCalled()
       expect(mockSendValidation).toHaveBeenCalledTimes(1)
       const manifest = mockSendValidation.mock.calls[0][0]
       expect(manifest.items.map((i: { itemId: string }) => i.itemId)).toEqual([
         changedItem.id,
         unhashedItem.id,
       ])
+    })
+
+    describe('and an item has no stored hash because it was not saved since its publication', () => {
+      let untouchedItem: ItemAttributes
+      let editedItem: ItemAttributes
+
+      beforeEach(() => {
+        untouchedItem = {
+          ...item,
+          id: uuidv4(),
+          blockchain_item_id: '3',
+          local_content_hash: null,
+        }
+        editedItem = {
+          ...item,
+          id: uuidv4(),
+          blockchain_item_id: '4',
+          local_content_hash: null,
+        }
+        mockFindItemsByCollection.mockResolvedValue([untouchedItem, editedItem])
+        mockFetchRemoteItems.mockResolvedValue([
+          { ...itemFragmentMock, blockchainId: '3', contentHash: 'chainHash' },
+          { ...itemFragmentMock, blockchainId: '4', contentHash: 'chainHash' },
+        ])
+        mockCalculateHash.mockImplementation(async (i: ItemAttributes) =>
+          i.id === untouchedItem.id ? 'chainHash' : 'editedHash'
+        )
+      })
+
+      it('should hash it and only validate it when the hash differs from the chain', async () => {
+        await service.onChangesSubmitted(dbCollectionMock.id)
+
+        expect(mockCalculateHash).toHaveBeenCalledWith(
+          untouchedItem,
+          dbCollectionMock
+        )
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        const manifest = mockSendValidation.mock.calls[0][0]
+        expect(
+          manifest.items.map((i: { itemId: string }) => i.itemId)
+        ).toEqual([editedItem.id])
+      })
     })
 
     describe('and nothing changed', () => {

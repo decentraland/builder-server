@@ -24,13 +24,15 @@ async function fetchFlags(): Promise<FlagsSnapshot | undefined> {
       { timeout: REQUEST_TIMEOUT_MS }
     )
     const json = await response.json()
-    snapshot = { flags: json.flags ?? {}, fetchedAt: Date.now() }
+    if (!json?.flags) {
+      throw new Error(`Unexpected response (${response.status})`)
+    }
+    snapshot = { flags: json.flags, fetchedAt: Date.now() }
   } catch (e) {
     // The last known flags stay in use for another TTL: a failed fetch must not switch a flag off mid-flow.
+    // Without any, every flag reads off for one TTL instead of waiting on the service on every call.
     console.warn('Error fetching feature flags', (e as Error).message)
-    if (snapshot) {
-      snapshot = { ...snapshot, fetchedAt: Date.now() }
-    }
+    snapshot = { flags: snapshot?.flags ?? {}, fetchedAt: Date.now() }
   }
   return snapshot
 }

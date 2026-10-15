@@ -237,6 +237,15 @@ describe('AutoCuration router', () => {
       })
     })
 
+    describe('and a logged id carries a line break', () => {
+      it('should respond with a 400', () => {
+        return postSigned(url, {
+          ...result,
+          validationId: 'aValidation\n2026-10-14 [INFO] forged',
+        }).expect(400)
+      })
+    })
+
     describe('and the body has an unknown top level field', () => {
       it('should accept it, the schema drops the field', () => {
         return postSigned(url, { ...result, unexpected: true }).expect(204)

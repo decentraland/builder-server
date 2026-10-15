@@ -237,6 +237,15 @@ describe('AutoCuration router', () => {
       })
     })
 
+    describe('and the rules version carries build metadata', () => {
+      it('should accept it', () => {
+        return postSigned(url, {
+          ...result,
+          rulesVersion: '0.5.0+build.7',
+        }).expect(204)
+      })
+    })
+
     describe('and a logged id carries a line break', () => {
       it('should respond with a 400', () => {
         return postSigned(url, {

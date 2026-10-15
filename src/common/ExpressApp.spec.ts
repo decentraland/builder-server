@@ -10,6 +10,7 @@ describe('when parsing a JSON body', () => {
     app = new ExpressApp().useJSON()
     for (const path of [
       '/collections/:id/validation-result',
+      '/collections/:id/Validation-Result/',
       '/collections/:id/curation',
     ]) {
       app.getApp().post(path, (req, res) => {
@@ -29,6 +30,11 @@ describe('when parsing a JSON body', () => {
       .send(body)
       .expect(204)
     await server
+      .post('/collections/1/Validation-Result/')
+      .set('Content-Type', 'application/json')
+      .send(body)
+      .expect(204)
+    await server
       .post('/collections/1/curation')
       .set('Content-Type', 'application/json')
       .send(body)
@@ -36,6 +42,7 @@ describe('when parsing a JSON body', () => {
 
     expect(rawBodies).toEqual({
       '/collections/1/validation-result': body,
+      '/collections/1/Validation-Result/': body,
       '/collections/1/curation': undefined,
     })
   })

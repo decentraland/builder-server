@@ -259,18 +259,22 @@ describe('AutoCurationService', () => {
         )
       })
 
-      it('should hash it and only validate it when the hash differs from the chain', async () => {
+      it('should hash it once and only validate it when the hash differs from the chain', async () => {
         await service.onChangesSubmitted(dbCollectionMock.id)
 
+        expect(mockCalculateHash).toHaveBeenCalledTimes(2)
         expect(mockCalculateHash).toHaveBeenCalledWith(
           untouchedItem,
           dbCollectionMock
         )
         expect(mockSendValidation).toHaveBeenCalledTimes(1)
         const manifest = mockSendValidation.mock.calls[0][0]
-        expect(
-          manifest.items.map((i: { itemId: string }) => i.itemId)
-        ).toEqual([editedItem.id])
+        expect(manifest.items).toEqual([
+          expect.objectContaining({
+            itemId: editedItem.id,
+            contentHash: 'editedHash',
+          }),
+        ])
       })
     })
 
@@ -333,11 +337,39 @@ describe('AutoCurationService', () => {
         mockFetchRemoteItems.mockRejectedValue(new Error('graph timeout'))
       })
 
-      it('should not throw', async () => {
+      it('should tell the curators without throwing', async () => {
         await expect(
           service.onChangesSubmitted(dbCollectionMock.id)
         ).resolves.toBeUndefined()
         expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockNotify).toHaveBeenCalledWith(
+          dbCollectionMock.id,
+          'the automatic review could not be requested'
+        )
+      })
+    })
+
+    describe('and hashing an item fails', () => {
+      beforeEach(() => {
+        mockFindItemsByCollection.mockResolvedValue([
+          {
+            ...item,
+            id: uuidv4(),
+            blockchain_item_id: '5',
+            local_content_hash: null,
+          },
+        ])
+        mockCalculateHash.mockRejectedValue(new Error('malformed item'))
+      })
+
+      it('should tell the curators without throwing', async () => {
+        await service.onChangesSubmitted(dbCollectionMock.id)
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockNotify).toHaveBeenCalledWith(
+          dbCollectionMock.id,
+          'the automatic review could not be requested'
+        )
       })
     })
   })

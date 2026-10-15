@@ -69,6 +69,7 @@ export class AutoCurationService {
           collection.id
         }: ${(error as Error).message}`
       )
+      await this.handOffToCurators(collection.id)
     }
   }
 
@@ -113,7 +114,8 @@ export class AutoCurationService {
           item.local_content_hash ??
           (await calculateItemContentHash(item, collection))
         if (remoteContentHashes.get(item.blockchain_item_id) !== localHash) {
-          changedItems.push(item)
+          // The hash computed here is reused by the manifest.
+          changedItems.push({ ...item, local_content_hash: localHash })
         }
       }
       if (changedItems.length === 0) {
@@ -130,6 +132,7 @@ export class AutoCurationService {
           (error as Error).message
         }`
       )
+      await this.handOffToCurators(collectionId)
     }
   }
 
@@ -183,7 +186,23 @@ export class AutoCurationService {
           collection.id
         } was not sent: ${(error as Error).message}`
       )
-      await curationNotifications.validationNotRequested(collection.id, reason)
+      await this.handOffToCurators(collection.id, reason)
+    }
+  }
+
+  /** Never throws: the notification is best effort and the hooks must not surface an error twice. */
+  private async handOffToCurators(
+    collectionId: string,
+    reason = 'the automatic review could not be requested'
+  ): Promise<void> {
+    try {
+      await curationNotifications.validationNotRequested(collectionId, reason)
+    } catch (error) {
+      logger.error(
+        `Error telling the curators about collection ${collectionId}: ${
+          (error as Error).message
+        }`
+      )
     }
   }
 }

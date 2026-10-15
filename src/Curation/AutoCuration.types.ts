@@ -60,12 +60,13 @@ export type ValidationResult = {
 // Generous bounds: the body is signed by the validator, and a 400 makes SQS re-run the whole collection.
 const shortText = { type: 'string', maxLength: 256 }
 const longText = { type: 'string', maxLength: 10000 }
-// Ids and versions reach the logs, so no whitespace or control characters.
+// Ids and versions reach the logs, so no whitespace or control characters. The version is the rules manifest's
+// semver, which may carry a build suffix.
 const token = {
   type: 'string',
   minLength: 1,
   maxLength: 64,
-  pattern: '^[A-Za-z0-9._:-]+$',
+  pattern: '^[A-Za-z0-9._:+-]+$',
 }
 
 export const validationResultSchema = Object.freeze({

@@ -57,7 +57,7 @@ describe('when sending a Slack message', () => {
         mockSlackResponse({ ok: true })
       })
 
-      it('should post the message with the bot token and resolve to true', async () => {
+      it('should post the message with the bot token, without link previews, and resolve to true', async () => {
         await expect(sendSlackMessage(message)).resolves.toBe(true)
         expect(mockFetch).toHaveBeenCalledWith(
           'https://slack.com/api/chat.postMessage',
@@ -66,7 +66,11 @@ describe('when sending a Slack message', () => {
             headers: expect.objectContaining({
               Authorization: 'Bearer xoxb-example123',
             }),
-            body: JSON.stringify(message),
+            body: JSON.stringify({
+              ...message,
+              unfurl_links: false,
+              unfurl_media: false,
+            }),
           })
         )
       })

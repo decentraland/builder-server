@@ -45,7 +45,12 @@ export async function sendSlackMessage(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json; charset=utf-8',
       },
-      body: JSON.stringify(message),
+      // The links name the collection and the person; Slack's previews of those pages only add noise.
+      body: JSON.stringify({
+        ...message,
+        unfurl_links: false,
+        unfurl_media: false,
+      }),
       timeout: REQUEST_TIMEOUT_MS,
     })
     const result = parseSlackResponse(await response.text())

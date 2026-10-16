@@ -105,6 +105,20 @@ export const curationNotifications = {
       return `${emoji} ${link(collection)} was ${verdict} by ${curator}.`
     })
   },
+
+  /** The automatic review was not requested, so no result will follow in the channel. */
+  async validationNotRequested(
+    collectionId: string,
+    reason: string
+  ): Promise<void> {
+    await notify(
+      collectionId,
+      async (collection) =>
+        `⚠️ No automatic review for ${link(
+          collection
+        )}: ${reason}. It needs a curator review without it.`
+    )
+  },
 }
 
 async function notify(

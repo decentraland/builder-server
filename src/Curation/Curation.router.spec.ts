@@ -21,6 +21,7 @@ import { CurationService } from './Curation.service'
 import { CurationStatus } from './Curation.types'
 import { createAssigneeEventPost, getPost } from '../Forum'
 import { curationNotifications } from './notifications'
+import { AutoCurationService } from './AutoCuration.service'
 import { VIDEO_PATH } from '../Item/utils'
 
 jest.mock('../common/Router')
@@ -29,6 +30,7 @@ jest.mock('../Committee')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Forum')
 jest.mock('./notifications')
+jest.mock('./AutoCuration.service')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockCreateAssigneeEventPost = createAssigneeEventPost as jest.Mock
@@ -1332,6 +1334,55 @@ describe('when handling a request', () => {
             'ethAddress'
           )
           expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+        })
+
+        it('should not request the automatic review', async () => {
+          jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(expectedCuration)
+
+          await router.insertCollectionCuration(req)
+
+          expect(
+            AutoCurationService.prototype.onChangesSubmitted
+          ).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('when a creator opens a review request', () => {
+        let expectedCuration: CollectionCurationAttributes
+
+        beforeEach(() => {
+          expectedCuration = {
+            id: 'uuid-123123-123123',
+          } as CollectionCurationAttributes
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+          } as any
+
+          service = mockServiceWithAccess(CollectionCuration, true)
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ status: CurationStatus.REJECTED } as any)
+          jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(expectedCuration)
+        })
+
+        it('should notify the curators and request the automatic review of the changes', async () => {
+          expect(await router.insertCollectionCuration(req)).toEqual(
+            expectedCuration
+          )
+
+          expect(curationNotifications.reviewRequested).toHaveBeenCalledWith(
+            'some id',
+            CurationStatus.REJECTED,
+            'ethAddress'
+          )
+          expect(
+            AutoCurationService.prototype.onChangesSubmitted
+          ).toHaveBeenCalledWith('some id')
         })
       })
 

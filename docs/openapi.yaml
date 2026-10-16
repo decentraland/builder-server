@@ -1298,6 +1298,120 @@ paths:
         '401':
           $ref: '#/components/responses/Unauthorized'
 
+  /collections/{id}/validation-result:
+    post:
+      operationId: receiveValidationResult
+      tags: [Curations]
+      summary: Receive a wearable-validator result
+      description: |
+        Callback of the wearable-validator job with the result of an automatic review. Authenticated by the HMAC
+        of the raw body (`x-wearable-validator-signature`, `sha256=<hex>` over `<timestamp>.<body>` with the shared
+        secret) and `x-wearable-validator-timestamp` (epoch milliseconds, at most 5 minutes off). The result is
+        logged only; the job posts its findings to the curators' Slack channel. Unknown fields are dropped.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - name: x-wearable-validator-signature
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^sha256=[0-9a-f]{64}$'
+          description: HMAC-SHA256 of `<timestamp>.<raw body>` with the shared secret
+        - name: x-wearable-validator-timestamp
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Epoch milliseconds when the request was signed, at most 5 minutes off the server clock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [validationId, collectionId, verdict, rulesVersion, items]
+              properties:
+                validationId:
+                  type: string
+                collectionId:
+                  type: string
+                  description: Must match the path id
+                verdict:
+                  type: string
+                  enum: [passed, rejected, error]
+                reason:
+                  type: string
+                  description: Only with verdict `error`
+                retryable:
+                  type: boolean
+                  description: Only with verdict `error`
+                rulesVersion:
+                  type: string
+                items:
+                  type: array
+                  maxItems: 50
+                  items:
+                    type: object
+                    required: [itemId, contentHash, passed, findings]
+                    properties:
+                      itemId:
+                        type: string
+                      contentHash:
+                        type: string
+                      passed:
+                        type: boolean
+                        nullable: true
+                      findings:
+                        type: array
+                        items:
+                          type: object
+                          required: [rule, check, severity, message]
+                          properties:
+                            rule:
+                              type: string
+                            check:
+                              type: string
+                            severity:
+                              type: string
+                              enum: [error, warning]
+                            message:
+                              type: string
+                            where:
+                              type: string
+                            bodyShape:
+                              type: string
+                              enum: [male, female]
+                            measured:
+                              type: number
+                            limit:
+                              type: number
+                            fix:
+                              type: string
+                            docs:
+                              type: string
+                      visualSummary:
+                        type: string
+                      unsupported:
+                        type: boolean
+                      error:
+                        type: string
+      responses:
+        '204':
+          description: Result received
+        '400':
+          description: Invalid body, or the result belongs to another collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing, stale or invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
   /collections/{id}/itemCurations:
     get:
       operationId: getCollectionItemCurations

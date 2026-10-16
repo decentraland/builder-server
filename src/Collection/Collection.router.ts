@@ -46,6 +46,7 @@ import {
 } from '../utils/urn'
 import { ForumService } from '../Forum/Forum.service'
 import { curationNotifications } from '../Curation/notifications'
+import { AutoCurationService } from '../Curation/AutoCuration.service'
 import { CurationService } from '../Curation/Curation.service'
 import { CurationType } from '../Curation/Curation.types'
 import { Collection, FindCollectionParams } from './Collection.model'
@@ -86,6 +87,7 @@ const CONTRACT_ADDRESS_REGEX = new RegExp(`^${matchers.address}$`)
 export class CollectionRouter extends Router {
   public service = new CollectionService()
   public forumService = new ForumService()
+  public autoCurationService = new AutoCurationService()
 
   private modelAuthorizationCheck = (
     _: OwnableModel,
@@ -560,6 +562,9 @@ export class CollectionRouter extends Router {
             id,
             dbItems.length,
             dbCollection.eth_address
+          )
+          void this.autoCurationService.onStandardCollectionPublished(
+            result.collection
           )
         }
       }

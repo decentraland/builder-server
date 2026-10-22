@@ -1103,16 +1103,19 @@ describe('Collection router', () => {
                 ok: true,
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
-                assignee: undefined,
+                assignees: undefined,
+                statuses: undefined,
+                reviewType: undefined,
                 isPublished,
                 q,
                 sort: undefined,
-                status: undefined,
                 type: undefined,
                 limit,
                 offset: page - 1, // it's the offset,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
               })
             })
         })
@@ -1132,7 +1135,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1168,8 +1171,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1177,6 +1181,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: undefined,
               })
             })
@@ -1199,7 +1205,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1236,8 +1242,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1245,6 +1252,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
               })
             })
@@ -1323,17 +1332,97 @@ describe('Collection router', () => {
                 ok: true,
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
-                assignee: undefined,
+                assignees: undefined,
+                statuses: undefined,
+                reviewType: undefined,
                 isPublished: undefined,
                 q: undefined,
                 sort: undefined,
-                status: undefined,
                 type: undefined,
                 limit,
                 offset: page - 1, // it's the offset,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
               })
+            })
+        })
+      })
+
+      describe('and filtering by several statuses, several assignees and a review type', () => {
+        let baseUrl: string
+        let curator: string
+        beforeEach(() => {
+          curator = '0x1234567890123456789012345678901234567890'
+          baseUrl = '/collections'
+          url = `${baseUrl}?status=to_review&status=under_review&assignee=unassigned&assignee=${curator.toUpperCase()}&review_type=updates`
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should pass every status and assignee, the assignee addresses lowercased, and the review type', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  statuses: ['to_review', 'under_review'],
+                  assignees: ['unassigned', curator],
+                  reviewType: 'updates',
+                })
+              )
+            })
+        })
+      })
+
+      describe('and the on-chain collections are approved, reviewed or untouched', () => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = baseUrl
+          ;(collectionAPI.fetchCollections as jest.Mock).mockReset()
+          ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([
+            { id: 'approved', isApproved: true, createdAt: '1', reviewedAt: '2' },
+            { id: 'reviewed', isApproved: false, createdAt: '1', reviewedAt: '2' },
+            { id: 'new', isApproved: false, createdAt: '1', reviewedAt: '1' },
+          ])
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should split the remote ids into every, approved and reviewed collections', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  remoteIds: ['approved', 'reviewed', 'new'],
+                  approvedRemoteIds: ['approved'],
+                  reviewedRemoteIds: ['reviewed'],
+                })
+              )
+            })
+        })
+      })
+
+      describe.each([
+        ['status', 'published', 'Invalid status'],
+        ['review_type', 'changes', 'Invalid review type'],
+      ])('and the %s filter is not a valid one', (param, value, error) => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = `${baseUrl}?${param}=${value}`
+        })
+        it('should respond with a 400', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body.error).toEqual(error)
+              expect(Collection.findAll).not.toHaveBeenCalled()
             })
         })
       })
@@ -1352,7 +1441,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1388,8 +1477,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1397,6 +1487,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: undefined,
               })
             })
@@ -1419,7 +1511,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1456,8 +1548,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1465,6 +1558,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
               })
             })
@@ -3624,16 +3719,19 @@ describe('Collection router', () => {
               ok: true,
             })
             expect(Collection.findAll).toHaveBeenCalledWith({
-              assignee: undefined,
+              assignees: undefined,
+              statuses: undefined,
+              reviewType: undefined,
               isPublished: undefined,
               q: undefined,
               sort: undefined,
-              status: undefined,
               limit,
               offset: page - 1, // it's the offset,
               type: CollectionTypeFilter.STANDARD,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              reviewedRemoteIds: [],
               itemTags: undefined,
             })
           })
@@ -3654,7 +3752,7 @@ describe('Collection router', () => {
       beforeEach(() => {
         ;(page = 1), (limit = 3)
         assignee = '0x1234567890123456789012345678901234567890'
-        status = 'published'
+        status = 'to_review'
         sort = 'NAME_DESC'
         isPublished = 'true'
         q = 'collection name 1'
@@ -3684,14 +3782,17 @@ describe('Collection router', () => {
             })
             expect(Collection.findAll).toHaveBeenCalledWith({
               q,
-              assignee,
-              status,
+              assignees: [assignee],
+              statuses: [status],
+              reviewType: undefined,
               sort,
               isPublished: true,
               offset: page - 1, // it's the offset
               limit,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              reviewedRemoteIds: [],
               type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase()],
             })
@@ -3714,7 +3815,7 @@ describe('Collection router', () => {
       beforeEach(() => {
         ;(page = 1), (limit = 3)
         assignee = '0x1234567890123456789012345678901234567890'
-        status = 'published'
+        status = 'to_review'
         sort = 'NAME_DESC'
         isPublished = 'true'
         q = 'collection name 1'
@@ -3745,14 +3846,17 @@ describe('Collection router', () => {
             })
             expect(Collection.findAll).toHaveBeenCalledWith({
               q,
-              assignee,
-              status,
+              assignees: [assignee],
+              statuses: [status],
+              reviewType: undefined,
               sort,
               isPublished: true,
               offset: page - 1, // it's the offset
               limit,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              reviewedRemoteIds: [],
               type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
             })

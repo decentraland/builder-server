@@ -579,7 +579,18 @@ paths:
       operationId: getCollections
       tags: [Collections]
       summary: Get all collections
-      description: Returns collections with filtering and pagination (committee members only for full access)
+      description: |
+        Returns collections with filtering and pagination (committee members only for full access).
+
+        `status` filters by the review status the committee sees, from the latest review request and the
+        on-chain state; repeat it to match any of several. A `rejected` request wins over the on-chain state.
+        `to_review` is an unassigned pending request, on a new collection or on an approved one with changes
+        sent for review, or a published collection the committee never touched. `disabled` is a collection
+        the committee turned off. `pending` keeps its legacy meaning: waiting for a first approval.
+
+        `assignee` is repeatable too: curator addresses and/or `unassigned`, any of them matches.
+        `review_type` splits the list into `new` collections (never approved on chain) and `updates` to ones
+        that were. Unknown `status` or `review_type` values answer 400.
       parameters:
         - name: q
           in: query
@@ -588,12 +599,26 @@ paths:
           description: Search query
         - name: assignee
           in: query
+          style: form
+          explode: true
           schema:
-            type: string
+            type: array
+            items:
+              type: string
+          description: Curator addresses, or `unassigned`
         - name: status
           in: query
+          style: form
+          explode: true
           schema:
-            $ref: '#/components/schemas/CurationStatus'
+            type: array
+            items:
+              $ref: '#/components/schemas/CurationStatus'
+        - name: review_type
+          in: query
+          schema:
+            type: string
+            enum: [new, updates]
         - name: type
           in: query
           schema:
@@ -888,13 +913,30 @@ paths:
       operationId: getCollectionAddresses
       tags: [Collections]
       summary: Get collection addresses
-      description: Returns collection contract addresses with filtering
+      description: Returns collection contract addresses with the same review filters as `GET /collections`
       security: []
       parameters:
+        - name: assignee
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
         - name: status
           in: query
+          style: form
+          explode: true
           schema:
-            $ref: '#/components/schemas/CurationStatus'
+            type: array
+            items:
+              $ref: '#/components/schemas/CurationStatus'
+        - name: review_type
+          in: query
+          schema:
+            type: string
+            enum: [new, updates]
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -3147,7 +3189,7 @@ components:
 
     CurationStatus:
       type: string
-      enum: [pending, approved, rejected, to_review, under_review]
+      enum: [pending, approved, rejected, to_review, under_review, disabled]
 
     CollectionCuration:
       type: object

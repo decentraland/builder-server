@@ -1,6 +1,11 @@
 import { SQL } from 'decentraland-server'
 import { Collection } from './Collection.model'
-import { CollectionSort, CollectionStatus } from './Collection.types'
+import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
+import {
+  CollectionSort,
+  CollectionStatus,
+  ReviewTypeFilter,
+} from './Collection.types'
 
 describe('Collection model', () => {
   let queryMock: jest.SpyInstance
@@ -66,6 +71,152 @@ describe('Collection model', () => {
 
       expect(normalize(lastQuery().text)).toMatch(/END\) = \$\d+/)
       expect(lastQuery().values).toContain(CollectionStatus.DISABLED)
+    })
+  })
+
+  describe('when finding collections for the committee', () => {
+    const remoteSets = {
+      remoteIds: ['approved', 'reviewed', 'new'],
+      approvedRemoteIds: ['approved'],
+      reviewedRemoteIds: ['reviewed'],
+    }
+
+    describe('filtered by several statuses', () => {
+      it('should match any of them', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [
+            CurationStatusFilter.TO_REVIEW,
+            CurationStatusFilter.UNDER_REVIEW,
+          ],
+        })
+
+        expect(normalize(lastQuery().text)).toMatch(
+          /WHERE \(\(collection_curations.assignee is NULL AND .* OR \(collection_curations.assignee is NOT NULL AND collection_curations.status = \$\d+\)\)/
+        )
+      })
+    })
+
+    describe('filtered by the to review status', () => {
+      it('should take unassigned pending requests whatever the on-chain state, and unassigned never-reviewed collections', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [CurationStatusFilter.TO_REVIEW],
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'collection_curations.assignee is NULL AND ((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) OR (collections.third_party_id is NULL AND collections.urn_suffix is NULL AND collections.contract_address = ANY($1) AND (collection_curations.status = $2 OR (collection_curations.id is NULL AND NOT collections.contract_address = ANY($3) AND NOT collections.contract_address = ANY($4)))))'
+        )
+        expect(lastQuery().values.slice(0, 4)).toEqual([
+          remoteSets.remoteIds,
+          CurationStatusFilter.PENDING,
+          remoteSets.approvedRemoteIds,
+          remoteSets.reviewedRemoteIds,
+        ])
+      })
+    })
+
+    describe('filtered by the rejected status', () => {
+      it('should take a rejected request whether or not the collection is approved on chain', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [CurationStatusFilter.REJECTED],
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE ((collection_curations.status = $1 AND (collections.contract_address = ANY($2) OR (collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL))))'
+        )
+        expect(lastQuery().values[0]).toEqual(CurationStatusFilter.REJECTED)
+      })
+    })
+
+    describe('filtered by the disabled status', () => {
+      it('should take a not approved collection with an approved request, or none and reviewed on chain', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [CurationStatusFilter.DISABLED],
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE (((collections.contract_address = ANY($1) AND NOT collections.contract_address = ANY($2)) AND (collection_curations.status = $3 OR (collection_curations.id is NULL AND collections.contract_address = ANY($4)))))'
+        )
+      })
+    })
+
+    describe('filtered by assignees', () => {
+      it('should match any of the curators', async () => {
+        await Collection.findAll({ ...remoteSets, assignees: ['0xa', '0xb'] })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE (collection_curations.assignee = ANY($1))'
+        )
+        expect(lastQuery().values[0]).toEqual(['0xa', '0xb'])
+      })
+
+      it('should match the unassigned collections too when asked', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          assignees: ['0xa', UNASSIGNED_FILTER],
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE (collection_curations.assignee = ANY($1) OR collection_curations.assignee is NULL)'
+        )
+        expect(lastQuery().values[0]).toEqual(['0xa'])
+      })
+
+      it('should match only the unassigned collections when that is the only assignee', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          assignees: [UNASSIGNED_FILTER],
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE (collection_curations.assignee is NULL)'
+        )
+      })
+    })
+
+    describe('filtered by review type', () => {
+      it('should take the collections approved or reviewed on chain as updates', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          reviewType: ReviewTypeFilter.UPDATES,
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE (collections.contract_address = ANY($1) OR collections.contract_address = ANY($2))'
+        )
+        expect(lastQuery().values.slice(0, 2)).toEqual([
+          remoteSets.approvedRemoteIds,
+          remoteSets.reviewedRemoteIds,
+        ])
+      })
+
+      it('should take the rest as new', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          reviewType: ReviewTypeFilter.NEW,
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE NOT (collections.contract_address = ANY($1) OR collections.contract_address = ANY($2))'
+        )
+      })
+    })
+
+    describe('sorted by relevance', () => {
+      it('should put the collections not approved on chain first', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          sort: CollectionSort.MOST_RELEVANT,
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'ORDER BY CASE WHEN( collection_curations.assignee is NULL AND collections.contract_address = ANY($1))'
+        )
+        expect(lastQuery().values[0]).toEqual(['reviewed', 'new'])
+      })
     })
   })
 

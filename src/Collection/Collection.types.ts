@@ -90,6 +90,12 @@ export enum CollectionTypeFilter {
   THIRD_PARTY = 'third_party',
 }
 
+/** What a review request is for: a collection never approved on chain, or changes to one that was. */
+export enum ReviewTypeFilter {
+  NEW = 'new',
+  UPDATES = 'updates',
+}
+
 /** A standard collection's status as its creator sees it, used by the `/:address/collections` status filter. */
 export enum CollectionStatus {
   DRAFT = 'draft',

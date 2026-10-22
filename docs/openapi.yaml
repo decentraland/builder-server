@@ -642,7 +642,15 @@ paths:
                 NAME_ASC,
                 UPDATED_AT_DESC,
                 UPDATED_AT_ASC,
+                LAST_ACTIVITY_DESC,
+                LAST_ACTIVITY_ASC,
+                REQUESTED_AT_DESC,
+                REQUESTED_AT_ASC,
               ]
+          description: |
+            `LAST_ACTIVITY_*` orders by the last time the collection, its items or its review changed;
+            `REQUESTED_AT_*` by when the latest review was requested, or the collection was created when it was
+            never reviewed.
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -702,7 +710,8 @@ paths:
           in: query
           description: |
             Defaults to `CREATED_AT_DESC`. `LAST_ACTIVITY_*` orders by the last time the collection, its items or
-            its review changed.
+            its review changed. `REQUESTED_AT_*` orders by when the latest review was requested, or the collection
+            was created when it was never reviewed.
           schema:
             type: string
             enum:
@@ -715,6 +724,8 @@ paths:
               - UPDATED_AT_ASC
               - LAST_ACTIVITY_DESC
               - LAST_ACTIVITY_ASC
+              - REQUESTED_AT_DESC
+              - REQUESTED_AT_ASC
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:

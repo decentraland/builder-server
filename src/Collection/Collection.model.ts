@@ -113,6 +113,11 @@ export class Collection extends Model<CollectionAttributes> {
         return SQL`ORDER BY `
           .append(this.getLastActivityStatement())
           .append(SQL` DESC, collections.id`)
+      // When the latest review was requested; a collection never reviewed waits since its creation.
+      case CollectionSort.REQUESTED_AT_ASC:
+        return SQL`ORDER BY COALESCE(collection_curations.created_at, collections.created_at) ASC, collections.id`
+      case CollectionSort.REQUESTED_AT_DESC:
+        return SQL`ORDER BY COALESCE(collection_curations.created_at, collections.created_at) DESC, collections.id`
 
       default:
         return SQL``

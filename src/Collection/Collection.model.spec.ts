@@ -247,6 +247,19 @@ describe('Collection model', () => {
     })
   })
 
+  describe.each([
+    [CollectionSort.REQUESTED_AT_DESC, 'DESC'],
+    [CollectionSort.REQUESTED_AT_ASC, 'ASC'],
+  ])('when sorting by %s', (sort, direction) => {
+    it(`should order by the latest request's creation, or the collection's without one, ${direction}`, async () => {
+      await Collection.findAll({ sort })
+
+      expect(normalize(lastQuery().text)).toContain(
+        `ORDER BY COALESCE(collection_curations.created_at, collections.created_at) ${direction}, collections.id`
+      )
+    })
+  })
+
   describe('when counting the collections by status', () => {
     beforeEach(() => {
       queryMock.mockResolvedValueOnce([

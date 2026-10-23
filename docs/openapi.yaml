@@ -588,9 +588,11 @@ paths:
         sent for review, or a published collection the committee never touched. `disabled` is a collection
         the committee turned off. `pending` keeps its legacy meaning: waiting for a first approval.
 
-        `assignee` is repeatable too: curator addresses and/or `unassigned`, any of them matches.
+        `assignee` is repeatable too: curator addresses and/or `unassigned`, any of them matches, at most 20.
         `review_type` splits the list into `new` collections (never approved on chain, third-party ones
-        included) and `updates` to ones that were. Unknown `status` or `review_type` values answer 400.
+        included) and `updates` to ones that were. For third-party collections `to_review` also takes an
+        unassigned collection with items waiting for review. Unknown `status`, `review_type` or `assignee`
+        values answer 400.
       parameters:
         - name: q
           in: query
@@ -605,7 +607,7 @@ paths:
             type: array
             items:
               type: string
-          description: Curator addresses, or `unassigned`
+          description: Curator addresses, or `unassigned`; at most 20
         - name: status
           in: query
           style: form
@@ -613,7 +615,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/CurationStatus'
+              $ref: '#/components/schemas/CurationStatusFilter'
         - name: review_type
           in: query
           schema:
@@ -660,6 +662,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -942,7 +946,7 @@ paths:
           schema:
             type: array
             items:
-              $ref: '#/components/schemas/CurationStatus'
+              $ref: '#/components/schemas/CurationStatusFilter'
         - name: review_type
           in: query
           schema:
@@ -953,6 +957,8 @@ paths:
       responses:
         '200':
           description: List of addresses
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # Item endpoints
   /items:
@@ -3200,6 +3206,11 @@ components:
 
     CurationStatus:
       type: string
+      enum: [pending, approved, rejected, to_review, under_review]
+
+    CurationStatusFilter:
+      type: string
+      description: A review status as the collections list filters by it.
       enum: [pending, approved, rejected, to_review, under_review, disabled]
 
     CollectionCuration:

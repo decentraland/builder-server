@@ -91,12 +91,16 @@ type ReviewFilters = {
   reviewType?: ReviewTypeFilter
 }
 
+const MAX_ASSIGNEE_FILTERS = 20
+
+/** Repeated query params as a list without blanks or duplicates. */
 function toArray(value: unknown): string[] {
-  return Array.isArray(value)
+  const values = Array.isArray(value)
     ? value.map(String)
-    : typeof value === 'string' && value
+    : typeof value === 'string'
     ? [value]
     : []
+  return Array.from(new Set(values.filter((entry) => entry !== '')))
 }
 
 /** The committee list's `assignee`, `status` and `review_type` params, repeatable; unknown values are a 400. */
@@ -106,7 +110,7 @@ function getReviewFilters(query: Request['query']): ReviewFilters {
   const invalidStatus = statuses.find(
     (status) => !validStatuses.includes(status as CurationStatusFilter)
   )
-  if (invalidStatus) {
+  if (invalidStatus !== undefined) {
     throw new HTTPError(
       'Invalid status',
       { status: invalidStatus, validStatuses },
@@ -124,9 +128,28 @@ function getReviewFilters(query: Request['query']): ReviewFilters {
       STATUS_CODES.badRequest
     )
   }
+  // Each assignee binds the on-chain sets again, so the list is capped; the route is public.
   const assignees = toArray(query.assignee).map((assignee) =>
     assignee === UNASSIGNED_FILTER ? assignee : assignee.toLowerCase()
   )
+  if (assignees.length > MAX_ASSIGNEE_FILTERS) {
+    throw new HTTPError(
+      'Too many assignees',
+      { max: MAX_ASSIGNEE_FILTERS },
+      STATUS_CODES.badRequest
+    )
+  }
+  const invalidAssignee = assignees.find(
+    (assignee) =>
+      assignee !== UNASSIGNED_FILTER && !CONTRACT_ADDRESS_REGEX.test(assignee)
+  )
+  if (invalidAssignee !== undefined) {
+    throw new HTTPError(
+      'Invalid assignee',
+      { assignee: invalidAssignee },
+      STATUS_CODES.badRequest
+    )
+  }
   return {
     assignees: assignees.length ? assignees : undefined,
     statuses: statuses.length

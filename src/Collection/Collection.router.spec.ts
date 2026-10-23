@@ -1416,9 +1416,61 @@ describe('Collection router', () => {
         })
       })
 
+      describe('and the filters repeat values or carry blanks', () => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = `${baseUrl}?status=&status=approved&status=approved&assignee=&assignee=unassigned&assignee=unassigned`
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should drop the blanks and the duplicates', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  statuses: ['approved'],
+                  assignees: ['unassigned'],
+                })
+              )
+            })
+        })
+      })
+
+      describe('and the status filter is only blanks', () => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = `${baseUrl}?status=&status=`
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should not filter by status', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ statuses: undefined })
+              )
+            })
+        })
+      })
+
       describe.each([
         ['status', 'published', 'Invalid status'],
         ['review_type', 'changes', 'Invalid review type'],
+        ['assignee', 'garbage', 'Invalid assignee'],
+        [
+          'assignee',
+          Array.from(
+            { length: 21 },
+            (_, i) => `0x${String(i).padStart(40, '0')}`
+          ).join('&assignee='),
+          'Too many assignees',
+        ],
       ])('and the %s filter is not a valid one', (param, value, error) => {
         let baseUrl: string
         beforeEach(() => {
@@ -3703,7 +3755,7 @@ describe('Collection router', () => {
       let baseUrl: string
       beforeEach(() => {
         baseUrl = '/addresses'
-        url = `${baseUrl}?status=to_review&status=under_review&assignee=unassigned&assignee=0xABC&review_type=new`
+        url = `${baseUrl}?status=to_review&status=under_review&assignee=unassigned&assignee=0xABCDEF0123456789ABCDEF0123456789ABCDEF01&review_type=new`
         ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
       })
       it('should pass every status and assignee, the assignee addresses lowercased, and the review type', () => {
@@ -3715,7 +3767,10 @@ describe('Collection router', () => {
             expect(Collection.findAll).toHaveBeenCalledWith(
               expect.objectContaining({
                 statuses: ['to_review', 'under_review'],
-                assignees: ['unassigned', '0xabc'],
+                assignees: [
+                  'unassigned',
+                  '0xabcdef0123456789abcdef0123456789abcdef01',
+                ],
                 reviewType: 'new',
               })
             )

@@ -37,7 +37,8 @@ import {
   getOffset,
   getPaginationParams,
 } from '../Pagination/utils'
-import { CurationStatusFilter } from '../Curation'
+import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
+import { CollectionFragment } from '../ethereum/api/fragments'
 import { addCustomMaxAgeCacheControlHeader } from '../common/headers'
 import {
   getThirdPartyCollectionURN,
@@ -61,6 +62,7 @@ import {
   CollectionSort,
   CollectionStatus,
   CollectionStatusCounts,
+  ReviewTypeFilter,
   TermsOfServiceEvent,
 } from './Collection.types'
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
@@ -69,7 +71,6 @@ import {
   toFullCollection,
   toPublicCollection,
   toPublicCollectionDetail,
-  toRemoteWhereCondition,
 } from './utils'
 import {
   AlreadyPublishedCollectionError,
@@ -83,6 +84,117 @@ import {
 } from './Collection.errors'
 
 const CONTRACT_ADDRESS_REGEX = new RegExp(`^${matchers.address}$`)
+
+type ReviewFilters = {
+  assignees?: string[]
+  statuses?: CurationStatusFilter[]
+  reviewType?: ReviewTypeFilter
+}
+
+const MAX_ASSIGNEE_FILTERS = 20
+
+/** A repeatable query param as a list without blanks or duplicates; anything qs didn't parse as strings is a 400. */
+function toArray(name: string, value: unknown): string[] {
+  if (value === undefined) {
+    return []
+  }
+  const values = Array.isArray(value) ? value : [value]
+  if (values.some((entry) => typeof entry !== 'string')) {
+    throw new HTTPError(
+      `Invalid ${name}`,
+      { [name]: value },
+      STATUS_CODES.badRequest
+    )
+  }
+  return Array.from(
+    new Set((values as string[]).filter((entry) => entry !== ''))
+  )
+}
+
+/** The committee list's `assignee`, `status` and `review_type` params, repeatable; unknown values are a 400. */
+function getReviewFilters(query: Request['query']): ReviewFilters {
+  const statuses = toArray('status', query.status)
+  const validStatuses = Object.values(CurationStatusFilter)
+  const invalidStatus = statuses.find(
+    (status) => !validStatuses.includes(status as CurationStatusFilter)
+  )
+  if (invalidStatus !== undefined) {
+    throw new HTTPError(
+      'Invalid status',
+      { status: invalidStatus, validStatuses },
+      STATUS_CODES.badRequest
+    )
+  }
+  const reviewTypes = toArray('review_type', query.review_type)
+  if (reviewTypes.length > 1) {
+    throw new HTTPError(
+      'Only one review type can be given',
+      { review_type: reviewTypes },
+      STATUS_CODES.badRequest
+    )
+  }
+  const reviewType = reviewTypes[0] as ReviewTypeFilter | undefined
+  if (
+    reviewTypes.length === 1 &&
+    !Object.values(ReviewTypeFilter).includes(
+      reviewTypes[0] as ReviewTypeFilter
+    )
+  ) {
+    throw new HTTPError(
+      'Invalid review type',
+      { review_type: reviewType, validTypes: Object.values(ReviewTypeFilter) },
+      STATUS_CODES.badRequest
+    )
+  }
+  // The route is public, so the one list the request sizes is capped.
+  const assignees = toArray('assignee', query.assignee).map((assignee) =>
+    assignee === UNASSIGNED_FILTER ? assignee : assignee.toLowerCase()
+  )
+  if (assignees.length > MAX_ASSIGNEE_FILTERS) {
+    throw new HTTPError(
+      'Too many assignees',
+      { max: MAX_ASSIGNEE_FILTERS },
+      STATUS_CODES.badRequest
+    )
+  }
+  const invalidAssignee = assignees.find(
+    (assignee) =>
+      assignee !== UNASSIGNED_FILTER && !CONTRACT_ADDRESS_REGEX.test(assignee)
+  )
+  if (invalidAssignee !== undefined) {
+    throw new HTTPError(
+      'Invalid assignee',
+      { assignee: invalidAssignee },
+      STATUS_CODES.badRequest
+    )
+  }
+  return {
+    assignees: assignees.length ? assignees : undefined,
+    statuses: statuses.length
+      ? (statuses as CurationStatusFilter[])
+      : undefined,
+    reviewType,
+  }
+}
+
+/** The on-chain sets the review filters and MOST_RELEVANT read: every collection, the approved ones, and the reviewed but not approved ones. */
+function toRemoteSets(remoteCollections: CollectionFragment[]) {
+  const approvedRemoteIds: string[] = []
+  const reviewedRemoteIds: string[] = []
+  for (const remoteCollection of remoteCollections) {
+    if (remoteCollection.isApproved) {
+      approvedRemoteIds.push(remoteCollection.id)
+    } else if (remoteCollection.reviewedAt !== remoteCollection.createdAt) {
+      // The graph stamps reviewedAt with createdAt on creation and moves it on every setApproved and rescueItems.
+      reviewedRemoteIds.push(remoteCollection.id)
+    }
+  }
+  return {
+    remoteIds: remoteCollections.map((remoteCollection) => remoteCollection.id),
+    approvedRemoteIds,
+    reviewedRemoteIds,
+  }
+}
 
 export class CollectionRouter extends Router {
   public service = new CollectionService()
@@ -294,15 +406,7 @@ export class CollectionRouter extends Router {
     | (FullCollection | PublicCollection)[]
   > => {
     const { page, limit } = getPaginationParams(req)
-    const {
-      assignee,
-      status,
-      sort,
-      q,
-      is_published: isPublished,
-      tag,
-      type,
-    } = req.query
+    const { sort, q, is_published: isPublished, tag, type } = req.query
     const eth_address = req.auth.ethAddress
     const canRequestCollections = await isCommitteeMember(eth_address)
 
@@ -314,27 +418,20 @@ export class CollectionRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
+    const reviewFilters = getReviewFilters(req.query)
 
-    // If status is passed, the graph query will be filtered and those results will be included in a WHERE statement in the query later on
-    // If status is not passed, the query won't be filtered and all the collections will be retrieved
-    const remoteCollections = await collectionAPI.fetchCollections(
-      toRemoteWhereCondition({ status: status as CurationStatusFilter })
-    )
+    // Every collection on chain: the review filters compare against the approved and reviewed subsets in the query.
+    const remoteCollections = await collectionAPI.fetchCollections({})
 
     const allCollectionsWithCount = await this.service.getCollections({
       q: q as string,
-      assignee: assignee as string,
-      status: status as CurationStatusFilter,
+      ...reviewFilters,
       type: type as CollectionTypeFilter,
       sort: sort as CollectionSort,
       isPublished: isPublished ? isPublished === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
-      remoteIds: status
-        ? remoteCollections.map((c) => c.id)
-        : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.
-          // We filter at this level and not in the query because we need all the collections so they can be consolidated later on.
-          remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
+      ...toRemoteSets(remoteCollections),
       itemTags: tag
         ? Array.isArray(tag)
           ? (tag as string[]).map((t) => t.toLowerCase())
@@ -413,16 +510,6 @@ export class CollectionRouter extends Router {
     const authorizedRemoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
       eth_address
     )
-    const approvedRemoteIds: string[] = []
-    const reviewedRemoteIds: string[] = []
-    for (const remoteCollection of authorizedRemoteCollections) {
-      if (remoteCollection.isApproved) {
-        approvedRemoteIds.push(remoteCollection.id)
-      } else if (remoteCollection.reviewedAt !== remoteCollection.createdAt) {
-        // The graph stamps reviewedAt with createdAt on creation and moves it on every setApproved and rescueItems.
-        reviewedRemoteIds.push(remoteCollection.id)
-      }
-    }
 
     const params: FindCollectionParams = {
       q: q as string,
@@ -434,11 +521,7 @@ export class CollectionRouter extends Router {
       type: type as CollectionTypeFilter,
       collectionStatus: status as CollectionStatus | undefined,
       isPublished: is_published ? is_published === 'true' : undefined,
-      remoteIds: authorizedRemoteCollections.map(
-        (remoteCollection) => remoteCollection.id
-      ),
-      approvedRemoteIds,
-      reviewedRemoteIds,
+      ...toRemoteSets(authorizedRemoteCollections),
     }
     // Only the paginated envelope carries the counts, so a bare list skips their query.
     const { collections: allCollectionsWithCount, statusCounts } =
@@ -781,33 +864,25 @@ export class CollectionRouter extends Router {
     res: Response
   ): Promise<PaginatedResponse<string> | string[]> => {
     const { page, limit } = getPaginationParams(req)
-    const { assignee, status, sort, q, is_published, tag } = req.query
+    const { sort, q, is_published, tag } = req.query
+    const reviewFilters = getReviewFilters(req.query)
 
     // If the conditions are met, use the alternative collection api that uses a different subgraph.
     let desiredCollectionAPI = (await canUseCollectionAPIAlt())
       ? collectionAPIAlt
       : collectionAPI
 
-    // If status is passed, the graph query will be filtered and those results will be included in a WHERE statement in the query later on
-    // If status is not passed, the query won't be filtered and all the collections will be retrieved
-    const remoteCollections = await desiredCollectionAPI.fetchCollections(
-      toRemoteWhereCondition({ status: status as CurationStatusFilter })
-    )
+    const remoteCollections = await desiredCollectionAPI.fetchCollections({})
 
     const allCollectionsWithCount = await this.service.getCollections({
       q: q as string,
-      assignee: assignee as string,
-      status: status as CurationStatusFilter,
+      ...reviewFilters,
       sort: sort as CollectionSort,
       isPublished: is_published ? is_published === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,
       limit,
       type: CollectionTypeFilter.STANDARD,
-      remoteIds: status
-        ? remoteCollections.map((c) => c.id)
-        : // if the status is not passed, we still want to prioritize the not approved. It won't filter by them, it'll just use them for the sort.
-          // We filter at this level and not in the query because we need all the collections so they can be consolidated later on.
-          remoteCollections.filter((r) => !r.isApproved).map((c) => c.id),
+      ...toRemoteSets(remoteCollections),
       itemTags: tag
         ? Array.isArray(tag)
           ? (tag as string[]).map((t) => t.toLowerCase())

@@ -579,21 +579,39 @@ paths:
       operationId: getCollections
       tags: [Collections]
       summary: Get all collections
-      description: Returns collections with filtering and pagination (committee members only for full access)
+      description: |
+        Returns collections with filtering and pagination. Committee members see every collection; anyone else
+        needs `q` and `is_published=true`.
       parameters:
         - name: q
           in: query
           schema:
             type: string
-          description: Search query
+          description: Search by collection name
         - name: assignee
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Curator addresses and/or `unassigned`, any of them matches. Up to 20; repeat the param.
+        - name: status
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CurationStatusFilter'
+          description: Review statuses, any of them matches. Repeat the param.
+        - name: review_type
           in: query
           schema:
             type: string
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/CurationStatus'
+            enum: [new, updates]
+          description: Only collections never approved (`new`), or only changes to ones approved before (`updates`)
         - name: type
           in: query
           schema:
@@ -617,7 +635,14 @@ paths:
                 NAME_ASC,
                 UPDATED_AT_DESC,
                 UPDATED_AT_ASC,
+                LAST_ACTIVITY_DESC,
+                LAST_ACTIVITY_ASC,
+                REQUESTED_AT_DESC,
+                REQUESTED_AT_ASC,
               ]
+          description: |
+            `MOST_RELEVANT` puts the collections waiting for a curator first. `LAST_ACTIVITY_*` orders by the last
+            change to the collection, its items or its review; `REQUESTED_AT_*` by when its review was requested.
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -627,6 +652,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -677,7 +704,8 @@ paths:
           in: query
           description: |
             Defaults to `CREATED_AT_DESC`. `LAST_ACTIVITY_*` orders by the last time the collection, its items or
-            its review changed.
+            its review changed. `REQUESTED_AT_*` orders by when the latest review was requested, or the collection
+            was created when it was never reviewed.
           schema:
             type: string
             enum:
@@ -690,6 +718,8 @@ paths:
               - UPDATED_AT_ASC
               - LAST_ACTIVITY_DESC
               - LAST_ACTIVITY_ASC
+              - REQUESTED_AT_DESC
+              - REQUESTED_AT_ASC
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -888,18 +918,58 @@ paths:
       operationId: getCollectionAddresses
       tags: [Collections]
       summary: Get collection addresses
-      description: Returns collection contract addresses with filtering
+      description: Returns the contract addresses of standard collections, with the same filters and sorts as `GET /collections`.
       security: []
       parameters:
+        - name: assignee
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Curator addresses and/or `unassigned`, any of them matches. Up to 20; repeat the param.
         - name: status
           in: query
+          style: form
+          explode: true
           schema:
-            $ref: '#/components/schemas/CurationStatus'
+            type: array
+            items:
+              $ref: '#/components/schemas/CurationStatusFilter'
+          description: Review statuses, any of them matches. Repeat the param.
+        - name: review_type
+          in: query
+          schema:
+            type: string
+            enum: [new, updates]
+          description: Only collections never approved (`new`), or only changes to ones approved before (`updates`)
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                MOST_RELEVANT,
+                CREATED_AT_DESC,
+                CREATED_AT_ASC,
+                NAME_DESC,
+                NAME_ASC,
+                UPDATED_AT_DESC,
+                UPDATED_AT_ASC,
+                LAST_ACTIVITY_DESC,
+                LAST_ACTIVITY_ASC,
+                REQUESTED_AT_DESC,
+                REQUESTED_AT_ASC,
+              ]
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: List of addresses
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # Item endpoints
   /items:
@@ -3148,6 +3218,14 @@ components:
     CurationStatus:
       type: string
       enum: [pending, approved, rejected, to_review, under_review]
+
+    CurationStatusFilter:
+      type: string
+      description: |
+        A collection's review status. `to_review` is waiting for a curator, `under_review` has one assigned,
+        `approved` and `rejected` carry the committee's latest decision, `disabled` was turned off by the
+        committee after an approval. `pending` is the legacy name for a collection waiting for its first approval.
+      enum: [pending, approved, rejected, to_review, under_review, disabled]
 
     CollectionCuration:
       type: object

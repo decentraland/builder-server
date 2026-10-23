@@ -3778,9 +3778,45 @@ describe('Collection router', () => {
       })
     })
 
+    describe('and sorting by the request date', () => {
+      let baseUrl: string
+      beforeEach(() => {
+        baseUrl = '/addresses'
+        url = `${baseUrl}?sort=REQUESTED_AT_ASC`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+      })
+      it('should pass the sort through', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then(() => {
+            expect(Collection.findAll).toHaveBeenCalledWith(
+              expect.objectContaining({ sort: 'REQUESTED_AT_ASC' })
+            )
+          })
+      })
+    })
+
     describe.each([
       ['status', 'published', 'Invalid status'],
+      ['status[a]', 'rejected', 'Invalid status'],
       ['review_type', 'changes', 'Invalid review type'],
+      [
+        'review_type',
+        'new&review_type=updates',
+        'Only one review type can be given',
+      ],
+      ['assignee', 'garbage', 'Invalid assignee'],
+      ['assignee[a]', 'unassigned', 'Invalid assignee'],
+      [
+        'assignee',
+        Array.from(
+          { length: 21 },
+          (_, i) => `0x${String(i).padStart(40, '0')}`
+        ).join('&assignee='),
+        'Too many assignees',
+      ],
     ])('and the %s filter is not a valid one', (param, value, error) => {
       let baseUrl: string
       beforeEach(() => {

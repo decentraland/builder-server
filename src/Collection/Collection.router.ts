@@ -93,19 +93,27 @@ type ReviewFilters = {
 
 const MAX_ASSIGNEE_FILTERS = 20
 
-/** Repeated query params as a list without blanks or duplicates. */
-function toArray(value: unknown): string[] {
-  const values = Array.isArray(value)
-    ? value.map(String)
-    : typeof value === 'string'
-    ? [value]
-    : []
-  return Array.from(new Set(values.filter((entry) => entry !== '')))
+/** A repeatable query param as a list without blanks or duplicates; anything qs didn't parse as strings is a 400. */
+function toArray(name: string, value: unknown): string[] {
+  if (value === undefined) {
+    return []
+  }
+  const values = Array.isArray(value) ? value : [value]
+  if (values.some((entry) => typeof entry !== 'string')) {
+    throw new HTTPError(
+      `Invalid ${name}`,
+      { [name]: value },
+      STATUS_CODES.badRequest
+    )
+  }
+  return Array.from(
+    new Set((values as string[]).filter((entry) => entry !== ''))
+  )
 }
 
 /** The committee list's `assignee`, `status` and `review_type` params, repeatable; unknown values are a 400. */
 function getReviewFilters(query: Request['query']): ReviewFilters {
-  const statuses = toArray(query.status)
+  const statuses = toArray('status', query.status)
   const validStatuses = Object.values(CurationStatusFilter)
   const invalidStatus = statuses.find(
     (status) => !validStatuses.includes(status as CurationStatusFilter)
@@ -117,7 +125,15 @@ function getReviewFilters(query: Request['query']): ReviewFilters {
       STATUS_CODES.badRequest
     )
   }
-  const reviewType = query.review_type
+  const reviewTypes = toArray('review_type', query.review_type)
+  if (reviewTypes.length > 1) {
+    throw new HTTPError(
+      'Only one review type can be given',
+      { review_type: reviewTypes },
+      STATUS_CODES.badRequest
+    )
+  }
+  const reviewType: string | undefined = reviewTypes[0]
   if (
     reviewType !== undefined &&
     !Object.values(ReviewTypeFilter).includes(reviewType as ReviewTypeFilter)
@@ -128,8 +144,8 @@ function getReviewFilters(query: Request['query']): ReviewFilters {
       STATUS_CODES.badRequest
     )
   }
-  // Each assignee binds the on-chain sets again, so the list is capped; the route is public.
-  const assignees = toArray(query.assignee).map((assignee) =>
+  // The route is public, so the one list the request sizes is capped.
+  const assignees = toArray('assignee', query.assignee).map((assignee) =>
     assignee === UNASSIGNED_FILTER ? assignee : assignee.toLowerCase()
   )
   if (assignees.length > MAX_ASSIGNEE_FILTERS) {

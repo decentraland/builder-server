@@ -126,17 +126,22 @@ export class Collection extends Model<CollectionAttributes> {
               remoteSets
             )
           )
+          .append(SQL` THEN 0 WHEN `)
+          .append(
+            this.getCurationStatusCondition(
+              CurationStatusFilter.UNDER_REVIEW,
+              remoteSets
+            )
+          )
           .append(
             SQL`
-            THEN 0
-            WHEN(collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING})
             THEN 1
             WHEN(collection_curations.status = ${CurationStatusFilter.APPROVED})
             THEN 2
               WHEN(collection_curations.status = ${CurationStatusFilter.REJECTED})
             THEN 3
             ELSE 4
-          END, collections.created_at DESC
+          END, collections.created_at DESC, collections.id
         `
           )
       case CollectionSort.NAME_ASC:
@@ -209,21 +214,24 @@ export class Collection extends Model<CollectionAttributes> {
   }
 
   /**
-   * When the latest review was requested: the newest pending item request (a third-party publish reuses the
-   * collection's request), else the collection's request, else its creation for one never reviewed.
+   * When the latest review was requested: the newest pending item request, else the newest item request of any
+   * status (a third-party publish reuses the collection's request, so its own date is the first publish), else
+   * the collection's request, else its creation for one never reviewed.
    */
   static getRequestedAtStatement() {
-    return SQL`COALESCE(
-      (SELECT MAX(item_curations.created_at) FROM ${raw(
+    const newestItemRequest = (status?: CurationStatusFilter) =>
+      SQL`(SELECT MAX(item_curations.created_at) FROM ${raw(
         ItemCuration.tableName
       )} item_curations JOIN ${raw(
-      Item.tableName
-    )} items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id AND item_curations.status = ${
-      CurationStatusFilter.PENDING
-    }),
-      collection_curations.created_at,
-      collections.created_at
-    )`
+        Item.tableName
+      )} items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id`
+        .append(status ? SQL` AND item_curations.status = ${status}` : SQL``)
+        .append(SQL`)`)
+    return SQL`COALESCE(`
+      .append(newestItemRequest(CurationStatusFilter.PENDING))
+      .append(SQL`, `)
+      .append(newestItemRequest())
+      .append(SQL`, collection_curations.created_at, collections.created_at)`)
   }
 
   /** When the collection, any of its items or its latest curation last changed. */
@@ -277,7 +285,9 @@ export class Collection extends Model<CollectionAttributes> {
           CurationStatusFilter.PENDING
         } OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))))`
       case CurationStatusFilter.UNDER_REVIEW:
-        return SQL`(collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING})`
+        return SQL`(collection_curations.assignee is NOT NULL AND (collection_curations.status = ${
+          CurationStatusFilter.PENDING
+        } OR ((${isThirdParty()}) AND ${hasPendingItemCuration()})))`
       case CurationStatusFilter.DISABLED:
         return SQL`(${isNotApprovedOnChain} AND (collection_curations.status = ${CurationStatusFilter.APPROVED} OR (${hasNoCuration} AND ${wasReviewedOnChain})))`
       default:

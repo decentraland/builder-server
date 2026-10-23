@@ -590,9 +590,9 @@ paths:
 
         `assignee` is repeatable too: curator addresses and/or `unassigned`, any of them matches, at most 20.
         `review_type` splits the list into `new` collections (never approved on chain, third-party ones
-        included) and `updates` to ones that were. For third-party collections `to_review` also takes an
-        unassigned collection with items waiting for review. Unknown `status`, `review_type` or `assignee`
-        values answer 400.
+        included) and `updates` to ones that were. For third-party collections, whose publishes reuse the
+        collection's request, `to_review` and `under_review` also take one with items waiting for review,
+        by assignee. Unknown `status`, `review_type` or `assignee` values answer 400.
       parameters:
         - name: q
           in: query
@@ -928,7 +928,10 @@ paths:
       operationId: getCollectionAddresses
       tags: [Collections]
       summary: Get collection addresses
-      description: Returns collection contract addresses with the same review filters as `GET /collections`
+      description: |
+        Returns the contract addresses of standard collections, with the same review filters and sorts as
+        `GET /collections` (`type` is always `standard` here). Unknown `status`, `review_type` or `assignee`
+        values answer 400.
       security: []
       parameters:
         - name: assignee
@@ -939,6 +942,7 @@ paths:
             type: array
             items:
               type: string
+          description: Curator addresses, or `unassigned`; at most 20
         - name: status
           in: query
           style: form
@@ -952,6 +956,25 @@ paths:
           schema:
             type: string
             enum: [new, updates]
+          description: Collections never approved on chain (`new`) or approved before (`updates`)
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                MOST_RELEVANT,
+                CREATED_AT_DESC,
+                CREATED_AT_ASC,
+                NAME_DESC,
+                NAME_ASC,
+                UPDATED_AT_DESC,
+                UPDATED_AT_ASC,
+                LAST_ACTIVITY_DESC,
+                LAST_ACTIVITY_ASC,
+                REQUESTED_AT_DESC,
+                REQUESTED_AT_ASC,
+              ]
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:

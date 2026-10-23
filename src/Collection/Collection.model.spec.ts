@@ -92,7 +92,7 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toMatch(
-          /WHERE \(\(\(collection_curations.assignee is NULL AND .* OR \(collection_curations.assignee is NOT NULL AND collection_curations.status = \$\d+\)\)\)/
+          /WHERE \(\(\(collection_curations.assignee is NULL AND .* OR \(collection_curations.assignee is NOT NULL AND \(collection_curations.status = \$\d+ OR \(\(collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL\) AND EXISTS \(SELECT 1 FROM item_curations .*\)\)\)\)\)/
         )
       })
     })
@@ -126,6 +126,19 @@ describe('Collection model', () => {
         // A third-party publish keeps the collection's request and opens pending item requests instead.
         expect(normalize(lastQuery().text)).toMatch(
           /urn_suffix is NOT NULL\) AND \(\(collection_curations.status = \$1 OR collection_curations.id is NULL\) OR EXISTS \(SELECT 1 FROM item_curations/
+        )
+      })
+    })
+
+    describe('filtered by the under review status', () => {
+      it('should take an assigned pending request, or an assigned third-party collection with items waiting for review', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [CurationStatusFilter.UNDER_REVIEW],
+        })
+
+        expect(normalize(lastQuery().text)).toContain(
+          'WHERE (((collection_curations.assignee is NOT NULL AND (collection_curations.status = $1 OR ((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND EXISTS (SELECT 1 FROM item_curations'
         )
       })
     })
@@ -235,7 +248,14 @@ describe('Collection model', () => {
         expect(tier0).toContain(
           'NOT COALESCE(collections.contract_address = ANY('
         )
-        expect(text).toContain('THEN 1 WHEN(collection_curations.status = $')
+        const [tier1] = text.split('THEN 0')[1].split('THEN 1')
+        expect(tier1).toContain(
+          'WHEN (collection_curations.assignee is NOT NULL AND (collection_curations.status = $'
+        )
+        expect(tier1).toContain('EXISTS (SELECT 1 FROM item_curations')
+        expect(text).toContain(
+          'END, collections.created_at DESC, collections.id'
+        )
       })
     })
   })
@@ -274,10 +294,10 @@ describe('Collection model', () => {
     it(`should order by the latest request's creation, or the collection's without one, ${direction}`, async () => {
       await Collection.findAll({ sort })
 
-      // The newest pending item request (third-party publishes reuse the collection's request) wins over the
-      // collection's request, which wins over its creation.
+      // The newest pending item request wins, then the newest item request of any status (third-party publishes
+      // reuse the collection's request), then the collection's request, then its creation.
       expect(normalize(lastQuery().text)).toContain(
-        `ORDER BY COALESCE( (SELECT MAX(item_curations.created_at) FROM item_curations item_curations JOIN items items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id AND item_curations.status = $1), collection_curations.created_at, collections.created_at ) ${direction}, collections.id`
+        `ORDER BY COALESCE((SELECT MAX(item_curations.created_at) FROM item_curations item_curations JOIN items items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id AND item_curations.status = $1), (SELECT MAX(item_curations.created_at) FROM item_curations item_curations JOIN items items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id), collection_curations.created_at, collections.created_at) ${direction}, collections.id`
       )
     })
   })

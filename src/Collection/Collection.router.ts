@@ -133,10 +133,12 @@ function getReviewFilters(query: Request['query']): ReviewFilters {
       STATUS_CODES.badRequest
     )
   }
-  const reviewType: string | undefined = reviewTypes[0]
+  const reviewType = reviewTypes[0] as ReviewTypeFilter | undefined
   if (
-    reviewType !== undefined &&
-    !Object.values(ReviewTypeFilter).includes(reviewType as ReviewTypeFilter)
+    reviewTypes.length === 1 &&
+    !Object.values(ReviewTypeFilter).includes(
+      reviewTypes[0] as ReviewTypeFilter
+    )
   ) {
     throw new HTTPError(
       'Invalid review type',
@@ -171,7 +173,7 @@ function getReviewFilters(query: Request['query']): ReviewFilters {
     statuses: statuses.length
       ? (statuses as CurationStatusFilter[])
       : undefined,
-    reviewType: reviewType as ReviewTypeFilter | undefined,
+    reviewType,
   }
 }
 

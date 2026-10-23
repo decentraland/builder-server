@@ -580,25 +580,14 @@ paths:
       tags: [Collections]
       summary: Get all collections
       description: |
-        Returns collections with filtering and pagination (committee members only for full access).
-
-        `status` filters by the review status the committee sees, from the latest review request and the
-        on-chain state; repeat it to match any of several. A `rejected` request wins over the on-chain state.
-        `to_review` is an unassigned pending request, on a new collection or on an approved one with changes
-        sent for review, or a published collection the committee never touched. `disabled` is a collection
-        the committee turned off. `pending` keeps its legacy meaning: waiting for a first approval.
-
-        `assignee` is repeatable too: curator addresses and/or `unassigned`, any of them matches, at most 20.
-        `review_type` splits the list into `new` collections (never approved on chain, third-party ones
-        included) and `updates` to ones that were. For third-party collections, whose publishes reuse the
-        collection's request, `to_review` and `under_review` also take one with items waiting for review,
-        by assignee. Unknown `status`, `review_type` or `assignee` values answer 400.
+        Returns collections with filtering and pagination. Committee members see every collection; anyone else
+        needs `q` and `is_published=true`.
       parameters:
         - name: q
           in: query
           schema:
             type: string
-          description: Search query
+          description: Search by collection name
         - name: assignee
           in: query
           style: form
@@ -607,7 +596,7 @@ paths:
             type: array
             items:
               type: string
-          description: Curator addresses, or `unassigned`; at most 20
+          description: Curator addresses and/or `unassigned`, any of them matches. Up to 20; repeat the param.
         - name: status
           in: query
           style: form
@@ -616,11 +605,13 @@ paths:
             type: array
             items:
               $ref: '#/components/schemas/CurationStatusFilter'
+          description: Review statuses, any of them matches. Repeat the param.
         - name: review_type
           in: query
           schema:
             type: string
             enum: [new, updates]
+          description: Only collections never approved (`new`), or only changes to ones approved before (`updates`)
         - name: type
           in: query
           schema:
@@ -650,9 +641,8 @@ paths:
                 REQUESTED_AT_ASC,
               ]
           description: |
-            `LAST_ACTIVITY_*` orders by the last time the collection, its items or its review changed;
-            `REQUESTED_AT_*` by when the latest review was requested, or the collection was created when it was
-            never reviewed.
+            `MOST_RELEVANT` puts the collections waiting for a curator first. `LAST_ACTIVITY_*` orders by the last
+            change to the collection, its items or its review; `REQUESTED_AT_*` by when its review was requested.
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -928,10 +918,7 @@ paths:
       operationId: getCollectionAddresses
       tags: [Collections]
       summary: Get collection addresses
-      description: |
-        Returns the contract addresses of standard collections, with the same review filters and sorts as
-        `GET /collections` (`type` is always `standard` here). Unknown `status`, `review_type` or `assignee`
-        values answer 400.
+      description: Returns the contract addresses of standard collections, with the same filters and sorts as `GET /collections`.
       security: []
       parameters:
         - name: assignee
@@ -942,7 +929,7 @@ paths:
             type: array
             items:
               type: string
-          description: Curator addresses, or `unassigned`; at most 20
+          description: Curator addresses and/or `unassigned`, any of them matches. Up to 20; repeat the param.
         - name: status
           in: query
           style: form
@@ -951,12 +938,13 @@ paths:
             type: array
             items:
               $ref: '#/components/schemas/CurationStatusFilter'
+          description: Review statuses, any of them matches. Repeat the param.
         - name: review_type
           in: query
           schema:
             type: string
             enum: [new, updates]
-          description: Collections never approved on chain (`new`) or approved before (`updates`)
+          description: Only collections never approved (`new`), or only changes to ones approved before (`updates`)
         - name: sort
           in: query
           schema:
@@ -3233,7 +3221,10 @@ components:
 
     CurationStatusFilter:
       type: string
-      description: A review status as the collections list filters by it.
+      description: |
+        A collection's review status. `to_review` is waiting for a curator, `under_review` has one assigned,
+        `approved` and `rejected` carry the committee's latest decision, `disabled` was turned off by the
+        committee after an approval. `pending` is the legacy name for a collection waiting for its first approval.
       enum: [pending, approved, rejected, to_review, under_review, disabled]
 
     CollectionCuration:

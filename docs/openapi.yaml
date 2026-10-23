@@ -589,8 +589,8 @@ paths:
         the committee turned off. `pending` keeps its legacy meaning: waiting for a first approval.
 
         `assignee` is repeatable too: curator addresses and/or `unassigned`, any of them matches.
-        `review_type` splits the list into `new` collections (never approved on chain) and `updates` to ones
-        that were. Unknown `status` or `review_type` values answer 400.
+        `review_type` splits the list into `new` collections (never approved on chain, third-party ones
+        included) and `updates` to ones that were. Unknown `status` or `review_type` values answer 400.
       parameters:
         - name: q
           in: query

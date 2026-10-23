@@ -105,14 +105,27 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'collection_curations.assignee is NULL AND ((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) OR (collections.third_party_id is NULL AND collections.urn_suffix is NULL AND collections.contract_address = ANY($1) AND (collection_curations.status = $2 OR (collection_curations.id is NULL AND NOT collections.contract_address = ANY($3) AND NOT collections.contract_address = ANY($4)))))'
+          'collection_curations.assignee is NULL AND (((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND (collection_curations.status = $1 OR collection_curations.id is NULL)) OR (collections.third_party_id is NULL AND collections.urn_suffix is NULL AND COALESCE(collections.contract_address = ANY($2), false) AND (collection_curations.status = $3 OR (collection_curations.id is NULL AND NOT COALESCE(collections.contract_address = ANY($4), false) AND NOT COALESCE(collections.contract_address = ANY($5), false)))))'
         )
-        expect(lastQuery().values.slice(0, 4)).toEqual([
+        expect(lastQuery().values.slice(0, 5)).toEqual([
+          CurationStatusFilter.PENDING,
           remoteSets.remoteIds,
           CurationStatusFilter.PENDING,
           remoteSets.approvedRemoteIds,
           remoteSets.reviewedRemoteIds,
         ])
+      })
+
+      it('should leave out a third-party collection whose latest request was decided', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [CurationStatusFilter.TO_REVIEW],
+        })
+
+        // The third-party branch needs a pending request or none, like the standard one.
+        expect(normalize(lastQuery().text)).toMatch(
+          /urn_suffix is NOT NULL\) AND \(collection_curations.status = \$1 OR collection_curations.id is NULL\)\)/
+        )
       })
     })
 
@@ -124,7 +137,7 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE ((collection_curations.status = $1 AND (collections.contract_address = ANY($2) OR (collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL))))'
+          'WHERE ((collection_curations.status = $1 AND (COALESCE(collections.contract_address = ANY($2), false) OR (collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL))))'
         )
         expect(lastQuery().values[0]).toEqual(CurationStatusFilter.REJECTED)
       })
@@ -138,7 +151,7 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE (((collections.contract_address = ANY($1) AND NOT collections.contract_address = ANY($2)) AND (collection_curations.status = $3 OR (collection_curations.id is NULL AND collections.contract_address = ANY($4)))))'
+          'WHERE (((COALESCE(collections.contract_address = ANY($1), false) AND NOT COALESCE(collections.contract_address = ANY($2), false)) AND (collection_curations.status = $3 OR (collection_curations.id is NULL AND COALESCE(collections.contract_address = ANY($4), false)))))'
         )
       })
     })
@@ -184,8 +197,9 @@ describe('Collection model', () => {
           reviewType: ReviewTypeFilter.UPDATES,
         })
 
+        // COALESCE: a NULL contract address (third-party, unpublished) must read as false, not NULL, on both sides.
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE (collections.contract_address = ANY($1) OR collections.contract_address = ANY($2))'
+          'WHERE (COALESCE(collections.contract_address = ANY($1), false) OR COALESCE(collections.contract_address = ANY($2), false))'
         )
         expect(lastQuery().values.slice(0, 2)).toEqual([
           remoteSets.approvedRemoteIds,
@@ -200,7 +214,7 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE NOT (collections.contract_address = ANY($1) OR collections.contract_address = ANY($2))'
+          'WHERE NOT (COALESCE(collections.contract_address = ANY($1), false) OR COALESCE(collections.contract_address = ANY($2), false))'
         )
       })
     })

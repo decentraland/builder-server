@@ -196,11 +196,13 @@ export class Collection extends Model<CollectionAttributes> {
   ) {
     const isStandard = SQL`collections.third_party_id is NULL AND collections.urn_suffix is NULL`
     const isThirdParty = SQL`collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL`
-    const isOnChain = SQL`collections.contract_address = ANY(${remoteIds})`
-    const isApprovedOnChain = SQL`collections.contract_address = ANY(${approvedRemoteIds})`
+    // A NULL contract address (third-party, unpublished) compares to NULL, which NOT and OR can't turn into a match.
+    const isOnChain = SQL`COALESCE(collections.contract_address = ANY(${remoteIds}), false)`
+    const isApprovedOnChain = SQL`COALESCE(collections.contract_address = ANY(${approvedRemoteIds}), false)`
     const isNotApprovedOnChain = SQL`(${isOnChain} AND NOT ${isApprovedOnChain})`
-    const wasReviewedOnChain = SQL`collections.contract_address = ANY(${reviewedRemoteIds})`
+    const wasReviewedOnChain = SQL`COALESCE(collections.contract_address = ANY(${reviewedRemoteIds}), false)`
     const hasNoCuration = SQL`collection_curations.id is NULL`
+    const isPendingOrNew = SQL`(collection_curations.status = ${CurationStatusFilter.PENDING} OR ${hasNoCuration})`
     switch (status) {
       case CurationStatusFilter.PENDING:
         return SQL`((collection_curations.status = ${status} AND (${isNotApprovedOnChain} OR (${isThirdParty}))) OR (${hasNoCuration} AND ${isNotApprovedOnChain}))`
@@ -209,7 +211,7 @@ export class Collection extends Model<CollectionAttributes> {
       case CurationStatusFilter.REJECTED:
         return SQL`(collection_curations.status = ${status} AND (${isOnChain} OR (${isThirdParty})))`
       case CurationStatusFilter.TO_REVIEW:
-        return SQL`(collection_curations.assignee is NULL AND ((${isThirdParty}) OR (${isStandard} AND ${isOnChain} AND (collection_curations.status = ${CurationStatusFilter.PENDING} OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))))`
+        return SQL`(collection_curations.assignee is NULL AND (((${isThirdParty}) AND ${isPendingOrNew}) OR (${isStandard} AND ${isOnChain} AND (collection_curations.status = ${CurationStatusFilter.PENDING} OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))))`
       case CurationStatusFilter.UNDER_REVIEW:
         return SQL`(collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING})`
       case CurationStatusFilter.DISABLED:
@@ -265,9 +267,12 @@ export class Collection extends Model<CollectionAttributes> {
     const isThirdParty = SQL`collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL`
     const isInRemoteIds = SQL`collections.contract_address = ANY(${remoteIds})`
     const remoteSets = { remoteIds, approvedRemoteIds, reviewedRemoteIds }
-    const hasBeenApproved = SQL`(collections.contract_address = ANY(${
+    // COALESCE: a NULL contract address (third-party, unpublished) is never approved, so it reads as new.
+    const hasBeenApproved = SQL`(COALESCE(collections.contract_address = ANY(${
       approvedRemoteIds ?? []
-    }) OR collections.contract_address = ANY(${reviewedRemoteIds ?? []}))`
+    }), false) OR COALESCE(collections.contract_address = ANY(${
+      reviewedRemoteIds ?? []
+    }), false))`
     const curatorAddresses = assignees?.filter(
       (assignee) => assignee !== UNASSIGNED_FILTER
     )

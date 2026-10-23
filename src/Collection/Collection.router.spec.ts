@@ -1383,8 +1383,18 @@ describe('Collection router', () => {
           url = baseUrl
           ;(collectionAPI.fetchCollections as jest.Mock).mockReset()
           ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([
-            { id: 'approved', isApproved: true, createdAt: '1', reviewedAt: '2' },
-            { id: 'reviewed', isApproved: false, createdAt: '1', reviewedAt: '2' },
+            {
+              id: 'approved',
+              isApproved: true,
+              createdAt: '1',
+              reviewedAt: '2',
+            },
+            {
+              id: 'reviewed',
+              isApproved: false,
+              createdAt: '1',
+              reviewedAt: '2',
+            },
             { id: 'new', isApproved: false, createdAt: '1', reviewedAt: '1' },
           ])
           ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
@@ -3687,6 +3697,51 @@ describe('Collection router', () => {
       )
       ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([])
       ThirdPartyServiceMock.getThirdParties.mockResolvedValueOnce([])
+    })
+
+    describe('and filtering by several statuses, several assignees and a review type', () => {
+      let baseUrl: string
+      beforeEach(() => {
+        baseUrl = '/addresses'
+        url = `${baseUrl}?status=to_review&status=under_review&assignee=unassigned&assignee=0xABC&review_type=new`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+      })
+      it('should pass every status and assignee, the assignee addresses lowercased, and the review type', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then(() => {
+            expect(Collection.findAll).toHaveBeenCalledWith(
+              expect.objectContaining({
+                statuses: ['to_review', 'under_review'],
+                assignees: ['unassigned', '0xabc'],
+                reviewType: 'new',
+              })
+            )
+          })
+      })
+    })
+
+    describe.each([
+      ['status', 'published', 'Invalid status'],
+      ['review_type', 'changes', 'Invalid review type'],
+    ])('and the %s filter is not a valid one', (param, value, error) => {
+      let baseUrl: string
+      beforeEach(() => {
+        baseUrl = '/addresses'
+        url = `${baseUrl}?${param}=${value}`
+      })
+      it('should respond with a 400', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body.error).toEqual(error)
+            expect(Collection.findAll).not.toHaveBeenCalled()
+          })
+      })
     })
 
     describe('and sending pagination params', () => {

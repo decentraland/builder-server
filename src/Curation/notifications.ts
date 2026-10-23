@@ -5,8 +5,7 @@ import { isCommitteeMember } from '../Committee/utils'
 import { CollectionAttributes } from '../Collection/Collection.types'
 import { peerAPI } from '../ethereum/api/peer'
 import {
-  getLegacyItemEditorUrl,
-  getStandardItemEditorUrl,
+  getItemEditorUrl,
   shortenAddress,
 } from '../Forum/utils'
 import { escapeSlackText, sendSlackMessage } from '../Slack'
@@ -151,9 +150,7 @@ async function notify(
 }
 
 function link(collection: CollectionAttributes): string {
-  const url = isTPCollection(collection)
-    ? getLegacyItemEditorUrl({ collectionId: collection.id })
-    : getStandardItemEditorUrl({ collectionId: collection.id })
+  const url = getItemEditorUrl({ collectionId: collection.id })
   return `<${url}|${escapeSlackText(collection.name)}>`
 }
 

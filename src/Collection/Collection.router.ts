@@ -68,6 +68,7 @@ import {
 import { upsertCollectionSchema, saveTOSSchema } from './Collection.schema'
 import { canSeeCollection, hasPublicAccess } from './access'
 import {
+  toOnChainApprovals,
   toFullCollection,
   toPublicCollection,
   toPublicCollectionDetail,
@@ -193,6 +194,7 @@ function toRemoteSets(remoteCollections: CollectionFragment[]) {
     remoteIds: remoteCollections.map((remoteCollection) => remoteCollection.id),
     approvedRemoteIds,
     reviewedRemoteIds,
+    onChainApprovals: toOnChainApprovals(remoteCollections),
   }
 }
 

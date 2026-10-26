@@ -12,6 +12,9 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
 import { ItemCuration } from '../Curation/ItemCuration'
+import { OnChainApproval } from '../Curation/CollectionCuration'
+import { CollectionFragment } from '../ethereum/api/fragments'
+import { fromUnixTimestamp } from '../utils/parse'
 import {
   decodeTPCollectionURN,
   getDecentralandCollectionURN,
@@ -131,6 +134,35 @@ export function toDBCollection(
  * For standard collections, the remote collection will be fetched from thegraph, if it's not present it'll throw.
  * For TP collections, the remote collection is fetched from the Catalyst, if it's not present it'll throw
  */
+/** The approvals the latest collection requests are read against: the collections approved on chain, with when. */
+export function toOnChainApprovals(
+  remoteCollections: CollectionFragment[]
+): OnChainApproval[] {
+  return remoteCollections
+    .filter((remoteCollection) => remoteCollection.isApproved)
+    .map((remoteCollection) => ({
+      contractAddress: remoteCollection.id,
+      reviewedAt: fromUnixTimestamp(remoteCollection.reviewedAt),
+    }))
+}
+
+/** Same as `toOnChainApprovals` for one merged collection; a third-party collection has no on-chain approval. */
+export function toCollectionApprovals(
+  collection: CollectionAttributes
+): OnChainApproval[] {
+  return !isTPCollection(collection) &&
+    collection.is_approved &&
+    collection.contract_address &&
+    collection.reviewed_at
+    ? [
+        {
+          contractAddress: collection.contract_address,
+          reviewedAt: collection.reviewed_at,
+        },
+      ]
+    : []
+}
+
 export async function getMergedCollection(
   dbCollection: CollectionAttributes
 ): Promise<CollectionAttributes> {

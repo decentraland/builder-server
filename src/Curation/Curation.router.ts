@@ -19,6 +19,7 @@ import {
   NonExistentCollectionError,
   UnpublishedCollectionError,
 } from '../Collection/Collection.errors'
+import { toCollectionApprovals, toOnChainApprovals } from '../Collection/utils'
 import { createAssigneeEventPost, getPost } from '../Forum'
 import {
   CurationStatus,
@@ -132,7 +133,9 @@ export class CurationRouter extends Router {
     const curationService = CurationService.byType(CurationType.COLLECTION)
 
     if (await isCommitteeMember(ethAddress)) {
-      return curationService.getLatest()
+      // Every collection on chain, as the committee listing reads it; only the approved ones matter here.
+      const remoteCollections = await collectionAPI.fetchCollections({})
+      return curationService.getLatest(toOnChainApprovals(remoteCollections))
     }
 
     const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
@@ -152,7 +155,10 @@ export class CurationRouter extends Router {
       .concat(dbTPCollections)
       .map((collection) => collection.id)
 
-    return curationService.getLatestByIds(collectionIds)
+    return curationService.getLatestByIds(
+      collectionIds,
+      toOnChainApprovals(remoteCollections)
+    )
   }
 
   getCollectionCuration = async (req: AuthRequest) => {
@@ -160,13 +166,16 @@ export class CurationRouter extends Router {
     const ethAddress = req.auth.ethAddress
     const curationService = CurationService.byType(CurationType.COLLECTION)
 
-    await this.validateAccessToCuration(
+    const collection = await this.validateAccessToCuration(
       curationService,
       ethAddress,
       collectionId
     )
 
-    return curationService.getLatestById(collectionId)
+    return curationService.getLatestById(
+      collectionId,
+      toCollectionApprovals(collection)
+    )
   }
 
   getCollectionItemCurations = async (req: AuthRequest) => {
@@ -495,8 +504,15 @@ export class CurationRouter extends Router {
     curationJSON?: Partial<CollectionCurationAttributes>
   ) => {
     const curationService = CurationService.byType(type)
-    await this.validateAccessToCuration(curationService, ethAddress, id)
-    const curation = await curationService.getLatestById(id)
+    const collection = await this.validateAccessToCuration(
+      curationService,
+      ethAddress,
+      id
+    )
+    const curation = await curationService.getLatestById(
+      id,
+      toCollectionApprovals(collection)
+    )
 
     if (!curation && type === CurationType.ITEM) {
       throw new HTTPError(
@@ -604,14 +620,15 @@ export class CurationRouter extends Router {
     await itemService.updateDCLItemsContent(collectionId)
   }
 
+  /** Rejects when the address can't see the collection (or the item's); resolves with the merged collection. */
   private validateAccessToCuration = async (
     service: CurationService<any>,
     ethAddress: string,
     id: string
-  ) => {
-    let hasAccess: boolean
+  ): Promise<CollectionAttributes> => {
+    let collection: CollectionAttributes
     try {
-      hasAccess = await service.hasAccess(id, ethAddress)
+      collection = await service.getMergedCollection(id)
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
@@ -629,12 +646,13 @@ export class CurationRouter extends Router {
       throw error
     }
 
-    if (!hasAccess) {
+    if (!(await service.hasAccess(id, ethAddress, collection))) {
       throw new HTTPError(
         'Unauthorized',
         { id, ethAddress },
         STATUS_CODES.unauthorized
       )
     }
+    return collection
   }
 }

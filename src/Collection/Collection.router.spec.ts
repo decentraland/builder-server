@@ -1116,6 +1116,7 @@ describe('Collection router', () => {
                 remoteIds: [],
                 approvedRemoteIds: [],
                 reviewedRemoteIds: [],
+                onChainApprovals: [],
               })
             })
         })
@@ -1183,6 +1184,7 @@ describe('Collection router', () => {
                 remoteIds: [],
                 approvedRemoteIds: [],
                 reviewedRemoteIds: [],
+                onChainApprovals: [],
                 itemTags: undefined,
               })
             })
@@ -1254,6 +1256,7 @@ describe('Collection router', () => {
                 remoteIds: [],
                 approvedRemoteIds: [],
                 reviewedRemoteIds: [],
+                onChainApprovals: [],
                 itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
               })
             })
@@ -1345,6 +1348,7 @@ describe('Collection router', () => {
                 remoteIds: [],
                 approvedRemoteIds: [],
                 reviewedRemoteIds: [],
+                onChainApprovals: [],
               })
             })
         })
@@ -1410,6 +1414,9 @@ describe('Collection router', () => {
                   remoteIds: ['approved', 'reviewed', 'new'],
                   approvedRemoteIds: ['approved'],
                   reviewedRemoteIds: ['reviewed'],
+                  onChainApprovals: [
+                    { contractAddress: 'approved', reviewedAt: new Date(2000) },
+                  ],
                 })
               )
             })
@@ -1551,6 +1558,7 @@ describe('Collection router', () => {
                 remoteIds: [],
                 approvedRemoteIds: [],
                 reviewedRemoteIds: [],
+                onChainApprovals: [],
                 itemTags: undefined,
               })
             })
@@ -1622,6 +1630,7 @@ describe('Collection router', () => {
                 remoteIds: [],
                 approvedRemoteIds: [],
                 reviewedRemoteIds: [],
+                onChainApprovals: [],
                 itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
               })
             })
@@ -1736,6 +1745,7 @@ describe('Collection router', () => {
               remoteIds: [],
               approvedRemoteIds: [],
               reviewedRemoteIds: [],
+              onChainApprovals: [],
             })
           })
       })
@@ -1774,6 +1784,7 @@ describe('Collection router', () => {
               remoteIds: [],
               approvedRemoteIds: [],
               reviewedRemoteIds: [],
+              onChainApprovals: [],
             })
             expect(Collection.countByStatus).not.toHaveBeenCalled()
             expect(response.body).toEqual({
@@ -1842,6 +1853,7 @@ describe('Collection router', () => {
               remoteIds: [],
               approvedRemoteIds: [],
               reviewedRemoteIds: [],
+              onChainApprovals: [],
               q: 'text',
               isPublished: undefined,
             }
@@ -1974,6 +1986,12 @@ describe('Collection router', () => {
                   ],
                   approvedRemoteIds: [approvedRemoteCollection.id],
                   reviewedRemoteIds: [reviewedRemoteCollection.id],
+                  onChainApprovals: [
+                    {
+                      contractAddress: approvedRemoteCollection.id,
+                      reviewedAt: new Date(200_000),
+                    },
+                  ],
                   isPublished: undefined,
                 })
               })
@@ -3878,6 +3896,7 @@ describe('Collection router', () => {
               remoteIds: [],
               approvedRemoteIds: [],
               reviewedRemoteIds: [],
+              onChainApprovals: [],
               itemTags: undefined,
             })
           })
@@ -3939,6 +3958,7 @@ describe('Collection router', () => {
               remoteIds: [],
               approvedRemoteIds: [],
               reviewedRemoteIds: [],
+              onChainApprovals: [],
               type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase()],
             })
@@ -4003,6 +4023,7 @@ describe('Collection router', () => {
               remoteIds: [],
               approvedRemoteIds: [],
               reviewedRemoteIds: [],
+              onChainApprovals: [],
               type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
             })

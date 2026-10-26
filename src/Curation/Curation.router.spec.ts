@@ -46,6 +46,9 @@ describe('when handling a request', () => {
     hasAccess: boolean
   ) {
     const service = mockService(CurationModel)
+    jest
+      .spyOn(service, 'getMergedCollection')
+      .mockResolvedValueOnce({ ...dbCollectionMock })
     jest.spyOn(service, 'hasAccess').mockResolvedValueOnce(hasAccess)
     return service
   }
@@ -76,7 +79,11 @@ describe('when handling a request', () => {
         mockIsCommitteeMember.mockResolvedValueOnce(true)
       })
 
-      it('should resolve with the collections provided by Curation.getLatest', async () => {
+      it('should resolve with the latest requests, read against the collections approved on chain', async () => {
+        jest.spyOn(collectionAPI, 'fetchCollections').mockResolvedValueOnce([
+          { id: 'approved', isApproved: true, reviewedAt: '2' },
+          { id: 'new', isApproved: false, reviewedAt: '1' },
+        ] as any)
         const getAllLatestSpy = jest
           .spyOn(service, 'getLatest')
           .mockResolvedValueOnce([])
@@ -87,7 +94,9 @@ describe('when handling a request', () => {
 
         await router.getCollectionCurations(req)
 
-        expect(getAllLatestSpy).toHaveBeenCalled()
+        expect(getAllLatestSpy).toHaveBeenCalledWith([
+          { contractAddress: 'approved', reviewedAt: new Date(2000) },
+        ])
       })
     })
 
@@ -146,12 +155,15 @@ describe('when handling a request', () => {
           'thirdPartyRecordId',
         ])
 
-        expect(getLatestByIdsCollectionsSpy).toHaveBeenCalledWith([
-          'collectionId1',
-          'collectionId2',
-          'tpCollectionId1',
-          'tpCollectionId2',
-        ])
+        expect(getLatestByIdsCollectionsSpy).toHaveBeenCalledWith(
+          [
+            'collectionId1',
+            'collectionId2',
+            'tpCollectionId1',
+            'tpCollectionId2',
+          ],
+          []
+        )
       })
     })
   })
@@ -226,13 +238,29 @@ describe('when handling a request', () => {
     })
 
     describe('when everything is correct', () => {
+      let getLatestByIdSpy: jest.SpyInstance
+
       beforeEach(() => {
-        service = mockServiceWithAccess(CollectionCuration, true)
-        jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({})
+        service = mockService(CollectionCuration)
+        jest.spyOn(service, 'getMergedCollection').mockResolvedValueOnce({
+          ...dbCollectionMock,
+          is_approved: true,
+          reviewed_at: new Date(2000),
+        })
+        jest.spyOn(service, 'hasAccess').mockResolvedValueOnce(true)
+        getLatestByIdSpy = jest
+          .spyOn(service, 'getLatestById')
+          .mockResolvedValueOnce({})
       })
 
-      it('should resolve with the expected curation', async () => {
+      it('should resolve with the latest request, read against the collection approval on chain', async () => {
         expect(await router.getCollectionCuration(req)).toEqual({})
+        expect(getLatestByIdSpy).toHaveBeenCalledWith('collectionId', [
+          {
+            contractAddress: dbCollectionMock.contract_address,
+            reviewedAt: new Date(2000),
+          },
+        ])
       })
     })
   })

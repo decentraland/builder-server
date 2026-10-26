@@ -129,11 +129,6 @@ export function toDBCollection(
   }
 }
 
-/**
- * Will return a collection by merging the collection present in the database and the remote counterpart.
- * For standard collections, the remote collection will be fetched from thegraph, if it's not present it'll throw.
- * For TP collections, the remote collection is fetched from the Catalyst, if it's not present it'll throw
- */
 /** The approvals the latest collection requests are read against: the collections approved on chain, with when. */
 export function toOnChainApprovals(
   remoteCollections: CollectionFragment[]
@@ -163,6 +158,11 @@ export function toCollectionApprovals(
     : []
 }
 
+/**
+ * Will return a collection by merging the collection present in the database and the remote counterpart.
+ * For standard collections, the remote collection will be fetched from thegraph, if it's not present it'll throw.
+ * For TP collections, the remote collection is fetched from the Catalyst, if it's not present it'll throw
+ */
 export async function getMergedCollection(
   dbCollection: CollectionAttributes
 ): Promise<CollectionAttributes> {

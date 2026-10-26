@@ -1,6 +1,7 @@
 import { server } from 'decentraland-server'
 import { v4 as uuid } from 'uuid'
 import { Router } from '../common/Router'
+import { createConsoleLogComponent } from '@well-known-components/logger'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { withAuthentication, AuthRequest } from '../middleware'
 import { isCommitteeMember } from '../Committee'
@@ -38,6 +39,8 @@ import { AutoCurationService } from './AutoCuration.service'
 const validator = getValidator()
 
 const MAX_FORUM_POST_LENGTH = 10000
+
+const logger = createConsoleLogComponent().getLogger('Curation')
 
 export class CurationRouter extends Router {
   public collectionService = new CollectionService()
@@ -133,9 +136,20 @@ export class CurationRouter extends Router {
     const curationService = CurationService.byType(CurationType.COLLECTION)
 
     if (await isCommitteeMember(ethAddress)) {
-      // Every collection on chain, as the committee listing reads it; only the approved ones matter here.
-      const remoteCollections = await collectionAPI.fetchCollections({})
-      return curationService.getLatest(toOnChainApprovals(remoteCollections))
+      // Every collection on chain, as the committee listing reads it. Without the chain the stored
+      // statuses are served rather than failing the whole list.
+      const approvals = await collectionAPI
+        .fetchCollections({})
+        .then(toOnChainApprovals)
+        .catch((error) => {
+          logger.error(
+            `Could not fetch the on-chain approvals for the curations list: ${
+              error instanceof Error ? error.message : String(error)
+            }`
+          )
+          return []
+        })
+      return curationService.getLatest(approvals)
     }
 
     const remoteCollections = await collectionAPI.fetchCollectionsByAuthorizedUser(
@@ -409,6 +423,7 @@ export class CurationRouter extends Router {
       )
     }
 
+    // The stored status, not the derived one: a request that already reads as approved is closed for real here.
     const curation = await curationService.getLatestById(id)
 
     if (!curation) {
@@ -511,7 +526,7 @@ export class CurationRouter extends Router {
     )
     const curation = await curationService.getLatestById(
       id,
-      toCollectionApprovals(collection)
+      type === CurationType.COLLECTION ? toCollectionApprovals(collection) : []
     )
 
     if (!curation && type === CurationType.ITEM) {

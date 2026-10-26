@@ -105,9 +105,9 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'collection_curations.assignee is NULL AND (((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND ((collection_curations.status = $1 OR collection_curations.id is NULL) OR EXISTS (SELECT 1 FROM item_curations pending_item_curations JOIN items pending_items ON pending_items.id = pending_item_curations.item_id WHERE pending_items.collection_id = collections.id AND pending_item_curations.status = $2))) OR (collections.third_party_id is NULL AND collections.urn_suffix is NULL AND COALESCE(collections.contract_address = ANY($3), false) AND (collection_curations.status = $4 OR (collection_curations.id is NULL AND NOT COALESCE(collections.contract_address = ANY($5), false) AND NOT COALESCE(collections.contract_address = ANY($6), false)))))'
+          'collection_curations.assignee is NULL AND (((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND ((collection_curations.status = $5 OR collection_curations.id is NULL) OR EXISTS (SELECT 1 FROM item_curations pending_item_curations JOIN items pending_items ON pending_items.id = pending_item_curations.item_id WHERE pending_items.collection_id = collections.id AND pending_item_curations.status = $6))) OR (collections.third_party_id is NULL AND collections.urn_suffix is NULL AND COALESCE(collections.contract_address = ANY($7), false) AND (collection_curations.status = $8 OR (collection_curations.id is NULL AND NOT COALESCE(collections.contract_address = ANY($9), false) AND NOT COALESCE(collections.contract_address = ANY($10), false)))))'
         )
-        expect(lastQuery().values.slice(0, 6)).toEqual([
+        expect(lastQuery().values.slice(4, 10)).toEqual([
           CurationStatusFilter.PENDING,
           CurationStatusFilter.PENDING,
           remoteSets.remoteIds,
@@ -125,7 +125,7 @@ describe('Collection model', () => {
 
         // A third-party publish keeps the collection's request and opens pending item requests instead.
         expect(normalize(lastQuery().text)).toMatch(
-          /urn_suffix is NOT NULL\) AND \(\(collection_curations.status = \$1 OR collection_curations.id is NULL\) OR EXISTS \(SELECT 1 FROM item_curations/
+          /urn_suffix is NOT NULL\) AND \(\(collection_curations.status = \$5 OR collection_curations.id is NULL\) OR EXISTS \(SELECT 1 FROM item_curations/
         )
       })
     })
@@ -138,7 +138,7 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE (((collection_curations.assignee is NOT NULL AND (collection_curations.status = $1 OR ((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND EXISTS (SELECT 1 FROM item_curations'
+          'WHERE (((collection_curations.assignee is NOT NULL AND (collection_curations.status = $5 OR ((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND EXISTS (SELECT 1 FROM item_curations'
         )
       })
     })
@@ -151,9 +151,9 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE (((collection_curations.status = $1 AND (COALESCE(collections.contract_address = ANY($2), false) OR (collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL)))))'
+          'WHERE (((collection_curations.status = $5 AND (COALESCE(collections.contract_address = ANY($6), false) OR (collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL)))))'
         )
-        expect(lastQuery().values[0]).toEqual(CurationStatusFilter.REJECTED)
+        expect(lastQuery().values[4]).toEqual(CurationStatusFilter.REJECTED)
       })
     })
 
@@ -165,7 +165,7 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE ((((COALESCE(collections.contract_address = ANY($1), false) AND NOT COALESCE(collections.contract_address = ANY($2), false)) AND (collection_curations.status = $3 OR (collection_curations.id is NULL AND COALESCE(collections.contract_address = ANY($4), false))))))'
+          'WHERE ((((COALESCE(collections.contract_address = ANY($5), false) AND NOT COALESCE(collections.contract_address = ANY($6), false)) AND (collection_curations.status = $7 OR (collection_curations.id is NULL AND COALESCE(collections.contract_address = ANY($8), false))))))'
         )
       })
     })
@@ -175,9 +175,9 @@ describe('Collection model', () => {
         await Collection.findAll({ ...remoteSets, assignees: ['0xa', '0xb'] })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE ((collection_curations.assignee = ANY($1)))'
+          'WHERE ((collection_curations.assignee = ANY($5)))'
         )
-        expect(lastQuery().values[0]).toEqual(['0xa', '0xb'])
+        expect(lastQuery().values[4]).toEqual(['0xa', '0xb'])
       })
 
       it('should match the unassigned collections too when asked', async () => {
@@ -187,9 +187,9 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE ((collection_curations.assignee = ANY($1) OR collection_curations.assignee is NULL))'
+          'WHERE ((collection_curations.assignee = ANY($5) OR collection_curations.assignee is NULL))'
         )
-        expect(lastQuery().values[0]).toEqual(['0xa'])
+        expect(lastQuery().values[4]).toEqual(['0xa'])
       })
 
       it('should match only the unassigned collections when that is the only assignee', async () => {
@@ -213,9 +213,9 @@ describe('Collection model', () => {
 
         // COALESCE: a NULL contract address (third-party, unpublished) must read as false, not NULL, on both sides.
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE ((COALESCE(collections.contract_address = ANY($1), false) OR COALESCE(collections.contract_address = ANY($2), false)))'
+          'WHERE ((COALESCE(collections.contract_address = ANY($5), false) OR COALESCE(collections.contract_address = ANY($6), false)))'
         )
-        expect(lastQuery().values.slice(0, 2)).toEqual([
+        expect(lastQuery().values.slice(4, 6)).toEqual([
           remoteSets.approvedRemoteIds,
           remoteSets.reviewedRemoteIds,
         ])
@@ -228,7 +228,7 @@ describe('Collection model', () => {
         })
 
         expect(normalize(lastQuery().text)).toContain(
-          'WHERE (NOT (COALESCE(collections.contract_address = ANY($1), false) OR COALESCE(collections.contract_address = ANY($2), false)))'
+          'WHERE (NOT (COALESCE(collections.contract_address = ANY($5), false) OR COALESCE(collections.contract_address = ANY($6), false)))'
         )
       })
     })
@@ -297,7 +297,7 @@ describe('Collection model', () => {
       // The newest pending item request wins, then the newest item request of any status (third-party publishes
       // reuse the collection's request), then the collection's request, then its creation.
       expect(normalize(lastQuery().text)).toContain(
-        `ORDER BY COALESCE((SELECT MAX(item_curations.created_at) FROM item_curations item_curations JOIN items items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id AND item_curations.status = $1), (SELECT MAX(item_curations.created_at) FROM item_curations item_curations JOIN items items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id), collection_curations.created_at, collections.created_at) ${direction}, collections.id`
+        `ORDER BY COALESCE((SELECT MAX(item_curations.created_at) FROM item_curations item_curations JOIN items items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id AND item_curations.status = $5), (SELECT MAX(item_curations.created_at) FROM item_curations item_curations JOIN items items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id), collection_curations.created_at, collections.created_at) ${direction}, collections.id`
       )
     })
   })

@@ -9,6 +9,21 @@ export type OnChainApproval = {
   reviewedAt: Date
 }
 
+// Every column but `status`, which `getLatestStatement` replaces. Typed so a new column fails to compile until it is listed.
+const columns: Record<
+  Exclude<keyof CollectionCurationAttributes, 'status'>,
+  true
+> = {
+  id: true,
+  collection_id: true,
+  assignee: true,
+  created_at: true,
+  updated_at: true,
+}
+const storedColumns = Object.keys(columns)
+  .map((column) => `cc.${column}`)
+  .join(', ')
+
 export class CollectionCuration extends Model<CollectionCurationAttributes> {
   static tableName = 'collection_curations'
   static type = CurationType.COLLECTION
@@ -16,21 +31,15 @@ export class CollectionCuration extends Model<CollectionCurationAttributes> {
   /**
    * The latest request of every collection, as a table aliased `collection_curations`. A pending request
    * older than the collection's on-chain approval was superseded by it (the legacy builder approves on chain
-   * without closing the request it was reviewing), so it reads as approved. The columns are spelled out
-   * because `status` is replaced: keep them in sync with the table.
+   * without closing the request it was reviewing), so it reads as approved.
    */
   static getLatestStatement(approvals: OnChainApproval[]) {
-    if (!approvals.length) {
-      return SQL`(SELECT DISTINCT ON (cc.collection_id) cc.* FROM ${raw(
-        CollectionCuration.tableName
-      )} cc ORDER BY cc.collection_id, cc.created_at DESC) collection_curations`
-    }
     const addresses = approvals.map((approval) => approval.contractAddress)
     const reviewedAts = approvals.map((approval) => approval.reviewedAt)
     // created_at is a timestamp without time zone written in UTC, so the approval is read in UTC too.
     return SQL`(
       SELECT DISTINCT ON (cc.collection_id)
-        cc.id, cc.collection_id, cc.assignee, cc.created_at, cc.updated_at,
+        ${raw(storedColumns)},
         CASE WHEN cc.status = ${CurationStatus.PENDING}
           AND cc.created_at < (approvals.reviewed_at AT TIME ZONE 'UTC')
           THEN ${

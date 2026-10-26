@@ -9,11 +9,12 @@ describe('CollectionCuration model', () => {
     describe('without on-chain approvals', () => {
       it('should take the newest request of every collection as it is stored', () => {
         const statement = CollectionCuration.getLatestStatement([])
+        const text = normalize(statement.text)
 
-        expect(normalize(statement.text)).toEqual(
-          '(SELECT DISTINCT ON (cc.collection_id) cc.* FROM collection_curations cc ORDER BY cc.collection_id, cc.created_at DESC) collection_curations'
+        expect(text).toContain(
+          'SELECT DISTINCT ON (cc.collection_id) cc.id, cc.collection_id, cc.assignee, cc.created_at, cc.updated_at, CASE WHEN'
         )
-        expect(statement.values).toEqual([])
+        expect(statement.values).toEqual(['pending', 'approved', [], []])
       })
     })
 

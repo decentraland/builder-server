@@ -180,21 +180,21 @@ function getReviewFilters(query: Request['query']): ReviewFilters {
 
 /** The on-chain sets the review filters and MOST_RELEVANT read: every collection, the approved ones, and the reviewed but not approved ones. */
 function toRemoteSets(remoteCollections: CollectionFragment[]) {
-  const approvedRemoteIds: string[] = []
-  const reviewedRemoteIds: string[] = []
-  for (const remoteCollection of remoteCollections) {
-    if (remoteCollection.isApproved) {
-      approvedRemoteIds.push(remoteCollection.id)
-    } else if (remoteCollection.reviewedAt !== remoteCollection.createdAt) {
-      // The graph stamps reviewedAt with createdAt on creation and moves it on every setApproved and rescueItems.
-      reviewedRemoteIds.push(remoteCollection.id)
-    }
-  }
+  const onChainApprovals = toOnChainApprovals(remoteCollections)
   return {
     remoteIds: remoteCollections.map((remoteCollection) => remoteCollection.id),
-    approvedRemoteIds,
-    reviewedRemoteIds,
-    onChainApprovals: toOnChainApprovals(remoteCollections),
+    approvedRemoteIds: onChainApprovals.map(
+      (approval) => approval.contractAddress
+    ),
+    // The graph stamps reviewedAt with createdAt on creation and moves it on every setApproved and rescueItems.
+    reviewedRemoteIds: remoteCollections
+      .filter(
+        (remoteCollection) =>
+          !remoteCollection.isApproved &&
+          remoteCollection.reviewedAt !== remoteCollection.createdAt
+      )
+      .map((remoteCollection) => remoteCollection.id),
+    onChainApprovals,
   }
 }
 

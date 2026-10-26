@@ -98,6 +98,23 @@ describe('when handling a request', () => {
           { contractAddress: 'approved', reviewedAt: new Date(2000) },
         ])
       })
+
+      it('should resolve with the stored statuses when the on-chain collections cannot be fetched', async () => {
+        jest
+          .spyOn(collectionAPI, 'fetchCollections')
+          .mockRejectedValueOnce(new Error('All providers failed to fetch'))
+        const getAllLatestSpy = jest
+          .spyOn(service, 'getLatest')
+          .mockResolvedValueOnce([])
+
+        const req = {
+          auth: { ethAddress: 'ethAddress' },
+        } as AuthRequest
+
+        await router.getCollectionCurations(req)
+
+        expect(getAllLatestSpy).toHaveBeenCalledWith([])
+      })
     })
 
     describe('when the caller does not belong to the committee', () => {
@@ -1267,6 +1284,44 @@ describe('when handling a request', () => {
             'There is already an ongoing review request'
           )
         })
+      })
+    })
+
+    describe('when the pending review of the collection reads as approved because the collection was approved on chain after it', () => {
+      let req: AuthRequest
+
+      beforeEach(() => {
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce({ ...dbCollectionMock })
+        jest
+          .spyOn(collectionAPI, 'fetchCollection')
+          .mockResolvedValueOnce({ ...collectionFragmentMock })
+        service = mockServiceWithAccess(CollectionCuration, true)
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockResolvedValueOnce({ status: CurationStatus.APPROVED } as any)
+
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+        } as any
+      })
+
+      it('should open a new review request', async () => {
+        const createSpy = jest
+          .spyOn(CollectionCuration, 'create')
+          .mockResolvedValueOnce({ status: CurationStatus.PENDING } as any)
+
+        expect(await router.insertCollectionCuration(req)).toEqual({
+          status: CurationStatus.PENDING,
+        })
+        expect(createSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            collection_id: 'some id',
+            status: CurationStatus.PENDING,
+          })
+        )
       })
     })
 

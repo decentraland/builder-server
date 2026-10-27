@@ -7,9 +7,6 @@ import {
 import { wallet } from '../../spec/mocks/wallet'
 import { ThirdPartyService } from '../ThirdParty/ThirdParty.service'
 import { ItemCuration } from '../Curation/ItemCuration'
-import { Item } from '../Item/Item.model'
-import { collectionAPI } from '../ethereum/api/collection'
-import { Bridge } from '../ethereum/api/Bridge'
 import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { Collection } from './Collection.model'
 import { CollectionService } from './Collection.service'
@@ -17,6 +14,9 @@ import { CollectionAttributes, FullCollection } from './Collection.types'
 import { UnauthorizedCollectionEditError } from './Collection.errors'
 import { toFullCollection } from './utils'
 import { isCommitteeMember } from '../Committee'
+import { collectionAPI } from '../ethereum/api/collection'
+import { Bridge } from '../ethereum/api/Bridge'
+import { Item } from '../Item/Item.model'
 
 jest.mock('./Collection.model')
 jest.mock('../Item/Item.model')
@@ -135,6 +135,25 @@ describe('Collection service', () => {
         })
       })
 
+      describe('and the address became the owner on-chain but is not stored as such yet', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbCollectionMock
+          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(false)
+          jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+            ...collectionFragmentMock,
+            creator: otherAddress,
+          })
+        })
+
+        it('should return true', async () => {
+          expect(
+            await service.canSyncPublication(dbCollectionMock.id, otherAddress)
+          ).toBe(true)
+        })
+      })
+
       describe('and the address is neither the owner, a manager nor a committee member', () => {
         beforeEach(() => {
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
@@ -194,6 +213,196 @@ describe('Collection service', () => {
             )
           ).toBe(true)
         })
+      })
+    })
+  })
+
+  describe('when syncing the owner of a collection from chain', () => {
+    const newOwner = '0x00000000000000000000000000000000000000AA'
+    let collection: CollectionAttributes
+
+    beforeEach(() => {
+      collection = { ...dbCollectionMock }
+    })
+
+    describe('and the collection is not published', () => {
+      beforeEach(() => {
+        collection.contract_address = null
+        jest.spyOn(collectionAPI, 'fetchCollection')
+      })
+
+      it('should return the collection untouched', async () => {
+        await expect(service.syncOwnerFromChain(collection)).resolves.toBe(
+          collection
+        )
+        expect(collectionAPI.fetchCollection).not.toHaveBeenCalled()
+        expect(Collection.update).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the subgraph does not know the collection yet', () => {
+      beforeEach(() => {
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
+      })
+
+      it('should return the collection untouched', async () => {
+        await expect(service.syncOwnerFromChain(collection)).resolves.toBe(
+          collection
+        )
+        expect(Collection.update).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the on-chain creator is the stored owner', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(collectionAPI, 'fetchCollection')
+          .mockResolvedValueOnce(collectionFragmentMock)
+      })
+
+      it('should return the merged collection without touching the database', async () => {
+        await expect(service.syncOwnerFromChain(collection)).resolves.toEqual(
+          Bridge.mergeCollection(dbCollectionMock, collectionFragmentMock)
+        )
+        expect(Collection.update).not.toHaveBeenCalled()
+        expect(Item.update).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the ownership was transferred on-chain', () => {
+      beforeEach(() => {
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+          ...collectionFragmentMock,
+          creator: newOwner,
+        })
+      })
+
+      it('should store the new owner, lowercased, on the collection and its items', async () => {
+        await service.syncOwnerFromChain(collection)
+        expect(Item.update).toHaveBeenCalledWith(
+          { eth_address: newOwner.toLowerCase() },
+          { collection_id: collection.id }
+        )
+        expect(Collection.update).toHaveBeenCalledWith(
+          { eth_address: newOwner.toLowerCase() },
+          { id: collection.id }
+        )
+      })
+
+      it('should return the collection owned by the new owner', () => {
+        return expect(service.syncOwnerFromChain(collection)).resolves.toEqual(
+          expect.objectContaining({ eth_address: newOwner })
+        )
+      })
+
+      describe('and storing the new owner of the items fails', () => {
+        beforeEach(() => {
+          ;(Item.update as jest.Mock).mockRejectedValueOnce(
+            new Error('timeout')
+          )
+        })
+
+        it('should throw and leave the collection on the previous owner, so the next sync retries', async () => {
+          await expect(service.syncOwnerFromChain(collection)).rejects.toThrow(
+            'timeout'
+          )
+          expect(Collection.update).not.toHaveBeenCalled()
+        })
+      })
+    })
+  })
+
+  describe('when checking if an address owns or manages a collection', () => {
+    const newOwner = '0x00000000000000000000000000000000000000aa'
+
+    describe('and the collection does not exist', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(undefined)
+      })
+
+      it('should return false', () => {
+        return expect(
+          service.isOwnedOrManagedBy(dbCollectionMock.id, wallet.address)
+        ).resolves.toBe(false)
+      })
+    })
+
+    describe('and the collection is a third party collection', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbTPCollectionMock
+        )
+        ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
+      })
+
+      it('should answer with whether the address manages the third party', () => {
+        return expect(
+          service.isOwnedOrManagedBy(dbTPCollectionMock.id, wallet.address)
+        ).resolves.toBe(true)
+      })
+    })
+
+    describe('and the collection was transferred on-chain to the address', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+          ...dbCollectionMock,
+        })
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+          ...collectionFragmentMock,
+          creator: newOwner,
+        })
+      })
+
+      it('should allow the new owner and store it', async () => {
+        await expect(
+          service.isOwnedOrManagedBy(dbCollectionMock.id, newOwner)
+        ).resolves.toBe(true)
+        expect(Collection.update).toHaveBeenCalledWith(
+          { eth_address: newOwner },
+          { id: dbCollectionMock.id }
+        )
+      })
+    })
+
+    describe('and the collection was transferred on-chain away from the address', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+          ...dbCollectionMock,
+        })
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+          ...collectionFragmentMock,
+          creator: newOwner,
+        })
+      })
+
+      it('should refuse the previous owner', () => {
+        return expect(
+          service.isOwnedOrManagedBy(
+            dbCollectionMock.id,
+            dbCollectionMock.eth_address
+          )
+        ).resolves.toBe(false)
+      })
+    })
+
+    describe('and the subgraph cannot be reached', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbCollectionMock
+        )
+        jest
+          .spyOn(collectionAPI, 'fetchCollection')
+          .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+        jest.spyOn(console, 'error').mockImplementation(() => undefined)
+      })
+
+      it('should fall back to the stored owner', () => {
+        return expect(
+          service.isOwnedOrManagedBy(
+            dbCollectionMock.id,
+            dbCollectionMock.eth_address
+          )
+        ).resolves.toBe(true)
       })
     })
   })
@@ -341,82 +550,6 @@ describe('Collection service', () => {
         })
       })
     })
-
-    describe('and the collection is a standard collection', () => {
-      const newOwner = '0x00000000000000000000000000000000000000AA'
-
-      beforeEach(() => {
-        collection = { ...dbCollectionMock }
-        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([collection])
-        ;(Collection.update as jest.Mock).mockResolvedValueOnce(undefined)
-        ;(Item.update as jest.Mock).mockResolvedValueOnce(undefined)
-      })
-
-      describe('and the on-chain creator is the stored owner', () => {
-        beforeEach(() => {
-          jest
-            .spyOn(collectionAPI, 'fetchCollection')
-            .mockResolvedValueOnce({ ...collectionFragmentMock })
-        })
-
-        it('should return the merged collection without touching the database', async () => {
-          await expect(service.getCollection(collection.id)).resolves.toEqual(
-            Bridge.mergeCollection(dbCollectionMock, collectionFragmentMock)
-          )
-          expect(Collection.update).not.toHaveBeenCalled()
-          expect(Item.update).not.toHaveBeenCalled()
-        })
-      })
-
-      describe('and the ownership was transferred on-chain', () => {
-        beforeEach(() => {
-          jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
-            ...collectionFragmentMock,
-            creator: newOwner,
-          })
-        })
-
-        it('should store the new owner, lowercased, on the collection and its items', async () => {
-          await service.getCollection(collection.id)
-          expect(Collection.update).toHaveBeenCalledWith(
-            { eth_address: newOwner.toLowerCase() },
-            { id: collection.id }
-          )
-          expect(Item.update).toHaveBeenCalledWith(
-            { eth_address: newOwner.toLowerCase() },
-            { collection_id: collection.id }
-          )
-        })
-
-        it('should return the collection owned by the new owner', () => {
-          return expect(service.getCollection(collection.id)).resolves.toEqual(
-            expect.objectContaining({ eth_address: newOwner })
-          )
-        })
-      })
-
-      describe('and storing the new owner of the items fails', () => {
-        beforeEach(() => {
-          jest
-            .spyOn(collectionAPI, 'fetchCollection')
-            .mockResolvedValueOnce({
-              ...collectionFragmentMock,
-              creator: newOwner,
-            })
-          ;(Item.update as jest.Mock).mockReset()
-          ;(Item.update as jest.Mock).mockRejectedValueOnce(
-            new Error('timeout')
-          )
-        })
-
-        it('should leave the collection on the previous owner, so the next read retries, and still return the merged collection', async () => {
-          await expect(service.getCollection(collection.id)).resolves.toEqual(
-            expect.objectContaining({ eth_address: newOwner })
-          )
-          expect(Collection.update).not.toHaveBeenCalled()
-        })
-      })
-    })
   })
 
   describe('when getting all collections', () => {
@@ -454,59 +587,6 @@ describe('Collection service', () => {
           { ...collections[0], is_programmatic: false },
           { ...collections[1], is_programmatic: true },
         ])
-      })
-    })
-
-    describe('and a standard collection was transferred on-chain to the requesting address', () => {
-      const newOwner = '0x00000000000000000000000000000000000000aa'
-
-      beforeEach(() => {
-        collections = [{ ...dbCollectionMock }]
-        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce(collections)
-        ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
-          []
-        )
-        ;(Collection.update as jest.Mock).mockResolvedValueOnce(undefined)
-        ;(Item.update as jest.Mock).mockResolvedValueOnce(undefined)
-        jest.spyOn(collectionAPI, 'fetchCollections').mockResolvedValueOnce([
-          {
-            ...collectionFragmentMock,
-            id: dbCollectionMock.contract_address!,
-            creator: newOwner,
-          },
-        ])
-      })
-
-      it("should drop the collection from the previous owner's list and still store the new owner", async () => {
-        await expect(
-          service.getCollections(
-            { address: dbCollectionMock.eth_address },
-            dbCollectionMock.eth_address
-          )
-        ).resolves.toEqual([])
-        expect(Collection.update).toHaveBeenCalledWith(
-          { eth_address: newOwner },
-          { id: dbCollectionMock.id }
-        )
-      })
-
-      it('should keep the collection in the list and store the new owner', async () => {
-        await expect(
-          service.getCollections({ address: newOwner }, newOwner)
-        ).resolves.toEqual([
-          expect.objectContaining({
-            id: dbCollectionMock.id,
-            eth_address: newOwner,
-          }),
-        ])
-        expect(Collection.update).toHaveBeenCalledWith(
-          { eth_address: newOwner },
-          { id: dbCollectionMock.id }
-        )
-        expect(Item.update).toHaveBeenCalledWith(
-          { eth_address: newOwner },
-          { collection_id: dbCollectionMock.id }
-        )
       })
     })
   })

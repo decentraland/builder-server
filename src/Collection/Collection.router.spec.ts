@@ -2153,6 +2153,154 @@ describe('Collection router', () => {
     })
   })
 
+  describe('when syncing the owner of a collection from chain', () => {
+    const newOwner = '0x00000000000000000000000000000000000000aa'
+
+    beforeEach(() => {
+      url = `/collections/${dbCollection.id}/owner/sync`
+    })
+
+    describe('and the caller neither owns nor manages the collection', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Collection, dbCollection.id)
+        mockCollectionAuthorizationMiddleware(
+          dbCollection.id,
+          wallet.address,
+          false,
+          false
+        )
+      })
+
+      it('should respond with a 401', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(401)
+      })
+    })
+
+    describe('and the collection is a TP collection', () => {
+      beforeEach(() => {
+        url = `/collections/${dbTPCollection.id}/owner/sync`
+        mockExistsMiddleware(Collection, dbTPCollection.id)
+        mockCollectionAuthorizationMiddleware(
+          dbTPCollection.id,
+          wallet.address,
+          true
+        )
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbTPCollection,
+        ])
+      })
+
+      it('should respond with a 400', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: { id: dbTPCollection.id },
+              error: 'Third party collections have no on-chain owner',
+            })
+          })
+      })
+    })
+
+    describe('and the caller is the stored owner', () => {
+      beforeEach(() => {
+        mockExistsMiddleware(Collection, dbCollection.id)
+        mockCollectionAuthorizationMiddleware(dbCollection.id, wallet.address)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollection,
+        ])
+      })
+
+      describe('and the collection was transferred on-chain', () => {
+        beforeEach(() => {
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce({
+            ...collectionFragmentMock,
+            creator: newOwner,
+          })
+        })
+
+        it('should store the new owner on the collection and its items and respond with it', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: true,
+                data: expect.objectContaining({
+                  id: dbCollection.id,
+                  eth_address: newOwner,
+                }),
+              })
+              expect(Item.update).toHaveBeenCalledWith(
+                { eth_address: newOwner },
+                { collection_id: dbCollection.id }
+              )
+              expect(Collection.update).toHaveBeenCalledWith(
+                { eth_address: newOwner },
+                { id: dbCollection.id }
+              )
+            })
+        })
+      })
+
+      describe('and the subgraph has not indexed the transfer yet', () => {
+        beforeEach(() => {
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+            collectionFragmentMock
+          )
+        })
+
+        it('should respond with the current owner without touching the database', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .expect(200)
+            .then((response: any) => {
+              expect(response.body.data).toEqual(
+                expect.objectContaining({
+                  eth_address: dbCollection.eth_address,
+                })
+              )
+              expect(Collection.update).not.toHaveBeenCalled()
+            })
+        })
+      })
+
+      describe('and storing the new owner fails', () => {
+        beforeEach(() => {
+          ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce({
+            ...collectionFragmentMock,
+            creator: newOwner,
+          })
+          ;(Item.update as jest.Mock).mockRejectedValueOnce(
+            new Error('timeout')
+          )
+        })
+
+        it('should respond with a 500', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .expect(500)
+            .then((response: any) => {
+              expect(response.body).toEqual({
+                ok: false,
+                data: { id: dbCollection.id, error: 'timeout' },
+                error: "The collection owner couldn't be synced",
+              })
+            })
+        })
+      })
+    })
+  })
+
   describe('when deleting a collection', () => {
     describe('and the collection is a TP collection', () => {
       beforeEach(() => {
@@ -2305,7 +2453,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(collectionAPI.fetchCollection as jest.MockedFunction<
             typeof collectionAPI.fetchCollection
-          >).mockResolvedValueOnce({} as CollectionFragment)
+          >).mockResolvedValue(collectionFragmentMock)
         })
 
         it('should respond with a 409 and a message signaling that the collection is already published', () => {

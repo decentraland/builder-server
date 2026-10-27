@@ -238,6 +238,7 @@ export class CollectionRouter extends Router {
     this.router.options('/:address/collections', withCors)
     this.router.options('/collections/:id', withCors)
     this.router.options('/collections/:id/publish', withCors)
+    this.router.options('/collections/:id/owner/sync', withCors)
     this.router.options('/collections/:id/tos', withCors)
     this.router.options('/collections/:id/lock', withCors)
     this.router.options('/collections/:id/approvalData', withCors)
@@ -285,6 +286,19 @@ export class CollectionRouter extends Router {
       withCollectionExists,
       withPublishAuthorization,
       server.handleRequest(this.publishCollection)
+    )
+
+    /**
+     * Store the collection's on-chain owner after a `transferCreatorship`. The client keeps calling it
+     * until the subgraph indexes the transfer, like /publish.
+     */
+    this.router.post(
+      '/collections/:id/owner/sync',
+      withCors,
+      withAuthentication,
+      withCollectionExists,
+      withPublishAuthorization,
+      server.handleRequest(this.syncCollectionOwner)
     )
 
     /**
@@ -740,6 +754,31 @@ export class CollectionRouter extends Router {
       throw new HTTPError(
         "The TOS couldn't be recorded",
         null,
+        STATUS_CODES.error
+      )
+    }
+  }
+
+  syncCollectionOwner = async (req: AuthRequest): Promise<FullCollection> => {
+    const id = server.extractFromReq(req, 'id')
+    const dbCollection = await this.service.getDBCollection(id)
+
+    if (isTPCollection(dbCollection)) {
+      throw new HTTPError(
+        'Third party collections have no on-chain owner',
+        { id },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    try {
+      return toFullCollection(
+        await this.service.syncOwnerFromChain(dbCollection)
+      )
+    } catch (error) {
+      throw new HTTPError(
+        "The collection owner couldn't be synced",
+        { id, error: (error as Error).message },
         STATUS_CODES.error
       )
     }

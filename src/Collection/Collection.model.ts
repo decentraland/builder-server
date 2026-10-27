@@ -1,6 +1,6 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { DEFAULT_LIMIT } from '../Pagination/utils'
-import { CurationStatusFilter } from '../Curation'
+import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
 import { CollectionCuration } from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { database } from '../database/database'
@@ -11,6 +11,7 @@ import {
   CollectionSort,
   CollectionStatus,
   CollectionStatusCounts,
+  ReviewTypeFilter,
   UpsertableCollectionAttributes,
 } from './Collection.types'
 
@@ -27,13 +28,18 @@ export type FindCollectionParams = {
   limit?: number
   offset?: number
   q?: string
+  contractAddress?: string
   address?: string
   thirdPartyIds?: string[]
-  assignee?: string
-  status?: CurationStatusFilter
+  /** Curator addresses, plus `UNASSIGNED_FILTER` for the collections without one; any of them matches. */
+  assignees?: string[]
+  /** Any of them matches. */
+  statuses?: CurationStatusFilter[]
+  reviewType?: ReviewTypeFilter
   type?: CollectionTypeFilter
   sort?: CollectionSort
   isPublished?: boolean
+  /** Every collection on chain the query may see. */
   remoteIds?: CollectionAttributes['id'][]
   itemTags?: string[]
   collectionStatus?: CollectionStatus
@@ -47,31 +53,97 @@ type CollectionStatusParams = Pick<
   'remoteIds' | 'approvedRemoteIds' | 'reviewedRemoteIds'
 >
 
+type Statement = ReturnType<typeof SQL>
+
+/** `(a OP b OP …)`. */
+function joinConditions(conditions: Statement[], operator: 'AND' | 'OR') {
+  const result = SQL`(`
+  conditions.forEach((condition, index) => {
+    result.append(condition)
+    if (conditions[index + 1]) {
+      result.append(operator === 'AND' ? SQL` AND ` : SQL` OR `)
+    }
+  })
+  return result.append(SQL`)`)
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unexpected value: ${value}`)
+}
+
+const isStandard = () =>
+  SQL`collections.third_party_id is NULL AND collections.urn_suffix is NULL`
+const isThirdParty = () =>
+  SQL`collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL`
+/** A third-party publish keeps the collection's request and stores the new work as pending item requests. */
+const hasPendingItemCuration = () =>
+  SQL`EXISTS (SELECT 1 FROM ${raw(
+    ItemCuration.tableName
+  )} pending_item_curations JOIN ${raw(
+    Item.tableName
+  )} pending_items ON pending_items.id = pending_item_curations.item_id WHERE pending_items.collection_id = collections.id AND pending_item_curations.status = ${
+    CurationStatusFilter.PENDING
+  })`
+
+/** The on-chain checks the review filters read; a NULL contract address (third-party, unpublished) reads as false. */
+function getRemoteChecks({
+  remoteIds = [],
+  approvedRemoteIds = [],
+  reviewedRemoteIds = [],
+}: CollectionStatusParams) {
+  const isOnChain = SQL`COALESCE(collections.contract_address = ANY(${remoteIds}), false)`
+  const isApprovedOnChain = SQL`COALESCE(collections.contract_address = ANY(${approvedRemoteIds}), false)`
+  const wasReviewedOnChain = SQL`COALESCE(collections.contract_address = ANY(${reviewedRemoteIds}), false)`
+  return {
+    isOnChain,
+    isApprovedOnChain,
+    wasReviewedOnChain,
+    isNotApprovedOnChain: SQL`(${isOnChain} AND NOT ${isApprovedOnChain})`,
+    hasBeenApproved: SQL`(${isApprovedOnChain} OR ${wasReviewedOnChain})`,
+  }
+}
+
 export class Collection extends Model<CollectionAttributes> {
   static tableName = 'collections'
 
-  static getOrderByStatement(sort?: CollectionSort, remoteIds?: string[]) {
+  static getOrderByStatement(
+    sort?: CollectionSort,
+    remoteSets: CollectionStatusParams = {}
+  ) {
     switch (sort) {
       case CollectionSort.MOST_RELEVANT:
         // Order should be
-        // 1- To review: Not assigned && isApproved false from the contract
-        // 2- Under review: Assigned && isApproved false from the contract OR has pending curation
+        // 1- To review: pending request nobody picked up, or never reviewed
+        // 2- Under review: Assigned && has pending curation
         // 3- Approved: Curation approved
         // 4- Rejected: Curation rejected
         return SQL`
           ORDER BY
-            CASE WHEN(
-              collection_curations.assignee is NULL AND collections.contract_address = ANY(${remoteIds}))
-            THEN 0
-            WHEN(collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING})
+            CASE WHEN `
+          .append(
+            this.getCurationStatusCondition(
+              CurationStatusFilter.TO_REVIEW,
+              remoteSets
+            )
+          )
+          .append(SQL` THEN 0 WHEN `)
+          .append(
+            this.getCurationStatusCondition(
+              CurationStatusFilter.UNDER_REVIEW,
+              remoteSets
+            )
+          )
+          .append(
+            SQL`
             THEN 1
             WHEN(collection_curations.status = ${CurationStatusFilter.APPROVED})
             THEN 2
               WHEN(collection_curations.status = ${CurationStatusFilter.REJECTED})
             THEN 3
             ELSE 4
-          END, collections.created_at DESC
+          END, collections.created_at DESC, collections.id
         `
+          )
       case CollectionSort.NAME_ASC:
         return SQL`ORDER BY collections.name ASC`
       case CollectionSort.NAME_DESC:
@@ -91,6 +163,14 @@ export class Collection extends Model<CollectionAttributes> {
       case CollectionSort.LAST_ACTIVITY_DESC:
         return SQL`ORDER BY `
           .append(this.getLastActivityStatement())
+          .append(SQL` DESC, collections.id`)
+      case CollectionSort.REQUESTED_AT_ASC:
+        return SQL`ORDER BY `
+          .append(this.getRequestedAtStatement())
+          .append(SQL` ASC, collections.id`)
+      case CollectionSort.REQUESTED_AT_DESC:
+        return SQL`ORDER BY `
+          .append(this.getRequestedAtStatement())
           .append(SQL` DESC, collections.id`)
 
       default:
@@ -133,6 +213,27 @@ export class Collection extends Model<CollectionAttributes> {
       .append(SQL`) collections`)
   }
 
+  /**
+   * When the latest review was requested: the newest pending item request, else the newest item request of any
+   * status (a third-party publish reuses the collection's request, so its own date is the first publish), else
+   * the collection's request, else its creation for one never reviewed.
+   */
+  static getRequestedAtStatement() {
+    const newestItemRequest = (status?: CurationStatusFilter) =>
+      SQL`(SELECT MAX(item_curations.created_at) FROM ${raw(
+        ItemCuration.tableName
+      )} item_curations JOIN ${raw(
+        Item.tableName
+      )} items ON items.id = item_curations.item_id WHERE items.collection_id = collections.id`
+        .append(status ? SQL` AND item_curations.status = ${status}` : SQL``)
+        .append(SQL`)`)
+    return SQL`COALESCE(`
+      .append(newestItemRequest(CurationStatusFilter.PENDING))
+      .append(SQL`, `)
+      .append(newestItemRequest())
+      .append(SQL`, collection_curations.created_at, collections.created_at)`)
+  }
+
   /** When the collection, any of its items or its latest curation last changed. */
   static getLastActivityStatement() {
     return SQL`GREATEST(
@@ -154,10 +255,52 @@ export class Collection extends Model<CollectionAttributes> {
     `
   }
 
+  /**
+   * One review status as the committee filters by it, from the latest curation and the on-chain sets. The
+   * rules follow `getStatusStatement`: a rejected request wins, a pending one reads as to review or under
+   * review by its assignee whatever the on-chain state, and `pending` keeps its legacy meaning (waiting
+   * for a first approval).
+   */
+  static getCurationStatusCondition(
+    status: CurationStatusFilter,
+    remoteSets: CollectionStatusParams
+  ) {
+    const {
+      isOnChain,
+      isApprovedOnChain,
+      isNotApprovedOnChain,
+      wasReviewedOnChain,
+    } = getRemoteChecks(remoteSets)
+    const hasNoCuration = SQL`collection_curations.id is NULL`
+    const isPendingOrNew = SQL`(collection_curations.status = ${CurationStatusFilter.PENDING} OR ${hasNoCuration})`
+    switch (status) {
+      case CurationStatusFilter.PENDING:
+        return SQL`((collection_curations.status = ${status} AND (${isNotApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isNotApprovedOnChain}))`
+      case CurationStatusFilter.APPROVED:
+        return SQL`((collection_curations.status = ${status} AND (${isApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isApprovedOnChain}))`
+      case CurationStatusFilter.REJECTED:
+        return SQL`(collection_curations.status = ${status} AND (${isOnChain} OR (${isThirdParty()})))`
+      case CurationStatusFilter.TO_REVIEW:
+        return SQL`(collection_curations.assignee is NULL AND (((${isThirdParty()}) AND (${isPendingOrNew} OR ${hasPendingItemCuration()})) OR (${isStandard()} AND ${isOnChain} AND (collection_curations.status = ${
+          CurationStatusFilter.PENDING
+        } OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))))`
+      case CurationStatusFilter.UNDER_REVIEW:
+        return SQL`(collection_curations.assignee is NOT NULL AND (collection_curations.status = ${
+          CurationStatusFilter.PENDING
+        } OR ((${isThirdParty()}) AND ${hasPendingItemCuration()})))`
+      case CurationStatusFilter.DISABLED:
+        return SQL`(${isNotApprovedOnChain} AND (collection_curations.status = ${CurationStatusFilter.APPROVED} OR (${hasNoCuration} AND ${wasReviewedOnChain})))`
+      default:
+        return assertNever(status)
+    }
+  }
+
   static getFindAllWhereStatement({
     q,
-    assignee,
-    status,
+    contractAddress,
+    assignees,
+    statuses,
+    reviewType,
     type,
     address,
     thirdPartyIds,
@@ -168,8 +311,10 @@ export class Collection extends Model<CollectionAttributes> {
   }: Pick<
     FindCollectionParams,
     | 'q'
-    | 'assignee'
-    | 'status'
+    | 'contractAddress'
+    | 'assignees'
+    | 'statuses'
+    | 'reviewType'
     | 'type'
     | 'address'
     | 'thirdPartyIds'
@@ -180,8 +325,10 @@ export class Collection extends Model<CollectionAttributes> {
   >) {
     if (
       !q &&
-      !assignee &&
-      !status &&
+      !contractAddress &&
+      !assignees?.length &&
+      !statuses?.length &&
+      !reviewType &&
       !type &&
       !address &&
       !thirdPartyIds?.length &&
@@ -190,37 +337,52 @@ export class Collection extends Model<CollectionAttributes> {
       return SQL``
     }
     const search = `%${q}%`
-    const isStandard = SQL`collections.third_party_id is NULL AND collections.urn_suffix is NULL`
-    const isThirdParty = SQL`collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL`
     const isInRemoteIds = SQL`collections.contract_address = ANY(${remoteIds})`
-    const sameStatusAndInTheBlockchain = SQL`(collection_curations.status = ${status} AND (${isInRemoteIds} OR (${isThirdParty})))`
+    const remoteSets = { remoteIds, approvedRemoteIds, reviewedRemoteIds }
+    // A third-party collection has no contract address, so it never counts as approved and reads as new.
+    const { hasBeenApproved } = getRemoteChecks(remoteSets)
+    const curatorAddresses = assignees?.filter(
+      (assignee) => assignee !== UNASSIGNED_FILTER
+    )
+    const assigneeConditions = [
+      curatorAddresses?.length
+        ? SQL`collection_curations.assignee = ANY(${curatorAddresses})`
+        : undefined,
+      assignees?.includes(UNASSIGNED_FILTER)
+        ? SQL`collection_curations.assignee is NULL`
+        : undefined,
+    ].filter((condition): condition is Statement => !!condition)
     const conditions = [
       q ? SQL`collections.name ILIKE ${search} ` : undefined,
-      assignee ? SQL`collection_curations.assignee = ${assignee}` : undefined,
+      contractAddress
+        ? SQL`LOWER(collections.contract_address) = ${contractAddress.toLowerCase()}`
+        : undefined,
+      assigneeConditions.length
+        ? joinConditions(assigneeConditions, 'OR')
+        : undefined,
       address
         ? thirdPartyIds?.length
           ? SQL`(collections.eth_address = ${address} OR third_party_id = ANY(${thirdPartyIds}) OR ${isInRemoteIds})`
           : SQL`(collections.eth_address = ${address} OR ${isInRemoteIds})`
         : undefined,
-      status
-        ? [
-            CurationStatusFilter.PENDING,
-            CurationStatusFilter.APPROVED,
-          ].includes(status)
-          ? SQL`(${sameStatusAndInTheBlockchain} OR (collection_curations.id is NULL AND ${isInRemoteIds}))`
-          : status === CurationStatusFilter.REJECTED // To review: Not assigned && isApproved false from the contract
-          ? sameStatusAndInTheBlockchain
-          : status === CurationStatusFilter.TO_REVIEW // To review: Not assigned && isApproved false from the contract
-          ? SQL`collection_curations.assignee is NULL AND ((${isThirdParty}) OR (${isInRemoteIds} AND ${isStandard}))`
-          : status === CurationStatusFilter.UNDER_REVIEW // Under review: isApproved false from the contract OR it's assigned & has pending curation
-          ? SQL`collection_curations.assignee is NOT NULL AND collection_curations.status = ${CurationStatusFilter.PENDING}`
-          : SQL``
+      statuses?.length
+        ? joinConditions(
+            statuses.map((status) =>
+              this.getCurationStatusCondition(status, remoteSets)
+            ),
+            'OR'
+          )
+        : undefined,
+      reviewType
+        ? reviewType === ReviewTypeFilter.UPDATES
+          ? hasBeenApproved
+          : SQL`NOT ${hasBeenApproved}`
         : undefined,
       type
         ? type === CollectionTypeFilter.STANDARD
-          ? isStandard
+          ? isStandard()
           : type === CollectionTypeFilter.THIRD_PARTY
-          ? isThirdParty
+          ? isThirdParty()
           : SQL``
         : undefined,
       collectionStatus
@@ -234,23 +396,13 @@ export class Collection extends Model<CollectionAttributes> {
             )
             .append(SQL`) = ${collectionStatus}`)
         : undefined,
-    ].filter(Boolean)
+    ].filter((condition): condition is Statement => !!condition)
 
     if (!conditions.length) {
       return SQL``
     }
 
-    const result = SQL`WHERE `
-    conditions.forEach((condition, index) => {
-      if (condition) {
-        result.append(condition)
-        if (conditions[index + 1]) {
-          result.append(SQL` AND `)
-        }
-      }
-    })
-
-    return result
+    return SQL`WHERE `.append(joinConditions(conditions, 'AND'))
   }
 
   static getPublishedJoinStatement(isPublished: boolean | undefined) {
@@ -319,17 +471,17 @@ export class Collection extends Model<CollectionAttributes> {
 
   /**
    * Finds all the Collections that given parameters. It sorts and paginates the results.
-   * If the status is APPROVED, the remoteIds will be the ones with `isApproved` true.
-   * If the status is TO_REVIEW, UNDER_REVIEW or REJECTED, the remoteIds will be the ones with `isApproved` false.
-   * If status is not defined, the remoteIds will be the ones with `isApproved` false, so the ORDER BY can put them first.
+   * The review filters (statuses, review type) read the on-chain state from `remoteIds`, `approvedRemoteIds`
+   * and `reviewedRemoteIds`; MOST_RELEVANT puts the ones to review first.
    *
    * @param limit - limit param to paginate the query
    * @param offset - offset param to paginate the query
    * @param sort - the type of sorting to apply. MOST_RELEVANT will return the NOT approved first.
    * @param isPublished - if true, will return only the published collections. If false, will return only the unpublished collections.
    * @param q - the query to search for.
-   * @param assignee - the assignee to filter by.
-   * @param status - the status to filter by.
+   * @param assignees - the assignees to filter by, any of them.
+   * @param statuses - the review statuses to filter by, any of them.
+   * @param reviewType - new collections or updates to approved ones.
    * @param address - the address to filter by.
    * @param thirdPartyIds - the third party ids to filter by. If it's a committee member, the array will have all the ids.
    * @param remoteIds - The remote ids to filter the query with
@@ -356,7 +508,7 @@ export class Collection extends Model<CollectionAttributes> {
             : SQL``
         }
         ${SQL`${this.getFindAllWhereStatement(whereFilters)}`}
-        ${SQL`${this.getOrderByStatement(sort, whereFilters.remoteIds)}`}
+        ${SQL`${this.getOrderByStatement(sort, whereFilters)}`}
         LIMIT ${limit}
         OFFSET ${offset}
       `

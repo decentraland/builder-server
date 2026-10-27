@@ -10,7 +10,7 @@ import { PoolGroupRouter } from './PoolGroup'
 import { PoolLikeRouter } from './PoolLike'
 import { ItemRouter } from './Item'
 import { CollectionRouter } from './Collection'
-import { CurationRouter } from './Curation'
+import { AutoCurationRouter, CurationRouter } from './Curation'
 import { CommitteeRouter } from './Committee'
 import { ThirdPartyRouter } from './ThirdParty'
 import { RarityRouter } from './Rarity'
@@ -49,6 +49,7 @@ new PoolRouter(app).mount()
 new ItemRouter(app).mount()
 new CollectionRouter(app).mount()
 new CurationRouter(app).mount()
+new AutoCurationRouter(app).mount()
 new CommitteeRouter(app).mount()
 new ThirdPartyRouter(app).mount()
 new RarityRouter(app).mount()

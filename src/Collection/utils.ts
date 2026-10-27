@@ -9,10 +9,7 @@ import {
   ContractName,
 } from 'decentraland-transactions'
 import { Bridge } from '../ethereum/api/Bridge'
-import {
-  collectionAPI,
-  CollectionQueryFilters,
-} from '../ethereum/api/collection'
+import { collectionAPI } from '../ethereum/api/collection'
 import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
 import { ItemCuration } from '../Curation/ItemCuration'
 import {
@@ -22,7 +19,6 @@ import {
   hasTPCollectionURN,
   isTPCollection,
 } from '../utils/urn'
-import { CurationStatusFilter } from '../Curation'
 import { Cheque } from '../SlotUsageCheque'
 import {
   CollectionAttributes,
@@ -277,19 +273,4 @@ export async function getAddressFromSignature(
     chequeSignatureData.values,
     chequeSignatureData.signature
   )
-}
-
-/**
- * Converts a '/collections' endpoint filter to an object that can be translated to a WHERE condition for the collections graph
- *
- * @param dbCollection - The "FullCollection" to be converted into a DB collection.
- */
-export function toRemoteWhereCondition({
-  status,
-}: {
-  status?: CurationStatusFilter
-}): CollectionQueryFilters {
-  return {
-    isApproved: status ? status === CurationStatusFilter.APPROVED : undefined,
-  }
 }

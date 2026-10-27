@@ -579,21 +579,39 @@ paths:
       operationId: getCollections
       tags: [Collections]
       summary: Get all collections
-      description: Returns collections with filtering and pagination (committee members only for full access)
+      description: |
+        Returns collections with filtering and pagination. Committee members see every collection; anyone else
+        needs `q` and `is_published=true`.
       parameters:
         - name: q
           in: query
           schema:
             type: string
-          description: Search query
+          description: Search by collection name
         - name: assignee
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Curator addresses and/or `unassigned`, any of them matches. Up to 20; repeat the param.
+        - name: status
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              $ref: '#/components/schemas/CurationStatusFilter'
+          description: Review statuses, any of them matches. Repeat the param.
+        - name: review_type
           in: query
           schema:
             type: string
-        - name: status
-          in: query
-          schema:
-            $ref: '#/components/schemas/CurationStatus'
+            enum: [new, updates]
+          description: Only collections never approved (`new`), or only changes to ones approved before (`updates`)
         - name: type
           in: query
           schema:
@@ -617,7 +635,14 @@ paths:
                 NAME_ASC,
                 UPDATED_AT_DESC,
                 UPDATED_AT_ASC,
+                LAST_ACTIVITY_DESC,
+                LAST_ACTIVITY_ASC,
+                REQUESTED_AT_DESC,
+                REQUESTED_AT_ASC,
               ]
+          description: |
+            `MOST_RELEVANT` puts the collections waiting for a curator first. `LAST_ACTIVITY_*` orders by the last
+            change to the collection, its items or its review; `REQUESTED_AT_*` by when its review was requested.
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -627,6 +652,8 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/CollectionListResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
 
@@ -677,7 +704,8 @@ paths:
           in: query
           description: |
             Defaults to `CREATED_AT_DESC`. `LAST_ACTIVITY_*` orders by the last time the collection, its items or
-            its review changed.
+            its review changed. `REQUESTED_AT_*` orders by when the latest review was requested, or the collection
+            was created when it was never reviewed.
           schema:
             type: string
             enum:
@@ -690,6 +718,8 @@ paths:
               - UPDATED_AT_ASC
               - LAST_ACTIVITY_DESC
               - LAST_ACTIVITY_ASC
+              - REQUESTED_AT_DESC
+              - REQUESTED_AT_ASC
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
@@ -888,18 +918,58 @@ paths:
       operationId: getCollectionAddresses
       tags: [Collections]
       summary: Get collection addresses
-      description: Returns collection contract addresses with filtering
+      description: Returns the contract addresses of standard collections, with the same filters and sorts as `GET /collections`.
       security: []
       parameters:
+        - name: assignee
+          in: query
+          style: form
+          explode: true
+          schema:
+            type: array
+            items:
+              type: string
+          description: Curator addresses and/or `unassigned`, any of them matches. Up to 20; repeat the param.
         - name: status
           in: query
+          style: form
+          explode: true
           schema:
-            $ref: '#/components/schemas/CurationStatus'
+            type: array
+            items:
+              $ref: '#/components/schemas/CurationStatusFilter'
+          description: Review statuses, any of them matches. Repeat the param.
+        - name: review_type
+          in: query
+          schema:
+            type: string
+            enum: [new, updates]
+          description: Only collections never approved (`new`), or only changes to ones approved before (`updates`)
+        - name: sort
+          in: query
+          schema:
+            type: string
+            enum:
+              [
+                MOST_RELEVANT,
+                CREATED_AT_DESC,
+                CREATED_AT_ASC,
+                NAME_DESC,
+                NAME_ASC,
+                UPDATED_AT_DESC,
+                UPDATED_AT_ASC,
+                LAST_ACTIVITY_DESC,
+                LAST_ACTIVITY_ASC,
+                REQUESTED_AT_DESC,
+                REQUESTED_AT_ASC,
+              ]
         - $ref: '#/components/parameters/Page'
         - $ref: '#/components/parameters/Limit'
       responses:
         '200':
           description: List of addresses
+        '400':
+          $ref: '#/components/responses/BadRequest'
 
   # Item endpoints
   /items:
@@ -1221,7 +1291,10 @@ paths:
       operationId: createCollectionCuration
       tags: [Curations]
       summary: Create collection curation
-      description: Creates a new curation for a collection
+      description: |
+        Opens a new review request for a published collection: the creator's "publish changes" or "request review
+        again", or a committee member picking a never-requested collection up. Answers 400 while one is pending.
+        A creator's request is announced in the curators' Slack channel.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1232,6 +1305,7 @@ paths:
               properties:
                 assignee:
                   type: string
+                  description: Committee member to assign. Only committee members may send it.
       responses:
         '200':
           description: Curation created successfully
@@ -1245,7 +1319,10 @@ paths:
       operationId: updateCollectionCuration
       tags: [Curations]
       summary: Update collection curation
-      description: Updates a collection curation
+      description: |
+        Updates the latest curation of a collection. Approving, rejecting and changing the assignee (including
+        clearing it) are committee-only and answer 401 otherwise. A change of assignee or verdict is announced in
+        the curators' Slack channel; repeating the current value is not.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1259,6 +1336,8 @@ paths:
                   $ref: '#/components/schemas/CurationStatus'
                 assignee:
                   type: string
+                  nullable: true
+                  description: Committee member to assign; `null` or an empty string clears the assignment.
       responses:
         '200':
           description: Curation updated successfully
@@ -1288,6 +1367,120 @@ paths:
           description: Forum post created successfully
         '401':
           $ref: '#/components/responses/Unauthorized'
+
+  /collections/{id}/validation-result:
+    post:
+      operationId: receiveValidationResult
+      tags: [Curations]
+      summary: Receive a wearable-validator result
+      description: |
+        Callback of the wearable-validator job with the result of an automatic review. Authenticated by the HMAC
+        of the raw body (`x-wearable-validator-signature`, `sha256=<hex>` over `<timestamp>.<body>` with the shared
+        secret) and `x-wearable-validator-timestamp` (epoch milliseconds, at most 5 minutes off). The result is
+        logged only; the job posts its findings to the curators' Slack channel. Unknown fields are dropped.
+      security: []
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+        - name: x-wearable-validator-signature
+          in: header
+          required: true
+          schema:
+            type: string
+            pattern: '^sha256=[0-9a-f]{64}$'
+          description: HMAC-SHA256 of `<timestamp>.<raw body>` with the shared secret
+        - name: x-wearable-validator-timestamp
+          in: header
+          required: true
+          schema:
+            type: string
+          description: Epoch milliseconds when the request was signed, at most 5 minutes off the server clock
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [validationId, collectionId, verdict, rulesVersion, items]
+              properties:
+                validationId:
+                  type: string
+                collectionId:
+                  type: string
+                  description: Must match the path id
+                verdict:
+                  type: string
+                  enum: [passed, rejected, error]
+                reason:
+                  type: string
+                  description: Only with verdict `error`
+                retryable:
+                  type: boolean
+                  description: Only with verdict `error`
+                rulesVersion:
+                  type: string
+                items:
+                  type: array
+                  maxItems: 50
+                  items:
+                    type: object
+                    required: [itemId, contentHash, passed, findings]
+                    properties:
+                      itemId:
+                        type: string
+                      contentHash:
+                        type: string
+                      passed:
+                        type: boolean
+                        nullable: true
+                      findings:
+                        type: array
+                        items:
+                          type: object
+                          required: [rule, check, severity, message]
+                          properties:
+                            rule:
+                              type: string
+                            check:
+                              type: string
+                            severity:
+                              type: string
+                              enum: [error, warning]
+                            message:
+                              type: string
+                            where:
+                              type: string
+                            bodyShape:
+                              type: string
+                              enum: [male, female]
+                            measured:
+                              type: number
+                            limit:
+                              type: number
+                            fix:
+                              type: string
+                            docs:
+                              type: string
+                      visualSummary:
+                        type: string
+                      unsupported:
+                        type: boolean
+                      error:
+                        type: string
+      responses:
+        '204':
+          description: Result received
+        '400':
+          description: Invalid body, or the result belongs to another collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Missing, stale or invalid signature
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
 
   /collections/{id}/itemCurations:
     get:
@@ -3026,6 +3219,14 @@ components:
       type: string
       enum: [pending, approved, rejected, to_review, under_review]
 
+    CurationStatusFilter:
+      type: string
+      description: |
+        A collection's review status. `to_review` is waiting for a curator, `under_review` has one assigned,
+        `approved` and `rejected` carry the committee's latest decision, `disabled` was turned off by the
+        committee after an approval. `pending` is the legacy name for a collection waiting for its first approval.
+      enum: [pending, approved, rejected, to_review, under_review, disabled]
+
     CollectionCuration:
       type: object
       properties:
@@ -3039,6 +3240,7 @@ components:
           $ref: '#/components/schemas/CurationStatus'
         assignee:
           type: string
+          nullable: true
         created_at:
           type: string
           format: date-time

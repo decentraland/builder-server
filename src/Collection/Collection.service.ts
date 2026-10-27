@@ -31,6 +31,7 @@ import {
 import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { CurationStatus } from '../Curation'
 import { decodeTPCollectionURN, isTPCollection } from '../utils/urn'
+import { isCommitteeMember } from '../Committee'
 import {
   getAddressFromSignature,
   getChequeMessageHash,
@@ -611,6 +612,33 @@ export class CollectionService {
     }
 
     return false
+  }
+
+  /**
+   * Committee members may also sync a standard collection's token ids, so a curator can approve a
+   * collection whose creator left before the publish finished.
+   */
+  public async canSyncPublication(
+    id: string,
+    ethAddress: string
+  ): Promise<boolean> {
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+    if (!collection) {
+      return false
+    }
+    if (isTPCollection(collection)) {
+      return ThirdPartyService.isManager(collection.third_party_id, ethAddress)
+    }
+    if (
+      collection.eth_address === ethAddress ||
+      (await isCommitteeMember(ethAddress))
+    ) {
+      return true
+    }
+    return this.isDCLManagerOfCollection(
+      await this.getDCLCollection(collection),
+      ethAddress
+    )
   }
 
   public async getCollections(

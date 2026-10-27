@@ -89,7 +89,11 @@ import {
   TermsOfServiceEvent,
 } from './Collection.types'
 
+import { curationNotifications } from '../Curation/notifications'
+import { AutoCurationService } from '../Curation/AutoCuration.service'
+
 const server = supertest(app.getApp())
+
 jest.mock('../ethereum/api/collection')
 jest.mock('../ethereum/api/peer')
 jest.mock('../utils/eth')
@@ -97,6 +101,8 @@ jest.mock('../Forum/client')
 jest.mock('../SlotUsageCheque')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Curation/CollectionCuration')
+jest.mock('../Curation/notifications')
+jest.mock('../Curation/AutoCuration.service')
 jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Committee')
 jest.mock('../Item/Item.model')
@@ -119,6 +125,8 @@ describe('Collection router', () => {
     dbCollection = { ...dbCollectionMock }
     dbTPCollection = { ...dbTPCollectionMock }
     resultingCollectionAttributes = toResultCollection(dbCollection)
+    // Publishing looks the latest curation up; no row means the collection was never reviewed.
+    ;(CollectionCuration.query as jest.Mock).mockResolvedValue([])
   })
 
   afterEach(() => {
@@ -1095,16 +1103,19 @@ describe('Collection router', () => {
                 ok: true,
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
-                assignee: undefined,
+                assignees: undefined,
+                statuses: undefined,
+                reviewType: undefined,
                 isPublished,
                 q,
                 sort: undefined,
-                status: undefined,
                 type: undefined,
                 limit,
                 offset: page - 1, // it's the offset,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
               })
             })
         })
@@ -1124,7 +1135,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1160,8 +1171,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1169,6 +1181,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: undefined,
               })
             })
@@ -1191,7 +1205,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1228,8 +1242,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1237,6 +1252,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
               })
             })
@@ -1315,17 +1332,159 @@ describe('Collection router', () => {
                 ok: true,
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
-                assignee: undefined,
+                assignees: undefined,
+                statuses: undefined,
+                reviewType: undefined,
                 isPublished: undefined,
                 q: undefined,
                 sort: undefined,
-                status: undefined,
                 type: undefined,
                 limit,
                 offset: page - 1, // it's the offset,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
               })
+            })
+        })
+      })
+
+      describe('and filtering by several statuses, several assignees and a review type', () => {
+        let baseUrl: string
+        let curator: string
+        beforeEach(() => {
+          curator = '0x1234567890123456789012345678901234567890'
+          baseUrl = '/collections'
+          url = `${baseUrl}?status=to_review&status=under_review&assignee=unassigned&assignee=${curator.toUpperCase()}&review_type=updates`
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should pass every status and assignee, the assignee addresses lowercased, and the review type', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  statuses: ['to_review', 'under_review'],
+                  assignees: ['unassigned', curator],
+                  reviewType: 'updates',
+                })
+              )
+            })
+        })
+      })
+
+      describe('and the on-chain collections are approved, reviewed or untouched', () => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = baseUrl
+          ;(collectionAPI.fetchCollections as jest.Mock).mockReset()
+          ;(collectionAPI.fetchCollections as jest.Mock).mockResolvedValueOnce([
+            {
+              id: 'approved',
+              isApproved: true,
+              createdAt: '1',
+              reviewedAt: '2',
+            },
+            {
+              id: 'reviewed',
+              isApproved: false,
+              createdAt: '1',
+              reviewedAt: '2',
+            },
+            { id: 'new', isApproved: false, createdAt: '1', reviewedAt: '1' },
+          ])
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should split the remote ids into every, approved and reviewed collections', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  remoteIds: ['approved', 'reviewed', 'new'],
+                  approvedRemoteIds: ['approved'],
+                  reviewedRemoteIds: ['reviewed'],
+                })
+              )
+            })
+        })
+      })
+
+      describe('and the filters repeat values or carry blanks', () => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = `${baseUrl}?status=&status=approved&status=approved&assignee=&assignee=unassigned&assignee=unassigned`
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should drop the blanks and the duplicates', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  statuses: ['approved'],
+                  assignees: ['unassigned'],
+                })
+              )
+            })
+        })
+      })
+
+      describe('and the status filter is only blanks', () => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = `${baseUrl}?status=&status=`
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should not filter by status', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ statuses: undefined })
+              )
+            })
+        })
+      })
+
+      describe.each([
+        ['status', 'published', 'Invalid status'],
+        ['review_type', 'changes', 'Invalid review type'],
+        ['assignee', 'garbage', 'Invalid assignee'],
+        [
+          'assignee',
+          Array.from(
+            { length: 21 },
+            (_, i) => `0x${String(i).padStart(40, '0')}`
+          ).join('&assignee='),
+          'Too many assignees',
+        ],
+      ])('and the %s filter is not a valid one', (param, value, error) => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = `${baseUrl}?${param}=${value}`
+        })
+        it('should respond with a 400', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body.error).toEqual(error)
+              expect(Collection.findAll).not.toHaveBeenCalled()
             })
         })
       })
@@ -1344,7 +1503,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1380,8 +1539,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1389,6 +1549,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: undefined,
               })
             })
@@ -1411,7 +1573,7 @@ describe('Collection router', () => {
         beforeEach(() => {
           ;(page = 1), (limit = 3)
           assignee = '0x1234567890123456789012345678901234567890'
-          status = 'published'
+          status = 'to_review'
           type = 'standard'
           sort = 'NAME_DESC'
           isPublished = 'true'
@@ -1448,8 +1610,9 @@ describe('Collection router', () => {
               })
               expect(Collection.findAll).toHaveBeenCalledWith({
                 q,
-                assignee,
-                status,
+                assignees: [assignee],
+                statuses: [status],
+                reviewType: undefined,
                 type,
                 sort,
                 isPublished: true,
@@ -1457,6 +1620,8 @@ describe('Collection router', () => {
                 limit,
                 thirdPartyIds: [],
                 remoteIds: [],
+                approvedRemoteIds: [],
+                reviewedRemoteIds: [],
                 itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
               })
             })
@@ -1684,6 +1849,61 @@ describe('Collection router', () => {
             expect(Collection.countByStatus).toHaveBeenCalledWith(
               expectedParams
             )
+          })
+      })
+    })
+
+    describe('and sending a contract address', () => {
+      let contractAddress: string
+
+      beforeEach(() => {
+        contractAddress = '0x1D9FB685C257E74F869BA302E260C0B68F5EBB37'
+        ;(Collection.findAll as jest.Mock).mockReturnValueOnce([
+          { ...dbCollection, collection_count: 1 },
+        ])
+        ;(Collection.findByThirdPartyIds as jest.Mock).mockReturnValueOnce([])
+        ;(ThirdPartyService.getThirdParties as jest.Mock).mockReturnValueOnce(
+          []
+        )
+      })
+
+      it("should look the address's collections up by that contract, keeping the pagination", () => {
+        return server
+          .get(
+            buildURL(
+              `${url}?contract_address=${contractAddress}&page=1&limit=1`
+            )
+          )
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body.data.results).toHaveLength(1)
+            expect(Collection.findAll).toHaveBeenCalledWith(
+              expect.objectContaining({
+                address: wallet.address,
+                contractAddress,
+                limit: 1,
+                offset: 0,
+              })
+            )
+          })
+      })
+    })
+
+    describe.each([
+      ['more than once', 'contract_address=0xaa&contract_address=0xbb'],
+      ['empty', 'contract_address='],
+      ['as an object', 'contract_address[a]=b'],
+      ['in a format that is not an address', 'contract_address=foo'],
+    ])('and sending the contract address %s', (_, query) => {
+      it('should respond with a 400 without looking the collections up', () => {
+        return server
+          .get(buildURL(`${url}?${query}`))
+          .set(createAuthHeaders('get', url))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body.error).toBe('Invalid contract address')
+            expect(Collection.findAll).not.toHaveBeenCalled()
           })
       })
     })
@@ -2202,6 +2422,28 @@ describe('Collection router', () => {
               expect(CollectionCuration.create).not.toHaveBeenCalled()
             })
         })
+
+        describe('and the caller is a committee member', () => {
+          beforeEach(() => {
+            ;(isCommitteeMember as jest.Mock).mockResolvedValue(true)
+          })
+
+          it('should respond with a 401 and not create any publication records', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({
+                itemIds: [dbTPItemMock.id],
+                cheque: { signature: 'signature', qty: 1, salt: '0xsalt' },
+              })
+              .expect(401)
+              .then(() => {
+                expect(SlotUsageCheque.create).not.toHaveBeenCalled()
+                expect(ItemCuration.create).not.toHaveBeenCalled()
+                expect(CollectionCuration.create).not.toHaveBeenCalled()
+              })
+          })
+        })
       })
 
       describe('and the collection is a Standard collection', () => {
@@ -2228,6 +2470,144 @@ describe('Collection router', () => {
             .then(() => {
               expect(Item.update).not.toHaveBeenCalled()
             })
+        })
+
+        describe('and the caller is a committee member', () => {
+          let unsyncedItem: ItemAttributes
+
+          beforeEach(() => {
+            unsyncedItem = { ...dbItemMock, blockchain_item_id: null }
+            ;(Collection.findOne as jest.Mock)
+              .mockReset()
+              .mockResolvedValueOnce({
+                ...dbCollection,
+                eth_address: '0x1111111111111111111111111111111111111111',
+              })
+            ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+            ;(Collection.findByIds as jest.Mock)
+              .mockResolvedValueOnce([dbCollection])
+              .mockResolvedValueOnce([{ ...dbCollection, item_count: 1 }])
+            ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce(
+              [unsyncedItem]
+            )
+            ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+              collectionFragmentMock
+            )
+            ;(collectionAPI.fetchItemsByContractAddress as jest.MockedFunction<
+              typeof collectionAPI.fetchItemsByContractAddress
+            >).mockResolvedValueOnce([itemFragmentMock])
+            ;(peerAPI.fetchItems as jest.MockedFunction<
+              typeof peerAPI.fetchItems
+            >).mockResolvedValueOnce([])
+          })
+
+          it('should respond with a 200 and store the blockchain item id of the items missing it', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(Item.update).toHaveBeenCalledWith(
+                  { blockchain_item_id: itemFragmentMock.blockchainId },
+                  { id: unsyncedItem.id }
+                )
+              })
+          })
+
+          it('should notify the curators about the new collection, crediting its owner', () => {
+            ;(Collection.findByIds as jest.Mock).mockReset().mockResolvedValue([
+              {
+                ...dbCollection,
+                eth_address: '0x1111111111111111111111111111111111111111',
+              },
+            ])
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(
+                  curationNotifications.collectionPublished
+                ).toHaveBeenCalledWith(
+                  dbCollection.id,
+                  1,
+                  '0x1111111111111111111111111111111111111111'
+                )
+              })
+          })
+
+          it('should request the automatic review of the published collection and its items', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(
+                  AutoCurationService.prototype.onStandardCollectionPublished
+                ).toHaveBeenCalledWith(
+                  expect.objectContaining({ id: dbCollection.id })
+                )
+              })
+          })
+
+          describe('and the collection was reviewed before', () => {
+            beforeEach(() => {
+              ;(CollectionCuration.query as jest.Mock).mockResolvedValueOnce([
+                { id: 'curationId' },
+              ])
+            })
+
+            it('should not notify the curators nor request the automatic review', () => {
+              return server
+                .post(buildURL(url))
+                .set(createAuthHeaders('post', url))
+                .expect(200)
+                .then(() => {
+                  expect(
+                    curationNotifications.collectionPublished
+                  ).not.toHaveBeenCalled()
+                  expect(
+                    AutoCurationService.prototype.onStandardCollectionPublished
+                  ).not.toHaveBeenCalled()
+                })
+            })
+          })
+        })
+
+        describe('and the items already have their blockchain ids', () => {
+          beforeEach(() => {
+            ;(Collection.findOne as jest.Mock)
+              .mockReset()
+              .mockResolvedValueOnce({ ...dbCollection })
+            ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(true)
+            ;(Collection.findByIds as jest.Mock)
+              .mockResolvedValueOnce([dbCollection])
+              .mockResolvedValueOnce([{ ...dbCollection, item_count: 1 }])
+            ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce(
+              [{ ...dbItemMock, blockchain_item_id: '0' }]
+            )
+            ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValueOnce(
+              collectionFragmentMock
+            )
+            ;(peerAPI.fetchItems as jest.MockedFunction<
+              typeof peerAPI.fetchItems
+            >).mockResolvedValueOnce([])
+          })
+
+          it('should respond with a 200 and not notify the curators nor request the automatic review again', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .expect(200)
+              .then(() => {
+                expect(
+                  curationNotifications.collectionPublished
+                ).not.toHaveBeenCalled()
+                expect(
+                  AutoCurationService.prototype.onStandardCollectionPublished
+                ).not.toHaveBeenCalled()
+              })
+          })
         })
       })
     })
@@ -2580,7 +2960,7 @@ describe('Collection router', () => {
         let forumId: number
         let forumLink: string
         let authHeaders: Record<string, string>
-        let mockedWallet
+        let mockedWallet: ethers.Wallet
         let cheque: Cheque
         let availableSlots: number
 
@@ -2652,6 +3032,29 @@ describe('Collection router', () => {
                   qty: cheque.qty,
                   salt: cheque.salt,
                 })
+              })
+          })
+
+          it('should notify the curators about the published items', () => {
+            return server
+              .post(buildURL(url))
+              .set(authHeaders)
+              .send({
+                itemIds,
+                cheque,
+              })
+              .expect(200)
+              .then(() => {
+                expect(
+                  curationNotifications.collectionPublished
+                ).toHaveBeenCalledWith(
+                  dbTPCollection.id,
+                  items.length,
+                  mockedWallet.address.toLowerCase()
+                )
+                expect(
+                  AutoCurationService.prototype.onStandardCollectionPublished
+                ).not.toHaveBeenCalled()
               })
           })
 
@@ -3348,6 +3751,90 @@ describe('Collection router', () => {
       ThirdPartyServiceMock.getThirdParties.mockResolvedValueOnce([])
     })
 
+    describe('and filtering by several statuses, several assignees and a review type', () => {
+      let baseUrl: string
+      beforeEach(() => {
+        baseUrl = '/addresses'
+        url = `${baseUrl}?status=to_review&status=under_review&assignee=unassigned&assignee=0xABCDEF0123456789ABCDEF0123456789ABCDEF01&review_type=new`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+      })
+      it('should pass every status and assignee, the assignee addresses lowercased, and the review type', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then(() => {
+            expect(Collection.findAll).toHaveBeenCalledWith(
+              expect.objectContaining({
+                statuses: ['to_review', 'under_review'],
+                assignees: [
+                  'unassigned',
+                  '0xabcdef0123456789abcdef0123456789abcdef01',
+                ],
+                reviewType: 'new',
+              })
+            )
+          })
+      })
+    })
+
+    describe('and sorting by the request date', () => {
+      let baseUrl: string
+      beforeEach(() => {
+        baseUrl = '/addresses'
+        url = `${baseUrl}?sort=REQUESTED_AT_ASC`
+        ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+      })
+      it('should pass the sort through', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(200)
+          .then(() => {
+            expect(Collection.findAll).toHaveBeenCalledWith(
+              expect.objectContaining({ sort: 'REQUESTED_AT_ASC' })
+            )
+          })
+      })
+    })
+
+    describe.each([
+      ['status', 'published', 'Invalid status'],
+      ['status[a]', 'rejected', 'Invalid status'],
+      ['review_type', 'changes', 'Invalid review type'],
+      [
+        'review_type',
+        'new&review_type=updates',
+        'Only one review type can be given',
+      ],
+      ['assignee', 'garbage', 'Invalid assignee'],
+      ['assignee[a]', 'unassigned', 'Invalid assignee'],
+      [
+        'assignee',
+        Array.from(
+          { length: 21 },
+          (_, i) => `0x${String(i).padStart(40, '0')}`
+        ).join('&assignee='),
+        'Too many assignees',
+      ],
+    ])('and the %s filter is not a valid one', (param, value, error) => {
+      let baseUrl: string
+      beforeEach(() => {
+        baseUrl = '/addresses'
+        url = `${baseUrl}?${param}=${value}`
+      })
+      it('should respond with a 400', () => {
+        return server
+          .get(buildURL(url))
+          .set(createAuthHeaders('get', baseUrl))
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body.error).toEqual(error)
+            expect(Collection.findAll).not.toHaveBeenCalled()
+          })
+      })
+    })
+
     describe('and sending pagination params', () => {
       let page: number, limit: number
       let baseUrl: string
@@ -3378,16 +3865,19 @@ describe('Collection router', () => {
               ok: true,
             })
             expect(Collection.findAll).toHaveBeenCalledWith({
-              assignee: undefined,
+              assignees: undefined,
+              statuses: undefined,
+              reviewType: undefined,
               isPublished: undefined,
               q: undefined,
               sort: undefined,
-              status: undefined,
               limit,
               offset: page - 1, // it's the offset,
               type: CollectionTypeFilter.STANDARD,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              reviewedRemoteIds: [],
               itemTags: undefined,
             })
           })
@@ -3408,7 +3898,7 @@ describe('Collection router', () => {
       beforeEach(() => {
         ;(page = 1), (limit = 3)
         assignee = '0x1234567890123456789012345678901234567890'
-        status = 'published'
+        status = 'to_review'
         sort = 'NAME_DESC'
         isPublished = 'true'
         q = 'collection name 1'
@@ -3438,14 +3928,17 @@ describe('Collection router', () => {
             })
             expect(Collection.findAll).toHaveBeenCalledWith({
               q,
-              assignee,
-              status,
+              assignees: [assignee],
+              statuses: [status],
+              reviewType: undefined,
               sort,
               isPublished: true,
               offset: page - 1, // it's the offset
               limit,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              reviewedRemoteIds: [],
               type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase()],
             })
@@ -3468,7 +3961,7 @@ describe('Collection router', () => {
       beforeEach(() => {
         ;(page = 1), (limit = 3)
         assignee = '0x1234567890123456789012345678901234567890'
-        status = 'published'
+        status = 'to_review'
         sort = 'NAME_DESC'
         isPublished = 'true'
         q = 'collection name 1'
@@ -3499,14 +3992,17 @@ describe('Collection router', () => {
             })
             expect(Collection.findAll).toHaveBeenCalledWith({
               q,
-              assignee,
-              status,
+              assignees: [assignee],
+              statuses: [status],
+              reviewType: undefined,
               sort,
               isPublished: true,
               offset: page - 1, // it's the offset
               limit,
               thirdPartyIds: [],
               remoteIds: [],
+              approvedRemoteIds: [],
+              reviewedRemoteIds: [],
               type: CollectionTypeFilter.STANDARD,
               itemTags: [itemTag.toLowerCase(), itemTag2.toLowerCase()],
             })

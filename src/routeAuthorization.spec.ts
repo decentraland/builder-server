@@ -13,6 +13,7 @@ import { join } from 'path'
  */
 const AUTH_MIDDLEWARE = [
   'withCollectionAuthorization',
+  'withPublishAuthorization',
   'withItemAuthorization',
   'withAssetPackAuthorization',
 ]

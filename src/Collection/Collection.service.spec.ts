@@ -622,6 +622,20 @@ describe('Collection service', () => {
           )
         ).resolves.toEqual(dbTPCollectionMock)
       })
+
+      it('should add the collection contract to the virtual third party', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          ethAddress,
+          fullCollection
+        )
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, null, {
+          network: dbTPCollectionMock.linked_contract_network,
+          address: dbTPCollectionMock.linked_contract_address!.toLowerCase(),
+        })
+      })
     })
 
     describe('and the wallet is not a manager of the third party', () => {
@@ -637,6 +651,104 @@ describe('Collection service', () => {
             fullCollection
           )
         ).rejects.toThrow(UnauthorizedCollectionEditError)
+      })
+    })
+  })
+
+  describe('when updating an existing third party collection', () => {
+    let fullCollection: FullCollection
+
+    beforeEach(() => {
+      fullCollection = toFullCollection(dbTPCollectionMock)
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+      ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
+      ;(Collection.upsertWithItemCount as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+    })
+
+    describe('and the linked contract changes', () => {
+      beforeEach(() => {
+        fullCollection.linked_contract_address =
+          '0x77372A4CC66063575B05B44481F059BE356964A4'
+      })
+
+      it('should sync the virtual third party with the new contract', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          wallet.address,
+          fullCollection
+        )
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(
+          dbTPCollectionMock.third_party_id,
+          {
+            network: dbTPCollectionMock.linked_contract_network,
+            address: dbTPCollectionMock.linked_contract_address,
+          },
+          {
+            network: dbTPCollectionMock.linked_contract_network,
+            address: '0x77372a4cc66063575b05b44481f059be356964a4',
+          }
+        )
+      })
+
+      it('should not sync the virtual third party when the collection upsert fails', async () => {
+        ;(Collection.upsertWithItemCount as jest.Mock).mockReset()
+        ;(Collection.upsertWithItemCount as jest.Mock).mockRejectedValueOnce(
+          new Error('duplicate key value violates unique constraint')
+        )
+        await expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            wallet.address,
+            fullCollection
+          )
+        ).rejects.toThrow('duplicate key')
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the virtual third party sync fails', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.syncVirtualThirdPartyContracts as jest.Mock).mockRejectedValueOnce(
+          new Error('db unavailable')
+        )
+      })
+
+      it('should still resolve with the saved collection', () => {
+        return expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            wallet.address,
+            fullCollection
+          )
+        ).resolves.toEqual(dbTPCollectionMock)
+      })
+    })
+
+    describe('and the linked contract stays the same', () => {
+      it('should still sync the virtual third party, so an earlier failed sync is repaired', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          wallet.address,
+          fullCollection
+        )
+        const stored = {
+          network: dbTPCollectionMock.linked_contract_network,
+          address: dbTPCollectionMock.linked_contract_address,
+        }
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, stored, {
+          ...stored,
+          address: stored.address!.toLowerCase(),
+        })
       })
     })
   })

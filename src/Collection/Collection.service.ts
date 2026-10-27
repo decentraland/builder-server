@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid'
+import { createConsoleLogComponent } from '@well-known-components/logger'
 import { collectionAPI } from '../ethereum/api/collection'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
@@ -61,6 +62,8 @@ import {
   InsufficientSlotsError,
   URNAlreadyInUseError,
 } from './Collection.errors'
+
+const logger = createConsoleLogComponent().getLogger('CollectionService')
 
 export class CollectionService {
   /**
@@ -493,7 +496,40 @@ export class CollectionService {
     }
 
     const attributes = toDBCollection(collectionJSON)
-    return Collection.upsertWithItemCount(attributes)
+    const upserted = await Collection.upsertWithItemCount(attributes)
+    // Only after the collection took the contract: the unique constraint may still refuse it. Runs on every save,
+    // not only on a change, so a sync that failed once is repaired by the next save and a collection added to an
+    // existing virtual third party gets its contract listed. A DB trigger forbids clearing a linked contract on
+    // save; deleting the collection still leaves its contract listed.
+    if (
+      attributes.linked_contract_address &&
+      attributes.linked_contract_network
+    ) {
+      try {
+        await ThirdPartyService.syncVirtualThirdPartyContracts(
+          third_party_id,
+          collection?.linked_contract_address &&
+            collection.linked_contract_network
+            ? {
+                network: collection.linked_contract_network,
+                address: collection.linked_contract_address,
+              }
+            : null,
+          {
+            network: attributes.linked_contract_network,
+            address: attributes.linked_contract_address,
+          }
+        )
+      } catch (error) {
+        // The collection is already saved; the next save retries the sync.
+        logger.error(
+          `Could not sync the contract of collection ${id} to third party ${third_party_id}: ${String(
+            error
+          )}`
+        )
+      }
+    }
+    return upserted
   }
 
   public async getApprovalData(id: string): Promise<ItemApprovalData> {

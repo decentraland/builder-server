@@ -318,6 +318,19 @@ describe('Collection service', () => {
         ])
       })
 
+      it("should drop the collection from the previous owner's list and still store the new owner", async () => {
+        await expect(
+          service.getCollections(
+            { address: dbCollectionMock.eth_address },
+            dbCollectionMock.eth_address
+          )
+        ).resolves.toEqual([])
+        expect(Collection.update).toHaveBeenCalledWith(
+          { eth_address: newOwner },
+          { id: dbCollectionMock.id }
+        )
+      })
+
       it('should keep the collection in the list and store the new owner', async () => {
         await expect(
           service.getCollections({ address: newOwner }, newOwner)

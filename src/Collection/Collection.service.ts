@@ -705,6 +705,17 @@ export class CollectionService {
           ])
         )
 
+        // Before filtering, so a collection the address no longer owns is corrected on its own list fetch.
+        await Promise.all(
+          allCollections.map((collection) => {
+            const remoteCollection =
+              remoteCollectionMap[collection.contract_address!]
+            return remoteCollection
+              ? this.syncOwnerFromChain(collection, remoteCollection.creator)
+              : undefined
+          })
+        )
+
         // If exists the remote collection, filter by the creator field or the managers field or the minters field
         allCollections = allCollections.filter(
           ({ contract_address }) =>
@@ -717,16 +728,6 @@ export class CollectionService {
             remoteCollectionMap[contract_address!].minters.includes(
               params.address!
             )
-        )
-
-        await Promise.all(
-          allCollections.map((collection) => {
-            const remoteCollection =
-              remoteCollectionMap[collection.contract_address!]
-            return remoteCollection
-              ? this.syncOwnerFromChain(collection, remoteCollection.creator)
-              : undefined
-          })
         )
       }
     }

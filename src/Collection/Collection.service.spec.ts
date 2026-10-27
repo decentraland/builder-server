@@ -428,6 +428,57 @@ describe('Collection service', () => {
     })
   })
 
+  describe('when updating an existing third party collection', () => {
+    let fullCollection: FullCollection
+
+    beforeEach(() => {
+      fullCollection = toFullCollection(dbTPCollectionMock)
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+      ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
+      ;(Collection.upsertWithItemCount as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+    })
+
+    describe('and the linked contract changes', () => {
+      beforeEach(() => {
+        fullCollection.linked_contract_address =
+          '0x77372A4CC66063575B05B44481F059BE356964A4'
+      })
+
+      it('should sync the virtual third party with the new contract', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          wallet.address,
+          fullCollection
+        )
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, [
+          {
+            network: dbTPCollectionMock.linked_contract_network,
+            address: '0x77372a4cc66063575b05b44481f059be356964a4',
+          },
+        ])
+      })
+    })
+
+    describe('and the linked contract stays the same', () => {
+      it('should not touch the virtual third party', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          wallet.address,
+          fullCollection
+        )
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).not.toHaveBeenCalled()
+      })
+    })
+  })
+
   describe('when upserting a collection and the third-party lookup fails transiently', () => {
     let fullCollection: FullCollection
     let ethAddress: string

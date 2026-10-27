@@ -1,4 +1,5 @@
 import { thirdPartyAPI } from '../ethereum/api/thirdParty'
+import { LinkedContract } from '../ethereum/api/fragments'
 import { ItemCuration } from '../Curation/ItemCuration'
 import {
   ThirdParty,
@@ -9,6 +10,7 @@ import {
   convertThirdPartyMetadataToRawMetadata,
   convertVirtualThirdPartyToThirdParty,
   hasManager,
+  parseRawMetadata,
   toThirdParty,
 } from './utils'
 import {
@@ -41,11 +43,39 @@ export class ThirdPartyService {
     })
   }
 
+  /** Keeps a virtual third party's contracts in step with its collection; no-op once the registry owns the record. */
+  static async syncVirtualThirdPartyContracts(
+    thirdPartyId: string,
+    contracts: LinkedContract[]
+  ): Promise<void> {
+    const virtual = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
+      {
+        id: thirdPartyId,
+      }
+    )
+    if (!virtual) {
+      return
+    }
+    const { name, description } = parseRawMetadata(virtual.raw_metadata)
+    await VirtualThirdParty.update(
+      {
+        raw_metadata: convertThirdPartyMetadataToRawMetadata(
+          name,
+          description,
+          contracts
+        ),
+      },
+      { id: thirdPartyId }
+    )
+  }
+
   private static async getVirtualThirdParty(
     thirdPartyId: string
   ): Promise<ThirdParty | undefined> {
     const dbVirtualThirdParty = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
-      { id: thirdPartyId }
+      {
+        id: thirdPartyId,
+      }
     )
 
     return dbVirtualThirdParty
@@ -148,7 +178,9 @@ export class ThirdPartyService {
 
   static async removeVirtualThirdParty(thirdPartyId: string, manager: string) {
     const virtualThirdParty = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
-      { id: thirdPartyId }
+      {
+        id: thirdPartyId,
+      }
     )
     if (!virtualThirdParty) {
       throw new NonExistentThirdPartyError(thirdPartyId)
@@ -170,7 +202,9 @@ export class ThirdPartyService {
     updateParameters: UpdateVirtualThirdPartyBody
   ) {
     const virtualThirdParty = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
-      { id: thirdPartyId }
+      {
+        id: thirdPartyId,
+      }
     )
     if (!virtualThirdParty) {
       throw new NonExistentThirdPartyError(thirdPartyId)

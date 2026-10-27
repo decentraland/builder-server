@@ -221,6 +221,53 @@ describe('when creating a virtual third party', () => {
   })
 })
 
+describe('when syncing the contracts of a virtual third party', () => {
+  const contracts = [
+    {
+      network: 'mainnet',
+      address: '0x77372a4cc66063575b05b44481f059be356964a4',
+    },
+  ]
+
+  describe('and the virtual third party exists', () => {
+    beforeEach(() => {
+      VirtualThirdPartyMock.findOne.mockResolvedValueOnce(virtualThirdParty)
+    })
+
+    it('should rewrite its raw metadata keeping the name and description', async () => {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        virtualThirdParty.id,
+        contracts
+      )
+      expect(VirtualThirdPartyMock.update).toHaveBeenCalledWith(
+        {
+          raw_metadata: convertThirdPartyMetadataToRawMetadata(
+            'name',
+            'description',
+            contracts
+          ),
+        },
+        { id: virtualThirdParty.id }
+      )
+    })
+  })
+
+  describe('and the virtual third party does not exist', () => {
+    beforeEach(() => {
+      VirtualThirdPartyMock.update.mockClear()
+      VirtualThirdPartyMock.findOne.mockResolvedValueOnce(undefined)
+    })
+
+    it('should not update anything', async () => {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        virtualThirdParty.id,
+        contracts
+      )
+      expect(VirtualThirdPartyMock.update).not.toHaveBeenCalled()
+    })
+  })
+})
+
 describe('when getting a third party', () => {
   describe('and the third party is not found in the graph', () => {
     beforeEach(() => {

@@ -272,6 +272,15 @@ describe('when syncing the contracts of a virtual third party', () => {
       )
     })
 
+    it('should not write anything when the contract is already listed and there is nothing to drop', async () => {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        virtualThirdParty.id,
+        previous,
+        previous
+      )
+      expect(VirtualThirdPartyMock.update).not.toHaveBeenCalled()
+    })
+
     it('should append the contract when there is no previous one to replace', async () => {
       await ThirdPartyService.syncVirtualThirdPartyContracts(
         virtualThirdParty.id,

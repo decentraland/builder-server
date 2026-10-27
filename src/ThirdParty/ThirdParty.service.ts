@@ -45,9 +45,10 @@ export class ThirdPartyService {
   }
 
   /**
-   * Swaps one contract of a virtual third party for another, keeping its sibling collections' contracts, so the
-   * first publish registers them all. The virtual row outlives on-chain registration (only a manual delete removes
-   * it) but readers ignore it once the registry has the record, so the rewrite is harmless then.
+   * Makes a virtual third party list `next` in place of `previous`, keeping its sibling collections' contracts, so
+   * the first publish registers them all. Nothing is written when the list already reads that way. The virtual row
+   * outlives on-chain registration (only a manual delete removes it) but readers ignore it once the registry has the
+   * record, so the rewrite is harmless then.
    */
   static async syncVirtualThirdPartyContracts(
     thirdPartyId: string,
@@ -64,10 +65,19 @@ export class ThirdPartyService {
       virtual.raw_metadata
     )
     const kept = contracts.filter(
-      (contract) => !previous || !isSameContract(contract, previous)
+      (contract) =>
+        !previous ||
+        isSameContract(previous, next) ||
+        !isSameContract(contract, previous)
     )
     if (!kept.some((contract) => isSameContract(contract, next))) {
       kept.push(next)
+    }
+    if (
+      kept.length === contracts.length &&
+      kept.every((contract, i) => isSameContract(contract, contracts[i]))
+    ) {
+      return
     }
     await VirtualThirdParty.update(
       {

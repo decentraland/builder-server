@@ -33,13 +33,11 @@ export function isSameContract(a: LinkedContract, b: LinkedContract): boolean {
 export function parseRawMetadata(
   rawMetadata: string
 ): Pick<ThirdParty, 'name' | 'description' | 'contracts'> {
-  const data = rawMetadata.split(':')
-  return {
-    name: data[2] ?? '',
-    description: data[3] ?? '',
-    contracts:
-      data.length == 5 ? buildThirdPartyLinkedContractsMetadata(data[4]) : [],
-  }
+  // Contracts are always the last segment and never contain ':', so a ':' inside the description still round-trips.
+  const [, , name = '', ...rest] = rawMetadata.split(':')
+  const contracts =
+    rest.length >= 2 ? buildThirdPartyLinkedContractsMetadata(rest.pop()!) : []
+  return { name, description: rest.join(':'), contracts }
 }
 
 function buildThirdPartyLinkedContractsMetadata(

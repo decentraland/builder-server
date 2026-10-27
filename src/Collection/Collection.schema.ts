@@ -30,7 +30,10 @@ export const collectionSchema = Object.freeze({
     reviewed_at: { type: ['string', 'null'] },
     created_at: { type: 'string' },
     updated_at: { type: 'string' },
-    linked_contract_address: { type: ['string', 'null'] },
+    linked_contract_address: {
+      type: ['string', 'null'],
+      pattern: '^0x[a-fA-F0-9]{40}$',
+    },
     linked_contract_network: {
       type: ['string', 'null'],
       enum: [...Object.values(ContractNetwork), null],

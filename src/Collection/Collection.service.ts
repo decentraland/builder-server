@@ -494,23 +494,21 @@ export class CollectionService {
 
     const attributes = toDBCollection(collectionJSON)
     const upserted = await Collection.upsertWithItemCount(attributes)
-    // Only after the collection took the contract: the unique constraint may still refuse it. A DB trigger forbids
-    // clearing a linked contract, so there is no unlink to mirror.
+    // Only after the collection took the contract: the unique constraint may still refuse it. Runs on every save,
+    // not only on a change, so a sync that failed once is repaired by the next save and a collection added to an
+    // existing virtual third party gets its contract listed. A DB trigger forbids clearing a linked contract, so
+    // there is no unlink to mirror.
     if (
-      collection &&
       attributes.linked_contract_address &&
-      attributes.linked_contract_network &&
-      (attributes.linked_contract_address !==
-        collection.linked_contract_address?.toLowerCase() ||
-        attributes.linked_contract_network !==
-          collection.linked_contract_network)
+      attributes.linked_contract_network
     ) {
       await ThirdPartyService.syncVirtualThirdPartyContracts(
-        collection.third_party_id!,
-        collection.linked_contract_address && collection.linked_contract_network
+        third_party_id,
+        collection?.linked_contract_address &&
+          collection.linked_contract_network
           ? {
               network: collection.linked_contract_network,
-              address: collection.linked_contract_address.toLowerCase(),
+              address: collection.linked_contract_address,
             }
           : null,
         {

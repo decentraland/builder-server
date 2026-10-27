@@ -409,6 +409,20 @@ describe('Collection service', () => {
           )
         ).resolves.toEqual(dbTPCollectionMock)
       })
+
+      it('should add the collection contract to the virtual third party', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          ethAddress,
+          fullCollection
+        )
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, null, {
+          network: dbTPCollectionMock.linked_contract_network,
+          address: dbTPCollectionMock.linked_contract_address!.toLowerCase(),
+        })
+      })
     })
 
     describe('and the wallet is not a manager of the third party', () => {
@@ -460,7 +474,7 @@ describe('Collection service', () => {
           dbTPCollectionMock.third_party_id,
           {
             network: dbTPCollectionMock.linked_contract_network,
-            address: dbTPCollectionMock.linked_contract_address!.toLowerCase(),
+            address: dbTPCollectionMock.linked_contract_address,
           },
           {
             network: dbTPCollectionMock.linked_contract_network,
@@ -488,15 +502,22 @@ describe('Collection service', () => {
     })
 
     describe('and the linked contract stays the same', () => {
-      it('should not touch the virtual third party', async () => {
+      it('should still sync the virtual third party, so an earlier failed sync is repaired', async () => {
         await service.upsertTPCollection(
           dbTPCollectionMock.id,
           wallet.address,
           fullCollection
         )
+        const stored = {
+          network: dbTPCollectionMock.linked_contract_network,
+          address: dbTPCollectionMock.linked_contract_address,
+        }
         expect(
           ThirdPartyService.syncVirtualThirdPartyContracts
-        ).not.toHaveBeenCalled()
+        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, stored, {
+          ...stored,
+          address: stored.address!.toLowerCase(),
+        })
       })
     })
   })

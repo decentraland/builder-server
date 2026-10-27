@@ -861,6 +861,29 @@ describe('Collection router', () => {
         })
       })
 
+      describe('and the collection to upsert has a linked contract address that is not a hex address', () => {
+        beforeEach(() => {
+          collectionToUpsert = {
+            ...toFullCollection(dbCollection),
+            linked_contract_address: 'mainnet-0x1;matic-0x2',
+            urn,
+          }
+        })
+
+        it('should respond with a 400 and not store the collection', () => {
+          return server
+            .put(buildURL(url))
+            .set(createAuthHeaders('put', url))
+            .send({ collection: collectionToUpsert, data: collectionDataMock })
+            .expect(400)
+            .then((response: any) => {
+              expect(response.body.ok).toBe(false)
+              expect(response.body.error).toBe('Invalid request body')
+              expect(Collection.upsertWithItemCount).not.toHaveBeenCalled()
+            })
+        })
+      })
+
       describe('and the collection is upserted', () => {
         beforeEach(() => {
           collectionToUpsert = {

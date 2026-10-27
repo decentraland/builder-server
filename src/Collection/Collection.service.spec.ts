@@ -501,6 +501,24 @@ describe('Collection service', () => {
       })
     })
 
+    describe('and the virtual third party sync fails', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.syncVirtualThirdPartyContracts as jest.Mock).mockRejectedValueOnce(
+          new Error('db unavailable')
+        )
+      })
+
+      it('should still resolve with the saved collection', () => {
+        return expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            wallet.address,
+            fullCollection
+          )
+        ).resolves.toEqual(dbTPCollectionMock)
+      })
+    })
+
     describe('and the linked contract stays the same', () => {
       it('should still sync the virtual third party, so an earlier failed sync is repaired', async () => {
         await service.upsertTPCollection(

@@ -447,20 +447,6 @@ export class CollectionService {
       if (this.isLockActive(collection.lock)) {
         throw new LockedCollectionError(id, CollectionAction.UPDATE)
       }
-
-      const linkedAddress = collectionJSON.linked_contract_address?.toLowerCase()
-      const linkedNetwork = collectionJSON.linked_contract_network
-      if (
-        linkedAddress &&
-        linkedNetwork &&
-        (linkedAddress !== collection.linked_contract_address?.toLowerCase() ||
-          linkedNetwork !== collection.linked_contract_network)
-      ) {
-        await ThirdPartyService.syncVirtualThirdPartyContracts(
-          collection.third_party_id!,
-          [{ network: linkedNetwork, address: linkedAddress }]
-        )
-      }
     } else {
       let thirdParty: ThirdParty | undefined
       try {
@@ -507,7 +493,33 @@ export class CollectionService {
     }
 
     const attributes = toDBCollection(collectionJSON)
-    return Collection.upsertWithItemCount(attributes)
+    const upserted = await Collection.upsertWithItemCount(attributes)
+    // Only after the collection took the contract: the unique constraint may still refuse it. A DB trigger forbids
+    // clearing a linked contract, so there is no unlink to mirror.
+    if (
+      collection &&
+      attributes.linked_contract_address &&
+      attributes.linked_contract_network &&
+      (attributes.linked_contract_address !==
+        collection.linked_contract_address?.toLowerCase() ||
+        attributes.linked_contract_network !==
+          collection.linked_contract_network)
+    ) {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        collection.third_party_id!,
+        collection.linked_contract_address && collection.linked_contract_network
+          ? {
+              network: collection.linked_contract_network,
+              address: collection.linked_contract_address.toLowerCase(),
+            }
+          : null,
+        {
+          network: attributes.linked_contract_network,
+          address: attributes.linked_contract_address,
+        }
+      )
+    }
+    return upserted
   }
 
   public async getApprovalData(id: string): Promise<ItemApprovalData> {

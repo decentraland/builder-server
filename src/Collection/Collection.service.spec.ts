@@ -456,12 +456,34 @@ describe('Collection service', () => {
         )
         expect(
           ThirdPartyService.syncVirtualThirdPartyContracts
-        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, [
+        ).toHaveBeenCalledWith(
+          dbTPCollectionMock.third_party_id,
+          {
+            network: dbTPCollectionMock.linked_contract_network,
+            address: dbTPCollectionMock.linked_contract_address!.toLowerCase(),
+          },
           {
             network: dbTPCollectionMock.linked_contract_network,
             address: '0x77372a4cc66063575b05b44481f059be356964a4',
-          },
-        ])
+          }
+        )
+      })
+
+      it('should not sync the virtual third party when the collection upsert fails', async () => {
+        ;(Collection.upsertWithItemCount as jest.Mock).mockReset()
+        ;(Collection.upsertWithItemCount as jest.Mock).mockRejectedValueOnce(
+          new Error('duplicate key value violates unique constraint')
+        )
+        await expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            wallet.address,
+            fullCollection
+          )
+        ).rejects.toThrow('duplicate key')
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).not.toHaveBeenCalled()
       })
     })
 

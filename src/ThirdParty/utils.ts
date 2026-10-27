@@ -23,6 +23,13 @@ export function toThirdParty(fragment: ThirdPartyFragment): ThirdParty {
   }
 }
 
+export function isSameContract(a: LinkedContract, b: LinkedContract): boolean {
+  return (
+    a.network === b.network &&
+    a.address.toLowerCase() === b.address.toLowerCase()
+  )
+}
+
 export function parseRawMetadata(
   rawMetadata: string
 ): Pick<ThirdParty, 'name' | 'description' | 'contracts'> {

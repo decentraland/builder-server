@@ -10,6 +10,7 @@ import {
   convertThirdPartyMetadataToRawMetadata,
   convertVirtualThirdPartyToThirdParty,
   hasManager,
+  isSameContract,
   parseRawMetadata,
   toThirdParty,
 } from './utils'
@@ -43,26 +44,37 @@ export class ThirdPartyService {
     })
   }
 
-  /** Keeps a virtual third party's contracts in step with its collection; no-op once the registry owns the record. */
+  /**
+   * Swaps one contract of a virtual third party for another, keeping its sibling collections' contracts, so the
+   * first publish registers them all. The virtual row outlives on-chain registration (only a manual delete removes
+   * it) but readers ignore it once the registry has the record, so the rewrite is harmless then.
+   */
   static async syncVirtualThirdPartyContracts(
     thirdPartyId: string,
-    contracts: LinkedContract[]
+    previous: LinkedContract | null,
+    next: LinkedContract
   ): Promise<void> {
     const virtual = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
-      {
-        id: thirdPartyId,
-      }
+      { id: thirdPartyId }
     )
     if (!virtual) {
       return
     }
-    const { name, description } = parseRawMetadata(virtual.raw_metadata)
+    const { name, description, contracts } = parseRawMetadata(
+      virtual.raw_metadata
+    )
+    const kept = contracts.filter(
+      (contract) => !previous || !isSameContract(contract, previous)
+    )
+    if (!kept.some((contract) => isSameContract(contract, next))) {
+      kept.push(next)
+    }
     await VirtualThirdParty.update(
       {
         raw_metadata: convertThirdPartyMetadataToRawMetadata(
           name,
           description,
-          contracts
+          kept
         ),
       },
       { id: thirdPartyId }
@@ -73,9 +85,7 @@ export class ThirdPartyService {
     thirdPartyId: string
   ): Promise<ThirdParty | undefined> {
     const dbVirtualThirdParty = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
-      {
-        id: thirdPartyId,
-      }
+      { id: thirdPartyId }
     )
 
     return dbVirtualThirdParty
@@ -178,9 +188,7 @@ export class ThirdPartyService {
 
   static async removeVirtualThirdParty(thirdPartyId: string, manager: string) {
     const virtualThirdParty = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
-      {
-        id: thirdPartyId,
-      }
+      { id: thirdPartyId }
     )
     if (!virtualThirdParty) {
       throw new NonExistentThirdPartyError(thirdPartyId)
@@ -202,9 +210,7 @@ export class ThirdPartyService {
     updateParameters: UpdateVirtualThirdPartyBody
   ) {
     const virtualThirdParty = await VirtualThirdParty.findOne<VirtualThirdPartyAttributes>(
-      {
-        id: thirdPartyId,
-      }
+      { id: thirdPartyId }
     )
     if (!virtualThirdParty) {
       throw new NonExistentThirdPartyError(thirdPartyId)

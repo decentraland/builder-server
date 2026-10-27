@@ -776,9 +776,10 @@ export class CollectionRouter extends Router {
         await this.service.syncOwnerFromChain(dbCollection)
       )
     } catch (error) {
+      console.error(`Could not sync the owner of collection ${id}`, error)
       throw new HTTPError(
         "The collection owner couldn't be synced",
-        { id, error: (error as Error).message },
+        { id },
         STATUS_CODES.error
       )
     }

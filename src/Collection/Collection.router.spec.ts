@@ -2282,9 +2282,10 @@ describe('Collection router', () => {
           ;(Item.update as jest.Mock).mockRejectedValueOnce(
             new Error('timeout')
           )
+          jest.spyOn(console, 'error').mockImplementation(() => undefined)
         })
 
-        it('should respond with a 500', () => {
+        it('should respond with a 500 without the database error', () => {
           return server
             .post(buildURL(url))
             .set(createAuthHeaders('post', url))
@@ -2292,7 +2293,7 @@ describe('Collection router', () => {
             .then((response: any) => {
               expect(response.body).toEqual({
                 ok: false,
-                data: { id: dbCollection.id, error: 'timeout' },
+                data: { id: dbCollection.id },
                 error: "The collection owner couldn't be synced",
               })
             })

@@ -601,17 +601,65 @@ export class CollectionService {
     id: string,
     ethAddress: string
   ): Promise<boolean> {
-    const collection = await Collection.findOne<CollectionAttributes>(id)
-    if (collection && isTPCollection(collection)) {
-      return ThirdPartyService.isManager(collection.third_party_id!, ethAddress)
-    } else if (collection) {
-      return (
-        collection.eth_address === ethAddress ||
-        this.isDCLManager(id, ethAddress)
+    const dbCollection = await Collection.findOne<CollectionAttributes>(id)
+    if (!dbCollection) {
+      return false
+    }
+    if (isTPCollection(dbCollection)) {
+      return ThirdPartyService.isManager(
+        dbCollection.third_party_id!,
+        ethAddress
       )
     }
 
-    return false
+    let collection = dbCollection
+    try {
+      collection = await this.syncOwnerFromChain(dbCollection)
+    } catch (error) {
+      // Without the chain, the stored owner is the best answer there is.
+      console.error(
+        `Could not sync the owner of collection ${id} from chain`,
+        error
+      )
+    }
+    return (
+      collection.eth_address === ethAddress ||
+      this.isDCLManagerOfCollection(collection, ethAddress)
+    )
+  }
+
+  /**
+   * The on-chain creator can change (`transferCreatorship`) without the server hearing about it, while the
+   * permission checks read `eth_address` from the database. Stores the subgraph's creator on the collection
+   * and its items when it differs, and returns the collection merged with its on-chain state.
+   */
+  public async syncOwnerFromChain(
+    dbCollection: CollectionAttributes
+  ): Promise<CollectionAttributes> {
+    if (!dbCollection.contract_address) {
+      return dbCollection
+    }
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection.contract_address
+    )
+    if (!remoteCollection) {
+      return dbCollection
+    }
+
+    const ethAddress = remoteCollection.creator.toLowerCase()
+    if (dbCollection.eth_address.toLowerCase() !== ethAddress) {
+      // Items first: the collection row is what marks the sync as done, so a failure before it is retried.
+      await Item.update(
+        { eth_address: ethAddress },
+        { collection_id: dbCollection.id }
+      )
+      await Collection.update(
+        { eth_address: ethAddress },
+        { id: dbCollection.id }
+      )
+      dbCollection.eth_address = ethAddress
+    }
+    return Bridge.mergeCollection(dbCollection, remoteCollection)
   }
 
   /**
@@ -635,9 +683,10 @@ export class CollectionService {
     ) {
       return true
     }
-    return this.isDCLManagerOfCollection(
-      await this.getDCLCollection(collection),
-      ethAddress
+    const remoteCollection = await this.getDCLCollection(collection)
+    return (
+      remoteCollection.eth_address === ethAddress ||
+      this.isDCLManagerOfCollection(remoteCollection, ethAddress)
     )
   }
 

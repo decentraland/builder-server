@@ -833,14 +833,24 @@ export class CollectionService {
       return
     }
 
-    await Promise.all([
-      Collection.update({ eth_address: ethAddress }, { id: dbCollection.id }),
-      Item.update(
+    try {
+      // Items first: the collection row is what skips the sync, so a failure before it is retried on the next read.
+      await Item.update(
         { eth_address: ethAddress },
         { collection_id: dbCollection.id }
-      ),
-    ])
-    dbCollection.eth_address = ethAddress
+      )
+      await Collection.update(
+        { eth_address: ethAddress },
+        { id: dbCollection.id }
+      )
+      dbCollection.eth_address = ethAddress
+    } catch (error) {
+      // The merged collection already carries the on-chain creator, so a failed write must not fail the read.
+      console.error(
+        `Could not sync the owner of collection ${dbCollection.id} from chain`,
+        error
+      )
+    }
   }
 
   private async checkIfNameIsValid(id: string, name: string): Promise<void> {

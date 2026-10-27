@@ -17,7 +17,6 @@ import { CollectionAttributes, FullCollection } from './Collection.types'
 import { UnauthorizedCollectionEditError } from './Collection.errors'
 import { toFullCollection } from './utils'
 import { isCommitteeMember } from '../Committee'
-import { collectionAPI } from '../ethereum/api/collection'
 
 jest.mock('./Collection.model')
 jest.mock('../Item/Item.model')
@@ -33,6 +32,7 @@ describe('Collection service', () => {
   })
 
   afterEach(() => {
+    jest.clearAllMocks()
     jest.restoreAllMocks()
   })
 
@@ -348,8 +348,8 @@ describe('Collection service', () => {
       beforeEach(() => {
         collection = { ...dbCollectionMock }
         ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([collection])
-        ;(Collection.update as jest.Mock).mockResolvedValue(undefined)
-        ;(Item.update as jest.Mock).mockResolvedValue(undefined)
+        ;(Collection.update as jest.Mock).mockResolvedValueOnce(undefined)
+        ;(Item.update as jest.Mock).mockResolvedValueOnce(undefined)
       })
 
       describe('and the on-chain creator is the stored owner', () => {
@@ -392,6 +392,28 @@ describe('Collection service', () => {
           return expect(service.getCollection(collection.id)).resolves.toEqual(
             expect.objectContaining({ eth_address: newOwner })
           )
+        })
+      })
+
+      describe('and storing the new owner of the items fails', () => {
+        beforeEach(() => {
+          jest
+            .spyOn(collectionAPI, 'fetchCollection')
+            .mockResolvedValueOnce({
+              ...collectionFragmentMock,
+              creator: newOwner,
+            })
+          ;(Item.update as jest.Mock).mockReset()
+          ;(Item.update as jest.Mock).mockRejectedValueOnce(
+            new Error('timeout')
+          )
+        })
+
+        it('should leave the collection on the previous owner, so the next read retries, and still return the merged collection', async () => {
+          await expect(service.getCollection(collection.id)).resolves.toEqual(
+            expect.objectContaining({ eth_address: newOwner })
+          )
+          expect(Collection.update).not.toHaveBeenCalled()
         })
       })
     })
@@ -444,8 +466,8 @@ describe('Collection service', () => {
         ;(ThirdPartyService.getThirdParties as jest.Mock).mockResolvedValueOnce(
           []
         )
-        ;(Collection.update as jest.Mock).mockResolvedValue(undefined)
-        ;(Item.update as jest.Mock).mockResolvedValue(undefined)
+        ;(Collection.update as jest.Mock).mockResolvedValueOnce(undefined)
+        ;(Item.update as jest.Mock).mockResolvedValueOnce(undefined)
         jest.spyOn(collectionAPI, 'fetchCollections').mockResolvedValueOnce([
           {
             ...collectionFragmentMock,

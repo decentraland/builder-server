@@ -8,6 +8,7 @@ import { getMergedCollection } from '../Collection/utils'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
+  OnChainApproval,
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { CurationType } from './Curation.types'
@@ -43,33 +44,28 @@ export class CurationService<
     }
   }
 
-  async getLatest() {
-    const columnName = this.getForeignColumnName()
+  /** The latest request of every collection or item; `approvals` only matter for collections. */
+  async getLatest(approvals: OnChainApproval[] = []) {
     return this.getModel().query(
-      SQL`SELECT DISTINCT ON (${raw(columnName)}) *
-        FROM ${raw(this.getTableName())} AS t1
-        WHERE ${this.getLatestCreatedAtQuery()}`
+      SQL`SELECT * FROM `.append(this.getLatestSourceStatement(approvals))
     )
   }
 
-  async getLatestByIds(ids: string[]) {
+  async getLatestByIds(ids: string[], approvals: OnChainApproval[] = []) {
     const columnName = this.getForeignColumnName()
     return this.getModel().query(
-      SQL`SELECT DISTINCT ON (${raw(columnName)}) *
-        FROM ${raw(this.getTableName())} AS t1
-        WHERE ${raw(columnName)} = ANY(${ids})
-          AND ${this.getLatestCreatedAtQuery()}`
+      SQL`SELECT * FROM `
+        .append(this.getLatestSourceStatement(approvals))
+        .append(SQL` WHERE ${raw(columnName)} = ANY(${ids})`)
     )
   }
 
-  async getLatestById(id: string) {
+  async getLatestById(id: string, approvals: OnChainApproval[] = []) {
     const columnName = this.getForeignColumnName()
     const result = await this.getModel().query(
-      SQL`SELECT *
-        FROM ${raw(this.getTableName())}
-        WHERE ${raw(columnName)} = ${id}
-        ORDER BY created_at DESC
-        LIMIT 1`
+      SQL`SELECT * FROM `
+        .append(this.getLatestSourceStatement(approvals))
+        .append(SQL` WHERE ${raw(columnName)} = ${id}`)
     )
     return result[0]
   }
@@ -92,7 +88,8 @@ export class CurationService<
     return result[0]
   }
 
-  async hasAccess(id: string, ethAddress: string) {
+  /** The collection (an item's for item curations) as the chain sees it. */
+  async getMergedCollection(id: string): Promise<CollectionAttributes> {
     const collection =
       this.type === CurationType.ITEM
         ? await Collection.findByItemId(id)
@@ -101,14 +98,22 @@ export class CurationService<
     if (!collection) {
       throw new NonExistentCollectionError()
     }
-    const mergedCollection = await getMergedCollection(collection)
+    return getMergedCollection(collection)
+  }
+
+  async hasAccess(
+    id: string,
+    ethAddress: string,
+    mergedCollection?: CollectionAttributes
+  ) {
+    const collection = mergedCollection ?? (await this.getMergedCollection(id))
 
     switch (this.type) {
       case CurationType.COLLECTION: {
-        return hasCollectionAccess(ethAddress, mergedCollection)
+        return hasCollectionAccess(ethAddress, collection)
       }
       case CurationType.ITEM: {
-        return hasItemAccess(ethAddress, id, mergedCollection)
+        return hasItemAccess(ethAddress, id, collection)
       }
       default:
         throw new Error(`Invalid type ${this.type}`)
@@ -120,12 +125,14 @@ export class CurationService<
     return this.CurationModel
   }
 
-  private getLatestCreatedAtQuery() {
-    const columnName = this.getForeignColumnName()
-    return SQL`created_at = (
-      SELECT MAX(created_at) FROM ${raw(this.getTableName())} AS t2
-      WHERE t1.${raw(columnName)} = t2.${raw(columnName)}
-    )`
+  /** The latest request per collection or item, aliased as the curation table so callers filter by its columns. */
+  private getLatestSourceStatement(approvals: OnChainApproval[]) {
+    if (this.type === CurationType.COLLECTION) {
+      return CollectionCuration.getLatestStatement(approvals)
+    }
+    return SQL`(SELECT DISTINCT ON (item_id) * FROM ${raw(
+      ItemCuration.tableName
+    )} ORDER BY item_id, created_at DESC) ${raw(ItemCuration.tableName)}`
   }
 
   private getTableName() {

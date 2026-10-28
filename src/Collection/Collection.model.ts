@@ -1,7 +1,10 @@
 import { Model, raw, SQL } from 'decentraland-server'
 import { DEFAULT_LIMIT } from '../Pagination/utils'
 import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
-import { CollectionCuration } from '../Curation/CollectionCuration'
+import {
+  CollectionCuration,
+  OnChainApproval,
+} from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
@@ -46,6 +49,8 @@ export type FindCollectionParams = {
   /** Subsets of `remoteIds`: approved now, and not approved but touched on-chain since creation. */
   approvedRemoteIds?: CollectionAttributes['id'][]
   reviewedRemoteIds?: CollectionAttributes['id'][]
+  /** The approved ones with when, so a pending request older than its approval reads as approved. */
+  onChainApprovals?: OnChainApproval[]
 }
 
 type CollectionStatusParams = Pick<
@@ -245,14 +250,15 @@ export class Collection extends Model<CollectionAttributes> {
     )`
   }
 
-  static getLatestCurationJoinStatement() {
-    return SQL`
-      LEFT JOIN
-        (SELECT DISTINCT on (cc.collection_id) cc.* FROM ${raw(
-          CollectionCuration.tableName
-        )} cc ORDER BY cc.collection_id, cc.created_at DESC) collection_curations
-        ON collection_curations.collection_id = collections.id
+  static getLatestCurationJoinStatement(
+    onChainApprovals: OnChainApproval[] = []
+  ) {
+    return SQL`LEFT JOIN `
+      .append(CollectionCuration.getLatestStatement(onChainApprovals))
+      .append(
+        SQL` ON collection_curations.collection_id = collections.id
     `
+      )
   }
 
   /**
@@ -501,7 +507,7 @@ export class Collection extends Model<CollectionAttributes> {
         WHERE items.collection_id = collections.id) as item_count,
         (${raw(this.isMappingCompleteTableStatement())}) as is_mapping_complete
         FROM ${this.getCollectionsSourceStatement(isPublished)}
-        ${this.getLatestCurationJoinStatement()}
+        ${this.getLatestCurationJoinStatement(whereFilters.onChainApprovals)}
         ${
           whereFilters.itemTags
             ? this.getItemsTagJoinStatement(whereFilters.itemTags)
@@ -526,7 +532,9 @@ export class Collection extends Model<CollectionAttributes> {
         .append(this.getStatusStatement(whereFilters))
         .append(SQL` as status FROM `)
         .append(this.getCollectionsSourceStatement(isPublished))
-        .append(this.getLatestCurationJoinStatement())
+        .append(
+          this.getLatestCurationJoinStatement(whereFilters.onChainApprovals)
+        )
         .append(itemTags ? this.getItemsTagJoinStatement(itemTags) : SQL``)
         .append(this.getFindAllWhereStatement(whereFilters))
         .append(SQL`) statuses WHERE status IS NOT NULL GROUP BY status`)

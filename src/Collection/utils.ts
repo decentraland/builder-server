@@ -12,6 +12,9 @@ import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
 import { getMappedChainIdForCurrentChainName } from '../ethereum/utils'
 import { ItemCuration } from '../Curation/ItemCuration'
+import { OnChainApproval } from '../Curation/CollectionCuration'
+import { CollectionFragment } from '../ethereum/api/fragments'
+import { fromUnixTimestamp } from '../utils/parse'
 import {
   decodeTPCollectionURN,
   getDecentralandCollectionURN,
@@ -124,6 +127,35 @@ export function toDBCollection(
     linked_contract_network,
     salt,
   }
+}
+
+/** The approvals the latest collection requests are read against: the collections approved on chain, with when. */
+export function toOnChainApprovals(
+  remoteCollections: CollectionFragment[]
+): OnChainApproval[] {
+  return remoteCollections
+    .filter((remoteCollection) => remoteCollection.isApproved)
+    .map((remoteCollection) => ({
+      contractAddress: remoteCollection.id,
+      reviewedAt: fromUnixTimestamp(remoteCollection.reviewedAt),
+    }))
+}
+
+/** Same as `toOnChainApprovals` for one merged collection; a third-party collection has no on-chain approval. */
+export function toCollectionApprovals(
+  collection: CollectionAttributes
+): OnChainApproval[] {
+  return !isTPCollection(collection) &&
+    collection.is_approved &&
+    collection.contract_address &&
+    collection.reviewed_at
+    ? [
+        {
+          contractAddress: collection.contract_address,
+          reviewedAt: collection.reviewed_at,
+        },
+      ]
+    : []
 }
 
 /**

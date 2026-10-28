@@ -14,8 +14,10 @@ import { Collection } from './Collection.model'
 import {
   getChequeMessageHash,
   getMergedCollection,
+  toCollectionApprovals,
   toDBCollection,
   toFullCollection,
+  toOnChainApprovals,
 } from './utils'
 
 describe('when decoding the TP collection URN', () => {
@@ -197,5 +199,64 @@ describe('when converting a full collection into a DB collection', () => {
         managers: collection.managers,
       })
     )
+  })
+})
+
+describe('when reading the on-chain approvals', () => {
+  describe('from the remote collections', () => {
+    it('should keep the approved ones with when the chain last reviewed them', () => {
+      expect(
+        toOnChainApprovals([
+          {
+            ...collectionFragmentMock,
+            id: '0xa',
+            isApproved: true,
+            reviewedAt: '200',
+          },
+          {
+            ...collectionFragmentMock,
+            id: '0xb',
+            isApproved: false,
+            reviewedAt: '300',
+          },
+        ])
+      ).toEqual([{ contractAddress: '0xa', reviewedAt: new Date(200_000) }])
+    })
+  })
+
+  describe('from a merged collection', () => {
+    const reviewedAt = new Date(200_000)
+
+    it('should resolve to the approval of an approved standard collection', () => {
+      expect(
+        toCollectionApprovals({
+          ...dbCollectionMock,
+          is_approved: true,
+          reviewed_at: reviewedAt,
+        })
+      ).toEqual([
+        { contractAddress: dbCollectionMock.contract_address, reviewedAt },
+      ])
+    })
+
+    it('should resolve to none for a collection that is not approved on chain', () => {
+      expect(
+        toCollectionApprovals({
+          ...dbCollectionMock,
+          is_approved: false,
+          reviewed_at: reviewedAt,
+        })
+      ).toEqual([])
+    })
+
+    it('should resolve to none for a third-party collection, whose request stays pending by design', () => {
+      expect(
+        toCollectionApprovals({
+          ...dbTPCollectionMock,
+          is_approved: true,
+          reviewed_at: reviewedAt,
+        })
+      ).toEqual([])
+    })
   })
 })

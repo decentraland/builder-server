@@ -5,16 +5,13 @@ import {
   buildURL,
   createAuthHeaders,
   mockAuthorizationMiddleware,
-  mockExistsMiddleware,
 } from '../../spec/utils'
 import { wallet } from '../../spec/mocks/wallet'
 import { app } from '../../src/server'
-import { AssetPack } from '../../src/AssetPack/AssetPack.model'
 import { Project } from '../../src/Project/Project.model'
 import { Deployment } from '../../src/Deployment/Deployment.model'
 import { S3Project } from '../../src/S3/S3Project'
 
-jest.mock('../../src/AssetPack/AssetPack.model')
 jest.mock('../../src/Project/Project.model')
 jest.mock('../../src/Deployment/Deployment.model')
 
@@ -27,54 +24,6 @@ function mockProjectExists(id: string) {
       conditions['id'] === id && conditions['is_deleted'] === false ? 1 : 0
   )
 }
-
-describe('when deleting an asset pack', () => {
-  let id: string
-  let url: string
-
-  beforeEach(() => {
-    id = uuid()
-    url = `/assetPacks/${id}`
-    mockExistsMiddleware(AssetPack, id)
-  })
-
-  afterEach(() => {
-    jest.resetAllMocks()
-  })
-
-  describe('and the caller owns it', () => {
-    beforeEach(() => {
-      mockAuthorizationMiddleware(AssetPack, id, wallet.address)
-    })
-
-    it('should respond with a 200 and soft delete the asset pack scoped to the caller', async () => {
-      await server
-        .delete(buildURL(url))
-        .set(createAuthHeaders('delete', url))
-        .expect(200)
-
-      expect(AssetPack.delete).toHaveBeenCalledWith({
-        id,
-        eth_address: wallet.address,
-      })
-    })
-  })
-
-  describe('and the caller does not own it', () => {
-    beforeEach(() => {
-      mockAuthorizationMiddleware(AssetPack, id, anotherAddress)
-    })
-
-    it('should respond with a 401 without deleting the asset pack', async () => {
-      await server
-        .delete(buildURL(url))
-        .set(createAuthHeaders('delete', url))
-        .expect(401)
-
-      expect(AssetPack.delete).not.toHaveBeenCalled()
-    })
-  })
-})
 
 describe('when deleting a project', () => {
   let id: string

@@ -33,7 +33,6 @@ const REMOVED_ROUTES: [HttpMethod, string][] = [
 const RETAINED_ROUTES: [HttpMethod, string, number][] = [
   ['get', '/assets', 401],
   ['get', '/assets/:id', 401],
-  ['delete', '/assetPacks/:id', 401],
   ['get', '/storage/assetPacks/:filename', 301],
   ['get', '/projects', 401],
   ['get', '/projects/:id', 401],

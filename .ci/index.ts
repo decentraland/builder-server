@@ -1,9 +1,11 @@
+import * as aws from '@pulumi/aws'
 import * as pulumi from '@pulumi/pulumi'
-import { createBucketWithUser } from 'dcl-ops-lib/createBucketWithUser'
 import { env } from 'dcl-ops-lib/domain'
 
 export = async function main() {
-  const userAndBucket = createBucketWithUser(`builder-assetpacks-${env}`, {
+  const name = `builder-assetpacks-${env}`
+
+  const bucket = new aws.s3.Bucket(name, {
     corsRules: [
       {
         allowedHeaders: ['*'],
@@ -23,7 +25,23 @@ export = async function main() {
     ],
   })
 
+  // pool.json and the manifests upload with a private ACL; this statement serves them.
+  new aws.s3.BucketPolicy(`${name}-read-policy`, {
+    bucket: bucket.bucket,
+    policy: pulumi.interpolate`{
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Principal": "*",
+        "Action": ["s3:GetObject"],
+        "Resource": ["arn:aws:s3:::${bucket.bucket}/*"]
+      }
+    ]
+  }`,
+  })
+
   return {
-    userAndBucket,
+    userAndBucket: { bucket: bucket.bucket },
   }
 }

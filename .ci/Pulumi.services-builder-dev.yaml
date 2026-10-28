@@ -5,10 +5,6 @@ config:
     secure: v1:otw+92ejjeAgoBNw:au9UYhAZ0iHuFuFHMyRFVg==
   service-builder:FORUM_API_KEY:
     secure: v1:7rn73BWMabPIHq/e:JuX4njhvOAt3Dyjetd/fQLZyvwEowu9iD4cXSlHB/TzvR5f9yQBRtBT+5waiG4pT9A6YKobHAlW1Idhrf134N9StdMHL6S43oL1Zb0auGCM=
-  service-builder:IPFS_API_KEY:
-    secure: v1:pbcXIEjhTOmNDhhs:tJU0rwU2nBTTTfNRqfa1zav4mI4d1o3DN0VnNWg0iPfyERIfjwagA0JtRsL+PjTW
-  service-builder:IPFS_PROJECT_ID:
-    secure: v1:SyWTHCkeMnZ3zniC:nr4JNb57IiZLYAuprI+D7VSKuHpV0XKlDocOlryZLlfYEep7sSYtAwAdIg==
   service-builder:OPEN_SEA_API_KEY:
     secure: v1:Mc7Ff0fCHUuCFIiP:q9OarhYcmVVvPC5BoaQRA2Y20XBlqOo2zdFGMvSRX/pfCoQ2ryLTzwUqjLH+IYM5
   service-builder:WAREHOUSE_TOKEN:

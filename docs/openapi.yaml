@@ -65,8 +65,6 @@ tags:
     description: Analytics endpoints
   - name: NFT
     description: NFT-related operations
-  - name: LAND
-    description: LAND parcel operations
   - name: Newsletter
     description: Newsletter subscription management
 
@@ -1980,87 +1978,6 @@ paths:
         '500':
           $ref: '#/components/responses/InternalServerError'
 
-  # LAND endpoints
-  /lands/redirectionHashes:
-    get:
-      operationId: getRedirectionHashes
-      tags: [LAND]
-      summary: Get redirection hashes
-      description: Returns IPFS hashes for LAND redirection files
-      security: []
-      parameters:
-        - name: coords
-          in: query
-          required: true
-          schema:
-            oneOf:
-              - type: string
-              - type: array
-                items:
-                  type: string
-      responses:
-        '200':
-          description: Redirection hashes
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        x:
-                          type: integer
-                        y:
-                          type: integer
-                        ipfsHash:
-                          type: string
-                        contentHash:
-                          type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-
-  /lands/{coords}/redirection:
-    post:
-      operationId: uploadLandRedirection
-      tags: [LAND]
-      summary: Upload LAND redirection
-      description: Uploads a redirection file to IPFS
-      security: []
-      parameters:
-        - name: coords
-          in: path
-          required: true
-          schema:
-            type: string
-            pattern: '^-?[0-9]+,-?[0-9]+$'
-      responses:
-        '200':
-          description: Redirection uploaded
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      ipfsHash:
-                        type: string
-                      contentHash:
-                        type: string
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '500':
-          $ref: '#/components/responses/InternalServerError'
-
-  # Newsletter endpoints
   /newsletter:
     post:
       operationId: subscribeToNewsletter

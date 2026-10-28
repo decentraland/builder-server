@@ -1865,25 +1865,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    delete:
-      operationId: deleteAssetPack
-      tags: [Asset Packs]
-      summary: Delete an asset pack
-      description: Deletes an asset pack
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Asset pack deleted successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   # Asset endpoints
   /assets/{id}:

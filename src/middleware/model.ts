@@ -7,7 +7,6 @@ import { STATUS_CODES } from '../common/HTTPError'
 import { Project } from '../Project'
 import { Pool } from '../Pool'
 import { Deployment } from '../Deployment'
-import { AssetPack } from '../AssetPack'
 import { Asset } from '../Asset'
 import { Collection } from '../Collection'
 import { Item } from '../Item'
@@ -16,7 +15,6 @@ export type QueryableModel =
   | typeof Project
   | typeof Pool
   | typeof Deployment
-  | typeof AssetPack
   | typeof Asset
   | typeof Collection
   | typeof Item

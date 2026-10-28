@@ -8,14 +8,9 @@ import { withCors } from '../middleware/cors'
 import { Router } from '../common/Router'
 import { HTTPError, STATUS_CODES } from '../common/HTTPError'
 import { logExecutionTime } from '../utils/logging'
-import {
-  withModelExists,
-  withModelAuthorization,
-  withLowercaseQueryParams,
-} from '../middleware'
+import { withLowercaseQueryParams } from '../middleware'
 import {
   withPermissiveAuthentication,
-  withAuthentication,
   AuthRequest,
 } from '../middleware/authentication'
 import { ExpressApp } from '../common/ExpressApp'
@@ -44,9 +39,6 @@ export class AssetPackRouter extends Router {
   }
 
   mount() {
-    const withAssetPackExists = withModelExists(AssetPack)
-    const withAssetPackAuthorization = withModelAuthorization(AssetPack)
-
     /**
      * CORS for the OPTIONS header
      */
@@ -72,18 +64,6 @@ export class AssetPackRouter extends Router {
       withCors,
       withPermissiveAuthentication,
       server.handleRequest(this.getAssetPack)
-    )
-
-    /**
-     * Delete asset pack
-     */
-    this.router.delete(
-      '/assetPacks/:id',
-      withCors,
-      withAuthentication,
-      withAssetPackExists,
-      withAssetPackAuthorization,
-      server.handleRequest(this.deleteAssetPack)
     )
   }
 
@@ -197,13 +177,6 @@ export class AssetPackRouter extends Router {
     }
 
     return this.sanitize([assetPack])[0]
-  }
-
-  async deleteAssetPack(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const eth_address = req.auth.ethAddress
-    await AssetPack.delete({ id, eth_address })
-    return true
   }
 
   private sendDefaultAssetPacksRaw = async (

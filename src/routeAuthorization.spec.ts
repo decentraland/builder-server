@@ -15,7 +15,6 @@ const AUTH_MIDDLEWARE = [
   'withCollectionAuthorization',
   'withPublishAuthorization',
   'withItemAuthorization',
-  'withAssetPackAuthorization',
 ]
 
 const HANDLER_AUTHORIZED: Record<string, string> = {
@@ -37,7 +36,6 @@ const ROUTERS = [
   'Collection/Collection.router.ts',
   'Item/Item.router.ts',
   'Curation/Curation.router.ts',
-  'AssetPack/AssetPack.router.ts',
 ]
 
 interface Route {

@@ -9,6 +9,7 @@ const server = supertest(app.getApp())
 
 const REMOVED_ROUTES: [HttpMethod, string][] = [
   ['put', '/assetPacks/:id'],
+  ['delete', '/assetPacks/:id'],
   ['post', '/assetPacks/:id/thumbnail'],
   ['post', '/assetPacks/:assetPackId/assets/:id/files'],
 ]

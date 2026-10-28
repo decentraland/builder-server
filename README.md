@@ -23,7 +23,7 @@ Backend service for the Decentraland Builder application. Exposes endpoints for 
 
 - **Scene Projects**: Create, manage, and deploy scene projects to Decentraland parcels
 - **Collections & Items**: Manage wearable and emote collections with full curation workflow
-- **Asset Packs**: Read and delete reusable 3D asset packs for scene building (read-only: no create or upload)
+- **Asset Packs**: Read reusable 3D asset packs for scene building (read-only: no create, upload or delete)
 - **Pools & Pool Groups**: Public scene pools for community sharing and categorization
 - **Third Party Integration**: Support for third-party wearable and emote collections
 - **S3 Storage**: Manage project files, thumbnails, and content through S3-compatible storage

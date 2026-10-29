@@ -136,19 +136,39 @@ describe('when building the forum links of a collection', () => {
       process.env.CREATORS_URL = 'https://example.org/create'
     })
 
-    it('should keep linking the legacy Builder in the post', () => {
+    it('should link the whole collection to the creators site editor in review mode', () => {
       const { raw } = buildThirdPartyCollectionForumPost(collection, items)
       expect(raw).toContain(
-        '[Link to editor](https://builder.example.org/item-editor?collection=collection-id&item=item-id)'
+        '[View entire collection](https://example.org/create/collections/editor?collection=collection-id&reviewing=true)'
       )
-      expect(raw).not.toContain('example.org/create')
     })
 
-    it('should keep linking the legacy Builder in update replies', () => {
+    it('should link each item to the creators site editor in review mode', () => {
+      const { raw } = buildThirdPartyCollectionForumPost(collection, items)
+      expect(raw).toContain(
+        '[Link to editor](https://example.org/create/collections/editor?collection=collection-id&item=item-id&reviewing=true)'
+      )
+      expect(raw).not.toContain('builder.example.org')
+    })
+
+    it('should link the creators site editor in update replies', () => {
       const reply = buildCollectionForumUpdateReply('old post', items)
       expect(reply).toContain(
-        '[Link to editor](https://builder.example.org/item-editor?collection=collection-id&item=item-id)'
+        '[Link to editor](https://example.org/create/collections/editor?collection=collection-id&item=item-id&reviewing=true)'
       )
+    })
+
+    describe('and the creators site is not configured', () => {
+      beforeEach(() => {
+        delete process.env.CREATORS_URL
+      })
+
+      it('should fall back to the legacy Builder editor', () => {
+        const { raw } = buildThirdPartyCollectionForumPost(collection, items)
+        expect(raw).toContain(
+          '[Link to editor](https://builder.example.org/item-editor?collection=collection-id&item=item-id)'
+        )
+      })
     })
   })
 })

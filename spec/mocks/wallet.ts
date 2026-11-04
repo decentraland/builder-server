@@ -1,4 +1,4 @@
-import { Wallet as EthersWallet } from 'ethers'
+import { Wallet as EthersWallet, utils } from 'ethers'
 import { Bytes } from '@ethersproject/bytes'
 import { Signer } from '@ethersproject/abstract-signer'
 import { Authenticator, AuthLinkType, AuthIdentity } from '@dcl/crypto'
@@ -8,34 +8,51 @@ export type Wallet = {
   identity: AuthIdentity
 }
 
-// Mock wallet with a valid identity that lasts until 2026. Useful for making authorized requests to the server
-export const wallet: Wallet = {
-  address: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
-  identity: {
-    ephemeralIdentity: {
-      address: '0x00d1244305653Be915D066d39d4c6b54808e59a9',
-      publicKey:
-        '0x043e17ed6a1e1ea903660fb0be36f841c808aff2a595f9b3e3a3caaf970dbb197bd91e414a945ebd27beb478ab85c361127d2e807d014626035881348ccaf69281',
-      privateKey:
-        '0x91ee230307805931ac133b16a3eae41eeb404c8e16436ade9ea07d736217f8fb',
+// Some suites move `Date.now` a day or more ahead (lock expirations) while they sign requests.
+const IDENTITY_TTL_MS = 365 * 24 * 60 * 60 * 1000
+
+/**
+ * A wallet with an identity signed when the module loads, for making authorized requests to the server. Both keys are
+ * generated for each test run and never leave it: no key is kept in the repository and the identity cannot expire.
+ * The signature is computed synchronously, as `Authenticator.initializeAuthChain` would, so mocks can read the address
+ * at import time.
+ */
+function createTestWallet(): Wallet {
+  const signer = new EthersWallet(utils.randomBytes(32))
+  const ephemeral = new EthersWallet(utils.randomBytes(32))
+  const address = signer.address.toLowerCase()
+  const expiration = new Date(Date.now() + IDENTITY_TTL_MS)
+  const ephemeralMessage = `Decentraland Login\nEphemeral address: ${
+    ephemeral.address
+  }\nExpiration: ${expiration.toISOString()}`
+  const signature = utils.joinSignature(
+    new utils.SigningKey(signer.privateKey).signDigest(
+      utils.hashMessage(ephemeralMessage)
+    )
+  )
+
+  return {
+    address,
+    identity: {
+      ephemeralIdentity: {
+        address: ephemeral.address,
+        publicKey: ephemeral.publicKey,
+        privateKey: ephemeral.privateKey,
+      },
+      expiration,
+      authChain: [
+        { type: AuthLinkType.SIGNER, payload: address, signature: '' },
+        {
+          type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
+          payload: ephemeralMessage,
+          signature,
+        },
+      ],
     },
-    expiration: new Date('2026-11-01T19:27:26.452Z'),
-    authChain: [
-      {
-        type: AuthLinkType.SIGNER,
-        payload: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
-        signature: '',
-      },
-      {
-        type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
-        payload:
-          'Decentraland Login\nEphemeral address: 0x00d1244305653Be915D066d39d4c6b54808e59a9\nExpiration: 2026-11-01T19:27:26.452Z',
-        signature:
-          '0x22fa60a6f0c5b979524b6ceea6318ca4491ddd831efa7d60369546f2b66f38383014d262c5ce4e4b859298fe1bc992d990909389d7f6cb5c765d17f9ae2118101b',
-      },
-    ],
-  },
+  }
 }
+
+export const wallet: Wallet = createTestWallet()
 
 // Taken from https://github.com/decentraland/builder-client/blob/00ab26cdbd350ce5f5a46da09358c3662c4c6741/src/test-utils/crypto.ts#L1
 // Wallet address: 0x63FaC9201494f0bd17B9892B9fae4d52fe3BD377

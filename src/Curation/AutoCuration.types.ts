@@ -3,7 +3,7 @@ import { buildEntityMetadata } from '../Item/hashes'
 // The validator job drops a request with more items without answering.
 export const MAX_VALIDATION_ITEMS = 50
 
-export type ValidationTrigger = 'publish' | 'changes'
+export type ValidationTrigger = 'publish' | 'changes' | 'edit'
 
 export type ValidationVerdict = 'passed' | 'rejected' | 'error'
 

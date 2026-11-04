@@ -21,6 +21,7 @@ import { CurationService } from './Curation.service'
 import { CurationStatus } from './Curation.types'
 import { createAssigneeEventPost, getPost } from '../Forum'
 import { curationNotifications } from './notifications'
+import { AutoCurationService } from './AutoCuration.service'
 import { VIDEO_PATH } from '../Item/utils'
 import { ItemService } from '../Item/Item.service'
 import { isFeatureFlagEnabled } from '../utils/features'
@@ -38,6 +39,7 @@ jest.mock('../Forum')
 jest.mock('../utils/features')
 jest.mock('./CollectionEvent/CollectionEvent.model')
 jest.mock('./notifications')
+jest.mock('./AutoCuration.service')
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockCreateAssigneeEventPost = createAssigneeEventPost as jest.Mock
@@ -1392,6 +1394,55 @@ describe('when handling a request', () => {
           )
           expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
         })
+
+        it('should not request the automatic review', async () => {
+          jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(expectedCuration)
+
+          await router.insertCollectionCuration(req)
+
+          expect(
+            AutoCurationService.prototype.onChangesSubmitted
+          ).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('when a creator opens a review request', () => {
+        let expectedCuration: CollectionCurationAttributes
+
+        beforeEach(() => {
+          expectedCuration = {
+            id: 'uuid-123123-123123',
+          } as CollectionCurationAttributes
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+          } as any
+
+          service = mockServiceWithAccess(CollectionCuration, true)
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockResolvedValueOnce({ status: CurationStatus.REJECTED } as any)
+          jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(expectedCuration)
+        })
+
+        it('should notify the curators and request the automatic review of the changes', async () => {
+          expect(await router.insertCollectionCuration(req)).toEqual(
+            expectedCuration
+          )
+
+          expect(curationNotifications.reviewRequested).toHaveBeenCalledWith(
+            'some id',
+            CurationStatus.REJECTED,
+            'ethAddress'
+          )
+          expect(
+            AutoCurationService.prototype.onChangesSubmitted
+          ).toHaveBeenCalledWith('some id', 'ethAddress')
+        })
       })
 
       describe('when updating an item', () => {
@@ -1626,51 +1677,6 @@ describe('when handling a request', () => {
       })
     })
 
-    describe('and the curation is rejected without reasons', () => {
-      beforeEach(() => {
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-          body: {
-            curation: {
-              status: CurationStatus.REJECTED,
-              rejectionMessage: 'Clips through the body',
-            },
-          },
-        } as any
-      })
-
-      it('should reject with a message asking for the reasons and not update the curation', async () => {
-        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
-          'Rejecting a collection requires rejectionReasons and rejectionMessage'
-        )
-        expect(updateSpy).not.toHaveBeenCalled()
-        expect(mockRecordEvent).not.toHaveBeenCalled()
-      })
-    })
-
-    describe('and the curation is rejected without a message', () => {
-      beforeEach(() => {
-        req = {
-          auth: { ethAddress: 'ethAddress' },
-          params: { id: 'some id' },
-          body: {
-            curation: {
-              status: CurationStatus.REJECTED,
-              rejectionReasons: ['clipping'],
-            },
-          },
-        } as any
-      })
-
-      it('should reject with a message asking for the message and not update the curation', async () => {
-        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
-          'Rejecting a collection requires rejectionReasons and rejectionMessage'
-        )
-        expect(updateSpy).not.toHaveBeenCalled()
-      })
-    })
-
     describe('and the curation is rejected with a reason outside the fixed list', () => {
       beforeEach(() => {
         req = {
@@ -1769,26 +1775,6 @@ describe('when handling a request', () => {
           payload: {},
         })
       })
-    })
-  })
-
-  describe('when the assignee forum post is requested with the auto curation enabled', () => {
-    let req: AuthRequest
-
-    beforeEach(() => {
-      mockIsFeatureFlagEnabled.mockResolvedValue(true)
-      mockIsCommitteeMember.mockResolvedValueOnce(true)
-      req = {
-        auth: { ethAddress: 'ethAddress' },
-        params: { id: 'some id', forumPost: { raw: '', topic_id: '1' } },
-      } as any
-    })
-
-    it('should resolve without posting to the forum', async () => {
-      await expect(
-        router.createCurationNewAssigneePost(req)
-      ).resolves.toBeUndefined()
-      expect(mockCreateAssigneeEventPost).not.toHaveBeenCalled()
     })
   })
 })

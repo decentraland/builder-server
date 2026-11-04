@@ -10,12 +10,6 @@ export class ValidationLimitReachedError extends Error {
   }
 }
 
-export class MissingCurationError extends Error {
-  constructor(public id: string) {
-    super('The collection has no curation to validate')
-  }
-}
-
 export class NotStandardCollectionError extends Error {
   constructor(public id: string) {
     super('Only standard collections can be validated automatically')
@@ -31,6 +25,14 @@ export class AppealAlreadyOpenError extends Error {
 export class CurationNotRejectedError extends Error {
   constructor(public id: string) {
     super('Only rejected collections can be appealed')
+  }
+}
+
+export class CurationRejectedByCuratorError extends Error {
+  constructor(public id: string) {
+    super(
+      'A curator rejected this collection: submit your changes for review instead of validating again'
+    )
   }
 }
 

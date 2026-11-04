@@ -6,8 +6,9 @@ import { getDefaultHttpMetrics } from '@well-known-components/metrics/dist/http'
 
 export type RawBodyRequest = express.Request & { rawBody?: string }
 
-// The validator signs the exact bytes it sent, which JSON parsing does not preserve.
-const RAW_BODY_PATH = /\/validation-result$/
+// The validator signs the exact bytes it sent, which JSON parsing does not preserve. Routing ignores case and a
+// trailing slash, so this does too.
+const RAW_BODY_PATH = /\/validation-result\/?$/i
 
 function keepRawBody(req: IncomingMessage, _: unknown, buffer: Buffer) {
   if (RAW_BODY_PATH.test((req.url ?? '').split('?')[0])) {

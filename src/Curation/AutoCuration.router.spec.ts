@@ -48,6 +48,7 @@ jest.mock('./validationQueue', () => ({
   requestValidation: jest.fn(),
 }))
 jest.mock('./slack')
+jest.mock('./notifications')
 jest.mock('./collectionLock')
 
 const server = supertest(app.getApp())
@@ -57,6 +58,7 @@ const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
 const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
 const mockRecordEventOnce = CollectionEvent.recordOnce as jest.Mock
+const mockRecordEvent = CollectionEvent.record as jest.Mock
 const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Mock
 const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndType as jest.Mock
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
@@ -101,14 +103,18 @@ describe('AutoCuration router', () => {
 
   beforeAll(() => {
     process.env.WEARABLE_VALIDATOR_CALLBACK_SECRET = callbackSecret
+    process.env.AWS_SNS_ARN = 'arn:aws:sns:us-east-1:000000000000:events'
   })
 
   afterAll(() => {
     delete process.env.WEARABLE_VALIDATOR_CALLBACK_SECRET
+    delete process.env.AWS_SNS_ARN
   })
 
   beforeEach(() => {
     mockIsFeatureFlagEnabled.mockResolvedValue(true)
+    ;(Item.findByIds as jest.Mock).mockResolvedValue([])
+    jest.spyOn(process.stderr, 'write').mockImplementation(() => true)
     ;(withCollectionLock as jest.Mock).mockImplementation(
       (_: string, task: () => Promise<unknown>) => task()
     )
@@ -116,6 +122,7 @@ describe('AutoCuration router', () => {
 
   afterEach(() => {
     jest.resetAllMocks()
+    jest.restoreAllMocks()
   })
 
   describe('when the auto curation flag is off', () => {
@@ -151,26 +158,38 @@ describe('AutoCuration router', () => {
         .expect(404)
     })
 
-    it('should answer 404 on a signed validator callback', () => {
+    it('should still record a signed validator callback for a job that was in flight', () => {
       url = `/collections/${dbCollectionMock.id}/validation-result`
+      mockFindLatestEventByType.mockResolvedValue(
+        buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          validationId: 'inFlight',
+        })
+      )
+      mockRecordEventOnce.mockImplementation((event) => Promise.resolve(event))
       return postSigned(url, {
-        validationId: 'x',
+        validationId: 'inFlight',
         collectionId: dbCollectionMock.id,
         verdict: 'passed',
         rulesVersion: '0.4.0',
         items: [],
       })
-        .expect(404)
-        .then(() => expect(mockRecordEventOnce).not.toHaveBeenCalled())
+        .expect(204)
+        .then(() =>
+          expect(mockRecordEventOnce).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_AI_PASSED,
+            })
+          )
+        )
     })
 
-    it('should answer 401 on an unsigned validator callback so the flag state stays hidden', () => {
+    it('should answer 401 on an unsigned validator callback', () => {
       url = `/collections/${dbCollectionMock.id}/validation-result`
       return server
         .post(buildURL(url))
         .send({ validationId: 'x', verdict: 'passed', items: [] })
         .expect(401)
-        .then(() => expect(mockIsFeatureFlagEnabled).not.toHaveBeenCalled())
+        .then(() => expect(mockFindLatestEventByType).not.toHaveBeenCalled())
     })
   })
 
@@ -325,6 +344,38 @@ describe('AutoCuration router', () => {
       })
     })
 
+    describe('and the rules version carries build metadata', () => {
+      it('should accept it', () => {
+        return postSigned(url, { ...result, rulesVersion: '0.5.0+abc.1' })
+          .expect(204)
+          .then(() => expect(mockRecordEventOnce).toHaveBeenCalled())
+      })
+    })
+
+    describe('and a logged id carries a line break', () => {
+      it('should respond with a 400', () => {
+        return postSigned(url, {
+          ...result,
+          validationId: 'latest\nValidation',
+        })
+          .expect(400)
+          .then(() => expect(mockRecordEventOnce).not.toHaveBeenCalled())
+      })
+    })
+
+    describe('and the collection does not exist any more', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValue(undefined)
+        mockFindLatestEventByType.mockResolvedValue(undefined)
+      })
+
+      it('should still respond with a 204 so the job does not retry it', () => {
+        return postSigned(url, result)
+          .expect(204)
+          .then(() => expect(mockRecordEventOnce).not.toHaveBeenCalled())
+      })
+    })
+
     describe('and the validation is not the latest one', () => {
       it('should respond with a 204 and ignore it', () => {
         return postSigned(url, { ...result, validationId: 'staleValidation' })
@@ -443,7 +494,7 @@ describe('AutoCuration router', () => {
                   status: CurationStatus.REJECTED,
                   reviewed_by: 'validator',
                 }),
-                { id: 'curationId' }
+                { id: 'curationId', status: CurationStatus.PENDING }
               )
             })
         })
@@ -582,9 +633,9 @@ describe('AutoCuration router', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockResolvedValue(undefined)
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_PASSED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
         ])
       })
 
@@ -606,23 +657,30 @@ describe('AutoCuration router', () => {
 
     describe('and nothing changed since the latest verdict', () => {
       beforeEach(() => {
-        mockFindLatestEventByType.mockResolvedValue({
-          ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
-            validationId: 'previous',
-            itemIds: [],
-          }),
-          created_at: new Date(Date.now() - 60 * 1000),
-        })
+        const itemId = uuidv4()
+        mockFindLatestEventByType.mockImplementation((_, type) =>
+          Promise.resolve(
+            type === CollectionEventType.REVIEW_AI_STARTED
+              ? {
+                  ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+                    validationId: 'previous',
+                    itemIds: [itemId],
+                    contentHashes: { [itemId]: 'sameHash' },
+                  }),
+                  created_at: new Date(Date.now() - 60 * 1000),
+                }
+              : undefined
+          )
+        )
         mockFindVerdict.mockResolvedValue(
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
             validationId: 'previous',
           })
         )
+        const item = { id: itemId, local_content_hash: 'sameHash' }
+        ;(Item.findByIds as jest.Mock).mockResolvedValue([item])
         ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValue([
-          {
-            id: uuidv4(),
-            updated_at: new Date(Date.now() - 120 * 1000),
-          },
+          item,
         ])
       })
 
@@ -671,11 +729,45 @@ describe('AutoCuration router', () => {
     })
 
     describe('and the note is missing', () => {
-      it('should respond with a 400', () => {
+      beforeEach(() => {
+        mockFindLatestEvent.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
+        )
+        mockFindLatestCuration.mockResolvedValue({
+          id: 'curationId',
+          status: CurationStatus.REJECTED,
+        })
+        ;(CollectionCuration.create as jest.Mock).mockImplementation(
+          (curation) => Promise.resolve(curation)
+        )
+      })
+
+      it('should open the pending curation anyway and respond with it', () => {
         return server
           .post(buildURL(url))
           .set(createAuthHeaders('post', url))
           .send({})
+          .expect(200)
+          .then((response: any) => {
+            expect(response.body.data).toEqual(
+              expect.objectContaining({ status: CurationStatus.PENDING })
+            )
+            expect(mockRecordEvent).toHaveBeenCalledWith(
+              expect.objectContaining({
+                type: CollectionEventType.REVIEW_APPEAL_REQUESTED,
+                payload: { note: '' },
+              })
+            )
+          })
+      })
+    })
+
+    describe('and the note is longer than 2000 characters', () => {
+      it('should respond with a 400', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .send({ note: 'a'.repeat(2001) })
           .expect(400)
       })
     })

@@ -15,8 +15,11 @@ import { UnauthorizedCollectionEditError } from './Collection.errors'
 import { toFullCollection } from './utils'
 import { isCommitteeMember } from '../Committee'
 import { collectionAPI } from '../ethereum/api/collection'
+import { Bridge } from '../ethereum/api/Bridge'
+import { Item } from '../Item/Item.model'
 
 jest.mock('./Collection.model')
+jest.mock('../Item/Item.model')
 jest.mock('../ThirdParty/ThirdParty.service')
 jest.mock('../Curation/ItemCuration/ItemCuration.model')
 jest.mock('../Committee')
@@ -29,6 +32,7 @@ describe('Collection service', () => {
   })
 
   afterEach(() => {
+    jest.clearAllMocks()
     jest.restoreAllMocks()
   })
 
@@ -131,6 +135,25 @@ describe('Collection service', () => {
         })
       })
 
+      describe('and the address became the owner on-chain but is not stored as such yet', () => {
+        beforeEach(() => {
+          ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+            dbCollectionMock
+          )
+          ;(isCommitteeMember as jest.Mock).mockResolvedValueOnce(false)
+          jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+            ...collectionFragmentMock,
+            creator: otherAddress,
+          })
+        })
+
+        it('should return true', async () => {
+          expect(
+            await service.canSyncPublication(dbCollectionMock.id, otherAddress)
+          ).toBe(true)
+        })
+      })
+
       describe('and the address is neither the owner, a manager nor a committee member', () => {
         beforeEach(() => {
           ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
@@ -190,6 +213,196 @@ describe('Collection service', () => {
             )
           ).toBe(true)
         })
+      })
+    })
+  })
+
+  describe('when syncing the owner of a collection from chain', () => {
+    const newOwner = '0x00000000000000000000000000000000000000AA'
+    let collection: CollectionAttributes
+
+    beforeEach(() => {
+      collection = { ...dbCollectionMock }
+    })
+
+    describe('and the collection is not published', () => {
+      beforeEach(() => {
+        collection.contract_address = null
+        jest.spyOn(collectionAPI, 'fetchCollection')
+      })
+
+      it('should return the collection untouched', async () => {
+        await expect(service.syncOwnerFromChain(collection)).resolves.toBe(
+          collection
+        )
+        expect(collectionAPI.fetchCollection).not.toHaveBeenCalled()
+        expect(Collection.update).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the subgraph does not know the collection yet', () => {
+      beforeEach(() => {
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce(null)
+      })
+
+      it('should return the collection untouched', async () => {
+        await expect(service.syncOwnerFromChain(collection)).resolves.toBe(
+          collection
+        )
+        expect(Collection.update).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the on-chain creator is the stored owner', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(collectionAPI, 'fetchCollection')
+          .mockResolvedValueOnce(collectionFragmentMock)
+      })
+
+      it('should return the merged collection without touching the database', async () => {
+        await expect(service.syncOwnerFromChain(collection)).resolves.toEqual(
+          Bridge.mergeCollection(dbCollectionMock, collectionFragmentMock)
+        )
+        expect(Collection.update).not.toHaveBeenCalled()
+        expect(Item.update).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the ownership was transferred on-chain', () => {
+      beforeEach(() => {
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+          ...collectionFragmentMock,
+          creator: newOwner,
+        })
+      })
+
+      it('should store the new owner, lowercased, on the collection and its items', async () => {
+        await service.syncOwnerFromChain(collection)
+        expect(Item.update).toHaveBeenCalledWith(
+          { eth_address: newOwner.toLowerCase() },
+          { collection_id: collection.id }
+        )
+        expect(Collection.update).toHaveBeenCalledWith(
+          { eth_address: newOwner.toLowerCase() },
+          { id: collection.id }
+        )
+      })
+
+      it('should return the collection owned by the new owner', () => {
+        return expect(service.syncOwnerFromChain(collection)).resolves.toEqual(
+          expect.objectContaining({ eth_address: newOwner })
+        )
+      })
+
+      describe('and storing the new owner of the items fails', () => {
+        beforeEach(() => {
+          ;(Item.update as jest.Mock).mockRejectedValueOnce(
+            new Error('timeout')
+          )
+        })
+
+        it('should throw and leave the collection on the previous owner, so the next sync retries', async () => {
+          await expect(service.syncOwnerFromChain(collection)).rejects.toThrow(
+            'timeout'
+          )
+          expect(Collection.update).not.toHaveBeenCalled()
+        })
+      })
+    })
+  })
+
+  describe('when checking if an address owns or manages a collection', () => {
+    const newOwner = '0x00000000000000000000000000000000000000aa'
+
+    describe('and the collection does not exist', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(undefined)
+      })
+
+      it('should return false', () => {
+        return expect(
+          service.isOwnedOrManagedBy(dbCollectionMock.id, wallet.address)
+        ).resolves.toBe(false)
+      })
+    })
+
+    describe('and the collection is a third party collection', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbTPCollectionMock
+        )
+        ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
+      })
+
+      it('should answer with whether the address manages the third party', () => {
+        return expect(
+          service.isOwnedOrManagedBy(dbTPCollectionMock.id, wallet.address)
+        ).resolves.toBe(true)
+      })
+    })
+
+    describe('and the collection was transferred on-chain to the address', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+          ...dbCollectionMock,
+        })
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+          ...collectionFragmentMock,
+          creator: newOwner,
+        })
+      })
+
+      it('should allow the new owner and store it', async () => {
+        await expect(
+          service.isOwnedOrManagedBy(dbCollectionMock.id, newOwner)
+        ).resolves.toBe(true)
+        expect(Collection.update).toHaveBeenCalledWith(
+          { eth_address: newOwner },
+          { id: dbCollectionMock.id }
+        )
+      })
+    })
+
+    describe('and the collection was transferred on-chain away from the address', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce({
+          ...dbCollectionMock,
+        })
+        jest.spyOn(collectionAPI, 'fetchCollection').mockResolvedValueOnce({
+          ...collectionFragmentMock,
+          creator: newOwner,
+        })
+      })
+
+      it('should refuse the previous owner', () => {
+        return expect(
+          service.isOwnedOrManagedBy(
+            dbCollectionMock.id,
+            dbCollectionMock.eth_address
+          )
+        ).resolves.toBe(false)
+      })
+    })
+
+    describe('and the subgraph cannot be reached', () => {
+      beforeEach(() => {
+        ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+          dbCollectionMock
+        )
+        jest
+          .spyOn(collectionAPI, 'fetchCollection')
+          .mockRejectedValueOnce(new Error('ECONNREFUSED'))
+        jest.spyOn(console, 'error').mockImplementation(() => undefined)
+      })
+
+      it('should fall back to the stored owner', () => {
+        return expect(
+          service.isOwnedOrManagedBy(
+            dbCollectionMock.id,
+            dbCollectionMock.eth_address
+          )
+        ).resolves.toBe(true)
       })
     })
   })
@@ -409,6 +622,20 @@ describe('Collection service', () => {
           )
         ).resolves.toEqual(dbTPCollectionMock)
       })
+
+      it('should add the collection contract to the virtual third party', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          ethAddress,
+          fullCollection
+        )
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, null, {
+          network: dbTPCollectionMock.linked_contract_network,
+          address: dbTPCollectionMock.linked_contract_address!.toLowerCase(),
+        })
+      })
     })
 
     describe('and the wallet is not a manager of the third party', () => {
@@ -424,6 +651,104 @@ describe('Collection service', () => {
             fullCollection
           )
         ).rejects.toThrow(UnauthorizedCollectionEditError)
+      })
+    })
+  })
+
+  describe('when updating an existing third party collection', () => {
+    let fullCollection: FullCollection
+
+    beforeEach(() => {
+      fullCollection = toFullCollection(dbTPCollectionMock)
+      ;(Collection.findOne as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+      ;(ThirdPartyService.isManager as jest.Mock).mockResolvedValueOnce(true)
+      ;(Collection.upsertWithItemCount as jest.Mock).mockResolvedValueOnce(
+        dbTPCollectionMock
+      )
+    })
+
+    describe('and the linked contract changes', () => {
+      beforeEach(() => {
+        fullCollection.linked_contract_address =
+          '0x77372A4CC66063575B05B44481F059BE356964A4'
+      })
+
+      it('should sync the virtual third party with the new contract', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          wallet.address,
+          fullCollection
+        )
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(
+          dbTPCollectionMock.third_party_id,
+          {
+            network: dbTPCollectionMock.linked_contract_network,
+            address: dbTPCollectionMock.linked_contract_address,
+          },
+          {
+            network: dbTPCollectionMock.linked_contract_network,
+            address: '0x77372a4cc66063575b05b44481f059be356964a4',
+          }
+        )
+      })
+
+      it('should not sync the virtual third party when the collection upsert fails', async () => {
+        ;(Collection.upsertWithItemCount as jest.Mock).mockReset()
+        ;(Collection.upsertWithItemCount as jest.Mock).mockRejectedValueOnce(
+          new Error('duplicate key value violates unique constraint')
+        )
+        await expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            wallet.address,
+            fullCollection
+          )
+        ).rejects.toThrow('duplicate key')
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the virtual third party sync fails', () => {
+      beforeEach(() => {
+        ;(ThirdPartyService.syncVirtualThirdPartyContracts as jest.Mock).mockRejectedValueOnce(
+          new Error('db unavailable')
+        )
+      })
+
+      it('should still resolve with the saved collection', () => {
+        return expect(
+          service.upsertTPCollection(
+            dbTPCollectionMock.id,
+            wallet.address,
+            fullCollection
+          )
+        ).resolves.toEqual(dbTPCollectionMock)
+      })
+    })
+
+    describe('and the linked contract stays the same', () => {
+      it('should still sync the virtual third party, so an earlier failed sync is repaired', async () => {
+        await service.upsertTPCollection(
+          dbTPCollectionMock.id,
+          wallet.address,
+          fullCollection
+        )
+        const stored = {
+          network: dbTPCollectionMock.linked_contract_network,
+          address: dbTPCollectionMock.linked_contract_address,
+        }
+        expect(
+          ThirdPartyService.syncVirtualThirdPartyContracts
+        ).toHaveBeenCalledWith(dbTPCollectionMock.third_party_id, stored, {
+          ...stored,
+          address: stored.address!.toLowerCase(),
+        })
       })
     })
   })

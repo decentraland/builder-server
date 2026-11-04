@@ -142,6 +142,20 @@ describe('when parsing raw metadata', () => {
     })
   })
 
+  describe('when the description contains a colon', () => {
+    beforeEach(() => {
+      rawMetadata = 'tp:1:a name:a: description:amoy-0x0'
+    })
+
+    it('should keep the description whole and still read the contracts', () => {
+      expect(parseRawMetadata(rawMetadata)).toEqual({
+        name: 'a name',
+        description: 'a: description',
+        contracts: [{ network: 'amoy', address: '0x0' }],
+      })
+    })
+  })
+
   describe('when the raw metadata does not have contracts', () => {
     beforeEach(() => {
       rawMetadata = 'tp:1:a name:a description:'

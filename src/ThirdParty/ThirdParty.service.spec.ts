@@ -221,6 +221,101 @@ describe('when creating a virtual third party', () => {
   })
 })
 
+describe('when syncing the contracts of a virtual third party', () => {
+  const previous = {
+    network: 'mainnet',
+    address: '0x77372a4cc66063575b05b44481f059be356964a4',
+  }
+  const sibling = {
+    network: 'mainnet',
+    address: '0x1111111111111111111111111111111111111111',
+  }
+  const next = {
+    network: 'mainnet',
+    address: '0xcb0befd9417c65f19bd348840515fdb20d6fb818',
+  }
+  // Stored with another case: the swap must still find it.
+  const storedPrevious = {
+    ...previous,
+    address: previous.address.toUpperCase(),
+  }
+
+  beforeEach(() => {
+    VirtualThirdPartyMock.update.mockClear()
+  })
+
+  describe('and the virtual third party exists', () => {
+    beforeEach(() => {
+      virtualThirdParty.raw_metadata = convertThirdPartyMetadataToRawMetadata(
+        'name',
+        'description',
+        [sibling, storedPrevious]
+      )
+      VirtualThirdPartyMock.findOne.mockResolvedValueOnce(virtualThirdParty)
+    })
+
+    it('should swap only the previous contract, keeping the name, description and sibling contracts', async () => {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        virtualThirdParty.id,
+        previous,
+        next
+      )
+      expect(VirtualThirdPartyMock.update).toHaveBeenCalledWith(
+        {
+          raw_metadata: convertThirdPartyMetadataToRawMetadata(
+            'name',
+            'description',
+            [sibling, next]
+          ),
+        },
+        { id: virtualThirdParty.id }
+      )
+    })
+
+    it('should not write anything when the contract is already listed and there is nothing to drop', async () => {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        virtualThirdParty.id,
+        previous,
+        previous
+      )
+      expect(VirtualThirdPartyMock.update).not.toHaveBeenCalled()
+    })
+
+    it('should append the contract when there is no previous one to replace', async () => {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        virtualThirdParty.id,
+        null,
+        next
+      )
+      expect(VirtualThirdPartyMock.update).toHaveBeenCalledWith(
+        {
+          raw_metadata: convertThirdPartyMetadataToRawMetadata(
+            'name',
+            'description',
+            [sibling, storedPrevious, next]
+          ),
+        },
+        { id: virtualThirdParty.id }
+      )
+    })
+  })
+
+  describe('and the virtual third party does not exist', () => {
+    beforeEach(() => {
+      VirtualThirdPartyMock.findOne.mockResolvedValueOnce(undefined)
+    })
+
+    it('should not update anything', async () => {
+      await ThirdPartyService.syncVirtualThirdPartyContracts(
+        virtualThirdParty.id,
+        previous,
+        next
+      )
+      expect(VirtualThirdPartyMock.update).not.toHaveBeenCalled()
+    })
+  })
+})
+
 describe('when getting a third party', () => {
   describe('and the third party is not found in the graph', () => {
     beforeEach(() => {

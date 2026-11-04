@@ -9,6 +9,8 @@ import {
 
 export const SWEEP_EXHAUSTED_REASON = 'sweep_exhausted'
 export const TOO_LARGE_REASON = 'too_large'
+// The request never reached the topic; the sweep re-sends it.
+export const PUBLISH_FAILED_REASON = 'publish_failed'
 // Error reasons the sweep must not re-send: re-sending cannot change their outcome.
 const FINAL_ERROR_REASONS = [SWEEP_EXHAUSTED_REASON, TOO_LARGE_REASON]
 
@@ -68,7 +70,9 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
           ${JSON.stringify(event.payload)}::jsonb,
           ${nextTimestamp()}
         )
-        ON CONFLICT DO NOTHING
+        ON CONFLICT (collection_id, type, (payload->>'validationId'), (COALESCE(payload->>'reason', '')))
+          WHERE type IN ('review.ai_passed', 'review.ai_rejected', 'review.ai_error', 'review.human_required')
+          DO NOTHING
         RETURNING *`)
     return rows[0]
   }

@@ -31,7 +31,7 @@ import {
   AppealAlreadyOpenError,
   CollectionBusyError,
   CurationNotRejectedError,
-  MissingCurationError,
+  CurationRejectedByCuratorError,
   NothingToRevalidateError,
   NotStandardCollectionError,
   ValidationInProgressError,
@@ -113,12 +113,40 @@ export function withValidatorSignature(
   next()
 }
 
+/** Maps the service's expected failures to HTTP answers; anything else is rethrown. */
+export function toAutoCurationHTTPError(error: unknown, id: string): unknown {
+  if (error instanceof ValidationInProgressError) {
+    return new HTTPError(error.message, { id }, STATUS_CODES.conflict)
+  }
+  if (error instanceof ValidationLimitReachedError) {
+    return new HTTPError(
+      error.message,
+      { id, retryAt: error.retryAt.toISOString() },
+      STATUS_CODES.tooManyRequests
+    )
+  }
+  if (
+    error instanceof AppealAlreadyOpenError ||
+    error instanceof CurationNotRejectedError ||
+    error instanceof CurationRejectedByCuratorError ||
+    error instanceof NotStandardCollectionError ||
+    error instanceof NothingToRevalidateError
+  ) {
+    return new HTTPError(error.message, { id }, STATUS_CODES.conflict)
+  }
+  // Another instance holds the collection: 503 makes the Builder and the validator job retry instead of giving up.
+  if (error instanceof CollectionBusyError) {
+    return new HTTPError(error.message, { id }, STATUS_CODES.serviceUnavailable)
+  }
+  return error
+}
+
 export class AutoCurationRouter extends Router {
   public service = new AutoCurationService()
   public collectionService = new CollectionService()
 
   mount() {
-    // With the flag off none of these routes exist, so the legacy flow stays untouched.
+    // With the flag off none of the creator routes exist, so the legacy flow stays untouched.
     // It runs after auth so anonymous calls never fetch the flag.
     const withAutoCurationEnabled = guardAsync(
       async (_: Request, res: Response, next: NextFunction) => {
@@ -179,12 +207,12 @@ export class AutoCurationRouter extends Router {
       server.handleRequest(this.getEvents)
     )
 
-    // The signature goes first so an unauthenticated caller cannot tell whether the flag is on.
+    // Not gated by the feature flag nor by the collection's existence: a result for a job that was in flight
+    // when the flag went off, or whose collection was deleted, must still be answered, otherwise the job
+    // retries it into its dead-letter queue.
     this.router.post(
       '/collections/:id/validation-result',
       withValidatorSignature,
-      withAutoCurationEnabled,
-      withCollectionExists,
       withSchemaValidation(validationResultSchema),
       asyncHandler(this.receiveValidationResult)
     )
@@ -196,23 +224,7 @@ export class AutoCurationRouter extends Router {
     try {
       return await this.service.requestValidation(id, req.auth.ethAddress)
     } catch (error) {
-      if (error instanceof ValidationInProgressError) {
-        throw new HTTPError(error.message, { id }, STATUS_CODES.conflict)
-      } else if (error instanceof ValidationLimitReachedError) {
-        throw new HTTPError(
-          error.message,
-          { id, retryAt: error.retryAt.toISOString() },
-          STATUS_CODES.tooManyRequests
-        )
-      } else if (
-        error instanceof MissingCurationError ||
-        error instanceof NotStandardCollectionError ||
-        error instanceof NothingToRevalidateError
-      ) {
-        throw new HTTPError(error.message, { id }, STATUS_CODES.conflict)
-      }
-
-      throw toBusyHTTPError(error, id)
+      throw toAutoCurationHTTPError(error, id)
     }
   }
 
@@ -220,16 +232,13 @@ export class AutoCurationRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     try {
-      return await this.service.appeal(id, req.auth.ethAddress, req.body.note)
+      return await this.service.appeal(
+        id,
+        req.auth.ethAddress,
+        req.body.note ?? ''
+      )
     } catch (error) {
-      if (
-        error instanceof AppealAlreadyOpenError ||
-        error instanceof CurationNotRejectedError
-      ) {
-        throw new HTTPError(error.message, { id }, STATUS_CODES.conflict)
-      }
-
-      throw toBusyHTTPError(error, id)
+      throw toAutoCurationHTTPError(error, id)
     }
   }
 
@@ -271,15 +280,8 @@ export class AutoCurationRouter extends Router {
     try {
       await this.service.handleValidationResult(id, result)
     } catch (error) {
-      throw toBusyHTTPError(error, id)
+      throw toAutoCurationHTTPError(error, id)
     }
     res.status(204).end()
   }
-}
-
-/** Another instance holds the collection: 503 makes the Builder and the validator job retry instead of giving up. */
-function toBusyHTTPError(error: unknown, id: string): unknown {
-  return error instanceof CollectionBusyError
-    ? new HTTPError(error.message, { id }, STATUS_CODES.serviceUnavailable)
-    : error
 }

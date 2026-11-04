@@ -2,6 +2,12 @@ import { MigrationBuilder } from 'node-pg-migrate'
 import { Collection } from '../src/Collection'
 
 const tableName = 'collection_events'
+const verdictTypes = [
+  'review.ai_passed',
+  'review.ai_rejected',
+  'review.ai_error',
+  'review.human_required',
+]
 
 export async function up(pgm: MigrationBuilder): Promise<void> {
   pgm.createTable(tableName, {
@@ -32,6 +38,22 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     name: 'collection_events_ai_started_idx',
     where: "type = 'review.ai_started'",
   })
+  // One verdict per validation. The reason is part of the key so the sweep's give-up can follow a retryable
+  // error of the same validation.
+  pgm.createIndex(
+    tableName,
+    [
+      'collection_id',
+      'type',
+      "(payload->>'validationId')",
+      "(COALESCE(payload->>'reason', ''))",
+    ],
+    {
+      name: 'collection_events_verdict_validation_idx',
+      unique: true,
+      where: `type IN (${verdictTypes.map((type) => `'${type}'`).join(',')})`,
+    }
+  )
 }
 
 export async function down(pgm: MigrationBuilder): Promise<void> {

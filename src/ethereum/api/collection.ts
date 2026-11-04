@@ -24,7 +24,6 @@ import {
 
 export type CollectionQueryFilters = {
   ids?: string[]
-  isApproved?: boolean
 }
 
 const getCollectionByIdQuery = () => gql`
@@ -36,15 +35,11 @@ const getCollectionByIdQuery = () => gql`
   ${collectionFragment()}
 `
 
-const getCollectionsQuery = ({ ids, isApproved }: CollectionQueryFilters) => {
+const getCollectionsQuery = ({ ids }: CollectionQueryFilters) => {
   const where: string[] = []
 
   if (ids !== undefined && ids.length > 0) {
     where.push(`id_in: ${JSON.stringify(ids)}`)
-  }
-
-  if (isApproved !== undefined) {
-    where.push(`isApproved : ${isApproved}`)
   }
 
   return gql`

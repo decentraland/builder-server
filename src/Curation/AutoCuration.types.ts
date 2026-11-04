@@ -70,23 +70,31 @@ export type CollectionEventsPage<T> = {
 // Generous bounds: the body is signed by the validator, and a 400 makes SQS re-run the whole collection.
 const shortText = { type: 'string', maxLength: 256 }
 const longText = { type: 'string', maxLength: 10000 }
+// Ids and versions reach the logs, so no whitespace or control characters. The version is the rules manifest's
+// semver, which may carry a build suffix.
+const token = {
+  type: 'string',
+  minLength: 1,
+  maxLength: 64,
+  pattern: '^[A-Za-z0-9._:+-]+$',
+}
 
 export const validationResultSchema = Object.freeze({
   type: 'object',
   properties: {
-    validationId: { type: 'string', minLength: 1, maxLength: 64 },
-    collectionId: { type: 'string', minLength: 1, maxLength: 64 },
+    validationId: token,
+    collectionId: token,
     verdict: { type: 'string', enum: ['passed', 'rejected', 'error'] },
     reason: shortText,
     retryable: { type: 'boolean' },
-    rulesVersion: shortText,
+    rulesVersion: token,
     items: {
       type: 'array',
       maxItems: MAX_VALIDATION_ITEMS,
       items: {
         type: 'object',
         properties: {
-          itemId: shortText,
+          itemId: token,
           contentHash: shortText,
           passed: { type: ['boolean', 'null'] },
           findings: {
@@ -130,8 +138,7 @@ export const validationResultSchema = Object.freeze({
 export const appealSchema = Object.freeze({
   type: 'object',
   properties: {
-    note: { type: 'string', minLength: 1, maxLength: 2000 },
+    note: { type: 'string', maxLength: 2000 },
   },
-  required: ['note'],
   additionalProperties: false,
 })

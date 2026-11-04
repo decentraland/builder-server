@@ -36,8 +36,8 @@ import {
   CollectionEventActor,
   CollectionEventType,
 } from './CollectionEvent'
-import { AutoCurationService } from './AutoCuration.service'
 import { curationNotifications, CurationVerdict } from './notifications'
+import { AutoCurationService } from './AutoCuration.service'
 
 const validator = getValidator()
 
@@ -278,21 +278,12 @@ export class CurationRouter extends Router {
       } catch (error) {}
       const ethAddress = req.auth.ethAddress
 
-      const curation = await this.insertCuration(
+      return await this.insertCuration(
         collectionId,
         ethAddress,
         CurationType.COLLECTION,
         curationJSON
       )
-
-      if (await this.autoCurationService.isEnabled()) {
-        await this.autoCurationService.onChangesSubmitted(
-          collectionId,
-          ethAddress
-        )
-      }
-
-      return curation
     } catch (error) {
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
@@ -357,11 +348,6 @@ export class CurationRouter extends Router {
         STATUS_CODES.unauthorized
       )
     }
-    // Assignments are recorded as collection events instead once the auto curation is on.
-    if (await this.autoCurationService.isEnabled()) {
-      return
-    }
-
     const collection = await Collection.findOne<CollectionAttributes>(id)
     if (!collection) {
       throw new HTTPError('Collection not found', { id }, STATUS_CODES.notFound)
@@ -491,7 +477,7 @@ export class CurationRouter extends Router {
     if (type === CurationType.COLLECTION) {
       Object.assign(
         fieldsToUpdate,
-        await this.getCollectionReviewFields(id, ethAddress, curationJSON)
+        this.getCollectionReviewFields(ethAddress, curationJSON)
       )
     }
 
@@ -519,12 +505,11 @@ export class CurationRouter extends Router {
     return { updated, previous: curation }
   }
 
-  /** Rejections carry the curator's reasons and message; both are mandatory once the auto curation is on. */
-  private getCollectionReviewFields = async (
-    id: string,
+  /** Rejections may carry the curator's reasons and message; the legacy Builder sends neither. */
+  private getCollectionReviewFields = (
     ethAddress: string,
     curationJSON: any
-  ): Promise<Partial<CollectionCurationAttributes>> => {
+  ): Partial<CollectionCurationAttributes> => {
     const { status, rejectionReasons, rejectionMessage } = curationJSON
 
     if (status === CurationStatus.APPROVED) {
@@ -543,17 +528,6 @@ export class CurationRouter extends Router {
       Array.isArray(rejectionReasons) && rejectionReasons.length > 0
     const hasMessage =
       typeof rejectionMessage === 'string' && rejectionMessage.trim() !== ''
-
-    if (
-      (!hasReasons || !hasMessage) &&
-      (await this.autoCurationService.isEnabled())
-    ) {
-      throw new HTTPError(
-        'Rejecting a collection requires rejectionReasons and rejectionMessage',
-        { id },
-        STATUS_CODES.badRequest
-      )
-    }
 
     return {
       reviewed_by: ethAddress.toLowerCase(),
@@ -686,6 +660,7 @@ export class CurationRouter extends Router {
           curation?.status,
           ethAddress
         )
+        void this.autoCurationService.onChangesSubmitted(id, ethAddress)
       }
     }
 

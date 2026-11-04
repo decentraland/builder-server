@@ -17,6 +17,8 @@ import {
   CollectionEventType,
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
+import { curationNotifications } from './notifications'
+import { calculateItemContentHash } from '../Item/hashes'
 import {
   requestValidation as sendValidation,
   ValidationTooLargeError,
@@ -26,6 +28,7 @@ import { ValidationResult } from './AutoCuration.types'
 import {
   AppealAlreadyOpenError,
   CurationNotRejectedError,
+  CurationRejectedByCuratorError,
   NothingToRevalidateError,
   ValidationInProgressError,
   ValidationLimitReachedError,
@@ -46,6 +49,11 @@ jest.mock('../Item/Item.model')
 jest.mock('../ethereum/api/collection')
 jest.mock('./CollectionEvent/CollectionEvent.model')
 jest.mock('./CollectionCuration/CollectionCuration.model')
+jest.mock('./notifications')
+jest.mock('../Item/hashes', () => ({
+  ...jest.requireActual('../Item/hashes'),
+  calculateItemContentHash: jest.fn(),
+}))
 jest.mock('./collectionLock', () => ({
   withCollectionLock: (_: string, task: () => Promise<unknown>) => task(),
 }))
@@ -61,6 +69,8 @@ jest.mock('./slack', () => ({
 const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
 const mockSendValidation = sendValidation as jest.Mock
 const mockNotifySlack = notifyCurationSlack as jest.Mock
+const mockNotifyNotRequested = curationNotifications.validationNotRequested as jest.Mock
+const mockCalculateHash = calculateItemContentHash as jest.Mock
 const mockRecordEvent = CollectionEvent.record as jest.Mock
 const mockRecordEventOnce = CollectionEvent.recordOnce as jest.Mock
 const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Mock
@@ -101,15 +111,22 @@ describe('AutoCurationService', () => {
 
   beforeAll(() => {
     process.env.CHAIN_NAME = 'Sepolia'
+    process.env.AWS_SNS_ARN = 'arn:aws:sns:us-east-1:000000000000:events'
   })
 
   afterAll(() => {
     delete process.env.CHAIN_NAME
+    delete process.env.AWS_SNS_ARN
   })
 
   beforeEach(() => {
     service = new AutoCurationService()
     item = { ...dbItemMock, local_content_hash: 'localHash' }
+    mockIsFeatureFlagEnabled.mockResolvedValue(true)
+    mockCalculateHash.mockResolvedValue('computedHash')
+    jest.spyOn(console, 'log').mockImplementation(() => undefined)
+    jest.spyOn(console, 'error').mockImplementation(() => undefined)
+    jest.spyOn(process.stderr, 'write').mockImplementation(() => true)
     mockRecordEvent.mockImplementation((event) =>
       Promise.resolve({ id: uuidv4(), created_at: new Date(), ...event })
     )
@@ -125,25 +142,28 @@ describe('AutoCurationService', () => {
   })
 
   describe('when counting the validation attempts of the day', () => {
-    it('should count only the AI verdicts', () => {
+    it('should count the starts the creator caused, not the sweep re-sends nor the verdicts', () => {
       expect(
         countValidationAttempts([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'sweep' }),
           buildEvent(CollectionEventType.REVIEW_AI_ERROR),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'changes' }),
           buildEvent(CollectionEventType.REVIEW_AI_PASSED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
           buildEvent(CollectionEventType.COLLECTION_PUBLISHED),
         ])
-      ).toBe(2)
+      ).toBe(3)
     })
 
     it('should stop counting at the latest human decision', () => {
       expect(
         countValidationAttempts([
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
           buildEvent(CollectionEventType.REVIEW_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
         ])
       ).toBe(1)
     })
@@ -159,13 +179,19 @@ describe('AutoCurationService', () => {
           validationId: 'previousValidation',
           trigger: 'publish',
           itemIds: [item.id],
+          contentHashes: { [item.id]: 'oldHash' },
         }),
         created_at: new Date('2026-09-29T14:00:00.000Z'),
       }
-      item = { ...item, updated_at: new Date('2026-09-29T14:30:00.000Z') }
       mockFindCollection.mockResolvedValue(dbCollectionMock)
       mockFindEventsSince.mockResolvedValue([])
-      mockFindLatestEventByType.mockResolvedValue(previousStart)
+      mockFindLatestEventByType.mockImplementation((_, type) =>
+        Promise.resolve(
+          type === CollectionEventType.REVIEW_AI_STARTED
+            ? previousStart
+            : undefined
+        )
+      )
       mockFindVerdict.mockResolvedValue(
         buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
           validationId: 'previousValidation',
@@ -210,6 +236,29 @@ describe('AutoCurationService', () => {
           expect(mockRecordEvent).not.toHaveBeenCalled()
         })
       })
+
+      describe('and a curator decided the collection after the start', () => {
+        beforeEach(() => {
+          mockFindLatestEventByType.mockImplementation((_, type) =>
+            Promise.resolve(
+              type === CollectionEventType.REVIEW_AI_STARTED
+                ? previousStart
+                : type === CollectionEventType.REVIEW_REJECTED
+                ? {
+                    ...buildEvent(CollectionEventType.REVIEW_REJECTED),
+                    created_at: new Date('2026-09-29T14:10:00.000Z'),
+                  }
+                : undefined
+            )
+          )
+        })
+
+        it('should treat the run as over and start a new validation', async () => {
+          await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+          expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        })
+      })
     })
 
     describe('and the latest validation was handed to a curator as unsupported', () => {
@@ -230,11 +279,9 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and no item was saved since the latest validation started', () => {
+    describe('and no item changed since the latest validation started', () => {
       beforeEach(() => {
-        item = { ...item, updated_at: new Date('2026-09-29T13:00:00.000Z') }
-        mockFindItemsByCollection.mockResolvedValue([item])
-        mockFindItemsByIds.mockResolvedValue([item])
+        previousStart.payload.contentHashes = { [item.id]: 'localHash' }
       })
 
       it('should reject with a nothing to revalidate error and not send anything', async () => {
@@ -284,34 +331,57 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and an item outside the latest validation was saved after it started', () => {
+    describe('and an item outside the latest validation changed since it started', () => {
       let editedItem: ItemAttributes
 
       beforeEach(() => {
-        const untouchedItem = {
-          ...item,
-          updated_at: new Date('2026-09-29T13:00:00.000Z'),
-        }
+        previousStart.payload.contentHashes = { [item.id]: 'localHash' }
         editedItem = {
           ...item,
           id: 'b43f3350-ff47-4766-8b0e-28744b66e4a1',
-          updated_at: new Date('2026-09-29T14:30:00.000Z'),
+          local_content_hash: 'editedHash',
         }
-        mockFindItemsByIds.mockResolvedValue([untouchedItem])
-        mockFindItemsByCollection.mockResolvedValue([untouchedItem, editedItem])
+        mockFindItemsByIds.mockResolvedValue([item])
+        mockFindItemsByCollection.mockResolvedValue([item, editedItem])
       })
 
-      it('should validate the previous items and the edited one', async () => {
+      it('should validate the edited item and the previous ones', async () => {
         await service.requestValidation(dbCollectionMock.id, ethAddress)
 
         expect(mockSendValidation).toHaveBeenCalledWith(
           expect.objectContaining({
             items: [
-              expect.objectContaining({ itemId: item.id }),
               expect.objectContaining({ itemId: editedItem.id }),
+              expect.objectContaining({ itemId: item.id }),
             ],
           })
         )
+      })
+
+      describe('and the edited item has no stored hash', () => {
+        beforeEach(() => {
+          editedItem = { ...editedItem, local_content_hash: null }
+          mockFindItemsByCollection.mockResolvedValue([item, editedItem])
+        })
+
+        it('should hash it to tell whether it changed', async () => {
+          await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+          expect(mockCalculateHash).toHaveBeenCalledWith(
+            editedItem,
+            dbCollectionMock
+          )
+          expect(mockSendValidation).toHaveBeenCalledWith(
+            expect.objectContaining({
+              items: expect.arrayContaining([
+                expect.objectContaining({
+                  itemId: editedItem.id,
+                  contentHash: 'computedHash',
+                }),
+              ]),
+            })
+          )
+        })
       })
     })
 
@@ -331,16 +401,17 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and three verdicts were already issued today', () => {
+    describe('and three automatic reviews were already used today', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
         )
         mockFindEventsSince.mockResolvedValue([
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_ERROR),
-          buildEvent(CollectionEventType.REVIEW_AI_PASSED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'sweep' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'changes' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
         ])
       })
 
@@ -370,16 +441,16 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and a curator decided after two of the three verdicts of the day', () => {
+    describe('and a curator decided after two of the three reviews of the day', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
         )
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
           buildEvent(CollectionEventType.REVIEW_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
         ])
       })
 
@@ -396,11 +467,43 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and the latest curation is rejected', () => {
+    describe('and the latest curation was rejected by a curator', () => {
       beforeEach(() => {
         mockFindLatestCuration.mockResolvedValue({
           id: 'curationId',
           status: CurationStatus.REJECTED,
+          reviewed_by: '0xcurator',
+        })
+      })
+
+      it('should reject with a rejected by curator error and not send anything', async () => {
+        await expect(
+          service.requestValidation(dbCollectionMock.id, ethAddress)
+        ).rejects.toThrow(CurationRejectedByCuratorError)
+        expect(mockCreateCuration).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the collection has no curation at all', () => {
+      beforeEach(() => {
+        mockFindLatestCuration.mockResolvedValue(undefined)
+      })
+
+      it('should start the validation without opening one', async () => {
+        await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+        expect(mockCreateCuration).not.toHaveBeenCalled()
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    describe('and the latest curation was rejected by the validator', () => {
+      beforeEach(() => {
+        mockFindLatestCuration.mockResolvedValue({
+          id: 'curationId',
+          status: CurationStatus.REJECTED,
+          reviewed_by: VALIDATOR_REVIEWER,
         })
       })
 
@@ -585,6 +688,7 @@ describe('AutoCurationService', () => {
         id: 'curationId',
         status: CurationStatus.PENDING,
       })
+      mockFindItemsByIds.mockResolvedValue([item])
     })
 
     describe('and the validation is not the latest one', () => {
@@ -638,7 +742,34 @@ describe('AutoCurationService', () => {
           payload: result,
         })
         expect(mockUpdateCuration).not.toHaveBeenCalled()
-        expect(mockNotifySlack).toHaveBeenCalledTimes(1)
+        expect(mockNotifySlack).toHaveBeenCalledWith(
+          expect.stringContaining('ready for a curator approval')
+        )
+      })
+
+      describe('and an item changed while the validation ran', () => {
+        beforeEach(() => {
+          mockFindItemsByIds.mockResolvedValue([
+            { ...item, local_content_hash: 'editedHash' },
+          ])
+        })
+
+        it('should record the stale items with the pass and ask for a new review instead', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
+
+          expect(mockRecordEventOnce).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_AI_PASSED,
+              payload: { ...result, staleItemIds: [item.id] },
+            })
+          )
+          expect(mockNotifySlack).toHaveBeenCalledWith(
+            expect.stringContaining('changed while it ran')
+          )
+          expect(mockNotifySlack).not.toHaveBeenCalledWith(
+            expect.stringContaining('ready for a curator approval')
+          )
+        })
       })
     })
 
@@ -656,7 +787,7 @@ describe('AutoCurationService', () => {
             reviewed_by: VALIDATOR_REVIEWER,
             updated_at: expect.any(Date),
           },
-          { id: 'curationId' }
+          { id: 'curationId', status: CurationStatus.PENDING }
         )
         expect(mockRecordEventOnce).toHaveBeenCalledWith(
           expect.objectContaining({
@@ -667,15 +798,18 @@ describe('AutoCurationService', () => {
         expect(mockNotifySlack).not.toHaveBeenCalled()
       })
 
-      describe('and a concurrent callback already recorded the verdict', () => {
+      describe('and a redelivery of the verdict was already recorded', () => {
         beforeEach(() => {
           mockRecordEventOnce.mockResolvedValue(undefined)
         })
 
-        it('should not touch the curation nor notify Slack', async () => {
+        it('should still land the rejection on the pending curation and not notify Slack', async () => {
           await service.handleValidationResult(dbCollectionMock.id, result)
 
-          expect(mockUpdateCuration).not.toHaveBeenCalled()
+          expect(mockUpdateCuration).toHaveBeenCalledWith(
+            expect.objectContaining({ status: CurationStatus.REJECTED }),
+            { id: 'curationId', status: CurationStatus.PENDING }
+          )
           expect(mockNotifySlack).not.toHaveBeenCalled()
         })
       })
@@ -692,7 +826,28 @@ describe('AutoCurationService', () => {
           await service.handleValidationResult(dbCollectionMock.id, result)
 
           expect(mockUpdateCuration).not.toHaveBeenCalled()
+          expect(mockCreateCuration).not.toHaveBeenCalled()
           expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
+        })
+      })
+
+      describe('and the collection has no curation at all', () => {
+        beforeEach(() => {
+          mockFindLatestCuration.mockResolvedValue(undefined)
+        })
+
+        it('should open a rejected curation in the name of the validator', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
+
+          expect(mockUpdateCuration).not.toHaveBeenCalled()
+          expect(mockCreateCuration).toHaveBeenCalledWith(
+            expect.objectContaining({
+              collection_id: dbCollectionMock.id,
+              status: CurationStatus.REJECTED,
+              reviewed_by: VALIDATOR_REVIEWER,
+              assignee: null,
+            })
+          )
         })
       })
     })
@@ -941,9 +1096,9 @@ describe('AutoCurationService', () => {
     describe('and the daily limit was reached', () => {
       beforeEach(() => {
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
         ])
       })
 
@@ -952,6 +1107,43 @@ describe('AutoCurationService', () => {
 
         expect(mockRecordEvent).toHaveBeenCalledTimes(1)
         expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and a changed item has no stored hash', () => {
+      beforeEach(() => {
+        mockFindItemsByCollection.mockResolvedValue([
+          { ...changedItem, local_content_hash: null },
+        ])
+      })
+
+      it('should hash it and validate it with that hash', async () => {
+        await service.onChangesSubmitted(dbCollectionMock.id, ethAddress)
+
+        expect(mockCalculateHash).toHaveBeenCalledTimes(1)
+        expect(mockSendValidation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            items: [
+              expect.objectContaining({
+                itemId: changedItem.id,
+                contentHash: 'computedHash',
+              }),
+            ],
+          })
+        )
+      })
+    })
+
+    describe('and the flag is off', () => {
+      beforeEach(() => {
+        mockIsFeatureFlagEnabled.mockResolvedValue(false)
+      })
+
+      it('should not even load the collection', async () => {
+        await service.onChangesSubmitted(dbCollectionMock.id, ethAddress)
+
+        expect(mockFindCollection).not.toHaveBeenCalled()
+        expect(mockRecordEvent).not.toHaveBeenCalled()
       })
     })
 
@@ -1027,6 +1219,7 @@ describe('AutoCurationService', () => {
               validationId: expect.not.stringMatching(/^lost$/),
               trigger: 'sweep',
               itemIds: [item.id],
+              contentHashes: { [item.id]: 'localHash' },
             },
           })
         )
@@ -1151,17 +1344,44 @@ describe('AutoCurationService', () => {
       mockFindItemsByCollection.mockResolvedValue([item])
     })
 
-    describe('and a validation of the collection is still running', () => {
+    describe('and the flag is off', () => {
       beforeEach(() => {
-        mockFindLatestEventByType.mockResolvedValue({
-          payload: { validationId: 'running' },
-        })
-        mockFindVerdict.mockResolvedValue(undefined)
+        mockIsFeatureFlagEnabled.mockResolvedValue(false)
       })
 
-      it('should not record anything nor start a second validation', async () => {
+      it('should not record anything nor request anything', async () => {
         await service.onStandardCollectionPublished(
           dbCollectionMock,
+          ethAddress
+        )
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the topic is not configured', () => {
+      beforeEach(() => {
+        delete process.env.AWS_SNS_ARN
+      })
+
+      afterEach(() => {
+        process.env.AWS_SNS_ARN = 'arn:aws:sns:us-east-1:000000000000:events'
+      })
+
+      it('should not request anything', async () => {
+        await service.onStandardCollectionPublished(
+          dbCollectionMock,
+          ethAddress
+        )
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the collection is a third party collection', () => {
+      it('should not request anything', async () => {
+        await service.onStandardCollectionPublished(
+          dbTPCollectionMock,
           ethAddress
         )
         expect(mockRecordEvent).not.toHaveBeenCalled()
@@ -1220,10 +1440,8 @@ describe('AutoCurationService', () => {
             itemCount: 1,
           },
         })
-        expect(console.error).toHaveBeenCalledWith(
-          expect.stringContaining('300000 bytes')
-        )
-        expect(mockNotifySlack).toHaveBeenCalledWith(
+        expect(mockNotifyNotRequested).toHaveBeenCalledWith(
+          dbCollectionMock.id,
           expect.stringContaining('too large')
         )
       })
@@ -1231,30 +1449,35 @@ describe('AutoCurationService', () => {
 
     describe('and publishing the validation request fails', () => {
       beforeEach(() => {
-        jest.spyOn(console, 'error').mockImplementation(() => undefined)
         mockSendValidation.mockRejectedValue(new Error('SNS is down'))
       })
 
-      it('should keep the start for the sweep without recording an error', async () => {
+      it('should record a retryable error so the sweep re-sends it and a retry is not blocked', async () => {
         await expect(
           service.onStandardCollectionPublished(dbCollectionMock, ethAddress)
         ).resolves.toBeUndefined()
 
-        expect(mockRecordEvent).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: CollectionEventType.REVIEW_AI_STARTED,
-          })
-        )
-        expect(mockRecordEventOnce).not.toHaveBeenCalled()
+        const start = mockRecordEvent.mock.calls
+          .map(([event]) => event)
+          .find((event) => event.type === CollectionEventType.REVIEW_AI_STARTED)
+        expect(mockRecordEventOnce).toHaveBeenCalledWith({
+          collection_id: dbCollectionMock.id,
+          type: CollectionEventType.REVIEW_AI_ERROR,
+          actor: CollectionEventActor.SYSTEM,
+          actor_address: null,
+          payload: {
+            reason: 'publish_failed',
+            validationId: start.payload.validationId,
+          },
+        })
+        expect(mockNotifySlack).not.toHaveBeenCalled()
       })
     })
 
-    it('should open a pending curation, record the publication with an empty payload and start the validation', async () => {
+    it('should record the publication with an empty payload and start the validation without opening a curation', async () => {
       await service.onStandardCollectionPublished(dbCollectionMock, ethAddress)
 
-      expect(mockCreateCuration).toHaveBeenCalledWith(
-        expect.objectContaining({ status: CurationStatus.PENDING })
-      )
+      expect(mockCreateCuration).not.toHaveBeenCalled()
       expect(mockRecordEvent).toHaveBeenCalledWith({
         collection_id: dbCollectionMock.id,
         type: CollectionEventType.COLLECTION_PUBLISHED,
@@ -1265,10 +1488,70 @@ describe('AutoCurationService', () => {
       expect(mockRecordEvent).toHaveBeenCalledWith(
         expect.objectContaining({
           type: CollectionEventType.REVIEW_AI_STARTED,
-          payload: expect.objectContaining({ trigger: 'publish' }),
+          payload: expect.objectContaining({
+            trigger: 'publish',
+            itemIds: [item.id],
+            contentHashes: { [item.id]: 'localHash' },
+          }),
         })
       )
       expect(mockSendValidation).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('when checking whether changes can be validated', () => {
+    beforeEach(() => {
+      mockFindEventsSince.mockResolvedValue([])
+      mockFindLatestEventByType.mockResolvedValue(undefined)
+    })
+
+    it('should resolve when nothing runs and the limit is not reached', async () => {
+      await expect(
+        service.assertChangesCanBeValidated(dbCollectionMock.id)
+      ).resolves.toBeUndefined()
+    })
+
+    it('should resolve with the flag off without reading anything', async () => {
+      mockIsFeatureFlagEnabled.mockResolvedValue(false)
+
+      await expect(
+        service.assertChangesCanBeValidated(dbCollectionMock.id)
+      ).resolves.toBeUndefined()
+      expect(mockFindLatestEventByType).not.toHaveBeenCalled()
+    })
+
+    it('should reject while a validation runs', async () => {
+      mockFindLatestEventByType.mockImplementation((_, type) =>
+        Promise.resolve(
+          type === CollectionEventType.REVIEW_AI_STARTED
+            ? buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+                validationId: 'running',
+              })
+            : undefined
+        )
+      )
+      mockFindVerdict.mockResolvedValue(undefined)
+
+      await expect(
+        service.assertChangesCanBeValidated(dbCollectionMock.id)
+      ).rejects.toThrow(ValidationInProgressError)
+    })
+
+    it('should reject with the retry time once the daily limit is reached', async () => {
+      jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
+      mockFindEventsSince.mockResolvedValue([
+        buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+        buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'changes' }),
+        buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+      ])
+
+      await expect(
+        service.assertChangesCanBeValidated(dbCollectionMock.id)
+      ).rejects.toEqual(
+        expect.objectContaining({
+          retryAt: new Date('2026-09-30T00:00:00.000Z'),
+        })
+      )
     })
   })
 

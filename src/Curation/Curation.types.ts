@@ -15,6 +15,7 @@ export enum CurationStatusFilter {
   REJECTED = 'rejected',
   TO_REVIEW = 'to_review',
   UNDER_REVIEW = 'under_review',
+  DISABLED = 'disabled',
 }
 
 export const REJECTION_REASONS = [
@@ -33,6 +34,9 @@ export const REJECTION_REASONS = [
 ] as const
 
 export type RejectionReason = typeof REJECTION_REASONS[number]
+
+/** `assignee` filter value for the collections without an assigned curator. */
+export const UNASSIGNED_FILTER = 'unassigned'
 
 export const patchCurationSchema = Object.freeze({
   type: 'object',

@@ -1,4 +1,5 @@
 import { v4 as uuid } from 'uuid'
+import { createConsoleLogComponent } from '@well-known-components/logger'
 import { collectionAPI } from '../ethereum/api/collection'
 import { ItemFragment } from '../ethereum/api/fragments'
 import { FactoryCollection } from '../ethereum/FactoryCollection'
@@ -61,6 +62,8 @@ import {
   InsufficientSlotsError,
   URNAlreadyInUseError,
 } from './Collection.errors'
+
+const logger = createConsoleLogComponent().getLogger('CollectionService')
 
 export class CollectionService {
   /**
@@ -496,7 +499,40 @@ export class CollectionService {
     }
 
     const attributes = toDBCollection(collectionJSON)
-    return Collection.upsertWithItemCount(attributes)
+    const upserted = await Collection.upsertWithItemCount(attributes)
+    // Only after the collection took the contract: the unique constraint may still refuse it. Runs on every save,
+    // not only on a change, so a sync that failed once is repaired by the next save and a collection added to an
+    // existing virtual third party gets its contract listed. A DB trigger forbids clearing a linked contract on
+    // save; deleting the collection still leaves its contract listed.
+    if (
+      attributes.linked_contract_address &&
+      attributes.linked_contract_network
+    ) {
+      try {
+        await ThirdPartyService.syncVirtualThirdPartyContracts(
+          third_party_id,
+          collection?.linked_contract_address &&
+            collection.linked_contract_network
+            ? {
+                network: collection.linked_contract_network,
+                address: collection.linked_contract_address,
+              }
+            : null,
+          {
+            network: attributes.linked_contract_network,
+            address: attributes.linked_contract_address,
+          }
+        )
+      } catch (error) {
+        // The collection is already saved; the next save retries the sync.
+        logger.error(
+          `Could not sync the contract of collection ${id} to third party ${third_party_id}: ${String(
+            error
+          )}`
+        )
+      }
+    }
+    return upserted
   }
 
   public async getApprovalData(id: string): Promise<ItemApprovalData> {
@@ -604,17 +640,65 @@ export class CollectionService {
     id: string,
     ethAddress: string
   ): Promise<boolean> {
-    const collection = await Collection.findOne<CollectionAttributes>(id)
-    if (collection && isTPCollection(collection)) {
-      return ThirdPartyService.isManager(collection.third_party_id!, ethAddress)
-    } else if (collection) {
-      return (
-        collection.eth_address === ethAddress ||
-        this.isDCLManager(id, ethAddress)
+    const dbCollection = await Collection.findOne<CollectionAttributes>(id)
+    if (!dbCollection) {
+      return false
+    }
+    if (isTPCollection(dbCollection)) {
+      return ThirdPartyService.isManager(
+        dbCollection.third_party_id!,
+        ethAddress
       )
     }
 
-    return false
+    let collection = dbCollection
+    try {
+      collection = await this.syncOwnerFromChain(dbCollection)
+    } catch (error) {
+      // Without the chain, the stored owner is the best answer there is.
+      console.error(
+        `Could not sync the owner of collection ${id} from chain`,
+        error
+      )
+    }
+    return (
+      collection.eth_address === ethAddress ||
+      this.isDCLManagerOfCollection(collection, ethAddress)
+    )
+  }
+
+  /**
+   * The on-chain creator can change (`transferCreatorship`) without the server hearing about it, while the
+   * permission checks read `eth_address` from the database. Stores the subgraph's creator on the collection
+   * and its items when it differs, and returns the collection merged with its on-chain state.
+   */
+  public async syncOwnerFromChain(
+    dbCollection: CollectionAttributes
+  ): Promise<CollectionAttributes> {
+    if (!dbCollection.contract_address) {
+      return dbCollection
+    }
+    const remoteCollection = await collectionAPI.fetchCollection(
+      dbCollection.contract_address
+    )
+    if (!remoteCollection) {
+      return dbCollection
+    }
+
+    const ethAddress = remoteCollection.creator.toLowerCase()
+    if (dbCollection.eth_address.toLowerCase() !== ethAddress) {
+      // Items first: the collection row is what marks the sync as done, so a failure before it is retried.
+      await Item.update(
+        { eth_address: ethAddress },
+        { collection_id: dbCollection.id }
+      )
+      await Collection.update(
+        { eth_address: ethAddress },
+        { id: dbCollection.id }
+      )
+      dbCollection.eth_address = ethAddress
+    }
+    return Bridge.mergeCollection(dbCollection, remoteCollection)
   }
 
   /**
@@ -638,9 +722,10 @@ export class CollectionService {
     ) {
       return true
     }
-    return this.isDCLManagerOfCollection(
-      await this.getDCLCollection(collection),
-      ethAddress
+    const remoteCollection = await this.getDCLCollection(collection)
+    return (
+      remoteCollection.eth_address === ethAddress ||
+      this.isDCLManagerOfCollection(remoteCollection, ethAddress)
     )
   }
 

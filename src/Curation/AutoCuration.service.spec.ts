@@ -1,5 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
 import {
+  collectionFragmentMock,
   dbCollectionMock,
   dbTPCollectionMock,
 } from '../../spec/mocks/collections'
@@ -11,11 +12,16 @@ import { collectionAPI } from '../ethereum/api/collection'
 import { calculateItemContentHash } from '../Item/hashes'
 import { isFeatureFlagEnabled } from '../utils/features'
 import { curationNotifications } from './notifications'
+import { CurationService } from './Curation.service'
+import { CurationStatus } from './Curation.types'
 import {
   requestValidation as sendValidation,
   ValidationTooLargeError,
 } from './validationQueue'
-import { AutoCurationService } from './AutoCuration.service'
+import {
+  AutoCurationService,
+  ITEM_CHANGES_DELAY_MS,
+} from './AutoCuration.service'
 
 jest.mock('../utils/features')
 jest.mock('../Collection/Collection.model')
@@ -37,6 +43,7 @@ const mockNotify = curationNotifications.validationNotRequested as jest.Mock
 const mockFindCollection = Collection.findOne as jest.Mock
 const mockFindItemsByCollection = Item.findOrderedByCollectionId as jest.Mock
 const mockFetchRemoteItems = collectionAPI.fetchItemsByContractAddress as jest.Mock
+const mockFetchRemoteCollection = collectionAPI.fetchCollection as jest.Mock
 const mockCalculateHash = calculateItemContentHash as jest.Mock
 
 describe('AutoCurationService', () => {
@@ -370,6 +377,356 @@ describe('AutoCurationService', () => {
           dbCollectionMock.id,
           'the automatic review could not be requested'
         )
+      })
+    })
+  })
+  describe('when an item of a published standard collection is saved', () => {
+    let previous: ItemAttributes
+    let saved: ItemAttributes
+    let mockGetLatestCuration: jest.SpyInstance
+    let settledSpy: jest.SpyInstance
+
+    // Lets the delay go by and waits for the validations it starts.
+    async function settle(ms = ITEM_CHANGES_DELAY_MS) {
+      jest.advanceTimersByTime(ms)
+      await Promise.all(settledSpy.mock.results.map((result) => result.value))
+    }
+
+    function requestedItemIds(call = 0): string[] {
+      return mockSendValidation.mock.calls[call][0].items.map(
+        (i: { itemId: string }) => i.itemId
+      )
+    }
+
+    beforeEach(() => {
+      jest.useFakeTimers()
+      previous = {
+        ...item,
+        id: uuidv4(),
+        blockchain_item_id: '0',
+        contents: {
+          'male/model.glb': 'oldModelHash',
+          'thumbnail.png': 'thumbnailHash',
+        },
+      }
+      saved = {
+        ...previous,
+        contents: { ...previous.contents, 'male/model.glb': 'newModelHash' },
+        local_content_hash: 'newLocalHash',
+      }
+      settledSpy = jest.spyOn(service, 'onItemChangesSettled')
+      mockGetLatestCuration = jest
+        .spyOn(CurationService.prototype, 'getLatestById')
+        .mockResolvedValue(undefined)
+      mockFindCollection.mockResolvedValue(dbCollectionMock)
+      mockFindItemsByCollection.mockResolvedValue([saved])
+      mockFetchRemoteCollection.mockResolvedValue({
+        ...collectionFragmentMock,
+        isApproved: false,
+      })
+    })
+
+    afterEach(() => {
+      service.cancelItemChanges(dbCollectionMock.id)
+      jest.useRealTimers()
+    })
+
+    describe('and its files changed', () => {
+      it('should request the validation of that item as stored once its saves settle', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+
+        await settle(ITEM_CHANGES_DELAY_MS - 1)
+        expect(mockSendValidation).not.toHaveBeenCalled()
+
+        await settle(1)
+        expect(mockFindCollection).toHaveBeenCalledWith(dbCollectionMock.id)
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        const manifest = mockSendValidation.mock.calls[0][0]
+        expect(manifest.collectionId).toBe(dbCollectionMock.id)
+        expect(manifest.items).toEqual([
+          expect.objectContaining({
+            itemId: saved.id,
+            contentHash: 'newLocalHash',
+            contents: saved.contents,
+          }),
+        ])
+        expect(mockNotify).not.toHaveBeenCalled()
+      })
+
+      it('should check the flag as builder-auto-curation', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+
+        expect(mockIsFeatureFlagEnabled).toHaveBeenCalledWith('auto-curation')
+      })
+    })
+
+    describe('and it is saved again before the delay ends', () => {
+      let savedAgain: ItemAttributes
+
+      beforeEach(() => {
+        savedAgain = {
+          ...saved,
+          contents: { ...saved.contents, 'male/model.glb': 'newerModelHash' },
+          local_content_hash: 'newerLocalHash',
+        }
+        mockFindItemsByCollection.mockResolvedValue([savedAgain])
+      })
+
+      it('should wait for the last save and request one validation of its version', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle(ITEM_CHANGES_DELAY_MS / 2)
+        service.onItemSaved(saved, savedAgain, dbCollectionMock)
+
+        await settle(ITEM_CHANGES_DELAY_MS / 2)
+        expect(mockSendValidation).not.toHaveBeenCalled()
+
+        await settle(ITEM_CHANGES_DELAY_MS / 2)
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        expect(mockSendValidation.mock.calls[0][0].items).toEqual([
+          expect.objectContaining({
+            itemId: savedAgain.id,
+            contentHash: 'newerLocalHash',
+          }),
+        ])
+      })
+    })
+
+    describe('and another item of the collection changes before the delay ends', () => {
+      let otherPrevious: ItemAttributes
+      let otherSaved: ItemAttributes
+
+      beforeEach(() => {
+        otherPrevious = { ...previous, id: uuidv4(), blockchain_item_id: '1' }
+        otherSaved = { ...saved, id: otherPrevious.id, blockchain_item_id: '1' }
+        mockFindItemsByCollection.mockResolvedValue([
+          saved,
+          { ...item, id: uuidv4(), blockchain_item_id: '2' },
+          otherSaved,
+        ])
+      })
+
+      it('should request one validation of both items', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        service.onItemSaved(otherPrevious, otherSaved, dbCollectionMock)
+        await settle()
+
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        expect(requestedItemIds()).toEqual([saved.id, otherSaved.id])
+      })
+    })
+
+    describe('and its files went back to the previous ones before the delay ends', () => {
+      beforeEach(() => {
+        mockFindItemsByCollection.mockResolvedValue([previous])
+      })
+
+      it('should not request anything', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        service.onItemSaved(saved, previous, dbCollectionMock)
+        await settle()
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockNotify).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and its files did not change', () => {
+      it('should not request anything', async () => {
+        service.onItemSaved(
+          previous,
+          { ...previous, name: 'A new name' },
+          dbCollectionMock
+        )
+        await settle()
+
+        expect(settledSpy).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and only files the validator does not receive changed', () => {
+      it('should not request anything', async () => {
+        service.onItemSaved(
+          previous,
+          {
+            ...previous,
+            contents: {
+              ...previous.contents,
+              'video.mp4': 'videoHash',
+              'male/': 'directoryHash',
+            },
+          },
+          dbCollectionMock
+        )
+        await settle()
+
+        expect(settledSpy).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the item is not on chain yet', () => {
+      it('should not request anything', async () => {
+        service.onItemSaved(
+          { ...previous, blockchain_item_id: null },
+          { ...saved, blockchain_item_id: null },
+          dbCollectionMock
+        )
+        await settle()
+
+        expect(settledSpy).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the collection is a third party collection', () => {
+      it('should not request anything', async () => {
+        service.onItemSaved(previous, saved, dbTPCollectionMock)
+        await settle()
+
+        expect(settledSpy).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the flag is off', () => {
+      beforeEach(() => {
+        mockIsFeatureFlagEnabled.mockResolvedValue(false)
+      })
+
+      it('should not even load the collection', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+
+        expect(mockFindCollection).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the collection is approved on chain', () => {
+      beforeEach(() => {
+        mockFetchRemoteCollection.mockResolvedValue({
+          ...collectionFragmentMock,
+          isApproved: true,
+        })
+      })
+
+      describe('and its last curation is not pending', () => {
+        beforeEach(() => {
+          mockGetLatestCuration.mockResolvedValue({
+            status: CurationStatus.APPROVED,
+          })
+        })
+
+        it('should not request anything, as pushing the changes requests their validation', async () => {
+          service.onItemSaved(previous, saved, dbCollectionMock)
+          await settle()
+
+          expect(mockGetLatestCuration).toHaveBeenCalledWith(
+            dbCollectionMock.id
+          )
+          expect(mockSendValidation).not.toHaveBeenCalled()
+          expect(mockNotify).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and its last curation is pending', () => {
+        beforeEach(() => {
+          mockGetLatestCuration.mockResolvedValue({
+            status: CurationStatus.PENDING,
+          })
+        })
+
+        it('should request the validation of the item', async () => {
+          service.onItemSaved(previous, saved, dbCollectionMock)
+          await settle()
+
+          expect(mockSendValidation).toHaveBeenCalledTimes(1)
+          expect(requestedItemIds()).toEqual([saved.id])
+        })
+      })
+    })
+
+    describe('and the collection was never approved and its last curation was rejected', () => {
+      beforeEach(() => {
+        mockGetLatestCuration.mockResolvedValue({
+          status: CurationStatus.REJECTED,
+        })
+      })
+
+      it('should request the validation of the item', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+
+        expect(mockFetchRemoteCollection).toHaveBeenCalledWith(
+          dbCollectionMock.contract_address
+        )
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        expect(requestedItemIds()).toEqual([saved.id])
+      })
+    })
+
+    describe("and the collection's changes are submitted before the delay ends", () => {
+      beforeEach(() => {
+        mockFetchRemoteItems.mockResolvedValue([
+          { ...itemFragmentMock, blockchainId: '0', contentHash: 'oldHash' },
+        ])
+      })
+
+      it('should only request the validation of the submitted changes', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await service.onChangesSubmitted(dbCollectionMock.id)
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+
+        await settle()
+        expect(settledSpy).not.toHaveBeenCalled()
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    describe('and the request cannot be published', () => {
+      beforeEach(() => {
+        mockSendValidation.mockRejectedValue(new Error('SNS is down'))
+      })
+
+      it('should tell the curators without throwing', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+
+        expect(mockNotify).toHaveBeenCalledWith(
+          dbCollectionMock.id,
+          'the automatic review could not be requested'
+        )
+      })
+    })
+
+    describe('and the collection cannot be read', () => {
+      beforeEach(() => {
+        mockFindCollection.mockRejectedValue(new Error('database is down'))
+      })
+
+      it('should tell the curators without throwing', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockNotify).toHaveBeenCalledWith(
+          dbCollectionMock.id,
+          'the automatic review could not be requested'
+        )
+      })
+    })
+
+    describe('and the saved item cannot be read', () => {
+      it('should not throw', () => {
+        expect(() =>
+          service.onItemSaved(
+            (undefined as unknown) as ItemAttributes,
+            saved,
+            dbCollectionMock
+          )
+        ).not.toThrow()
       })
     })
   })

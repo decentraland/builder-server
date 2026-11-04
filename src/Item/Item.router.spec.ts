@@ -47,6 +47,13 @@ import { isCommitteeMember } from '../Committee'
 import { app } from '../server'
 import { ItemCuration, ItemCurationAttributes } from '../Curation/ItemCuration'
 import { CurationStatus } from '../Curation'
+import {
+  AutoCurationService,
+  ITEM_CHANGES_DELAY_MS,
+} from '../Curation/AutoCuration.service'
+import { CurationService } from '../Curation/Curation.service'
+import { curationNotifications } from '../Curation/notifications'
+import { requestValidation } from '../Curation/validationQueue'
 import { Collection } from '../Collection/Collection.model'
 import { collectionAPI } from '../ethereum/api/collection'
 import { CatalystItem, peerAPI } from '../ethereum/api/peer'
@@ -77,6 +84,12 @@ jest.mock('../Curation/ItemCuration')
 jest.mock('../Committee')
 jest.mock('./access')
 jest.mock('./Item.model')
+jest.mock('../Curation/validationQueue', () => ({
+  ...jest.requireActual('../Curation/validationQueue'),
+  requestValidation: jest.fn(),
+}))
+
+const mockRequestValidation = requestValidation as jest.Mock
 
 function mockItemConsolidation(wearables: CatalystItem[]) {
   ;(peerAPI.fetchItems as jest.Mock).mockResolvedValueOnce(wearables)
@@ -2397,6 +2410,134 @@ describe('Item router', () => {
             })
           })
         })
+
+        describe("and the item's files are being changed", () => {
+          let newContents: ItemAttributes['contents']
+          let spies: jest.SpyInstance[]
+          let settledSpy: jest.SpyInstance
+          let notifySpy: jest.SpyInstance
+
+          // Lets the auto-curation delay go by and waits for the validation it starts.
+          async function settle() {
+            jest.advanceTimersByTime(ITEM_CHANGES_DELAY_MS)
+            await Promise.all(
+              settledSpy.mock.results.map((result) => result.value)
+            )
+          }
+
+          beforeEach(() => {
+            process.env.FF_AUTO_CURATION = 'true'
+            process.env.AWS_SNS_ARN =
+              'arn:aws:sns:us-east-1:000000000000:events'
+            jest.useFakeTimers()
+            jest.setSystemTime(new Date())
+            dbItem = { ...dbItem, eth_address: wallet.address }
+            newContents = {
+              ...dbItem.contents,
+              'male/M_3LAU_Hat_Blue.glb': 'QmNewModelHash',
+            }
+            itemToUpsert = { ...itemToUpsert, contents: newContents }
+            mockItem.upsert.mockImplementation((createdItem) =>
+              Promise.resolve({
+                ...createdItem,
+                blockchain_item_id: dbItem.blockchain_item_id,
+              })
+            )
+            mockItem.findOne.mockResolvedValueOnce(dbItem)
+            mockCollection.findByIds.mockResolvedValueOnce([
+              {
+                ...dbCollectionMock,
+                item_count: 1,
+              },
+            ])
+            ;(collectionAPI.fetchCollection as jest.Mock).mockReset()
+            ;(collectionAPI.fetchCollection as jest.Mock).mockResolvedValue({
+              ...itemFragment.collection,
+              creator: wallet.address,
+              isApproved: false,
+            })
+            mockFetchCollectionWithItem(itemFragment.collection, {
+              ...itemFragment,
+              totalSupply: '0',
+            })
+            mockFetchCatalystItems([wearable])
+            // What the validation reads once the saves settle.
+            mockCollection.findOne.mockResolvedValue(dbCollectionMock)
+            mockItem.findOrderedByCollectionId.mockResolvedValue([
+              { ...dbItem, contents: newContents },
+            ])
+            mockRequestValidation.mockResolvedValue(undefined)
+            settledSpy = jest.spyOn(
+              AutoCurationService.prototype,
+              'onItemChangesSettled'
+            )
+            notifySpy = jest
+              .spyOn(curationNotifications, 'validationNotRequested')
+              .mockResolvedValue(undefined)
+            spies = [
+              settledSpy,
+              notifySpy,
+              jest
+                .spyOn(CurationService.prototype, 'getLatestById')
+                .mockResolvedValue(undefined),
+            ]
+          })
+
+          afterEach(() => {
+            new AutoCurationService().cancelItemChanges(dbCollectionMock.id)
+            spies.forEach((spy) => spy.mockRestore())
+            jest.useRealTimers()
+            delete process.env.FF_AUTO_CURATION
+            delete process.env.AWS_SNS_ARN
+          })
+
+          it('should respond with the updated item and request the validation of that item once its saves settle', async () => {
+            const response = await server
+              .put(buildURL(url))
+              .send({ item: itemToUpsert })
+              .set(createAuthHeaders('put', url))
+              .expect(STATUS_CODES.ok)
+
+            expect(response.body.data.contents).toEqual(newContents)
+            expect(mockRequestValidation).not.toHaveBeenCalled()
+
+            await settle()
+            expect(mockRequestValidation).toHaveBeenCalledTimes(1)
+            expect(mockRequestValidation.mock.calls[0][0]).toEqual(
+              expect.objectContaining({
+                collectionId: dbCollectionMock.id,
+                items: [
+                  expect.objectContaining({
+                    itemId: dbItem.id,
+                    contents: newContents,
+                  }),
+                ],
+              })
+            )
+            expect(notifySpy).not.toHaveBeenCalled()
+          })
+
+          describe('and the validation cannot be requested', () => {
+            beforeEach(() => {
+              mockRequestValidation.mockRejectedValue(new Error('SNS is down'))
+            })
+
+            it('should still respond with the updated item and tell the curators', async () => {
+              await server
+                .put(buildURL(url))
+                .send({ item: itemToUpsert })
+                .set(createAuthHeaders('put', url))
+                .expect(STATUS_CODES.ok)
+
+              await settle()
+              expect(mockRequestValidation).toHaveBeenCalledTimes(1)
+              expect(notifySpy).toHaveBeenCalledWith(
+                dbCollectionMock.id,
+                'the automatic review could not be requested'
+              )
+            })
+          })
+        })
       })
 
       describe('and the collection given for the item is not published', () => {
@@ -2451,6 +2592,22 @@ describe('Item router', () => {
             data: resultingItem,
             ok: true,
           })
+        })
+
+        it('should not hand the item to the automatic review', async () => {
+          const onItemSavedSpy = jest.spyOn(
+            AutoCurationService.prototype,
+            'onItemSaved'
+          )
+
+          await server
+            .put(buildURL(url))
+            .send({ item: itemToUpsert })
+            .set(createAuthHeaders('put', url))
+            .expect(STATUS_CODES.ok)
+
+          expect(onItemSavedSpy).not.toHaveBeenCalled()
+          onItemSavedSpy.mockRestore()
         })
       })
     })

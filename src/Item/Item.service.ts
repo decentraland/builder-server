@@ -7,6 +7,7 @@ import {
 } from '../Collection'
 import { CollectionService } from '../Collection/Collection.service'
 import { CurationStatus } from '../Curation'
+import { AutoCurationService } from '../Curation/AutoCuration.service'
 import { ItemCuration } from '../Curation/ItemCuration'
 import { Bridge } from '../ethereum/api/Bridge'
 import { collectionAPI } from '../ethereum/api/collection'
@@ -62,6 +63,7 @@ import { EmoteData } from './emote/types'
 
 export class ItemService {
   private collectionService = new CollectionService()
+  private autoCurationService = new AutoCurationService()
 
   /**
    * Updates or insert an item, either a third party item or a standard item.
@@ -713,6 +715,10 @@ export class ItemService {
         : null
 
     const upsertedItem: ItemAttributes = await Item.upsert(attributes)
+    if (dbItem && dbCollection && isDbItemCollectionPublished) {
+      // Curators may be reviewing the collection while its items change: new files get validated too. Never throws.
+      this.autoCurationService.onItemSaved(dbItem, attributes, dbCollection)
+    }
     const { item: fullItem } = await this.getDCLItem(
       upsertedItem,
       itemCollection ?? dbCollection

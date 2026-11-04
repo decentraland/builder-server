@@ -6,12 +6,14 @@ import { env } from 'decentraland-commons'
 import { Collection } from '../Collection/Collection.model'
 import { CollectionAttributes } from '../Collection/Collection.types'
 import { Item } from '../Item/Item.model'
-import { ItemAttributes } from '../Item/Item.types'
+import { ItemAttributes, ItemContents } from '../Item/Item.types'
 import { VIDEO_PATH } from '../Item/utils'
-import { sanitizeItemContents } from '../Item/sanitize'
+import { isValidContentEntry, sanitizeItemContents } from '../Item/sanitize'
 import { buildEntityMetadata, calculateItemContentHash } from '../Item/hashes'
 import { collectionAPI } from '../ethereum/api/collection'
 import { curationNotifications } from './notifications'
+import { CurationService } from './Curation.service'
+import { CurationStatus, CurationType } from './Curation.types'
 import {
   requestValidation as publishValidationRequest,
   ValidationTooLargeError,
@@ -25,8 +27,32 @@ import {
 // Resolved by isFeatureFlagEnabled as `builder-auto-curation`.
 export const AUTO_CURATION_FEATURE_FLAG = 'auto-curation'
 
+// The Builder saves an item before uploading the files it points to, and creators often save several times in a
+// row: a collection's changed items are validated once they went this long without another change.
+export const ITEM_CHANGES_DELAY_MS = 60 * 1000
+
 const logger = createConsoleLogComponent().getLogger('AutoCuration')
 let warnedMissingTopic = false
+
+type PendingItemChanges = {
+  timer: ReturnType<typeof setTimeout>
+  // The files each changed item had before its first change in the window, keyed by item id.
+  filesBefore: Map<string, string>
+}
+
+// Per process, shared by every instance: each router and service builds its own.
+const pendingItemChanges = new Map<string, PendingItemChanges>()
+
+/** The files the validator receives, comparable as a string: no video, no empty files or directories, any order. */
+function getFilesKey(contents: ItemContents | null | undefined): string {
+  return JSON.stringify(
+    Object.entries(contents ?? {})
+      .filter(
+        ([path, hash]) => path !== VIDEO_PATH && isValidContentEntry(path, hash)
+      )
+      .sort(([a], [b]) => (a < b ? -1 : a > b ? 1 : 0))
+  )
+}
 
 /**
  * Sends standard collections to the wearable-validator job. The job posts its findings to the curators' Slack
@@ -78,6 +104,8 @@ export class AutoCurationService {
    * content hash for. Items not on chain yet have no URN, so the validator cannot judge them. Never throws.
    */
   async onChangesSubmitted(collectionId: string): Promise<void> {
+    // This validation covers every changed item, including the saved ones still waiting for their own.
+    this.cancelItemChanges(collectionId)
     try {
       if (!(await this.isEnabled())) {
         return
@@ -136,6 +164,119 @@ export class AutoCurationService {
     }
   }
 
+  /**
+   * Item hook: an item of a published standard collection was saved. When its files changed, the collection's
+   * changed items are validated once its saves settle (ITEM_CHANGES_DELAY_MS without another change), if the
+   * collection is under review by then. Items not on chain yet have no URN and are skipped. Never throws.
+   */
+  onItemSaved(
+    previous: ItemAttributes,
+    saved: ItemAttributes,
+    collection: CollectionAttributes
+  ): void {
+    try {
+      if (
+        isTPCollection(collection) ||
+        !collection.contract_address ||
+        saved.blockchain_item_id === null
+      ) {
+        return
+      }
+      const filesBefore = getFilesKey(previous.contents)
+      if (filesBefore === getFilesKey(saved.contents)) {
+        return
+      }
+
+      const pending = pendingItemChanges.get(collection.id)
+      const changes = pending?.filesBefore ?? new Map<string, string>()
+      if (!changes.has(saved.id)) {
+        changes.set(saved.id, filesBefore)
+      }
+      if (pending) {
+        clearTimeout(pending.timer)
+      }
+      const timer = setTimeout(() => {
+        pendingItemChanges.delete(collection.id)
+        void this.onItemChangesSettled(collection.id, changes)
+      }, ITEM_CHANGES_DELAY_MS)
+      // A validation waiting for more changes must not keep the process alive.
+      timer.unref?.()
+      pendingItemChanges.set(collection.id, { timer, filesBefore: changes })
+      logger.info(
+        `The files of item ${saved.id} changed: collection ${collection.id} waits for its saves to settle`
+      )
+    } catch (error) {
+      logger.error(
+        `Error scheduling the validation of item ${saved?.id}: ${
+          (error as Error).message
+        }`
+      )
+    }
+  }
+
+  /** Drops the saved item changes that wait to be validated, as a validation of every changed item covers them. */
+  cancelItemChanges(collectionId: string): void {
+    const pending = pendingItemChanges.get(collectionId)
+    if (pending) {
+      clearTimeout(pending.timer)
+      pendingItemChanges.delete(collectionId)
+    }
+  }
+
+  /**
+   * The items whose files changed in the window, read again so that the last save is the one validated, when the
+   * collection is still under review. An item whose files went back to the ones it had is not sent. Never throws.
+   */
+  async onItemChangesSettled(
+    collectionId: string,
+    filesBefore: Map<string, string>
+  ): Promise<void> {
+    try {
+      if (!(await this.isEnabled())) {
+        return
+      }
+      const collection = await Collection.findOne<CollectionAttributes>(
+        collectionId
+      )
+      if (
+        !collection ||
+        isTPCollection(collection) ||
+        !collection.contract_address
+      ) {
+        return
+      }
+      if (!(await this.isUnderReview(collection))) {
+        logger.info(
+          `Collection ${collectionId} is not under review: its changed items are validated when its creator pushes them`
+        )
+        return
+      }
+
+      const items = await Item.findOrderedByCollectionId(collectionId)
+      const changedItems = items.filter(
+        (item) =>
+          item.blockchain_item_id !== null &&
+          filesBefore.has(item.id) &&
+          filesBefore.get(item.id) !== getFilesKey(item.contents)
+      )
+      if (changedItems.length === 0) {
+        logger.info(
+          `The changed items of collection ${collectionId} went back to their previous files`
+        )
+        return
+      }
+
+      await this.startValidation(collection, changedItems, 'edit')
+    } catch (error) {
+      logger.error(
+        `Error requesting the validation of the changed items of collection ${collectionId}: ${
+          (error as Error).message
+        }`
+      )
+      await this.handOffToCurators(collectionId)
+    }
+  }
+
   async buildManifest(
     validationId: string,
     collection: CollectionAttributes,
@@ -163,6 +304,27 @@ export class AutoCurationService {
     }
 
     return { validationId, collectionId: collection.id, items: manifestItems }
+  }
+
+  /**
+   * Whether the curators review the collection as it is now: it has a pending curation, or it was never approved on
+   * chain and waits for its first review whatever its curations say (the Builder shows it as under review and offers
+   * no way to request one). An approved collection without a pending curation is not: its creator pushes the changes,
+   * which requests their validation.
+   */
+  private async isUnderReview(
+    collection: CollectionAttributes
+  ): Promise<boolean> {
+    const curation = await CurationService.byType(
+      CurationType.COLLECTION
+    ).getLatestById(collection.id)
+    if (curation?.status === CurationStatus.PENDING) {
+      return true
+    }
+    const remoteCollection = await collectionAPI.fetchCollection(
+      collection.contract_address!
+    )
+    return !!remoteCollection && !remoteCollection.isApproved
   }
 
   /** A request that cannot be sent is handed to the curators: no automatic result will reach their channel. */

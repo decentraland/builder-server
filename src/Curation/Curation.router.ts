@@ -33,6 +33,7 @@ import {
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { curationNotifications, CurationVerdict } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
+import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
 
@@ -565,7 +566,7 @@ export class CurationRouter extends Router {
           attributes.assignee,
           ethAddress
         )
-      } else {
+      } else if (!(await this.isFirstReviewRequest(id, curation))) {
         void curationNotifications.reviewRequested(
           id,
           curation?.status,
@@ -576,6 +577,34 @@ export class CurationRouter extends Router {
     }
 
     return created
+  }
+
+  /**
+   * A request on a standard collection the chain never approved and with no previous request is the first
+   * review request: the publish already announced it and started the full automatic review. A legacy
+   * collection approved before requests were stored also has no request, and its request is submitted changes.
+   */
+  private isFirstReviewRequest = async (
+    collectionId: string,
+    previousCuration: CollectionCurationAttributes | undefined
+  ): Promise<boolean> => {
+    if (previousCuration) {
+      return false
+    }
+    const collection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
+    if (
+      !collection ||
+      isTPCollection(collection) ||
+      !collection.contract_address
+    ) {
+      return false
+    }
+    const remoteCollection = await collectionAPI.fetchCollection(
+      collection.contract_address
+    )
+    return !!remoteCollection && !remoteCollection.isApproved
   }
 
   private getItemCurationContentHashAndMappingCompletion = async (

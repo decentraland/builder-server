@@ -783,7 +783,7 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and its files change again while their validation is being prepared', () => {
+    describe('and its files change again before a validation being prepared reads them', () => {
       let enableFlag: (enabled: boolean) => void
       let savedAgain: ItemAttributes
 
@@ -799,11 +799,58 @@ describe('AutoCurationService', () => {
         )
       })
 
-      it('should send the new changes once the minimum interval after that validation went by', async () => {
+      it('should send the files it reads once, not again when the window opened meanwhile ends', async () => {
         service.onItemSaved(previous, saved, dbCollectionMock)
         jest.advanceTimersByTime(ITEM_CHANGES_DELAY_MS)
+        mockFindItemsByCollection.mockResolvedValue([savedAgain])
         service.onItemSaved(saved, savedAgain, dbCollectionMock)
         enableFlag(true)
+        await settledSpy.mock.results[0].value
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        expect(mockSendValidation.mock.calls[0][0].items).toEqual([
+          expect.objectContaining({
+            itemId: savedAgain.id,
+            contents: savedAgain.contents,
+          }),
+        ])
+
+        await settle(MIN_ITEM_CHANGES_INTERVAL_MS)
+        expect(settledSpy).toHaveBeenCalledTimes(2)
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    describe('and its files change again after a validation being prepared read them', () => {
+      let savedAgain: ItemAttributes
+      let hashReached: Promise<void>
+      let releaseHash: (hash: string) => void
+
+      beforeEach(() => {
+        savedAgain = {
+          ...saved,
+          contents: { ...saved.contents, 'male/model.glb': 'newerModelHash' },
+        }
+        // Without a stored hash the manifest computes one: the test acts while it does.
+        mockFindItemsByCollection.mockResolvedValue([
+          { ...saved, local_content_hash: null },
+        ])
+        hashReached = new Promise<void>((resolveReached) => {
+          mockCalculateHash.mockImplementationOnce(
+            () =>
+              new Promise<string>((resolve) => {
+                releaseHash = resolve
+                resolveReached()
+              })
+          )
+        })
+      })
+
+      it('should send the new files once the minimum interval after that validation went by', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        jest.advanceTimersByTime(ITEM_CHANGES_DELAY_MS)
+        await hashReached
+        service.onItemSaved(saved, savedAgain, dbCollectionMock)
+        releaseHash('newLocalHash')
         await settledSpy.mock.results[0].value
         expect(mockSendValidation).toHaveBeenCalledTimes(1)
 
@@ -813,6 +860,24 @@ describe('AutoCurationService', () => {
 
         await settle(MIN_ITEM_CHANGES_INTERVAL_MS - ITEM_CHANGES_DELAY_MS)
         expect(mockSendValidation).toHaveBeenCalledTimes(2)
+        expect(mockSendValidation.mock.calls[1][0].items).toEqual([
+          expect.objectContaining({
+            itemId: savedAgain.id,
+            contents: savedAgain.contents,
+          }),
+        ])
+      })
+
+      it("should not send it when the collection's changes are submitted before it is published", async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        jest.advanceTimersByTime(ITEM_CHANGES_DELAY_MS)
+        await hashReached
+        service.cancelItemChanges(dbCollectionMock.id)
+        releaseHash('newLocalHash')
+        await settledSpy.mock.results[0].value
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockNotify).not.toHaveBeenCalled()
       })
     })
 

@@ -46,24 +46,41 @@ type PendingItemChanges = {
 
 // Per process, shared by every instance: each router and service builds its own.
 const pendingItemChanges = new Map<string, PendingItemChanges>()
-// Bumped whenever a collection's item changes are dropped, so that a validation already being prepared is not sent.
-// One number per collection whose review was requested since the process started.
-const itemChangesGenerations = new Map<string, number>()
+
+type ItemChangesInFlight = {
+  // How many validations of the collection's item changes are being prepared.
+  count: number
+  // Bumped when the collection's item changes are dropped, so that the validations being prepared are not sent.
+  generation: number
+  // The files key each item was last sent with, so that a window that waited meanwhile does not send them again.
+  sentFiles: Map<string, string>
+}
+
+// Kept only while a validation of a collection's item changes is being prepared or another window waits.
+const itemChangesInFlight = new Map<string, ItemChangesInFlight>()
 // When each collection's item changes were last sent to be validated, while that is within the minimum interval.
 const lastItemChangesValidations = new Map<string, number>()
 
-/** Forgets every waiting item change, generation and interval. For tests: suites share this module's state. */
+/** Forgets every waiting item change, in-flight state and interval. For tests: suites share this module's state. */
 export function resetPendingItemChanges(): void {
   for (const { timer } of pendingItemChanges.values()) {
     clearTimeout(timer)
   }
   pendingItemChanges.clear()
-  itemChangesGenerations.clear()
+  itemChangesInFlight.clear()
   lastItemChangesValidations.clear()
 }
 
-function getItemChangesGeneration(collectionId: string): number {
-  return itemChangesGenerations.get(collectionId) ?? 0
+/** Forgets what a collection had in flight once nothing is prepared and no window waits: none of it matters then. */
+function releaseItemChangesInFlight(collectionId: string): void {
+  const inFlight = itemChangesInFlight.get(collectionId)
+  if (
+    inFlight &&
+    inFlight.count === 0 &&
+    !pendingItemChanges.has(collectionId)
+  ) {
+    itemChangesInFlight.delete(collectionId)
+  }
 }
 
 /** How long until the collection's item changes may be validated again: 0 when the minimum interval went by. */
@@ -258,21 +275,39 @@ export class AutoCurationService {
       clearTimeout(pending.timer)
       pendingItemChanges.delete(collectionId)
     }
-    itemChangesGenerations.set(
-      collectionId,
-      getItemChangesGeneration(collectionId) + 1
-    )
+    const inFlight = itemChangesInFlight.get(collectionId)
+    if (inFlight) {
+      inFlight.generation += 1
+      releaseItemChangesInFlight(collectionId)
+    }
   }
 
   /**
    * The items whose files changed in the window, read again so that the last save is the one validated, when the
-   * collection is still under review. An item whose files went back to the ones it had is not sent. Never throws.
+   * collection is still under review. An item whose files went back to the ones it had, or whose files were sent by
+   * a validation prepared while this window waited, is not sent. Never throws.
    */
   async onItemChangesSettled(
     collectionId: string,
     filesBefore: Map<string, string>
   ): Promise<void> {
-    const generation = getItemChangesGeneration(collectionId)
+    const inFlight = itemChangesInFlight.get(collectionId) ?? {
+      count: 0,
+      generation: 0,
+      sentFiles: new Map<string, string>(),
+    }
+    inFlight.count += 1
+    itemChangesInFlight.set(collectionId, inFlight)
+    const generation = inFlight.generation
+    const wasDropped = () => {
+      if (inFlight.generation === generation) {
+        return false
+      }
+      logger.info(
+        `The changed items of collection ${collectionId} were dropped while their validation was prepared`
+      )
+      return true
+    }
     try {
       if (!(await this.isEnabled())) {
         return
@@ -295,29 +330,36 @@ export class AutoCurationService {
       }
 
       const items = await Item.findOrderedByCollectionId(collectionId)
-      const changedItems = items.filter(
-        (item) =>
+      const changedItems = items.filter((item) => {
+        const files = getFilesKey(item.contents)
+        return (
           item.blockchain_item_id !== null &&
           filesBefore.has(item.id) &&
-          filesBefore.get(item.id) !== getFilesKey(item.contents)
-      )
+          filesBefore.get(item.id) !== files &&
+          inFlight.sentFiles.get(item.id) !== files
+        )
+      })
       if (changedItems.length === 0) {
         logger.info(
-          `The changed items of collection ${collectionId} went back to their previous files`
+          `No changed item of collection ${collectionId} has files left to validate`
         )
         return
       }
-
-      if (getItemChangesGeneration(collectionId) !== generation) {
-        logger.info(
-          `The changed items of collection ${collectionId} were dropped while their validation was prepared`
-        )
+      if (wasDropped()) {
         return
       }
 
-      // Also when the request fails: a collection too large to validate would post a notice on every window.
-      lastItemChangesValidations.set(collectionId, Date.now())
-      await this.startValidation(collection, changedItems, 'edit')
+      await this.startValidation(collection, changedItems, 'edit', () => {
+        if (wasDropped()) {
+          return false
+        }
+        // Also when the request fails: a collection too large to validate would post a notice on every window.
+        lastItemChangesValidations.set(collectionId, Date.now())
+        for (const item of changedItems) {
+          inFlight.sentFiles.set(item.id, getFilesKey(item.contents))
+        }
+        return true
+      })
     } catch (error) {
       logger.error(
         `Error requesting the validation of the changed items of collection ${collectionId}: ${
@@ -325,6 +367,9 @@ export class AutoCurationService {
         }`
       )
       await this.handOffToCurators(collectionId)
+    } finally {
+      inFlight.count -= 1
+      releaseItemChangesInFlight(collectionId)
     }
   }
 
@@ -407,13 +452,17 @@ export class AutoCurationService {
   private async startValidation(
     collection: CollectionAttributes,
     items: ItemAttributes[],
-    trigger: ValidationTrigger
+    trigger: ValidationTrigger,
+    // The caller's last chance to drop the request, once every await before publishing it is done.
+    beforeSend: () => boolean = () => true
   ): Promise<void> {
     const validationId = uuid()
     try {
-      await publishValidationRequest(
-        await this.buildManifest(validationId, collection, items)
-      )
+      const manifest = await this.buildManifest(validationId, collection, items)
+      if (!beforeSend()) {
+        return
+      }
+      await publishValidationRequest(manifest)
     } catch (error) {
       const reason =
         error instanceof ValidationTooLargeError

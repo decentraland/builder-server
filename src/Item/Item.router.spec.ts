@@ -2544,8 +2544,13 @@ describe('Item router', () => {
 
       describe('and the collection given for the item is not published', () => {
         let currentDate: Date
+        let onItemSavedSpy: jest.SpyInstance
 
         beforeEach(() => {
+          onItemSavedSpy = jest.spyOn(
+            AutoCurationService.prototype,
+            'onItemSaved'
+          )
           currentDate = new Date()
           jest.useFakeTimers()
           jest.setSystemTime(currentDate)
@@ -2580,6 +2585,7 @@ describe('Item router', () => {
         })
 
         afterEach(() => {
+          onItemSavedSpy.mockRestore()
           jest.useRealTimers()
         })
 
@@ -2597,11 +2603,6 @@ describe('Item router', () => {
         })
 
         it('should not hand the item to the automatic review', async () => {
-          const onItemSavedSpy = jest.spyOn(
-            AutoCurationService.prototype,
-            'onItemSaved'
-          )
-
           await server
             .put(buildURL(url))
             .send({ item: itemToUpsert })
@@ -2609,7 +2610,6 @@ describe('Item router', () => {
             .expect(STATUS_CODES.ok)
 
           expect(onItemSavedSpy).not.toHaveBeenCalled()
-          onItemSavedSpy.mockRestore()
         })
       })
     })

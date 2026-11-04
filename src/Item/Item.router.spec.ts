@@ -50,6 +50,7 @@ import { CurationStatus } from '../Curation'
 import {
   AutoCurationService,
   ITEM_CHANGES_DELAY_MS,
+  resetPendingItemChanges,
 } from '../Curation/AutoCuration.service'
 import { CurationService } from '../Curation/Curation.service'
 import { curationNotifications } from '../Curation/notifications'
@@ -154,6 +155,8 @@ describe('Item router', () => {
   })
 
   afterEach(() => {
+    // Saves that change a published item's files leave a validation waiting in a module-level map.
+    resetPendingItemChanges()
     jest.resetAllMocks()
   })
 
@@ -2484,7 +2487,6 @@ describe('Item router', () => {
           })
 
           afterEach(() => {
-            new AutoCurationService().cancelItemChanges(dbCollectionMock.id)
             spies.forEach((spy) => spy.mockRestore())
             jest.useRealTimers()
             delete process.env.FF_AUTO_CURATION

@@ -21,6 +21,8 @@ import {
 import {
   AutoCurationService,
   ITEM_CHANGES_DELAY_MS,
+  MIN_ITEM_CHANGES_INTERVAL_MS,
+  resetPendingItemChanges,
 } from './AutoCuration.service'
 
 jest.mock('../utils/features')
@@ -70,6 +72,7 @@ describe('AutoCurationService', () => {
   })
 
   afterEach(() => {
+    resetPendingItemChanges()
     jest.resetAllMocks()
     jest.restoreAllMocks()
   })
@@ -427,7 +430,6 @@ describe('AutoCurationService', () => {
     })
 
     afterEach(() => {
-      service.cancelItemChanges(dbCollectionMock.id)
       jest.useRealTimers()
     })
 
@@ -682,6 +684,167 @@ describe('AutoCurationService', () => {
         await settle()
         expect(settledSpy).not.toHaveBeenCalled()
         expect(mockSendValidation).toHaveBeenCalledTimes(1)
+      })
+    })
+
+    describe("and the collection's changes are submitted while the validation is being prepared", () => {
+      let enableFlag: (enabled: boolean) => void
+
+      beforeEach(() => {
+        mockIsFeatureFlagEnabled.mockReturnValueOnce(
+          new Promise<boolean>((resolve) => {
+            enableFlag = resolve
+          })
+        )
+      })
+
+      it('should not send it', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        jest.advanceTimersByTime(ITEM_CHANGES_DELAY_MS)
+        expect(settledSpy).toHaveBeenCalledTimes(1)
+
+        service.cancelItemChanges(dbCollectionMock.id)
+        enableFlag(true)
+        await settledSpy.mock.results[0].value
+
+        expect(mockFindItemsByCollection).toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+
+      it('should still validate the changes saved after it', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        jest.advanceTimersByTime(ITEM_CHANGES_DELAY_MS)
+        service.cancelItemChanges(dbCollectionMock.id)
+        enableFlag(true)
+        await settledSpy.mock.results[0].value
+
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        expect(requestedItemIds()).toEqual([saved.id])
+      })
+    })
+
+    describe('and its files change again after their validation was requested', () => {
+      let savedAgain: ItemAttributes
+
+      beforeEach(() => {
+        savedAgain = {
+          ...saved,
+          contents: { ...saved.contents, 'male/model.glb': 'newerModelHash' },
+          local_content_hash: 'newerLocalHash',
+        }
+      })
+
+      it('should wait for the minimum interval and then request the validation of the latest version', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+
+        mockFindItemsByCollection.mockResolvedValue([savedAgain])
+        service.onItemSaved(saved, savedAgain, dbCollectionMock)
+        await settle(MIN_ITEM_CHANGES_INTERVAL_MS - 1)
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+
+        await settle(1)
+        expect(mockSendValidation).toHaveBeenCalledTimes(2)
+        expect(mockSendValidation.mock.calls[1][0].items).toEqual([
+          expect.objectContaining({
+            itemId: savedAgain.id,
+            contentHash: 'newerLocalHash',
+          }),
+        ])
+      })
+
+      it('should fold the changes made in the meantime into one request', async () => {
+        const otherPrevious = {
+          ...previous,
+          id: uuidv4(),
+          blockchain_item_id: '1',
+        }
+        const otherSaved = {
+          ...saved,
+          id: otherPrevious.id,
+          blockchain_item_id: '1',
+        }
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+
+        mockFindItemsByCollection.mockResolvedValue([savedAgain, otherSaved])
+        await settle(10 * 1000)
+        service.onItemSaved(saved, savedAgain, dbCollectionMock)
+        await settle(5 * 60 * 1000)
+        service.onItemSaved(otherPrevious, otherSaved, dbCollectionMock)
+        await settle(MIN_ITEM_CHANGES_INTERVAL_MS)
+
+        expect(mockSendValidation).toHaveBeenCalledTimes(2)
+        expect(requestedItemIds(1)).toEqual([savedAgain.id, otherSaved.id])
+      })
+    })
+
+    describe('and its files change again while their validation is being prepared', () => {
+      let enableFlag: (enabled: boolean) => void
+      let savedAgain: ItemAttributes
+
+      beforeEach(() => {
+        savedAgain = {
+          ...saved,
+          contents: { ...saved.contents, 'male/model.glb': 'newerModelHash' },
+        }
+        mockIsFeatureFlagEnabled.mockReturnValueOnce(
+          new Promise<boolean>((resolve) => {
+            enableFlag = resolve
+          })
+        )
+      })
+
+      it('should send the new changes once the minimum interval after that validation went by', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        jest.advanceTimersByTime(ITEM_CHANGES_DELAY_MS)
+        service.onItemSaved(saved, savedAgain, dbCollectionMock)
+        enableFlag(true)
+        await settledSpy.mock.results[0].value
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+
+        mockFindItemsByCollection.mockResolvedValue([savedAgain])
+        await settle(ITEM_CHANGES_DELAY_MS)
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+
+        await settle(MIN_ITEM_CHANGES_INTERVAL_MS - ITEM_CHANGES_DELAY_MS)
+        expect(mockSendValidation).toHaveBeenCalledTimes(2)
+      })
+    })
+
+    describe('and the request is too large every time', () => {
+      let savedAgain: ItemAttributes
+
+      beforeEach(() => {
+        savedAgain = {
+          ...saved,
+          contents: { ...saved.contents, 'male/model.glb': 'newerModelHash' },
+        }
+        mockSendValidation.mockRejectedValue(
+          new ValidationTooLargeError(300000, 51)
+        )
+      })
+
+      it('should tell the curators at most once per minimum interval', async () => {
+        service.onItemSaved(previous, saved, dbCollectionMock)
+        await settle()
+        expect(mockNotify).toHaveBeenCalledTimes(1)
+
+        mockFindItemsByCollection.mockResolvedValue([savedAgain])
+        service.onItemSaved(saved, savedAgain, dbCollectionMock)
+        await settle()
+        expect(mockNotify).toHaveBeenCalledTimes(1)
+
+        await settle(MIN_ITEM_CHANGES_INTERVAL_MS - ITEM_CHANGES_DELAY_MS)
+        expect(mockNotify).toHaveBeenCalledTimes(2)
+        expect(mockNotify).toHaveBeenLastCalledWith(
+          dbCollectionMock.id,
+          'it is too large for the automatic review (51 items, 300000 bytes)'
+        )
       })
     })
 

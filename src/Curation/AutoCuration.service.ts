@@ -30,6 +30,10 @@ export const AUTO_CURATION_FEATURE_FLAG = 'auto-curation'
 // The Builder saves an item before uploading the files it points to, and creators often save several times in a
 // row: a collection's changed items are validated once they went this long without another change.
 export const ITEM_CHANGES_DELAY_MS = 60 * 1000
+// The shortest time between two validations of a collection's item changes; the changes made in between are validated
+// together when it ends. It caps what one collection being edited costs (model calls, a Slack thread or notice each
+// time) at 6 validations an hour, while a curator still gets a verdict for the latest files within minutes.
+export const MIN_ITEM_CHANGES_INTERVAL_MS = 10 * 60 * 1000
 
 const logger = createConsoleLogComponent().getLogger('AutoCuration')
 let warnedMissingTopic = false
@@ -42,6 +46,39 @@ type PendingItemChanges = {
 
 // Per process, shared by every instance: each router and service builds its own.
 const pendingItemChanges = new Map<string, PendingItemChanges>()
+// Bumped whenever a collection's item changes are dropped, so that a validation already being prepared is not sent.
+// One number per collection whose review was requested since the process started.
+const itemChangesGenerations = new Map<string, number>()
+// When each collection's item changes were last sent to be validated, while that is within the minimum interval.
+const lastItemChangesValidations = new Map<string, number>()
+
+/** Forgets every waiting item change, generation and interval. For tests: suites share this module's state. */
+export function resetPendingItemChanges(): void {
+  for (const { timer } of pendingItemChanges.values()) {
+    clearTimeout(timer)
+  }
+  pendingItemChanges.clear()
+  itemChangesGenerations.clear()
+  lastItemChangesValidations.clear()
+}
+
+function getItemChangesGeneration(collectionId: string): number {
+  return itemChangesGenerations.get(collectionId) ?? 0
+}
+
+/** How long until the collection's item changes may be validated again: 0 when the minimum interval went by. */
+function getItemChangesCooldown(collectionId: string): number {
+  const lastValidation = lastItemChangesValidations.get(collectionId)
+  if (lastValidation === undefined) {
+    return 0
+  }
+  const cooldown = lastValidation + MIN_ITEM_CHANGES_INTERVAL_MS - Date.now()
+  if (cooldown <= 0) {
+    lastItemChangesValidations.delete(collectionId)
+    return 0
+  }
+  return cooldown
+}
 
 /** The files the validator receives, comparable as a string: no video, no empty files or directories, any order. */
 function getFilesKey(contents: ItemContents | null | undefined): string {
@@ -166,8 +203,9 @@ export class AutoCurationService {
 
   /**
    * Item hook: an item of a published standard collection was saved. When its files changed, the collection's
-   * changed items are validated once its saves settle (ITEM_CHANGES_DELAY_MS without another change), if the
-   * collection is under review by then. Items not on chain yet have no URN and are skipped. Never throws.
+   * changed items are validated once its saves settle (ITEM_CHANGES_DELAY_MS without another change) and at least
+   * MIN_ITEM_CHANGES_INTERVAL_MS after the previous validation of its item changes, if the collection is under
+   * review by then. Items not on chain yet have no URN and are skipped. Never throws.
    */
   onItemSaved(
     previous: ItemAttributes,
@@ -187,21 +225,17 @@ export class AutoCurationService {
         return
       }
 
-      const pending = pendingItemChanges.get(collection.id)
-      const changes = pending?.filesBefore ?? new Map<string, string>()
+      const changes =
+        pendingItemChanges.get(collection.id)?.filesBefore ??
+        new Map<string, string>()
       if (!changes.has(saved.id)) {
         changes.set(saved.id, filesBefore)
       }
-      if (pending) {
-        clearTimeout(pending.timer)
-      }
-      const timer = setTimeout(() => {
-        pendingItemChanges.delete(collection.id)
-        void this.onItemChangesSettled(collection.id, changes)
-      }, ITEM_CHANGES_DELAY_MS)
-      // A validation waiting for more changes must not keep the process alive.
-      timer.unref?.()
-      pendingItemChanges.set(collection.id, { timer, filesBefore: changes })
+      this.scheduleItemChanges(
+        collection.id,
+        changes,
+        Math.max(ITEM_CHANGES_DELAY_MS, getItemChangesCooldown(collection.id))
+      )
       logger.info(
         `The files of item ${saved.id} changed: collection ${collection.id} waits for its saves to settle`
       )
@@ -214,13 +248,20 @@ export class AutoCurationService {
     }
   }
 
-  /** Drops the saved item changes that wait to be validated, as a validation of every changed item covers them. */
+  /**
+   * Drops the saved item changes that wait to be validated, including the ones whose validation is being prepared,
+   * as a validation of every changed item covers them.
+   */
   cancelItemChanges(collectionId: string): void {
     const pending = pendingItemChanges.get(collectionId)
     if (pending) {
       clearTimeout(pending.timer)
       pendingItemChanges.delete(collectionId)
     }
+    itemChangesGenerations.set(
+      collectionId,
+      getItemChangesGeneration(collectionId) + 1
+    )
   }
 
   /**
@@ -231,6 +272,7 @@ export class AutoCurationService {
     collectionId: string,
     filesBefore: Map<string, string>
   ): Promise<void> {
+    const generation = getItemChangesGeneration(collectionId)
     try {
       if (!(await this.isEnabled())) {
         return
@@ -266,6 +308,15 @@ export class AutoCurationService {
         return
       }
 
+      if (getItemChangesGeneration(collectionId) !== generation) {
+        logger.info(
+          `The changed items of collection ${collectionId} were dropped while their validation was prepared`
+        )
+        return
+      }
+
+      // Also when the request fails: a collection too large to validate would post a notice on every window.
+      lastItemChangesValidations.set(collectionId, Date.now())
       await this.startValidation(collection, changedItems, 'edit')
     } catch (error) {
       logger.error(
@@ -304,6 +355,31 @@ export class AutoCurationService {
     }
 
     return { validationId, collectionId: collection.id, items: manifestItems }
+  }
+
+  /** (Re)starts the wait of a collection's item changes; when it ends, they are validated unless the interval says no. */
+  private scheduleItemChanges(
+    collectionId: string,
+    filesBefore: Map<string, string>,
+    delay: number
+  ): void {
+    const pending = pendingItemChanges.get(collectionId)
+    if (pending) {
+      clearTimeout(pending.timer)
+    }
+    const timer = setTimeout(() => {
+      // A validation of the collection's item changes may have gone out while these waited.
+      const cooldown = getItemChangesCooldown(collectionId)
+      if (cooldown > 0) {
+        this.scheduleItemChanges(collectionId, filesBefore, cooldown)
+        return
+      }
+      pendingItemChanges.delete(collectionId)
+      void this.onItemChangesSettled(collectionId, filesBefore)
+    }, delay)
+    // A validation waiting for more changes must not keep the process alive.
+    timer.unref?.()
+    pendingItemChanges.set(collectionId, { timer, filesBefore })
   }
 
   /**

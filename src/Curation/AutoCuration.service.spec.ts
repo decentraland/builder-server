@@ -165,6 +165,25 @@ describe('AutoCurationService', () => {
       ).toBe(3)
     })
 
+    it('should not count a start whose request never reached the topic', () => {
+      expect(
+        countValidationAttempts([
+          buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+            reason: 'publish_failed',
+            validationId: 'unsent',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+            validationId: 'unsent',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'publish',
+            validationId: 'sent',
+          }),
+        ])
+      ).toBe(1)
+    })
+
     it('should stop counting at the latest human decision', () => {
       expect(
         countValidationAttempts([
@@ -591,6 +610,29 @@ describe('AutoCurationService', () => {
     })
   })
 
+  describe('when a third party collection is published', () => {
+    it('should hand it to the curators once, whatever the number of batches', async () => {
+      mockFindLatestEventByType
+        .mockResolvedValueOnce(undefined)
+        .mockResolvedValueOnce(
+          buildEvent(CollectionEventType.REVIEW_HUMAN_REQUIRED, {
+            reason: 'third_party',
+          })
+        )
+
+      await service.onThirdPartyCollectionPublished(dbTPCollectionMock)
+      await service.onThirdPartyCollectionPublished(dbTPCollectionMock)
+
+      expect(mockRecordEvent).toHaveBeenCalledTimes(1)
+      expect(mockRecordEvent).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: CollectionEventType.REVIEW_HUMAN_REQUIRED,
+          payload: { reason: 'third_party' },
+        })
+      )
+    })
+  })
+
   describe('when appealing a rejection', () => {
     beforeEach(() => {
       mockFindCollection.mockResolvedValue(dbCollectionMock)
@@ -861,6 +903,38 @@ describe('AutoCurationService', () => {
         })
       })
 
+      describe('and a curator decided the collection while it ran', () => {
+        beforeEach(() => {
+          mockFindLatestEventByType.mockImplementation((_, type) =>
+            Promise.resolve(
+              type === CollectionEventType.REVIEW_AI_STARTED
+                ? {
+                    ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+                      validationId: 'latestValidation',
+                    }),
+                    created_at: new Date(Date.now() - 60 * 1000),
+                  }
+                : type === CollectionEventType.REVIEW_APPROVED
+                ? buildEvent(CollectionEventType.REVIEW_APPROVED)
+                : undefined
+            )
+          )
+          mockFindLatestCuration.mockResolvedValue(undefined)
+        })
+
+        it('should keep the verdict for the timeline and leave the curation alone', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
+
+          expect(mockRecordEventOnce).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_AI_REJECTED,
+            })
+          )
+          expect(mockUpdateCuration).not.toHaveBeenCalled()
+          expect(mockCreateCuration).not.toHaveBeenCalled()
+        })
+      })
+
       describe('and the collection has no curation at all', () => {
         beforeEach(() => {
           mockFindLatestCuration.mockResolvedValue(undefined)
@@ -1038,6 +1112,7 @@ describe('AutoCurationService', () => {
             curatorEvent,
           ],
           total: 7,
+          pages: 4,
           page: 2,
           limit: 2,
         })

@@ -63,6 +63,7 @@ export const UNSUPPORTED_VALIDATION_REASON = 'unsupported'
 export type CollectionEventsPage<T> = {
   results: T[]
   total: number
+  pages: number
   page: number
   limit: number
 }

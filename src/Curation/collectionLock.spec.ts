@@ -70,7 +70,7 @@ describe('when running a task under the collection lock', () => {
     it('should give up with a busy error without running the task', async () => {
       const result = withCollectionLock(collectionId, task)
       const assertion = expect(result).rejects.toThrow(CollectionBusyError)
-      for (let i = 0; i < 25; i++) {
+      for (let i = 0; i < 160; i++) {
         await Promise.resolve()
         jest.advanceTimersByTime(100)
         await Promise.resolve()

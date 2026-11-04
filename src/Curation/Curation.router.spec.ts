@@ -1487,6 +1487,68 @@ describe('when handling a request', () => {
           })
         })
 
+        describe('and the publication was recorded as an event', () => {
+          beforeEach(() => {
+            ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockResolvedValueOnce(
+              { type: CollectionEventType.COLLECTION_PUBLISHED }
+            )
+            jest.spyOn(collectionAPI, 'fetchCollection').mockReset()
+          })
+
+          it('should treat it as the first request without asking the graph', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(collectionAPI.fetchCollection).not.toHaveBeenCalled()
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and the graph cannot tell whether the chain approved it', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(collectionAPI, 'fetchCollection')
+              .mockReset()
+              .mockRejectedValueOnce(new Error('subgraph down'))
+          })
+
+          it('should treat it as the first request and insert it without announcing it', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and a committee member opens it on a collection they do not own', () => {
+          beforeEach(() => {
+            ;(Collection.findOne as jest.Mock).mockResolvedValue({
+              ...dbCollectionMock,
+              eth_address: '0xsomebodyelse',
+            })
+            mockIsCommitteeMember.mockReset().mockResolvedValue(true)
+          })
+
+          it('should insert the request as bookkeeping without announcing it or requesting a review', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
         describe('and the collection was approved before requests were stored', () => {
           beforeEach(() => {
             jest
@@ -1843,6 +1905,24 @@ describe('when handling a request', () => {
           actor_address: 'ethaddress',
           type: CollectionEventType.REVIEW_APPROVED,
           payload: {},
+        })
+      })
+
+      describe('and it was already approved', () => {
+        beforeEach(() => {
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockReset()
+            .mockResolvedValueOnce({
+              id: 'curationId',
+              status: CurationStatus.APPROVED,
+            } as any)
+        })
+
+        it('should not record a second review.approved event', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).not.toHaveBeenCalled()
         })
       })
     })

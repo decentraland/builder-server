@@ -3310,8 +3310,8 @@ describe('Collection router', () => {
               .expect(200)
               .then(() => {
                 expect(CollectionCuration.update).toHaveBeenCalledWith(
-                  { id: collectionCuration.id },
-                  { updated_at: expect.any(Date) }
+                  { updated_at: expect.any(Date) },
+                  { id: collectionCuration.id }
                 )
               })
           })

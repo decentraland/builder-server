@@ -11,6 +11,7 @@ import { VIDEO_PATH } from '../Item/utils'
 import { sanitizeItemContents } from '../Item/sanitize'
 import { buildEntityMetadata, calculateItemContentHash } from '../Item/hashes'
 import { collectionAPI } from '../ethereum/api/collection'
+import { generatePaginatedResponse, getOffset } from '../Pagination/utils'
 import {
   CollectionCuration,
   CollectionCurationAttributes,
@@ -82,6 +83,16 @@ export function getStartOfTodayUTC(now = new Date()): Date {
 export function countValidationAttempts(
   eventsNewestFirst: CollectionEventAttributes[]
 ): number {
+  // A start whose request never reached the topic did not run; it is not held against the creator.
+  const unsentValidationIds = new Set(
+    eventsNewestFirst
+      .filter(
+        (event) =>
+          event.type === CollectionEventType.REVIEW_AI_ERROR &&
+          event.payload.reason === PUBLISH_FAILED_REASON
+      )
+      .map((event) => event.payload.validationId)
+  )
   let attempts = 0
   for (const event of eventsNewestFirst) {
     if (HUMAN_DECISION_EVENT_TYPES.includes(event.type)) {
@@ -89,7 +100,8 @@ export function countValidationAttempts(
     }
     if (
       event.type === CollectionEventType.REVIEW_AI_STARTED &&
-      event.payload.trigger !== 'sweep'
+      event.payload.trigger !== 'sweep' &&
+      !unsentValidationIds.has(event.payload.validationId)
     ) {
       attempts++
     }
@@ -152,6 +164,14 @@ export class AutoCurationService {
   ): Promise<void> {
     try {
       if (!(await this.isEnabled())) {
+        return
+      }
+      // Third Party items are published in batches; the hand-off is recorded once per collection.
+      const handedOff = await CollectionEvent.findLatestByCollectionIdAndType(
+        collection.id,
+        CollectionEventType.REVIEW_HUMAN_REQUIRED
+      )
+      if (handedOff?.payload.reason === 'third_party') {
         return
       }
       await CollectionEvent.record({
@@ -285,7 +305,7 @@ export class AutoCurationService {
     const rows = await CollectionEvent.findPageByCollectionId(
       collectionId,
       limit,
-      limit * (page - 1)
+      getOffset(page, limit)
     )
     const total = Number(rows[0]?.total_count ?? 0)
     const results = rows.map((row) => {
@@ -293,7 +313,7 @@ export class AutoCurationService {
       return canSeeValidationIds ? event : redactCollectionEvent(event)
     })
 
-    return { results, total, page, limit }
+    return generatePaginatedResponse(results, total, limit, page)
   }
 
   /** Re-sends validations that ended in a retryable error, or whose start is older than the stale threshold and got no verdict. */
@@ -522,6 +542,11 @@ export class AutoCurationService {
     const collection = await Collection.findOne<CollectionAttributes>(
       collectionId
     )
+    // A curator decided while it ran: their decision stands, the verdict is only kept for the timeline.
+    const decidedByCurator = await this.hasHumanDecisionSince(
+      collectionId,
+      new Date(latestStart.created_at)
+    )
     const staleItemIds = collection
       ? await this.findStaleItemIds(collection, result)
       : []
@@ -544,6 +569,9 @@ export class AutoCurationService {
         if (!recorded) {
           break
         }
+        if (decidedByCurator) {
+          break
+        }
         await notifyCurationSlack(
           stale
             ? `AI review passed for collection ${describeCollection(
@@ -563,7 +591,9 @@ export class AutoCurationService {
           type: CollectionEventType.REVIEW_AI_REJECTED,
         })
         // Idempotent, so a redelivery after a failed update still lands it.
-        await this.rejectByValidator(collectionId)
+        if (!decidedByCurator) {
+          await this.rejectByValidator(collectionId)
+        }
         break
       }
       case 'error': {
@@ -787,17 +817,29 @@ export class AutoCurationService {
     if (verdict) {
       return false
     }
-    const startedAt = new Date(latestStart.created_at).getTime()
+    return !(await this.hasHumanDecisionSince(
+      collectionId,
+      new Date(latestStart.created_at)
+    ))
+  }
+
+  private async hasHumanDecisionSince(
+    collectionId: string,
+    since: Date
+  ): Promise<boolean> {
     for (const type of HUMAN_DECISION_EVENT_TYPES) {
       const decision = await CollectionEvent.findLatestByCollectionIdAndType(
         collectionId,
         type as CollectionEventType
       )
-      if (decision && new Date(decision.created_at).getTime() > startedAt) {
-        return false
+      if (
+        decision &&
+        new Date(decision.created_at).getTime() > since.getTime()
+      ) {
+        return true
       }
     }
-    return true
+    return false
   }
 
   /** Returns when validations are allowed again if the daily limit was reached, null otherwise. */

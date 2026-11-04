@@ -564,6 +564,7 @@ describe('AutoCuration router', () => {
                   }),
                 ],
                 total: 1,
+                pages: 1,
                 page: 1,
                 limit: 10,
               },

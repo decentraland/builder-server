@@ -8,30 +8,32 @@ export type Wallet = {
   identity: AuthIdentity
 }
 
-// Mock wallet with a valid identity that lasts until 2026. Useful for making authorized requests to the server
+// Mock wallet with a valid identity that lasts until the end of 2099. Useful for making authorized requests to the server.
+// Test-only keys: the signer's private key is 0xc4fa97485f42da57c67006559ed95bae823e23e0f74ac3e2889fde0825b3470d, which
+// signs a new ephemeral link if this one ever needs to change.
 export const wallet: Wallet = {
-  address: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
+  address: '0x41abbd52906f3a5f600d74844c4e8bb8bd5cbcc3',
   identity: {
     ephemeralIdentity: {
-      address: '0x00d1244305653Be915D066d39d4c6b54808e59a9',
+      address: '0x71B5bE76782e2CA244E8a332f6CaC0E3d8054bcf',
       publicKey:
-        '0x043e17ed6a1e1ea903660fb0be36f841c808aff2a595f9b3e3a3caaf970dbb197bd91e414a945ebd27beb478ab85c361127d2e807d014626035881348ccaf69281',
+        '0x04e70a499e02504a137b6c39dae5e4a17c476151d14775b1dc3b931d2e97ca7175f780b60b971eb4721ced74a8ba939320ab2436037a52359a9c3fb31a5c03d190',
       privateKey:
-        '0x91ee230307805931ac133b16a3eae41eeb404c8e16436ade9ea07d736217f8fb',
+        '0xd559a5c12322cd7fb9c3d3f4ab44f414714770172d84e876d46711e8e83dce3d',
     },
-    expiration: new Date('2026-11-01T19:27:26.452Z'),
+    expiration: new Date('2099-12-31T23:59:59.000Z'),
     authChain: [
       {
         type: AuthLinkType.SIGNER,
-        payload: '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9',
+        payload: '0x41abbd52906f3a5f600d74844c4e8bb8bd5cbcc3',
         signature: '',
       },
       {
         type: AuthLinkType.ECDSA_PERSONAL_EPHEMERAL,
         payload:
-          'Decentraland Login\nEphemeral address: 0x00d1244305653Be915D066d39d4c6b54808e59a9\nExpiration: 2026-11-01T19:27:26.452Z',
+          'Decentraland Login\nEphemeral address: 0x71B5bE76782e2CA244E8a332f6CaC0E3d8054bcf\nExpiration: 2099-12-31T23:59:59.000Z',
         signature:
-          '0x22fa60a6f0c5b979524b6ceea6318ca4491ddd831efa7d60369546f2b66f38383014d262c5ce4e4b859298fe1bc992d990909389d7f6cb5c765d17f9ae2118101b',
+          '0x02a7b4e00cbafc4b36f2d3297625793a334eaec1020a76b05fb6ae1e9810fa240067046e020675f3db89e7591253dee4f33fe07c94d511e8db47d4e207c4b9591b',
       },
     ],
   },

@@ -1,3 +1,5 @@
+import { HTTPError, STATUS_CODES } from '../common/HTTPError'
+
 export class ValidationInProgressError extends Error {
   constructor(public id: string) {
     super('A validation is already in progress for this collection')
@@ -48,4 +50,32 @@ export class CollectionBusyError extends Error {
   constructor(public id: string) {
     super('The collection is being updated, try again in a moment')
   }
+}
+
+/** Maps the service's expected failures to HTTP answers; anything else is rethrown. */
+export function toAutoCurationHTTPError(error: unknown, id: string): unknown {
+  if (error instanceof ValidationInProgressError) {
+    return new HTTPError(error.message, { id }, STATUS_CODES.conflict)
+  }
+  if (error instanceof ValidationLimitReachedError) {
+    return new HTTPError(
+      error.message,
+      { id, retryAt: error.retryAt.toISOString() },
+      STATUS_CODES.tooManyRequests
+    )
+  }
+  if (
+    error instanceof AppealAlreadyOpenError ||
+    error instanceof CurationNotRejectedError ||
+    error instanceof CurationRejectedByCuratorError ||
+    error instanceof NotStandardCollectionError ||
+    error instanceof NothingToRevalidateError
+  ) {
+    return new HTTPError(error.message, { id }, STATUS_CODES.conflict)
+  }
+  // Another instance holds the collection: 503 makes the Builder and the validator job retry instead of giving up.
+  if (error instanceof CollectionBusyError) {
+    return new HTTPError(error.message, { id }, STATUS_CODES.serviceUnavailable)
+  }
+  return error
 }

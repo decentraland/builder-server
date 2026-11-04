@@ -513,11 +513,11 @@ Append-only review timeline of a collection. Rows are never updated or deleted b
 | Type                      | Actor     | Payload                                                                                                                          |
 | ------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | `collection.published`    | creator   | `{}`                                                                                                                             |
-| `review.human_required`   | system    | `{ reason: 'third_party' }`, or `{ reason: 'unsupported_items', validationId, items }` when the validator cannot check the items |
-| `review.ai_started`       | validator | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds }`                                               |
+| `review.human_required`   | system    | `{ reason: 'third_party' }`, `{ reason: 'unsupported_items', validationId, rulesVersion, items }` when the validator cannot check the items, or `{ reason: 'validator_error', validationId, rulesVersion, items }` when it failed for good |
+| `review.ai_started`       | validator | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds, contentHashes }`                                |
 | `review.ai_passed`        | validator | The validator callback body                                                                                                      |
 | `review.ai_rejected`      | validator | The validator callback body                                                                                                      |
-| `review.ai_error`         | validator | The validator callback body, or `{ reason: 'sweep_exhausted', validationId }`                                                    |
+| `review.ai_error`         | validator | The validator callback body (retryable), or `{ reason: 'sweep_exhausted' \| 'too_large' \| 'publish_failed', validationId, ... }` |
 | `review.appeal_requested` | creator   | `{ note }`                                                                                                                       |
 | `review.assigned`         | curator   | `{ assignee }`                                                                                                                   |
 | `review.approved`         | curator   | `{}`                                                                                                                             |
@@ -528,8 +528,10 @@ Append-only review timeline of a collection. Rows are never updated or deleted b
 ### Business Rules
 
 - **Latest event**: The most recent event decides the review stage shown to creators together with the latest curation
-- **Attempts**: `review.ai_passed` and `review.ai_rejected` count as AI attempts; creators get 3 per UTC day, reset by a `review.approved` or `review.rejected`
-- **Sweep**: A validation start with no `review.ai_passed`, `review.ai_rejected` or `review.human_required` for its `validationId` is re-sent after 30 minutes; after 10 consecutive sweep re-sends a `review.ai_error` with `reason: 'sweep_exhausted'` stops it until someone acts
+- **Attempts**: every `review.ai_started` the creator caused (`publish`, `retry`, `changes` triggers; never `sweep`) counts as an automatic review; creators get 3 per UTC day, reset by a `review.approved` or `review.rejected`
+- **Sweep**: A validation start with no `review.ai_passed`, `review.ai_rejected` or `review.human_required` for its `validationId` is re-sent every 10 minutes once it is 2 hours old, or right away after a retryable `review.ai_error` (`reason: 'publish_failed'` when the request never reached the topic); after 3 consecutive sweep re-sends a `review.ai_error` with `reason: 'sweep_exhausted'` stops it until someone acts
+- **Unique index** `collection_events_verdict_validation_idx` on `(collection_id, type, payload->>'validationId', COALESCE(payload->>'reason', ''))` for the verdict types: one verdict per validation
+- **Verdict rows**: a `rejected` verdict lands on the pending `collection_curations` row (`reviewed_by = 'validator'`), or opens a rejected one when the collection has no request (legacy Builder publishes); a row a curator already decided is left alone. A `passed` verdict whose items changed while it ran carries `staleItemIds`
 
 ---
 

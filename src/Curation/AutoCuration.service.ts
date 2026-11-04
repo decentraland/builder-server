@@ -959,7 +959,8 @@ export class AutoCurationService {
       collection_id: collectionId,
       status,
       assignee: null,
-      reviewed_by: status === CurationStatus.REJECTED ? VALIDATOR_REVIEWER : null,
+      reviewed_by:
+        status === CurationStatus.REJECTED ? VALIDATOR_REVIEWER : null,
       rejection_reasons: null,
       rejection_message: null,
       created_at: now,

@@ -633,9 +633,15 @@ describe('AutoCuration router', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockResolvedValue(undefined)
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'publish',
+          }),
         ])
       })
 
@@ -679,9 +685,7 @@ describe('AutoCuration router', () => {
         )
         const item = { id: itemId, local_content_hash: 'sameHash' }
         ;(Item.findByIds as jest.Mock).mockResolvedValue([item])
-        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValue([
-          item,
-        ])
+        ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValue([item])
       })
 
       it('should respond with a 409 asking for a change or an appeal', () => {

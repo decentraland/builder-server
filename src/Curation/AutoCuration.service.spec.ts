@@ -145,13 +145,21 @@ describe('AutoCurationService', () => {
     it('should count the starts the creator caused, not the sweep re-sends nor the verdicts', () => {
       expect(
         countValidationAttempts([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'sweep' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'sweep',
+          }),
           buildEvent(CollectionEventType.REVIEW_AI_ERROR),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'changes' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'changes',
+          }),
           buildEvent(CollectionEventType.REVIEW_AI_PASSED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'publish',
+          }),
           buildEvent(CollectionEventType.COLLECTION_PUBLISHED),
         ])
       ).toBe(3)
@@ -160,10 +168,16 @@ describe('AutoCurationService', () => {
     it('should stop counting at the latest human decision', () => {
       expect(
         countValidationAttempts([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
           buildEvent(CollectionEventType.REVIEW_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'publish',
+          }),
         ])
       ).toBe(1)
     })
@@ -408,10 +422,18 @@ describe('AutoCurationService', () => {
         )
         mockFindEventsSince.mockResolvedValue([
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'sweep' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'changes' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'sweep',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'changes',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'publish',
+          }),
         ])
       })
 
@@ -447,10 +469,16 @@ describe('AutoCurationService', () => {
           buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
         )
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
           buildEvent(CollectionEventType.REVIEW_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'publish',
+          }),
         ])
       })
 
@@ -806,7 +834,9 @@ describe('AutoCurationService', () => {
         it('should still land the rejection on the pending curation and not notify Slack', async () => {
           await service.handleValidationResult(dbCollectionMock.id, result)
 
-          expect(mockUpdateCuration).toHaveBeenCalledWith(
+          expect(
+            mockUpdateCuration
+          ).toHaveBeenCalledWith(
             expect.objectContaining({ status: CurationStatus.REJECTED }),
             { id: 'curationId', status: CurationStatus.PENDING }
           )
@@ -1096,9 +1126,15 @@ describe('AutoCurationService', () => {
     describe('and the daily limit was reached', () => {
       beforeEach(() => {
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'retry',
+          }),
+          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            trigger: 'publish',
+          }),
         ])
       })
 
@@ -1541,8 +1577,12 @@ describe('AutoCurationService', () => {
       jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
       mockFindEventsSince.mockResolvedValue([
         buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'retry' }),
-        buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'changes' }),
-        buildEvent(CollectionEventType.REVIEW_AI_STARTED, { trigger: 'publish' }),
+        buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          trigger: 'changes',
+        }),
+        buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          trigger: 'publish',
+        }),
       ])
 
       await expect(

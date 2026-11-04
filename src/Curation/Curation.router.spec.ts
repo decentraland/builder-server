@@ -180,7 +180,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is not provided', () => {
       beforeEach(() => {
-        (ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
           itemCuration,
         ])
         req = ({
@@ -197,7 +197,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is provided', () => {
       beforeEach(() => {
-        (ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
+        ;(ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
           [itemCuration]
         )
         req = ({
@@ -1510,7 +1510,7 @@ describe('when handling a request', () => {
             )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith('some id')
+            ).toHaveBeenCalledWith('some id', 'ethAddress')
           })
         })
       })

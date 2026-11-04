@@ -38,6 +38,7 @@ import {
 } from './CollectionEvent'
 import { curationNotifications, CurationVerdict } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
+import { toAutoCurationHTTPError } from './AutoCuration.errors'
 import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
@@ -286,6 +287,13 @@ export class CurationRouter extends Router {
         curationJSON
       )
     } catch (error) {
+      const autoCurationError = toAutoCurationHTTPError(
+        error,
+        server.extractFromReq(req, 'id')
+      )
+      if (autoCurationError instanceof HTTPError) {
+        throw autoCurationError
+      }
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
           'Collection does not exist',
@@ -645,6 +653,16 @@ export class CurationRouter extends Router {
       attributes.is_mapping_complete = itemData.is_mapping_complete
     }
 
+    // A creator submitting changes waits for the running automatic review and for the daily limit; the
+    // request is refused before anything is written so the client can tell them.
+    const isChangesSubmission =
+      type === CurationType.COLLECTION &&
+      !attributes.assignee &&
+      !(await this.isFirstReviewRequest(id, curation))
+    if (isChangesSubmission) {
+      await this.autoCurationService.assertChangesCanBeValidated(id)
+    }
+
     const created = await curationService.getModel().create(attributes)
 
     if (type === CurationType.COLLECTION) {
@@ -655,7 +673,7 @@ export class CurationRouter extends Router {
           attributes.assignee,
           ethAddress
         )
-      } else if (!(await this.isFirstReviewRequest(id, curation))) {
+      } else if (isChangesSubmission) {
         void curationNotifications.reviewRequested(
           id,
           curation?.status,

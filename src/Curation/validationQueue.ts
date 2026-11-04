@@ -1,4 +1,5 @@
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns'
+import { NodeHttpHandler } from '@smithy/node-http-handler'
 import { env } from 'decentraland-commons'
 import { MAX_VALIDATION_ITEMS, ValidationManifest } from './AutoCuration.types'
 
@@ -10,6 +11,7 @@ export const VALIDATION_REQUESTED_EVENT = {
 } as const
 // SNS refuses messages over 256 KB; the margin covers the attributes and the envelope.
 export const MAX_VALIDATION_MESSAGE_BYTES = 240 * 1024
+const PUBLISH_TIMEOUT_MS = 10 * 1000
 
 export class ValidationTooLargeError extends Error {
   constructor(public bytes: number, public itemCount: number) {
@@ -23,9 +25,14 @@ let client: SNSClient | undefined
 
 function getClient(): SNSClient {
   if (!client) {
+    // The publish runs while the collection lock is held, so a hung request must not stall the collection.
     client = new SNSClient({
       region: env.get('AWS_REGION', '') || undefined,
       endpoint: env.get('AWS_SNS_ENDPOINT', '') || undefined,
+      requestHandler: new NodeHttpHandler({
+        connectionTimeout: PUBLISH_TIMEOUT_MS,
+        requestTimeout: PUBLISH_TIMEOUT_MS,
+      }),
     })
   }
   return client

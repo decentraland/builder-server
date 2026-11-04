@@ -71,7 +71,6 @@ import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { isCommitteeMember } from '../Committee'
 import * as Warehouse from '../warehouse'
 import { app } from '../server'
-import { AutoCurationService } from '../Curation/AutoCuration.service'
 import { ForumService } from '../Forum/Forum.service'
 import { CollectionService } from './Collection.service'
 import { canSeeCollection, hasPublicAccess } from './access'
@@ -2720,7 +2719,8 @@ describe('Collection router', () => {
                 expect(
                   AutoCurationService.prototype.onStandardCollectionPublished
                 ).toHaveBeenCalledWith(
-                  expect.objectContaining({ id: dbCollection.id })
+                  expect.objectContaining({ id: dbCollection.id }),
+                  wallet.address
                 )
               })
           })
@@ -3763,14 +3763,14 @@ describe('Collection router', () => {
             .mockResolvedValue(false)
         })
 
-        it('should not start the auto curation', () => {
+        it('should leave the decision to the hook, which checks the flag itself', () => {
           return server
             .post(buildURL(url))
             .set(createAuthHeaders('post', url))
             .send({})
             .expect(200)
             .then(() => {
-              expect(standardHookSpy).not.toHaveBeenCalled()
+              expect(standardHookSpy).toHaveBeenCalledTimes(1)
             })
         })
       })

@@ -1296,7 +1296,9 @@ paths:
         again", or a committee member picking a never-requested collection up. Answers 400 while one is pending.
         A creator's request is announced in the curators' Slack channel and starts the automatic review of the
         changed items, except a collection's first request (right after its publication, before any approval):
-        the publication already announced it and started the full automatic review.
+        the publication already announced it and started the full automatic review. With the auto curation on, a
+        creator's changes are refused with 409 while an automatic review of the collection is running and with
+        429 (`retryAt` in the data) once the day's 3 automatic reviews are used, before anything is written.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1350,7 +1352,7 @@ paths:
                 rejectionMessage:
                   type: string
                   minLength: 1
-                  description: Free text shown to the creator. Required together with rejectionReasons when rejecting
+                  description: Free text shown to the creator, optional like rejectionReasons (the legacy Builder sends neither)
       responses:
         '200':
           description: Curation updated successfully
@@ -1397,12 +1399,11 @@ paths:
           application/json:
             schema:
               type: object
-              required: [note]
               properties:
                 note:
                   type: string
-                  minLength: 1
                   maxLength: 2000
+                  description: Optional message for the curators
       responses:
         '200':
           description: Appeal registered, returns the new pending curation
@@ -1438,11 +1439,12 @@ paths:
       summary: Request an AI validation
       description: |
         Sends the collection to the automatic validator again. Only the collection creator or a manager can call it.
-        A collection gets 3 AI verdicts per UTC day; a curator decision resets the count. The same content always
-        gets the same verdict, so a retry needs the last run to have ended without one (an AI error) or an item saved
-        since it started; it then validates the previous run's items plus the edited ones. Opens a new pending
-        curation when the latest one is rejected and records a `review.ai_started` event. At most 30 requests per
-        minute per address.
+        A collection gets 3 automatic reviews per UTC day (publish, retry and submitted changes all count; sweep
+        re-sends do not); a curator decision resets the count. The same content always gets the same verdict, so a
+        retry needs the last run to have ended without one (an AI error) or an item whose content changed since it
+        started; it then validates the changed items plus the previous run's. Reopens a pending curation when the
+        validator rejected the latest one; a curator's rejection stands until the creator submits changes or
+        appeals. Records a `review.ai_started` event. At most 30 requests per minute per address.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       responses:
@@ -1457,7 +1459,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: A validation is already in progress, nothing changed since the last verdict, or the collection is not a published standard collection
+          description: A validation is already in progress, nothing changed since the last verdict, a curator rejected the collection, or it is not a published standard collection
           content:
             application/json:
               schema:

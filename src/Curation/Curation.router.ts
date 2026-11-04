@@ -566,7 +566,7 @@ export class CurationRouter extends Router {
           attributes.assignee,
           ethAddress
         )
-      } else if (!(await this.isFirstReviewRequest(id, curation))) {
+      } else if (await this.isChangesSubmission(id, curation, ethAddress)) {
         void curationNotifications.reviewRequested(
           id,
           curation?.status,
@@ -580,31 +580,51 @@ export class CurationRouter extends Router {
   }
 
   /**
-   * A request on a standard collection the chain never approved and with no previous request is the first
-   * review request: the publish already announced it and started the full automatic review. A legacy
-   * collection approved before requests were stored also has no request, and its request is submitted changes.
+   * A creator submitting changes: not a collection's first request (the publish already announced it and
+   * started the full automatic review) nor a committee member's bookkeeping on someone else's collection.
    */
-  private isFirstReviewRequest = async (
+  private isChangesSubmission = async (
     collectionId: string,
-    previousCuration: CollectionCurationAttributes | undefined
+    previousCuration: CollectionCurationAttributes | undefined,
+    ethAddress: string
   ): Promise<boolean> => {
-    if (previousCuration) {
-      return false
-    }
     const collection = await Collection.findOne<CollectionAttributes>(
       collectionId
     )
-    if (
-      !collection ||
-      isTPCollection(collection) ||
-      !collection.contract_address
-    ) {
+    if (!collection) {
       return false
     }
-    const remoteCollection = await collectionAPI.fetchCollection(
-      collection.contract_address
-    )
-    return !!remoteCollection && !remoteCollection.isApproved
+    const isOwner =
+      collection.eth_address.toLowerCase() === ethAddress.toLowerCase()
+    if (!isOwner && (await isCommitteeMember(ethAddress))) {
+      return false
+    }
+    if (previousCuration) {
+      return true
+    }
+    return this.wasApprovedOnChain(collection)
+  }
+
+  /** Fails open: with the subgraph down or blank, a collection with no request reads as a first request. */
+  private wasApprovedOnChain = async (
+    collection: CollectionAttributes
+  ): Promise<boolean> => {
+    if (isTPCollection(collection) || !collection.contract_address) {
+      return false
+    }
+    try {
+      const remoteCollection = await collectionAPI.fetchCollection(
+        collection.contract_address
+      )
+      return !!remoteCollection?.isApproved
+    } catch (error) {
+      console.warn(
+        `Could not read the approval of collection ${
+          collection.id
+        } from the graph: ${(error as Error).message}`
+      )
+      return false
+    }
   }
 
   private getItemCurationContentHashAndMappingCompletion = async (

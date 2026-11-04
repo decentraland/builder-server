@@ -169,7 +169,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is not provided', () => {
       beforeEach(() => {
-        (ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
+        ;(ItemCuration.findByCollectionId as jest.Mock).mockResolvedValueOnce([
           itemCuration,
         ])
         req = ({
@@ -186,7 +186,7 @@ describe('when handling a request', () => {
 
     describe('when itemIds param is provided', () => {
       beforeEach(() => {
-        (ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
+        ;(ItemCuration.findByCollectionAndItemIds as jest.Mock).mockResolvedValueOnce(
           [itemCuration]
         )
         req = ({
@@ -1417,6 +1417,47 @@ describe('when handling a request', () => {
           })
 
           it('should insert the request without announcing it or requesting an automatic review', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and the graph cannot tell whether the chain approved it', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(collectionAPI, 'fetchCollection')
+              .mockReset()
+              .mockRejectedValueOnce(new Error('subgraph down'))
+          })
+
+          it('should treat it as the first request and insert it without announcing it', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and a committee member opens it on a collection they do not own', () => {
+          beforeEach(() => {
+            ;(Collection.findOne as jest.Mock).mockResolvedValue({
+              ...dbCollectionMock,
+              eth_address: '0xsomebodyelse',
+            })
+            mockIsCommitteeMember.mockReset().mockResolvedValue(true)
+          })
+
+          it('should insert the request as bookkeeping without announcing it or requesting a review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )

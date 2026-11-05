@@ -1,3 +1,4 @@
+import { createConsoleLogComponent } from '@well-known-components/logger'
 import { server } from 'decentraland-server'
 import { v4 as uuid } from 'uuid'
 import { Router } from '../common/Router'
@@ -33,8 +34,10 @@ import {
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
 import { curationNotifications, CurationVerdict } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
+import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
+const logger = createConsoleLogComponent().getLogger('Curation')
 
 const MAX_FORUM_POST_LENGTH = 10000
 
@@ -558,24 +561,103 @@ export class CurationRouter extends Router {
     const created = await curationService.getModel().create(attributes)
 
     if (type === CurationType.COLLECTION) {
-      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
-      if (attributes.assignee) {
-        void curationNotifications.assigneeChanged(
-          id,
-          attributes.assignee,
-          ethAddress
-        )
-      } else {
-        void curationNotifications.reviewRequested(
-          id,
-          curation?.status,
-          ethAddress
-        )
-        void this.autoCurationService.onChangesSubmitted(id)
-      }
+      await this.announceCollectionRequest(
+        id,
+        attributes.assignee ?? null,
+        curation,
+        ethAddress
+      )
     }
 
     return created
+  }
+
+  /** Never throws: the request is already stored, so a failure here must not fail it. */
+  private announceCollectionRequest = async (
+    collectionId: string,
+    assignee: string | null,
+    previousCuration: CollectionCurationAttributes | undefined,
+    ethAddress: string
+  ): Promise<void> => {
+    try {
+      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
+      if (assignee) {
+        void curationNotifications.assigneeChanged(
+          collectionId,
+          assignee,
+          ethAddress
+        )
+      } else if (
+        await this.isChangesSubmission(
+          collectionId,
+          previousCuration,
+          ethAddress
+        )
+      ) {
+        void curationNotifications.reviewRequested(
+          collectionId,
+          previousCuration?.status,
+          ethAddress
+        )
+        void this.autoCurationService.onChangesSubmitted(collectionId)
+      }
+    } catch (error) {
+      logger.error(
+        `Error announcing the review request of collection ${collectionId}: ${
+          (error as Error).message
+        }`
+      )
+    }
+  }
+
+  /**
+   * A creator submitting changes: not a collection's first request (the publish already announced it and
+   * started the full automatic review) nor a committee member's bookkeeping on someone else's collection.
+   */
+  private isChangesSubmission = async (
+    collectionId: string,
+    previousCuration: CollectionCurationAttributes | undefined,
+    ethAddress: string
+  ): Promise<boolean> => {
+    const collection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
+    if (!collection) {
+      return false
+    }
+    const isOwner =
+      collection.eth_address.toLowerCase() === ethAddress.toLowerCase()
+    if (!isOwner && (await isCommitteeMember(ethAddress))) {
+      return false
+    }
+    if (previousCuration) {
+      return true
+    }
+    return this.mayHaveBeenApproved(collection)
+  }
+
+  /** Only a graph that answers "never approved" makes it a first request: down or blank reads as submitted changes. */
+  private mayHaveBeenApproved = async (
+    collection: CollectionAttributes
+  ): Promise<boolean> => {
+    if (isTPCollection(collection) || !collection.contract_address) {
+      return false
+    }
+    try {
+      const remoteCollection = await collectionAPI.fetchCollection(
+        collection.contract_address
+      )
+      return !remoteCollection || remoteCollection.isApproved
+    } catch (error) {
+      logger.warn(
+        `Could not read the approval of collection ${
+          collection.id
+        } from the graph, treating its request as submitted changes: ${
+          (error as Error).message
+        }`
+      )
+      return true
+    }
   }
 
   private getItemCurationContentHashAndMappingCompletion = async (

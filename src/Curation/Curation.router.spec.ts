@@ -1446,6 +1446,34 @@ describe('when handling a request', () => {
               AutoCurationService.prototype.onChangesSubmitted
             ).not.toHaveBeenCalled()
           })
+
+          it('should tell the curators the graph could not classify it', async () => {
+            await router.insertCollectionCuration(req)
+
+            expect(curationNotifications.approvalUnknown).toHaveBeenCalledWith(
+              dbCollectionMock.id
+            )
+          })
+        })
+
+        describe('and telling the request apart fails after it was stored', () => {
+          beforeEach(() => {
+            mockIsCommitteeMember
+              .mockReset()
+              .mockRejectedValue(new Error('subgraph down'))
+            ;(Collection.findOne as jest.Mock).mockResolvedValue({
+              ...dbCollectionMock,
+              eth_address: '0xsomebodyelse',
+            })
+          })
+
+          it('should still respond with the stored request', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+          })
         })
 
         describe('and a committee member opens it on a collection they do not own', () => {

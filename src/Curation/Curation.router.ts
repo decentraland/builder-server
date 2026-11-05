@@ -1,3 +1,4 @@
+import { createConsoleLogComponent } from '@well-known-components/logger'
 import { server } from 'decentraland-server'
 import { v4 as uuid } from 'uuid'
 import { Router } from '../common/Router'
@@ -36,6 +37,7 @@ import { AutoCurationService } from './AutoCuration.service'
 import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
+const logger = createConsoleLogComponent().getLogger('Curation')
 
 const MAX_FORUM_POST_LENGTH = 10000
 
@@ -559,24 +561,53 @@ export class CurationRouter extends Router {
     const created = await curationService.getModel().create(attributes)
 
     if (type === CurationType.COLLECTION) {
-      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
-      if (attributes.assignee) {
-        void curationNotifications.assigneeChanged(
-          id,
-          attributes.assignee,
-          ethAddress
-        )
-      } else if (await this.isChangesSubmission(id, curation, ethAddress)) {
-        void curationNotifications.reviewRequested(
-          id,
-          curation?.status,
-          ethAddress
-        )
-        void this.autoCurationService.onChangesSubmitted(id)
-      }
+      await this.announceCollectionRequest(
+        id,
+        attributes.assignee ?? null,
+        curation,
+        ethAddress
+      )
     }
 
     return created
+  }
+
+  /** Never throws: the request is already stored, so a failure here must not fail it. */
+  private announceCollectionRequest = async (
+    collectionId: string,
+    assignee: string | null,
+    previousCuration: CollectionCurationAttributes | undefined,
+    ethAddress: string
+  ): Promise<void> => {
+    try {
+      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
+      if (assignee) {
+        void curationNotifications.assigneeChanged(
+          collectionId,
+          assignee,
+          ethAddress
+        )
+      } else if (
+        await this.isChangesSubmission(
+          collectionId,
+          previousCuration,
+          ethAddress
+        )
+      ) {
+        void curationNotifications.reviewRequested(
+          collectionId,
+          previousCuration?.status,
+          ethAddress
+        )
+        void this.autoCurationService.onChangesSubmitted(collectionId)
+      }
+    } catch (error) {
+      logger.error(
+        `Error announcing the review request of collection ${collectionId}: ${
+          (error as Error).message
+        }`
+      )
+    }
   }
 
   /**
@@ -605,7 +636,7 @@ export class CurationRouter extends Router {
     return this.wasApprovedOnChain(collection)
   }
 
-  /** Fails open: with the subgraph down or blank, a collection with no request reads as a first request. */
+  /** Fails open: with the subgraph down or blank, a collection with no request reads as a first request; curators hear when it was down. */
   private wasApprovedOnChain = async (
     collection: CollectionAttributes
   ): Promise<boolean> => {
@@ -618,11 +649,12 @@ export class CurationRouter extends Router {
       )
       return !!remoteCollection?.isApproved
     } catch (error) {
-      console.warn(
+      logger.warn(
         `Could not read the approval of collection ${
           collection.id
         } from the graph: ${(error as Error).message}`
       )
+      void curationNotifications.approvalUnknown(collection.id)
       return false
     }
   }

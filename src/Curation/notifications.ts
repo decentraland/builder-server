@@ -102,6 +102,17 @@ export const curationNotifications = {
     })
   },
 
+  /** A request on a collection with no previous one, when the graph could not tell whether it was approved before. */
+  async approvalUnknown(collectionId: string): Promise<void> {
+    await notify(
+      collectionId,
+      async (collection) =>
+        `⚠️ Review requested for ${link(
+          collection
+        )}, but the graph could not tell whether it was approved before: if it was, its changes were not announced nor reviewed automatically.`
+    )
+  },
+
   /** The automatic review was not requested, so no result will follow in the channel. */
   async validationNotRequested(
     collectionId: string,

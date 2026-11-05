@@ -633,11 +633,11 @@ export class CurationRouter extends Router {
     if (previousCuration) {
       return true
     }
-    return this.wasApprovedOnChain(collection)
+    return this.mayHaveBeenApproved(collection)
   }
 
-  /** Fails open: with the subgraph down or blank, a collection with no request reads as a first request; curators hear when it was down. */
-  private wasApprovedOnChain = async (
+  /** Only a graph that answers "never approved" makes it a first request: down or blank reads as submitted changes. */
+  private mayHaveBeenApproved = async (
     collection: CollectionAttributes
   ): Promise<boolean> => {
     if (isTPCollection(collection) || !collection.contract_address) {
@@ -647,15 +647,16 @@ export class CurationRouter extends Router {
       const remoteCollection = await collectionAPI.fetchCollection(
         collection.contract_address
       )
-      return !!remoteCollection?.isApproved
+      return !remoteCollection || remoteCollection.isApproved
     } catch (error) {
       logger.warn(
         `Could not read the approval of collection ${
           collection.id
-        } from the graph: ${(error as Error).message}`
+        } from the graph, treating its request as submitted changes: ${
+          (error as Error).message
+        }`
       )
-      void curationNotifications.approvalUnknown(collection.id)
-      return false
+      return true
     }
   }
 

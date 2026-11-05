@@ -383,12 +383,3 @@ describe('when the automatic review was not requested', () => {
     )
   })
 })
-
-describe('when the graph cannot tell whether a collection was approved before', () => {
-  it('should warn that its changes may have skipped the announcement and the automatic review', async () => {
-    await curationNotifications.approvalUnknown(dbCollectionMock.id)
-    expect(sentText()).toMatch(
-      /^⚠️ Review requested for <.*>, but the graph could not tell whether it was approved before: if it was, its changes were not announced nor reviewed automatically\.$/
-    )
-  })
-})

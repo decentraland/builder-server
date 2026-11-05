@@ -1386,6 +1386,159 @@ describe('when handling a request', () => {
         })
       })
 
+      describe('when a creator opens the first review request of a collection', () => {
+        let expectedCuration: CollectionCurationAttributes
+
+        beforeEach(() => {
+          expectedCuration = {
+            id: 'uuid-123123-123123',
+          } as CollectionCurationAttributes
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+          } as any
+
+          service = mockServiceWithAccess(CollectionCuration, true)
+          jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(undefined)
+          jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(expectedCuration)
+        })
+
+        describe('and the chain never approved the collection', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(collectionAPI, 'fetchCollection')
+              .mockReset()
+              .mockResolvedValueOnce({
+                ...collectionFragmentMock,
+                isApproved: false,
+              })
+          })
+
+          it('should insert the request without announcing it or requesting an automatic review', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and the graph is down', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(collectionAPI, 'fetchCollection')
+              .mockReset()
+              .mockRejectedValueOnce(new Error('subgraph down'))
+          })
+
+          it('should treat it as submitted changes, announcing them and requesting their automatic review', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).toHaveBeenCalledWith(
+              'some id',
+              undefined,
+              'ethAddress'
+            )
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).toHaveBeenCalledWith('some id')
+          })
+        })
+
+        describe('and the graph answers without the collection', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(collectionAPI, 'fetchCollection')
+              .mockReset()
+              .mockResolvedValueOnce(undefined as any)
+          })
+
+          it('should treat it as submitted changes', async () => {
+            await router.insertCollectionCuration(req)
+
+            expect(curationNotifications.reviewRequested).toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).toHaveBeenCalledWith('some id')
+          })
+        })
+
+        describe('and telling the request apart fails after it was stored', () => {
+          beforeEach(() => {
+            mockIsCommitteeMember
+              .mockReset()
+              .mockRejectedValue(new Error('subgraph down'))
+            ;(Collection.findOne as jest.Mock).mockResolvedValue({
+              ...dbCollectionMock,
+              eth_address: '0xsomebodyelse',
+            })
+          })
+
+          it('should still respond with the stored request', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and a committee member opens it on a collection they do not own', () => {
+          beforeEach(() => {
+            ;(Collection.findOne as jest.Mock).mockResolvedValue({
+              ...dbCollectionMock,
+              eth_address: '0xsomebodyelse',
+            })
+            mockIsCommitteeMember.mockReset().mockResolvedValue(true)
+          })
+
+          it('should insert the request as bookkeeping without announcing it or requesting a review', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and the collection was approved before requests were stored', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(collectionAPI, 'fetchCollection')
+              .mockReset()
+              .mockResolvedValueOnce({
+                ...collectionFragmentMock,
+                isApproved: true,
+              })
+          })
+
+          it('should announce submitted changes and request their automatic review', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(curationNotifications.reviewRequested).toHaveBeenCalledWith(
+              'some id',
+              undefined,
+              'ethAddress'
+            )
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).toHaveBeenCalledWith('some id')
+          })
+        })
+      })
+
       describe('when updating an item', () => {
         let item: ItemAttributes
         let createItemCurationSpy: jest.SpyInstance

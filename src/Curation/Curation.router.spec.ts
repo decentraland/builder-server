@@ -1508,7 +1508,7 @@ describe('when handling a request', () => {
           })
         })
 
-        describe('and the graph cannot tell whether the chain approved it', () => {
+        describe('and the graph is down', () => {
           beforeEach(() => {
             jest
               .spyOn(collectionAPI, 'fetchCollection')
@@ -1516,15 +1516,37 @@ describe('when handling a request', () => {
               .mockRejectedValueOnce(new Error('subgraph down'))
           })
 
-          it('should treat it as the first request and insert it without announcing it', async () => {
+          it('should treat it as submitted changes, announcing them and requesting their automatic review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )
 
-            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(curationNotifications.reviewRequested).toHaveBeenCalledWith(
+              'some id',
+              undefined,
+              'ethAddress'
+            )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).not.toHaveBeenCalled()
+            ).toHaveBeenCalledWith('some id', 'ethAddress')
+          })
+        })
+
+        describe('and the graph answers without the collection', () => {
+          beforeEach(() => {
+            jest
+              .spyOn(collectionAPI, 'fetchCollection')
+              .mockReset()
+              .mockResolvedValueOnce(undefined as any)
+          })
+
+          it('should treat it as submitted changes', async () => {
+            await router.insertCollectionCuration(req)
+
+            expect(curationNotifications.reviewRequested).toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).toHaveBeenCalledWith('some id', 'ethAddress')
           })
         })
 

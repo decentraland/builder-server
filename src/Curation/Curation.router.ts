@@ -1,3 +1,4 @@
+import { createConsoleLogComponent } from '@well-known-components/logger'
 import { server } from 'decentraland-server'
 import { v4 as uuid } from 'uuid'
 import { Router } from '../common/Router'
@@ -42,6 +43,7 @@ import { toAutoCurationHTTPError } from './AutoCuration.errors'
 import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
+const logger = createConsoleLogComponent().getLogger('Curation')
 
 const MAX_FORUM_POST_LENGTH = 10000
 
@@ -729,11 +731,11 @@ export class CurationRouter extends Router {
     if (published) {
       return false
     }
-    return this.wasApprovedOnChain(collection)
+    return this.mayHaveBeenApproved(collection)
   }
 
-  /** Fails open: with the subgraph down or blank, a collection with no request reads as a first request. */
-  private wasApprovedOnChain = async (
+  /** Only a graph that answers "never approved" makes it a first request: down or blank reads as submitted changes. */
+  private mayHaveBeenApproved = async (
     collection: CollectionAttributes
   ): Promise<boolean> => {
     if (isTPCollection(collection) || !collection.contract_address) {
@@ -743,14 +745,16 @@ export class CurationRouter extends Router {
       const remoteCollection = await collectionAPI.fetchCollection(
         collection.contract_address
       )
-      return !!remoteCollection?.isApproved
+      return !remoteCollection || remoteCollection.isApproved
     } catch (error) {
-      console.warn(
+      logger.warn(
         `Could not read the approval of collection ${
           collection.id
-        } from the graph: ${(error as Error).message}`
+        } from the graph, treating its request as submitted changes: ${
+          (error as Error).message
+        }`
       )
-      return false
+      return true
     }
   }
 

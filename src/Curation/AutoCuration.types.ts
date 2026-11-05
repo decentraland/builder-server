@@ -1,9 +1,10 @@
 import { buildEntityMetadata } from '../Item/hashes'
 
+export const MAX_VALIDATION_ATTEMPTS_PER_DAY = 3
 // The validator job drops a request with more items without answering.
 export const MAX_VALIDATION_ITEMS = 50
 
-export type ValidationTrigger = 'publish' | 'changes'
+export type ValidationTrigger = 'publish' | 'retry' | 'changes' | 'sweep'
 
 export type ValidationVerdict = 'passed' | 'rejected' | 'error'
 
@@ -55,6 +56,16 @@ export type ValidationResult = {
   reason?: string
   // Only with verdict "error": whether sending the collection again may decide it.
   retryable?: boolean
+}
+
+export const UNSUPPORTED_VALIDATION_REASON = 'unsupported'
+
+export type CollectionEventsPage<T> = {
+  results: T[]
+  total: number
+  pages: number
+  page: number
+  limit: number
 }
 
 // Generous bounds: the body is signed by the validator, and a 400 makes SQS re-run the whole collection.
@@ -122,5 +133,13 @@ export const validationResultSchema = Object.freeze({
     'rulesVersion',
     'items',
   ],
+  additionalProperties: false,
+})
+
+export const appealSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    note: { type: 'string', maxLength: 2000 },
+  },
   additionalProperties: false,
 })

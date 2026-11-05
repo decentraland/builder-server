@@ -18,6 +18,23 @@ export enum CurationStatusFilter {
   DISABLED = 'disabled',
 }
 
+export const REJECTION_REASONS = [
+  'clipping',
+  'thumbnail',
+  'category_hides',
+  'rigging',
+  'triangle_count',
+  'emote',
+  'file_size',
+  'textures_materials',
+  'reversed_faces',
+  'smart_wearable_files',
+  'content_policy_ip',
+  'other',
+] as const
+
+export type RejectionReason = typeof REJECTION_REASONS[number]
+
 /** `assignee` filter value for the collections without an assigned curator. */
 export const UNASSIGNED_FILTER = 'unassigned'
 
@@ -33,6 +50,13 @@ export const patchCurationSchema = Object.freeze({
       ],
     },
     assignee: { type: ['string', 'null'] },
+    rejectionReasons: {
+      type: 'array',
+      items: { type: 'string', enum: [...REJECTION_REASONS] },
+      minItems: 1,
+      uniqueItems: true,
+    },
+    rejectionMessage: { type: 'string', minLength: 1, maxLength: 2000 },
   },
   additionalProperties: false,
   anyOf: [{ required: ['assignee'] }, { required: ['status'] }],

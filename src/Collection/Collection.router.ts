@@ -619,6 +619,7 @@ export class CollectionRouter extends Router {
 
     try {
       const dbCollection = await this.service.getDBCollection(id)
+      const isAutoCurationEnabled = await this.autoCurationService.isEnabled()
 
       let result: PublishCollectionResponse<CollectionAttributes>
 
@@ -638,6 +639,11 @@ export class CollectionRouter extends Router {
           result.items.length,
           eth_address
         )
+        if (isAutoCurationEnabled) {
+          await this.autoCurationService.onThirdPartyCollectionPublished(
+            dbCollection
+          )
+        }
 
         await this.forumService.upsertThirdPartyCollectionForumPost(
           dbCollection,
@@ -661,7 +667,8 @@ export class CollectionRouter extends Router {
             dbCollection.eth_address
           )
           void this.autoCurationService.onStandardCollectionPublished(
-            result.collection
+            result.collection,
+            eth_address
           )
         }
       }

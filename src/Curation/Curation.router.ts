@@ -32,8 +32,14 @@ import {
   CollectionCurationAttributes,
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import {
+  CollectionEvent,
+  CollectionEventActor,
+  CollectionEventType,
+} from './CollectionEvent'
 import { curationNotifications, CurationVerdict } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
+import { toAutoCurationHTTPError } from './AutoCuration.errors'
 import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
@@ -276,13 +282,20 @@ export class CurationRouter extends Router {
       } catch (error) {}
       const ethAddress = req.auth.ethAddress
 
-      return this.insertCuration(
+      return await this.insertCuration(
         collectionId,
         ethAddress,
         CurationType.COLLECTION,
         curationJSON
       )
     } catch (error) {
+      const autoCurationError = toAutoCurationHTTPError(
+        error,
+        server.extractFromReq(req, 'id')
+      )
+      if (autoCurationError instanceof HTTPError) {
+        throw autoCurationError
+      }
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
           'Collection does not exist',
@@ -472,6 +485,13 @@ export class CurationRouter extends Router {
       updated_at: new Date(),
     }
 
+    if (type === CurationType.COLLECTION) {
+      Object.assign(
+        fieldsToUpdate,
+        this.getCollectionReviewFields(ethAddress, curationJSON)
+      )
+    }
+
     if (curationJSON.status === CurationStatus.APPROVED) {
       await this.updateCollectionItemsContent(id)
     }
@@ -488,7 +508,96 @@ export class CurationRouter extends Router {
       curation.id,
       fieldsToUpdate
     )
+
+    if (type === CurationType.COLLECTION) {
+      await this.recordCollectionReviewEvents(
+        id,
+        ethAddress,
+        curationJSON,
+        curation
+      )
+    }
+
     return { updated, previous: curation }
+  }
+
+  /** Rejections may carry the curator's reasons and message; the legacy Builder sends neither. */
+  private getCollectionReviewFields = (
+    ethAddress: string,
+    curationJSON: any
+  ): Partial<CollectionCurationAttributes> => {
+    const { status, rejectionReasons, rejectionMessage } = curationJSON
+
+    if (status === CurationStatus.APPROVED) {
+      return {
+        reviewed_by: ethAddress.toLowerCase(),
+        rejection_reasons: null,
+        rejection_message: null,
+      }
+    }
+
+    if (status !== CurationStatus.REJECTED) {
+      return {}
+    }
+
+    const hasReasons =
+      Array.isArray(rejectionReasons) && rejectionReasons.length > 0
+    const hasMessage =
+      typeof rejectionMessage === 'string' && rejectionMessage.trim() !== ''
+
+    return {
+      reviewed_by: ethAddress.toLowerCase(),
+      ...(hasReasons ? { rejection_reasons: rejectionReasons } : {}),
+      ...(hasMessage ? { rejection_message: rejectionMessage.trim() } : {}),
+    }
+  }
+
+  /** Only real changes become events: a repeated PATCH must not reset the creator's attempts nor end a run. */
+  private recordCollectionReviewEvents = async (
+    collectionId: string,
+    ethAddress: string,
+    curationJSON: any,
+    previous: CollectionCurationAttributes
+  ): Promise<void> => {
+    const base = {
+      collection_id: collectionId,
+      actor: CollectionEventActor.CURATOR,
+      actor_address: ethAddress.toLowerCase(),
+    }
+    const assignee = curationJSON.assignee
+      ? curationJSON.assignee.toLowerCase()
+      : null
+    const previousAssignee = previous.assignee
+      ? previous.assignee.toLowerCase()
+      : null
+
+    if (curationJSON.assignee !== undefined && assignee !== previousAssignee) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_ASSIGNED,
+        payload: { assignee },
+      })
+    }
+
+    if (!curationJSON.status || curationJSON.status === previous.status) {
+      return
+    }
+    if (curationJSON.status === CurationStatus.APPROVED) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_APPROVED,
+        payload: {},
+      })
+    } else if (curationJSON.status === CurationStatus.REJECTED) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_REJECTED,
+        payload: {
+          rejectionReasons: curationJSON.rejectionReasons ?? [],
+          rejectionMessage: curationJSON.rejectionMessage ?? null,
+        },
+      })
+    }
   }
 
   private insertCuration = async (
@@ -558,56 +667,37 @@ export class CurationRouter extends Router {
       attributes.is_mapping_complete = itemData.is_mapping_complete
     }
 
+    // A creator submitting changes waits for the running automatic review and for the daily limit; the
+    // request is refused before anything is written so the client can tell them.
+    const isChangesSubmission =
+      type === CurationType.COLLECTION &&
+      !attributes.assignee &&
+      (await this.isChangesSubmission(id, curation, ethAddress))
+    if (isChangesSubmission) {
+      await this.autoCurationService.assertChangesCanBeValidated(id)
+    }
+
     const created = await curationService.getModel().create(attributes)
 
     if (type === CurationType.COLLECTION) {
-      await this.announceCollectionRequest(
-        id,
-        attributes.assignee ?? null,
-        curation,
-        ethAddress
-      )
+      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
+      if (attributes.assignee) {
+        void curationNotifications.assigneeChanged(
+          id,
+          attributes.assignee,
+          ethAddress
+        )
+      } else if (isChangesSubmission) {
+        void curationNotifications.reviewRequested(
+          id,
+          curation?.status,
+          ethAddress
+        )
+        void this.autoCurationService.onChangesSubmitted(id, ethAddress)
+      }
     }
 
     return created
-  }
-
-  /** Never throws: the request is already stored, so a failure here must not fail it. */
-  private announceCollectionRequest = async (
-    collectionId: string,
-    assignee: string | null,
-    previousCuration: CollectionCurationAttributes | undefined,
-    ethAddress: string
-  ): Promise<void> => {
-    try {
-      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
-      if (assignee) {
-        void curationNotifications.assigneeChanged(
-          collectionId,
-          assignee,
-          ethAddress
-        )
-      } else if (
-        await this.isChangesSubmission(
-          collectionId,
-          previousCuration,
-          ethAddress
-        )
-      ) {
-        void curationNotifications.reviewRequested(
-          collectionId,
-          previousCuration?.status,
-          ethAddress
-        )
-        void this.autoCurationService.onChangesSubmitted(collectionId)
-      }
-    } catch (error) {
-      logger.error(
-        `Error announcing the review request of collection ${collectionId}: ${
-          (error as Error).message
-        }`
-      )
-    }
   }
 
   /**
@@ -632,6 +722,14 @@ export class CurationRouter extends Router {
     }
     if (previousCuration) {
       return true
+    }
+    // The publish hook recorded the publication, so this is the request that follows it.
+    const published = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      CollectionEventType.COLLECTION_PUBLISHED
+    )
+    if (published) {
+      return false
     }
     return this.mayHaveBeenApproved(collection)
   }

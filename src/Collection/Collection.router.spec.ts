@@ -71,6 +71,8 @@ import { ThirdParty } from '../ThirdParty/ThirdParty.types'
 import { isCommitteeMember } from '../Committee'
 import * as Warehouse from '../warehouse'
 import { app } from '../server'
+import { ForumService } from '../Forum/Forum.service'
+import { CollectionService } from './Collection.service'
 import { canSeeCollection, hasPublicAccess } from './access'
 import {
   getChequeMessageHash,
@@ -2717,7 +2719,8 @@ describe('Collection router', () => {
                 expect(
                   AutoCurationService.prototype.onStandardCollectionPublished
                 ).toHaveBeenCalledWith(
-                  expect.objectContaining({ id: dbCollection.id })
+                  expect.objectContaining({ id: dbCollection.id }),
+                  wallet.address
                 )
               })
           })
@@ -3274,6 +3277,9 @@ describe('Collection router', () => {
                   created_at: expect.any(Date),
                   updated_at: expect.any(Date),
                   assignee: null,
+                  reviewed_by: null,
+                  rejection_reasons: null,
+                  rejection_message: null,
                 })
               })
           })
@@ -3304,8 +3310,8 @@ describe('Collection router', () => {
               .expect(200)
               .then(() => {
                 expect(CollectionCuration.update).toHaveBeenCalledWith(
-                  { id: collectionCuration.id },
-                  { updated_at: expect.any(Date) }
+                  { updated_at: expect.any(Date) },
+                  { id: collectionCuration.id }
                 )
               })
           })
@@ -3590,6 +3596,182 @@ describe('Collection router', () => {
                 )
               })
           })
+        })
+      })
+    })
+  })
+
+  describe('when publishing a collection with the auto curation flag', () => {
+    let isEnabledSpy: jest.SpyInstance
+    let forumSpy: jest.SpyInstance
+    let tpHookSpy: jest.SpyInstance
+    let standardHookSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      forumSpy = jest
+        .spyOn(ForumService.prototype, 'upsertThirdPartyCollectionForumPost')
+        .mockResolvedValue('link')
+      tpHookSpy = jest
+        .spyOn(AutoCurationService.prototype, 'onThirdPartyCollectionPublished')
+        .mockResolvedValue(undefined)
+      standardHookSpy = jest
+        .spyOn(AutoCurationService.prototype, 'onStandardCollectionPublished')
+        .mockResolvedValue(undefined)
+    })
+
+    afterEach(() => {
+      jest.restoreAllMocks()
+    })
+
+    describe('and the collection is a TP collection', () => {
+      beforeEach(() => {
+        url = `/collections/${dbTPCollection.id}/publish`
+        mockExistsMiddleware(Collection, dbTPCollection.id)
+        ;(Collection.findOne as jest.Mock).mockResolvedValue(dbTPCollection)
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbTPCollection,
+        ])
+        ThirdPartyServiceMock.isManager.mockResolvedValue(true)
+        jest
+          .spyOn(CollectionService.prototype, 'publishTPCollection')
+          .mockResolvedValue({
+            collection: dbTPCollection,
+            items: [],
+            itemCurations: [],
+          })
+      })
+
+      describe('and the flag is on', () => {
+        beforeEach(() => {
+          isEnabledSpy = jest
+            .spyOn(AutoCurationService.prototype, 'isEnabled')
+            .mockResolvedValue(true)
+        })
+
+        it('should record the human review and still post to the forum', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({ itemIds: [dbTPItemMock.id], cheque: {} })
+            .expect(200)
+            .then(() => {
+              expect(isEnabledSpy).toHaveBeenCalled()
+              expect(forumSpy).toHaveBeenCalled()
+              expect(tpHookSpy).toHaveBeenCalledWith(dbTPCollection)
+            })
+        })
+      })
+
+      describe('and the flag is off', () => {
+        beforeEach(() => {
+          jest
+            .spyOn(AutoCurationService.prototype, 'isEnabled')
+            .mockResolvedValue(false)
+        })
+
+        it('should post to the forum as before', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({ itemIds: [dbTPItemMock.id], cheque: {} })
+            .expect(200)
+            .then(() => {
+              expect(forumSpy).toHaveBeenCalled()
+              expect(tpHookSpy).not.toHaveBeenCalled()
+            })
+        })
+      })
+    })
+
+    describe('and the collection is a Standard collection', () => {
+      let publishedCollection: CollectionAttributes
+
+      beforeEach(() => {
+        url = `/collections/${dbCollection.id}/publish`
+        publishedCollection = { ...dbCollection, is_published: true }
+        mockExistsMiddleware(Collection, dbCollection.id)
+        mockCollectionAuthorizationMiddleware(
+          dbCollection.id,
+          wallet.address,
+          false,
+          true
+        )
+        ;(Collection.findByIds as jest.Mock).mockResolvedValueOnce([
+          dbCollection,
+        ])
+        jest
+          .spyOn(CollectionService.prototype, 'publishDCLCollection')
+          .mockResolvedValue({ collection: publishedCollection, items: [] })
+      })
+
+      describe('and the flag is on', () => {
+        beforeEach(() => {
+          jest
+            .spyOn(AutoCurationService.prototype, 'isEnabled')
+            .mockResolvedValue(true)
+        })
+
+        describe('and it is the first publication', () => {
+          beforeEach(() => {
+            ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce(
+              [{ ...dbItemMock, blockchain_item_id: null }]
+            )
+          })
+
+          it('should start the auto curation with the published collection', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({})
+              .expect(200)
+              .then(() => {
+                expect(standardHookSpy).toHaveBeenCalledWith(
+                  publishedCollection,
+                  wallet.address
+                )
+              })
+          })
+        })
+
+        describe('and the collection was published before', () => {
+          beforeEach(() => {
+            ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce(
+              [{ ...dbItemMock, blockchain_item_id: '0' }]
+            )
+          })
+
+          it('should not start the auto curation again', () => {
+            return server
+              .post(buildURL(url))
+              .set(createAuthHeaders('post', url))
+              .send({})
+              .expect(200)
+              .then(() => {
+                expect(standardHookSpy).not.toHaveBeenCalled()
+              })
+          })
+        })
+      })
+
+      describe('and the flag is off', () => {
+        beforeEach(() => {
+          ;(Item.findOrderedByCollectionId as jest.Mock).mockResolvedValueOnce([
+            { ...dbItemMock, blockchain_item_id: null },
+          ])
+          jest
+            .spyOn(AutoCurationService.prototype, 'isEnabled')
+            .mockResolvedValue(false)
+        })
+
+        it('should leave the decision to the hook, which checks the flag itself', () => {
+          return server
+            .post(buildURL(url))
+            .set(createAuthHeaders('post', url))
+            .send({})
+            .expect(200)
+            .then(() => {
+              expect(standardHookSpy).toHaveBeenCalledTimes(1)
+            })
         })
       })
     })

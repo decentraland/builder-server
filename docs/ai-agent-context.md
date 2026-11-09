@@ -11,7 +11,7 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 - **Item Curation Workflow**: Complete approval workflow with committee review for publishing items
 - **Third-Party Collections**: Support for external providers to create and manage collections
 - **Asset Pack Management**: Read reusable 3D asset packs for scene building (read-only: no create, upload or delete)
-- **S3 Storage Integration**: Manage project files, thumbnails, and content through S3-compatible storage
+- **S3 Storage Integration**: Serve project files, thumbnails, and content from S3-compatible storage
 - **Forum Integration**: Automatic forum post creation for collection submissions
 
 **Communication Pattern:**
@@ -72,7 +72,7 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 
   - Reusable collections of 3D assets for scene building
   - Default packs are available to all users
-  - Existing user packs can be read and deleted; creating packs or uploading assets is not supported
+  - Existing user packs are read-only; creating, editing, deleting packs or uploading assets is not supported
 
 - **Slot Usage Cheques**:
   - Third-party collections require "slots" to publish items

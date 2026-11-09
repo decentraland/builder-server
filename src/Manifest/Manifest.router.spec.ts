@@ -75,8 +75,20 @@ describe('Manifest Router', () => {
         ;(Project.count as jest.Mock).mockResolvedValueOnce(1)
       })
 
-      it('should redirect to the manifest with a 301', async () => {
-        await server.get(buildURL(url)).expect(301)
+      it('should only look for a public project that is not deleted', async () => {
+        await server.get(buildURL(url))
+        expect(Project.count).toHaveBeenCalledWith({
+          id: url.split('/')[2],
+          is_public: true,
+          is_deleted: false,
+        })
+      })
+
+      it('should redirect to the manifest with a 301 that is revalidated before being reused', async () => {
+        await server
+          .get(buildURL(url))
+          .expect(301)
+          .expect('Cache-Control', 'no-cache')
       })
     })
 

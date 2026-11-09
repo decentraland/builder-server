@@ -66,7 +66,8 @@ describe('when requesting a route removed by the read-only migration', () => {
   it.each(REMOVED_ROUTES)(
     'should respond to %s %s with a 404',
     async (method, route) => {
-      await server[method](buildURL(toPath(route))).expect(404)
+      const response = await server[method](buildURL(toPath(route))).expect(404)
+      expect(response.text).toContain(`Cannot ${method.toUpperCase()}`)
     }
   )
 })

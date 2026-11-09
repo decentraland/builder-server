@@ -22,7 +22,7 @@ import { SearchableProject } from './SearchableProject'
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
 
-export const THUMBNAIL_FILE_NAME = 'thumbnail'
+const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
   THUMBNAIL_FILE_NAME,
   'preview',

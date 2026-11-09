@@ -2184,29 +2184,6 @@ components:
         default: 20
       description: Number of items per page
 
-    Offset:
-      name: offset
-      in: query
-      schema:
-        type: integer
-        minimum: 0
-      description: Offset for pagination
-
-    SortBy:
-      name: sort_by
-      in: query
-      schema:
-        type: string
-      description: Field to sort by
-
-    SortOrder:
-      name: sort_order
-      in: query
-      schema:
-        type: string
-        enum: [asc, desc]
-      description: Sort order
-
   responses:
     BadRequest:
       description: Bad request - invalid input

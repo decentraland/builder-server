@@ -15,6 +15,8 @@ const AUTH_MIDDLEWARE = [
   'withCollectionAuthorization',
   'withPublishAuthorization',
   'withItemAuthorization',
+  'withProjectAuthorization',
+  'withDeploymentAuthorization',
 ]
 
 const HANDLER_AUTHORIZED: Record<string, string> = {
@@ -30,12 +32,20 @@ const HANDLER_AUTHORIZED: Record<string, string> = {
     'createCurationNewAssigneePost -> isCommitteeMember',
   'POST /items/:id/curation': 'insertCuration -> validateAccessToCuration',
   'PATCH /items/:id/curation': 'updateCuration -> validateAccessToCuration',
+  'DELETE /projects/:coords/coords':
+    'removeCoordsFromProjects -> scoped to req.auth.ethAddress',
+  'DELETE /projects_by_coords/:coords/coords':
+    'removeCoordsFromProjects -> scoped to req.auth.ethAddress',
 }
 
 const ROUTERS = [
   'Collection/Collection.router.ts',
   'Item/Item.router.ts',
   'Curation/Curation.router.ts',
+  'Project/Project.router.ts',
+  'Project/ProjectByCoord.router.ts',
+  'Manifest/Manifest.router.ts',
+  'Deployment/Deployment.router.ts',
 ]
 
 interface Route {

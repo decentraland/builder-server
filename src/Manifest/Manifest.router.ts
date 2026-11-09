@@ -3,7 +3,6 @@ import { Request, Response } from 'express'
 
 import { Router } from '../common/Router'
 import { withCors, withPermissiveCors } from '../middleware/cors'
-import { addInmutableCacheControlHeader } from '../common/headers'
 import {
   withModelAuthorization,
   withAuthentication,
@@ -90,7 +89,7 @@ export class ManifestRouter extends Router {
   getProjectManifest = (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     const project = new S3Project(id)
-    addInmutableCacheControlHeader(res)
+    res.setHeader('Cache-Control', 'no-cache')
     return res.redirect(
       `${getBucketURL()}/${project.getFileKey(MANIFEST_FILENAME)}`,
       301

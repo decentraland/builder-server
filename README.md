@@ -25,7 +25,7 @@ Backend service for the Decentraland Builder application. Exposes endpoints for 
 - **Collections & Items**: Manage wearable and emote collections with full curation workflow
 - **Asset Packs**: Read reusable 3D asset packs for scene building (read-only: no create, upload or delete)
 - **Third Party Integration**: Support for third-party wearable and emote collections
-- **S3 Storage**: Manage project files, thumbnails, and content through S3-compatible storage
+- **S3 Storage**: Serve project files, thumbnails, and content from S3-compatible storage
 - **Curation Workflow**: Full approval workflow for collections and items with committee review
 - **Forum Integration**: Automatic forum post creation for collection submissions
 

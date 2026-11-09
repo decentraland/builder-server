@@ -66,7 +66,7 @@ export function readFile(key: string): Promise<AWS.S3.GetObjectOutput> {
   return utils.promisify<AWS.S3.GetObjectOutput>(s3.getObject.bind(s3))(params)
 }
 
-export async function listFiles(
+async function listFiles(
   key: string,
   continuationToken?: string,
   contents: AWS.S3.ObjectList = []

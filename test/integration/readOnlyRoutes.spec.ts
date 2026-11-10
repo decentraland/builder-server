@@ -28,6 +28,8 @@ const REMOVED_ROUTES: [HttpMethod, string][] = [
   ['put', '/projects/:id/manifest'],
   ['put', '/projects/:id/deployment'],
   ['post', '/storage/upload'],
+  ['get', '/lands/redirectionHashes'],
+  ['post', '/lands/:coords/redirection'],
 ]
 
 const RETAINED_ROUTES: [HttpMethod, string, number][] = [

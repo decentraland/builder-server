@@ -16,7 +16,6 @@ import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
 import { S3Router } from './S3'
 import { AnalyticsRouter } from './Analytics'
-import { LANDRouter } from './LAND'
 import { NFTRouter } from './NFT'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
@@ -52,7 +51,6 @@ new DeploymentRouter(app).mount()
 new S3Router(app).mount()
 new AnalyticsRouter(app).mount()
 new NFTRouter(app).mount()
-new LANDRouter(app).mount()
 new NewsletterRouter(app).mount()
 
 app.use(errorHandler)

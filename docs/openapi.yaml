@@ -1294,7 +1294,7 @@ paths:
       description: |
         Opens a new review request for a published collection: the creator's "publish changes" or "request review
         again", or a committee member picking a never-requested collection up. Answers 400 while one is pending.
-        A creator's request is announced in the curators' Slack channel.
+        A creator's changes are announced in the curators' Slack channel.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:

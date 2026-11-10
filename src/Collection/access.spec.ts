@@ -158,8 +158,8 @@ describe('when checking if the user is an admin user', () => {
 })
 
 describe('when checking if the user is a manager of a collection', () => {
-  const lowercased = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9'
-  const checksummed = '0xC6d2000A7a1DdCA92941f4E2b41360Fe4Ee2ABd9'
+  const lowercased = wallet.address
+  const checksummed = '0x1563915e194D8CfBA1943570603F7606A3115508'
 
   it('should match the caller against the managers case-insensitively', () => {
     const collection = { ...dbCollectionMock, managers: [lowercased] }
@@ -175,8 +175,8 @@ describe('when checking if the user is a manager of a collection', () => {
 })
 
 describe('when checking if the user is a minter of a collection', () => {
-  const lowercased = '0xc6d2000a7a1ddca92941f4e2b41360fe4ee2abd9'
-  const checksummed = '0xC6d2000A7a1DdCA92941f4E2b41360Fe4Ee2ABd9'
+  const lowercased = wallet.address
+  const checksummed = '0x1563915e194D8CfBA1943570603F7606A3115508'
 
   it('should match the caller against the minters case-insensitively', () => {
     const collection = { ...dbCollectionMock, minters: [lowercased] }

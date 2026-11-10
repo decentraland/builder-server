@@ -43,12 +43,8 @@ export const curationNotifications = {
   },
 
   /**
-   * A creator opened a new review request. `previousStatus` is the request it follows: a rejection
-   * ("request review again") or, otherwise, an approval ("publish changes"). The clients only offer
-   * those two; the server does not enforce it, so a direct call on a never-reviewed collection is
-   * worded as submitted changes too. A committee member opening one on someone else's collection is
-   * bookkeeping (assigning or rejecting a never-requested collection), not a creator asking for a
-   * review, so it is not announced.
+   * A creator opened a review request after a rejection ("request review again") or an approval ("publish
+   * changes"). A collection's first request is announced by the publish notice instead.
    */
   async reviewRequested(
     collectionId: string,

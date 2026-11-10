@@ -37,12 +37,6 @@ tags:
     description: Application info and health check
   - name: Projects
     description: Scene project management
-  - name: Pools
-    description: Public scene pools for community sharing
-  - name: Pool Groups
-    description: Pool categorization and grouping
-  - name: Pool Likes
-    description: Pool like management
   - name: Collections
     description: Wearable and emote collection management
   - name: Items
@@ -67,8 +61,6 @@ tags:
     description: Scene deployment tracking
   - name: Storage
     description: S3 storage proxy endpoints
-  - name: Share
-    description: Share link generation
   - name: Analytics
     description: Analytics endpoints
   - name: NFT
@@ -157,30 +149,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertProject
-      tags: [Projects]
-      summary: Create or update a project
-      description: Creates a new project or updates an existing one
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/ProjectInput'
-      responses:
-        '200':
-          description: Project created/updated successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProjectResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
     delete:
       operationId: deleteProject
       tags: [Projects]
@@ -214,45 +182,6 @@ paths:
                 $ref: '#/components/schemas/ProjectResponse'
         '404':
           $ref: '#/components/responses/NotFound'
-
-  /projects/{id}/media:
-    post:
-      operationId: uploadProjectMedia
-      tags: [Projects]
-      summary: Upload project media
-      description: Uploads media files (thumbnails, previews) for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                thumbnail:
-                  type: string
-                  format: binary
-                preview:
-                  type: string
-                  format: binary
-                north:
-                  type: string
-                  format: binary
-                east:
-                  type: string
-                  format: binary
-                south:
-                  type: string
-                  format: binary
-                west:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: Media uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
 
   /projects/{id}/media/{filename}:
     get:
@@ -336,31 +265,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: uploadProjectCrdt
-      tags: [Projects]
-      summary: Upload project CRDT
-      description: Uploads the CRDT file for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                file:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: CRDT uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   /projects/{coords}/coords:
     delete:
       operationId: removeProjectCoords
@@ -378,200 +282,6 @@ paths:
           description: Coordinates removed successfully
         '401':
           $ref: '#/components/responses/Unauthorized'
-
-  # Pool endpoints
-  /pools:
-    get:
-      operationId: getPools
-      tags: [Pools]
-      summary: Get all pools
-      description: Returns all public scene pools with filtering and pagination
-      security: []
-      parameters:
-        - name: eth_address
-          in: query
-          schema:
-            type: string
-        - name: group
-          in: query
-          schema:
-            type: string
-        - $ref: '#/components/parameters/SortBy'
-        - $ref: '#/components/parameters/SortOrder'
-        - $ref: '#/components/parameters/Limit'
-        - $ref: '#/components/parameters/Offset'
-      responses:
-        '200':
-          description: List of pools
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PoolListResponse'
-
-  /projects/{id}/pool:
-    get:
-      operationId: getPool
-      tags: [Pools]
-      summary: Get a pool
-      description: Returns a pool by project ID
-      security: []
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      responses:
-        '200':
-          description: Pool details
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PoolResponse'
-    put:
-      operationId: upsertPool
-      tags: [Pools]
-      summary: Create or update a pool
-      description: Creates a pool from a project or updates an existing pool
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                groups:
-                  type: array
-                  items:
-                    type: string
-                    format: uuid
-      responses:
-        '200':
-          description: Pool created/updated successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  # Pool Group endpoints
-  /pools/groups:
-    get:
-      operationId: getPoolGroups
-      tags: [Pool Groups]
-      summary: Get all pool groups
-      description: Returns all pool groups
-      security: []
-      parameters:
-        - name: active_only
-          in: query
-          schema:
-            type: boolean
-            default: false
-          description: Filter to only active groups
-      responses:
-        '200':
-          description: List of pool groups
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: array
-                    items:
-                      $ref: '#/components/schemas/PoolGroup'
-
-  # Pool Like endpoints
-  /pools/{id}/likes:
-    get:
-      operationId: getPoolLikes
-      tags: [Pool Likes]
-      summary: Get pool likes count
-      description: Returns the total number of likes for a pool
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: address
-          in: query
-          schema:
-            type: string
-          description: Filter by user address (use "me" for current user)
-      responses:
-        '200':
-          description: Pool likes count
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: integer
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      operationId: likePool
-      tags: [Pool Likes]
-      summary: Like a pool
-      description: Adds a like to a pool
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Pool liked successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: integer
-                    description: New total likes count
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    delete:
-      operationId: unlikePool
-      tags: [Pool Likes]
-      summary: Unlike a pool
-      description: Removes a like from a pool
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Pool unliked successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: integer
-                    description: New total likes count
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   # Collection endpoints
   /collections:
@@ -1865,114 +1575,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertAssetPack
-      tags: [Asset Packs]
-      summary: Create or update an asset pack
-      description: Creates a new asset pack or updates an existing one
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/AssetPackInput'
-      responses:
-        '200':
-          description: Asset pack created/updated successfully
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-    delete:
-      operationId: deleteAssetPack
-      tags: [Asset Packs]
-      summary: Delete an asset pack
-      description: Deletes an asset pack
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '200':
-          description: Asset pack deleted successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-
-  /assetPacks/{id}/thumbnail:
-    post:
-      operationId: uploadAssetPackThumbnail
-      tags: [Asset Packs]
-      summary: Upload asset pack thumbnail
-      description: Uploads a thumbnail for an asset pack
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-              properties:
-                thumbnail:
-                  type: string
-                  format: binary
-      responses:
-        '200':
-          description: Thumbnail uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
 
   # Asset endpoints
-  /assetPacks/{assetPackId}/assets/{id}/files:
-    post:
-      operationId: uploadAssetFiles
-      tags: [Assets]
-      summary: Upload asset files
-      description: Uploads files for an asset in an asset pack
-      parameters:
-        - name: assetPackId
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: Files uploaded successfully
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
   /assets/{id}:
     get:
       operationId: getAsset
@@ -2047,33 +1651,6 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertProjectManifest
-      tags: [Manifest]
-      summary: Upsert project manifest
-      description: Creates or updates the manifest for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                manifest:
-                  type: object
-      responses:
-        '200':
-          description: Manifest upserted successfully
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProjectResponse'
-        '400':
-          $ref: '#/components/responses/BadRequest'
-        '401':
-          $ref: '#/components/responses/Unauthorized'
     delete:
       operationId: deleteProjectManifest
       tags: [Manifest]
@@ -2140,26 +1717,6 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
 
-  /pools/{id}/manifest:
-    get:
-      operationId: getPoolManifest
-      tags: [Manifest]
-      summary: Get pool manifest
-      description: Returns the manifest for a pool
-      security: []
-      parameters:
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-            format: uuid
-      responses:
-        '301':
-          description: Redirect to S3 manifest URL
-        '404':
-          $ref: '#/components/responses/NotFound'
-
   # Deployment endpoints
   /deployments:
     get:
@@ -2204,31 +1761,6 @@ paths:
                     type: boolean
                   data:
                     type: object
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-        '404':
-          $ref: '#/components/responses/NotFound'
-    put:
-      operationId: upsertProjectDeployment
-      tags: [Deployments]
-      summary: Create or update deployment
-      description: Creates or updates deployment info for a project
-      parameters:
-        - $ref: '#/components/parameters/ProjectId'
-      requestBody:
-        required: true
-        content:
-          application/json:
-            schema:
-              type: object
-              properties:
-                deployment:
-                  type: object
-      responses:
-        '200':
-          description: Deployment updated successfully
-        '400':
-          $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '404':
@@ -2316,68 +1848,6 @@ paths:
           description: File exists
         '404':
           description: File does not exist
-
-  /storage/upload:
-    post:
-      operationId: uploadContent
-      tags: [Storage]
-      summary: Upload content file
-      description: Uploads a file to storage
-      requestBody:
-        required: true
-        content:
-          multipart/form-data:
-            schema:
-              type: object
-      responses:
-        '200':
-          description: File uploaded successfully
-          content:
-            application/json:
-              schema:
-                type: object
-                properties:
-                  ok:
-                    type: boolean
-                  data:
-                    type: object
-                    properties:
-                      hash:
-                        type: string
-        '401':
-          $ref: '#/components/responses/Unauthorized'
-
-  # Share endpoints
-  /share/{type}/{id}:
-    get:
-      operationId: getSharePage
-      tags: [Share]
-      summary: Get share page
-      description: Returns an HTML share page for a project or pool. Redirects to Builder if not a social agent.
-      security: []
-      parameters:
-        - name: type
-          in: path
-          required: true
-          schema:
-            type: string
-            enum: [scene, pool]
-        - name: id
-          in: path
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Share HTML page
-          content:
-            text/html:
-              schema:
-                type: string
-        '301':
-          description: Redirect to Builder URL
-        '404':
-          description: Resource not found
 
   # Analytics endpoints
   /analytics/weekly:
@@ -2714,29 +2184,6 @@ components:
         default: 20
       description: Number of items per page
 
-    Offset:
-      name: offset
-      in: query
-      schema:
-        type: integer
-        minimum: 0
-      description: Offset for pagination
-
-    SortBy:
-      name: sort_by
-      in: query
-      schema:
-        type: string
-      description: Field to sort by
-
-    SortOrder:
-      name: sort_order
-      in: query
-      schema:
-        type: string
-        enum: [asc, desc]
-      description: Sort order
-
   responses:
     BadRequest:
       description: Bad request - invalid input
@@ -2845,44 +2292,6 @@ components:
           type: string
           format: date-time
 
-    ProjectInput:
-      type: object
-      required:
-        - id
-        - title
-        - description
-        - scene_id
-        - cols
-        - rows
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        description:
-          type: string
-        thumbnail:
-          type: string
-        scene_id:
-          type: string
-          format: uuid
-        cols:
-          type: integer
-        rows:
-          type: integer
-        is_public:
-          type: boolean
-        creation_coords:
-          type: string
-        is_template:
-          type: boolean
-        template_status:
-          type: string
-          enum: [active, coming_soon]
-        video:
-          type: string
-
     ProjectResponse:
       type: object
       properties:
@@ -2900,57 +2309,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Project'
-
-    Pool:
-      type: object
-      allOf:
-        - $ref: '#/components/schemas/Project'
-        - type: object
-          properties:
-            groups:
-              type: array
-              items:
-                type: string
-                format: uuid
-            likes:
-              type: integer
-            like:
-              type: boolean
-
-    PoolResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-        data:
-          $ref: '#/components/schemas/Pool'
-
-    PoolListResponse:
-      type: object
-      properties:
-        ok:
-          type: boolean
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/Pool'
-
-    PoolGroup:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        is_active:
-          type: boolean
-        created_at:
-          type: string
-          format: date-time
-        updated_at:
-          type: string
-          format: date-time
 
     Collection:
       type: object
@@ -3350,23 +2708,6 @@ components:
           type: string
           format: date-time
 
-    AssetPackInput:
-      type: object
-      required:
-        - id
-        - title
-        - assets
-      properties:
-        id:
-          type: string
-          format: uuid
-        title:
-          type: string
-        assets:
-          type: array
-          items:
-            $ref: '#/components/schemas/AssetInput'
-
     AssetPackResponse:
       type: object
       properties:
@@ -3406,38 +2747,6 @@ components:
           type: array
         actions:
           type: array
-
-    AssetInput:
-      type: object
-      required:
-        - id
-        - name
-        - model
-      properties:
-        id:
-          type: string
-          format: uuid
-        asset_pack_id:
-          type: string
-          format: uuid
-        name:
-          type: string
-        model:
-          type: string
-        script:
-          type: string
-        thumbnail:
-          type: string
-        tags:
-          type: array
-          items:
-            type: string
-        category:
-          type: string
-        contents:
-          type: object
-        metrics:
-          type: object
 
     PaginatedResponse:
       type: object

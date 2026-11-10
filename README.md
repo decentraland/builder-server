@@ -21,12 +21,11 @@ Backend service for the Decentraland Builder application. Exposes endpoints for 
 
 ## Features
 
-- **Scene Projects**: Create, manage, and deploy scene projects to Decentraland parcels
+- **Scene Projects**: Read and delete scene projects, their manifests and deployments (read-only: no create or upload)
 - **Collections & Items**: Manage wearable and emote collections with full curation workflow
-- **Asset Packs**: Create and manage reusable 3D asset packs for scene building
-- **Pools & Pool Groups**: Public scene pools for community sharing and categorization
+- **Asset Packs**: Read reusable 3D asset packs for scene building (read-only: no create, upload or delete)
 - **Third Party Integration**: Support for third-party wearable and emote collections
-- **S3 Storage**: Manage project files, thumbnails, and content through S3-compatible storage
+- **S3 Storage**: Serve project files, thumbnails, and content from S3-compatible storage
 - **Curation Workflow**: Full approval workflow for collections and items with committee review
 - **Forum Integration**: Automatic forum post creation for collection submissions
 
@@ -58,7 +57,6 @@ The following endpoints proxy requests to S3 storage:
 These endpoints require authentication:
 
 - `GET /v1/projects/:id/manifest` → Project manifest JSON
-- `GET /v1/pools/:id/manifest` → Pool manifest JSON
 - `GET /v1/projects/:id/media/:filename` → Project media files
 
 > **Note**: `/v1/` corresponds to the version specified in `.env` with `API_VERSION`
@@ -174,10 +172,6 @@ npm run migrate up
 
 # Seed initial data (only once, after asset pack changes)
 npm run seed
-
-# Optional: Run one-time scripts
-npx ts-node ./scripts/parseS3Pools.ts
-npx ts-node ./scripts/updateProjectThumbnails.ts
 ```
 
 #### Running in Development Mode
@@ -198,7 +192,6 @@ npm run watch:start
 projects/
 ├── PROJECT_ID/
 │   ├── manifest.json
-│   ├── pool.json
 │   ├── east.png
 │   ├── north.png
 │   ├── preview.png

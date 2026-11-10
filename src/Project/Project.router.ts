@@ -1,33 +1,28 @@
 import { Request, Response } from 'express'
 import { server } from 'decentraland-server'
-import mimeTypes from 'mime-types'
 import path from 'path'
 import { Router } from '../common/Router'
 import { withCors, withPermissiveCors } from '../middleware/cors'
 import { addInmutableCacheControlHeader } from '../common/headers'
-import { HTTPError, STATUS_CODES } from '../common/HTTPError'
-import { getValidator } from '../utils/validator'
+import { STATUS_CODES } from '../common/HTTPError'
 import { withModelExists, withModelAuthorization } from '../middleware'
 import {
   S3Content,
   S3Project,
   getBucketURL,
   getProjectManifest,
-  getUploader,
   CRDT_FILENAME,
 } from '../S3'
 import { withAuthentication, AuthRequest } from '../middleware/authentication'
-import { Ownable } from '../Ownable'
 import { SDK7Scene } from '../Scene/SDK7Scene'
 import { CRDT_HASH, ENTITY_HASH } from '../Scene/utils'
 import { Project } from './Project.model'
-import { ProjectAttributes, projectSchema } from './Project.types'
 import { SearchableProject } from './SearchableProject'
 
 const BUILDER_SERVER_URL = process.env.BUILDER_SERVER_URL
 const PEER_URL = process.env.PEER_URL
 
-export const THUMBNAIL_FILE_NAME = 'thumbnail'
+const THUMBNAIL_FILE_NAME = 'thumbnail'
 const FILE_NAMES = [
   THUMBNAIL_FILE_NAME,
   'preview',
@@ -36,9 +31,6 @@ const FILE_NAMES = [
   'south',
   'west',
 ]
-const MIME_TYPES = ['image/png', 'image/jpeg']
-
-const validator = getValidator()
 
 export class ProjectRouter extends Router {
   mount() {
@@ -60,7 +52,6 @@ export class ProjectRouter extends Router {
     this.router.options('/projects/:coords/coords', withCors)
     this.router.options('/projects/:id/public', withCors)
     this.router.options('/projects/:id/media/:filename', withPermissiveCors)
-    this.router.options('/projects/:id/media', withCors)
     this.router.options('/projects/:id/contents/:content', withPermissiveCors)
     this.router.options('/projects/:id/about', withCors)
     this.router.options('/projects/:id/crdt', withPermissiveCors)
@@ -94,17 +85,6 @@ export class ProjectRouter extends Router {
       withProjectExists,
       withProjectAuthorization,
       server.handleRequest(this.getProject)
-    )
-
-    /**
-     * Upsert a new project
-     * Important! Project authorization is done inside the handler
-     */
-    this.router.put(
-      '/projects/:id',
-      withCors,
-      withAuthentication,
-      server.handleRequest(this.upsertProject)
     )
 
     /**
@@ -145,34 +125,6 @@ export class ProjectRouter extends Router {
       this.getMedia
     )
 
-    /**
-     * Upload a project media attachment
-     */
-    this.router.post(
-      '/projects/:id/media',
-      withCors,
-      withAuthentication,
-      withProjectExists,
-      withProjectAuthorization,
-      getUploader({
-        mimeTypes: MIME_TYPES,
-        getFileKey: async (file, req) => {
-          const id = server.extractFromReq(req, 'id')
-          const extension = mimeTypes.extension(file.mimetype)
-          const filename = `${file.fieldname}.${extension}`
-
-          // **Important** Shares folder with the other project files
-          return new S3Project(id).getFileKey(filename)
-        },
-      }).fields(
-        FILE_NAMES.map((name) => ({
-          name,
-          maxCount: 1,
-        }))
-      ),
-      server.handleRequest(this.uploadFiles)
-    )
-
     this.router.get(
       '/projects/:id/contents/:content',
       withPermissiveCors,
@@ -185,21 +137,6 @@ export class ProjectRouter extends Router {
       withCors,
       withProjectExists,
       this.getPreviewAbout
-    )
-
-    this.router.put(
-      '/projects/:id/crdt',
-      withCors,
-      withAuthentication,
-      withProjectExists,
-      withProjectAuthorization,
-      getUploader({
-        getFileKey: async (_file, req) => {
-          const id = server.extractFromReq(req, 'id')
-          return new S3Project(id).getFileKey(CRDT_FILENAME)
-        },
-      }).any(),
-      server.handleRequest(this.upsertCrdt)
     )
 
     this.router.get(
@@ -237,39 +174,6 @@ export class ProjectRouter extends Router {
     return Project.findOne({ id, is_public: true, is_deleted: false })
   }
 
-  async upsertProject(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-    const projectJSON: any = server.extractFromReq(req, 'project')
-    const eth_address = req.auth.ethAddress
-
-    const validate = validator.compile(projectSchema)
-    validate(projectJSON)
-
-    if (validate.errors) {
-      throw new HTTPError('Invalid schema', validate.errors)
-    }
-
-    const canUpsert = await new Ownable(Project).canUpsert(id, eth_address)
-    if (!canUpsert) {
-      throw new HTTPError(
-        'Unauthorized user',
-        { id, eth_address },
-        STATUS_CODES.unauthorized
-      )
-    }
-
-    const attributes = { ...projectJSON, eth_address } as ProjectAttributes
-
-    if (id !== attributes.id) {
-      throw new HTTPError('The body and URL project ids do not match', {
-        urlId: id,
-        bodyId: attributes.id,
-      })
-    }
-
-    return new Project(attributes).upsert()
-  }
-
   async deleteProject(req: AuthRequest) {
     const id = server.extractFromReq(req, 'id')
     await Project.update({ updated_at: new Date(), is_deleted: true }, { id })
@@ -304,32 +208,6 @@ export class ProjectRouter extends Router {
       301,
       `${getBucketURL()}/${project.getFileKey(filename)}`
     )
-  }
-
-  async uploadFiles(req: AuthRequest) {
-    const id = server.extractFromReq(req, 'id')
-
-    // req.files is an object with: { [fieldName]: Express.Multer.File[] }
-    // The array is there because multer supports multiple files per field name, but we set the maxCount to 1
-    // So the array will always have only one item on it
-    // We cast req.files for easier access of each file. The field name is still accessible on each File
-    const reqFiles = req.files as Record<string, Express.Multer.File[]>
-
-    const files = Object.values(reqFiles).map((files) => files[0])
-
-    const thumbnail = files.find(
-      (file) => file.fieldname === THUMBNAIL_FILE_NAME
-    )
-
-    if (thumbnail) {
-      const extension = mimeTypes.extension(thumbnail.mimetype)
-      await Project.update(
-        { thumbnail: `${THUMBNAIL_FILE_NAME}.${extension}` },
-        { id }
-      )
-    }
-
-    return true
   }
 
   async getContents(req: Request, res: Response) {
@@ -416,10 +294,6 @@ export class ProjectRouter extends Router {
         fixedAdapter: 'offline:offline',
       },
     })
-  }
-
-  async upsertCrdt(_req: AuthRequest) {
-    return true
   }
 
   async getCrdt(req: Request, res: Response) {

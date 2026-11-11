@@ -15,7 +15,8 @@ const AUTH_MIDDLEWARE = [
   'withCollectionAuthorization',
   'withPublishAuthorization',
   'withItemAuthorization',
-  'withAssetPackAuthorization',
+  'withProjectAuthorization',
+  'withDeploymentAuthorization',
 ]
 
 const HANDLER_AUTHORIZED: Record<string, string> = {
@@ -31,15 +32,20 @@ const HANDLER_AUTHORIZED: Record<string, string> = {
     'createCurationNewAssigneePost -> isCommitteeMember',
   'POST /items/:id/curation': 'insertCuration -> validateAccessToCuration',
   'PATCH /items/:id/curation': 'updateCuration -> validateAccessToCuration',
-  'PUT /assetPacks/:id': 'upsertAssetPack -> AssetPack.findOne ownership check',
+  'DELETE /projects/:coords/coords':
+    'removeCoordsFromProjects -> scoped to req.auth.ethAddress',
+  'DELETE /projects_by_coords/:coords/coords':
+    'removeCoordsFromProjects -> scoped to req.auth.ethAddress',
 }
 
 const ROUTERS = [
   'Collection/Collection.router.ts',
   'Item/Item.router.ts',
   'Curation/Curation.router.ts',
-  'AssetPack/AssetPack.router.ts',
-  'Asset/Asset.router.ts',
+  'Project/Project.router.ts',
+  'Project/ProjectByCoord.router.ts',
+  'Manifest/Manifest.router.ts',
+  'Deployment/Deployment.router.ts',
 ]
 
 interface Route {
@@ -74,7 +80,7 @@ describe('router authorization guard', () => {
   )
 
   it('finds the mutating routes (parser sanity)', () => {
-    expect(allRoutes.length).toBeGreaterThanOrEqual(18)
+    expect(allRoutes.length).toBeGreaterThanOrEqual(15)
   })
 
   it('rejects a mutating route with neither middleware nor an allow-list entry', () => {

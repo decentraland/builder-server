@@ -1,6 +1,4 @@
-import { modelMetricsSchema } from '../Metrics/Metrics.schema'
-import { parametersSchema, AssetParameter } from './Parameters'
-import { actionsSchema } from './Actions'
+import { AssetParameter } from './Parameters'
 
 export type AssetAttributes = {
   id: string
@@ -18,34 +16,3 @@ export type AssetAttributes = {
 }
 
 export const MAX_ASSETS_COUNT = 80
-
-export const assetSchema = Object.freeze({
-  type: 'object',
-  properties: {
-    id: { type: 'string', format: 'uuid' },
-    asset_pack_id: { type: 'string', format: 'uuid' },
-    name: { type: 'string', minLength: 3, maxLength: 50 },
-    model: { type: 'string' },
-    script: { type: ['string', 'null'] },
-    thumbnail: { type: ['string', 'null'] },
-    tags: { type: 'array', items: { type: 'string' } },
-    category: { type: 'string' },
-    contents: {
-      type: 'object',
-      additionalProperties: true,
-    },
-    metrics: modelMetricsSchema,
-    parameters: parametersSchema,
-    actions: actionsSchema,
-  },
-  additionalProperties: false,
-  required: [
-    'id',
-    'asset_pack_id',
-    'name',
-    'model',
-    'tags',
-    'category',
-    'contents',
-  ],
-})

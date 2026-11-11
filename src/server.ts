@@ -5,9 +5,6 @@ import { AppRouter } from './App'
 import { AssetPackRouter } from './AssetPack'
 import { AssetRouter } from './Asset'
 import { ProjectRouter } from './Project'
-import { PoolRouter } from './Pool'
-import { PoolGroupRouter } from './PoolGroup'
-import { PoolLikeRouter } from './PoolLike'
 import { ItemRouter } from './Item'
 import { CollectionRouter } from './Collection'
 import {
@@ -22,9 +19,7 @@ import { ForumRouter } from './Forum'
 import { ManifestRouter } from './Manifest'
 import { DeploymentRouter } from './Deployment'
 import { S3Router } from './S3'
-import { ShareRouter } from './Share'
 import { AnalyticsRouter } from './Analytics'
-import { LANDRouter } from './LAND'
 import { NFTRouter } from './NFT'
 import { db } from './database'
 import { ExpressApp } from './common/ExpressApp'
@@ -47,9 +42,6 @@ new AssetPackRouter(app, logs).mount()
 new AssetRouter(app).mount()
 new ProjectRouter(app).mount()
 new ProjectByCoordRouter(app).mount()
-new PoolLikeRouter(app).mount()
-new PoolGroupRouter(app).mount()
-new PoolRouter(app).mount()
 new ItemRouter(app).mount()
 new CollectionRouter(app).mount()
 new CurationRouter(app).mount()
@@ -61,10 +53,8 @@ new ForumRouter(app, logs).mount()
 new ManifestRouter(app).mount()
 new DeploymentRouter(app).mount()
 new S3Router(app).mount()
-new ShareRouter(app).mount()
 new AnalyticsRouter(app).mount()
 new NFTRouter(app).mount()
-new LANDRouter(app).mount()
 new NewsletterRouter(app).mount()
 
 app.use(errorHandler)

@@ -19,15 +19,6 @@ export class AssetPack extends Model<AssetPackAttributes> {
     return super.count({ is_deleted: false, ...conditions }, extra) // don't count deleted asset packs by default
   }
 
-  static async delete(conditions: Partial<AssetPackAttributes>) {
-    if (!conditions.eth_address) {
-      throw new Error(
-        'You need to supply an eth_address to delete an asset pack'
-      )
-    }
-    return this.update({ is_deleted: true }, conditions)
-  }
-
   static async hardDelete(conditions: Partial<AssetPackAttributes>) {
     return this.db.delete(this.tableName, conditions)
   }

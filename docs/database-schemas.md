@@ -226,9 +226,9 @@ erDiagram
 The database contains the following main tables:
 
 1. **`projects`** - Scene projects created by users
-2. **`pools`** - Public scene pools for community sharing
-3. **`pool_groups`** - Categories for organizing pools
-4. **`pool_likes`** - User likes on pools
+2. **`pools`** - Legacy public scene pools; no endpoint reads or writes them
+3. **`pool_groups`** - Legacy pool categories; no endpoint reads or writes them
+4. **`pool_likes`** - Legacy pool likes; no endpoint reads or writes them
 5. **`collections`** - Wearable and emote collections
 6. **`items`** - Individual wearables and emotes within collections
 7. **`collection_curations`** - Curation status for collections
@@ -289,7 +289,7 @@ Stores scene projects created by users in the Builder.
 
 ## Table: `pools`
 
-Stores public scene pools for community sharing. Pools are derived from projects.
+Legacy table. Stored public scene pools derived from projects; the pool endpoints are removed and the data is kept.
 
 ### Columns
 
@@ -325,7 +325,7 @@ Stores public scene pools for community sharing. Pools are derived from projects
 
 ## Table: `pool_groups`
 
-Stores categories for organizing pools.
+Legacy table. Stored categories for organizing pools; the pool endpoints are removed and the data is kept.
 
 ### Columns
 
@@ -346,7 +346,7 @@ Stores categories for organizing pools.
 
 ## Table: `pool_likes`
 
-Stores user likes on pools.
+Legacy table. Stored user likes on pools; the pool endpoints are removed and the data is kept.
 
 ### Columns
 

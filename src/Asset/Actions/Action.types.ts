@@ -1,4 +1,4 @@
-import { AssetParameter, parametersSchema } from '../Parameters'
+import { AssetParameter } from '../Parameters'
 
 export type AssetAction = {
   id: string
@@ -7,18 +7,3 @@ export type AssetAction = {
 }
 
 export type ActionAttributes = AssetAction[]
-
-export const actionsSchema = Object.freeze({
-  type: 'array',
-  items: {
-    type: 'object',
-    properties: {
-      id: { type: 'string' },
-      label: { type: 'string' },
-      description: { type: 'string' },
-      parameters: parametersSchema,
-    },
-    additionalProperties: false,
-    required: ['id', 'label', 'parameters'],
-  },
-})

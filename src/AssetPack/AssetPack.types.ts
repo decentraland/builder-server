@@ -1,4 +1,4 @@
-import { AssetAttributes, assetSchema } from '../Asset'
+import { AssetAttributes } from '../Asset'
 
 export type FullAssetPackAttributes = {
   id: string
@@ -13,18 +13,3 @@ export type FullAssetPackAttributes = {
 export type AssetPackAttributes = Omit<FullAssetPackAttributes, 'assets'>
 
 export const MAX_ASSET_PACKS_COUNT = 10
-
-export const assetPackSchema = Object.freeze({
-  type: 'object',
-  properties: {
-    id: { type: 'string', format: 'uuid' },
-    title: { type: 'string', minLength: 3, maxLength: 20 },
-    thumbnail: { type: ['string', 'null'] },
-    eth_address: { type: ['string', 'null'] },
-    assets: { type: 'array', items: assetSchema, additionalProperties: false },
-    created_at: { type: ['string', 'null'] },
-    updated_at: { type: ['string', 'null'] },
-  },
-  additionalProperties: false,
-  required: ['id', 'title', 'assets'],
-})

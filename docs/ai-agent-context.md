@@ -2,17 +2,16 @@
 
 **Service Purpose:**
 
-The Builder Server is the backend service for the Decentraland Builder application. It provides APIs for creating and managing scene projects, wearable and emote collections, asset packs, and facilitates the publication workflow to the Decentraland platform.
+The Builder Server is the backend service for the Decentraland Builder application. It provides APIs for reading scene projects and asset packs, managing wearable and emote collections, and facilitates the publication workflow to the Decentraland platform.
 
 **Key Capabilities:**
 
-- **Scene Project Management**: Create, edit, and deploy scene projects to Decentraland LAND parcels
+- **Scene Project Management**: Read and delete scene projects, their manifests and deployments (read-only: no create or upload)
 - **Wearable/Emote Collections**: Manage collections of wearables and emotes with full lifecycle support
 - **Item Curation Workflow**: Complete approval workflow with committee review for publishing items
 - **Third-Party Collections**: Support for external providers to create and manage collections
-- **Asset Pack Management**: Create and share reusable 3D asset packs for scene building
-- **Pool System**: Public scene pools for community sharing with likes and categorization
-- **S3 Storage Integration**: Manage project files, thumbnails, and content through S3-compatible storage
+- **Asset Pack Management**: Read reusable 3D asset packs for scene building (read-only: no create, upload or delete)
+- **S3 Storage Integration**: Serve project files, thumbnails, and content from S3-compatible storage
 - **Forum Integration**: Automatic forum post creation for collection submissions
 
 **Communication Pattern:**
@@ -69,16 +68,11 @@ The Builder Server is the backend service for the Decentraland Builder applicati
   - Collections can be locked (`lock` timestamp) before publication
   - Locked collections cannot be modified until published
 
-- **Pools vs Projects**:
-
-  - Projects are user-owned scene configurations
-  - Pools are public copies of projects shared with the community
-
 - **Asset Packs**:
 
   - Reusable collections of 3D assets for scene building
   - Default packs are available to all users
-  - Users can create custom packs (max 80 assets)
+  - Existing user packs are read-only; creating, editing, deleting packs or uploading assets is not supported
 
 - **Slot Usage Cheques**:
   - Third-party collections require "slots" to publish items
@@ -96,7 +90,6 @@ The Builder Server is the backend service for the Decentraland Builder applicati
 
 - **Curation History**: Both `collection_curations` and `item_curations` tables store history; the latest record (by `created_at`) is the active curation
 
-- **Composite Keys**: `pool_likes` uses composite primary key (`pool_id`, `eth_address`) to enforce one like per user
 
 - **Third-Party Items**: Items with `urn_suffix` set belong to third-party collections; standard items have `urn_suffix = NULL`
 

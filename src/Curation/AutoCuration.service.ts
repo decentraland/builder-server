@@ -21,6 +21,7 @@ import {
   CollectionEventActor,
   CollectionEventAttributes,
   CollectionEventType,
+  HUMAN_DECISION_EVENT_TYPES,
   PUBLISH_FAILED_REASON,
   SWEEP_EXHAUSTED_REASON,
   TOO_LARGE_REASON,
@@ -71,10 +72,6 @@ const VERDICT_EVENT_TYPE_BY_VERDICT: Record<
   rejected: CollectionEventType.REVIEW_AI_REJECTED,
   error: CollectionEventType.REVIEW_AI_ERROR,
 }
-const HUMAN_DECISION_EVENT_TYPES: string[] = [
-  CollectionEventType.REVIEW_APPROVED,
-  CollectionEventType.REVIEW_REJECTED,
-]
 
 const logger = createConsoleLogComponent().getLogger('AutoCuration')
 let warnedMissingTopic = false
@@ -172,7 +169,7 @@ export class AutoCurationService {
       const started = await withCollectionLock(collection.id, () =>
         this.doOnStandardCollectionPublished(collection, ethAddress)
       )
-      await this.sendValidation(started)
+      this.sendInBackground(started)
     } catch (error) {
       logger.error(
         `Error starting the auto curation of collection ${collection.id}: ${
@@ -283,7 +280,7 @@ export class AutoCurationService {
       const started = await withCollectionLock(collection.id, () =>
         this.recordStart(collection, items, 'changes')
       )
-      await this.sendValidation(started)
+      this.sendInBackground(started)
     } catch (error) {
       logger.error(
         `Error requesting the validation of the changes of collection ${
@@ -486,14 +483,24 @@ export class AutoCurationService {
 
     // A validator rejection is reopened by the retry; a curator's stands until the creator submits changes or
     // appeals. With no request at all (a legacy publish) the collection already reads as under review.
-    if (latestCuration?.status === CurationStatus.REJECTED) {
-      if (latestCuration.reviewed_by !== VALIDATOR_REVIEWER) {
-        throw new CurationRejectedByCuratorError(collectionId)
-      }
-      await this.createPendingCuration(collectionId)
+    if (
+      latestCuration?.status === CurationStatus.REJECTED &&
+      latestCuration.reviewed_by !== VALIDATOR_REVIEWER
+    ) {
+      throw new CurationRejectedByCuratorError(collectionId)
     }
 
-    return this.recordStart(collection, itemsToValidate, 'retry', ethAddress)
+    // The start goes first: a reopened request with no run behind it would never be recovered by the sweep.
+    const started = await this.recordStart(
+      collection,
+      itemsToValidate,
+      'retry',
+      ethAddress
+    )
+    if (latestCuration?.status === CurationStatus.REJECTED) {
+      await this.createPendingCuration(collectionId)
+    }
+    return started
   }
 
   private async doAppeal(
@@ -534,7 +541,7 @@ export class AutoCurationService {
     )
     // The note is quoted on one line so a creator cannot forge a message of its own in the channel.
     const quotedNote = trimmedNote
-      ? `\n> ${escapeSlackText(trimmedNote).replace(/\s*\n\s*/g, ' ')}`
+      ? `\n> ${escapeSlackText(toOneLine(trimmedNote))}`
       : ''
     await notifyCurationSlack(
       `Human review requested for collection ${describeCollection(
@@ -776,6 +783,13 @@ export class AutoCurationService {
     return { event, collection, manifest }
   }
 
+  /** The start is recorded before the answer; the creator does not wait for the validator's queue. */
+  private sendInBackground(started?: StartedValidation): void {
+    this.sendValidation(started).catch((error) =>
+      logger.error(`Error sending a validation: ${(error as Error).message}`)
+    )
+  }
+
   /** Runs outside the collection lock: the start is recorded, so a failure here is left to the sweep. */
   private async sendValidation(started?: StartedValidation): Promise<void> {
     if (!started) {
@@ -888,7 +902,7 @@ export class AutoCurationService {
     for (const type of HUMAN_DECISION_EVENT_TYPES) {
       const decision = await CollectionEvent.findLatestByCollectionIdAndType(
         collectionId,
-        type as CollectionEventType
+        type
       )
       if (
         decision &&
@@ -951,10 +965,7 @@ export class AutoCurationService {
       return previousItems
     }
 
-    const previousHashes = (latestStart.payload.contentHashes ?? {}) as Record<
-      string,
-      string
-    >
+    const previousHashes = await this.findJudgedHashes(collection.id)
     const changedItems: ItemAttributes[] = []
     for (const item of await Item.findOrderedByCollectionId(collection.id)) {
       const hash = await this.getContentHash(item, collection)
@@ -981,11 +992,11 @@ export class AutoCurationService {
     try {
       changedItems = await this.findChangedItems(collection)
     } catch (error) {
-      // Without the chain's hashes the last run is the only baseline; the request must not fail on the graph.
+      // Without the chain's hashes the past runs are the only baseline; the request must not fail on the graph.
       logger.warn(
         `Could not read the on-chain items of collection ${
           collection.id
-        }, comparing with the last run only: ${(error as Error).message}`
+        }, comparing with the past runs only: ${(error as Error).message}`
       )
       const items = await Item.findOrderedByCollectionId(collection.id)
       changedItems = []
@@ -998,17 +1009,31 @@ export class AutoCurationService {
         }
       }
     }
-    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
-      collection.id,
-      CollectionEventType.REVIEW_AI_STARTED
-    )
-    const judgedHashes = (latestStart?.payload.contentHashes ?? {}) as Record<
-      string,
-      string
-    >
+    const judgedHashes = await this.findJudgedHashes(collection.id)
     return changedItems.filter(
       (item) => judgedHashes[item.id] !== item.local_content_hash
     )
+  }
+
+  /** Each item's hash as its most recent run saw it: a run only carries the items it sent. */
+  private async findJudgedHashes(
+    collectionId: string
+  ): Promise<Record<string, string>> {
+    const judged: Record<string, string> = {}
+    for (const start of await CollectionEvent.findStartsByCollectionId(
+      collectionId
+    )) {
+      const hashes = (start.payload.contentHashes ?? {}) as Record<
+        string,
+        string
+      >
+      for (const [itemId, hash] of Object.entries(hashes)) {
+        if (!(itemId in judged)) {
+          judged[itemId] = hash
+        }
+      }
+    }
+    return judged
   }
 
   /** The items whose content differs from the chain, with the hash the manifest will carry. */
@@ -1107,12 +1132,24 @@ export class AutoCurationService {
   }
 }
 
+/** Linear, unlike a whitespace regex around the newline: the text is user input. */
+function toOneLine(text: string): string {
+  return text
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .join(' ')
+}
+
 function describeCollection(
   collection: CollectionAttributes | undefined,
   collectionId = collection?.id ?? ''
 ): string {
   const creatorsUrl = env.get('CREATORS_URL', '')
-  const name = collection ? `"${escapeSlackText(collection.name)}" ` : ''
+  // Names may hold newlines, which would let a creator forge lines of their own in the channel.
+  const name = collection
+    ? `"${escapeSlackText(toOneLine(collection.name))}" `
+    : ''
   return `${name}(${collectionId}) ${creatorsUrl}/collections/${collectionId}`
 }
 

@@ -79,6 +79,7 @@ const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndTyp
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
 const mockFindStaleAiStarted = CollectionEvent.findStaleAiStarted as jest.Mock
+const mockFindStarts = CollectionEvent.findStartsByCollectionId as jest.Mock
 const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
 const mockCountSweepStarts = CollectionEvent.countSweepStartsSinceManualStart as jest.Mock
 const mockFindLatestCuration = CollectionCuration.findLatestByCollectionId as jest.Mock
@@ -125,6 +126,13 @@ describe('AutoCurationService', () => {
     item = { ...dbItemMock, local_content_hash: 'localHash' }
     mockIsFeatureFlagEnabled.mockResolvedValue(true)
     mockCalculateHash.mockResolvedValue('computedHash')
+    mockFindStarts.mockImplementation(async (collectionId: string) => {
+      const latest = await mockFindLatestEventByType(
+        collectionId,
+        CollectionEventType.REVIEW_AI_STARTED
+      )
+      return latest ? [latest] : []
+    })
     jest.spyOn(console, 'log').mockImplementation(() => undefined)
     jest.spyOn(console, 'error').mockImplementation(() => undefined)
     jest.spyOn(process.stderr, 'write').mockImplementation(() => true)
@@ -595,6 +603,24 @@ describe('AutoCurationService', () => {
       })
     })
 
+    describe('and recording the start fails after a validator rejection', () => {
+      beforeEach(() => {
+        mockFindLatestCuration.mockResolvedValue({
+          id: 'curationId',
+          status: CurationStatus.REJECTED,
+          reviewed_by: VALIDATOR_REVIEWER,
+        })
+        mockRecordEvent.mockRejectedValueOnce(new Error('db down'))
+      })
+
+      it('should leave the rejection in place instead of a pending request with no run', async () => {
+        await expect(
+          service.requestValidation(dbCollectionMock.id, ethAddress)
+        ).rejects.toThrow('db down')
+        expect(mockCreateCuration).not.toHaveBeenCalled()
+      })
+    })
+
     describe('and the collection is approved', () => {
       beforeEach(() => {
         mockFindLatestCuration.mockResolvedValue({
@@ -995,6 +1021,22 @@ describe('AutoCurationService', () => {
             })
           )
         })
+      })
+    })
+
+    describe('and the collection name spans several lines', () => {
+      beforeEach(() => {
+        mockFindCollection.mockResolvedValue({
+          ...dbCollectionMock,
+          name: 'Hat\nAI review passed for collection "Other"',
+        })
+      })
+
+      it('should keep the name on one line in the channel', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, result)
+
+        const [text] = mockNotifySlack.mock.calls[0]
+        expect(text.split('\n')).toHaveLength(1)
       })
     })
 
@@ -1751,6 +1793,7 @@ describe('AutoCurationService', () => {
           dbCollectionMock,
           ethAddress
         )
+        await new Promise((resolve) => setImmediate(resolve))
 
         const start = mockRecordEvent.mock.calls
           .map(([event]) => event)

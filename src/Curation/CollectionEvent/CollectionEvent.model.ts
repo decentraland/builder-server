@@ -4,6 +4,7 @@ import {
   CollectionEventAttributes,
   CollectionEventType,
   CollectionEventWithTotalCount,
+  HUMAN_DECISION_EVENT_TYPES,
   NewCollectionEvent,
 } from './CollectionEvent.types'
 
@@ -26,11 +27,6 @@ const FINAL_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_AI_PASSED,
   CollectionEventType.REVIEW_AI_REJECTED,
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
-]
-
-const HUMAN_DECISION_EVENT_TYPES = [
-  CollectionEventType.REVIEW_APPROVED,
-  CollectionEventType.REVIEW_REJECTED,
 ]
 
 let lastTimestamp = 0
@@ -127,6 +123,17 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         ORDER BY created_at DESC
         LIMIT ${limit}
         OFFSET ${offset}`)
+  }
+
+  static findStartsByCollectionId(
+    collectionId: string
+  ): Promise<CollectionEventAttributes[]> {
+    return this.query<CollectionEventAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ${collectionId}
+          AND type = ${CollectionEventType.REVIEW_AI_STARTED}
+        ORDER BY created_at DESC`)
   }
 
   /** Counts sweep re-sends since the last validation started by a publish, retry or change. */

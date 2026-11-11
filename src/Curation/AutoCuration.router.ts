@@ -41,6 +41,10 @@ const limitPerAddress = (limit: number) =>
     standardHeaders: 'draft-7',
     legacyHeaders: false,
     keyGenerator: (req) => (req as AuthRequest).auth.ethAddress.toLowerCase(),
+    handler: (_req, res) =>
+      res
+        .status(STATUS_CODES.tooManyRequests)
+        .json(server.sendError({}, 'Too many requests, try again in a minute')),
   })
 
 export const SIGNATURE_HEADER = 'x-wearable-validator-signature'

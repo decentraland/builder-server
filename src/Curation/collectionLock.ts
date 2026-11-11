@@ -3,8 +3,8 @@ import { CollectionBusyError } from './AutoCuration.errors'
 
 // Two-key advisory locks live apart from the sweep's single-key lock.
 const LOCK_NAMESPACE = 20261001
-// Covers a validation request's publish (two attempts of PUBLISH_TIMEOUT_MS) held under the lock.
-const LOCK_ATTEMPTS = 150
+// The lock only covers database writes; the request to the validator is sent after it is released.
+const LOCK_ATTEMPTS = 50
 const LOCK_RETRY_MS = 100
 
 const collectionLocks = new Map<string, Promise<unknown>>()

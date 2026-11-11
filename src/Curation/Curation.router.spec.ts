@@ -2009,7 +2009,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('and it was already approved', () => {
+      describe('and the same curator already recorded that decision for this request', () => {
         beforeEach(() => {
           jest
             .spyOn(service, 'getLatestById')
@@ -2017,7 +2017,15 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce({
               id: 'curationId',
               status: CurationStatus.APPROVED,
+              created_at: new Date('2026-11-10T10:00:00.000Z'),
             } as any)
+          ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockResolvedValueOnce(
+            {
+              type: CollectionEventType.REVIEW_APPROVED,
+              actor_address: 'ethaddress',
+              created_at: new Date('2026-11-10T11:00:00.000Z'),
+            }
+          )
         })
 
         it('should not record a second review.approved event', async () => {
@@ -2025,6 +2033,51 @@ describe('when handling a request', () => {
 
           expect(mockRecordEvent).not.toHaveBeenCalled()
         })
+      })
+    })
+
+    describe('and a curator confirms the rejection the validator made', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.REJECTED,
+            reviewed_by: 'validator',
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'Clips through the body',
+            },
+          },
+        } as any
+      })
+
+      it("should record the curator's decision and tell the channel", async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_REJECTED,
+            actor_address: 'ethaddress',
+            payload: {
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'Clips through the body',
+            },
+          })
+        )
+        expect(curationNotifications.verdictGiven).toHaveBeenCalledWith(
+          'some id',
+          CurationStatus.REJECTED,
+          'ethAddress'
+        )
       })
     })
   })

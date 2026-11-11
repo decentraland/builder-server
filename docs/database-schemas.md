@@ -482,7 +482,7 @@ Stores curation status for collections.
 
 - **Latest curation**: The most recent curation (by `created_at`) is the active one
 - **Assignee**: Only committee members can be assigned
-- **Rejection feedback**: When the auto curation is enabled, a curator rejection must carry `rejection_reasons` and `rejection_message`; validator rejections leave them null and keep their findings in the `review.ai_rejected` event
+- **Rejection feedback**: A curator rejection may carry `rejection_reasons` and `rejection_message`; validator rejections leave them null and keep their findings in the `review.ai_rejected` event
 
 ---
 
@@ -498,7 +498,7 @@ Append-only review timeline of a collection. Rows are never updated or deleted b
 | `collection_id` | UUID      | NOT NULL | **Foreign Key** to collections (cascade delete)                  |
 | `type`          | TEXT      | NOT NULL | Event type (see below), validated in code                        |
 | `actor`         | TEXT      | NOT NULL | Who produced it: `creator`, `curator`, `validator` or `system`   |
-| `actor_address` | TEXT      | NULL     | Address of the creator or curator; null for validator and system |
+| `actor_address` | TEXT      | NULL     | Address of the creator or curator, also on a start the creator retried; null otherwise |
 | `payload`       | JSONB     | NOT NULL | Event data, defaults to `{}`                                     |
 | `created_at`    | TIMESTAMP | NOT NULL | Creation timestamp, defaults to `now()`                          |
 
@@ -518,13 +518,12 @@ Append-only review timeline of a collection. Rows are never updated or deleted b
 | `review.ai_started`       | validator | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds, contentHashes }`                                |
 | `review.ai_passed`        | validator | The validator callback body                                                                                                      |
 | `review.ai_rejected`      | validator | The validator callback body                                                                                                      |
-| `review.ai_error`         | validator | The validator callback body (retryable), or `{ reason: 'sweep_exhausted' \| 'too_large' \| 'publish_failed', validationId, ... }` |
+| `review.ai_error`         | validator / system | The validator callback body (retryable) or `{ reason: 'sweep_exhausted', validationId }`; `system` for `{ reason: 'too_large' \| 'publish_failed', validationId, ... }` |
 | `review.appeal_requested` | creator   | `{ note }`                                                                                                                       |
 | `review.assigned`         | curator   | `{ assignee }`                                                                                                                   |
 | `review.approved`         | curator   | `{}`                                                                                                                             |
 | `review.rejected`         | curator   | `{ rejectionReasons, rejectionMessage }`                                                                                         |
 | `changes.submitted`       | creator   | `{ itemIds }`                                                                                                                    |
-| `collection.disabled`     | curator   | `{ rejectionReasons, rejectionMessage }`                                                                                         |
 
 ### Business Rules
 

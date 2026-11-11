@@ -38,7 +38,7 @@ import {
   CollectionEventType,
 } from './CollectionEvent'
 import { curationNotifications, CurationVerdict } from './notifications'
-import { AutoCurationService } from './AutoCuration.service'
+import { AutoCurationService, VALIDATOR_REVIEWER } from './AutoCuration.service'
 import { toAutoCurationHTTPError } from './AutoCuration.errors'
 import { isTPCollection } from '../utils/urn'
 
@@ -247,7 +247,8 @@ export class CurationRouter extends Router {
     if (
       (curationJSON.status === CurationStatus.APPROVED ||
         curationJSON.status === CurationStatus.REJECTED) &&
-      curationJSON.status !== previous.status
+      (curationJSON.status !== previous.status ||
+        previous.reviewed_by === VALIDATOR_REVIEWER)
     ) {
       void curationNotifications.verdictGiven(
         collectionId,
@@ -506,7 +507,11 @@ export class CurationRouter extends Router {
       fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
     }
 
-    // The events go first: a retried PATCH no longer sees a change to record once the row is updated.
+    const updated = await curationService.updateById(
+      curation.id,
+      fieldsToUpdate
+    )
+
     if (type === CurationType.COLLECTION) {
       await this.recordCollectionReviewEvents(
         id,
@@ -515,11 +520,6 @@ export class CurationRouter extends Router {
         curation
       )
     }
-
-    const updated = await curationService.updateById(
-      curation.id,
-      fieldsToUpdate
-    )
 
     return { updated, previous: curation }
   }
@@ -555,7 +555,7 @@ export class CurationRouter extends Router {
     }
   }
 
-  /** Only real changes become events: a repeated PATCH must not reset the creator's attempts nor end a run. */
+  /** Only real decisions become events: a repeated PATCH must not reset the creator's attempts nor end a run. */
   private recordCollectionReviewEvents = async (
     collectionId: string,
     ethAddress: string,
@@ -582,7 +582,27 @@ export class CurationRouter extends Router {
       })
     }
 
-    if (!curationJSON.status || curationJSON.status === previous.status) {
+    // Keyed on the request, not on the row's status: a curator confirming the validator's rejection is a new
+    // decision, and a PATCH retried after the update still records it, while a repeated one does not.
+    if (
+      curationJSON.status !== CurationStatus.APPROVED &&
+      curationJSON.status !== CurationStatus.REJECTED
+    ) {
+      return
+    }
+    const decisionType =
+      curationJSON.status === CurationStatus.APPROVED
+        ? CollectionEventType.REVIEW_APPROVED
+        : CollectionEventType.REVIEW_REJECTED
+    const recorded = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      decisionType
+    )
+    if (
+      recorded &&
+      recorded.actor_address === base.actor_address &&
+      new Date(recorded.created_at) >= new Date(previous.created_at)
+    ) {
       return
     }
     if (curationJSON.status === CurationStatus.APPROVED) {

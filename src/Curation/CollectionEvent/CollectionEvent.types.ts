@@ -10,8 +10,12 @@ export enum CollectionEventType {
   REVIEW_APPROVED = 'review.approved',
   REVIEW_REJECTED = 'review.rejected',
   CHANGES_SUBMITTED = 'changes.submitted',
-  COLLECTION_DISABLED = 'collection.disabled',
 }
+
+export const HUMAN_DECISION_EVENT_TYPES: CollectionEventType[] = [
+  CollectionEventType.REVIEW_APPROVED,
+  CollectionEventType.REVIEW_REJECTED,
+]
 
 export enum CollectionEventActor {
   CREATOR = 'creator',

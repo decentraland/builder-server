@@ -25,7 +25,7 @@ let client: SNSClient | undefined
 
 function getClient(): SNSClient {
   if (!client) {
-    // The publish runs while the collection lock is held, so a hung request must not stall the collection.
+    // A hung request must not hold a creator's retry or the sweep for long.
     client = new SNSClient({
       region: env.get('AWS_REGION', '') || undefined,
       endpoint: env.get('AWS_SNS_ENDPOINT', '') || undefined,

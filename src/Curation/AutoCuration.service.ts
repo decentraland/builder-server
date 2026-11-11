@@ -472,6 +472,16 @@ export class AutoCurationService {
       throw new NothingToValidateError(collectionId)
     }
 
+    // A validator rejection is reopened by the retry; a curator's stands until the creator submits changes or
+    // appeals, whatever the last run's outcome. With no request at all (a legacy publish) the collection already
+    // reads as under review.
+    if (
+      latestCuration?.status === CurationStatus.REJECTED &&
+      latestCuration.reviewed_by !== VALIDATOR_REVIEWER
+    ) {
+      throw new CurationRejectedByCuratorError(collectionId)
+    }
+
     if (await this.isValidationInProgress(collectionId)) {
       throw new ValidationInProgressError(collectionId)
     }
@@ -488,15 +498,6 @@ export class AutoCurationService {
     const itemsToValidate = await this.findItemsToRetry(collection, latestStart)
     if (!itemsToValidate) {
       throw new NothingToRevalidateError(collectionId)
-    }
-
-    // A validator rejection is reopened by the retry; a curator's stands until the creator submits changes or
-    // appeals. With no request at all (a legacy publish) the collection already reads as under review.
-    if (
-      latestCuration?.status === CurationStatus.REJECTED &&
-      latestCuration.reviewed_by !== VALIDATOR_REVIEWER
-    ) {
-      throw new CurationRejectedByCuratorError(collectionId)
     }
 
     // The start goes first: a reopened request with no run behind it would never be recovered by the sweep.

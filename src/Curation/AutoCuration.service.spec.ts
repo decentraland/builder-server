@@ -371,6 +371,22 @@ describe('AutoCurationService', () => {
             service.requestValidation(dbCollectionMock.id, ethAddress)
           ).rejects.toThrow(TooLargeToValidateError)
         })
+
+        describe('and a curator rejected the collection since', () => {
+          beforeEach(() => {
+            mockFindLatestCuration.mockResolvedValue({
+              id: 'curationId',
+              status: CurationStatus.REJECTED,
+              reviewed_by: '0xcurator',
+            })
+          })
+
+          it("should point to the curator's rejection instead", async () => {
+            await expect(
+              service.requestValidation(dbCollectionMock.id, ethAddress)
+            ).rejects.toThrow(CurationRejectedByCuratorError)
+          })
+        })
       })
     })
 

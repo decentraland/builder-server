@@ -658,14 +658,14 @@ export class CurationRouter extends Router {
       await CollectionEvent.record({
         ...base,
         type: CollectionEventType.REVIEW_REJECTED,
-        // A correction may send only one of the two: the event carries what the row ends up with.
+        // A PATCH may send only one of the two, and the row keeps the other: the event carries what it ends up with.
         payload: {
           rejectionReasons:
-            curationJSON.rejectionReasons ??
-            (decision === 'edit' ? previous.rejection_reasons ?? [] : []),
+            curationJSON.rejectionReasons ?? previous.rejection_reasons ?? [],
           rejectionMessage:
             curationJSON.rejectionMessage?.trim() ||
-            (decision === 'edit' ? previous.rejection_message ?? null : null),
+            previous.rejection_message ||
+            null,
         },
       })
     }

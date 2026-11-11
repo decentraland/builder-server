@@ -658,9 +658,14 @@ export class CurationRouter extends Router {
       await CollectionEvent.record({
         ...base,
         type: CollectionEventType.REVIEW_REJECTED,
+        // A correction may send only one of the two: the event carries what the row ends up with.
         payload: {
-          rejectionReasons: curationJSON.rejectionReasons ?? [],
-          rejectionMessage: curationJSON.rejectionMessage?.trim() || null,
+          rejectionReasons:
+            curationJSON.rejectionReasons ??
+            (decision === 'edit' ? previous.rejection_reasons ?? [] : []),
+          rejectionMessage:
+            curationJSON.rejectionMessage?.trim() ||
+            (decision === 'edit' ? previous.rejection_message ?? null : null),
         },
       })
     }
@@ -897,7 +902,9 @@ function changesRejectionFeedback(
   previous: CollectionCurationAttributes
 ): boolean {
   const reasons: string[] | undefined = curationJSON.rejectionReasons
-  const message: string | undefined = curationJSON.rejectionMessage?.trim()
+  // A blank message is not sent, as the row's update treats it.
+  const message: string | undefined =
+    curationJSON.rejectionMessage?.trim() || undefined
   const sameReasons =
     reasons === undefined ||
     [...reasons].sort().join(',') ===

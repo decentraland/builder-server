@@ -51,6 +51,7 @@ import {
   NothingToRevalidateError,
   NothingToValidateError,
   NotStandardCollectionError,
+  TooLargeToValidateError,
   ValidationInProgressError,
   ValidationLimitReachedError,
 } from './AutoCuration.errors'
@@ -986,12 +987,12 @@ export class AutoCurationService {
     if (isRetryableVerdict(verdict)) {
       return previousItems
     }
-    // Too large is about the collection's size, which an edit does not change: it is for a curator now.
+    // The run was handed to a curator; retrying the same request would be refused for its size again.
     if (
       verdict?.type === CollectionEventType.REVIEW_AI_ERROR &&
       verdict.payload.reason === TOO_LARGE_REASON
     ) {
-      return null
+      throw new TooLargeToValidateError(collection.id)
     }
 
     const previousHashes = await this.findJudgedHashes(collection.id)

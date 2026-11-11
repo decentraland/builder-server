@@ -52,6 +52,14 @@ export class NothingToValidateError extends Error {
   }
 }
 
+export class TooLargeToValidateError extends Error {
+  constructor(public id: string) {
+    super(
+      'The collection is too large for an automatic review: a curator will review it'
+    )
+  }
+}
+
 export class CollectionBusyError extends Error {
   constructor(public id: string) {
     super('The collection is being updated, try again in a moment')
@@ -76,7 +84,8 @@ export function toAutoCurationHTTPError(error: unknown, id: string): unknown {
     error instanceof CurationRejectedByCuratorError ||
     error instanceof NotStandardCollectionError ||
     error instanceof NothingToRevalidateError ||
-    error instanceof NothingToValidateError
+    error instanceof NothingToValidateError ||
+    error instanceof TooLargeToValidateError
   ) {
     return new HTTPError(error.message, { id }, STATUS_CODES.conflict)
   }

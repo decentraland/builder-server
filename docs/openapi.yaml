@@ -1168,7 +1168,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: A validation is already in progress, nothing changed since the last verdict, a curator rejected the collection, or it is not a published standard collection
+          description: A validation is already in progress, nothing changed since the last verdict, a curator rejected the collection, it was too large for an automatic review, or it is not a published standard collection
           content:
             application/json:
               schema:

@@ -31,6 +31,7 @@ import {
   CurationRejectedByCuratorError,
   NothingToRevalidateError,
   NothingToValidateError,
+  TooLargeToValidateError,
   ValidationInProgressError,
   ValidationLimitReachedError,
 } from './AutoCuration.errors'
@@ -365,10 +366,10 @@ describe('AutoCurationService', () => {
           )
         })
 
-        it('should reject with a nothing to revalidate error', async () => {
+        it('should tell the creator a curator reviews it instead', async () => {
           await expect(
             service.requestValidation(dbCollectionMock.id, ethAddress)
-          ).rejects.toThrow(NothingToRevalidateError)
+          ).rejects.toThrow(TooLargeToValidateError)
         })
       })
     })
@@ -438,10 +439,10 @@ describe('AutoCurationService', () => {
         previousStart.payload.contentHashes = { [item.id]: 'oldHash' }
       })
 
-      it('should leave it to a curator even after an edit: an edit does not make it smaller', async () => {
+      it('should tell the creator a curator reviews it instead', async () => {
         await expect(
           service.requestValidation(dbCollectionMock.id, ethAddress)
-        ).rejects.toThrow(NothingToRevalidateError)
+        ).rejects.toThrow(TooLargeToValidateError)
       })
     })
 

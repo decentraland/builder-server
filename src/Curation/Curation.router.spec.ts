@@ -2146,6 +2146,56 @@ describe('when handling a request', () => {
         })
       })
 
+      describe('with only the reasons corrected', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: {
+              curation: {
+                status: CurationStatus.REJECTED,
+                rejectionReasons: ['thumbnail'],
+              },
+            },
+          } as any
+        })
+
+        it('should record the message the request keeps along with the new reasons', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              payload: {
+                rejectionReasons: ['thumbnail'],
+                rejectionMessage: 'Clips through the body',
+              },
+            })
+          )
+        })
+      })
+
+      describe('with a blank message and the same reasons', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: {
+              curation: {
+                status: CurationStatus.REJECTED,
+                rejectionReasons: ['clipping'],
+                rejectionMessage: '   ',
+              },
+            },
+          } as any
+        })
+
+        it('should treat it as a repeat', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+        })
+      })
+
       describe('with corrected reasons', () => {
         beforeEach(() => {
           req = {

@@ -22,6 +22,11 @@ import { CurationStatus } from './Curation.types'
 import { createAssigneeEventPost, getPost } from '../Forum'
 import { curationNotifications } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
+import {
+  ValidationInProgressError,
+  ValidationLimitReachedError,
+} from './AutoCuration.errors'
+import { STATUS_CODES } from '../common/HTTPError'
 import { VIDEO_PATH } from '../Item/utils'
 import { ItemService } from '../Item/Item.service'
 import { isFeatureFlagEnabled } from '../utils/features'
@@ -69,8 +74,12 @@ describe('when handling a request', () => {
     return service
   }
 
+  const submittedChanges = { collection: {}, items: [{ id: 'changed' }] }
+
   beforeEach(() => {
     router = new CurationRouter(new ExpressApp())
+    ;(AutoCurationService.prototype
+      .prepareChanges as jest.Mock).mockResolvedValue(submittedChanges)
   })
 
   afterEach(() => {
@@ -1441,7 +1450,7 @@ describe('when handling a request', () => {
           )
           expect(
             AutoCurationService.prototype.onChangesSubmitted
-          ).toHaveBeenCalledWith('some id', 'ethAddress')
+          ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
         })
       })
 
@@ -1528,7 +1537,7 @@ describe('when handling a request', () => {
             )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith('some id', 'ethAddress')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
           })
         })
 
@@ -1546,7 +1555,7 @@ describe('when handling a request', () => {
             expect(curationNotifications.reviewRequested).toHaveBeenCalled()
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith('some id', 'ethAddress')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
           })
         })
 
@@ -1594,7 +1603,7 @@ describe('when handling a request', () => {
             )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith('some id', 'ethAddress')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
           })
         })
       })
@@ -1770,6 +1779,76 @@ describe('when handling a request', () => {
       })
     })
   })
+  describe('when a creator tries to set the status of their own collection curation', () => {
+    let req: AuthRequest
+    let updateSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      mockIsCommitteeMember.mockResolvedValue(false)
+      const service = mockServiceWithAccess(CollectionCuration, true)
+      jest
+        .spyOn(service, 'getLatestById')
+        .mockResolvedValueOnce({ id: 'curationId', status: 'rejected' } as any)
+      updateSpy = jest.spyOn(service, 'updateById')
+      req = {
+        auth: { ethAddress: 'ethAddress' },
+        params: { id: 'some id' },
+        body: { curation: { status: CurationStatus.PENDING } },
+      } as any
+    })
+
+    it('should refuse it: a review is reopened with a new request, never by flipping a decided one', async () => {
+      await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+        'Only committee members can approve or reject a curation'
+      )
+      expect(updateSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('when a creator submits changes the automatic review cannot take now', () => {
+    let req: AuthRequest
+    let createSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      const service = mockServiceWithAccess(CollectionCuration, true)
+      jest
+        .spyOn(service, 'getLatestById')
+        .mockResolvedValueOnce({ status: CurationStatus.APPROVED } as any)
+      createSpy = jest.spyOn(CollectionCuration, 'create')
+      jest.spyOn(Collection, 'findOne').mockResolvedValue(dbCollectionMock)
+      req = {
+        auth: { ethAddress: dbCollectionMock.eth_address },
+        params: { id: 'some id' },
+      } as any
+    })
+
+    it('should answer 409 while a review runs, without storing the request', async () => {
+      ;(AutoCurationService.prototype
+        .prepareChanges as jest.Mock).mockRejectedValueOnce(
+        new ValidationInProgressError('some id')
+      )
+
+      await expect(router.insertCollectionCuration(req)).rejects.toMatchObject({
+        statusCode: STATUS_CODES.conflict,
+      })
+      expect(createSpy).not.toHaveBeenCalled()
+    })
+
+    it('should answer 429 with the time to retry past the daily limit, without storing the request', async () => {
+      const retryAt = new Date('2026-11-12T00:00:00.000Z')
+      ;(AutoCurationService.prototype
+        .prepareChanges as jest.Mock).mockRejectedValueOnce(
+        new ValidationLimitReachedError('some id', retryAt)
+      )
+
+      await expect(router.insertCollectionCuration(req)).rejects.toMatchObject({
+        statusCode: STATUS_CODES.tooManyRequests,
+        data: { id: 'some id', retryAt: retryAt.toISOString() },
+      })
+      expect(createSpy).not.toHaveBeenCalled()
+    })
+  })
+
   describe('when a committee member reviews a collection curation with the auto curation enabled', () => {
     let service: CurationService<any>
     let req: AuthRequest
@@ -1893,7 +1972,7 @@ describe('when handling a request', () => {
           type: CollectionEventType.REVIEW_REJECTED,
           payload: {
             rejectionReasons: ['clipping', 'other'],
-            rejectionMessage: '  Clips through the body  ',
+            rejectionMessage: 'Clips through the body',
           },
         })
       })

@@ -782,6 +782,10 @@ describe('AutoCuration router', () => {
         mockFindLatestEvent.mockResolvedValue(
           buildEvent(CollectionEventType.REVIEW_APPEAL_REQUESTED)
         )
+        mockFindLatestCuration.mockResolvedValue({
+          id: 'curationId',
+          status: CurationStatus.PENDING,
+        })
       })
 
       it('should respond with a 409', () => {

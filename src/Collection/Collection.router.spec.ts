@@ -3602,7 +3602,6 @@ describe('Collection router', () => {
   })
 
   describe('when publishing a collection with the auto curation flag', () => {
-    let isEnabledSpy: jest.SpyInstance
     let forumSpy: jest.SpyInstance
     let tpHookSpy: jest.SpyInstance
     let standardHookSpy: jest.SpyInstance
@@ -3641,45 +3640,16 @@ describe('Collection router', () => {
           })
       })
 
-      describe('and the flag is on', () => {
-        beforeEach(() => {
-          isEnabledSpy = jest
-            .spyOn(AutoCurationService.prototype, 'isEnabled')
-            .mockResolvedValue(true)
-        })
-
-        it('should record the human review and still post to the forum', () => {
-          return server
-            .post(buildURL(url))
-            .set(createAuthHeaders('post', url))
-            .send({ itemIds: [dbTPItemMock.id], cheque: {} })
-            .expect(200)
-            .then(() => {
-              expect(isEnabledSpy).toHaveBeenCalled()
-              expect(forumSpy).toHaveBeenCalled()
-              expect(tpHookSpy).toHaveBeenCalledWith(dbTPCollection)
-            })
-        })
-      })
-
-      describe('and the flag is off', () => {
-        beforeEach(() => {
-          jest
-            .spyOn(AutoCurationService.prototype, 'isEnabled')
-            .mockResolvedValue(false)
-        })
-
-        it('should post to the forum as before', () => {
-          return server
-            .post(buildURL(url))
-            .set(createAuthHeaders('post', url))
-            .send({ itemIds: [dbTPItemMock.id], cheque: {} })
-            .expect(200)
-            .then(() => {
-              expect(forumSpy).toHaveBeenCalled()
-              expect(tpHookSpy).not.toHaveBeenCalled()
-            })
-        })
+      it('should hand the collection to the human review hook and still post to the forum', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .send({ itemIds: [dbTPItemMock.id], cheque: {} })
+          .expect(200)
+          .then(() => {
+            expect(forumSpy).toHaveBeenCalled()
+            expect(tpHookSpy).toHaveBeenCalledWith(dbTPCollection)
+          })
       })
     })
 

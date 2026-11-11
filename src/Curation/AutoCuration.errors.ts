@@ -46,6 +46,12 @@ export class NothingToRevalidateError extends Error {
   }
 }
 
+export class NothingToValidateError extends Error {
+  constructor(public id: string) {
+    super('There is nothing to validate again: submit your changes for review')
+  }
+}
+
 export class CollectionBusyError extends Error {
   constructor(public id: string) {
     super('The collection is being updated, try again in a moment')
@@ -69,7 +75,8 @@ export function toAutoCurationHTTPError(error: unknown, id: string): unknown {
     error instanceof CurationNotRejectedError ||
     error instanceof CurationRejectedByCuratorError ||
     error instanceof NotStandardCollectionError ||
-    error instanceof NothingToRevalidateError
+    error instanceof NothingToRevalidateError ||
+    error instanceof NothingToValidateError
   ) {
     return new HTTPError(error.message, { id }, STATUS_CODES.conflict)
   }

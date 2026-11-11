@@ -448,9 +448,11 @@ export class CurationRouter extends Router {
       }
     }
 
+    // Creators reopen a review with a new request (POST), never by flipping the status of a decided one.
     if (
       (curationJSON.status === CurationStatus.APPROVED ||
-        curationJSON.status === CurationStatus.REJECTED) &&
+        curationJSON.status === CurationStatus.REJECTED ||
+        (type === CurationType.COLLECTION && curationJSON.status)) &&
       !(await isCommitteeMember(ethAddress))
     ) {
       throw new HTTPError(
@@ -504,11 +506,7 @@ export class CurationRouter extends Router {
       fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
     }
 
-    const updated = await curationService.updateById(
-      curation.id,
-      fieldsToUpdate
-    )
-
+    // The events go first: a retried PATCH no longer sees a change to record once the row is updated.
     if (type === CurationType.COLLECTION) {
       await this.recordCollectionReviewEvents(
         id,
@@ -517,6 +515,11 @@ export class CurationRouter extends Router {
         curation
       )
     }
+
+    const updated = await curationService.updateById(
+      curation.id,
+      fieldsToUpdate
+    )
 
     return { updated, previous: curation }
   }
@@ -594,7 +597,7 @@ export class CurationRouter extends Router {
         type: CollectionEventType.REVIEW_REJECTED,
         payload: {
           rejectionReasons: curationJSON.rejectionReasons ?? [],
-          rejectionMessage: curationJSON.rejectionMessage ?? null,
+          rejectionMessage: curationJSON.rejectionMessage?.trim() || null,
         },
       })
     }
@@ -673,9 +676,9 @@ export class CurationRouter extends Router {
       type === CurationType.COLLECTION &&
       !attributes.assignee &&
       (await this.isChangesSubmission(id, curation, ethAddress))
-    if (isChangesSubmission) {
-      await this.autoCurationService.assertChangesCanBeValidated(id)
-    }
+    const submittedChanges = isChangesSubmission
+      ? await this.autoCurationService.prepareChanges(id, curation?.status)
+      : null
 
     const created = await curationService.getModel().create(attributes)
 
@@ -693,7 +696,13 @@ export class CurationRouter extends Router {
           curation?.status,
           ethAddress
         )
-        void this.autoCurationService.onChangesSubmitted(id, ethAddress)
+        // Awaited: the client reads the timeline right after this answer, and the review start must be in it.
+        if (submittedChanges) {
+          await this.autoCurationService.onChangesSubmitted(
+            submittedChanges,
+            ethAddress
+          )
+        }
       }
     }
 

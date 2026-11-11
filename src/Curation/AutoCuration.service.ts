@@ -47,6 +47,7 @@ import {
   CurationNotRejectedError,
   CurationRejectedByCuratorError,
   NothingToRevalidateError,
+  NothingToValidateError,
   NotStandardCollectionError,
   ValidationInProgressError,
   ValidationLimitReachedError,
@@ -62,6 +63,14 @@ export const MAX_SWEEP_RESENDS = 3
 export const VALIDATOR_REVIEWER = 'validator'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const VERDICT_EVENT_TYPE_BY_VERDICT: Record<
+  ValidationResult['verdict'],
+  CollectionEventType
+> = {
+  passed: CollectionEventType.REVIEW_AI_PASSED,
+  rejected: CollectionEventType.REVIEW_AI_REJECTED,
+  error: CollectionEventType.REVIEW_AI_ERROR,
+}
 const HUMAN_DECISION_EVENT_TYPES: string[] = [
   CollectionEventType.REVIEW_APPROVED,
   CollectionEventType.REVIEW_REJECTED,
@@ -69,6 +78,20 @@ const HUMAN_DECISION_EVENT_TYPES: string[] = [
 
 const logger = createConsoleLogComponent().getLogger('AutoCuration')
 let warnedMissingTopic = false
+
+/** A run whose start is recorded; its request is sent to the validator once the collection lock is released. */
+type StartedValidation = {
+  event: CollectionEventAttributes
+  collection: CollectionAttributes
+  manifest: ValidationManifest
+}
+
+/** What a creator's request sends to the validator: the items changed since they were last judged. */
+export type SubmittedChanges = {
+  collection: CollectionAttributes
+  items: ItemAttributes[]
+  previousStatus?: CurationStatus
+}
 
 export function getStartOfTodayUTC(now = new Date()): Date {
   return new Date(
@@ -146,9 +169,10 @@ export class AutoCurationService {
       if (isTPCollection(collection) || !(await this.isEnabled())) {
         return
       }
-      await withCollectionLock(collection.id, () =>
+      const started = await withCollectionLock(collection.id, () =>
         this.doOnStandardCollectionPublished(collection, ethAddress)
       )
+      await this.sendValidation(started)
     } catch (error) {
       logger.error(
         `Error starting the auto curation of collection ${collection.id}: ${
@@ -191,90 +215,93 @@ export class AutoCurationService {
   }
 
   /**
-   * Changes hook: the items whose content differs from what is on chain, including the ones the chain holds no
-   * content hash for. Items not on chain yet have no URN, so the validator cannot judge them. Never throws: the
-   * curation already exists.
+   * Reads what a creator's request would send to the validator, refusing it while a run is in flight or past the
+   * daily limit, before the request is stored. Null when the auto curation is off or the collection has nothing a
+   * validator could judge.
+   */
+  async prepareChanges(
+    collectionId: string,
+    previousStatus: CurationStatus | undefined
+  ): Promise<SubmittedChanges | null> {
+    if (!(await this.isEnabled())) {
+      return null
+    }
+    const collection = await Collection.findOne<CollectionAttributes>(
+      collectionId
+    )
+    if (
+      !collection ||
+      isTPCollection(collection) ||
+      !collection.contract_address
+    ) {
+      return null
+    }
+    const items = await this.findItemsToSubmit(collection)
+    if (items.length > 0) {
+      if (await this.isValidationInProgress(collectionId)) {
+        throw new ValidationInProgressError(collectionId)
+      }
+      const retryAt = await this.getDailyLimitRetryAt(collectionId)
+      if (retryAt) {
+        throw new ValidationLimitReachedError(collectionId, retryAt)
+      }
+    }
+    return { collection, items, previousStatus }
+  }
+
+  /**
+   * Records the review start of a stored request before the creator gets an answer, so the timeline already shows
+   * it. A request after a rejection that changes nothing is an appeal: the validator would repeat its verdict.
+   * Never throws: the request is already stored.
    */
   async onChangesSubmitted(
-    collectionId: string,
+    changes: SubmittedChanges,
     ethAddress: string
   ): Promise<void> {
+    const { collection, items, previousStatus } = changes
     try {
-      if (!(await this.isEnabled())) {
+      if (items.length === 0) {
+        if (previousStatus === CurationStatus.REJECTED) {
+          await CollectionEvent.record({
+            collection_id: collection.id,
+            type: CollectionEventType.REVIEW_APPEAL_REQUESTED,
+            actor: CollectionEventActor.CREATOR,
+            actor_address: ethAddress.toLowerCase(),
+            payload: { note: '' },
+          })
+        }
         return
       }
-      const collection = await Collection.findOne<CollectionAttributes>(
-        collectionId
-      )
-      if (
-        !collection ||
-        isTPCollection(collection) ||
-        !collection.contract_address
-      ) {
-        return
-      }
-
-      const changedItems = await this.findChangedItems(collection)
       await CollectionEvent.record({
-        collection_id: collectionId,
+        collection_id: collection.id,
         type: CollectionEventType.CHANGES_SUBMITTED,
         actor: CollectionEventActor.CREATOR,
         actor_address: ethAddress.toLowerCase(),
-        payload: { itemIds: changedItems.map((item) => item.id) },
+        payload: { itemIds: items.map((item) => item.id) },
       })
-      if (changedItems.length === 0) {
-        logger.info(
-          `No changed items to validate in collection ${collectionId}`
-        )
-        return
-      }
-
-      await withCollectionLock(collectionId, async () => {
-        // The request endpoint refuses these before inserting; this only covers a race with the callback.
-        if (await this.isValidationInProgress(collectionId)) {
-          logger.warn(
-            `Not validating the changes of collection ${collectionId}: a validation is in progress`
-          )
-          return
-        }
-        if (await this.getDailyLimitRetryAt(collectionId)) {
-          logger.warn(
-            `Not validating the changes of collection ${collectionId}: the daily limit was reached`
-          )
-          return
-        }
-        await this.startValidation(collection, changedItems, 'changes')
-      })
+      // A sweep re-send that started after the check is superseded: its verdict is no longer the latest.
+      const started = await withCollectionLock(collection.id, () =>
+        this.recordStart(collection, items, 'changes')
+      )
+      await this.sendValidation(started)
     } catch (error) {
       logger.error(
-        `Error requesting the validation of the changes of collection ${collectionId}: ${
-          (error as Error).message
-        }`
+        `Error requesting the validation of the changes of collection ${
+          collection.id
+        }: ${(error as Error).message}`
       )
     }
   }
 
-  /** Whether a creator may submit changes now: not while a run is in flight, nor past the daily limit. */
-  async assertChangesCanBeValidated(collectionId: string): Promise<void> {
-    if (!(await this.isEnabled())) {
-      return
-    }
-    if (await this.isValidationInProgress(collectionId)) {
-      throw new ValidationInProgressError(collectionId)
-    }
-    const retryAt = await this.getDailyLimitRetryAt(collectionId)
-    if (retryAt) {
-      throw new ValidationLimitReachedError(collectionId, retryAt)
-    }
-  }
-
-  requestValidation(
+  async requestValidation(
     collectionId: string,
     ethAddress: string
   ): Promise<CollectionEventAttributes> {
-    return withCollectionLock(collectionId, () =>
+    const started = await withCollectionLock(collectionId, () =>
       this.doRequestValidation(collectionId, ethAddress)
     )
+    await this.sendValidation(started)
+    return started.event
   }
 
   appeal(
@@ -336,14 +363,14 @@ export class AutoCurationService {
           continue
         }
 
-        await withCollectionLock(collection.id, async () => {
+        const started = await withCollectionLock(collection.id, async () => {
           // A creator retry may have started a newer validation since the query ran.
           const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
             collection.id,
             CollectionEventType.REVIEW_AI_STARTED
           )
           if (latestStart?.id !== staleStart.id) {
-            return
+            return undefined
           }
 
           const sweepStarts = await CollectionEvent.countSweepStartsSinceManualStart(
@@ -351,12 +378,13 @@ export class AutoCurationService {
           )
           if (sweepStarts >= MAX_SWEEP_RESENDS) {
             await this.giveUpValidation(collection, staleStart)
-            return
+            return undefined
           }
 
           const items = await this.findItemsToRevalidate(collection, staleStart)
-          await this.startValidation(collection, items, 'sweep')
+          return this.recordStart(collection, items, 'sweep')
         })
+        await this.sendValidation(started)
       } catch (error) {
         logger.error(
           `Error re-sending the validation of collection ${
@@ -397,33 +425,46 @@ export class AutoCurationService {
   private async doOnStandardCollectionPublished(
     collection: CollectionAttributes,
     ethAddress: string
-  ): Promise<void> {
-    // /publish keeps answering once the collection is on chain; only the first publication opens the review.
-    const alreadyPublished = await CollectionEvent.findLatestByCollectionIdAndType(
+  ): Promise<StartedValidation | undefined> {
+    // /publish keeps answering once the collection is on chain; a start means the review already began. A
+    // publication recorded without one (the start failed) is resumed.
+    const anyStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collection.id,
+      CollectionEventType.REVIEW_AI_STARTED
+    )
+    if (anyStart) {
+      return undefined
+    }
+    const published = await CollectionEvent.findLatestByCollectionIdAndType(
       collection.id,
       CollectionEventType.COLLECTION_PUBLISHED
     )
-    if (alreadyPublished) {
-      return
+    if (!published) {
+      await CollectionEvent.record({
+        collection_id: collection.id,
+        type: CollectionEventType.COLLECTION_PUBLISHED,
+        actor: CollectionEventActor.CREATOR,
+        actor_address: ethAddress.toLowerCase(),
+        payload: {},
+      })
     }
 
-    await CollectionEvent.record({
-      collection_id: collection.id,
-      type: CollectionEventType.COLLECTION_PUBLISHED,
-      actor: CollectionEventActor.CREATOR,
-      actor_address: ethAddress.toLowerCase(),
-      payload: {},
-    })
-
     const items = await Item.findOrderedByCollectionId(collection.id)
-    await this.startValidation(collection, items, 'publish')
+    return this.recordStart(collection, items, 'publish')
   }
 
   private async doRequestValidation(
     collectionId: string,
     ethAddress: string
-  ): Promise<CollectionEventAttributes> {
+  ): Promise<StartedValidation> {
     const collection = await this.getStandardCollection(collectionId)
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collectionId
+    )
+    // Approved content changes go through a review request, which validates them.
+    if (latestCuration?.status === CurationStatus.APPROVED) {
+      throw new NothingToValidateError(collectionId)
+    }
 
     if (await this.isValidationInProgress(collectionId)) {
       throw new ValidationInProgressError(collectionId)
@@ -445,9 +486,6 @@ export class AutoCurationService {
 
     // A validator rejection is reopened by the retry; a curator's stands until the creator submits changes or
     // appeals. With no request at all (a legacy publish) the collection already reads as under review.
-    const latestCuration = await CollectionCuration.findLatestByCollectionId(
-      collectionId
-    )
     if (latestCuration?.status === CurationStatus.REJECTED) {
       if (latestCuration.reviewed_by !== VALIDATOR_REVIEWER) {
         throw new CurationRejectedByCuratorError(collectionId)
@@ -455,12 +493,7 @@ export class AutoCurationService {
       await this.createPendingCuration(collectionId)
     }
 
-    return this.startValidation(
-      collection,
-      itemsToValidate,
-      'retry',
-      ethAddress
-    )
+    return this.recordStart(collection, itemsToValidate, 'retry', ethAddress)
   }
 
   private async doAppeal(
@@ -471,26 +504,30 @@ export class AutoCurationService {
     const latestEvent = await CollectionEvent.findLatestByCollectionId(
       collectionId
     )
-    if (latestEvent?.type === CollectionEventType.REVIEW_APPEAL_REQUESTED) {
-      throw new AppealAlreadyOpenError(collectionId)
-    }
-
     const latestCuration = await CollectionCuration.findLatestByCollectionId(
       collectionId
     )
+    const appealRecorded =
+      latestEvent?.type === CollectionEventType.REVIEW_APPEAL_REQUESTED
+    if (appealRecorded && latestCuration?.status === CurationStatus.PENDING) {
+      throw new AppealAlreadyOpenError(collectionId)
+    }
     if (!latestCuration || latestCuration.status !== CurationStatus.REJECTED) {
       throw new CurationNotRejectedError(collectionId)
     }
 
+    // The appeal is recorded before the request, so a retry after a failed insert only opens the request.
     const trimmedNote = note.trim()
+    if (!appealRecorded) {
+      await CollectionEvent.record({
+        collection_id: collectionId,
+        type: CollectionEventType.REVIEW_APPEAL_REQUESTED,
+        actor: CollectionEventActor.CREATOR,
+        actor_address: ethAddress.toLowerCase(),
+        payload: { note: trimmedNote },
+      })
+    }
     const curation = await this.createPendingCuration(collectionId)
-    await CollectionEvent.record({
-      collection_id: collectionId,
-      type: CollectionEventType.REVIEW_APPEAL_REQUESTED,
-      actor: CollectionEventActor.CREATOR,
-      actor_address: ethAddress.toLowerCase(),
-      payload: { note: trimmedNote },
-    })
 
     const collection = await Collection.findOne<CollectionAttributes>(
       collectionId
@@ -527,15 +564,27 @@ export class AutoCurationService {
       )
       return
     }
-    if (
-      await CollectionEvent.findVerdictByValidationId(
-        collectionId,
-        result.validationId
-      )
-    ) {
+    // A request the server could not confirm sending may still have reached the validator.
+    const recorded = await CollectionEvent.findVerdictByValidationId(
+      collectionId,
+      result.validationId
+    )
+    if (recorded && recorded.payload.reason !== PUBLISH_FAILED_REASON) {
       logger.warn(
         `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
       )
+      return
+    }
+
+    // With the flag off the verdict only feeds the timeline: nothing is decided in the validator's name.
+    if (!(await this.isEnabled())) {
+      await CollectionEvent.recordOnce({
+        collection_id: collectionId,
+        actor: CollectionEventActor.VALIDATOR,
+        actor_address: null,
+        payload: result,
+        type: VERDICT_EVENT_TYPE_BY_VERDICT[result.verdict],
+      })
       return
     }
 
@@ -586,14 +635,14 @@ export class AutoCurationService {
         break
       }
       case 'rejected': {
+        // The curation goes first and the event last: the event is what marks a redelivery as done.
+        if (!decidedByCurator) {
+          await this.rejectByValidator(collectionId)
+        }
         await CollectionEvent.recordOnce({
           ...event,
           type: CollectionEventType.REVIEW_AI_REJECTED,
         })
-        // Idempotent, so a redelivery after a failed update still lands it.
-        if (!decidedByCurator) {
-          await this.rejectByValidator(collectionId)
-        }
         break
       }
       case 'error': {
@@ -700,12 +749,12 @@ export class AutoCurationService {
     }
   }
 
-  private async startValidation(
+  private async recordStart(
     collection: CollectionAttributes,
     items: ItemAttributes[],
     trigger: ValidationTrigger,
     ethAddress: string | null = null
-  ): Promise<CollectionEventAttributes> {
+  ): Promise<StartedValidation> {
     const validationId = uuid()
     const manifest = await this.buildManifest(validationId, collection, items)
     const contentHashes: Record<string, string> = {}
@@ -724,17 +773,25 @@ export class AutoCurationService {
         contentHashes,
       },
     })
+    return { event, collection, manifest }
+  }
 
+  /** Runs outside the collection lock: the start is recorded, so a failure here is left to the sweep. */
+  private async sendValidation(started?: StartedValidation): Promise<void> {
+    if (!started) {
+      return
+    }
+    const { collection, manifest } = started
     try {
       await publishValidationRequest(manifest)
     } catch (error) {
       if (error instanceof ValidationTooLargeError) {
-        await this.handOffTooLarge(collection, validationId, error)
-        return event
+        await this.handOffTooLarge(collection, manifest.validationId, error)
+        return
       }
       // A retryable error lets the next sweep re-send it and a creator retry it right away.
       logger.error(
-        `Error sending the validation ${validationId} of collection ${
+        `Error sending the validation ${manifest.validationId} of collection ${
           collection.id
         }: ${(error as Error).message}`
       )
@@ -743,11 +800,12 @@ export class AutoCurationService {
         type: CollectionEventType.REVIEW_AI_ERROR,
         actor: CollectionEventActor.SYSTEM,
         actor_address: null,
-        payload: { reason: PUBLISH_FAILED_REASON, validationId },
+        payload: {
+          reason: PUBLISH_FAILED_REASON,
+          validationId: manifest.validationId,
+        },
       })
     }
-
-    return event
   }
 
   /** Records a request too large to publish as a final error; splitting it is left to a curator. */
@@ -913,6 +971,44 @@ export class AutoCurationService {
       ...changedItems,
       ...previousItems.filter((item) => !changedIds.has(item.id)),
     ]
+  }
+
+  /** The items changed on chain's view and since the last run judged them: unchanged ones would get the same verdict. */
+  private async findItemsToSubmit(
+    collection: CollectionAttributes
+  ): Promise<ItemAttributes[]> {
+    let changedItems: ItemAttributes[]
+    try {
+      changedItems = await this.findChangedItems(collection)
+    } catch (error) {
+      // Without the chain's hashes the last run is the only baseline; the request must not fail on the graph.
+      logger.warn(
+        `Could not read the on-chain items of collection ${
+          collection.id
+        }, comparing with the last run only: ${(error as Error).message}`
+      )
+      const items = await Item.findOrderedByCollectionId(collection.id)
+      changedItems = []
+      for (const item of items) {
+        if (item.blockchain_item_id !== null) {
+          changedItems.push({
+            ...item,
+            local_content_hash: await this.getContentHash(item, collection),
+          })
+        }
+      }
+    }
+    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collection.id,
+      CollectionEventType.REVIEW_AI_STARTED
+    )
+    const judgedHashes = (latestStart?.payload.contentHashes ?? {}) as Record<
+      string,
+      string
+    >
+    return changedItems.filter(
+      (item) => judgedHashes[item.id] !== item.local_content_hash
+    )
   }
 
   /** The items whose content differs from the chain, with the hash the manifest will carry. */

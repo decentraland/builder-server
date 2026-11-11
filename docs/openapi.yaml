@@ -1056,11 +1056,11 @@ paths:
                   uniqueItems: true
                   items:
                     $ref: '#/components/schemas/RejectionReason'
-                  description: Required together with rejectionMessage when a committee member rejects a collection and the auto curation is enabled
+                  description: Optional reasons for a rejection
                 rejectionMessage:
                   type: string
                   minLength: 1
-                  description: Free text shown to the creator, optional like rejectionReasons (the legacy Builder sends neither)
+                  description: Optional message for the creator with a rejection
       responses:
         '200':
           description: Curation updated successfully

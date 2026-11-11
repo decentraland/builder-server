@@ -32,7 +32,7 @@ import {
   requestValidation as publishValidationRequest,
   ValidationTooLargeError,
 } from './validationQueue'
-import { escapeSlackText, notifyCurationSlack } from './slack'
+import { escapeSlackText, notifyCurationSlack, toOneLine } from './slack'
 import { withCollectionLock } from './collectionLock'
 import {
   CollectionEventsPage,
@@ -301,23 +301,26 @@ export class AutoCurationService {
     return started.event
   }
 
-  appeal(
+  async appeal(
     collectionId: string,
     ethAddress: string,
     note: string
   ): Promise<CollectionCurationAttributes> {
-    return withCollectionLock(collectionId, () =>
+    const { curation, notices } = await withCollectionLock(collectionId, () =>
       this.doAppeal(collectionId, ethAddress, note)
     )
+    await sendNotices(notices)
+    return curation
   }
 
-  handleValidationResult(
+  async handleValidationResult(
     collectionId: string,
     result: ValidationResult
   ): Promise<void> {
-    return withCollectionLock(collectionId, () =>
+    const notices = await withCollectionLock(collectionId, () =>
       this.doHandleValidationResult(collectionId, result)
     )
+    await sendNotices(notices)
   }
 
   async getEvents(
@@ -360,6 +363,7 @@ export class AutoCurationService {
           continue
         }
 
+        let giveUpNotice: string | undefined
         const started = await withCollectionLock(collection.id, async () => {
           // A creator retry may have started a newer validation since the query ran.
           const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
@@ -374,7 +378,7 @@ export class AutoCurationService {
             collection.id
           )
           if (sweepStarts >= MAX_SWEEP_RESENDS) {
-            await this.giveUpValidation(collection, staleStart)
+            giveUpNotice = await this.giveUpValidation(collection, staleStart)
             return undefined
           }
 
@@ -382,6 +386,9 @@ export class AutoCurationService {
           return this.recordStart(collection, items, 'sweep')
         })
         await this.sendValidation(started)
+        if (giveUpNotice) {
+          await notifyCurationSlack(giveUpNotice)
+        }
       } catch (error) {
         logger.error(
           `Error re-sending the validation of collection ${
@@ -507,7 +514,7 @@ export class AutoCurationService {
     collectionId: string,
     ethAddress: string,
     note: string
-  ): Promise<CollectionCurationAttributes> {
+  ): Promise<{ curation: CollectionCurationAttributes; notices: string[] }> {
     const latestEvent = await CollectionEvent.findLatestByCollectionId(
       collectionId
     )
@@ -543,21 +550,20 @@ export class AutoCurationService {
     const quotedNote = trimmedNote
       ? `\n> ${escapeSlackText(toOneLine(trimmedNote))}`
       : ''
-    await notifyCurationSlack(
-      `Human review requested for collection ${describeCollection(
-        collection,
-        collectionId
-      )}.${quotedNote}`
-    )
+    const notice = `Human review requested for collection ${describeCollection(
+      collection,
+      collectionId
+    )}.${quotedNote}`
 
-    return curation
+    return { curation, notices: [notice] }
   }
 
   /** Applies a validator callback. Results for anything but the latest validation, or already recorded, are ignored. */
   private async doHandleValidationResult(
     collectionId: string,
     result: ValidationResult
-  ): Promise<void> {
+  ): Promise<string[]> {
+    const notices: string[] = []
     const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
       collectionId,
       CollectionEventType.REVIEW_AI_STARTED
@@ -569,7 +575,7 @@ export class AutoCurationService {
       logger.warn(
         `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it is not the latest validation`
       )
-      return
+      return notices
     }
     // A request the server could not confirm sending may still have reached the validator.
     const recorded = await CollectionEvent.findVerdictByValidationId(
@@ -580,7 +586,7 @@ export class AutoCurationService {
       logger.warn(
         `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
       )
-      return
+      return notices
     }
 
     // With the flag off the verdict only feeds the timeline: nothing is decided in the validator's name.
@@ -592,7 +598,7 @@ export class AutoCurationService {
         payload: result,
         type: VERDICT_EVENT_TYPE_BY_VERDICT[result.verdict],
       })
-      return
+      return notices
     }
 
     const collection = await Collection.findOne<CollectionAttributes>(
@@ -618,6 +624,10 @@ export class AutoCurationService {
 
     switch (result.verdict) {
       case 'passed': {
+        // A pass supersedes the validator's own rejection, also when the retry could not reopen the request.
+        if (!decidedByCurator) {
+          await this.reopenValidatorRejection(collectionId)
+        }
         const recorded = await CollectionEvent.recordOnce({
           ...event,
           type: CollectionEventType.REVIEW_AI_PASSED,
@@ -628,7 +638,7 @@ export class AutoCurationService {
         if (decidedByCurator) {
           break
         }
-        await notifyCurationSlack(
+        notices.push(
           stale
             ? `AI review passed for collection ${describeCollection(
                 collection,
@@ -672,7 +682,7 @@ export class AutoCurationService {
           if (!handedOff) {
             break
           }
-          await notifyCurationSlack(
+          notices.push(
             `Collection ${describeCollection(
               collection,
               collectionId
@@ -701,7 +711,7 @@ export class AutoCurationService {
           if (!handedOff) {
             break
           }
-          await notifyCurationSlack(
+          notices.push(
             `Collection ${describeCollection(
               collection,
               collectionId
@@ -718,7 +728,7 @@ export class AutoCurationService {
         if (!recorded) {
           break
         }
-        await notifyCurationSlack(
+        notices.push(
           `AI review failed for collection ${describeCollection(
             collection,
             collectionId
@@ -728,6 +738,19 @@ export class AutoCurationService {
         )
         break
       }
+    }
+    return notices
+  }
+
+  private async reopenValidatorRejection(collectionId: string): Promise<void> {
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collectionId
+    )
+    if (
+      latestCuration?.status === CurationStatus.REJECTED &&
+      latestCuration.reviewed_by === VALIDATOR_REVIEWER
+    ) {
+      await this.createPendingCuration(collectionId)
     }
   }
 
@@ -851,7 +874,7 @@ export class AutoCurationService {
   private async giveUpValidation(
     collection: CollectionAttributes,
     staleStart: CollectionEventAttributes
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const validationId = staleStart.payload.validationId
     const recorded = await CollectionEvent.recordOnce({
       collection_id: collection.id,
@@ -861,13 +884,11 @@ export class AutoCurationService {
       payload: { reason: SWEEP_EXHAUSTED_REASON, validationId },
     })
     if (!recorded) {
-      return
+      return undefined
     }
-    await notifyCurationSlack(
-      `AI review of collection ${describeCollection(
-        collection
-      )} got no verdict after ${MAX_SWEEP_RESENDS} re-sends (validation ${validationId}). It needs a curator or a creator retry.`
-    )
+    return `AI review of collection ${describeCollection(
+      collection
+    )} got no verdict after ${MAX_SWEEP_RESENDS} re-sends (validation ${validationId}). It needs a curator or a creator retry.`
   }
 
   /**
@@ -1015,12 +1036,12 @@ export class AutoCurationService {
     )
   }
 
-  /** Each item's hash as its most recent run saw it: a run only carries the items it sent. */
+  /** Each item's hash as the most recent run that judged it saw it: a run only carries the items it sent. */
   private async findJudgedHashes(
     collectionId: string
   ): Promise<Record<string, string>> {
     const judged: Record<string, string> = {}
-    for (const start of await CollectionEvent.findStartsByCollectionId(
+    for (const start of await CollectionEvent.findJudgedStartsByCollectionId(
       collectionId
     )) {
       const hashes = (start.payload.contentHashes ?? {}) as Record<
@@ -1132,13 +1153,10 @@ export class AutoCurationService {
   }
 }
 
-/** Linear, unlike a whitespace regex around the newline: the text is user input. */
-function toOneLine(text: string): string {
-  return text
-    .split('\n')
-    .map((line) => line.trim())
-    .filter(Boolean)
-    .join(' ')
+async function sendNotices(notices: string[]): Promise<void> {
+  for (const notice of notices) {
+    await notifyCurationSlack(notice)
+  }
 }
 
 function describeCollection(

@@ -9,7 +9,7 @@ import {
   getStandardItemEditorUrl,
   shortenAddress,
 } from '../Forum/utils'
-import { escapeSlackText, sendSlackMessage } from '../Slack'
+import { escapeSlackText, sendSlackMessage, toOneLine } from '../Slack'
 import { isTPCollection } from '../utils/urn'
 import { CurationStatus } from './Curation.types'
 
@@ -150,7 +150,7 @@ function link(collection: CollectionAttributes): string {
   const url = isTPCollection(collection)
     ? getLegacyItemEditorUrl({ collectionId: collection.id })
     : getStandardItemEditorUrl({ collectionId: collection.id })
-  return `<${url}|${escapeSlackText(collection.name)}>`
+  return `<${url}|${escapeSlackText(toOneLine(collection.name))}>`
 }
 
 /** The person as a link: creators to their shop page, curators to their profile. */

@@ -760,10 +760,22 @@ describe('when handling a request', () => {
               jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
                 id: 'curationId',
                 status: CurationStatus.REJECTED,
+                created_at: new Date('2026-11-10T10:00:00.000Z'),
               } as any)
               jest
                 .spyOn(service, 'updateById')
                 .mockResolvedValueOnce(expectedCuration)
+              ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockImplementation(
+                (_: string, type: CollectionEventType) =>
+                  Promise.resolve(
+                    type === CollectionEventType.REVIEW_REJECTED
+                      ? {
+                          type,
+                          created_at: new Date('2026-11-10T11:00:00.000Z'),
+                        }
+                      : undefined
+                  )
+              )
             })
 
             it('should not notify the curators again', async () => {
@@ -2033,6 +2045,60 @@ describe('when handling a request', () => {
 
           expect(mockRecordEvent).not.toHaveBeenCalled()
         })
+      })
+    })
+
+    describe('and the curator reverses a decision on the same request', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.APPROVED,
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockImplementation(
+          (_: string, type: CollectionEventType) =>
+            Promise.resolve(
+              type === CollectionEventType.REVIEW_REJECTED
+                ? {
+                    type,
+                    actor_address: 'ethaddress',
+                    created_at: new Date('2026-11-10T11:00:00.000Z'),
+                  }
+                : {
+                    type,
+                    actor_address: 'ethaddress',
+                    created_at: new Date('2026-11-10T12:00:00.000Z'),
+                  }
+            )
+        )
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['other'],
+              rejectionMessage: 'After all, no',
+            },
+          },
+        } as any
+      })
+
+      it('should record the new rejection after the approval it reverses', async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_REJECTED,
+            payload: {
+              rejectionReasons: ['other'],
+              rejectionMessage: 'After all, no',
+            },
+          })
+        )
       })
     })
 

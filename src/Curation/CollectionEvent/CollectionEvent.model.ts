@@ -29,6 +29,11 @@ const FINAL_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
+const JUDGED_VERDICT_EVENT_TYPES = [
+  CollectionEventType.REVIEW_AI_PASSED,
+  CollectionEventType.REVIEW_AI_REJECTED,
+]
+
 let lastTimestamp = 0
 
 // Events written back to back must keep their insertion order when sorted by created_at.
@@ -125,15 +130,25 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         OFFSET ${offset}`)
   }
 
-  static findStartsByCollectionId(
-    collectionId: string
+  /** The latest starts the validator gave a verdict on: runs that failed never judged their items. */
+  static findJudgedStartsByCollectionId(
+    collectionId: string,
+    limit = 50
   ): Promise<CollectionEventAttributes[]> {
     return this.query<CollectionEventAttributes>(SQL`
-      SELECT *
-        FROM ${raw(this.tableName)}
-        WHERE collection_id = ${collectionId}
-          AND type = ${CollectionEventType.REVIEW_AI_STARTED}
-        ORDER BY created_at DESC`)
+      SELECT started.*
+        FROM ${raw(this.tableName)} started
+        WHERE started.collection_id = ${collectionId}
+          AND started.type = ${CollectionEventType.REVIEW_AI_STARTED}
+          AND EXISTS (
+            SELECT 1
+              FROM ${raw(this.tableName)} verdict
+              WHERE verdict.collection_id = started.collection_id
+                AND verdict.type = ANY(${JUDGED_VERDICT_EVENT_TYPES})
+                AND verdict.payload->>'validationId' = started.payload->>'validationId'
+          )
+        ORDER BY started.created_at DESC
+        LIMIT ${limit}`)
   }
 
   /** Counts sweep re-sends since the last validation started by a publish, retry or change. */

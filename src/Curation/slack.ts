@@ -1,7 +1,7 @@
 import { env } from 'decentraland-commons'
-import { escapeSlackText, sendSlackMessage } from '../Slack'
+import { escapeSlackText, sendSlackMessage, toOneLine } from '../Slack'
 
-export { escapeSlackText }
+export { escapeSlackText, toOneLine }
 
 /** Posts a line to the curators' channel through the shared bot. Best effort: an unset channel or token skips it. */
 export async function notifyCurationSlack(text: string): Promise<void> {

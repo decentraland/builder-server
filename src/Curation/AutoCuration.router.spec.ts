@@ -664,7 +664,7 @@ describe('AutoCuration router', () => {
 
     describe('and nothing changed since the latest verdict', () => {
       beforeEach(() => {
-        ;(CollectionEvent.findStartsByCollectionId as jest.Mock).mockImplementation(
+        ;(CollectionEvent.findJudgedStartsByCollectionId as jest.Mock).mockImplementation(
           async (collectionId: string) => [
             await mockFindLatestEventByType(
               collectionId,

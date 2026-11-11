@@ -36,9 +36,10 @@ import {
   CollectionEvent,
   CollectionEventActor,
   CollectionEventType,
+  HUMAN_DECISION_EVENT_TYPES,
 } from './CollectionEvent'
 import { curationNotifications, CurationVerdict } from './notifications'
-import { AutoCurationService, VALIDATOR_REVIEWER } from './AutoCuration.service'
+import { AutoCurationService } from './AutoCuration.service'
 import { toAutoCurationHTTPError } from './AutoCuration.errors'
 import { isTPCollection } from '../utils/urn'
 
@@ -223,7 +224,7 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
-    const { updated, previous } = await this.updateCuration(
+    const { updated, previous, decisionRecorded } = await this.updateCuration(
       collectionId,
       ethAddress,
       curationJSON,
@@ -244,12 +245,8 @@ export class CurationRouter extends Router {
         ethAddress
       )
     }
-    if (
-      (curationJSON.status === CurationStatus.APPROVED ||
-        curationJSON.status === CurationStatus.REJECTED) &&
-      (curationJSON.status !== previous.status ||
-        previous.reviewed_by === VALIDATOR_REVIEWER)
-    ) {
+    // Follows the timeline: a retried PATCH whose event was missing still announces the decision once.
+    if (decisionRecorded) {
       void curationNotifications.verdictGiven(
         collectionId,
         curationJSON.status as CurationVerdict,
@@ -512,16 +509,16 @@ export class CurationRouter extends Router {
       fieldsToUpdate
     )
 
-    if (type === CurationType.COLLECTION) {
-      await this.recordCollectionReviewEvents(
+    const decisionRecorded =
+      type === CurationType.COLLECTION &&
+      (await this.recordCollectionReviewEvents(
         id,
         ethAddress,
         curationJSON,
         curation
-      )
-    }
+      ))
 
-    return { updated, previous: curation }
+    return { updated, previous: curation, decisionRecorded }
   }
 
   /** Rejections may carry the curator's reasons and message; the legacy Builder sends neither. */
@@ -555,13 +552,16 @@ export class CurationRouter extends Router {
     }
   }
 
-  /** Only real decisions become events: a repeated PATCH must not reset the creator's attempts nor end a run. */
+  /**
+   * Only real decisions become events: a repeated PATCH must not reset the creator's attempts nor end a run.
+   * Returns whether a decision was recorded.
+   */
   private recordCollectionReviewEvents = async (
     collectionId: string,
     ethAddress: string,
     curationJSON: any,
     previous: CollectionCurationAttributes
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const base = {
       collection_id: collectionId,
       actor: CollectionEventActor.CURATOR,
@@ -582,28 +582,34 @@ export class CurationRouter extends Router {
       })
     }
 
-    // Keyed on the request, not on the row's status: a curator confirming the validator's rejection is a new
-    // decision, and a PATCH retried after the update still records it, while a repeated one does not.
+    // Keyed on the request, not on the row's status: a curator confirming the validator's rejection or reversing
+    // a decision is recorded, a PATCH retried after the update still is, and a repeated decision is not.
     if (
       curationJSON.status !== CurationStatus.APPROVED &&
       curationJSON.status !== CurationStatus.REJECTED
     ) {
-      return
+      return false
     }
     const decisionType =
       curationJSON.status === CurationStatus.APPROVED
         ? CollectionEventType.REVIEW_APPROVED
         : CollectionEventType.REVIEW_REJECTED
-    const recorded = await CollectionEvent.findLatestByCollectionIdAndType(
-      collectionId,
-      decisionType
+    const decisions = await Promise.all(
+      HUMAN_DECISION_EVENT_TYPES.map((type) =>
+        CollectionEvent.findLatestByCollectionIdAndType(collectionId, type)
+      )
     )
+    const latestDecision = decisions
+      .filter(Boolean)
+      .sort(
+        (a, b) =>
+          new Date(b!.created_at).getTime() - new Date(a!.created_at).getTime()
+      )[0]
     if (
-      recorded &&
-      recorded.actor_address === base.actor_address &&
-      new Date(recorded.created_at) >= new Date(previous.created_at)
+      latestDecision?.type === decisionType &&
+      new Date(latestDecision.created_at) >= new Date(previous.created_at)
     ) {
-      return
+      return false
     }
     if (curationJSON.status === CurationStatus.APPROVED) {
       await CollectionEvent.record({
@@ -621,6 +627,7 @@ export class CurationRouter extends Router {
         },
       })
     }
+    return true
   }
 
   private insertCuration = async (

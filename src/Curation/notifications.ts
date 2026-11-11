@@ -159,7 +159,9 @@ async function describeAddress(
   role: 'creator' | 'curator'
 ): Promise<string> {
   const name = await peerAPI.getProfileName(address)
-  const label = name ? escapeSlackText(name) : shortenAddress(address)
+  const label = name
+    ? escapeSlackText(toOneLine(name))
+    : shortenAddress(address)
   const origin = getSiteOrigin()
   if (!origin) {
     return label

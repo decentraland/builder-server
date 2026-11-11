@@ -21,7 +21,6 @@ export type SlackMessage = {
   blocks?: SlackBlock[]
 }
 
-/** Escapes the characters Slack parses as markup so user text cannot ping channels or disguise links. */
 /** Linear, unlike a whitespace regex around line breaks: the text is user input. */
 export function toOneLine(text: string): string {
   return text
@@ -31,6 +30,7 @@ export function toOneLine(text: string): string {
     .join(' ')
 }
 
+/** Escapes the characters Slack parses as markup so user text cannot ping channels or disguise links. */
 export function escapeSlackText(text: string): string {
   return text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
 }

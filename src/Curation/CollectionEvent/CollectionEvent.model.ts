@@ -29,9 +29,11 @@ const FINAL_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
+// Outcomes a re-send would repeat: a verdict, a hand-off of unsupported items, or a request too large to send.
 const JUDGED_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_AI_PASSED,
   CollectionEventType.REVIEW_AI_REJECTED,
+  CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
 let lastTimestamp = 0
@@ -90,6 +92,20 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
     return events[0]
   }
 
+  static async findLatestByCollectionIdAndTypes(
+    collectionId: string,
+    types: CollectionEventType[]
+  ): Promise<CollectionEventAttributes | undefined> {
+    const events = await this.query<CollectionEventAttributes>(SQL`
+      SELECT *
+        FROM ${raw(this.tableName)}
+        WHERE collection_id = ${collectionId}
+          AND type = ANY(${types})
+        ORDER BY created_at DESC
+        LIMIT 1`)
+    return events[0]
+  }
+
   static async findLatestByCollectionIdAndType(
     collectionId: string,
     type: CollectionEventType
@@ -130,7 +146,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         OFFSET ${offset}`)
   }
 
-  /** The latest starts the validator gave a verdict on: runs that failed never judged their items. */
+  /** The latest starts whose outcome a re-send would repeat: runs that failed never judged their items. */
   static findJudgedStartsByCollectionId(
     collectionId: string,
     limit = 50
@@ -144,8 +160,14 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
             SELECT 1
               FROM ${raw(this.tableName)} verdict
               WHERE verdict.collection_id = started.collection_id
-                AND verdict.type = ANY(${JUDGED_VERDICT_EVENT_TYPES})
                 AND verdict.payload->>'validationId' = started.payload->>'validationId'
+                AND (
+                  verdict.type = ANY(${JUDGED_VERDICT_EVENT_TYPES})
+                  OR (
+                    verdict.type = ${CollectionEventType.REVIEW_AI_ERROR}
+                    AND verdict.payload->>'reason' = ${TOO_LARGE_REASON}
+                  )
+                )
           )
         ORDER BY started.created_at DESC
         LIMIT ${limit}`)

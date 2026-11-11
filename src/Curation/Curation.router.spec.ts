@@ -45,6 +45,9 @@ jest.mock('../utils/features')
 jest.mock('./CollectionEvent/CollectionEvent.model')
 jest.mock('./notifications')
 jest.mock('./AutoCuration.service')
+jest.mock('./collectionLock', () => ({
+  withCollectionLock: (_: string, task: () => Promise<unknown>) => task(),
+}))
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockCreateAssigneeEventPost = createAssigneeEventPost as jest.Mock
@@ -765,16 +768,11 @@ describe('when handling a request', () => {
               jest
                 .spyOn(service, 'updateById')
                 .mockResolvedValueOnce(expectedCuration)
-              ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockImplementation(
-                (_: string, type: CollectionEventType) =>
-                  Promise.resolve(
-                    type === CollectionEventType.REVIEW_REJECTED
-                      ? {
-                          type,
-                          created_at: new Date('2026-11-10T11:00:00.000Z'),
-                        }
-                      : undefined
-                  )
+              ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+                {
+                  type: CollectionEventType.REVIEW_REJECTED,
+                  created_at: new Date('2026-11-10T11:00:00.000Z'),
+                }
               )
             })
 
@@ -2021,7 +2019,7 @@ describe('when handling a request', () => {
         })
       })
 
-      describe('and the same curator already recorded that decision for this request', () => {
+      describe('and that decision was already recorded for this request', () => {
         beforeEach(() => {
           jest
             .spyOn(service, 'getLatestById')
@@ -2031,7 +2029,7 @@ describe('when handling a request', () => {
               status: CurationStatus.APPROVED,
               created_at: new Date('2026-11-10T10:00:00.000Z'),
             } as any)
-          ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockResolvedValueOnce(
+          ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
             {
               type: CollectionEventType.REVIEW_APPROVED,
               actor_address: 'ethaddress',
@@ -2058,21 +2056,12 @@ describe('when handling a request', () => {
             status: CurationStatus.APPROVED,
             created_at: new Date('2026-11-10T10:00:00.000Z'),
           } as any)
-        ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockImplementation(
-          (_: string, type: CollectionEventType) =>
-            Promise.resolve(
-              type === CollectionEventType.REVIEW_REJECTED
-                ? {
-                    type,
-                    actor_address: 'ethaddress',
-                    created_at: new Date('2026-11-10T11:00:00.000Z'),
-                  }
-                : {
-                    type,
-                    actor_address: 'ethaddress',
-                    created_at: new Date('2026-11-10T12:00:00.000Z'),
-                  }
-            )
+        ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+          {
+            type: CollectionEventType.REVIEW_APPROVED,
+            actor_address: 'ethaddress',
+            created_at: new Date('2026-11-10T12:00:00.000Z'),
+          }
         )
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -2099,6 +2088,49 @@ describe('when handling a request', () => {
             },
           })
         )
+      })
+    })
+
+    describe('and another curator repeats the rejection already recorded for this request', () => {
+      beforeEach(() => {
+        mockIsCommitteeMember.mockReset().mockResolvedValue(true)
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.REJECTED,
+            reviewed_by: '0xfirstcurator',
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+          {
+            type: CollectionEventType.REVIEW_REJECTED,
+            actor_address: '0xfirstcurator',
+            created_at: new Date('2026-11-10T11:00:00.000Z'),
+          }
+        )
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['other'],
+              rejectionMessage: 'Me too',
+            },
+          },
+        } as any
+      })
+
+      it('should keep the first decision on the request and in the timeline', async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(updateSpy).toHaveBeenCalledWith('curationId', {
+          status: CurationStatus.REJECTED,
+          updated_at: expect.any(Date),
+        })
+        expect(mockRecordEvent).not.toHaveBeenCalled()
       })
     })
 

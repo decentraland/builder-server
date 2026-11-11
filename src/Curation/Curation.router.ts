@@ -41,6 +41,7 @@ import {
 import { curationNotifications, CurationVerdict } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
 import { toAutoCurationHTTPError } from './AutoCuration.errors'
+import { withCollectionLock } from './collectionLock'
 import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
@@ -224,12 +225,22 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
-    const { updated, previous, decisionRecorded } = await this.updateCuration(
-      collectionId,
-      ethAddress,
-      curationJSON,
-      CurationType.COLLECTION
-    )
+    // Under the collection lock: a validator verdict reopening its own rejection must not interleave with a
+    // curator's decision, nor two curators' identical decisions with each other.
+    let result: Awaited<ReturnType<CurationRouter['updateCuration']>>
+    try {
+      result = await withCollectionLock(collectionId, () =>
+        this.updateCuration(
+          collectionId,
+          ethAddress,
+          curationJSON,
+          CurationType.COLLECTION
+        )
+      )
+    } catch (error) {
+      throw toAutoCurationHTTPError(error, collectionId)
+    }
+    const { updated, previous, decisionRecorded } = result
 
     // Only real changes are announced, so repeating a PATCH cannot flood the channel.
     const assignee =
@@ -485,7 +496,11 @@ export class CurationRouter extends Router {
       updated_at: new Date(),
     }
 
-    if (type === CurationType.COLLECTION) {
+    // A repeated decision leaves the reviewer and the reasons as the timeline has them.
+    if (
+      type === CurationType.COLLECTION &&
+      (await this.isNewDecision(id, curationJSON, curation))
+    ) {
       Object.assign(
         fieldsToUpdate,
         this.getCollectionReviewFields(ethAddress, curationJSON)
@@ -553,6 +568,35 @@ export class CurationRouter extends Router {
   }
 
   /**
+   * Keyed on the request, not on the row's status: a curator confirming the validator's rejection or reversing a
+   * decision is new, a PATCH retried after the update still is, and a repeated decision by any curator is not.
+   */
+  private isNewDecision = async (
+    collectionId: string,
+    curationJSON: any,
+    previous: CollectionCurationAttributes
+  ): Promise<boolean> => {
+    if (
+      curationJSON.status !== CurationStatus.APPROVED &&
+      curationJSON.status !== CurationStatus.REJECTED
+    ) {
+      return false
+    }
+    const decisionType =
+      curationJSON.status === CurationStatus.APPROVED
+        ? CollectionEventType.REVIEW_APPROVED
+        : CollectionEventType.REVIEW_REJECTED
+    const latestDecision = await CollectionEvent.findLatestByCollectionIdAndTypes(
+      collectionId,
+      HUMAN_DECISION_EVENT_TYPES
+    )
+    return !(
+      latestDecision?.type === decisionType &&
+      new Date(latestDecision.created_at) >= new Date(previous.created_at)
+    )
+  }
+
+  /**
    * Only real decisions become events: a repeated PATCH must not reset the creator's attempts nor end a run.
    * Returns whether a decision was recorded.
    */
@@ -582,33 +626,7 @@ export class CurationRouter extends Router {
       })
     }
 
-    // Keyed on the request, not on the row's status: a curator confirming the validator's rejection or reversing
-    // a decision is recorded, a PATCH retried after the update still is, and a repeated decision is not.
-    if (
-      curationJSON.status !== CurationStatus.APPROVED &&
-      curationJSON.status !== CurationStatus.REJECTED
-    ) {
-      return false
-    }
-    const decisionType =
-      curationJSON.status === CurationStatus.APPROVED
-        ? CollectionEventType.REVIEW_APPROVED
-        : CollectionEventType.REVIEW_REJECTED
-    const decisions = await Promise.all(
-      HUMAN_DECISION_EVENT_TYPES.map((type) =>
-        CollectionEvent.findLatestByCollectionIdAndType(collectionId, type)
-      )
-    )
-    const latestDecision = decisions
-      .filter(Boolean)
-      .sort(
-        (a, b) =>
-          new Date(b!.created_at).getTime() - new Date(a!.created_at).getTime()
-      )[0]
-    if (
-      latestDecision?.type === decisionType &&
-      new Date(latestDecision.created_at) >= new Date(previous.created_at)
-    ) {
+    if (!(await this.isNewDecision(collectionId, curationJSON, previous))) {
       return false
     }
     if (curationJSON.status === CurationStatus.APPROVED) {

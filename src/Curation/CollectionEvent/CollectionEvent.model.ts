@@ -10,6 +10,7 @@ import {
 
 export const SWEEP_EXHAUSTED_REASON = 'sweep_exhausted'
 export const TOO_LARGE_REASON = 'too_large'
+export const UNSUPPORTED_ITEMS_REASON = 'unsupported_items'
 // The request never reached the topic; the sweep re-sends it.
 export const PUBLISH_FAILED_REASON = 'publish_failed'
 // Error reasons the sweep must not re-send: re-sending cannot change their outcome.
@@ -29,11 +30,10 @@ const FINAL_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
-// Outcomes a re-send would repeat: a verdict, a hand-off of unsupported items, or a request too large to send.
+// Runs whose items the validator checked: a verdict, or a hand-off of the items it cannot judge (it judged the rest).
 const JUDGED_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_AI_PASSED,
   CollectionEventType.REVIEW_AI_REJECTED,
-  CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
 let lastTimestamp = 0
@@ -101,7 +101,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         FROM ${raw(this.tableName)}
         WHERE collection_id = ${collectionId}
           AND type = ANY(${types})
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC, id DESC
         LIMIT 1`)
     return events[0]
   }
@@ -146,7 +146,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         OFFSET ${offset}`)
   }
 
-  /** The latest starts whose outcome a re-send would repeat: runs that failed never judged their items. */
+  /** The latest starts whose items the validator checked: a run too large to send or that failed checked none. */
   static findJudgedStartsByCollectionId(
     collectionId: string,
     limit = 50
@@ -164,8 +164,8 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
                 AND (
                   verdict.type = ANY(${JUDGED_VERDICT_EVENT_TYPES})
                   OR (
-                    verdict.type = ${CollectionEventType.REVIEW_AI_ERROR}
-                    AND verdict.payload->>'reason' = ${TOO_LARGE_REASON}
+                    verdict.type = ${CollectionEventType.REVIEW_HUMAN_REQUIRED}
+                    AND verdict.payload->>'reason' = ${UNSUPPORTED_ITEMS_REASON}
                   )
                 )
           )

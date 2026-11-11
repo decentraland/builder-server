@@ -25,6 +25,7 @@ import {
   PUBLISH_FAILED_REASON,
   SWEEP_EXHAUSTED_REASON,
   TOO_LARGE_REASON,
+  UNSUPPORTED_ITEMS_REASON,
 } from './CollectionEvent'
 import { CurationStatus } from './Curation.types'
 import { curationNotifications } from './notifications'
@@ -673,7 +674,7 @@ export class AutoCurationService {
             actor: CollectionEventActor.SYSTEM,
             actor_address: null,
             payload: {
-              reason: 'unsupported_items',
+              reason: UNSUPPORTED_ITEMS_REASON,
               validationId: result.validationId,
               rulesVersion: result.rulesVersion,
               items: unsupportedItems,
@@ -984,6 +985,13 @@ export class AutoCurationService {
     )
     if (isRetryableVerdict(verdict)) {
       return previousItems
+    }
+    // Too large is about the collection's size, which an edit does not change: it is for a curator now.
+    if (
+      verdict?.type === CollectionEventType.REVIEW_AI_ERROR &&
+      verdict.payload.reason === TOO_LARGE_REASON
+    ) {
+      return null
     }
 
     const previousHashes = await this.findJudgedHashes(collection.id)

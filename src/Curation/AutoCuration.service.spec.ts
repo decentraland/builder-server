@@ -427,6 +427,24 @@ describe('AutoCurationService', () => {
       })
     })
 
+    describe('and the latest run was too large to send', () => {
+      beforeEach(() => {
+        mockFindVerdict.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+            validationId: 'previousValidation',
+            reason: 'too_large',
+          })
+        )
+        previousStart.payload.contentHashes = { [item.id]: 'oldHash' }
+      })
+
+      it('should leave it to a curator even after an edit: an edit does not make it smaller', async () => {
+        await expect(
+          service.requestValidation(dbCollectionMock.id, ethAddress)
+        ).rejects.toThrow(NothingToRevalidateError)
+      })
+    })
+
     describe('and the latest validation ended with an error verdict', () => {
       beforeEach(() => {
         mockFindVerdict.mockResolvedValue(

@@ -490,11 +490,12 @@ export class CurationRouter extends Router {
         updated_at: new Date(),
       }
 
+      const decision =
+        type === CurationType.COLLECTION
+          ? await this.classifyDecision(id, curationJSON, curation)
+          : 'none'
       // A repeated decision leaves the reviewer and the reasons as the timeline has them.
-      if (
-        type === CurationType.COLLECTION &&
-        (await this.isNewDecision(id, curationJSON, curation))
-      ) {
+      if (decision === 'new' || decision === 'edit') {
         Object.assign(
           fieldsToUpdate,
           this.getCollectionReviewFields(ethAddress, curationJSON)
@@ -518,18 +519,28 @@ export class CurationRouter extends Router {
         fieldsToUpdate
       )
 
-      const decisionRecorded =
-        type === CurationType.COLLECTION &&
-        (await this.recordCollectionReviewEvents(
+      if (type === CurationType.COLLECTION) {
+        await this.recordCollectionReviewEvents(
           id,
           ethAddress,
           curationJSON,
-          curation
-        ))
+          curation,
+          decision
+        )
+      }
 
-      return { updated, previous: curation, decisionRecorded }
+      // Only a new decision is announced: a corrected reason is recorded quietly.
+      return {
+        updated,
+        previous: curation,
+        decisionRecorded: decision === 'new',
+      }
     }
-    if (type !== CurationType.COLLECTION) {
+    // Only validator verdicts race curator decisions, and they only act with the auto curation on.
+    if (
+      type !== CurationType.COLLECTION ||
+      !(await this.autoCurationService.isEnabled())
+    ) {
       return apply()
     }
     try {
@@ -572,18 +583,19 @@ export class CurationRouter extends Router {
 
   /**
    * Keyed on the request, not on the row's status: a curator confirming the validator's rejection or reversing a
-   * decision is new, a PATCH retried after the update still is, and a repeated decision by any curator is not.
+   * decision is new, a PATCH retried after the update still is, a rejection resent with other reasons is an edit,
+   * and a repeated decision by any curator is a repeat.
    */
-  private isNewDecision = async (
+  private classifyDecision = async (
     collectionId: string,
     curationJSON: any,
     previous: CollectionCurationAttributes
-  ): Promise<boolean> => {
+  ): Promise<'none' | 'new' | 'edit' | 'repeat'> => {
     if (
       curationJSON.status !== CurationStatus.APPROVED &&
       curationJSON.status !== CurationStatus.REJECTED
     ) {
-      return false
+      return 'none'
     }
     const decisionType =
       curationJSON.status === CurationStatus.APPROVED
@@ -593,22 +605,26 @@ export class CurationRouter extends Router {
       collectionId,
       HUMAN_DECISION_EVENT_TYPES
     )
-    return !(
+    const sameDecision =
       latestDecision?.type === decisionType &&
       new Date(latestDecision.created_at) >= new Date(previous.created_at)
-    )
+    if (!sameDecision) {
+      return 'new'
+    }
+    return decisionType === CollectionEventType.REVIEW_REJECTED &&
+      changesRejectionFeedback(curationJSON, previous)
+      ? 'edit'
+      : 'repeat'
   }
 
-  /**
-   * Only real decisions become events: a repeated PATCH must not reset the creator's attempts nor end a run.
-   * Returns whether a decision was recorded.
-   */
+  /** Only real decisions become events: a repeated PATCH must not reset the creator's attempts nor end a run. */
   private recordCollectionReviewEvents = async (
     collectionId: string,
     ethAddress: string,
     curationJSON: any,
-    previous: CollectionCurationAttributes
-  ): Promise<boolean> => {
+    previous: CollectionCurationAttributes,
+    decision: 'none' | 'new' | 'edit' | 'repeat'
+  ): Promise<void> => {
     const base = {
       collection_id: collectionId,
       actor: CollectionEventActor.CURATOR,
@@ -629,8 +645,8 @@ export class CurationRouter extends Router {
       })
     }
 
-    if (!(await this.isNewDecision(collectionId, curationJSON, previous))) {
-      return false
+    if (decision !== 'new' && decision !== 'edit') {
+      return
     }
     if (curationJSON.status === CurationStatus.APPROVED) {
       await CollectionEvent.record({
@@ -648,7 +664,6 @@ export class CurationRouter extends Router {
         },
       })
     }
-    return true
   }
 
   private insertCuration = async (
@@ -874,4 +889,20 @@ export class CurationRouter extends Router {
       )
     }
   }
+}
+
+/** A rejection resent with other reasons or another message corrects the one on record. */
+function changesRejectionFeedback(
+  curationJSON: any,
+  previous: CollectionCurationAttributes
+): boolean {
+  const reasons: string[] | undefined = curationJSON.rejectionReasons
+  const message: string | undefined = curationJSON.rejectionMessage?.trim()
+  const sameReasons =
+    reasons === undefined ||
+    [...reasons].sort().join(',') ===
+      [...(previous.rejection_reasons ?? [])].sort().join(',')
+  const sameMessage =
+    message === undefined || message === (previous.rejection_message ?? '')
+  return !sameReasons || !sameMessage
 }

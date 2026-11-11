@@ -2234,6 +2234,49 @@ describe('when handling a request', () => {
       })
     })
 
+    describe('and a retried rejection sends only the reasons after the first attempt saved the row', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.REJECTED,
+            reviewed_by: 'ethaddress',
+            rejection_reasons: ['clipping'],
+            rejection_message: 'Clips through the body',
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+          undefined
+        )
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['clipping'],
+            },
+          },
+        } as any
+      })
+
+      it('should record the message the request keeps', async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_REJECTED,
+            payload: {
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'Clips through the body',
+            },
+          })
+        )
+      })
+    })
+
     describe('and another instance holds the collection while the auto curation is on', () => {
       beforeEach(() => {
         ;(AutoCurationService.prototype

@@ -640,6 +640,7 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
+        mockIsCommitteeMember.mockResolvedValue(true)
         req = {
           auth: { ethAddress: 'ethAddress' },
           params: { id: 'some id' },

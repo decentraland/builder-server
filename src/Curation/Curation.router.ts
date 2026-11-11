@@ -225,22 +225,12 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
-    // Under the collection lock: a validator verdict reopening its own rejection must not interleave with a
-    // curator's decision, nor two curators' identical decisions with each other.
-    let result: Awaited<ReturnType<CurationRouter['updateCuration']>>
-    try {
-      result = await withCollectionLock(collectionId, () =>
-        this.updateCuration(
-          collectionId,
-          ethAddress,
-          curationJSON,
-          CurationType.COLLECTION
-        )
-      )
-    } catch (error) {
-      throw toAutoCurationHTTPError(error, collectionId)
-    }
-    const { updated, previous, decisionRecorded } = result
+    const { updated, previous, decisionRecorded } = await this.updateCuration(
+      collectionId,
+      ethAddress,
+      curationJSON,
+      CurationType.COLLECTION
+    )
 
     // Only real changes are announced, so repeating a PATCH cannot flood the channel.
     const assignee =
@@ -425,16 +415,6 @@ export class CurationRouter extends Router {
       )
     }
 
-    const curation = await curationService.getLatestById(id)
-
-    if (!curation) {
-      throw new HTTPError(
-        'Curation does not exist',
-        { id },
-        STATUS_CODES.notFound
-      )
-    }
-
     if (curationJSON.assignee !== undefined) {
       if (!(await isCommitteeMember(ethAddress))) {
         throw new HTTPError(
@@ -471,69 +451,92 @@ export class CurationRouter extends Router {
       )
     }
 
-    if (type === CurationType.ITEM) {
-      const { rowCount } = await CollectionCuration.updateByItemId(id)
-      if (rowCount === 0) {
+    // Every check above runs before the lock, so only callers allowed to change the request can hold it. A
+    // collection's decision runs under it: a validator verdict reopening its own rejection must not interleave
+    // with a curator's decision, nor two curators' identical decisions with each other.
+    const apply = async () => {
+      const curation = await curationService.getLatestById(id)
+
+      if (!curation) {
         throw new HTTPError(
-          'Could not find a valid collection curation for the item',
-          { itemId: id },
+          'Curation does not exist',
+          { id },
           STATUS_CODES.notFound
         )
       }
-    }
 
-    const fieldsToUpdate: Partial<
-      CollectionCurationAttributes & ItemCurationAttributes
-    > = {
-      ...(curationJSON.assignee !== undefined
-        ? {
-            assignee: curationJSON.assignee
-              ? curationJSON.assignee.toLowerCase()
-              : null,
-          }
-        : {}),
-      ...(curationJSON.status ? { status: curationJSON.status } : {}),
-      updated_at: new Date(),
-    }
+      if (type === CurationType.ITEM) {
+        const { rowCount } = await CollectionCuration.updateByItemId(id)
+        if (rowCount === 0) {
+          throw new HTTPError(
+            'Could not find a valid collection curation for the item',
+            { itemId: id },
+            STATUS_CODES.notFound
+          )
+        }
+      }
 
-    // A repeated decision leaves the reviewer and the reasons as the timeline has them.
-    if (
-      type === CurationType.COLLECTION &&
-      (await this.isNewDecision(id, curationJSON, curation))
-    ) {
-      Object.assign(
-        fieldsToUpdate,
-        this.getCollectionReviewFields(ethAddress, curationJSON)
+      const fieldsToUpdate: Partial<
+        CollectionCurationAttributes & ItemCurationAttributes
+      > = {
+        ...(curationJSON.assignee !== undefined
+          ? {
+              assignee: curationJSON.assignee
+                ? curationJSON.assignee.toLowerCase()
+                : null,
+            }
+          : {}),
+        ...(curationJSON.status ? { status: curationJSON.status } : {}),
+        updated_at: new Date(),
+      }
+
+      // A repeated decision leaves the reviewer and the reasons as the timeline has them.
+      if (
+        type === CurationType.COLLECTION &&
+        (await this.isNewDecision(id, curationJSON, curation))
+      ) {
+        Object.assign(
+          fieldsToUpdate,
+          this.getCollectionReviewFields(ethAddress, curationJSON)
+        )
+      }
+
+      if (curationJSON.status === CurationStatus.APPROVED) {
+        await this.updateCollectionItemsContent(id)
+      }
+
+      if (type === CurationType.ITEM) {
+        const itemData = await this.getItemCurationContentHashAndMappingCompletion(
+          id
+        )
+        fieldsToUpdate.content_hash = itemData.content_hash
+        fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
+      }
+
+      const updated = await curationService.updateById(
+        curation.id,
+        fieldsToUpdate
       )
+
+      const decisionRecorded =
+        type === CurationType.COLLECTION &&
+        (await this.recordCollectionReviewEvents(
+          id,
+          ethAddress,
+          curationJSON,
+          curation
+        ))
+
+      return { updated, previous: curation, decisionRecorded }
     }
-
-    if (curationJSON.status === CurationStatus.APPROVED) {
-      await this.updateCollectionItemsContent(id)
+    if (type !== CurationType.COLLECTION) {
+      return apply()
     }
-
-    if (type === CurationType.ITEM) {
-      const itemData = await this.getItemCurationContentHashAndMappingCompletion(
-        id
-      )
-      fieldsToUpdate.content_hash = itemData.content_hash
-      fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
+    try {
+      return await withCollectionLock(id, apply)
+    } catch (error) {
+      throw toAutoCurationHTTPError(error, id)
     }
-
-    const updated = await curationService.updateById(
-      curation.id,
-      fieldsToUpdate
-    )
-
-    const decisionRecorded =
-      type === CurationType.COLLECTION &&
-      (await this.recordCollectionReviewEvents(
-        id,
-        ethAddress,
-        curationJSON,
-        curation
-      ))
-
-    return { updated, previous: curation, decisionRecorded }
   }
 
   /** Rejections may carry the curator's reasons and message; the legacy Builder sends neither. */

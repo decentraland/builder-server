@@ -19,15 +19,24 @@ import { withCors } from '../middleware/cors'
 import { isCommitteeMember } from '../Committee'
 import { OwnableModel } from '../Ownable/Ownable.types'
 import { Collection } from '../Collection/Collection.model'
+import { CollectionAttributes } from '../Collection/Collection.types'
 import { CollectionService } from '../Collection/Collection.service'
+import { isTPCollection } from '../utils/urn'
 import { getPaginationParams } from '../Pagination/utils'
 import { AutoCurationService } from './AutoCuration.service'
+import { ItemCuration } from './ItemCuration'
+import { curationNotifications } from './notifications'
 import {
   appealSchema,
+  commentSchema,
+  MAX_COMMENT_LENGTH,
   ValidationResult,
   validationResultSchema,
 } from './AutoCuration.types'
-import { toAutoCurationHTTPError } from './AutoCuration.errors'
+import {
+  CollectionNotPublishedError,
+  toAutoCurationHTTPError,
+} from './AutoCuration.errors'
 
 const DEFAULT_EVENTS_LIMIT = 50
 const MAX_EVENTS_LIMIT = 200
@@ -140,6 +149,7 @@ export class AutoCurationRouter extends Router {
     this.router.options('/collections/:id/validations', withCors)
     this.router.options('/collections/:id/curation/appeal', withCors)
     this.router.options('/collections/:id/events', withCors)
+    this.router.options('/collections/:id/comments', withCors)
 
     this.router.post(
       '/collections/:id/validations',
@@ -172,6 +182,17 @@ export class AutoCurationRouter extends Router {
       withAutoCurationEnabled,
       withCollectionExists,
       server.handleRequest(this.getEvents)
+    )
+
+    this.router.post(
+      '/collections/:id/comments',
+      withCors,
+      withAuthentication,
+      withWriteRateLimit,
+      withAutoCurationEnabled,
+      withCollectionExists,
+      withSchemaValidation(commentSchema),
+      server.handleRequest(this.comment)
     )
 
     // Not gated by the feature flag nor by the collection's existence: a result for a job that was in flight
@@ -234,6 +255,52 @@ export class AutoCurationRouter extends Router {
     )
   }
 
+  comment = async (req: AuthRequest) => {
+    const id = server.extractFromReq(req, 'id')
+    const ethAddress = req.auth.ethAddress
+
+    const isCommittee = await isCommitteeMember(ethAddress)
+    if (
+      !isCommittee &&
+      !(await this.collectionService.isOwnedOrManagedBy(id, ethAddress))
+    ) {
+      throw new HTTPError(
+        'Unauthorized',
+        { id, ethAddress },
+        STATUS_CODES.unauthorized
+      )
+    }
+
+    const message = (req.body.message as string).trim()
+    if (message.length === 0 || message.length > MAX_COMMENT_LENGTH) {
+      throw new HTTPError(
+        `The message must have between 1 and ${MAX_COMMENT_LENGTH} characters`,
+        { id },
+        STATUS_CODES.badRequest
+      )
+    }
+
+    try {
+      if (!(await this.isPublished(id))) {
+        throw new CollectionNotPublishedError(id)
+      }
+      const event = await this.service.comment(
+        id,
+        ethAddress,
+        isCommittee,
+        message,
+        req.body.itemId
+      )
+      // Curators read the channel: only a creator's message is news there.
+      if (!isCommittee) {
+        void curationNotifications.commentPosted(id, ethAddress, message)
+      }
+      return event
+    } catch (error) {
+      throw toAutoCurationHTTPError(error, id)
+    }
+  }
+
   receiveValidationResult = async (req: Request, res: Response) => {
     const id = server.extractFromReq(req, 'id')
     const result = req.body as ValidationResult
@@ -250,5 +317,20 @@ export class AutoCurationRouter extends Router {
       throw toAutoCurationHTTPError(error, id)
     }
     res.status(204).end()
+  }
+
+  /** Third Party collections have no contract: their first curated item is their publication. */
+  private isPublished = async (id: string): Promise<boolean> => {
+    const collection = await Collection.findOne<CollectionAttributes>(id)
+    if (!collection) {
+      return false
+    }
+    if (isTPCollection(collection)) {
+      return !!(await ItemCuration.findLastByCollectionId(id))
+    }
+    return (
+      !!collection.contract_address &&
+      this.collectionService.isDCLPublished(collection.contract_address)
+    )
   }
 }

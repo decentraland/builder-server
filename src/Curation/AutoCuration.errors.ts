@@ -66,8 +66,27 @@ export class CollectionBusyError extends Error {
   }
 }
 
+export class CollectionNotPublishedError extends Error {
+  constructor(public id: string) {
+    super('The collection is not published, so it has no review to comment on')
+  }
+}
+
+export class CommentItemNotInCollectionError extends Error {
+  constructor(public id: string, public itemId: string) {
+    super('The item does not belong to the collection')
+  }
+}
+
 /** Maps the service's expected failures to HTTP answers; anything else is rethrown. */
 export function toAutoCurationHTTPError(error: unknown, id: string): unknown {
+  if (error instanceof CommentItemNotInCollectionError) {
+    return new HTTPError(
+      error.message,
+      { id, itemId: error.itemId },
+      STATUS_CODES.badRequest
+    )
+  }
   if (error instanceof ValidationInProgressError) {
     return new HTTPError(error.message, { id }, STATUS_CODES.conflict)
   }
@@ -80,6 +99,7 @@ export function toAutoCurationHTTPError(error: unknown, id: string): unknown {
   }
   if (
     error instanceof AppealAlreadyOpenError ||
+    error instanceof CollectionNotPublishedError ||
     error instanceof CurationNotRejectedError ||
     error instanceof CurationRejectedByCuratorError ||
     error instanceof NotStandardCollectionError ||

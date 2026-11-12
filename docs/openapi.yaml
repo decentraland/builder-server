@@ -1014,6 +1014,10 @@ paths:
                 assignee:
                   type: string
                   description: Committee member to assign. Only committee members may send it.
+                note:
+                  type: string
+                  maxLength: 2000
+                  description: Optional message for the curators, kept on the `changes.submitted` event
       responses:
         '200':
           description: Curation created successfully
@@ -1062,6 +1066,10 @@ paths:
                   minLength: 1
                   maxLength: 3000
                   description: Optional message for the creator with a rejection
+                note:
+                  type: string
+                  maxLength: 2000
+                  description: Optional message for the creator with an approval, kept on the `review.approved` event
       responses:
         '200':
           description: Curation updated successfully
@@ -1219,6 +1227,60 @@ paths:
           $ref: '#/components/responses/NotFound'
         '429':
           description: More than 120 requests per minute from this address
+
+  /collections/{id}/comments:
+    post:
+      operationId: commentOnCollectionReview
+      tags: [Curations]
+      summary: Comment on a collection review
+      description: |
+        Adds a `review.comment` event to the review timeline of a published collection. Its creator, its managers
+        and committee members can call it. At most 30 requests per minute per address.
+      parameters:
+        - $ref: '#/components/parameters/CollectionId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [message]
+              additionalProperties: false
+              properties:
+                message:
+                  type: string
+                  minLength: 1
+                  maxLength: 2000
+                  description: The comment; trimmed before it is measured and stored
+                itemId:
+                  type: string
+                  format: uuid
+                  description: Item of the collection the comment is about
+      responses:
+        '200':
+          description: Comment recorded, returns its event as the timeline lists it
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CollectionEventResponse'
+        '400':
+          description: Invalid body, or the item does not belong to the collection
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          description: The collection is not published
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '429':
+          description: More than 30 requests per minute from this address
 
   /collections/{id}/validation-result:
     post:
@@ -2668,6 +2730,7 @@ components:
         - review.approved
         - review.rejected
         - changes.submitted
+        - review.comment
 
     CollectionEvent:
       type: object
@@ -2694,7 +2757,8 @@ components:
             `review.automated_error` may also be `{ reason: "sweep_exhausted", validationId }`,
             `review.human_required` holds `{ reason: "third_party" }` or `{ reason: "unsupported_items", validationId, items }`,
             `review.appeal_requested` holds `{ note }`, `review.assigned` holds `{ assignee }`,
-            `review.rejected` holds `{ rejectionReasons, rejectionMessage }`, `changes.submitted` holds `{ itemIds }`.
+            `review.approved` holds `{ note? }`, `review.rejected` holds `{ rejectionReasons, rejectionMessage }`,
+            `changes.submitted` holds `{ itemIds, note? }`, `review.comment` holds `{ message, itemId? }`.
         created_at:
           type: string
           format: date-time

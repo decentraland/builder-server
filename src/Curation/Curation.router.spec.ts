@@ -1465,7 +1465,38 @@ describe('when handling a request', () => {
           )
           expect(
             AutoCurationService.prototype.onChangesSubmitted
-          ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
+          ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
+        })
+
+        describe('and the request carries a note', () => {
+          beforeEach(() => {
+            req.body = { curation: { note: '  Fixed the clipping  ' } }
+          })
+
+          it('should hand the trimmed note to the automated review of the changes', async () => {
+            await router.insertCollectionCuration(req)
+
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).toHaveBeenCalledWith(
+              submittedChanges,
+              'ethAddress',
+              'Fixed the clipping'
+            )
+          })
+        })
+
+        describe('and the note is longer than 2000 characters', () => {
+          beforeEach(() => {
+            req.body = { curation: { note: 'a'.repeat(2001) } }
+          })
+
+          it('should refuse the request without opening it', async () => {
+            await expect(
+              router.insertCollectionCuration(req)
+            ).rejects.toMatchObject({ statusCode: 400 })
+            expect(CollectionCuration.create).not.toHaveBeenCalled()
+          })
         })
       })
 
@@ -1552,7 +1583,7 @@ describe('when handling a request', () => {
             )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
           })
         })
 
@@ -1570,7 +1601,7 @@ describe('when handling a request', () => {
             expect(curationNotifications.reviewRequested).toHaveBeenCalled()
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
           })
         })
 
@@ -1618,7 +1649,7 @@ describe('when handling a request', () => {
             )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
           })
         })
       })
@@ -2021,6 +2052,40 @@ describe('when handling a request', () => {
           actor_address: 'ethaddress',
           type: CollectionEventType.REVIEW_APPROVED,
           payload: {},
+        })
+      })
+
+      describe('and the approval carries a note', () => {
+        beforeEach(() => {
+          req.body.curation.note = '  Great work  '
+        })
+
+        it('should keep the trimmed note in the review.approved event', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_APPROVED,
+              payload: { note: 'Great work' },
+            })
+          )
+        })
+      })
+
+      describe('and the approval carries a blank note', () => {
+        beforeEach(() => {
+          req.body.curation.note = '   '
+        })
+
+        it('should record the review.approved event without a note', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_APPROVED,
+              payload: {},
+            })
+          )
         })
       })
 

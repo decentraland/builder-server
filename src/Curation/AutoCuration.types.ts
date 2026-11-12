@@ -143,3 +143,16 @@ export const appealSchema = Object.freeze({
   },
   additionalProperties: false,
 })
+
+export const MAX_COMMENT_LENGTH = 2000
+
+// The length is checked on the trimmed message, which a schema cannot express.
+export const commentSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    message: { type: 'string' },
+    itemId: { type: 'string', format: 'uuid' },
+  },
+  required: ['message'],
+  additionalProperties: false,
+})

@@ -722,6 +722,45 @@ describe('AutoCurationService', () => {
     })
   })
 
+  describe('when commenting on a collection', () => {
+    it('should count neither as an automated review attempt nor as a decision', () => {
+      const comment = buildEvent(CollectionEventType.REVIEW_COMMENT, {
+        message: 'Hello',
+      })
+      const start = buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+        trigger: 'retry',
+        validationId: 'one',
+      })
+
+      expect(countValidationAttempts([comment, start, comment, start])).toBe(2)
+    })
+
+    it('should record the message with the item it is about', async () => {
+      const itemId = uuidv4()
+      ;(Item.findOne as jest.Mock).mockResolvedValue({
+        id: itemId,
+        collection_id: dbCollectionMock.id,
+      })
+
+      const event = await service.comment(
+        dbCollectionMock.id,
+        ethAddress,
+        false,
+        'Hello',
+        itemId
+      )
+
+      expect(event).toEqual(
+        expect.objectContaining({
+          type: CollectionEventType.REVIEW_COMMENT,
+          actor: CollectionEventActor.CREATOR,
+          actor_address: ethAddress.toLowerCase(),
+          payload: { message: 'Hello', itemId },
+        })
+      )
+    })
+  })
+
   describe('when appealing a rejection', () => {
     beforeEach(() => {
       mockFindCollection.mockResolvedValue(dbCollectionMock)
@@ -1483,6 +1522,24 @@ describe('AutoCurationService', () => {
             })
           )
         })
+      })
+    })
+
+    describe('and the creator wrote a note', () => {
+      it('should keep the note in the changes.submitted event', async () => {
+        const changes = (await service.prepareChanges(
+          dbCollectionMock.id,
+          CurationStatus.APPROVED
+        )) as SubmittedChanges
+
+        await service.onChangesSubmitted(changes, ethAddress, 'Fixed the hat')
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.CHANGES_SUBMITTED,
+            payload: { itemIds: [changedItem.id], note: 'Fixed the hat' },
+          })
+        )
       })
     })
 

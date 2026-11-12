@@ -25,6 +25,7 @@ import {
   CurationStatus,
   CurationType,
   patchCurationSchema,
+  postCurationSchema,
 } from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
@@ -275,7 +276,9 @@ export class CurationRouter extends Router {
   insertCollectionCuration = async (req: AuthRequest) => {
     try {
       const collectionId = server.extractFromReq(req, 'id')
-      let curationJSON: Partial<CollectionCurationAttributes> | undefined
+      let curationJSON:
+        | (Partial<CollectionCurationAttributes> & { note?: string })
+        | undefined
       try {
         curationJSON = server.extractFromReq(req, 'curation')
       } catch (error) {}
@@ -648,11 +651,12 @@ export class CurationRouter extends Router {
     if (decision !== 'new' && decision !== 'edit') {
       return
     }
+    const note: string = curationJSON.note?.trim() ?? ''
     if (curationJSON.status === CurationStatus.APPROVED) {
       await CollectionEvent.record({
         ...base,
         type: CollectionEventType.REVIEW_APPROVED,
-        payload: {},
+        payload: note ? { note } : {},
       })
     } else if (curationJSON.status === CurationStatus.REJECTED) {
       await CollectionEvent.record({
@@ -675,10 +679,22 @@ export class CurationRouter extends Router {
     id: string,
     ethAddress: string,
     type: CurationType,
-    curationJSON?: Partial<CollectionCurationAttributes>
+    curationJSON?: Partial<CollectionCurationAttributes> & { note?: string }
   ) => {
     const curationService = CurationService.byType(type)
     await this.validateAccessToCuration(curationService, ethAddress, id)
+
+    if (curationJSON !== undefined) {
+      const validate = validator.compile(postCurationSchema)
+      validate(curationJSON)
+      if (validate.errors) {
+        throw new HTTPError(
+          'Invalid schema',
+          validate.errors,
+          STATUS_CODES.badRequest
+        )
+      }
+    }
     const curation = await curationService.getLatestById(id)
 
     if (!curation && type === CurationType.ITEM) {
@@ -768,7 +784,8 @@ export class CurationRouter extends Router {
         if (submittedChanges) {
           await this.autoCurationService.onChangesSubmitted(
             submittedChanges,
-            ethAddress
+            ethAddress,
+            curationJSON?.note?.trim() ?? ''
           )
         }
       }

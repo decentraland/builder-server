@@ -14,6 +14,7 @@ import { isTPCollection } from '../utils/urn'
 import { CurationStatus } from './Curation.types'
 
 const CHANNEL_KEY = 'SLACK_CURATION_CHANNEL'
+const MAX_QUOTED_COMMENT_LENGTH = 300
 const logger = createConsoleLogComponent().getLogger('CurationNotifications')
 
 export type CurationVerdict = CurationStatus.APPROVED | CurationStatus.REJECTED
@@ -99,6 +100,26 @@ export const curationNotifications = {
       const curator = await describeAddress(curatorAddress, 'curator')
       const emoji = verdict === CurationStatus.APPROVED ? '✅' : '❌'
       return `${emoji} ${link(collection)} was ${verdict} by ${curator}.`
+    })
+  },
+
+  /** A creator wrote on the review timeline. The message is quoted on one line so it cannot forge channel lines. */
+  async commentPosted(
+    collectionId: string,
+    authorAddress: string,
+    message: string
+  ): Promise<void> {
+    await notify(collectionId, async (collection) => {
+      const author = await describeAddress(authorAddress, 'creator')
+      const line = toOneLine(message)
+      // Cut before escaping so an entity is never split.
+      const quote =
+        line.length > MAX_QUOTED_COMMENT_LENGTH
+          ? `${line.slice(0, MAX_QUOTED_COMMENT_LENGTH)}…`
+          : line
+      return `💬 New comment on ${link(
+        collection
+      )} by ${author}: ${escapeSlackText(quote)}`
     })
   },
 

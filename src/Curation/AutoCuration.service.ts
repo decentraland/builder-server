@@ -46,6 +46,7 @@ import {
 } from './AutoCuration.types'
 import {
   AppealAlreadyOpenError,
+  CommentItemNotInCollectionError,
   CurationNotRejectedError,
   CurationRejectedByCuratorError,
   NothingToRevalidateError,
@@ -270,7 +271,8 @@ export class AutoCurationService {
    */
   async onChangesSubmitted(
     changes: SubmittedChanges,
-    ethAddress: string
+    ethAddress: string,
+    note = ''
   ): Promise<void> {
     const { collection, items, previousStatus } = changes
     try {
@@ -281,7 +283,7 @@ export class AutoCurationService {
             type: CollectionEventType.REVIEW_APPEAL_REQUESTED,
             actor: CollectionEventActor.CREATOR,
             actor_address: ethAddress.toLowerCase(),
-            payload: { note: '' },
+            payload: { note },
           })
         }
         return
@@ -299,7 +301,10 @@ export class AutoCurationService {
           type: CollectionEventType.CHANGES_SUBMITTED,
           actor: CollectionEventActor.CREATOR,
           actor_address: ethAddress.toLowerCase(),
-          payload: { itemIds: items.map((item) => item.id) },
+          payload: {
+            itemIds: items.map((item) => item.id),
+            ...(note ? { note } : {}),
+          },
         })
         return this.recordStart(collection, items, 'changes')
       })
@@ -335,6 +340,32 @@ export class AutoCurationService {
     )
     await sendNotices(notices)
     return curation
+  }
+
+  /** Adds a message to the timeline. It takes no lock: a comment is not part of any review decision. */
+  async comment(
+    collectionId: string,
+    ethAddress: string,
+    isCurator: boolean,
+    message: string,
+    itemId?: string
+  ): Promise<CollectionEventAttributes> {
+    if (itemId) {
+      const item = await Item.findOne<ItemAttributes>(itemId)
+      if (item?.collection_id !== collectionId) {
+        throw new CommentItemNotInCollectionError(collectionId, itemId)
+      }
+    }
+    const event = await CollectionEvent.record({
+      collection_id: collectionId,
+      type: CollectionEventType.REVIEW_COMMENT,
+      actor: isCurator
+        ? CollectionEventActor.CURATOR
+        : CollectionEventActor.CREATOR,
+      actor_address: ethAddress.toLowerCase(),
+      payload: { message, ...(itemId ? { itemId } : {}) },
+    })
+    return isCurator ? event : redactCollectionEvent(event)
   }
 
   async handleValidationResult(

@@ -6,12 +6,17 @@ import {
   mockExistsMiddleware,
 } from '../../spec/utils'
 import { wallet } from '../../spec/mocks/wallet'
-import { dbCollectionMock } from '../../spec/mocks/collections'
+import {
+  dbCollectionMock,
+  dbTPCollectionMock,
+} from '../../spec/mocks/collections'
 import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
 import { isCommitteeMember } from '../Committee'
 import { isFeatureFlagEnabled } from '../utils/features'
 import { CollectionCuration } from './CollectionCuration'
+import { ItemCuration } from './ItemCuration'
+import { curationNotifications } from './notifications'
 import {
   CollectionEvent,
   CollectionEventActor,
@@ -152,6 +157,15 @@ describe('AutoCuration router', () => {
         .send({ note: 'Please' })
         .expect(404)
         .then(() => expect(CollectionCuration.create).not.toHaveBeenCalled())
+    })
+
+    it('should answer 404 on a comment', () => {
+      url = `/collections/${dbCollectionMock.id}/comments`
+      return server
+        .post(buildURL(url))
+        .set(createAuthHeaders('post', url))
+        .send({ message: 'Hello' })
+        .expect(404)
     })
 
     it('should answer 404 on the events', () => {
@@ -811,6 +825,270 @@ describe('AutoCuration router', () => {
             )
             expect(CollectionCuration.create).not.toHaveBeenCalled()
           })
+      })
+    })
+  })
+
+  describe('when commenting on the review of a collection', () => {
+    const mockHasPublishedItems = Item.hasPublishedItems as jest.Mock
+    const mockFindItem = Item.findOne as jest.Mock
+    const mockCommentPosted = curationNotifications.commentPosted as jest.Mock
+    const mockFindCollection = Collection.findOne as jest.Mock
+    const mockFindLastItemCuration = ItemCuration.findLastByCollectionId as jest.Mock
+
+    const post = (body: unknown) =>
+      server
+        .post(buildURL(url))
+        .set(createAuthHeaders('post', url))
+        .send(body as object)
+
+    beforeEach(() => {
+      url = `/collections/${dbCollectionMock.id}/comments`
+      mockExistsMiddleware(Collection, dbCollectionMock.id)
+      mockIsCommitteeMember.mockResolvedValue(false)
+      mockFindCollection.mockResolvedValue({
+        ...dbCollectionMock,
+        eth_address: wallet.address,
+      })
+      mockHasPublishedItems.mockResolvedValue(true)
+      mockRecordEvent.mockImplementation((event) =>
+        Promise.resolve({
+          id: 'eventId',
+          created_at: new Date('2026-11-12T10:00:00.000Z'),
+          ...event,
+        })
+      )
+    })
+
+    describe('and the collection does not exist', () => {
+      beforeEach(() => {
+        mockFindCollection.mockResolvedValue(undefined)
+        ;(Collection.count as jest.Mock).mockReset().mockResolvedValue(0)
+      })
+
+      it('should respond with a 404', () => {
+        return post({ message: 'Hello' }).expect(404)
+      })
+    })
+
+    describe('and the caller is neither on the committee nor manages the collection', () => {
+      beforeEach(() => {
+        mockFindCollection.mockResolvedValue({
+          ...dbCollectionMock,
+          eth_address: '0x0000000000000000000000000000000000000001',
+          managers: [],
+        })
+      })
+
+      it('should respond with a 401 without recording anything', () => {
+        return post({ message: 'Hello' })
+          .expect(401)
+          .then(() => {
+            expect(mockRecordEvent).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the message is missing', () => {
+      it('should respond with a 400', () => {
+        return post({}).expect(400)
+      })
+    })
+
+    describe('and the message is blank', () => {
+      it('should respond with a 400', () => {
+        return post({ message: '   ' })
+          .expect(400)
+          .then(() => {
+            expect(mockRecordEvent).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the message is longer than 2000 characters', () => {
+      it('should respond with a 400', () => {
+        return post({ message: 'a'.repeat(2001) }).expect(400)
+      })
+    })
+
+    describe('and the message has 2000 characters plus surrounding spaces', () => {
+      it('should accept it', () => {
+        return post({ message: `  ${'a'.repeat(2000)}  ` }).expect(200)
+      })
+    })
+
+    describe('and the item id is not a uuid', () => {
+      it('should respond with a 400', () => {
+        return post({ message: 'Hello', itemId: 'not-a-uuid' }).expect(400)
+      })
+    })
+
+    describe('and the body has an unknown property', () => {
+      it('should not store it', () => {
+        return post({ message: 'Hello', actor: 'curator' })
+          .expect(200)
+          .then(() => {
+            expect(mockRecordEvent).toHaveBeenCalledWith(
+              expect.objectContaining({
+                actor: CollectionEventActor.CREATOR,
+                payload: { message: 'Hello' },
+              })
+            )
+          })
+      })
+    })
+
+    describe('and the collection is not published', () => {
+      beforeEach(() => {
+        mockHasPublishedItems.mockResolvedValue(false)
+      })
+
+      it('should respond with a 409 without recording anything', () => {
+        return post({ message: 'Hello' })
+          .expect(409)
+          .then(() => {
+            expect(mockRecordEvent).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the item belongs to another collection', () => {
+      beforeEach(() => {
+        mockFindItem.mockResolvedValue({ id: 'x', collection_id: uuidv4() })
+      })
+
+      it('should respond with a 400 without recording anything', () => {
+        return post({ message: 'Hello', itemId: uuidv4() })
+          .expect(400)
+          .then((response: any) => {
+            expect(response.body.error).toBe(
+              'The item does not belong to the collection'
+            )
+            expect(mockRecordEvent).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the caller owns the collection', () => {
+      let itemId: string
+
+      beforeEach(() => {
+        itemId = uuidv4()
+        mockFindItem.mockResolvedValue({
+          id: itemId,
+          collection_id: dbCollectionMock.id,
+        })
+      })
+
+      it('should store the trimmed message as a creator and respond with the event', () => {
+        return post({ message: '  Is the hat fine now?\n', itemId })
+          .expect(200)
+          .then((response: any) => {
+            expect(mockRecordEvent).toHaveBeenCalledWith({
+              collection_id: dbCollectionMock.id,
+              type: CollectionEventType.REVIEW_COMMENT,
+              actor: CollectionEventActor.CREATOR,
+              actor_address: wallet.address.toLowerCase(),
+              payload: { message: 'Is the hat fine now?', itemId },
+            })
+            expect(response.body).toEqual({
+              ok: true,
+              data: {
+                id: 'eventId',
+                collection_id: dbCollectionMock.id,
+                type: CollectionEventType.REVIEW_COMMENT,
+                actor: CollectionEventActor.CREATOR,
+                actor_address: wallet.address.toLowerCase(),
+                payload: { message: 'Is the hat fine now?', itemId },
+                created_at: '2026-11-12T10:00:00.000Z',
+              },
+            })
+          })
+      })
+
+      it('should tell the curators channel', () => {
+        return post({ message: ' Is the hat fine now? ' })
+          .expect(200)
+          .then(() => {
+            expect(mockCommentPosted).toHaveBeenCalledWith(
+              dbCollectionMock.id,
+              wallet.address,
+              'Is the hat fine now?'
+            )
+          })
+      })
+
+      it('should not open, close nor change any review request', () => {
+        return post({ message: 'Hello' })
+          .expect(200)
+          .then(() => {
+            expect(mockRecordEvent).toHaveBeenCalledTimes(1)
+            expect(mockRecordEventOnce).not.toHaveBeenCalled()
+            expect(CollectionCuration.create).not.toHaveBeenCalled()
+            expect(CollectionCuration.update).not.toHaveBeenCalled()
+            expect(sendValidation).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the caller is on the committee', () => {
+      beforeEach(() => {
+        mockIsCommitteeMember.mockResolvedValue(true)
+        mockFindCollection.mockResolvedValue({
+          ...dbCollectionMock,
+          eth_address: '0x0000000000000000000000000000000000000001',
+        })
+      })
+
+      it('should store the message as a curator without telling the channel', () => {
+        return post({ message: 'Please fix the thumbnail' })
+          .expect(200)
+          .then((response: any) => {
+            expect(mockRecordEvent).toHaveBeenCalledWith({
+              collection_id: dbCollectionMock.id,
+              type: CollectionEventType.REVIEW_COMMENT,
+              actor: CollectionEventActor.CURATOR,
+              actor_address: wallet.address.toLowerCase(),
+              payload: { message: 'Please fix the thumbnail' },
+            })
+            expect(response.body.data.actor).toBe(CollectionEventActor.CURATOR)
+            expect(mockCommentPosted).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the collection is a Third Party one', () => {
+      beforeEach(() => {
+        mockIsCommitteeMember.mockResolvedValue(true)
+        mockFindCollection.mockResolvedValue(dbTPCollectionMock)
+      })
+
+      describe('and none of its items was sent to review', () => {
+        beforeEach(() => {
+          mockFindLastItemCuration.mockResolvedValue(undefined)
+        })
+
+        it('should respond with a 409', () => {
+          return post({ message: 'Hello' }).expect(409)
+        })
+      })
+
+      describe('and its items were sent to review', () => {
+        beforeEach(() => {
+          mockFindLastItemCuration.mockResolvedValue({ id: 'itemCurationId' })
+        })
+
+        it('should record the comment', () => {
+          return post({ message: 'Hello' })
+            .expect(200)
+            .then(() => {
+              expect(mockRecordEvent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                  type: CollectionEventType.REVIEW_COMMENT,
+                })
+              )
+            })
+        })
       })
     })
   })

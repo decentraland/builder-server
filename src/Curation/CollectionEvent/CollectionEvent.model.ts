@@ -80,6 +80,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
     return rows[0]
   }
 
+  /** Comments are skipped: a conversation never changes where the review stands. */
   static async findLatestByCollectionId(
     collectionId: string
   ): Promise<CollectionEventAttributes | undefined> {
@@ -87,6 +88,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
       SELECT *
         FROM ${raw(this.tableName)}
         WHERE collection_id = ${collectionId}
+          AND type <> ${CollectionEventType.REVIEW_COMMENT}
         ORDER BY created_at DESC
         LIMIT 1`)
     return events[0]

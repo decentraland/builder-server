@@ -59,7 +59,16 @@ export const patchCurationSchema = Object.freeze({
       uniqueItems: true,
     },
     rejectionMessage: { type: 'string', minLength: 1, maxLength: 3000 },
+    note: { type: 'string', maxLength: 2000 },
   },
   additionalProperties: false,
   anyOf: [{ required: ['assignee'] }, { required: ['status'] }],
+})
+
+// Open to other properties: the legacy Builder's body was never validated.
+export const postCurationSchema = Object.freeze({
+  type: 'object',
+  properties: {
+    note: { type: 'string', maxLength: 2000 },
+  },
 })

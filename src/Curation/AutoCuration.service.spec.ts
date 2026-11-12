@@ -79,7 +79,7 @@ const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Moc
 const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndType as jest.Mock
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
-const mockFindStaleAiStarted = CollectionEvent.findStaleAiStarted as jest.Mock
+const mockFindStaleAutomatedStarted = CollectionEvent.findStaleAutomatedStarted as jest.Mock
 const mockFindStarts = CollectionEvent.findJudgedStartsByCollectionId as jest.Mock
 const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
 const mockCountSweepStarts = CollectionEvent.countSweepStartsSinceManualStart as jest.Mock
@@ -130,7 +130,7 @@ describe('AutoCurationService', () => {
     mockFindStarts.mockImplementation(async (collectionId: string) => {
       const latest = await mockFindLatestEventByType(
         collectionId,
-        CollectionEventType.REVIEW_AI_STARTED
+        CollectionEventType.REVIEW_AUTOMATED_STARTED
       )
       return latest ? [latest] : []
     })
@@ -155,19 +155,19 @@ describe('AutoCurationService', () => {
     it('should count the starts the creator caused, not the sweep re-sends nor the verdicts', () => {
       expect(
         countValidationAttempts([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'sweep',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_ERROR),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR),
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'changes',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_PASSED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED),
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
           buildEvent(CollectionEventType.COLLECTION_PUBLISHED),
@@ -178,15 +178,15 @@ describe('AutoCurationService', () => {
     it('should not count a start whose request never reached the topic', () => {
       expect(
         countValidationAttempts([
-          buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
             reason: 'publish_failed',
             validationId: 'unsent',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
             validationId: 'unsent',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
             validationId: 'sent',
           }),
@@ -197,14 +197,14 @@ describe('AutoCurationService', () => {
     it('should stop counting at the latest human decision', () => {
       expect(
         countValidationAttempts([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
           buildEvent(CollectionEventType.REVIEW_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
         ])
@@ -218,7 +218,7 @@ describe('AutoCurationService', () => {
     beforeEach(() => {
       jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
       previousStart = {
-        ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+        ...buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
           validationId: 'previousValidation',
           trigger: 'publish',
           itemIds: [item.id],
@@ -230,13 +230,13 @@ describe('AutoCurationService', () => {
       mockFindEventsSince.mockResolvedValue([])
       mockFindLatestEventByType.mockImplementation((_, type) =>
         Promise.resolve(
-          type === CollectionEventType.REVIEW_AI_STARTED
+          type === CollectionEventType.REVIEW_AUTOMATED_STARTED
             ? previousStart
             : undefined
         )
       )
       mockFindVerdict.mockResolvedValue(
-        buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
+        buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED, {
           validationId: 'previousValidation',
         })
       )
@@ -284,7 +284,7 @@ describe('AutoCurationService', () => {
         beforeEach(() => {
           mockFindLatestEventByType.mockImplementation((_, type) =>
             Promise.resolve(
-              type === CollectionEventType.REVIEW_AI_STARTED
+              type === CollectionEventType.REVIEW_AUTOMATED_STARTED
                 ? previousStart
                 : type === CollectionEventType.REVIEW_REJECTED
                 ? {
@@ -338,7 +338,7 @@ describe('AutoCurationService', () => {
       describe('and the latest validation ended with a retryable error', () => {
         beforeEach(() => {
           mockFindVerdict.mockResolvedValue(
-            buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
               validationId: 'previousValidation',
               reason: 'sweep_exhausted',
             })
@@ -359,7 +359,7 @@ describe('AutoCurationService', () => {
       describe('and the latest validation was too large to send', () => {
         beforeEach(() => {
           mockFindVerdict.mockResolvedValue(
-            buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
               validationId: 'previousValidation',
               reason: 'too_large',
             })
@@ -447,7 +447,7 @@ describe('AutoCurationService', () => {
     describe('and the latest run was too large to send', () => {
       beforeEach(() => {
         mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
             validationId: 'previousValidation',
             reason: 'too_large',
           })
@@ -465,7 +465,7 @@ describe('AutoCurationService', () => {
     describe('and the latest validation ended with an error verdict', () => {
       beforeEach(() => {
         mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
             validationId: 'previousValidation',
           })
         )
@@ -478,23 +478,23 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and three automatic reviews were already used today', () => {
+    describe('and three automated reviews were already used today', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED)
         )
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED),
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'sweep',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'changes',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
         ])
@@ -529,17 +529,17 @@ describe('AutoCurationService', () => {
     describe('and a curator decided after two of the three reviews of the day', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED)
         )
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
           buildEvent(CollectionEventType.REVIEW_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
         ])
@@ -550,7 +550,7 @@ describe('AutoCurationService', () => {
 
         expect(mockRecordEvent).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: CollectionEventType.REVIEW_AI_STARTED,
+            type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
             payload: expect.objectContaining({ trigger: 'retry' }),
           })
         )
@@ -766,7 +766,7 @@ describe('AutoCurationService', () => {
     describe('and the latest curation is not rejected', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_PASSED)
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED)
         )
         mockFindLatestCuration.mockResolvedValue({
           id: 'curationId',
@@ -785,7 +785,7 @@ describe('AutoCurationService', () => {
     describe('and the latest curation is rejected', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED)
         )
       })
 
@@ -853,7 +853,7 @@ describe('AutoCurationService', () => {
       }
       mockFindCollection.mockResolvedValue(dbCollectionMock)
       mockFindLatestEventByType.mockResolvedValue(
-        buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+        buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
           validationId: 'latestValidation',
         })
       )
@@ -885,7 +885,7 @@ describe('AutoCurationService', () => {
     describe('and a verdict for the validation was already recorded', () => {
       beforeEach(() => {
         mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_PASSED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED, {
             validationId: 'latestValidation',
           })
         )
@@ -909,7 +909,7 @@ describe('AutoCurationService', () => {
 
         expect(mockRecordEventOnce).toHaveBeenCalledWith({
           collection_id: dbCollectionMock.id,
-          type: CollectionEventType.REVIEW_AI_PASSED,
+          type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
           actor: CollectionEventActor.VALIDATOR,
           actor_address: null,
           payload: result,
@@ -950,7 +950,7 @@ describe('AutoCurationService', () => {
 
           expect(mockRecordEventOnce).toHaveBeenCalledWith(
             expect.objectContaining({
-              type: CollectionEventType.REVIEW_AI_PASSED,
+              type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
               payload: { ...result, staleItemIds: [item.id] },
             })
           )
@@ -982,7 +982,7 @@ describe('AutoCurationService', () => {
         )
         expect(mockRecordEventOnce).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: CollectionEventType.REVIEW_AI_REJECTED,
+            type: CollectionEventType.REVIEW_AUTOMATED_REJECTED,
             payload: result,
           })
         )
@@ -1028,11 +1028,14 @@ describe('AutoCurationService', () => {
         beforeEach(() => {
           mockFindLatestEventByType.mockImplementation((_, type) =>
             Promise.resolve(
-              type === CollectionEventType.REVIEW_AI_STARTED
+              type === CollectionEventType.REVIEW_AUTOMATED_STARTED
                 ? {
-                    ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
-                      validationId: 'latestValidation',
-                    }),
+                    ...buildEvent(
+                      CollectionEventType.REVIEW_AUTOMATED_STARTED,
+                      {
+                        validationId: 'latestValidation',
+                      }
+                    ),
                     created_at: new Date(Date.now() - 60 * 1000),
                   }
                 : type === CollectionEventType.REVIEW_APPROVED
@@ -1048,7 +1051,7 @@ describe('AutoCurationService', () => {
 
           expect(mockRecordEventOnce).toHaveBeenCalledWith(
             expect.objectContaining({
-              type: CollectionEventType.REVIEW_AI_REJECTED,
+              type: CollectionEventType.REVIEW_AUTOMATED_REJECTED,
             })
           )
           expect(mockUpdateCuration).not.toHaveBeenCalled()
@@ -1081,7 +1084,7 @@ describe('AutoCurationService', () => {
       beforeEach(() => {
         mockFindCollection.mockResolvedValue({
           ...dbCollectionMock,
-          name: 'Hat\nAI review passed for collection "Other"',
+          name: 'Hat\nAutomated review passed for collection "Other"',
         })
       })
 
@@ -1116,7 +1119,7 @@ describe('AutoCurationService', () => {
     describe('and the request was recorded as never sent but reached the validator anyway', () => {
       beforeEach(() => {
         mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
             validationId: 'latestValidation',
             reason: 'publish_failed',
           })
@@ -1128,7 +1131,7 @@ describe('AutoCurationService', () => {
 
         expect(mockRecordEventOnce).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: CollectionEventType.REVIEW_AI_PASSED,
+            type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
           })
         )
       })
@@ -1145,7 +1148,7 @@ describe('AutoCurationService', () => {
 
         expect(mockRecordEventOnce).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: CollectionEventType.REVIEW_AI_REJECTED,
+            type: CollectionEventType.REVIEW_AUTOMATED_REJECTED,
             payload: result,
           })
         )
@@ -1160,13 +1163,13 @@ describe('AutoCurationService', () => {
         result = { ...result, verdict: 'error', retryable: true }
       })
 
-      it('should record an AI error for the sweep and notify Slack without touching the curation', async () => {
+      it('should record an automated review error for the sweep and notify Slack without touching the curation', async () => {
         await service.handleValidationResult(dbCollectionMock.id, result)
 
         expect(mockRecordEventOnce).toHaveBeenCalledTimes(1)
         expect(mockRecordEventOnce).toHaveBeenCalledWith({
           collection_id: dbCollectionMock.id,
-          type: CollectionEventType.REVIEW_AI_ERROR,
+          type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
           actor: CollectionEventActor.VALIDATOR,
           actor_address: null,
           payload: result,
@@ -1273,7 +1276,7 @@ describe('AutoCurationService', () => {
     let curatorEvent: CollectionEventAttributes
 
     beforeEach(() => {
-      aiEvent = buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
+      aiEvent = buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED, {
         validationId: 'secret',
         verdict: 'rejected',
         items: [{ itemId: item.id, findings: [], visualSummary: 'A hat' }],
@@ -1289,7 +1292,7 @@ describe('AutoCurationService', () => {
     })
 
     describe('and the caller is not a committee member', () => {
-      it('should drop the validation ids of the AI events and keep the rest', async () => {
+      it('should drop the validation ids of the automated review events and keep the rest', async () => {
         const page = await service.getEvents(dbCollectionMock.id, 2, 2, false)
 
         expect(mockFindEventsPage).toHaveBeenCalledWith(
@@ -1371,7 +1374,7 @@ describe('AutoCurationService', () => {
       })
       expect(mockRecordEvent).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: CollectionEventType.REVIEW_AI_STARTED,
+          type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
           payload: expect.objectContaining({
             trigger: 'changes',
             itemIds: [changedItem.id],
@@ -1389,8 +1392,8 @@ describe('AutoCurationService', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockImplementation((_, type) =>
           Promise.resolve(
-            type === CollectionEventType.REVIEW_AI_STARTED
-              ? buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            type === CollectionEventType.REVIEW_AUTOMATED_STARTED
+              ? buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
                   validationId: 'judged',
                   contentHashes: { [changedItem.id]: 'newHash' },
                 })
@@ -1398,7 +1401,7 @@ describe('AutoCurationService', () => {
           )
         )
         mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED, {
             validationId: 'judged',
           })
         )
@@ -1420,13 +1423,13 @@ describe('AutoCurationService', () => {
 
       it('should not refuse it at the daily limit: an appeal does not run the validator', async () => {
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
         ])
@@ -1440,11 +1443,11 @@ describe('AutoCurationService', () => {
     describe('and each item was judged as it is by a different earlier run', () => {
       beforeEach(() => {
         mockFindStarts.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             validationId: 'changesRun',
             contentHashes: { [changedItem.id]: 'newHash' },
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             validationId: 'publishRun',
             contentHashes: {
               [unchangedItem.id]: 'staleHash',
@@ -1473,8 +1476,8 @@ describe('AutoCurationService', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockImplementation((_, type) =>
           Promise.resolve(
-            type === CollectionEventType.REVIEW_AI_STARTED
-              ? buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+            type === CollectionEventType.REVIEW_AUTOMATED_STARTED
+              ? buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
                   validationId: 'running',
                 })
               : undefined
@@ -1496,13 +1499,13 @@ describe('AutoCurationService', () => {
       beforeEach(() => {
         jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
         ])
@@ -1595,12 +1598,12 @@ describe('AutoCurationService', () => {
     let staleStart: CollectionEventAttributes
 
     beforeEach(() => {
-      staleStart = buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+      staleStart = buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
         validationId: 'lost',
         trigger: 'publish',
         itemIds: [item.id],
       })
-      mockFindStaleAiStarted.mockResolvedValue([staleStart])
+      mockFindStaleAutomatedStarted.mockResolvedValue([staleStart])
       mockFindLatestEventByType.mockResolvedValue(staleStart)
       mockFindCollection.mockResolvedValue(dbCollectionMock)
       mockFindItemsByIds.mockResolvedValue([item])
@@ -1614,7 +1617,7 @@ describe('AutoCurationService', () => {
       it('should do nothing', async () => {
         await service.sweepStaleValidations()
 
-        expect(mockFindStaleAiStarted).not.toHaveBeenCalled()
+        expect(mockFindStaleAutomatedStarted).not.toHaveBeenCalled()
         expect(mockSendValidation).not.toHaveBeenCalled()
       })
     })
@@ -1631,7 +1634,7 @@ describe('AutoCurationService', () => {
         await service.sweepStaleValidations()
 
         expect(STALE_VALIDATION_MS).toBe(2 * 60 * 60 * 1000)
-        expect(mockFindStaleAiStarted).toHaveBeenCalledWith(
+        expect(mockFindStaleAutomatedStarted).toHaveBeenCalledWith(
           new Date('2026-09-29T13:00:00.000Z'),
           new Date(Date.now() - SWEEP_LOOKBACK_MS)
         )
@@ -1642,7 +1645,7 @@ describe('AutoCurationService', () => {
 
         expect(mockRecordEvent).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: CollectionEventType.REVIEW_AI_STARTED,
+            type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
             payload: {
               validationId: expect.not.stringMatching(/^lost$/),
               trigger: 'sweep',
@@ -1679,7 +1682,7 @@ describe('AutoCurationService', () => {
           expect(mockRecordEvent).not.toHaveBeenCalled()
           expect(mockRecordEventOnce).toHaveBeenCalledWith({
             collection_id: dbCollectionMock.id,
-            type: CollectionEventType.REVIEW_AI_ERROR,
+            type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
             actor: CollectionEventActor.VALIDATOR,
             actor_address: null,
             payload: { reason: 'sweep_exhausted', validationId: 'lost' },
@@ -1695,7 +1698,7 @@ describe('AutoCurationService', () => {
         describe('and the stale start already has a retryable error', () => {
           beforeEach(() => {
             mockFindVerdict.mockResolvedValue(
-              buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+              buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
                 validationId: 'lost',
                 verdict: 'error',
                 retryable: true,
@@ -1708,7 +1711,7 @@ describe('AutoCurationService', () => {
 
             expect(mockRecordEventOnce).toHaveBeenCalledWith(
               expect.objectContaining({
-                type: CollectionEventType.REVIEW_AI_ERROR,
+                type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
                 payload: { reason: 'sweep_exhausted', validationId: 'lost' },
               })
             )
@@ -1733,7 +1736,7 @@ describe('AutoCurationService', () => {
           beforeEach(() => {
             mockFindCollection.mockResolvedValue(dbCollectionMock)
             mockFindVerdict.mockResolvedValue(
-              buildEvent(CollectionEventType.REVIEW_AI_ERROR, {
+              buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
                 reason: 'sweep_exhausted',
                 validationId: 'lost',
               })
@@ -1821,8 +1824,8 @@ describe('AutoCurationService', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockImplementation((_, type) =>
           Promise.resolve(
-            type === CollectionEventType.REVIEW_AI_STARTED
-              ? buildEvent(CollectionEventType.REVIEW_AI_STARTED)
+            type === CollectionEventType.REVIEW_AUTOMATED_STARTED
+              ? buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED)
               : undefined
           )
         )
@@ -1858,7 +1861,7 @@ describe('AutoCurationService', () => {
         expect(mockRecordEvent).toHaveBeenCalledTimes(1)
         expect(mockRecordEvent).toHaveBeenCalledWith(
           expect.objectContaining({
-            type: CollectionEventType.REVIEW_AI_STARTED,
+            type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
           })
         )
         expect(mockSendValidation).toHaveBeenCalledTimes(1)
@@ -1882,10 +1885,13 @@ describe('AutoCurationService', () => {
 
         const start = mockRecordEvent.mock.calls
           .map(([event]) => event)
-          .find((event) => event.type === CollectionEventType.REVIEW_AI_STARTED)
+          .find(
+            (event) =>
+              event.type === CollectionEventType.REVIEW_AUTOMATED_STARTED
+          )
         expect(mockRecordEventOnce).toHaveBeenCalledWith({
           collection_id: dbCollectionMock.id,
-          type: CollectionEventType.REVIEW_AI_ERROR,
+          type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
           actor: CollectionEventActor.SYSTEM,
           actor_address: null,
           payload: {
@@ -1915,10 +1921,13 @@ describe('AutoCurationService', () => {
 
         const start = mockRecordEvent.mock.calls
           .map(([event]) => event)
-          .find((event) => event.type === CollectionEventType.REVIEW_AI_STARTED)
+          .find(
+            (event) =>
+              event.type === CollectionEventType.REVIEW_AUTOMATED_STARTED
+          )
         expect(mockRecordEventOnce).toHaveBeenCalledWith({
           collection_id: dbCollectionMock.id,
-          type: CollectionEventType.REVIEW_AI_ERROR,
+          type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
           actor: CollectionEventActor.SYSTEM,
           actor_address: null,
           payload: {
@@ -1943,7 +1952,7 @@ describe('AutoCurationService', () => {
       })
       expect(mockRecordEvent).toHaveBeenCalledWith(
         expect.objectContaining({
-          type: CollectionEventType.REVIEW_AI_STARTED,
+          type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
           payload: expect.objectContaining({
             trigger: 'publish',
             itemIds: [item.id],

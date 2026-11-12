@@ -102,7 +102,7 @@ export const curationNotifications = {
     })
   },
 
-  /** The automatic review was not requested, so no result will follow in the channel. */
+  /** The automated review was not requested, so no result will follow in the channel. */
   async validationNotRequested(
     collectionId: string,
     reason: string
@@ -110,7 +110,7 @@ export const curationNotifications = {
     await notify(
       collectionId,
       async (collection) =>
-        `⚠️ No automatic review for ${link(
+        `⚠️ No automated review for ${link(
           collection
         )}: ${reason}. It needs a curator review without it.`
     )

@@ -18,22 +18,22 @@ const FINAL_ERROR_REASONS = [SWEEP_EXHAUSTED_REASON, TOO_LARGE_REASON]
 
 // A human_required carrying a validationId is the validator handing unsupported items to a curator.
 const VERDICT_EVENT_TYPES = [
-  CollectionEventType.REVIEW_AI_PASSED,
-  CollectionEventType.REVIEW_AI_REJECTED,
-  CollectionEventType.REVIEW_AI_ERROR,
+  CollectionEventType.REVIEW_AUTOMATED_PASSED,
+  CollectionEventType.REVIEW_AUTOMATED_REJECTED,
+  CollectionEventType.REVIEW_AUTOMATED_ERROR,
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 // An error verdict is retried by the sweep, so only a pass, a reject or a hand-off ends a validation for it.
 const FINAL_VERDICT_EVENT_TYPES = [
-  CollectionEventType.REVIEW_AI_PASSED,
-  CollectionEventType.REVIEW_AI_REJECTED,
+  CollectionEventType.REVIEW_AUTOMATED_PASSED,
+  CollectionEventType.REVIEW_AUTOMATED_REJECTED,
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
 // Runs whose items the validator checked: a verdict, or a hand-off of the items it cannot judge (it judged the rest).
 const JUDGED_VERDICT_EVENT_TYPES = [
-  CollectionEventType.REVIEW_AI_PASSED,
-  CollectionEventType.REVIEW_AI_REJECTED,
+  CollectionEventType.REVIEW_AUTOMATED_PASSED,
+  CollectionEventType.REVIEW_AUTOMATED_REJECTED,
 ]
 
 let lastTimestamp = 0
@@ -74,7 +74,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
           ${nextTimestamp()}
         )
         ON CONFLICT (collection_id, type, (payload->>'validationId'), (COALESCE(payload->>'reason', '')))
-          WHERE type IN ('review.ai_passed', 'review.ai_rejected', 'review.ai_error', 'review.human_required')
+          WHERE type IN ('review.automated_passed', 'review.automated_rejected', 'review.automated_error', 'review.human_required')
           DO NOTHING
         RETURNING *`)
     return rows[0]
@@ -155,7 +155,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
       SELECT started.*
         FROM ${raw(this.tableName)} started
         WHERE started.collection_id = ${collectionId}
-          AND started.type = ${CollectionEventType.REVIEW_AI_STARTED}
+          AND started.type = ${CollectionEventType.REVIEW_AUTOMATED_STARTED}
           AND EXISTS (
             SELECT 1
               FROM ${raw(this.tableName)} verdict
@@ -181,13 +181,13 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
       SELECT COUNT(*) AS count
         FROM ${raw(this.tableName)}
         WHERE collection_id = ${collectionId}
-          AND type = ${CollectionEventType.REVIEW_AI_STARTED}
+          AND type = ${CollectionEventType.REVIEW_AUTOMATED_STARTED}
           AND payload->>'trigger' = 'sweep'
           AND created_at > COALESCE((
             SELECT MAX(created_at)
               FROM ${raw(this.tableName)}
               WHERE collection_id = ${collectionId}
-                AND type = ${CollectionEventType.REVIEW_AI_STARTED}
+                AND type = ${CollectionEventType.REVIEW_AUTOMATED_STARTED}
                 AND payload->>'trigger' <> 'sweep'
           ), '-infinity')`)
     return Number(counts[0]?.count ?? 0)
@@ -209,14 +209,14 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
   }
 
   /** Latest starts within the window that got a retryable error or are older than the threshold, with no final verdict and no later curator decision. */
-  static findStaleAiStarted(
+  static findStaleAutomatedStarted(
     olderThan: Date,
     notBefore: Date
   ): Promise<CollectionEventAttributes[]> {
     return this.query<CollectionEventAttributes>(SQL`
       SELECT started.*
         FROM ${raw(this.tableName)} started
-        WHERE started.type = ${CollectionEventType.REVIEW_AI_STARTED}
+        WHERE started.type = ${CollectionEventType.REVIEW_AUTOMATED_STARTED}
           AND started.created_at > ${notBefore}
           AND (
             started.created_at < ${olderThan}
@@ -224,7 +224,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
               SELECT 1
                 FROM ${raw(this.tableName)} error
                 WHERE error.collection_id = started.collection_id
-                  AND error.type = ${CollectionEventType.REVIEW_AI_ERROR}
+                  AND error.type = ${CollectionEventType.REVIEW_AUTOMATED_ERROR}
                   AND error.payload->>'validationId' = started.payload->>'validationId'
             )
           )
@@ -239,7 +239,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
             SELECT 1
               FROM ${raw(this.tableName)} newer
               WHERE newer.collection_id = started.collection_id
-                AND newer.type = ${CollectionEventType.REVIEW_AI_STARTED}
+                AND newer.type = ${CollectionEventType.REVIEW_AUTOMATED_STARTED}
                 AND newer.created_at > started.created_at
           )
           AND NOT EXISTS (
@@ -250,7 +250,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
                 AND (
                   verdict.type = ANY(${FINAL_VERDICT_EVENT_TYPES})
                   OR (
-                    verdict.type = ${CollectionEventType.REVIEW_AI_ERROR}
+                    verdict.type = ${CollectionEventType.REVIEW_AUTOMATED_ERROR}
                     AND verdict.payload->>'reason' = ANY(${FINAL_ERROR_REASONS})
                   )
                 )

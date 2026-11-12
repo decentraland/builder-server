@@ -738,7 +738,7 @@ export class CurationRouter extends Router {
       attributes.is_mapping_complete = itemData.is_mapping_complete
     }
 
-    // A creator submitting changes waits for the running automatic review and for the daily limit; the
+    // A creator submitting changes waits for the running automated review and for the daily limit; the
     // request is refused before anything is written so the client can tell them.
     const isChangesSubmission =
       type === CurationType.COLLECTION &&
@@ -779,7 +779,7 @@ export class CurationRouter extends Router {
 
   /**
    * A creator submitting changes: not a collection's first request (the publish already announced it and
-   * started the full automatic review) nor a committee member's bookkeeping on someone else's collection.
+   * started the full automated review) nor a committee member's bookkeeping on someone else's collection.
    */
   private isChangesSubmission = async (
     collectionId: string,

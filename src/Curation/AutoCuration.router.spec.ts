@@ -161,7 +161,7 @@ describe('AutoCuration router', () => {
     it('should still record a signed validator callback for a job that was in flight', () => {
       url = `/collections/${dbCollectionMock.id}/validation-result`
       mockFindLatestEventByType.mockResolvedValue(
-        buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+        buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
           validationId: 'inFlight',
         })
       )
@@ -177,7 +177,7 @@ describe('AutoCuration router', () => {
         .then(() =>
           expect(mockRecordEventOnce).toHaveBeenCalledWith(
             expect.objectContaining({
-              type: CollectionEventType.REVIEW_AI_PASSED,
+              type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
             })
           )
         )
@@ -215,7 +215,7 @@ describe('AutoCuration router', () => {
       mockExistsMiddleware(Collection, dbCollectionMock.id)
       ;(Collection.findOne as jest.Mock).mockResolvedValue(dbCollectionMock)
       mockFindLatestEventByType.mockResolvedValue(
-        buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+        buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
           validationId: 'latestValidation',
         })
       )
@@ -394,7 +394,7 @@ describe('AutoCuration router', () => {
           .then(() => {
             expect(mockRecordEventOnce).toHaveBeenCalledWith(
               expect.objectContaining({
-                type: CollectionEventType.REVIEW_AI_PASSED,
+                type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
                 payload: result,
               })
             )
@@ -452,7 +452,7 @@ describe('AutoCuration router', () => {
             .then(() => {
               expect(mockRecordEventOnce).toHaveBeenCalledWith(
                 expect.objectContaining({
-                  type: CollectionEventType.REVIEW_AI_ERROR,
+                  type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
                   payload: result,
                 })
               )
@@ -508,7 +508,7 @@ describe('AutoCuration router', () => {
     beforeEach(() => {
       url = `/collections/${dbCollectionMock.id}/events`
       mockExistsMiddleware(Collection, dbCollectionMock.id)
-      aiEvent = buildEvent(CollectionEventType.REVIEW_AI_PASSED, {
+      aiEvent = buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED, {
         validationId: 'secret',
         verdict: 'passed',
         items: [],
@@ -559,7 +559,7 @@ describe('AutoCuration router', () => {
                 results: [
                   expect.objectContaining({
                     id: aiEvent.id,
-                    type: CollectionEventType.REVIEW_AI_PASSED,
+                    type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
                     payload: { verdict: 'passed', items: [] },
                   }),
                 ],
@@ -607,7 +607,7 @@ describe('AutoCuration router', () => {
     describe('and a validation is in progress', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             validationId: 'running',
           })
         )
@@ -634,13 +634,13 @@ describe('AutoCuration router', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockResolvedValue(undefined)
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
-          buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
         ])
@@ -668,16 +668,16 @@ describe('AutoCuration router', () => {
           async (collectionId: string) => [
             await mockFindLatestEventByType(
               collectionId,
-              CollectionEventType.REVIEW_AI_STARTED
+              CollectionEventType.REVIEW_AUTOMATED_STARTED
             ),
           ]
         )
         const itemId = uuidv4()
         mockFindLatestEventByType.mockImplementation((_, type) =>
           Promise.resolve(
-            type === CollectionEventType.REVIEW_AI_STARTED
+            type === CollectionEventType.REVIEW_AUTOMATED_STARTED
               ? {
-                  ...buildEvent(CollectionEventType.REVIEW_AI_STARTED, {
+                  ...buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
                     validationId: 'previous',
                     itemIds: [itemId],
                     contentHashes: { [itemId]: 'sameHash' },
@@ -688,7 +688,7 @@ describe('AutoCuration router', () => {
           )
         )
         mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED, {
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED, {
             validationId: 'previous',
           })
         )
@@ -744,7 +744,7 @@ describe('AutoCuration router', () => {
     describe('and the note is missing', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AI_REJECTED)
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED)
         )
         mockFindLatestCuration.mockResolvedValue({
           id: 'curationId',

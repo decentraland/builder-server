@@ -3,9 +3,9 @@ import { Collection } from '../src/Collection'
 
 const tableName = 'collection_events'
 const verdictTypes = [
-  'review.ai_passed',
-  'review.ai_rejected',
-  'review.ai_error',
+  'review.automated_passed',
+  'review.automated_rejected',
+  'review.automated_error',
   'review.human_required',
 ]
 
@@ -35,8 +35,8 @@ export async function up(pgm: MigrationBuilder): Promise<void> {
     { name: 'collection_events_collection_created_idx' }
   )
   pgm.createIndex(tableName, 'created_at', {
-    name: 'collection_events_ai_started_idx',
-    where: "type = 'review.ai_started'",
+    name: 'collection_events_automated_started_idx',
+    where: "type = 'review.automated_started'",
   })
   // One verdict per validation. The reason is part of the key so the sweep's give-up can follow a retryable
   // error of the same validation.

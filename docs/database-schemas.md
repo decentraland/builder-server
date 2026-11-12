@@ -457,17 +457,17 @@ Stores curation status for collections.
 
 ### Columns
 
-| Column              | Type      | Nullable | Description                                                            |
-| ------------------- | --------- | -------- | ---------------------------------------------------------------------- |
-| `id`                | UUID      | NOT NULL | **Primary Key**. Curation identifier                                   |
-| `collection_id`     | UUID      | NOT NULL | **Foreign Key** to collections                                         |
-| `assignee`          | VARCHAR   | NULL     | Committee member assigned                                              |
-| `status`            | VARCHAR   | NOT NULL | Status: pending, approved, rejected                                    |
-| `reviewed_by`       | TEXT      | NULL     | `validator` or the curator's lowercase address. Null while pending     |
+| Column              | Type      | Nullable | Description                                                                     |
+| ------------------- | --------- | -------- | ------------------------------------------------------------------------------- |
+| `id`                | UUID      | NOT NULL | **Primary Key**. Curation identifier                                            |
+| `collection_id`     | UUID      | NOT NULL | **Foreign Key** to collections                                                  |
+| `assignee`          | VARCHAR   | NULL     | Committee member assigned                                                       |
+| `status`            | VARCHAR   | NOT NULL | Status: pending, approved, rejected                                             |
+| `reviewed_by`       | TEXT      | NULL     | `validator` or the curator's lowercase address. Null while pending              |
 | `rejection_reasons` | TEXT[]    | NULL     | Optional reject reason codes chosen by a curator. Null for validator rejections |
-| `rejection_message` | TEXT      | NULL     | Optional free text written by the curator, shown to the creator        |
-| `created_at`        | TIMESTAMP | NOT NULL | Creation timestamp                                                     |
-| `updated_at`        | TIMESTAMP | NOT NULL | Last update timestamp                                                  |
+| `rejection_message` | TEXT      | NULL     | Optional free text written by the curator, shown to the creator                 |
+| `created_at`        | TIMESTAMP | NOT NULL | Creation timestamp                                                              |
+| `updated_at`        | TIMESTAMP | NOT NULL | Last update timestamp                                                           |
 
 ### Indexes
 
@@ -482,7 +482,7 @@ Stores curation status for collections.
 
 - **Latest curation**: The most recent curation (by `created_at`) is the active one
 - **Assignee**: Only committee members can be assigned
-- **Rejection feedback**: A curator rejection may carry `rejection_reasons` and `rejection_message`; validator rejections leave them null and keep their findings in the `review.ai_rejected` event
+- **Rejection feedback**: A curator rejection may carry `rejection_reasons` and `rejection_message`; validator rejections leave them null and keep their findings in the `review.automated_rejected` event
 
 ---
 
@@ -492,44 +492,44 @@ Append-only review timeline of a collection. Rows are never updated or deleted b
 
 ### Columns
 
-| Column          | Type      | Nullable | Description                                                      |
-| --------------- | --------- | -------- | ---------------------------------------------------------------- |
-| `id`            | UUID      | NOT NULL | **Primary Key**. Event identifier                                |
-| `collection_id` | UUID      | NOT NULL | **Foreign Key** to collections (cascade delete)                  |
-| `type`          | TEXT      | NOT NULL | Event type (see below), validated in code                        |
-| `actor`         | TEXT      | NOT NULL | Who produced it: `creator`, `curator`, `validator` or `system`   |
+| Column          | Type      | Nullable | Description                                                                            |
+| --------------- | --------- | -------- | -------------------------------------------------------------------------------------- |
+| `id`            | UUID      | NOT NULL | **Primary Key**. Event identifier                                                      |
+| `collection_id` | UUID      | NOT NULL | **Foreign Key** to collections (cascade delete)                                        |
+| `type`          | TEXT      | NOT NULL | Event type (see below), validated in code                                              |
+| `actor`         | TEXT      | NOT NULL | Who produced it: `creator`, `curator`, `validator` or `system`                         |
 | `actor_address` | TEXT      | NULL     | Address of the creator or curator, also on a start the creator retried; null otherwise |
-| `payload`       | JSONB     | NOT NULL | Event data, defaults to `{}`                                     |
-| `created_at`    | TIMESTAMP | NOT NULL | Creation timestamp, defaults to `now()`                          |
+| `payload`       | JSONB     | NOT NULL | Event data, defaults to `{}`                                                           |
+| `created_at`    | TIMESTAMP | NOT NULL | Creation timestamp, defaults to `now()`                                                |
 
 ### Indexes
 
 - **Primary Key**: `id`
 - `collection_events_collection_created_idx` on (`collection_id`, `created_at DESC`): timeline, latest event, stale-callback check and attempt count
-- `collection_events_ai_started_idx` on `created_at` where `type = 'review.ai_started'`: the sweep of validations without a verdict
+- `collection_events_automated_started_idx` on `created_at` where `type = 'review.automated_started'`: the sweep of validations without a verdict
 - `collection_events_verdict_validation_idx` (unique) on (`collection_id`, `type`, `payload->>'validationId'`, `COALESCE(payload->>'reason', '')`) for the verdict types: one verdict per validation
 
 ### Event Types
 
-| Type                      | Actor     | Payload                                                                                                                          |
-| ------------------------- | --------- | -------------------------------------------------------------------------------------------------------------------------------- |
-| `collection.published`    | creator   | `{}`                                                                                                                             |
-| `review.human_required`   | system    | `{ reason: 'third_party' }`, `{ reason: 'unsupported_items', validationId, rulesVersion, items }` when the validator cannot check the items, or `{ reason: 'validator_error', validationId, rulesVersion, items }` when it failed for good |
-| `review.ai_started`       | validator | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds, contentHashes }`                                |
-| `review.ai_passed`        | validator | The validator callback body                                                                                                      |
-| `review.ai_rejected`      | validator | The validator callback body                                                                                                      |
-| `review.ai_error`         | validator / system | The validator callback body (retryable) or `{ reason: 'sweep_exhausted', validationId }`; `system` for `{ reason: 'too_large' \| 'publish_failed', validationId, ... }` |
-| `review.appeal_requested` | creator   | `{ note }`                                                                                                                       |
-| `review.assigned`         | curator   | `{ assignee }`                                                                                                                   |
-| `review.approved`         | curator   | `{}`                                                                                                                             |
-| `review.rejected`         | curator   | `{ rejectionReasons, rejectionMessage }`                                                                                         |
-| `changes.submitted`       | creator   | `{ itemIds }`                                                                                                                    |
+| Type                        | Actor              | Payload                                                                                                                                                                                                                                    |
+| --------------------------- | ------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `collection.published`      | creator            | `{}`                                                                                                                                                                                                                                       |
+| `review.human_required`     | system             | `{ reason: 'third_party' }`, `{ reason: 'unsupported_items', validationId, rulesVersion, items }` when the validator cannot check the items, or `{ reason: 'validator_error', validationId, rulesVersion, items }` when it failed for good |
+| `review.automated_started`  | validator          | `{ validationId, trigger: 'publish' \| 'retry' \| 'changes' \| 'sweep', itemIds, contentHashes }`                                                                                                                                          |
+| `review.automated_passed`   | validator          | The validator callback body                                                                                                                                                                                                                |
+| `review.automated_rejected` | validator          | The validator callback body                                                                                                                                                                                                                |
+| `review.automated_error`    | validator / system | The validator callback body (retryable) or `{ reason: 'sweep_exhausted', validationId }`; `system` for `{ reason: 'too_large' \| 'publish_failed', validationId, ... }`                                                                    |
+| `review.appeal_requested`   | creator            | `{ note }`                                                                                                                                                                                                                                 |
+| `review.assigned`           | curator            | `{ assignee }`                                                                                                                                                                                                                             |
+| `review.approved`           | curator            | `{}`                                                                                                                                                                                                                                       |
+| `review.rejected`           | curator            | `{ rejectionReasons, rejectionMessage }`                                                                                                                                                                                                   |
+| `changes.submitted`         | creator            | `{ itemIds }`                                                                                                                                                                                                                              |
 
 ### Business Rules
 
 - **Latest event**: The most recent event decides the review stage shown to creators together with the latest curation
-- **Attempts**: every `review.ai_started` the creator caused (`publish`, `retry`, `changes` triggers; never `sweep`) counts as an automatic review; creators get 3 per UTC day, reset by a `review.approved` or `review.rejected`
-- **Sweep**: A validation start with no `review.ai_passed`, `review.ai_rejected` or `review.human_required` for its `validationId` is re-sent every 10 minutes once it is 2 hours old, or right away after a retryable `review.ai_error` (`reason: 'publish_failed'` when the request never reached the topic); after 3 consecutive sweep re-sends a `review.ai_error` with `reason: 'sweep_exhausted'` stops it until someone acts
+- **Attempts**: every `review.automated_started` the creator caused (`publish`, `retry`, `changes` triggers; never `sweep`) counts as an automated review; creators get 3 per UTC day, reset by a `review.approved` or `review.rejected`
+- **Sweep**: A validation start with no `review.automated_passed`, `review.automated_rejected` or `review.human_required` for its `validationId` is re-sent every 10 minutes once it is 2 hours old, or right away after a retryable `review.automated_error` (`reason: 'publish_failed'` when the request never reached the topic); after 3 consecutive sweep re-sends a `review.automated_error` with `reason: 'sweep_exhausted'` stops it until someone acts
 - **Unchanged resubmission**: a creator's request after a rejection that changes nothing since the last run records `review.appeal_requested` instead of a new run
 - **Verdict rows**: a `rejected` verdict lands on the pending `collection_curations` row (`reviewed_by = 'validator'`), or opens a rejected one when the collection has no request (legacy Builder publishes); a row a curator already decided is left alone. A `passed` verdict whose items changed while it ran carries `staleItemIds`
 

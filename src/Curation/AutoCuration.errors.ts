@@ -55,7 +55,7 @@ export class NothingToValidateError extends Error {
 export class TooLargeToValidateError extends Error {
   constructor(public id: string) {
     super(
-      'The collection is too large for an automatic review: a curator will review it'
+      'The collection is too large for an automated review: a curator will review it'
     )
   }
 }

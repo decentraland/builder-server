@@ -1419,7 +1419,7 @@ describe('when handling a request', () => {
           expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
         })
 
-        it('should not request the automatic review', async () => {
+        it('should not request the automated review', async () => {
           jest
             .spyOn(CollectionCuration, 'create')
             .mockResolvedValueOnce(expectedCuration)
@@ -1453,7 +1453,7 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce(expectedCuration)
         })
 
-        it('should notify the curators and request the automatic review of the changes', async () => {
+        it('should notify the curators and request the automated review of the changes', async () => {
           expect(await router.insertCollectionCuration(req)).toEqual(
             expectedCuration
           )
@@ -1499,7 +1499,7 @@ describe('when handling a request', () => {
               })
           })
 
-          it('should insert the request without announcing it or requesting an automatic review', async () => {
+          it('should insert the request without announcing it or requesting an automated review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )
@@ -1540,7 +1540,7 @@ describe('when handling a request', () => {
               .mockRejectedValueOnce(new Error('subgraph down'))
           })
 
-          it('should treat it as submitted changes, announcing them and requesting their automatic review', async () => {
+          it('should treat it as submitted changes, announcing them and requesting their automated review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )
@@ -1606,7 +1606,7 @@ describe('when handling a request', () => {
               })
           })
 
-          it('should announce submitted changes and request their automatic review', async () => {
+          it('should announce submitted changes and request their automated review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )
@@ -1820,7 +1820,7 @@ describe('when handling a request', () => {
     })
   })
 
-  describe('when a creator submits changes the automatic review cannot take now', () => {
+  describe('when a creator submits changes the automated review cannot take now', () => {
     let req: AuthRequest
     let createSpy: jest.SpyInstance
 

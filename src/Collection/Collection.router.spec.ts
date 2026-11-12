@@ -2710,7 +2710,7 @@ describe('Collection router', () => {
               })
           })
 
-          it('should request the automatic review of the published collection and its items', () => {
+          it('should request the automated review of the published collection and its items', () => {
             return server
               .post(buildURL(url))
               .set(createAuthHeaders('post', url))
@@ -2732,7 +2732,7 @@ describe('Collection router', () => {
               ])
             })
 
-            it('should not notify the curators nor request the automatic review', () => {
+            it('should not notify the curators nor request the automated review', () => {
               return server
                 .post(buildURL(url))
                 .set(createAuthHeaders('post', url))
@@ -2769,7 +2769,7 @@ describe('Collection router', () => {
             >).mockResolvedValueOnce([])
           })
 
-          it('should respond with a 200 and not notify the curators nor request the automatic review again', () => {
+          it('should respond with a 200 and not notify the curators nor request the automated review again', () => {
             return server
               .post(buildURL(url))
               .set(createAuthHeaders('post', url))

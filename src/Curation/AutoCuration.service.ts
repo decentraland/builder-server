@@ -70,9 +70,9 @@ const VERDICT_EVENT_TYPE_BY_VERDICT: Record<
   ValidationResult['verdict'],
   CollectionEventType
 > = {
-  passed: CollectionEventType.REVIEW_AI_PASSED,
-  rejected: CollectionEventType.REVIEW_AI_REJECTED,
-  error: CollectionEventType.REVIEW_AI_ERROR,
+  passed: CollectionEventType.REVIEW_AUTOMATED_PASSED,
+  rejected: CollectionEventType.REVIEW_AUTOMATED_REJECTED,
+  error: CollectionEventType.REVIEW_AUTOMATED_ERROR,
 }
 
 const logger = createConsoleLogComponent().getLogger('AutoCuration')
@@ -99,7 +99,7 @@ export function getStartOfTodayUTC(now = new Date()): Date {
 }
 
 /**
- * Counts the automatic reviews a creator used: every start that is not a sweep re-send, since the latest human
+ * Counts the automated reviews a creator used: every start that is not a sweep re-send, since the latest human
  * decision. Expects the day's events newest first.
  */
 export function countValidationAttempts(
@@ -110,7 +110,7 @@ export function countValidationAttempts(
     eventsNewestFirst
       .filter(
         (event) =>
-          event.type === CollectionEventType.REVIEW_AI_ERROR &&
+          event.type === CollectionEventType.REVIEW_AUTOMATED_ERROR &&
           event.payload.reason === PUBLISH_FAILED_REASON
       )
       .map((event) => event.payload.validationId)
@@ -121,7 +121,7 @@ export function countValidationAttempts(
       break
     }
     if (
-      event.type === CollectionEventType.REVIEW_AI_STARTED &&
+      event.type === CollectionEventType.REVIEW_AUTOMATED_STARTED &&
       event.payload.trigger !== 'sweep' &&
       !unsentValidationIds.has(event.payload.validationId)
     ) {
@@ -351,7 +351,7 @@ export class AutoCurationService {
       return
     }
 
-    const staleStarts = await CollectionEvent.findStaleAiStarted(
+    const staleStarts = await CollectionEvent.findStaleAutomatedStarted(
       new Date(Date.now() - STALE_VALIDATION_MS),
       new Date(Date.now() - SWEEP_LOOKBACK_MS)
     )
@@ -370,7 +370,7 @@ export class AutoCurationService {
           // A creator retry may have started a newer validation since the query ran.
           const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
             collection.id,
-            CollectionEventType.REVIEW_AI_STARTED
+            CollectionEventType.REVIEW_AUTOMATED_STARTED
           )
           if (latestStart?.id !== staleStart.id) {
             return undefined
@@ -436,7 +436,7 @@ export class AutoCurationService {
     // publication recorded without one (the start failed) is resumed.
     const anyStart = await CollectionEvent.findLatestByCollectionIdAndType(
       collection.id,
-      CollectionEventType.REVIEW_AI_STARTED
+      CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
     if (anyStart) {
       return undefined
@@ -493,7 +493,7 @@ export class AutoCurationService {
 
     const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
       collectionId,
-      CollectionEventType.REVIEW_AI_STARTED
+      CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
     const itemsToValidate = await this.findItemsToRetry(collection, latestStart)
     if (!itemsToValidate) {
@@ -569,7 +569,7 @@ export class AutoCurationService {
     const notices: string[] = []
     const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
       collectionId,
-      CollectionEventType.REVIEW_AI_STARTED
+      CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
     if (
       !latestStart ||
@@ -633,7 +633,7 @@ export class AutoCurationService {
         }
         const recorded = await CollectionEvent.recordOnce({
           ...event,
-          type: CollectionEventType.REVIEW_AI_PASSED,
+          type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
         })
         if (!recorded) {
           break
@@ -643,11 +643,11 @@ export class AutoCurationService {
         }
         notices.push(
           stale
-            ? `AI review passed for collection ${describeCollection(
+            ? `Automated review passed for collection ${describeCollection(
                 collection,
                 collectionId
               )}, but${stale}`
-            : `AI review passed for collection ${describeCollection(
+            : `Automated review passed for collection ${describeCollection(
                 collection,
                 collectionId
               )}. It is ready for a curator approval.`
@@ -661,7 +661,7 @@ export class AutoCurationService {
         }
         await CollectionEvent.recordOnce({
           ...event,
-          type: CollectionEventType.REVIEW_AI_REJECTED,
+          type: CollectionEventType.REVIEW_AUTOMATED_REJECTED,
         })
         break
       }
@@ -726,13 +726,13 @@ export class AutoCurationService {
         }
         const recorded = await CollectionEvent.recordOnce({
           ...event,
-          type: CollectionEventType.REVIEW_AI_ERROR,
+          type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
         })
         if (!recorded) {
           break
         }
         notices.push(
-          `AI review failed for collection ${describeCollection(
+          `Automated review failed for collection ${describeCollection(
             collection,
             collectionId
           )} (validation ${
@@ -796,7 +796,7 @@ export class AutoCurationService {
     }
     const event = await CollectionEvent.record({
       collection_id: collection.id,
-      type: CollectionEventType.REVIEW_AI_STARTED,
+      type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
       actor: CollectionEventActor.VALIDATOR,
       actor_address: ethAddress ? ethAddress.toLowerCase() : null,
       payload: {
@@ -837,7 +837,7 @@ export class AutoCurationService {
       )
       await CollectionEvent.recordOnce({
         collection_id: collection.id,
-        type: CollectionEventType.REVIEW_AI_ERROR,
+        type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
         actor: CollectionEventActor.SYSTEM,
         actor_address: null,
         payload: {
@@ -859,7 +859,7 @@ export class AutoCurationService {
     )
     const recorded = await CollectionEvent.recordOnce({
       collection_id: collection.id,
-      type: CollectionEventType.REVIEW_AI_ERROR,
+      type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
       actor: CollectionEventActor.SYSTEM,
       actor_address: null,
       payload: { reason: TOO_LARGE_REASON, validationId, bytes, itemCount },
@@ -869,7 +869,7 @@ export class AutoCurationService {
     }
     await curationNotifications.validationNotRequested(
       collection.id,
-      `it is too large for the automatic review (${itemCount} items, ${bytes} bytes)`
+      `it is too large for the automated review (${itemCount} items, ${bytes} bytes)`
     )
   }
 
@@ -881,7 +881,7 @@ export class AutoCurationService {
     const validationId = staleStart.payload.validationId
     const recorded = await CollectionEvent.recordOnce({
       collection_id: collection.id,
-      type: CollectionEventType.REVIEW_AI_ERROR,
+      type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
       actor: CollectionEventActor.VALIDATOR,
       actor_address: null,
       payload: { reason: SWEEP_EXHAUSTED_REASON, validationId },
@@ -889,7 +889,7 @@ export class AutoCurationService {
     if (!recorded) {
       return undefined
     }
-    return `AI review of collection ${describeCollection(
+    return `Automated review of collection ${describeCollection(
       collection
     )} got no verdict after ${MAX_SWEEP_RESENDS} re-sends (validation ${validationId}). It needs a curator or a creator retry.`
   }
@@ -901,7 +901,7 @@ export class AutoCurationService {
   private async isValidationInProgress(collectionId: string): Promise<boolean> {
     const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
       collectionId,
-      CollectionEventType.REVIEW_AI_STARTED
+      CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
     if (!latestStart) {
       return false
@@ -990,7 +990,7 @@ export class AutoCurationService {
     }
     // The run was handed to a curator; retrying the same request would be refused for its size again.
     if (
-      verdict?.type === CollectionEventType.REVIEW_AI_ERROR &&
+      verdict?.type === CollectionEventType.REVIEW_AUTOMATED_ERROR &&
       verdict.payload.reason === TOO_LARGE_REASON
     ) {
       throw new TooLargeToValidateError(collection.id)
@@ -1184,7 +1184,7 @@ function describeCollection(
 /** A run that ended without judging the content (a failure the sweep gave up on) is worth repeating as is. */
 function isRetryableVerdict(verdict?: CollectionEventAttributes): boolean {
   return (
-    verdict?.type === CollectionEventType.REVIEW_AI_ERROR &&
+    verdict?.type === CollectionEventType.REVIEW_AUTOMATED_ERROR &&
     verdict.payload.reason !== TOO_LARGE_REASON
   )
 }

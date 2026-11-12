@@ -372,14 +372,14 @@ describe('when building the message fails', () => {
   })
 })
 
-describe('when the automatic review was not requested', () => {
+describe('when the automated review was not requested', () => {
   it('should say why and that a curator has to review without it', async () => {
     await curationNotifications.validationNotRequested(
       dbCollectionMock.id,
-      'it is too large for the automatic review (51 items, 300000 bytes)'
+      'it is too large for the automated review (51 items, 300000 bytes)'
     )
     expect(sentText()).toMatch(
-      /^⚠️ No automatic review for <.*>: it is too large for the automatic review \(51 items, 300000 bytes\)\. It needs a curator review without it\.$/
+      /^⚠️ No automated review for <.*>: it is too large for the automated review \(51 items, 300000 bytes\)\. It needs a curator review without it\.$/
     )
   })
 })

@@ -1024,9 +1024,9 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: An automatic review of the collection is running
+          description: An automated review of the collection is running
         '429':
-          description: The collection used today's automatic reviews; `retryAt` in the data
+          description: The collection used today's automated reviews; `retryAt` in the data
     patch:
       operationId: updateCollectionCuration
       tags: [Curations]
@@ -1145,15 +1145,15 @@ paths:
     post:
       operationId: requestCollectionValidation
       tags: [Curations]
-      summary: Request an AI validation
+      summary: Request an automated review
       description: |
         Sends the collection to the automatic validator again. Only the collection creator or a manager can call it.
-        A collection gets 3 automatic reviews per UTC day (publish, retry and submitted changes all count; sweep
+        A collection gets 3 automated reviews per UTC day (publish, retry and submitted changes all count; sweep
         re-sends do not); a curator decision resets the count. The same content always gets the same verdict, so a
-        retry needs the last run to have ended without one (an AI error) or an item whose content changed since it
+        retry needs the last run to have ended without one (an automated review error) or an item whose content changed since it
         started; it then validates the changed items plus the previous run's. Reopens a pending curation when the
         validator rejected the latest one; a curator's rejection stands until the creator submits changes or
-        appeals. Records a `review.ai_started` event. At most 30 requests per minute per address.
+        appeals. Records a `review.automated_started` event. At most 30 requests per minute per address.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       responses:
@@ -1168,7 +1168,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: A validation is already in progress, nothing changed since the last verdict, a curator rejected the collection, it was too large for an automatic review, or it is not a published standard collection
+          description: A validation is already in progress, nothing changed since the last verdict, a curator rejected the collection, it was too large for an automated review, or it is not a published standard collection
           content:
             application/json:
               schema:
@@ -1231,7 +1231,7 @@ paths:
         keyed with `WEARABLE_VALIDATOR_CALLBACK_SECRET`, of `<x-wearable-validator-timestamp>.<raw body>`; timestamps
         more than 5 minutes off are refused. The signature is checked before the feature flag. A body whose
         `collectionId` is not the path id is answered with 400. Results whose `validationId` is not the latest
-        `review.ai_started` of the collection are ignored and still answered with 204.
+        `review.automated_started` of the collection are ignored and still answered with 204.
       security:
         - ValidatorSignature: []
       parameters:
@@ -2649,10 +2649,10 @@ components:
       enum:
         - collection.published
         - review.human_required
-        - review.ai_started
-        - review.ai_passed
-        - review.ai_rejected
-        - review.ai_error
+        - review.automated_started
+        - review.automated_passed
+        - review.automated_rejected
+        - review.automated_error
         - review.appeal_requested
         - review.assigned
         - review.approved
@@ -2679,9 +2679,9 @@ components:
         payload:
           type: object
           description: |
-            Depends on the type: `review.ai_started` holds `{ validationId, trigger, itemIds }`,
-            `review.ai_passed` / `review.ai_rejected` / `review.ai_error` hold the validation result,
-            `review.ai_error` may also be `{ reason: "sweep_exhausted", validationId }`,
+            Depends on the type: `review.automated_started` holds `{ validationId, trigger, itemIds }`,
+            `review.automated_passed` / `review.automated_rejected` / `review.automated_error` hold the validation result,
+            `review.automated_error` may also be `{ reason: "sweep_exhausted", validationId }`,
             `review.human_required` holds `{ reason: "third_party" }` or `{ reason: "unsupported_items", validationId, items }`,
             `review.appeal_requested` holds `{ note }`, `review.assigned` holds `{ assignee }`,
             `review.rejected` holds `{ rejectionReasons, rejectionMessage }`, `changes.submitted` holds `{ itemIds }`.

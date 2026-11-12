@@ -1,5 +1,4 @@
 import { PublishCommand, SNSClient } from '@aws-sdk/client-sns'
-import { NodeHttpHandler } from '@smithy/node-http-handler'
 import { env } from 'decentraland-commons'
 import { MAX_VALIDATION_ITEMS, ValidationManifest } from './AutoCuration.types'
 
@@ -30,10 +29,12 @@ function getClient(): SNSClient {
       region: env.get('AWS_REGION', '') || undefined,
       endpoint: env.get('AWS_SNS_ENDPOINT', '') || undefined,
       maxAttempts: 2,
-      requestHandler: new NodeHttpHandler({
+      requestHandler: {
         connectionTimeout: PUBLISH_TIMEOUT_MS,
         requestTimeout: PUBLISH_TIMEOUT_MS,
-      }),
+        // Without it the handler only warns and the request keeps waiting.
+        throwOnRequestTimeout: true,
+      },
     })
   }
   return client

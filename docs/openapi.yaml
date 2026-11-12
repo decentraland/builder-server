@@ -1193,8 +1193,8 @@ paths:
       summary: Get collection events
       description: |
         Returns the review timeline of a collection, newest first. Creators and managers can read their own
-        collections, committee members any collection. For non-committee callers the `validationId` is omitted
-        from every event payload. At most 120 requests per minute per address.
+        collections, committee members any collection. For non-committee callers the `validationId` and each item's
+        `error` are omitted from every event payload. At most 120 requests per minute per address.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
         - $ref: '#/components/parameters/Page'

@@ -66,6 +66,7 @@ export const MAX_SWEEP_RESENDS = 3
 export const VALIDATOR_REVIEWER = 'validator'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+const MAX_LOGGED_ERROR_LENGTH = 1000
 const VERDICT_EVENT_TYPE_BY_VERDICT: Record<
   ValidationResult['verdict'],
   CollectionEventType
@@ -132,10 +133,19 @@ export function countValidationAttempts(
   return attempts
 }
 
+/** What a creator must not read: the id a validator result is matched by, and the validator's raw failures. */
 export function redactCollectionEvent(
   event: CollectionEventAttributes
 ): CollectionEventAttributes {
-  return { ...event, payload: utils.omit(event.payload, ['validationId']) }
+  const payload = utils.omit<Record<string, unknown>>(event.payload, [
+    'validationId',
+  ])
+  if (Array.isArray(payload.items)) {
+    payload.items = payload.items.map((item) =>
+      item && typeof item === 'object' ? utils.omit(item, ['error']) : item
+    )
+  }
+  return { ...event, payload }
 }
 
 export class AutoCurationService {
@@ -602,6 +612,19 @@ export class AutoCurationService {
         `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
       )
       return notices
+    }
+
+    // Creators never read these, so the log is where a developer finds them.
+    for (const item of result.items) {
+      if (item.error) {
+        logger.warn(
+          `Validation ${
+            result.validationId
+          } of collection ${collectionId} could not validate item ${
+            item.itemId
+          }: ${toOneLine(item.error).slice(0, MAX_LOGGED_ERROR_LENGTH)}`
+        )
+      }
     }
 
     // With the flag off the verdict only feeds the timeline: nothing is decided in the validator's name.

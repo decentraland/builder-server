@@ -47,7 +47,10 @@ jest.mock('./validationQueue', () => ({
   ...jest.requireActual('./validationQueue'),
   requestValidation: jest.fn(),
 }))
-jest.mock('./slack')
+jest.mock('./slack', () => ({
+  ...jest.requireActual('./slack'),
+  notifyCurationSlack: jest.fn(),
+}))
 jest.mock('./notifications')
 jest.mock('./collectionLock')
 

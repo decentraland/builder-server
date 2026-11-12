@@ -868,6 +868,35 @@ describe('AutoCurationService', () => {
       mockFindItemsByIds.mockResolvedValue([item])
     })
 
+    describe('and an item could not be validated', () => {
+      beforeEach(() => {
+        result = {
+          ...result,
+          verdict: 'error',
+          retryable: true,
+          items: [
+            {
+              itemId: item.id,
+              contentHash: 'localHash',
+              passed: null,
+              findings: [],
+              error: 'render failed\nat step 3',
+            },
+          ],
+        }
+      })
+
+      it('should log why on one line, where a developer can read it', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, result)
+
+        expect(process.stderr.write).toHaveBeenCalledWith(
+          expect.stringContaining(
+            `could not validate item ${item.id}: render failed at step 3`
+          )
+        )
+      })
+    })
+
     describe('and the validation is not the latest one', () => {
       beforeEach(() => {
         result = {
@@ -1283,7 +1312,14 @@ describe('AutoCurationService', () => {
       aiEvent = buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED, {
         validationId: 'secret',
         verdict: 'rejected',
-        items: [{ itemId: item.id, findings: [], visualSummary: 'A hat' }],
+        items: [
+          {
+            itemId: item.id,
+            findings: [],
+            visualSummary: 'A hat',
+            error: 'GET https://internal/render failed',
+          },
+        ],
       })
       curatorEvent = buildEvent(CollectionEventType.REVIEW_REJECTED, {
         rejectionReasons: ['clipping'],
@@ -1296,7 +1332,7 @@ describe('AutoCurationService', () => {
     })
 
     describe('and the caller is not a committee member', () => {
-      it('should drop the validation ids of the automated review events and keep the rest', async () => {
+      it('should drop the validation ids and the validator failures of the automated review events and keep the rest', async () => {
         const page = await service.getEvents(dbCollectionMock.id, 2, 2, false)
 
         expect(mockFindEventsPage).toHaveBeenCalledWith(
@@ -1326,10 +1362,10 @@ describe('AutoCurationService', () => {
     })
 
     describe('and the caller is a committee member', () => {
-      it('should keep the validation ids', async () => {
+      it('should keep the validation ids and the validator failures', async () => {
         const page = await service.getEvents(dbCollectionMock.id, 1, 50, true)
 
-        expect(page.results[0].payload.validationId).toBe('secret')
+        expect(page.results[0].payload).toEqual(aiEvent.payload)
       })
     })
   })

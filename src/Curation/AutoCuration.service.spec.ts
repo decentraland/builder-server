@@ -41,6 +41,7 @@ import {
   getStartOfTodayUTC,
   MAX_SWEEP_RESENDS,
   STALE_VALIDATION_MS,
+  SubmittedChanges,
   SWEEP_LOOKBACK_MS,
   VALIDATOR_REVIEWER,
 } from './AutoCuration.service'
@@ -612,16 +613,19 @@ describe('AutoCurationService', () => {
         )
       })
 
-      it('should validate the items of the previous run with a new validation id', async () => {
+      it('should validate the items of the previous run with a new validation id, kept out of the answer', async () => {
         const event = await service.requestValidation(
           dbCollectionMock.id,
           ethAddress
         )
 
         expect(mockFindItemsByIds).toHaveBeenCalledWith([item.id])
-        expect(event.payload.validationId).not.toBe('previousValidation')
+        expect(event.payload).toEqual(
+          expect.objectContaining({ trigger: 'retry', itemIds: [item.id] })
+        )
+        expect(event.payload).not.toHaveProperty('validationId')
         expect(mockSendValidation).toHaveBeenCalledWith({
-          validationId: event.payload.validationId,
+          validationId: expect.not.stringMatching(/^previousValidation$/),
           collectionId: dbCollectionMock.id,
           items: [
             {
@@ -1386,6 +1390,78 @@ describe('AutoCurationService', () => {
           items: [expect.objectContaining({ itemId: changedItem.id })],
         })
       )
+    })
+
+    describe('and a run started between the checks and the request being stored', () => {
+      let changes: SubmittedChanges
+      let trigger: string
+
+      beforeEach(async () => {
+        changes = (await service.prepareChanges(
+          dbCollectionMock.id,
+          CurationStatus.APPROVED
+        )) as SubmittedChanges
+        mockFindLatestEventByType.mockImplementation((_, type) =>
+          Promise.resolve(
+            type === CollectionEventType.REVIEW_AUTOMATED_STARTED
+              ? buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+                  validationId: 'meanwhile',
+                  trigger,
+                })
+              : undefined
+          )
+        )
+      })
+
+      describe('and another request of the creator started it', () => {
+        beforeEach(() => {
+          trigger = 'changes'
+        })
+
+        it('should not start a second run', async () => {
+          await service.onChangesSubmitted(changes, ethAddress)
+
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+          expect(mockSendValidation).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and the sweep started it', () => {
+        beforeEach(() => {
+          trigger = 'sweep'
+        })
+
+        it('should validate the changes, which supersede the re-send', async () => {
+          await service.onChangesSubmitted(changes, ethAddress)
+
+          expect(mockSendValidation).toHaveBeenCalledWith(
+            expect.objectContaining({
+              items: [expect.objectContaining({ itemId: changedItem.id })],
+            })
+          )
+        })
+      })
+    })
+
+    describe('and the daily limit was used up between the checks and the request being stored', () => {
+      it('should not start another run', async () => {
+        const changes = (await service.prepareChanges(
+          dbCollectionMock.id,
+          CurationStatus.APPROVED
+        )) as SubmittedChanges
+        mockFindEventsSince.mockResolvedValue(
+          Array.from({ length: 10 }, () =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'changes',
+            })
+          )
+        )
+
+        await service.onChangesSubmitted(changes, ethAddress)
+
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
     })
 
     describe('and the last run already judged the changed item as it is', () => {

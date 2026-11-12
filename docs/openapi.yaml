@@ -1158,7 +1158,7 @@ paths:
         - $ref: '#/components/parameters/CollectionId'
       responses:
         '200':
-          description: Validation started
+          description: Validation started. The event's payload omits the `validationId`
           content:
             application/json:
               schema:

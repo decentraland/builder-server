@@ -90,6 +90,7 @@ export type SubmittedChanges = {
   collection: CollectionAttributes
   items: ItemAttributes[]
   previousStatus?: CurationStatus
+  latestStartId?: string
 }
 
 export function getStartOfTodayUTC(now = new Date()): Date {
@@ -245,7 +246,11 @@ export class AutoCurationService {
         throw new ValidationLimitReachedError(collectionId, retryAt)
       }
     }
-    return { collection, items, previousStatus }
+    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      CollectionEventType.REVIEW_AUTOMATED_STARTED
+    )
+    return { collection, items, previousStatus, latestStartId: latestStart?.id }
   }
 
   /**
@@ -271,17 +276,23 @@ export class AutoCurationService {
         }
         return
       }
-      await CollectionEvent.record({
-        collection_id: collection.id,
-        type: CollectionEventType.CHANGES_SUBMITTED,
-        actor: CollectionEventActor.CREATOR,
-        actor_address: ethAddress.toLowerCase(),
-        payload: { itemIds: items.map((item) => item.id) },
+      const started = await withCollectionLock(collection.id, async () => {
+        // The checks ran before the request was stored: a concurrent request may have started a run since.
+        if (await this.wasOvertaken(changes)) {
+          logger.warn(
+            `Not validating the changes of collection ${collection.id} again: another request started a run or used the daily limit meanwhile`
+          )
+          return undefined
+        }
+        await CollectionEvent.record({
+          collection_id: collection.id,
+          type: CollectionEventType.CHANGES_SUBMITTED,
+          actor: CollectionEventActor.CREATOR,
+          actor_address: ethAddress.toLowerCase(),
+          payload: { itemIds: items.map((item) => item.id) },
+        })
+        return this.recordStart(collection, items, 'changes')
       })
-      // A sweep re-send that started after the check is superseded: its verdict is no longer the latest.
-      const started = await withCollectionLock(collection.id, () =>
-        this.recordStart(collection, items, 'changes')
-      )
       this.sendInBackground(started)
     } catch (error) {
       logger.error(
@@ -300,7 +311,8 @@ export class AutoCurationService {
       this.doRequestValidation(collectionId, ethAddress)
     )
     await this.sendValidation(started)
-    return started.event
+    // The caller is a creator: the id is what a validator result is matched by.
+    return redactCollectionEvent(started.event)
   }
 
   async appeal(
@@ -743,6 +755,23 @@ export class AutoCurationService {
       }
     }
     return notices
+  }
+
+  /** A sweep re-send does not count: the changes supersede it, and its verdict is no longer the latest. */
+  private async wasOvertaken(changes: SubmittedChanges): Promise<boolean> {
+    const collectionId = changes.collection.id
+    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      CollectionEventType.REVIEW_AUTOMATED_STARTED
+    )
+    if (
+      latestStart &&
+      latestStart.id !== changes.latestStartId &&
+      latestStart.payload.trigger !== 'sweep'
+    ) {
+      return true
+    }
+    return (await this.getDailyLimitRetryAt(collectionId)) !== null
   }
 
   private async reopenValidatorRejection(collectionId: string): Promise<void> {

@@ -638,6 +638,9 @@ export class CollectionRouter extends Router {
           result.items.length,
           eth_address
         )
+        await this.autoCurationService.onThirdPartyCollectionPublished(
+          dbCollection
+        )
 
         await this.forumService.upsertThirdPartyCollectionForumPost(
           dbCollection,
@@ -660,8 +663,10 @@ export class CollectionRouter extends Router {
             dbItems.length,
             dbCollection.eth_address
           )
-          void this.autoCurationService.onStandardCollectionPublished(
-            result.collection
+          // Awaited: the client reads the review timeline right after this answer.
+          await this.autoCurationService.onStandardCollectionPublished(
+            result.collection,
+            eth_address
           )
         }
       }

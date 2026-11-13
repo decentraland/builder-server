@@ -7,7 +7,11 @@ import { AssetRouter } from './Asset'
 import { ProjectRouter } from './Project'
 import { ItemRouter } from './Item'
 import { CollectionRouter } from './Collection'
-import { AutoCurationRouter, CurationRouter } from './Curation'
+import {
+  AutoCurationRouter,
+  CurationRouter,
+  startAutoCurationSweep,
+} from './Curation'
 import { CommitteeRouter } from './Committee'
 import { ThirdPartyRouter } from './ThirdParty'
 import { RarityRouter } from './Rarity'
@@ -66,5 +70,6 @@ if (require.main === module) {
 async function startServer() {
   console.log('Connecting to the DB!!')
   await db.connect()
+  startAutoCurationSweep()
   return app.listen(SERVER_PORT)
 }

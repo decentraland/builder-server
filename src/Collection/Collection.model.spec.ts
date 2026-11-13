@@ -2,6 +2,11 @@ import { SQL } from 'decentraland-server'
 import { Collection } from './Collection.model'
 import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
 import {
+  SWEEP_EXHAUSTED_REASON,
+  TOO_LARGE_REASON,
+} from '../Curation/CollectionEvent/CollectionEvent.model'
+import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
+import {
   CollectionSort,
   CollectionStatus,
   ReviewTypeFilter,
@@ -139,6 +144,43 @@ describe('Collection model', () => {
 
         expect(normalize(lastQuery().text)).toContain(
           'WHERE (((collection_curations.assignee is NOT NULL AND (collection_curations.status = $1 OR ((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND EXISTS (SELECT 1 FROM item_curations'
+        )
+      })
+    })
+
+    describe('filtered by the auto reviewing status', () => {
+      it('should take a standard collection with a pending request whose newest review event is a start or an error the sweep re-sends', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [CurationStatusFilter.AUTO_REVIEWING],
+        })
+
+        const text = normalize(lastQuery().text)
+        expect(text).toContain(
+          "collections.third_party_id is NULL AND collections.urn_suffix is NULL AND (COALESCE(collection_curations.status = $1, false) AND EXISTS (SELECT 1 FROM (SELECT latest_events.type, latest_events.payload FROM collection_events latest_events WHERE latest_events.collection_id = collections.id AND latest_events.type NOT IN ($2, $3) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE latest_stage.type = $4 OR (latest_stage.type = $5 AND COALESCE(latest_stage.payload->>'reason', '') NOT IN ($6, $7))))"
+        )
+        expect(lastQuery().values.slice(0, 7)).toEqual([
+          CurationStatusFilter.PENDING,
+          CollectionEventType.REVIEW_ASSIGNED,
+          CollectionEventType.CHANGES_SUBMITTED,
+          CollectionEventType.REVIEW_AUTOMATED_STARTED,
+          CollectionEventType.REVIEW_AUTOMATED_ERROR,
+          SWEEP_EXHAUSTED_REASON,
+          TOO_LARGE_REASON,
+        ])
+      })
+    })
+
+    describe.each([
+      CurationStatusFilter.TO_REVIEW,
+      CurationStatusFilter.UNDER_REVIEW,
+      CurationStatusFilter.PENDING,
+    ])('filtered by the %s status', (status) => {
+      it('should leave out a collection whose automated review is running', async () => {
+        await Collection.findAll({ ...remoteSets, statuses: [status] })
+
+        expect(normalize(lastQuery().text)).toMatch(
+          /AND NOT \(COALESCE\(collection_curations.status = \$\d+, false\) AND EXISTS \(SELECT 1 FROM \(SELECT latest_events.type/
         )
       })
     })

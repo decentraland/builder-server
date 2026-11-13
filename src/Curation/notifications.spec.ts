@@ -340,6 +340,43 @@ describe('when a verdict is given', () => {
   })
 })
 
+describe('when a creator comments on a review', () => {
+  it('should name the collection, the creator and the message', async () => {
+    await curationNotifications.commentPosted(
+      dbCollectionMock.id,
+      creator,
+      'Is the hat fine now?'
+    )
+    expect(sentText()).toMatch(
+      new RegExp(
+        `^💬 New comment on <.*> by ${escapeRegExp(
+          creatorLink('0x1111...1111')
+        )}: Is the hat fine now\\?$`
+      )
+    )
+  })
+
+  it('should put the message on one line and escape its markup', async () => {
+    await curationNotifications.commentPosted(
+      dbCollectionMock.id,
+      creator,
+      'First line\n<!channel> second & last'
+    )
+    expect(sentText()).toMatch(
+      /: First line &lt;!channel&gt; second &amp; last$/
+    )
+  })
+
+  it('should cut a long message', async () => {
+    await curationNotifications.commentPosted(
+      dbCollectionMock.id,
+      creator,
+      'a'.repeat(2000)
+    )
+    expect(sentText()).toMatch(new RegExp(`: a{300}…$`))
+  })
+})
+
 describe('when the collection does not exist', () => {
   beforeEach(() => {
     mockFindOne.mockResolvedValue(undefined)
@@ -372,14 +409,14 @@ describe('when building the message fails', () => {
   })
 })
 
-describe('when the automatic review was not requested', () => {
+describe('when the automated review was not requested', () => {
   it('should say why and that a curator has to review without it', async () => {
     await curationNotifications.validationNotRequested(
       dbCollectionMock.id,
-      'it is too large for the automatic review (51 items, 300000 bytes)'
+      'it is too large for the automated review (51 items, 300000 bytes)'
     )
     expect(sentText()).toMatch(
-      /^⚠️ No automatic review for <.*>: it is too large for the automatic review \(51 items, 300000 bytes\)\. It needs a curator review without it\.$/
+      /^⚠️ No automated review for <.*>: it is too large for the automated review \(51 items, 300000 bytes\)\. It needs a curator review without it\.$/
     )
   })
 })

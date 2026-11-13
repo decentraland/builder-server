@@ -10,6 +10,7 @@ export const VALIDATION_REQUESTED_EVENT = {
 } as const
 // SNS refuses messages over 256 KB; the margin covers the attributes and the envelope.
 export const MAX_VALIDATION_MESSAGE_BYTES = 240 * 1024
+const PUBLISH_TIMEOUT_MS = 5 * 1000
 
 export class ValidationTooLargeError extends Error {
   constructor(public bytes: number, public itemCount: number) {
@@ -23,9 +24,17 @@ let client: SNSClient | undefined
 
 function getClient(): SNSClient {
   if (!client) {
+    // A hung request must not hold a creator's retry or the sweep for long.
     client = new SNSClient({
       region: env.get('AWS_REGION', '') || undefined,
       endpoint: env.get('AWS_SNS_ENDPOINT', '') || undefined,
+      maxAttempts: 2,
+      requestHandler: {
+        connectionTimeout: PUBLISH_TIMEOUT_MS,
+        requestTimeout: PUBLISH_TIMEOUT_MS,
+        // Without it the handler only warns and the request keeps waiting.
+        throwOnRequestTimeout: true,
+      },
     })
   }
   return client

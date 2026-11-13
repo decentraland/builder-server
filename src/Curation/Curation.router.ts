@@ -25,6 +25,7 @@ import {
   CurationStatus,
   CurationType,
   patchCurationSchema,
+  postCurationSchema,
 } from './Curation.types'
 import { CurationService } from './Curation.service'
 import {
@@ -32,8 +33,16 @@ import {
   CollectionCurationAttributes,
 } from './CollectionCuration'
 import { ItemCuration, ItemCurationAttributes } from './ItemCuration'
+import {
+  CollectionEvent,
+  CollectionEventActor,
+  CollectionEventType,
+  HUMAN_DECISION_EVENT_TYPES,
+} from './CollectionEvent'
 import { curationNotifications, CurationVerdict } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
+import { toAutoCurationHTTPError } from './AutoCuration.errors'
+import { withCollectionLock } from './collectionLock'
 import { isTPCollection } from '../utils/urn'
 
 const validator = getValidator()
@@ -217,7 +226,7 @@ export class CurationRouter extends Router {
     const collectionId = server.extractFromReq(req, 'id')
     const curationJSON: any = server.extractFromReq(req, 'curation')
     const ethAddress = req.auth.ethAddress
-    const { updated, previous } = await this.updateCuration(
+    const { updated, previous, decisionRecorded } = await this.updateCuration(
       collectionId,
       ethAddress,
       curationJSON,
@@ -238,11 +247,8 @@ export class CurationRouter extends Router {
         ethAddress
       )
     }
-    if (
-      (curationJSON.status === CurationStatus.APPROVED ||
-        curationJSON.status === CurationStatus.REJECTED) &&
-      curationJSON.status !== previous.status
-    ) {
+    // Follows the timeline: a retried PATCH whose event was missing still announces the decision once.
+    if (decisionRecorded) {
       void curationNotifications.verdictGiven(
         collectionId,
         curationJSON.status as CurationVerdict,
@@ -270,19 +276,28 @@ export class CurationRouter extends Router {
   insertCollectionCuration = async (req: AuthRequest) => {
     try {
       const collectionId = server.extractFromReq(req, 'id')
-      let curationJSON: Partial<CollectionCurationAttributes> | undefined
+      let curationJSON:
+        | (Partial<CollectionCurationAttributes> & { note?: string })
+        | undefined
       try {
         curationJSON = server.extractFromReq(req, 'curation')
       } catch (error) {}
       const ethAddress = req.auth.ethAddress
 
-      return this.insertCuration(
+      return await this.insertCuration(
         collectionId,
         ethAddress,
         CurationType.COLLECTION,
         curationJSON
       )
     } catch (error) {
+      const autoCurationError = toAutoCurationHTTPError(
+        error,
+        server.extractFromReq(req, 'id')
+      )
+      if (autoCurationError instanceof HTTPError) {
+        throw autoCurationError
+      }
       if (error instanceof NonExistentCollectionError) {
         throw new HTTPError(
           'Collection does not exist',
@@ -403,16 +418,6 @@ export class CurationRouter extends Router {
       )
     }
 
-    const curation = await curationService.getLatestById(id)
-
-    if (!curation) {
-      throw new HTTPError(
-        'Curation does not exist',
-        { id },
-        STATUS_CODES.notFound
-      )
-    }
-
     if (curationJSON.assignee !== undefined) {
       if (!(await isCommitteeMember(ethAddress))) {
         throw new HTTPError(
@@ -435,9 +440,11 @@ export class CurationRouter extends Router {
       }
     }
 
+    // Creators reopen a review with a new request (POST), never by flipping the status of a decided one.
     if (
       (curationJSON.status === CurationStatus.APPROVED ||
-        curationJSON.status === CurationStatus.REJECTED) &&
+        curationJSON.status === CurationStatus.REJECTED ||
+        (type === CurationType.COLLECTION && curationJSON.status)) &&
       !(await isCommitteeMember(ethAddress))
     ) {
       throw new HTTPError(
@@ -447,58 +454,247 @@ export class CurationRouter extends Router {
       )
     }
 
-    if (type === CurationType.ITEM) {
-      const { rowCount } = await CollectionCuration.updateByItemId(id)
-      if (rowCount === 0) {
+    // Every check above runs before the lock, so only callers allowed to change the request can hold it. A
+    // collection's decision runs under it: a validator verdict reopening its own rejection must not interleave
+    // with a curator's decision, nor two curators' identical decisions with each other.
+    const apply = async () => {
+      const curation = await curationService.getLatestById(id)
+
+      if (!curation) {
         throw new HTTPError(
-          'Could not find a valid collection curation for the item',
-          { itemId: id },
+          'Curation does not exist',
+          { id },
           STATUS_CODES.notFound
         )
       }
-    }
 
-    const fieldsToUpdate: Partial<
-      CollectionCurationAttributes & ItemCurationAttributes
-    > = {
-      ...(curationJSON.assignee !== undefined
-        ? {
-            assignee: curationJSON.assignee
-              ? curationJSON.assignee.toLowerCase()
-              : null,
-          }
-        : {}),
-      ...(curationJSON.status ? { status: curationJSON.status } : {}),
-      updated_at: new Date(),
-    }
+      if (type === CurationType.ITEM) {
+        const { rowCount } = await CollectionCuration.updateByItemId(id)
+        if (rowCount === 0) {
+          throw new HTTPError(
+            'Could not find a valid collection curation for the item',
+            { itemId: id },
+            STATUS_CODES.notFound
+          )
+        }
+      }
 
-    if (curationJSON.status === CurationStatus.APPROVED) {
-      await this.updateCollectionItemsContent(id)
-    }
+      const fieldsToUpdate: Partial<
+        CollectionCurationAttributes & ItemCurationAttributes
+      > = {
+        ...(curationJSON.assignee !== undefined
+          ? {
+              assignee: curationJSON.assignee
+                ? curationJSON.assignee.toLowerCase()
+                : null,
+            }
+          : {}),
+        ...(curationJSON.status ? { status: curationJSON.status } : {}),
+        updated_at: new Date(),
+      }
 
-    if (type === CurationType.ITEM) {
-      const itemData = await this.getItemCurationContentHashAndMappingCompletion(
-        id
+      const decision =
+        type === CurationType.COLLECTION
+          ? await this.classifyDecision(id, curationJSON, curation)
+          : 'none'
+      // A repeated decision leaves the reviewer and the reasons as the timeline has them.
+      if (decision === 'new' || decision === 'edit') {
+        Object.assign(
+          fieldsToUpdate,
+          this.getCollectionReviewFields(ethAddress, curationJSON)
+        )
+      }
+
+      if (curationJSON.status === CurationStatus.APPROVED) {
+        await this.updateCollectionItemsContent(id)
+      }
+
+      if (type === CurationType.ITEM) {
+        const itemData = await this.getItemCurationContentHashAndMappingCompletion(
+          id
+        )
+        fieldsToUpdate.content_hash = itemData.content_hash
+        fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
+      }
+
+      const updated = await curationService.updateById(
+        curation.id,
+        fieldsToUpdate
       )
-      fieldsToUpdate.content_hash = itemData.content_hash
-      fieldsToUpdate.is_mapping_complete = itemData.is_mapping_complete
+
+      if (type === CurationType.COLLECTION) {
+        await this.recordCollectionReviewEvents(
+          id,
+          ethAddress,
+          curationJSON,
+          curation,
+          decision
+        )
+      }
+
+      // Only a new decision is announced: a corrected reason is recorded quietly.
+      return {
+        updated,
+        previous: curation,
+        decisionRecorded: decision === 'new',
+      }
+    }
+    // Only validator verdicts race curator decisions, and they only act with the auto curation on.
+    if (
+      type !== CurationType.COLLECTION ||
+      !(await this.autoCurationService.isEnabled())
+    ) {
+      return apply()
+    }
+    try {
+      return await withCollectionLock(id, apply)
+    } catch (error) {
+      throw toAutoCurationHTTPError(error, id)
+    }
+  }
+
+  /** Rejections may carry the curator's reasons and message; the legacy Builder sends neither. */
+  private getCollectionReviewFields = (
+    ethAddress: string,
+    curationJSON: any
+  ): Partial<CollectionCurationAttributes> => {
+    const { status, rejectionReasons, rejectionMessage } = curationJSON
+
+    if (status === CurationStatus.APPROVED) {
+      return {
+        reviewed_by: ethAddress.toLowerCase(),
+        rejection_reasons: null,
+        rejection_message: null,
+      }
     }
 
-    const updated = await curationService.updateById(
-      curation.id,
-      fieldsToUpdate
+    if (status !== CurationStatus.REJECTED) {
+      return {}
+    }
+
+    const hasReasons =
+      Array.isArray(rejectionReasons) && rejectionReasons.length > 0
+    const hasMessage =
+      typeof rejectionMessage === 'string' && rejectionMessage.trim() !== ''
+
+    return {
+      reviewed_by: ethAddress.toLowerCase(),
+      ...(hasReasons ? { rejection_reasons: rejectionReasons } : {}),
+      ...(hasMessage ? { rejection_message: rejectionMessage.trim() } : {}),
+    }
+  }
+
+  /**
+   * Keyed on the request, not on the row's status: a curator confirming the validator's rejection or reversing a
+   * decision is new, a PATCH retried after the update still is, a rejection resent with other reasons is an edit,
+   * and a repeated decision by any curator is a repeat.
+   */
+  private classifyDecision = async (
+    collectionId: string,
+    curationJSON: any,
+    previous: CollectionCurationAttributes
+  ): Promise<'none' | 'new' | 'edit' | 'repeat'> => {
+    if (
+      curationJSON.status !== CurationStatus.APPROVED &&
+      curationJSON.status !== CurationStatus.REJECTED
+    ) {
+      return 'none'
+    }
+    const decisionType =
+      curationJSON.status === CurationStatus.APPROVED
+        ? CollectionEventType.REVIEW_APPROVED
+        : CollectionEventType.REVIEW_REJECTED
+    const latestDecision = await CollectionEvent.findLatestByCollectionIdAndTypes(
+      collectionId,
+      HUMAN_DECISION_EVENT_TYPES
     )
-    return { updated, previous: curation }
+    const sameDecision =
+      latestDecision?.type === decisionType &&
+      new Date(latestDecision.created_at) >= new Date(previous.created_at)
+    if (!sameDecision) {
+      return 'new'
+    }
+    return decisionType === CollectionEventType.REVIEW_REJECTED &&
+      changesRejectionFeedback(curationJSON, previous)
+      ? 'edit'
+      : 'repeat'
+  }
+
+  /** Only real decisions become events: a repeated PATCH must not reset the creator's attempts nor end a run. */
+  private recordCollectionReviewEvents = async (
+    collectionId: string,
+    ethAddress: string,
+    curationJSON: any,
+    previous: CollectionCurationAttributes,
+    decision: 'none' | 'new' | 'edit' | 'repeat'
+  ): Promise<void> => {
+    const base = {
+      collection_id: collectionId,
+      actor: CollectionEventActor.CURATOR,
+      actor_address: ethAddress.toLowerCase(),
+    }
+    const assignee = curationJSON.assignee
+      ? curationJSON.assignee.toLowerCase()
+      : null
+    const previousAssignee = previous.assignee
+      ? previous.assignee.toLowerCase()
+      : null
+
+    if (curationJSON.assignee !== undefined && assignee !== previousAssignee) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_ASSIGNED,
+        payload: { assignee },
+      })
+    }
+
+    if (decision !== 'new' && decision !== 'edit') {
+      return
+    }
+    const note: string = curationJSON.note?.trim() ?? ''
+    if (curationJSON.status === CurationStatus.APPROVED) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_APPROVED,
+        payload: note ? { note } : {},
+      })
+    } else if (curationJSON.status === CurationStatus.REJECTED) {
+      await CollectionEvent.record({
+        ...base,
+        type: CollectionEventType.REVIEW_REJECTED,
+        // A PATCH may send only one of the two, and the row keeps the other: the event carries what it ends up with.
+        payload: {
+          rejectionReasons:
+            curationJSON.rejectionReasons ?? previous.rejection_reasons ?? [],
+          rejectionMessage:
+            curationJSON.rejectionMessage?.trim() ||
+            previous.rejection_message ||
+            null,
+        },
+      })
+    }
   }
 
   private insertCuration = async (
     id: string,
     ethAddress: string,
     type: CurationType,
-    curationJSON?: Partial<CollectionCurationAttributes>
+    curationJSON?: Partial<CollectionCurationAttributes> & { note?: string }
   ) => {
     const curationService = CurationService.byType(type)
     await this.validateAccessToCuration(curationService, ethAddress, id)
+
+    if (curationJSON !== undefined) {
+      const validate = validator.compile(postCurationSchema)
+      validate(curationJSON)
+      if (validate.errors) {
+        throw new HTTPError(
+          'Invalid schema',
+          validate.errors,
+          STATUS_CODES.badRequest
+        )
+      }
+    }
     const curation = await curationService.getLatestById(id)
 
     if (!curation && type === CurationType.ITEM) {
@@ -558,61 +754,49 @@ export class CurationRouter extends Router {
       attributes.is_mapping_complete = itemData.is_mapping_complete
     }
 
+    // A creator submitting changes waits for the running automated review and for the daily limit; the
+    // request is refused before anything is written so the client can tell them.
+    const isChangesSubmission =
+      type === CurationType.COLLECTION &&
+      !attributes.assignee &&
+      (await this.isChangesSubmission(id, curation, ethAddress))
+    const submittedChanges = isChangesSubmission
+      ? await this.autoCurationService.prepareChanges(id, curation?.status)
+      : null
+
     const created = await curationService.getModel().create(attributes)
 
     if (type === CurationType.COLLECTION) {
-      await this.announceCollectionRequest(
-        id,
-        attributes.assignee ?? null,
-        curation,
-        ethAddress
-      )
+      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
+      if (attributes.assignee) {
+        void curationNotifications.assigneeChanged(
+          id,
+          attributes.assignee,
+          ethAddress
+        )
+      } else if (isChangesSubmission) {
+        void curationNotifications.reviewRequested(
+          id,
+          curation?.status,
+          ethAddress
+        )
+        // Awaited: the client reads the timeline right after this answer, and the review start must be in it.
+        if (submittedChanges) {
+          await this.autoCurationService.onChangesSubmitted(
+            submittedChanges,
+            ethAddress,
+            curationJSON?.note?.trim() ?? ''
+          )
+        }
+      }
     }
 
     return created
   }
 
-  /** Never throws: the request is already stored, so a failure here must not fail it. */
-  private announceCollectionRequest = async (
-    collectionId: string,
-    assignee: string | null,
-    previousCuration: CollectionCurationAttributes | undefined,
-    ethAddress: string
-  ): Promise<void> => {
-    try {
-      // A request opened with an assignee is a curator picking the collection up, not a creator's request.
-      if (assignee) {
-        void curationNotifications.assigneeChanged(
-          collectionId,
-          assignee,
-          ethAddress
-        )
-      } else if (
-        await this.isChangesSubmission(
-          collectionId,
-          previousCuration,
-          ethAddress
-        )
-      ) {
-        void curationNotifications.reviewRequested(
-          collectionId,
-          previousCuration?.status,
-          ethAddress
-        )
-        void this.autoCurationService.onChangesSubmitted(collectionId)
-      }
-    } catch (error) {
-      logger.error(
-        `Error announcing the review request of collection ${collectionId}: ${
-          (error as Error).message
-        }`
-      )
-    }
-  }
-
   /**
    * A creator submitting changes: not a collection's first request (the publish already announced it and
-   * started the full automatic review) nor a committee member's bookkeeping on someone else's collection.
+   * started the full automated review) nor a committee member's bookkeeping on someone else's collection.
    */
   private isChangesSubmission = async (
     collectionId: string,
@@ -632,6 +816,14 @@ export class CurationRouter extends Router {
     }
     if (previousCuration) {
       return true
+    }
+    // The publish hook recorded the publication, so this is the request that follows it.
+    const published = await CollectionEvent.findLatestByCollectionIdAndType(
+      collectionId,
+      CollectionEventType.COLLECTION_PUBLISHED
+    )
+    if (published) {
+      return false
     }
     return this.mayHaveBeenApproved(collection)
   }
@@ -719,4 +911,22 @@ export class CurationRouter extends Router {
       )
     }
   }
+}
+
+/** A rejection resent with other reasons or another message corrects the one on record. */
+function changesRejectionFeedback(
+  curationJSON: any,
+  previous: CollectionCurationAttributes
+): boolean {
+  const reasons: string[] | undefined = curationJSON.rejectionReasons
+  // A blank message is not sent, as the row's update treats it.
+  const message: string | undefined =
+    curationJSON.rejectionMessage?.trim() || undefined
+  const sameReasons =
+    reasons === undefined ||
+    [...reasons].sort().join(',') ===
+      [...(previous.rejection_reasons ?? [])].sort().join(',')
+  const sameMessage =
+    message === undefined || message === (previous.rejection_message ?? '')
+  return !sameReasons || !sameMessage
 }

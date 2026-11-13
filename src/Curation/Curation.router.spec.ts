@@ -22,18 +22,41 @@ import { CurationStatus } from './Curation.types'
 import { createAssigneeEventPost, getPost } from '../Forum'
 import { curationNotifications } from './notifications'
 import { AutoCurationService } from './AutoCuration.service'
+import {
+  CollectionBusyError,
+  ValidationInProgressError,
+  ValidationLimitReachedError,
+} from './AutoCuration.errors'
+import { withCollectionLock } from './collectionLock'
+import { STATUS_CODES } from '../common/HTTPError'
 import { VIDEO_PATH } from '../Item/utils'
+import { ItemService } from '../Item/Item.service'
+import { isFeatureFlagEnabled } from '../utils/features'
+import {
+  CollectionEvent,
+  CollectionEventActor,
+  CollectionEventType,
+} from './CollectionEvent'
 
 jest.mock('../common/Router')
 jest.mock('../common/ExpressApp')
 jest.mock('../Committee')
 jest.mock('../Curation/ItemCuration')
 jest.mock('../Forum')
+jest.mock('../utils/features')
+jest.mock('./CollectionEvent/CollectionEvent.model')
 jest.mock('./notifications')
 jest.mock('./AutoCuration.service')
+jest.mock('./collectionLock', () => ({
+  withCollectionLock: jest.fn((_: string, task: () => Promise<unknown>) =>
+    task()
+  ),
+}))
 
 const mockIsCommitteeMember = isCommitteeMember as jest.Mock
 const mockCreateAssigneeEventPost = createAssigneeEventPost as jest.Mock
+const mockIsFeatureFlagEnabled = isFeatureFlagEnabled as jest.Mock
+const mockRecordEvent = CollectionEvent.record as jest.Mock
 const mockGetPost = getPost as jest.Mock
 
 const mockAddress = '0x6D7227d6F36FC997D53B4646132b3B55D751cc7c'
@@ -58,8 +81,12 @@ describe('when handling a request', () => {
     return service
   }
 
+  const submittedChanges = { collection: {}, items: [{ id: 'changed' }] }
+
   beforeEach(() => {
     router = new CurationRouter(new ExpressApp())
+    ;(AutoCurationService.prototype
+      .prepareChanges as jest.Mock).mockResolvedValue(submittedChanges)
   })
 
   afterEach(() => {
@@ -617,6 +644,7 @@ describe('when handling a request', () => {
       let req: AuthRequest
 
       beforeEach(() => {
+        mockIsCommitteeMember.mockResolvedValue(true)
         req = {
           auth: { ethAddress: 'ethAddress' },
           params: { id: 'some id' },
@@ -706,6 +734,19 @@ describe('when handling a request', () => {
             expect(updateSpy).toHaveBeenCalledWith('curationId', {
               status: CurationStatus.REJECTED,
               updated_at: expect.any(Date),
+              reviewed_by: 'ethaddress',
+            })
+          })
+
+          it('should record a review.rejected event without reasons', async () => {
+            await router.updateCollectionCuration(req)
+
+            expect(mockRecordEvent).toHaveBeenCalledWith({
+              collection_id: 'some id',
+              actor: CollectionEventActor.CURATOR,
+              actor_address: 'ethaddress',
+              type: CollectionEventType.REVIEW_REJECTED,
+              payload: { rejectionReasons: [], rejectionMessage: null },
             })
           })
 
@@ -727,10 +768,17 @@ describe('when handling a request', () => {
               jest.spyOn(service, 'getLatestById').mockResolvedValueOnce({
                 id: 'curationId',
                 status: CurationStatus.REJECTED,
+                created_at: new Date('2026-11-10T10:00:00.000Z'),
               } as any)
               jest
                 .spyOn(service, 'updateById')
                 .mockResolvedValueOnce(expectedCuration)
+              ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+                {
+                  type: CollectionEventType.REVIEW_REJECTED,
+                  created_at: new Date('2026-11-10T11:00:00.000Z'),
+                }
+              )
             })
 
             it('should not notify the curators again', async () => {
@@ -809,6 +857,9 @@ describe('when handling a request', () => {
                 expect(updateSpy).toHaveBeenCalledWith('curationId', {
                   status: CurationStatus.APPROVED,
                   updated_at: expect.any(Date),
+                  reviewed_by: 'ethaddress',
+                  rejection_reasons: null,
+                  rejection_message: null,
                 })
                 expect(updateItemSpy).toHaveBeenCalledWith(mockItem)
               })
@@ -820,6 +871,9 @@ describe('when handling a request', () => {
                 expect(updateSpy).toHaveBeenCalledWith('curationId', {
                   status: CurationStatus.APPROVED,
                   updated_at: expect.any(Date),
+                  reviewed_by: 'ethaddress',
+                  rejection_reasons: null,
+                  rejection_message: null,
                 })
                 expect(updateItemSpy).not.toHaveBeenCalled()
               })
@@ -905,6 +959,18 @@ describe('when handling a request', () => {
                 updated_at: expect.any(Date),
               })
             })
+
+            it('should record a review.assigned event', async () => {
+              await router.updateCollectionCuration(req)
+
+              expect(mockRecordEvent).toHaveBeenCalledWith({
+                collection_id: 'some id',
+                actor: CollectionEventActor.CURATOR,
+                actor_address: 'ethaddress',
+                type: CollectionEventType.REVIEW_ASSIGNED,
+                payload: { assignee: assignee.toLowerCase() },
+              })
+            })
           })
         })
 
@@ -955,7 +1021,24 @@ describe('when handling a request', () => {
               status: CurationStatus.REJECTED,
               assignee: assignee.toLowerCase(),
               updated_at: expect.any(Date),
+              reviewed_by: 'ethaddress',
             })
+          })
+
+          it('should record the assignment and the rejection as events', async () => {
+            await router.updateCollectionCuration(req)
+
+            expect(mockRecordEvent).toHaveBeenCalledWith(
+              expect.objectContaining({
+                type: CollectionEventType.REVIEW_ASSIGNED,
+                payload: { assignee: assignee.toLowerCase() },
+              })
+            )
+            expect(mockRecordEvent).toHaveBeenCalledWith(
+              expect.objectContaining({
+                type: CollectionEventType.REVIEW_REJECTED,
+              })
+            )
           })
         })
       })
@@ -1336,7 +1419,7 @@ describe('when handling a request', () => {
           expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
         })
 
-        it('should not request the automatic review', async () => {
+        it('should not request the automated review', async () => {
           jest
             .spyOn(CollectionCuration, 'create')
             .mockResolvedValueOnce(expectedCuration)
@@ -1370,7 +1453,7 @@ describe('when handling a request', () => {
             .mockResolvedValueOnce(expectedCuration)
         })
 
-        it('should notify the curators and request the automatic review of the changes', async () => {
+        it('should notify the curators and request the automated review of the changes', async () => {
           expect(await router.insertCollectionCuration(req)).toEqual(
             expectedCuration
           )
@@ -1382,7 +1465,38 @@ describe('when handling a request', () => {
           )
           expect(
             AutoCurationService.prototype.onChangesSubmitted
-          ).toHaveBeenCalledWith('some id')
+          ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
+        })
+
+        describe('and the request carries a note', () => {
+          beforeEach(() => {
+            req.body = { curation: { note: '  Fixed the clipping  ' } }
+          })
+
+          it('should hand the trimmed note to the automated review of the changes', async () => {
+            await router.insertCollectionCuration(req)
+
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).toHaveBeenCalledWith(
+              submittedChanges,
+              'ethAddress',
+              'Fixed the clipping'
+            )
+          })
+        })
+
+        describe('and the note is longer than 2000 characters', () => {
+          beforeEach(() => {
+            req.body = { curation: { note: 'a'.repeat(2001) } }
+          })
+
+          it('should refuse the request without opening it', async () => {
+            await expect(
+              router.insertCollectionCuration(req)
+            ).rejects.toMatchObject({ statusCode: 400 })
+            expect(CollectionCuration.create).not.toHaveBeenCalled()
+          })
         })
       })
 
@@ -1416,11 +1530,32 @@ describe('when handling a request', () => {
               })
           })
 
-          it('should insert the request without announcing it or requesting an automatic review', async () => {
+          it('should insert the request without announcing it or requesting an automated review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )
 
+            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+          })
+        })
+
+        describe('and the publication was recorded as an event', () => {
+          beforeEach(() => {
+            ;(CollectionEvent.findLatestByCollectionIdAndType as jest.Mock).mockResolvedValueOnce(
+              { type: CollectionEventType.COLLECTION_PUBLISHED }
+            )
+            jest.spyOn(collectionAPI, 'fetchCollection').mockReset()
+          })
+
+          it('should treat it as the first request without asking the graph', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(collectionAPI.fetchCollection).not.toHaveBeenCalled()
             expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
             expect(
               AutoCurationService.prototype.onChangesSubmitted
@@ -1436,7 +1571,7 @@ describe('when handling a request', () => {
               .mockRejectedValueOnce(new Error('subgraph down'))
           })
 
-          it('should treat it as submitted changes, announcing them and requesting their automatic review', async () => {
+          it('should treat it as submitted changes, announcing them and requesting their automated review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )
@@ -1448,7 +1583,7 @@ describe('when handling a request', () => {
             )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith('some id')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
           })
         })
 
@@ -1466,27 +1601,7 @@ describe('when handling a request', () => {
             expect(curationNotifications.reviewRequested).toHaveBeenCalled()
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith('some id')
-          })
-        })
-
-        describe('and telling the request apart fails after it was stored', () => {
-          beforeEach(() => {
-            mockIsCommitteeMember
-              .mockReset()
-              .mockRejectedValue(new Error('subgraph down'))
-            ;(Collection.findOne as jest.Mock).mockResolvedValue({
-              ...dbCollectionMock,
-              eth_address: '0xsomebodyelse',
-            })
-          })
-
-          it('should still respond with the stored request', async () => {
-            expect(await router.insertCollectionCuration(req)).toEqual(
-              expectedCuration
-            )
-
-            expect(curationNotifications.reviewRequested).not.toHaveBeenCalled()
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
           })
         })
 
@@ -1522,7 +1637,7 @@ describe('when handling a request', () => {
               })
           })
 
-          it('should announce submitted changes and request their automatic review', async () => {
+          it('should announce submitted changes and request their automated review', async () => {
             expect(await router.insertCollectionCuration(req)).toEqual(
               expectedCuration
             )
@@ -1534,7 +1649,7 @@ describe('when handling a request', () => {
             )
             expect(
               AutoCurationService.prototype.onChangesSubmitted
-            ).toHaveBeenCalledWith('some id')
+            ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
           })
         })
       })
@@ -1707,6 +1822,592 @@ describe('when handling a request', () => {
             router.createCurationNewAssigneePost(req)
           ).rejects.toThrow('Error creating the assignee post for topic 30')
         })
+      })
+    })
+  })
+  describe('when a creator tries to set the status of their own collection curation', () => {
+    let req: AuthRequest
+    let updateSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      mockIsCommitteeMember.mockResolvedValue(false)
+      const service = mockServiceWithAccess(CollectionCuration, true)
+      jest
+        .spyOn(service, 'getLatestById')
+        .mockResolvedValueOnce({ id: 'curationId', status: 'rejected' } as any)
+      updateSpy = jest.spyOn(service, 'updateById')
+      req = {
+        auth: { ethAddress: 'ethAddress' },
+        params: { id: 'some id' },
+        body: { curation: { status: CurationStatus.PENDING } },
+      } as any
+    })
+
+    it('should refuse it: a review is reopened with a new request, never by flipping a decided one', async () => {
+      await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+        'Only committee members can approve or reject a curation'
+      )
+      expect(updateSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('when a creator submits changes the automated review cannot take now', () => {
+    let req: AuthRequest
+    let createSpy: jest.SpyInstance
+
+    beforeEach(() => {
+      const service = mockServiceWithAccess(CollectionCuration, true)
+      jest
+        .spyOn(service, 'getLatestById')
+        .mockResolvedValueOnce({ status: CurationStatus.APPROVED } as any)
+      createSpy = jest.spyOn(CollectionCuration, 'create')
+      jest.spyOn(Collection, 'findOne').mockResolvedValue(dbCollectionMock)
+      req = {
+        auth: { ethAddress: dbCollectionMock.eth_address },
+        params: { id: 'some id' },
+      } as any
+    })
+
+    it('should answer 409 while a review runs, without storing the request', async () => {
+      ;(AutoCurationService.prototype
+        .prepareChanges as jest.Mock).mockRejectedValueOnce(
+        new ValidationInProgressError('some id')
+      )
+
+      await expect(router.insertCollectionCuration(req)).rejects.toMatchObject({
+        statusCode: STATUS_CODES.conflict,
+      })
+      expect(createSpy).not.toHaveBeenCalled()
+    })
+
+    it('should answer 429 with the time to retry past the daily limit, without storing the request', async () => {
+      const retryAt = new Date('2026-11-12T00:00:00.000Z')
+      ;(AutoCurationService.prototype
+        .prepareChanges as jest.Mock).mockRejectedValueOnce(
+        new ValidationLimitReachedError('some id', retryAt)
+      )
+
+      await expect(router.insertCollectionCuration(req)).rejects.toMatchObject({
+        statusCode: STATUS_CODES.tooManyRequests,
+        data: { id: 'some id', retryAt: retryAt.toISOString() },
+      })
+      expect(createSpy).not.toHaveBeenCalled()
+    })
+  })
+
+  describe('when a committee member reviews a collection curation with the auto curation enabled', () => {
+    let service: CurationService<any>
+    let req: AuthRequest
+    let updateSpy: jest.SpyInstance
+    let expectedCuration: CollectionCurationAttributes
+
+    beforeEach(() => {
+      mockIsFeatureFlagEnabled.mockResolvedValue(true)
+      mockIsCommitteeMember.mockResolvedValue(true)
+      service = mockServiceWithAccess(CollectionCuration, true)
+      expectedCuration = { id: 'curationId' } as CollectionCurationAttributes
+      jest
+        .spyOn(service, 'getLatestById')
+        .mockResolvedValueOnce({ id: 'curationId' } as any)
+      updateSpy = jest
+        .spyOn(service, 'updateById')
+        .mockResolvedValueOnce(expectedCuration)
+    })
+
+    describe('and the rejection message is longer than 3000 characters', () => {
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'a'.repeat(3001),
+            },
+          },
+        } as any
+      })
+
+      it('should reject with an invalid schema error and not update the curation', async () => {
+        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+          'Invalid schema'
+        )
+        expect(updateSpy).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and a caller that is not a committee member unassigns the curation', () => {
+      beforeEach(() => {
+        mockIsCommitteeMember.mockReset().mockResolvedValue(false)
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: { curation: { assignee: null } },
+        } as any
+      })
+
+      it('should reject and not record an assignment', async () => {
+        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+          'Only committee members can modify the assignee'
+        )
+        expect(updateSpy).not.toHaveBeenCalled()
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the curation is rejected with a reason outside the fixed list', () => {
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['ugly'],
+              rejectionMessage: 'Nope',
+            },
+          },
+        } as any
+      })
+
+      it('should reject with an invalid schema message', async () => {
+        await expect(router.updateCollectionCuration(req)).rejects.toThrowError(
+          'Invalid schema'
+        )
+        expect(updateSpy).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the curation is rejected with reasons and a message', () => {
+      beforeEach(() => {
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['clipping', 'other'],
+              rejectionMessage: '  Clips through the body  ',
+            },
+          },
+        } as any
+      })
+
+      it('should store the reviewer, the reasons and the trimmed message', async () => {
+        await expect(
+          router.updateCollectionCuration(req)
+        ).resolves.toStrictEqual(expectedCuration)
+
+        expect(updateSpy).toHaveBeenCalledWith('curationId', {
+          status: CurationStatus.REJECTED,
+          updated_at: expect.any(Date),
+          reviewed_by: 'ethaddress',
+          rejection_reasons: ['clipping', 'other'],
+          rejection_message: 'Clips through the body',
+        })
+      })
+
+      it('should record a review.rejected event with the reasons', async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(mockRecordEvent).toHaveBeenCalledWith({
+          collection_id: 'some id',
+          actor: CollectionEventActor.CURATOR,
+          actor_address: 'ethaddress',
+          type: CollectionEventType.REVIEW_REJECTED,
+          payload: {
+            rejectionReasons: ['clipping', 'other'],
+            rejectionMessage: 'Clips through the body',
+          },
+        })
+      })
+    })
+
+    describe('and the curation is approved', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(ItemService.prototype, 'updateDCLItemsContent')
+          .mockResolvedValueOnce(undefined as any)
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: { curation: { status: CurationStatus.APPROVED } },
+        } as any
+      })
+
+      it('should store the reviewer, clear the rejection fields and record a review.approved event', async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(updateSpy).toHaveBeenCalledWith('curationId', {
+          status: CurationStatus.APPROVED,
+          updated_at: expect.any(Date),
+          reviewed_by: 'ethaddress',
+          rejection_reasons: null,
+          rejection_message: null,
+        })
+        expect(mockRecordEvent).toHaveBeenCalledWith({
+          collection_id: 'some id',
+          actor: CollectionEventActor.CURATOR,
+          actor_address: 'ethaddress',
+          type: CollectionEventType.REVIEW_APPROVED,
+          payload: {},
+        })
+      })
+
+      describe('and the approval carries a note', () => {
+        beforeEach(() => {
+          req.body.curation.note = '  Great work  '
+        })
+
+        it('should keep the trimmed note in the review.approved event', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_APPROVED,
+              payload: { note: 'Great work' },
+            })
+          )
+        })
+      })
+
+      describe('and the approval carries a blank note', () => {
+        beforeEach(() => {
+          req.body.curation.note = '   '
+        })
+
+        it('should record the review.approved event without a note', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_APPROVED,
+              payload: {},
+            })
+          )
+        })
+      })
+
+      describe('and that decision was already recorded for this request', () => {
+        beforeEach(() => {
+          jest
+            .spyOn(service, 'getLatestById')
+            .mockReset()
+            .mockResolvedValueOnce({
+              id: 'curationId',
+              status: CurationStatus.APPROVED,
+              created_at: new Date('2026-11-10T10:00:00.000Z'),
+            } as any)
+          ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+            {
+              type: CollectionEventType.REVIEW_APPROVED,
+              actor_address: 'ethaddress',
+              created_at: new Date('2026-11-10T11:00:00.000Z'),
+            }
+          )
+        })
+
+        it('should not record a second review.approved event', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+        })
+      })
+    })
+
+    describe('and the curator reverses a decision on the same request', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.APPROVED,
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+          {
+            type: CollectionEventType.REVIEW_APPROVED,
+            actor_address: 'ethaddress',
+            created_at: new Date('2026-11-10T12:00:00.000Z'),
+          }
+        )
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['other'],
+              rejectionMessage: 'After all, no',
+            },
+          },
+        } as any
+      })
+
+      it('should record the new rejection after the approval it reverses', async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_REJECTED,
+            payload: {
+              rejectionReasons: ['other'],
+              rejectionMessage: 'After all, no',
+            },
+          })
+        )
+      })
+    })
+
+    describe('and another curator repeats the rejection already recorded for this request', () => {
+      beforeEach(() => {
+        mockIsCommitteeMember.mockReset().mockResolvedValue(true)
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.REJECTED,
+            reviewed_by: '0xfirstcurator',
+            rejection_reasons: ['clipping'],
+            rejection_message: 'Clips through the body',
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+          {
+            type: CollectionEventType.REVIEW_REJECTED,
+            actor_address: '0xfirstcurator',
+            created_at: new Date('2026-11-10T11:00:00.000Z'),
+          }
+        )
+      })
+
+      describe('with the same reasons and message', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: {
+              curation: {
+                status: CurationStatus.REJECTED,
+                rejectionReasons: ['clipping'],
+                rejectionMessage: 'Clips through the body',
+              },
+            },
+          } as any
+        })
+
+        it('should keep the first decision on the request and in the timeline', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(updateSpy).toHaveBeenCalledWith('curationId', {
+            status: CurationStatus.REJECTED,
+            updated_at: expect.any(Date),
+          })
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+          expect(curationNotifications.verdictGiven).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('with only the reasons corrected', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: {
+              curation: {
+                status: CurationStatus.REJECTED,
+                rejectionReasons: ['thumbnail'],
+              },
+            },
+          } as any
+        })
+
+        it('should record the message the request keeps along with the new reasons', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              payload: {
+                rejectionReasons: ['thumbnail'],
+                rejectionMessage: 'Clips through the body',
+              },
+            })
+          )
+        })
+      })
+
+      describe('with a blank message and the same reasons', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: {
+              curation: {
+                status: CurationStatus.REJECTED,
+                rejectionReasons: ['clipping'],
+                rejectionMessage: '   ',
+              },
+            },
+          } as any
+        })
+
+        it('should treat it as a repeat', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('with corrected reasons', () => {
+        beforeEach(() => {
+          req = {
+            auth: { ethAddress: 'ethAddress' },
+            params: { id: 'some id' },
+            body: {
+              curation: {
+                status: CurationStatus.REJECTED,
+                rejectionReasons: ['clipping', 'thumbnail'],
+                rejectionMessage: 'Clips through the body',
+              },
+            },
+          } as any
+        })
+
+        it('should save and record the correction without announcing a new decision', async () => {
+          await router.updateCollectionCuration(req)
+
+          expect(updateSpy).toHaveBeenCalledWith(
+            'curationId',
+            expect.objectContaining({
+              rejection_reasons: ['clipping', 'thumbnail'],
+            })
+          )
+          expect(mockRecordEvent).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_REJECTED,
+              payload: {
+                rejectionReasons: ['clipping', 'thumbnail'],
+                rejectionMessage: 'Clips through the body',
+              },
+            })
+          )
+          expect(curationNotifications.verdictGiven).not.toHaveBeenCalled()
+        })
+      })
+    })
+
+    describe('and a retried rejection sends only the reasons after the first attempt saved the row', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.REJECTED,
+            reviewed_by: 'ethaddress',
+            rejection_reasons: ['clipping'],
+            rejection_message: 'Clips through the body',
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        ;(CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock).mockResolvedValue(
+          undefined
+        )
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['clipping'],
+            },
+          },
+        } as any
+      })
+
+      it('should record the message the request keeps', async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_REJECTED,
+            payload: {
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'Clips through the body',
+            },
+          })
+        )
+      })
+    })
+
+    describe('and another instance holds the collection while the auto curation is on', () => {
+      beforeEach(() => {
+        ;(AutoCurationService.prototype
+          .isEnabled as jest.Mock).mockResolvedValue(true)
+        ;(withCollectionLock as jest.Mock).mockRejectedValueOnce(
+          new CollectionBusyError('some id')
+        )
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: { curation: { status: CurationStatus.APPROVED } },
+        } as any
+      })
+
+      it('should answer 503 so the curator retries, without updating the request', async () => {
+        await expect(
+          router.updateCollectionCuration(req)
+        ).rejects.toMatchObject({
+          statusCode: STATUS_CODES.serviceUnavailable,
+        })
+        expect(updateSpy).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and a curator confirms the rejection the validator made', () => {
+      beforeEach(() => {
+        jest
+          .spyOn(service, 'getLatestById')
+          .mockReset()
+          .mockResolvedValueOnce({
+            id: 'curationId',
+            status: CurationStatus.REJECTED,
+            reviewed_by: 'validator',
+            created_at: new Date('2026-11-10T10:00:00.000Z'),
+          } as any)
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+          body: {
+            curation: {
+              status: CurationStatus.REJECTED,
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'Clips through the body',
+            },
+          },
+        } as any
+      })
+
+      it("should record the curator's decision and tell the channel", async () => {
+        await router.updateCollectionCuration(req)
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_REJECTED,
+            actor_address: 'ethaddress',
+            payload: {
+              rejectionReasons: ['clipping'],
+              rejectionMessage: 'Clips through the body',
+            },
+          })
+        )
+        expect(curationNotifications.verdictGiven).toHaveBeenCalledWith(
+          'some id',
+          CurationStatus.REJECTED,
+          'ethAddress'
+        )
       })
     })
   })

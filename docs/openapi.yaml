@@ -1060,7 +1060,7 @@ paths:
                 rejectionMessage:
                   type: string
                   minLength: 1
-                  maxLength: 2000
+                  maxLength: 3000
                   description: Optional message for the creator with a rejection
       responses:
         '200':
@@ -1148,7 +1148,7 @@ paths:
       summary: Request an automated review
       description: |
         Sends the collection to the automatic validator again. Only the collection creator or a manager can call it.
-        A collection gets 3 automated reviews per UTC day (publish, retry and submitted changes all count; sweep
+        A collection gets 5 automated reviews per UTC day (publish, retry and submitted changes all count; sweep
         re-sends do not); a curator decision resets the count. The same content always gets the same verdict, so a
         retry needs the last run to have ended without one (an automated review error) or an item whose content changed since it
         started; it then validates the changed items plus the previous run's. Reopens a pending curation when the
@@ -2600,7 +2600,17 @@ components:
         A collection's review status. `to_review` is waiting for a curator, `under_review` has one assigned,
         `approved` and `rejected` carry the committee's latest decision, `disabled` was turned off by the
         committee after an approval. `pending` is the legacy name for a collection waiting for its first approval.
-      enum: [pending, approved, rejected, to_review, under_review, disabled]
+        `auto_reviewing` has its automated review running and is left out of `to_review`, `under_review` and `pending`.
+      enum:
+        [
+          pending,
+          approved,
+          rejected,
+          to_review,
+          under_review,
+          disabled,
+          auto_reviewing,
+        ]
 
     CollectionCuration:
       type: object

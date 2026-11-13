@@ -1401,6 +1401,26 @@ describe('Collection router', () => {
         })
       })
 
+      describe('and filtering by the auto reviewing status', () => {
+        let baseUrl: string
+        beforeEach(() => {
+          baseUrl = '/collections'
+          url = `${baseUrl}?status=auto_reviewing`
+          ;(Collection.findAll as jest.Mock).mockResolvedValueOnce([])
+        })
+        it('should accept it and pass it on', () => {
+          return server
+            .get(buildURL(url))
+            .set(createAuthHeaders('get', baseUrl))
+            .expect(200)
+            .then(() => {
+              expect(Collection.findAll).toHaveBeenCalledWith(
+                expect.objectContaining({ statuses: ['auto_reviewing'] })
+              )
+            })
+        })
+      })
+
       describe('and the on-chain collections are approved, reviewed or untouched', () => {
         let baseUrl: string
         beforeEach(() => {

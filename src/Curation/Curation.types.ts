@@ -16,6 +16,8 @@ export enum CurationStatusFilter {
   TO_REVIEW = 'to_review',
   UNDER_REVIEW = 'under_review',
   DISABLED = 'disabled',
+  /** The automated review is running; left out of the other pending filters until it ends. */
+  AUTO_REVIEWING = 'auto_reviewing',
 }
 
 export const REJECTION_REASONS = [
@@ -56,7 +58,7 @@ export const patchCurationSchema = Object.freeze({
       minItems: 1,
       uniqueItems: true,
     },
-    rejectionMessage: { type: 'string', minLength: 1, maxLength: 2000 },
+    rejectionMessage: { type: 'string', minLength: 1, maxLength: 3000 },
   },
   additionalProperties: false,
   anyOf: [{ required: ['assignee'] }, { required: ['status'] }],

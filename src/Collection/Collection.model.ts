@@ -3,6 +3,12 @@ import { DEFAULT_LIMIT } from '../Pagination/utils'
 import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
 import { CollectionCuration } from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
+import {
+  CollectionEvent,
+  SWEEP_EXHAUSTED_REASON,
+  TOO_LARGE_REASON,
+} from '../Curation/CollectionEvent/CollectionEvent.model'
+import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
 import {
@@ -84,6 +90,26 @@ const hasPendingItemCuration = () =>
   )} pending_items ON pending_items.id = pending_item_curations.item_id WHERE pending_items.collection_id = collections.id AND pending_item_curations.status = ${
     CurationStatusFilter.PENDING
   })`
+
+/**
+ * The collection's automated review is running: its latest request is pending and its newest event that moves the
+ * review (an assignment or a changes note doesn't) is a start, or an error the sweep will re-send. Mirrors the
+ * creators' site, which shows these collections as auto-reviewing instead of waiting for a curator.
+ */
+const isAutoReviewing = () =>
+  SQL`(COALESCE(collection_curations.status = ${
+    CurationStatusFilter.PENDING
+  }, false) AND EXISTS (SELECT 1 FROM (SELECT latest_events.type, latest_events.payload FROM ${raw(
+    CollectionEvent.tableName
+  )} latest_events WHERE latest_events.collection_id = collections.id AND latest_events.type NOT IN (${
+    CollectionEventType.REVIEW_ASSIGNED
+  }, ${
+    CollectionEventType.CHANGES_SUBMITTED
+  }) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE latest_stage.type = ${
+    CollectionEventType.REVIEW_AUTOMATED_STARTED
+  } OR (latest_stage.type = ${
+    CollectionEventType.REVIEW_AUTOMATED_ERROR
+  } AND COALESCE(latest_stage.payload->>'reason', '') NOT IN (${SWEEP_EXHAUSTED_REASON}, ${TOO_LARGE_REASON}))))`
 
 /** The on-chain checks the review filters read; a NULL contract address (third-party, unpublished) reads as false. */
 function getRemoteChecks({
@@ -275,7 +301,7 @@ export class Collection extends Model<CollectionAttributes> {
     const isPendingOrNew = SQL`(collection_curations.status = ${CurationStatusFilter.PENDING} OR ${hasNoCuration})`
     switch (status) {
       case CurationStatusFilter.PENDING:
-        return SQL`((collection_curations.status = ${status} AND (${isNotApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isNotApprovedOnChain}))`
+        return SQL`(((collection_curations.status = ${status} AND (${isNotApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isNotApprovedOnChain})) AND NOT ${isAutoReviewing()})`
       case CurationStatusFilter.APPROVED:
         return SQL`((collection_curations.status = ${status} AND (${isApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isApprovedOnChain}))`
       case CurationStatusFilter.REJECTED:
@@ -283,11 +309,13 @@ export class Collection extends Model<CollectionAttributes> {
       case CurationStatusFilter.TO_REVIEW:
         return SQL`(collection_curations.assignee is NULL AND (((${isThirdParty()}) AND (${isPendingOrNew} OR ${hasPendingItemCuration()})) OR (${isStandard()} AND ${isOnChain} AND (collection_curations.status = ${
           CurationStatusFilter.PENDING
-        } OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))))`
+        } OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))) AND NOT ${isAutoReviewing()})`
       case CurationStatusFilter.UNDER_REVIEW:
         return SQL`(collection_curations.assignee is NOT NULL AND (collection_curations.status = ${
           CurationStatusFilter.PENDING
-        } OR ((${isThirdParty()}) AND ${hasPendingItemCuration()})))`
+        } OR ((${isThirdParty()}) AND ${hasPendingItemCuration()})) AND NOT ${isAutoReviewing()})`
+      case CurationStatusFilter.AUTO_REVIEWING:
+        return SQL`(${isStandard()} AND ${isAutoReviewing()})`
       case CurationStatusFilter.DISABLED:
         return SQL`(${isNotApprovedOnChain} AND (collection_curations.status = ${CurationStatusFilter.APPROVED} OR (${hasNoCuration} AND ${wasReviewedOnChain})))`
       default:

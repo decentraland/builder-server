@@ -1,6 +1,6 @@
 import { buildEntityMetadata } from '../Item/hashes'
 
-export const MAX_VALIDATION_ATTEMPTS_PER_DAY = 3
+export const MAX_VALIDATION_ATTEMPTS_PER_DAY = 5
 // The validator job drops a request with more items without answering.
 export const MAX_VALIDATION_ITEMS = 50
 

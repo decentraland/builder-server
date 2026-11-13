@@ -22,6 +22,7 @@ import { CurationStatus } from './Curation.types'
 import { Item } from '../Item/Item.model'
 import { withCollectionLock } from './collectionLock'
 import { CollectionBusyError } from './AutoCuration.errors'
+import { MAX_VALIDATION_ATTEMPTS_PER_DAY } from './AutoCuration.types'
 import { requestValidation as sendValidation } from './validationQueue'
 import {
   SIGNATURE_HEADER,
@@ -637,12 +638,11 @@ describe('AutoCuration router', () => {
       beforeEach(() => {
         mockFindLatestEventByType.mockResolvedValue(undefined)
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
+          ...Array.from({ length: MAX_VALIDATION_ATTEMPTS_PER_DAY - 1 }, () =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'retry',
+            })
+          ),
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),

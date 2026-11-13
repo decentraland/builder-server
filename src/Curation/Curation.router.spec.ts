@@ -1883,7 +1883,7 @@ describe('when handling a request', () => {
         .mockResolvedValueOnce(expectedCuration)
     })
 
-    describe('and the rejection message is longer than 2000 characters', () => {
+    describe('and the rejection message is longer than 3000 characters', () => {
       beforeEach(() => {
         req = {
           auth: { ethAddress: 'ethAddress' },
@@ -1892,7 +1892,7 @@ describe('when handling a request', () => {
             curation: {
               status: CurationStatus.REJECTED,
               rejectionReasons: ['clipping'],
-              rejectionMessage: 'a'.repeat(2001),
+              rejectionMessage: 'a'.repeat(3001),
             },
           },
         } as any

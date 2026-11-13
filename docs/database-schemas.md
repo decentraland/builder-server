@@ -528,7 +528,7 @@ Append-only review timeline of a collection. Rows are never updated or deleted b
 ### Business Rules
 
 - **Latest event**: The most recent event decides the review stage shown to creators together with the latest curation
-- **Attempts**: every `review.automated_started` the creator caused (`publish`, `retry`, `changes` triggers; never `sweep`) counts as an automated review; creators get 3 per UTC day, reset by a `review.approved` or `review.rejected`
+- **Attempts**: every `review.automated_started` the creator caused (`publish`, `retry`, `changes` triggers; never `sweep`) counts as an automated review; creators get 5 per UTC day, reset by a `review.approved` or `review.rejected`
 - **Sweep**: A validation start with no `review.automated_passed`, `review.automated_rejected` or `review.human_required` for its `validationId` is re-sent every 10 minutes once it is 2 hours old, or right away after a retryable `review.automated_error` (`reason: 'publish_failed'` when the request never reached the topic); after 3 consecutive sweep re-sends a `review.automated_error` with `reason: 'sweep_exhausted'` stops it until someone acts
 - **Unchanged resubmission**: a creator's request after a rejection that changes nothing since the last run records `review.appeal_requested` instead of a new run
 - **Verdict rows**: a `rejected` verdict lands on the pending `collection_curations` row (`reviewed_by = 'validator'`), or opens a rejected one when the collection has no request (legacy Builder publishes); a row a curator already decided is left alone. A `passed` verdict whose items changed while it ran carries `staleItemIds`

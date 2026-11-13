@@ -24,7 +24,10 @@ import {
   ValidationTooLargeError,
 } from './validationQueue'
 import { notifyCurationSlack } from './slack'
-import { ValidationResult } from './AutoCuration.types'
+import {
+  MAX_VALIDATION_ATTEMPTS_PER_DAY,
+  ValidationResult,
+} from './AutoCuration.types'
 import {
   AppealAlreadyOpenError,
   CurationNotRejectedError,
@@ -479,16 +482,18 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and three automated reviews were already used today', () => {
+    describe('and five automated reviews were already used today', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED)
         )
         mockFindEventsSince.mockResolvedValue([
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
+          ...[1, 2, 3].map(() =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'retry',
+            })
+          ),
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'sweep',
           }),
@@ -527,7 +532,7 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and a curator decided after two of the three reviews of the day', () => {
+    describe('and a curator decided after four of the five reviews of the day', () => {
       beforeEach(() => {
         mockFindLatestEvent.mockResolvedValue(
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED)
@@ -537,9 +542,11 @@ describe('AutoCurationService', () => {
             trigger: 'retry',
           }),
           buildEvent(CollectionEventType.REVIEW_REJECTED),
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
+          ...[1, 2, 3].map(() =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'retry',
+            })
+          ),
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
@@ -1535,12 +1542,11 @@ describe('AutoCurationService', () => {
 
       it('should not refuse it at the daily limit: an appeal does not run the validator', async () => {
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
+          ...Array.from({ length: MAX_VALIDATION_ATTEMPTS_PER_DAY - 1 }, () =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'retry',
+            })
+          ),
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),
@@ -1611,12 +1617,11 @@ describe('AutoCurationService', () => {
       beforeEach(() => {
         jest.useFakeTimers().setSystemTime(new Date('2026-09-29T15:00:00.000Z'))
         mockFindEventsSince.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            trigger: 'retry',
-          }),
+          ...Array.from({ length: MAX_VALIDATION_ATTEMPTS_PER_DAY - 1 }, () =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'retry',
+            })
+          ),
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'publish',
           }),

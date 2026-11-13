@@ -128,7 +128,7 @@ describe('when a standard collection is published', () => {
 })
 
 describe('when Third Party items are published', () => {
-  it('should announce them with a link to the legacy editor', async () => {
+  it('should announce them with a link to the creators site editor', async () => {
     mockFindOne.mockResolvedValue(dbTPCollectionMock)
     await curationNotifications.collectionPublished(
       dbTPCollectionMock.id,
@@ -136,9 +136,9 @@ describe('when Third Party items are published', () => {
       creator
     )
     expect(sentText()).toBe(
-      `📦 New Third Party items ready for review: <https://builder.decentraland.org/item-editor?collection=${
+      `📦 New Third Party items ready for review: <https://decentraland.org/create/collections/editor?collection=${
         dbTPCollectionMock.id
-      }|${dbTPCollectionMock.name}> by ${creatorLink(
+      }&reviewing=true|${dbTPCollectionMock.name}> by ${creatorLink(
         '0x1111...1111'
       )} (2 items).`
     )

@@ -846,6 +846,10 @@ describe('AutoCuration router', () => {
       url = `/collections/${dbCollectionMock.id}/comments`
       mockExistsMiddleware(Collection, dbCollectionMock.id)
       mockIsCommitteeMember.mockResolvedValue(false)
+      mockFindLatestCuration.mockResolvedValue({
+        id: 'curationId',
+        status: CurationStatus.PENDING,
+      })
       mockFindCollection.mockResolvedValue({
         ...dbCollectionMock,
         eth_address: wallet.address,
@@ -883,6 +887,23 @@ describe('AutoCuration router', () => {
       it('should respond with a 401 without recording anything', () => {
         return post({ message: 'Hello' })
           .expect(401)
+          .then(() => {
+            expect(mockRecordEvent).not.toHaveBeenCalled()
+          })
+      })
+    })
+
+    describe('and the latest request was approved', () => {
+      beforeEach(() => {
+        mockFindLatestCuration.mockResolvedValue({
+          id: 'curationId',
+          status: CurationStatus.APPROVED,
+        })
+      })
+
+      it('should respond with a 409 without recording anything', () => {
+        return post({ message: 'Hello' })
+          .expect(409)
           .then(() => {
             expect(mockRecordEvent).not.toHaveBeenCalled()
           })

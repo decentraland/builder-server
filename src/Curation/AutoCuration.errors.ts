@@ -72,6 +72,12 @@ export class CollectionNotPublishedError extends Error {
   }
 }
 
+export class ReviewClosedError extends Error {
+  constructor(public id: string) {
+    super('The collection has no open review to comment on')
+  }
+}
+
 export class CommentItemNotInCollectionError extends Error {
   constructor(public id: string, public itemId: string) {
     super('The item does not belong to the collection')
@@ -100,6 +106,7 @@ export function toAutoCurationHTTPError(error: unknown, id: string): unknown {
   if (
     error instanceof AppealAlreadyOpenError ||
     error instanceof CollectionNotPublishedError ||
+    error instanceof ReviewClosedError ||
     error instanceof CurationNotRejectedError ||
     error instanceof CurationRejectedByCuratorError ||
     error instanceof NotStandardCollectionError ||

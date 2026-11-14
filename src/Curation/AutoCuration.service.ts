@@ -47,6 +47,7 @@ import {
 import {
   AppealAlreadyOpenError,
   CommentItemNotInCollectionError,
+  ReviewClosedError,
   CurationNotRejectedError,
   CurationRejectedByCuratorError,
   NothingToRevalidateError,
@@ -342,7 +343,10 @@ export class AutoCurationService {
     return curation
   }
 
-  /** Adds a message to the timeline. It takes no lock: a comment is not part of any review decision. */
+  /**
+   * Adds a message to the timeline, while a review is open or was sent back: an approval ends the conversation.
+   * It takes no lock: a comment is not part of any review decision.
+   */
   async comment(
     collectionId: string,
     ethAddress: string,
@@ -350,6 +354,12 @@ export class AutoCurationService {
     message: string,
     itemId?: string
   ): Promise<CollectionEventAttributes> {
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collectionId
+    )
+    if (!latestCuration || latestCuration.status === CurationStatus.APPROVED) {
+      throw new ReviewClosedError(collectionId)
+    }
     if (itemId) {
       const item = await Item.findOne<ItemAttributes>(itemId)
       if (item?.collection_id !== collectionId) {

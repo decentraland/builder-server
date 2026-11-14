@@ -1234,8 +1234,9 @@ paths:
       tags: [Curations]
       summary: Comment on a collection review
       description: |
-        Adds a `review.comment` event to the review timeline of a published collection. Its creator, its managers
-        and committee members can call it. At most 30 requests per minute per address.
+        Adds a `review.comment` event to the review timeline of a published collection whose latest review request
+        is pending or rejected. Its creator, its managers and committee members can call it. At most 30 requests
+        per minute per address.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1274,7 +1275,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: The collection is not published
+          description: The collection is not published, or it has no open review (none requested, or approved)
           content:
             application/json:
               schema:

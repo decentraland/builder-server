@@ -34,6 +34,7 @@ import {
   CurationRejectedByCuratorError,
   NothingToRevalidateError,
   NothingToValidateError,
+  ReviewClosedError,
   TooLargeToValidateError,
   ValidationInProgressError,
   ValidationLimitReachedError,
@@ -735,7 +736,39 @@ describe('AutoCurationService', () => {
       expect(countValidationAttempts([comment, start, comment, start])).toBe(2)
     })
 
+    describe('and the latest request was approved', () => {
+      beforeEach(() => {
+        mockFindLatestCuration.mockResolvedValue({
+          id: 'curationId',
+          status: CurationStatus.APPROVED,
+        })
+      })
+
+      it('should reject with a review closed error without recording anything', async () => {
+        await expect(
+          service.comment(dbCollectionMock.id, ethAddress, true, 'Hello')
+        ).rejects.toThrow(ReviewClosedError)
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the collection has no request', () => {
+      beforeEach(() => {
+        mockFindLatestCuration.mockResolvedValue(undefined)
+      })
+
+      it('should reject with a review closed error', async () => {
+        await expect(
+          service.comment(dbCollectionMock.id, ethAddress, false, 'Hello')
+        ).rejects.toThrow(ReviewClosedError)
+      })
+    })
+
     it('should record the message with the item it is about', async () => {
+      mockFindLatestCuration.mockResolvedValue({
+        id: 'curationId',
+        status: CurationStatus.REJECTED,
+      })
       const itemId = uuidv4()
       ;(Item.findOne as jest.Mock).mockResolvedValue({
         id: itemId,

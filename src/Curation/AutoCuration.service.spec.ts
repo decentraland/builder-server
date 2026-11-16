@@ -26,6 +26,7 @@ import {
 import { notifyCurationSlack } from './slack'
 import {
   MAX_VALIDATION_ATTEMPTS_PER_DAY,
+  MAX_VALIDATION_ITEMS,
   ValidationResult,
 } from './AutoCuration.types'
 import {
@@ -1228,26 +1229,29 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and the request was recorded as never sent but reached the validator anyway', () => {
-      beforeEach(() => {
-        mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
-            validationId: 'latestValidation',
-            reason: 'publish_failed',
-          })
-        )
-      })
+    describe.each(['publish_failed', 'sweep_exhausted'])(
+      'and the request was recorded as %s but its verdict arrived anyway',
+      (reason) => {
+        beforeEach(() => {
+          mockFindVerdict.mockResolvedValue(
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
+              validationId: 'latestValidation',
+              reason,
+            })
+          )
+        })
 
-      it('should record the real verdict', async () => {
-        await service.handleValidationResult(dbCollectionMock.id, result)
+        it('should record the real verdict', async () => {
+          await service.handleValidationResult(dbCollectionMock.id, result)
 
-        expect(mockRecordEventOnce).toHaveBeenCalledWith(
-          expect.objectContaining({
-            type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
-          })
-        )
-      })
-    })
+          expect(mockRecordEventOnce).toHaveBeenCalledWith(
+            expect.objectContaining({
+              type: CollectionEventType.REVIEW_AUTOMATED_PASSED,
+            })
+          )
+        })
+      }
+    )
 
     describe('and the auto curation was turned off while it ran', () => {
       beforeEach(() => {
@@ -1864,6 +1868,46 @@ describe('AutoCurationService', () => {
         expect(mockSendValidation).toHaveBeenCalledTimes(1)
       })
 
+      describe('and its verdict landed after the stale query ran', () => {
+        beforeEach(() => {
+          mockFindVerdict.mockResolvedValue(
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED, {
+              validationId: 'lost',
+            })
+          )
+        })
+
+        it('should not re-send it', async () => {
+          await service.sweepStaleValidations()
+
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+          expect(mockSendValidation).not.toHaveBeenCalled()
+        })
+      })
+
+      describe('and a curator decided after the stale query ran', () => {
+        beforeEach(() => {
+          mockFindVerdict.mockResolvedValue(undefined)
+          mockFindLatestEventByType.mockImplementation(async (_id, type) =>
+            type === CollectionEventType.REVIEW_APPROVED
+              ? {
+                  ...buildEvent(CollectionEventType.REVIEW_APPROVED),
+                  created_at: new Date(staleStart.created_at.getTime() + 1000),
+                }
+              : type === CollectionEventType.REVIEW_AUTOMATED_STARTED
+              ? staleStart
+              : undefined
+          )
+        })
+
+        it('should not re-send it', async () => {
+          await service.sweepStaleValidations()
+
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+          expect(mockSendValidation).not.toHaveBeenCalled()
+        })
+      })
+
       describe('and the collection was re-sent one time less than the cap', () => {
         beforeEach(() => {
           mockCountSweepStarts.mockResolvedValue(MAX_SWEEP_RESENDS - 1)
@@ -1967,6 +2011,8 @@ describe('AutoCurationService', () => {
             expect(retry.payload.trigger).toBe('retry')
             expect(mockSendValidation).toHaveBeenCalledTimes(1)
 
+            // The retry is a new validation, with no verdict yet.
+            mockFindVerdict.mockResolvedValue(undefined)
             mockCountSweepStarts.mockResolvedValue(0)
             await service.sweepStaleValidations()
             expect(mockSendValidation).toHaveBeenCalledTimes(2)
@@ -2046,6 +2092,46 @@ describe('AutoCurationService', () => {
         expect(mockCreateCuration).not.toHaveBeenCalled()
         expect(mockRecordEvent).not.toHaveBeenCalled()
         expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and it has more items than one request carries', () => {
+      beforeEach(() => {
+        mockFindLatestEventByType.mockResolvedValue(undefined)
+        mockFindItemsByCollection.mockResolvedValue(
+          Array.from({ length: MAX_VALIDATION_ITEMS + 1 }, (_, index) => ({
+            ...item,
+            id: `item-${index}`,
+          }))
+        )
+        mockRecordEvent.mockImplementation((event) =>
+          Promise.resolve({ ...event, id: uuidv4(), created_at: new Date() })
+        )
+      })
+
+      it('should hand it to a curator without building the request', async () => {
+        await service.onStandardCollectionPublished(
+          dbCollectionMock,
+          ethAddress
+        )
+        await new Promise((resolve) => setImmediate(resolve))
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
+            payload: expect.objectContaining({ contentHashes: {} }),
+          })
+        )
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockRecordEventOnce).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
+            payload: expect.objectContaining({
+              reason: 'too_large',
+              itemCount: MAX_VALIDATION_ITEMS + 1,
+            }),
+          })
+        )
       })
     })
 

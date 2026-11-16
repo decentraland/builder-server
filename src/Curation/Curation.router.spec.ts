@@ -1325,6 +1325,40 @@ describe('when handling a request', () => {
       })
     })
 
+    describe('when the validator rejected the publication before its own request arrived', () => {
+      let req: AuthRequest
+      let validatorRow: any
+
+      beforeEach(() => {
+        const openedAt = new Date('2026-11-16T10:00:00.000Z')
+        validatorRow = {
+          id: 'validator-row',
+          status: CurationStatus.REJECTED,
+          reviewed_by: 'validator',
+          created_at: openedAt,
+          updated_at: openedAt,
+        }
+        service = mockServiceWithAccess(CollectionCuration, true)
+        jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(validatorRow)
+        req = {
+          auth: { ethAddress: 'ethAddress' },
+          params: { id: 'some id' },
+        } as any
+      })
+
+      it('should answer with that rejection instead of opening a request', async () => {
+        const createSpy = jest.spyOn(CollectionCuration, 'create')
+
+        await expect(router.insertCollectionCuration(req)).resolves.toBe(
+          validatorRow
+        )
+        expect(createSpy).not.toHaveBeenCalled()
+        expect(
+          AutoCurationService.prototype.onChangesSubmitted
+        ).not.toHaveBeenCalled()
+      })
+    })
+
     describe("when the item doesn't have a previous finished curation", () => {
       let req: AuthRequest
 

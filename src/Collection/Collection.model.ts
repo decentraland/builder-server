@@ -5,8 +5,7 @@ import { CollectionCuration } from '../Curation/CollectionCuration'
 import { ItemCuration } from '../Curation/ItemCuration'
 import {
   CollectionEvent,
-  SWEEP_EXHAUSTED_REASON,
-  TOO_LARGE_REASON,
+  PUBLISH_FAILED_REASON,
 } from '../Curation/CollectionEvent/CollectionEvent.model'
 import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
 import { database } from '../database/database'
@@ -52,11 +51,16 @@ export type FindCollectionParams = {
   /** Subsets of `remoteIds`: approved now, and not approved but touched on-chain since creation. */
   approvedRemoteIds?: CollectionAttributes['id'][]
   reviewedRemoteIds?: CollectionAttributes['id'][]
+  /**
+   * With auto-curation on, the oldest start that can still be running: a review started after it is auto-reviewing
+   * and out of the curator queues. Unset while auto-curation is off, so the queues read as they always did.
+   */
+  autoReviewingSince?: Date
 }
 
 type CollectionStatusParams = Pick<
   FindCollectionParams,
-  'remoteIds' | 'approvedRemoteIds' | 'reviewedRemoteIds'
+  'remoteIds' | 'approvedRemoteIds' | 'reviewedRemoteIds' | 'autoReviewingSince'
 >
 
 type Statement = ReturnType<typeof SQL>
@@ -93,23 +97,26 @@ const hasPendingItemCuration = () =>
 
 /**
  * The collection's automated review is running: its latest request is pending and its newest event that moves the
- * review (an assignment or a changes note doesn't) is a start, or an error the sweep will re-send. Mirrors the
+ * review (an assignment, a changes note or a comment doesn't), since the cutoff, is a start or an error the sweep
+ * will re-send. Mirrors the
  * creators' site, which shows these collections as auto-reviewing instead of waiting for a curator.
  */
-const isAutoReviewing = () =>
-  SQL`(COALESCE(collection_curations.status = ${
-    CurationStatusFilter.PENDING
-  }, false) AND EXISTS (SELECT 1 FROM (SELECT latest_events.type, latest_events.payload FROM ${raw(
-    CollectionEvent.tableName
-  )} latest_events WHERE latest_events.collection_id = collections.id AND latest_events.type NOT IN (${
-    CollectionEventType.REVIEW_ASSIGNED
-  }, ${
-    CollectionEventType.CHANGES_SUBMITTED
-  }) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE latest_stage.type = ${
-    CollectionEventType.REVIEW_AUTOMATED_STARTED
-  } OR (latest_stage.type = ${
-    CollectionEventType.REVIEW_AUTOMATED_ERROR
-  } AND COALESCE(latest_stage.payload->>'reason', '') NOT IN (${SWEEP_EXHAUSTED_REASON}, ${TOO_LARGE_REASON}))))`
+const isAutoReviewing = (since: Date | undefined) =>
+  since
+    ? SQL`(COALESCE(collection_curations.status = ${
+        CurationStatusFilter.PENDING
+      }, false) AND EXISTS (SELECT 1 FROM (SELECT latest_events.type, latest_events.payload, latest_events.created_at FROM ${raw(
+        CollectionEvent.tableName
+      )} latest_events WHERE latest_events.collection_id = collections.id AND latest_events.type NOT IN (${
+        CollectionEventType.REVIEW_ASSIGNED
+      }, ${CollectionEventType.CHANGES_SUBMITTED}, ${
+        CollectionEventType.REVIEW_COMMENT
+      }) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE latest_stage.created_at >= ${since} AND (latest_stage.type = ${
+        CollectionEventType.REVIEW_AUTOMATED_STARTED
+      } OR (latest_stage.type = ${
+        CollectionEventType.REVIEW_AUTOMATED_ERROR
+      } AND COALESCE(latest_stage.payload->>'retryable' = 'true' OR latest_stage.payload->>'reason' = ${PUBLISH_FAILED_REASON}, false)))))`
+    : SQL`false`
 
 /** The on-chain checks the review filters read; a NULL contract address (third-party, unpublished) reads as false. */
 function getRemoteChecks({
@@ -301,7 +308,9 @@ export class Collection extends Model<CollectionAttributes> {
     const isPendingOrNew = SQL`(collection_curations.status = ${CurationStatusFilter.PENDING} OR ${hasNoCuration})`
     switch (status) {
       case CurationStatusFilter.PENDING:
-        return SQL`(((collection_curations.status = ${status} AND (${isNotApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isNotApprovedOnChain})) AND NOT ${isAutoReviewing()})`
+        return SQL`(((collection_curations.status = ${status} AND (${isNotApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isNotApprovedOnChain})) AND NOT ${isAutoReviewing(
+          remoteSets.autoReviewingSince
+        )})`
       case CurationStatusFilter.APPROVED:
         return SQL`((collection_curations.status = ${status} AND (${isApprovedOnChain} OR (${isThirdParty()}))) OR (${hasNoCuration} AND ${isApprovedOnChain}))`
       case CurationStatusFilter.REJECTED:
@@ -309,13 +318,19 @@ export class Collection extends Model<CollectionAttributes> {
       case CurationStatusFilter.TO_REVIEW:
         return SQL`(collection_curations.assignee is NULL AND (((${isThirdParty()}) AND (${isPendingOrNew} OR ${hasPendingItemCuration()})) OR (${isStandard()} AND ${isOnChain} AND (collection_curations.status = ${
           CurationStatusFilter.PENDING
-        } OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))) AND NOT ${isAutoReviewing()})`
+        } OR (${hasNoCuration} AND NOT ${isApprovedOnChain} AND NOT ${wasReviewedOnChain})))) AND NOT ${isAutoReviewing(
+          remoteSets.autoReviewingSince
+        )})`
       case CurationStatusFilter.UNDER_REVIEW:
         return SQL`(collection_curations.assignee is NOT NULL AND (collection_curations.status = ${
           CurationStatusFilter.PENDING
-        } OR ((${isThirdParty()}) AND ${hasPendingItemCuration()})) AND NOT ${isAutoReviewing()})`
+        } OR ((${isThirdParty()}) AND ${hasPendingItemCuration()})) AND NOT ${isAutoReviewing(
+          remoteSets.autoReviewingSince
+        )})`
       case CurationStatusFilter.AUTO_REVIEWING:
-        return SQL`(${isStandard()} AND ${isAutoReviewing()})`
+        return SQL`(${isStandard()} AND ${isAutoReviewing(
+          remoteSets.autoReviewingSince
+        )})`
       case CurationStatusFilter.DISABLED:
         return SQL`(${isNotApprovedOnChain} AND (collection_curations.status = ${CurationStatusFilter.APPROVED} OR (${hasNoCuration} AND ${wasReviewedOnChain})))`
       default:
@@ -336,6 +351,7 @@ export class Collection extends Model<CollectionAttributes> {
     collectionStatus,
     approvedRemoteIds,
     reviewedRemoteIds,
+    autoReviewingSince,
   }: Pick<
     FindCollectionParams,
     | 'q'
@@ -350,6 +366,7 @@ export class Collection extends Model<CollectionAttributes> {
     | 'collectionStatus'
     | 'approvedRemoteIds'
     | 'reviewedRemoteIds'
+    | 'autoReviewingSince'
   >) {
     if (
       !q &&
@@ -366,7 +383,12 @@ export class Collection extends Model<CollectionAttributes> {
     }
     const search = `%${q}%`
     const isInRemoteIds = SQL`collections.contract_address = ANY(${remoteIds})`
-    const remoteSets = { remoteIds, approvedRemoteIds, reviewedRemoteIds }
+    const remoteSets = {
+      remoteIds,
+      approvedRemoteIds,
+      reviewedRemoteIds,
+      autoReviewingSince,
+    }
     // A third-party collection has no contract address, so it never counts as approved and reads as new.
     const { hasBeenApproved } = getRemoteChecks(remoteSets)
     const curatorAddresses = assignees?.filter(

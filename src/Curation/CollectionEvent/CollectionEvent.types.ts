@@ -43,3 +43,14 @@ export type NewCollectionEvent = Omit<
 export type CollectionEventWithTotalCount = CollectionEventAttributes & {
   total_count: number
 }
+
+/** An error the sweep re-sends: the validator said so, or the request never reached it (`publish_failed`). */
+export function isSweepResendableError(
+  event: Pick<CollectionEventAttributes, 'type' | 'payload'>
+): boolean {
+  return (
+    event.type === CollectionEventType.REVIEW_AUTOMATED_ERROR &&
+    (event.payload.retryable === true ||
+      event.payload.reason === 'publish_failed')
+  )
+}

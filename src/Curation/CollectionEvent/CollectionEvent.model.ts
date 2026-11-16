@@ -13,8 +13,6 @@ export const TOO_LARGE_REASON = 'too_large'
 export const UNSUPPORTED_ITEMS_REASON = 'unsupported_items'
 // The request never reached the topic; the sweep re-sends it.
 export const PUBLISH_FAILED_REASON = 'publish_failed'
-// Error reasons the sweep must not re-send: re-sending cannot change their outcome.
-const FINAL_ERROR_REASONS = [SWEEP_EXHAUSTED_REASON, TOO_LARGE_REASON]
 
 // A human_required carrying a validationId is the validator handing unsupported items to a curator.
 const VERDICT_EVENT_TYPES = [
@@ -117,7 +115,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         FROM ${raw(this.tableName)}
         WHERE collection_id = ${collectionId}
           AND type = ${type}
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC, id DESC
         LIMIT 1`)
     return events[0]
   }
@@ -143,7 +141,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
       SELECT *, COUNT(*) OVER() AS total_count
         FROM ${raw(this.tableName)}
         WHERE collection_id = ${collectionId}
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC, id DESC
         LIMIT ${limit}
         OFFSET ${offset}`)
   }
@@ -228,6 +226,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
                 WHERE error.collection_id = started.collection_id
                   AND error.type = ${CollectionEventType.REVIEW_AUTOMATED_ERROR}
                   AND error.payload->>'validationId' = started.payload->>'validationId'
+                  AND COALESCE(error.payload->>'retryable' = 'true' OR error.payload->>'reason' = ${PUBLISH_FAILED_REASON}, false)
             )
           )
           AND NOT EXISTS (
@@ -253,7 +252,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
                   verdict.type = ANY(${FINAL_VERDICT_EVENT_TYPES})
                   OR (
                     verdict.type = ${CollectionEventType.REVIEW_AUTOMATED_ERROR}
-                    AND verdict.payload->>'reason' = ANY(${FINAL_ERROR_REASONS})
+                    AND NOT COALESCE(verdict.payload->>'retryable' = 'true' OR verdict.payload->>'reason' = ${PUBLISH_FAILED_REASON}, false)
                   )
                 )
           )`)

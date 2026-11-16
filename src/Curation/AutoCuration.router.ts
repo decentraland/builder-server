@@ -210,6 +210,10 @@ export class AutoCurationRouter extends Router {
     const id = server.extractFromReq(req, 'id')
 
     try {
+      // A draft has nothing to review yet, and a start recorded on it would stop its publication's own review.
+      if (!(await this.isPublished(id))) {
+        throw new CollectionNotPublishedError(id)
+      }
       return await this.service.requestValidation(id, req.auth.ethAddress)
     } catch (error) {
       throw toAutoCurationHTTPError(error, id)

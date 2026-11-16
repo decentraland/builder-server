@@ -68,7 +68,7 @@ export class CollectionBusyError extends Error {
 
 export class CollectionNotPublishedError extends Error {
   constructor(public id: string) {
-    super('The collection is not published, so it has no review to comment on')
+    super('The collection is not published, so it has no review yet')
   }
 }
 

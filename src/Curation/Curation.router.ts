@@ -40,7 +40,7 @@ import {
   HUMAN_DECISION_EVENT_TYPES,
 } from './CollectionEvent'
 import { curationNotifications, CurationVerdict } from './notifications'
-import { AutoCurationService } from './AutoCuration.service'
+import { AutoCurationService, VALIDATOR_REVIEWER } from './AutoCuration.service'
 import { toAutoCurationHTTPError } from './AutoCuration.errors'
 import { withCollectionLock } from './collectionLock'
 import { isTPCollection } from '../utils/urn'
@@ -713,6 +713,17 @@ export class CurationRouter extends Router {
       )
     }
 
+    // The validator rejected the publication before its own request arrived, opening the row itself: that
+    // rejection answers the request, so it is returned instead of reopening the review as an appeal.
+    if (
+      type === CurationType.COLLECTION &&
+      !curationJSON?.assignee &&
+      curation &&
+      isOpenedByValidator(curation as CollectionCurationAttributes)
+    ) {
+      return curation
+    }
+
     const attributes: Partial<
       CollectionCurationAttributes & ItemCurationAttributes
     > = {
@@ -929,4 +940,14 @@ function changesRejectionFeedback(
   const sameMessage =
     message === undefined || message === (previous.rejection_message ?? '')
   return !sameReasons || !sameMessage
+}
+
+/** A row the validator created when its rejection came first: nobody had asked for a review or decided on it. */
+function isOpenedByValidator(curation: CollectionCurationAttributes): boolean {
+  return (
+    curation.status === CurationStatus.REJECTED &&
+    curation.reviewed_by === VALIDATOR_REVIEWER &&
+    new Date(curation.created_at).getTime() ===
+      new Date(curation.updated_at).getTime()
+  )
 }

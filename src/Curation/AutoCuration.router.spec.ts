@@ -619,7 +619,30 @@ describe('AutoCuration router', () => {
         ...dbCollectionMock,
         eth_address: wallet.address,
       })
+      ;(Item.hasPublishedItems as jest.Mock).mockResolvedValue(true)
       mockFindEventsSince.mockResolvedValue([])
+    })
+
+    describe('and the collection is not published', () => {
+      beforeEach(() => {
+        ;(Item.hasPublishedItems as jest.Mock).mockResolvedValue(false)
+      })
+
+      it('should respond with a 409 and start nothing', () => {
+        return server
+          .post(buildURL(url))
+          .set(createAuthHeaders('post', url))
+          .expect(409)
+          .then((response: any) => {
+            expect(response.body).toEqual({
+              ok: false,
+              data: { id: dbCollectionMock.id },
+              error: 'The collection is not published, so it has no review yet',
+            })
+            expect(mockRecordEvent).not.toHaveBeenCalled()
+            expect(sendValidation).not.toHaveBeenCalled()
+          })
+      })
     })
 
     describe('and a validation is in progress', () => {

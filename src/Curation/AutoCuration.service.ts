@@ -22,6 +22,7 @@ import {
   CollectionEventAttributes,
   CollectionEventType,
   HUMAN_DECISION_EVENT_TYPES,
+  isSweepResendableError,
   PUBLISH_FAILED_REASON,
   SWEEP_EXHAUSTED_REASON,
   TOO_LARGE_REASON,
@@ -36,6 +37,7 @@ import {
 import { escapeSlackText, notifyCurationSlack, toOneLine } from './slack'
 import { withCollectionLock } from './collectionLock'
 import {
+  MAX_VALIDATION_ITEMS,
   CollectionEventsPage,
   MAX_VALIDATION_ATTEMPTS_PER_DAY,
   UNSUPPORTED_VALIDATION_REASON,
@@ -86,6 +88,8 @@ type StartedValidation = {
   event: CollectionEventAttributes
   collection: CollectionAttributes
   manifest: ValidationManifest
+  /** Set when there are more items than one request carries: nothing was hashed and the send hands it off. */
+  tooManyItems?: number
 }
 
 /** What a creator's request sends to the validator: the items changed since they were last judged. */
@@ -166,6 +170,13 @@ export class AutoCurationService {
       return false
     }
     return true
+  }
+
+  /** The oldest start the curator queues still count as running, or undefined while auto-curation is off. */
+  async getAutoReviewingSince(): Promise<Date | undefined> {
+    return (await this.isEnabled())
+      ? new Date(Date.now() - SWEEP_LOOKBACK_MS)
+      : undefined
   }
 
   /**
@@ -438,6 +449,20 @@ export class AutoCurationService {
           if (latestStart?.id !== staleStart.id) {
             return undefined
           }
+          // A verdict or a curator's decision may have landed since the query ran.
+          const verdict = await CollectionEvent.findVerdictByValidationId(
+            collection.id,
+            staleStart.payload.validationId as string
+          )
+          if (
+            (verdict && !isSweepResendableError(verdict)) ||
+            (await this.hasHumanDecisionSince(
+              collection.id,
+              new Date(staleStart.created_at)
+            ))
+          ) {
+            return undefined
+          }
 
           const sweepStarts = await CollectionEvent.countSweepStartsSinceManualStart(
             collection.id
@@ -643,12 +668,16 @@ export class AutoCurationService {
       )
       return notices
     }
-    // A request the server could not confirm sending may still have reached the validator.
     const recorded = await CollectionEvent.findVerdictByValidationId(
       collectionId,
       result.validationId
     )
-    if (recorded && recorded.payload.reason !== PUBLISH_FAILED_REASON) {
+    // A request the server could not confirm sending, or one the sweep gave up on, may still get its verdict.
+    if (
+      recorded &&
+      recorded.payload.reason !== PUBLISH_FAILED_REASON &&
+      recorded.payload.reason !== SWEEP_EXHAUSTED_REASON
+    ) {
       logger.warn(
         `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
       )
@@ -882,6 +911,27 @@ export class AutoCurationService {
     ethAddress: string | null = null
   ): Promise<StartedValidation> {
     const validationId = uuid()
+    // Hashing and building every item only to refuse the request for its size would slow the publish down.
+    if (items.length > MAX_VALIDATION_ITEMS) {
+      const event = await CollectionEvent.record({
+        collection_id: collection.id,
+        type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
+        actor: CollectionEventActor.VALIDATOR,
+        actor_address: ethAddress ? ethAddress.toLowerCase() : null,
+        payload: {
+          validationId,
+          trigger,
+          itemIds: items.map((item) => item.id),
+          contentHashes: {},
+        },
+      })
+      return {
+        event,
+        collection,
+        manifest: { validationId, collectionId: collection.id, items: [] },
+        tooManyItems: items.length,
+      }
+    }
     const manifest = await this.buildManifest(validationId, collection, items)
     const contentHashes: Record<string, string> = {}
     for (const item of manifest.items) {
@@ -914,7 +964,13 @@ export class AutoCurationService {
     if (!started) {
       return
     }
-    const { collection, manifest } = started
+    const { collection, manifest, tooManyItems } = started
+    if (tooManyItems !== undefined) {
+      await this.handOffTooLarge(collection, manifest.validationId, {
+        itemCount: tooManyItems,
+      })
+      return
+    }
     try {
       await publishValidationRequest(manifest)
     } catch (error) {
@@ -945,10 +1001,14 @@ export class AutoCurationService {
   private async handOffTooLarge(
     collection: CollectionAttributes,
     validationId: string,
-    { bytes, itemCount }: ValidationTooLargeError
+    { bytes, itemCount }: { bytes?: number; itemCount: number }
   ): Promise<void> {
+    const size =
+      bytes === undefined
+        ? `${itemCount} items`
+        : `${itemCount} items, ${bytes} bytes`
     logger.error(
-      `The validation ${validationId} of collection ${collection.id} has ${itemCount} items and ${bytes} bytes and was not sent`
+      `The validation ${validationId} of collection ${collection.id} has ${size} and was not sent`
     )
     const recorded = await CollectionEvent.recordOnce({
       collection_id: collection.id,
@@ -962,7 +1022,7 @@ export class AutoCurationService {
     }
     await curationNotifications.validationNotRequested(
       collection.id,
-      `it is too large for the automated review (${itemCount} items, ${bytes} bytes)`
+      `it is too large for the automated review (${size})`
     )
   }
 

@@ -440,6 +440,7 @@ export class CollectionRouter extends Router {
     const allCollectionsWithCount = await this.service.getCollections({
       q: q as string,
       ...reviewFilters,
+      autoReviewingSince: await this.autoCurationService.getAutoReviewingSince(),
       type: type as CollectionTypeFilter,
       sort: sort as CollectionSort,
       isPublished: isPublished ? isPublished === 'true' : undefined,
@@ -922,6 +923,7 @@ export class CollectionRouter extends Router {
     const allCollectionsWithCount = await this.service.getCollections({
       q: q as string,
       ...reviewFilters,
+      autoReviewingSince: await this.autoCurationService.getAutoReviewingSince(),
       sort: sort as CollectionSort,
       isPublished: is_published ? is_published === 'true' : undefined,
       offset: page && limit ? getOffset(page, limit) : undefined,

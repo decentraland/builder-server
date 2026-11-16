@@ -1384,6 +1384,9 @@ describe('when handling a request', () => {
           expect(
             AutoCurationService.prototype.onChangesSubmitted
           ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
+          expect(
+            AutoCurationService.prototype.onChangesSubmittedInBackground
+          ).not.toHaveBeenCalled()
         })
       })
     })
@@ -1529,6 +1532,29 @@ describe('when handling a request', () => {
           expect(
             AutoCurationService.prototype.onChangesSubmitted
           ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
+          expect(
+            AutoCurationService.prototype.onChangesSubmittedInBackground
+          ).not.toHaveBeenCalled()
+        })
+
+        describe('and the review flow is off', () => {
+          beforeEach(() => {
+            ;(AutoCurationService.prototype
+              .prepareChanges as jest.Mock).mockResolvedValueOnce(null)
+          })
+
+          it('should open the request and leave the changes to the background review', async () => {
+            expect(await router.insertCollectionCuration(req)).toEqual(
+              expectedCuration
+            )
+
+            expect(
+              AutoCurationService.prototype.onChangesSubmitted
+            ).not.toHaveBeenCalled()
+            expect(
+              AutoCurationService.prototype.onChangesSubmittedInBackground
+            ).toHaveBeenCalledWith('some id')
+          })
         })
 
         describe('and the request carries a note', () => {
@@ -2408,7 +2434,7 @@ describe('when handling a request', () => {
     describe('and another instance holds the collection while the auto curation is on', () => {
       beforeEach(() => {
         ;(AutoCurationService.prototype
-          .isEnabled as jest.Mock).mockResolvedValue(true)
+          .isReviewFlowEnabled as jest.Mock).mockResolvedValue(true)
         ;(withCollectionLock as jest.Mock).mockRejectedValueOnce(
           new CollectionBusyError('some id')
         )

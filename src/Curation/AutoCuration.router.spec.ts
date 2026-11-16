@@ -14,6 +14,7 @@ import { app } from '../server'
 import { Collection } from '../Collection/Collection.model'
 import { isCommitteeMember } from '../Committee'
 import { isFeatureFlagEnabled } from '../utils/features'
+import { AUTO_CURATION_FEATURE_FLAG } from './AutoCuration.service'
 import { CollectionCuration } from './CollectionCuration'
 import { ItemCuration } from './ItemCuration'
 import { curationNotifications } from './notifications'
@@ -132,6 +133,32 @@ describe('AutoCuration router', () => {
   afterEach(() => {
     jest.resetAllMocks()
     jest.restoreAllMocks()
+  })
+
+  describe('when only the background reviews are on, without the review flow', () => {
+    beforeEach(() => {
+      mockIsFeatureFlagEnabled.mockImplementation(
+        async (flag: string) => flag === AUTO_CURATION_FEATURE_FLAG
+      )
+      ;(Collection.findOne as jest.Mock).mockResolvedValue(dbCollectionMock)
+    })
+
+    it('should answer 404 on the validation request', () => {
+      url = `/collections/${dbCollectionMock.id}/validations`
+      return server
+        .post(buildURL(url))
+        .set(createAuthHeaders('post', url))
+        .expect(404)
+        .then(() => expect(CollectionCuration.create).not.toHaveBeenCalled())
+    })
+
+    it('should answer 404 on the events', () => {
+      url = `/collections/${dbCollectionMock.id}/events`
+      return server
+        .get(buildURL(url))
+        .set(createAuthHeaders('get', url))
+        .expect(404)
+    })
   })
 
   describe('when the auto curation flag is off', () => {

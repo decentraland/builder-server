@@ -539,10 +539,10 @@ export class CurationRouter extends Router {
         decisionRecorded: decision === 'new',
       }
     }
-    // Only validator verdicts race curator decisions, and they only act with the auto curation on.
+    // Only validator verdicts race curator decisions, and they only act with the review flow on.
     if (
       type !== CurationType.COLLECTION ||
-      !(await this.autoCurationService.isEnabled())
+      !(await this.autoCurationService.isReviewFlowEnabled())
     ) {
       return apply()
     }
@@ -799,6 +799,8 @@ export class CurationRouter extends Router {
             ethAddress,
             curationJSON?.note?.trim() ?? ''
           )
+        } else {
+          void this.autoCurationService.onChangesSubmittedInBackground(id)
         }
       }
     }

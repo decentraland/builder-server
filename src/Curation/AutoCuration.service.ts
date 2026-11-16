@@ -60,8 +60,11 @@ import {
   ValidationLimitReachedError,
 } from './AutoCuration.errors'
 
-// Resolved by isFeatureFlagEnabled as `builder-auto-curation`.
+// Resolved by isFeatureFlagEnabled as `builder-auto-curation`: the validator judges collections.
 export const AUTO_CURATION_FEATURE_FLAG = 'auto-curation'
+// Resolved as `builder-auto-curation-review-flow`: its verdicts are stored and act, and creators see them.
+export const AUTO_CURATION_REVIEW_FLOW_FEATURE_FLAG =
+  'auto-curation-review-flow'
 // A job may hold a collection for up to 55 minutes and SQS redelivers it after 30, so a start is lost only well after that.
 export const STALE_VALIDATION_MS = 2 * 60 * 60 * 1000
 export const SWEEP_LOOKBACK_MS = 7 * 24 * 60 * 60 * 1000
@@ -172,9 +175,20 @@ export class AutoCurationService {
     return true
   }
 
-  /** The oldest start the curator queues still count as running, or undefined while auto-curation is off. */
+  /**
+   * Whether the review flow is on, on top of the validator: the timeline, the creator routes and verdicts that
+   * decide. Without it the validator still runs in the background and only the curators' channel hears of it.
+   */
+  async isReviewFlowEnabled(): Promise<boolean> {
+    if (!(await this.isEnabled())) {
+      return false
+    }
+    return isFeatureFlagEnabled(AUTO_CURATION_REVIEW_FLOW_FEATURE_FLAG)
+  }
+
+  /** The oldest start the curator queues still count as running, or undefined while the review flow is off. */
   async getAutoReviewingSince(): Promise<Date | undefined> {
-    return (await this.isEnabled())
+    return (await this.isReviewFlowEnabled())
       ? new Date(Date.now() - SWEEP_LOOKBACK_MS)
       : undefined
   }
@@ -190,6 +204,10 @@ export class AutoCurationService {
   ): Promise<void> {
     try {
       if (isTPCollection(collection) || !(await this.isEnabled())) {
+        return
+      }
+      if (!(await this.isReviewFlowEnabled())) {
+        this.validateInBackground(collection, 'publish')
         return
       }
       const started = await withCollectionLock(collection.id, () =>
@@ -210,7 +228,7 @@ export class AutoCurationService {
     collection: CollectionAttributes
   ): Promise<void> {
     try {
-      if (!(await this.isEnabled())) {
+      if (!(await this.isReviewFlowEnabled())) {
         return
       }
       // Third Party items are published in batches; the hand-off is recorded once per collection.
@@ -239,14 +257,14 @@ export class AutoCurationService {
 
   /**
    * Reads what a creator's request would send to the validator, refusing it while a run is in flight or past the
-   * daily limit, before the request is stored. Null when the auto curation is off or the collection has nothing a
+   * daily limit, before the request is stored. Null when the review flow is off or the collection has nothing a
    * validator could judge.
    */
   async prepareChanges(
     collectionId: string,
     previousStatus: CurationStatus | undefined
   ): Promise<SubmittedChanges | null> {
-    if (!(await this.isEnabled())) {
+    if (!(await this.isReviewFlowEnabled())) {
       return null
     }
     const collection = await Collection.findOne<CollectionAttributes>(
@@ -326,6 +344,35 @@ export class AutoCurationService {
         `Error requesting the validation of the changes of collection ${
           collection.id
         }: ${(error as Error).message}`
+      )
+    }
+  }
+
+  /**
+   * Changes hook while the review flow is off: the items whose content differs from what is on chain go to the
+   * validator, and nothing is stored. Never throws, and answers before the request is sent.
+   */
+  async onChangesSubmittedInBackground(collectionId: string): Promise<void> {
+    try {
+      if (!(await this.isEnabled()) || (await this.isReviewFlowEnabled())) {
+        return
+      }
+      const collection = await Collection.findOne<CollectionAttributes>(
+        collectionId
+      )
+      if (
+        !collection ||
+        isTPCollection(collection) ||
+        !collection.contract_address
+      ) {
+        return
+      }
+      this.validateInBackground(collection, 'changes')
+    } catch (error) {
+      logger.error(
+        `Error requesting the validation of the changes of collection ${collectionId}: ${
+          (error as Error).message
+        }`
       )
     }
   }
@@ -421,7 +468,7 @@ export class AutoCurationService {
 
   /** Re-sends validations that ended in a retryable error, or whose start is older than the stale threshold and got no verdict. */
   async sweepStaleValidations(): Promise<void> {
-    if (!(await this.isEnabled())) {
+    if (!(await this.isReviewFlowEnabled())) {
       return
     }
 
@@ -698,8 +745,8 @@ export class AutoCurationService {
       }
     }
 
-    // With the flag off the verdict only feeds the timeline: nothing is decided in the validator's name.
-    if (!(await this.isEnabled())) {
+    // With the review flow off the verdict only feeds the timeline: nothing is decided in the validator's name.
+    if (!(await this.isReviewFlowEnabled())) {
       await CollectionEvent.recordOnce({
         collection_id: collectionId,
         actor: CollectionEventActor.VALIDATOR,
@@ -951,6 +998,54 @@ export class AutoCurationService {
       },
     })
     return { event, collection, manifest }
+  }
+
+  /**
+   * The validator's run while the review flow is off: every item of a publication, or the ones that differ from
+   * the chain on submitted changes. Nothing is recorded, so its result is ignored here and only reaches the
+   * curators' channel; a request that cannot be sent is handed to them. Not awaited by its callers.
+   */
+  private validateInBackground(
+    collection: CollectionAttributes,
+    trigger: 'publish' | 'changes'
+  ): void {
+    const run = async () => {
+      const validationId = uuid()
+      try {
+        const items =
+          trigger === 'publish'
+            ? await Item.findOrderedByCollectionId(collection.id)
+            : await this.findChangedItems(collection)
+        if (items.length === 0) {
+          logger.info(
+            `No changed items to validate in collection ${collection.id}`
+          )
+          return
+        }
+        await publishValidationRequest(
+          await this.buildManifest(validationId, collection, items)
+        )
+      } catch (error) {
+        logger.error(
+          `The validation ${validationId} (${trigger}) of collection ${
+            collection.id
+          } was not sent: ${(error as Error).message}`
+        )
+        await curationNotifications.validationNotRequested(
+          collection.id,
+          error instanceof ValidationTooLargeError
+            ? `it is too large for the automated review (${error.itemCount} items, ${error.bytes} bytes)`
+            : 'the automated review could not be requested'
+        )
+      }
+    }
+    run().catch((error) =>
+      logger.error(
+        `Error telling the curators about collection ${collection.id}: ${
+          (error as Error).message
+        }`
+      )
+    )
   }
 
   /** The start is recorded before the answer; the creator does not wait for the validator's queue. */

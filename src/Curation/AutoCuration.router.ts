@@ -124,11 +124,11 @@ export class AutoCurationRouter extends Router {
   public collectionService = new CollectionService()
 
   mount() {
-    // With the flag off none of the creator routes exist, so the legacy flow stays untouched.
+    // With the review flow off none of the creator routes exist, so the legacy flow stays untouched.
     // It runs after auth so anonymous calls never fetch the flag.
     const withAutoCurationEnabled = guardAsync(
       async (_: Request, res: Response, next: NextFunction) => {
-        if (await this.service.isEnabled()) {
+        if (await this.service.isReviewFlowEnabled()) {
           next()
         } else {
           res

@@ -41,6 +41,7 @@ import {
   ValidationLimitReachedError,
 } from './AutoCuration.errors'
 import {
+  AUTO_CURATION_FEATURE_FLAG,
   AutoCurationService,
   countValidationAttempts,
   getStartOfTodayUTC,
@@ -2074,6 +2075,89 @@ describe('AutoCurationService', () => {
           ethAddress
         )
         expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and only the background reviews are on, without the review flow', () => {
+      beforeEach(() => {
+        mockIsFeatureFlagEnabled.mockImplementation(
+          async (flag: string) => flag === AUTO_CURATION_FEATURE_FLAG
+        )
+      })
+
+      it('should send every item to the validator without recording anything', async () => {
+        await service.onStandardCollectionPublished(
+          dbCollectionMock,
+          ethAddress
+        )
+        await new Promise((resolve) => setImmediate(resolve))
+
+        expect(mockSendValidation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            collectionId: dbCollectionMock.id,
+            items: [expect.objectContaining({ itemId: item.id })],
+          })
+        )
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockRecordEventOnce).not.toHaveBeenCalled()
+      })
+
+      describe('and the request cannot be sent', () => {
+        beforeEach(() => {
+          mockSendValidation.mockRejectedValue(new Error('SNS is down'))
+        })
+
+        it('should hand the collection to the curators without recording anything', async () => {
+          await service.onStandardCollectionPublished(
+            dbCollectionMock,
+            ethAddress
+          )
+          await new Promise((resolve) => setImmediate(resolve))
+
+          expect(mockNotifyNotRequested).toHaveBeenCalledWith(
+            dbCollectionMock.id,
+            'the automated review could not be requested'
+          )
+          expect(mockRecordEvent).not.toHaveBeenCalled()
+          expect(mockRecordEventOnce).not.toHaveBeenCalled()
+        })
+      })
+
+      it('should send the items that differ from the chain when changes are submitted', async () => {
+        mockFindCollection.mockResolvedValue(dbCollectionMock)
+        mockFetchRemoteItems.mockResolvedValue([
+          { blockchainId: item.blockchain_item_id, contentHash: 'onChain' },
+        ])
+
+        await service.onChangesSubmittedInBackground(dbCollectionMock.id)
+        await new Promise((resolve) => setImmediate(resolve))
+
+        expect(mockSendValidation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            items: [expect.objectContaining({ itemId: item.id })],
+          })
+        )
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+      })
+
+      it('should store nothing when preparing a changes submission nor run the sweep', async () => {
+        await expect(
+          service.prepareChanges(dbCollectionMock.id, CurationStatus.APPROVED)
+        ).resolves.toBeNull()
+        await service.sweepStaleValidations()
+        await expect(service.getAutoReviewingSince()).resolves.toBeUndefined()
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the review flow is on', () => {
+      it('should leave submitted changes to the stored flow', async () => {
+        await service.onChangesSubmittedInBackground(dbCollectionMock.id)
+        await new Promise((resolve) => setImmediate(resolve))
+
         expect(mockSendValidation).not.toHaveBeenCalled()
       })
     })

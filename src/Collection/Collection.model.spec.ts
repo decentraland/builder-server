@@ -149,7 +149,7 @@ describe('Collection model', () => {
     describe('filtered by the auto reviewing status', () => {
       const since = new Date('2026-11-09T00:00:00.000Z')
 
-      it('should take a standard collection with a pending request whose newest review event, since the cutoff, is a start or a retryable error', async () => {
+      it('should take a standard collection with a pending request whose newest review event is a start or a retryable error of a run started since the cutoff', async () => {
         await Collection.findAll({
           ...remoteSets,
           autoReviewingSince: since,
@@ -158,13 +158,14 @@ describe('Collection model', () => {
 
         const text = normalize(lastQuery().text)
         expect(text).toContain(
-          "collections.third_party_id is NULL AND collections.urn_suffix is NULL AND (COALESCE(collection_curations.status = $1, false) AND EXISTS (SELECT 1 FROM (SELECT latest_events.type, latest_events.payload, latest_events.created_at FROM collection_events latest_events WHERE latest_events.collection_id = collections.id AND latest_events.type NOT IN ($2, $3, $4) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE latest_stage.created_at >= $5 AND (latest_stage.type = $6 OR (latest_stage.type = $7 AND COALESCE(latest_stage.payload->>'retryable' = 'true' OR latest_stage.payload->>'reason' = $8, false)))))"
+          "collections.third_party_id is NULL AND collections.urn_suffix is NULL AND (COALESCE(collection_curations.status = $1, false) AND EXISTS (SELECT 1 FROM (SELECT latest_events.type, latest_events.payload, latest_events.created_at FROM collection_events latest_events WHERE latest_events.collection_id = collections.id AND latest_events.type NOT IN ($2, $3, $4) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE EXISTS (SELECT 1 FROM collection_events run_start WHERE run_start.collection_id = collections.id AND run_start.type = $5 AND run_start.payload->>'validationId' = latest_stage.payload->>'validationId' AND run_start.created_at >= $6) AND (latest_stage.type = $7 OR (latest_stage.type = $8 AND COALESCE(latest_stage.payload->>'retryable' = 'true' OR latest_stage.payload->>'reason' = $9, false)))))"
         )
-        expect(lastQuery().values.slice(0, 8)).toEqual([
+        expect(lastQuery().values.slice(0, 9)).toEqual([
           CurationStatusFilter.PENDING,
           CollectionEventType.REVIEW_ASSIGNED,
           CollectionEventType.CHANGES_SUBMITTED,
           CollectionEventType.REVIEW_COMMENT,
+          CollectionEventType.REVIEW_AUTOMATED_STARTED,
           since,
           CollectionEventType.REVIEW_AUTOMATED_STARTED,
           CollectionEventType.REVIEW_AUTOMATED_ERROR,

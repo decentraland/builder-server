@@ -308,6 +308,20 @@ describe('AutoCurationService', () => {
           expect(mockSendValidation).toHaveBeenCalledTimes(1)
         })
       })
+
+      describe('and the start is older than the sweep looks back', () => {
+        beforeEach(() => {
+          previousStart.created_at = new Date(
+            Date.now() - SWEEP_LOOKBACK_MS - 1
+          )
+        })
+
+        it('should treat the run as over and start a new validation', async () => {
+          await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+          expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        })
+      })
     })
 
     describe('and the latest validation was handed to a curator as unsupported', () => {
@@ -1252,6 +1266,27 @@ describe('AutoCurationService', () => {
         })
       }
     )
+
+    describe('and the sweep gave up on it before a late retryable error arrived', () => {
+      beforeEach(() => {
+        mockFindVerdict.mockResolvedValue(
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
+            validationId: 'latestValidation',
+            reason: 'sweep_exhausted',
+          })
+        )
+      })
+
+      it('should keep the give-up, since nothing would re-send the error', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, {
+          ...result,
+          verdict: 'error',
+          retryable: true,
+        })
+
+        expect(mockRecordEventOnce).not.toHaveBeenCalled()
+      })
+    })
 
     describe('and the auto curation was turned off while it ran', () => {
       beforeEach(() => {
@@ -2229,6 +2264,29 @@ describe('AutoCurationService', () => {
           },
         })
         expect(mockNotifySlack).not.toHaveBeenCalled()
+      })
+
+      describe('and its verdict arrived before the send gave up', () => {
+        beforeEach(() => {
+          mockFindVerdict.mockResolvedValue(
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED)
+          )
+        })
+
+        it('should keep the verdict and record no failed send', async () => {
+          await service.onStandardCollectionPublished(
+            dbCollectionMock,
+            ethAddress
+          )
+          await new Promise((resolve) => setImmediate(resolve))
+
+          expect(mockSendValidation).toHaveBeenCalledTimes(1)
+          expect(mockRecordEventOnce).not.toHaveBeenCalledWith(
+            expect.objectContaining({
+              payload: expect.objectContaining({ reason: 'publish_failed' }),
+            })
+          )
+        })
       })
     })
 

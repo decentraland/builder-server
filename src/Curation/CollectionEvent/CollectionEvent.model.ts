@@ -87,7 +87,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         FROM ${raw(this.tableName)}
         WHERE collection_id = ${collectionId}
           AND type <> ${CollectionEventType.REVIEW_COMMENT}
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC, id DESC
         LIMIT 1`)
     return events[0]
   }
@@ -129,7 +129,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         FROM ${raw(this.tableName)}
         WHERE collection_id = ${collectionId}
           AND created_at >= ${since}
-        ORDER BY created_at DESC`)
+        ORDER BY created_at DESC, id DESC`)
   }
 
   static findPageByCollectionId(
@@ -169,7 +169,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
                   )
                 )
           )
-        ORDER BY started.created_at DESC
+        ORDER BY started.created_at DESC, started.id DESC
         LIMIT ${limit}`)
   }
 
@@ -203,7 +203,9 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         WHERE collection_id = ${collectionId}
           AND type = ANY(${VERDICT_EVENT_TYPES})
           AND payload->>'validationId' = ${validationId}
-        ORDER BY created_at DESC
+        ORDER BY created_at DESC,
+          COALESCE(payload->>'reason' = ${PUBLISH_FAILED_REASON}, false),
+          id DESC
         LIMIT 1`)
     return events[0]
   }

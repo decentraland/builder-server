@@ -1020,7 +1020,7 @@ paths:
                   description: Optional message for the curators, kept on the `changes.submitted` event
       responses:
         '200':
-          description: Curation created successfully
+          description: Curation created, or the validator's existing rejection when nothing changed since it
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1031,6 +1031,8 @@ paths:
           description: An automated review of the collection is running
         '429':
           description: The collection used today's automated reviews; `retryAt` in the data
+        '503':
+          description: The collection is being updated; try again
     patch:
       operationId: updateCollectionCuration
       tags: [Curations]
@@ -1079,6 +1081,8 @@ paths:
           $ref: '#/components/responses/Unauthorized'
         '404':
           $ref: '#/components/responses/NotFound'
+        '503':
+          description: The collection is being updated; try again
 
   /collections/{id}/curation/post:
     post:
@@ -2788,6 +2792,8 @@ components:
               type: integer
             page:
               type: integer
+            pages:
+              type: integer
             limit:
               type: integer
 
@@ -2847,6 +2853,7 @@ components:
           description: Only with verdict `error`. `true` leaves the validation for the sweep to re-send; otherwise the collection goes to a curator
         items:
           type: array
+          maxItems: 50
           items:
             type: object
             required: [itemId, contentHash, passed, findings]

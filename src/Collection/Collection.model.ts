@@ -97,9 +97,9 @@ const hasPendingItemCuration = () =>
 
 /**
  * The collection's automated review is running: its latest request is pending and its newest event that moves the
- * review (an assignment, a changes note or a comment doesn't), since the cutoff, is a start or an error the sweep
- * will re-send. Mirrors the
- * creators' site, which shows these collections as auto-reviewing instead of waiting for a curator.
+ * review (an assignment, a changes note or a comment doesn't) is a start or an error the sweep will re-send, for a
+ * run started since the cutoff, as the sweep measures it. Mirrors the creators' site, which shows these collections
+ * as auto-reviewing instead of waiting for a curator.
  */
 const isAutoReviewing = (since: Date | undefined) =>
   since
@@ -111,7 +111,11 @@ const isAutoReviewing = (since: Date | undefined) =>
         CollectionEventType.REVIEW_ASSIGNED
       }, ${CollectionEventType.CHANGES_SUBMITTED}, ${
         CollectionEventType.REVIEW_COMMENT
-      }) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE latest_stage.created_at >= ${since} AND (latest_stage.type = ${
+      }) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE EXISTS (SELECT 1 FROM ${raw(
+        CollectionEvent.tableName
+      )} run_start WHERE run_start.collection_id = collections.id AND run_start.type = ${
+        CollectionEventType.REVIEW_AUTOMATED_STARTED
+      } AND run_start.payload->>'validationId' = latest_stage.payload->>'validationId' AND run_start.created_at >= ${since}) AND (latest_stage.type = ${
         CollectionEventType.REVIEW_AUTOMATED_STARTED
       } OR (latest_stage.type = ${
         CollectionEventType.REVIEW_AUTOMATED_ERROR

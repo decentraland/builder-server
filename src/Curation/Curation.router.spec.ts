@@ -1340,13 +1340,21 @@ describe('when handling a request', () => {
         }
         service = mockServiceWithAccess(CollectionCuration, true)
         jest.spyOn(service, 'getLatestById').mockResolvedValueOnce(validatorRow)
+        jest
+          .spyOn(Collection, 'findOne')
+          .mockResolvedValueOnce({ ...dbCollectionMock })
         req = {
           auth: { ethAddress: 'ethAddress' },
           params: { id: 'some id' },
         } as any
       })
 
-      it('should answer with that rejection instead of opening a request', async () => {
+      it('should answer with that rejection instead of opening a request when nothing changed', async () => {
+        ;(AutoCurationService.prototype
+          .prepareChanges as jest.Mock).mockResolvedValueOnce({
+          ...submittedChanges,
+          items: [],
+        })
         const createSpy = jest.spyOn(CollectionCuration, 'create')
 
         await expect(router.insertCollectionCuration(req)).resolves.toBe(
@@ -1356,6 +1364,27 @@ describe('when handling a request', () => {
         expect(
           AutoCurationService.prototype.onChangesSubmitted
         ).not.toHaveBeenCalled()
+      })
+
+      describe('and items changed after the validator opened the row', () => {
+        it('should open a request and submit the changes for review', async () => {
+          const created = { id: 'new-request' }
+          jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(created as any)
+
+          await expect(router.insertCollectionCuration(req)).resolves.toBe(
+            created
+          )
+          expect(curationNotifications.reviewRequested).toHaveBeenCalledWith(
+            'some id',
+            CurationStatus.REJECTED,
+            'ethAddress'
+          )
+          expect(
+            AutoCurationService.prototype.onChangesSubmitted
+          ).toHaveBeenCalledWith(submittedChanges, 'ethAddress', '')
+        })
       })
     })
 

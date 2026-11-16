@@ -672,12 +672,13 @@ export class AutoCurationService {
       collectionId,
       result.validationId
     )
-    // A request the server could not confirm sending, or one the sweep gave up on, may still get its verdict.
-    if (
-      recorded &&
-      recorded.payload.reason !== PUBLISH_FAILED_REASON &&
-      recorded.payload.reason !== SWEEP_EXHAUSTED_REASON
-    ) {
+    // A request the server could not confirm sending, or one the sweep gave up on, may still get its verdict; after
+    // a give-up only a final one, since nothing would re-send a retryable error.
+    const replaceable =
+      recorded?.payload.reason === PUBLISH_FAILED_REASON ||
+      (recorded?.payload.reason === SWEEP_EXHAUSTED_REASON &&
+        !(result.verdict === 'error' && result.retryable))
+    if (recorded && !replaceable) {
       logger.warn(
         `Ignoring the validation result ${result.validationId} for collection ${collectionId}: it was already recorded`
       )
@@ -984,16 +985,36 @@ export class AutoCurationService {
           collection.id
         }: ${(error as Error).message}`
       )
-      await CollectionEvent.recordOnce({
-        collection_id: collection.id,
-        type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
-        actor: CollectionEventActor.SYSTEM,
-        actor_address: null,
-        payload: {
-          reason: PUBLISH_FAILED_REASON,
-          validationId: manifest.validationId,
-        },
-      })
+      // The send may have timed out after the message went out: a verdict that already arrived wins. Busy, the
+      // failure is left unrecorded and the sweep re-sends the run that never got a verdict.
+      try {
+        await withCollectionLock(collection.id, async () => {
+          if (
+            await CollectionEvent.findVerdictByValidationId(
+              collection.id,
+              manifest.validationId
+            )
+          ) {
+            return
+          }
+          await CollectionEvent.recordOnce({
+            collection_id: collection.id,
+            type: CollectionEventType.REVIEW_AUTOMATED_ERROR,
+            actor: CollectionEventActor.SYSTEM,
+            actor_address: null,
+            payload: {
+              reason: PUBLISH_FAILED_REASON,
+              validationId: manifest.validationId,
+            },
+          })
+        })
+      } catch (lockError) {
+        logger.error(
+          `Could not record the failed send of validation ${
+            manifest.validationId
+          } of collection ${collection.id}: ${(lockError as Error).message}`
+        )
+      }
     }
   }
 
@@ -1056,7 +1077,12 @@ export class AutoCurationService {
       collectionId,
       CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
-    if (!latestStart) {
+    // The sweep gives up on older runs, so they block the creator no longer than they hide from curators.
+    if (
+      !latestStart ||
+      new Date(latestStart.created_at).getTime() <
+        Date.now() - SWEEP_LOOKBACK_MS
+    ) {
       return false
     }
     const verdict = await CollectionEvent.findVerdictByValidationId(

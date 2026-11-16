@@ -713,16 +713,11 @@ export class CurationRouter extends Router {
       )
     }
 
-    // The validator rejected the publication before its own request arrived, opening the row itself: that
-    // rejection answers the request, so it is returned instead of reopening the review as an appeal.
-    if (
+    const openedByValidator =
       type === CurationType.COLLECTION &&
       !curationJSON?.assignee &&
-      curation &&
+      !!curation &&
       isOpenedByValidator(curation as CollectionCurationAttributes)
-    ) {
-      return curation
-    }
 
     const attributes: Partial<
       CollectionCurationAttributes & ItemCurationAttributes
@@ -774,6 +769,12 @@ export class CurationRouter extends Router {
     const submittedChanges = isChangesSubmission
       ? await this.autoCurationService.prepareChanges(id, curation?.status)
       : null
+
+    // The validator rejected the publication before its own request arrived, opening the row itself: with nothing
+    // changed since, that rejection answers the request instead of reopening the review as an appeal.
+    if (openedByValidator && !submittedChanges?.items.length) {
+      return curation
+    }
 
     const created = await curationService.getModel().create(attributes)
 

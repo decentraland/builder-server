@@ -589,6 +589,20 @@ describe('AutoCuration router', () => {
             })
           })
       })
+
+      it('should cap a page far past any timeline', () => {
+        return server
+          .get(buildURL(url, { page: '99999999999999999999', limit: '10' }))
+          .set(createAuthHeaders('get', url))
+          .expect(200)
+          .then(() => {
+            expect(mockFindEventsPage).toHaveBeenCalledWith(
+              dbCollectionMock.id,
+              10,
+              99990
+            )
+          })
+      })
     })
 
     describe('and the caller is on the committee', () => {

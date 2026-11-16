@@ -40,6 +40,8 @@ import {
 
 const DEFAULT_EVENTS_LIMIT = 50
 const MAX_EVENTS_LIMIT = 200
+// Far past any real timeline; keeps the offset within what Postgres accepts.
+const MAX_EVENTS_PAGE = 10000
 const RATE_LIMIT_WINDOW_MS = 60 * 1000
 
 // Keyed by the signed address: there is no trusted proxy config, so every caller would share the balancer's IP.
@@ -253,7 +255,7 @@ export class AutoCurationRouter extends Router {
     const { page = 1, limit = DEFAULT_EVENTS_LIMIT } = getPaginationParams(req)
     return this.service.getEvents(
       id,
-      Math.max(page, 1),
+      Math.min(Math.max(page, 1), MAX_EVENTS_PAGE),
       Math.min(Math.max(limit, 1), MAX_EVENTS_LIMIT),
       isCommittee
     )

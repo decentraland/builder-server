@@ -203,8 +203,8 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         WHERE collection_id = ${collectionId}
           AND type = ANY(${VERDICT_EVENT_TYPES})
           AND payload->>'validationId' = ${validationId}
-        ORDER BY created_at DESC,
-          COALESCE(payload->>'reason' = ${PUBLISH_FAILED_REASON}, false),
+        ORDER BY COALESCE(payload->>'reason' = ${PUBLISH_FAILED_REASON}, false),
+          created_at DESC,
           id DESC
         LIMIT 1`)
     return events[0]

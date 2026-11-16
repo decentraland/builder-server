@@ -1366,6 +1366,25 @@ describe('when handling a request', () => {
         ).not.toHaveBeenCalled()
       })
 
+      describe('and the automated review is off', () => {
+        it('should open a request as before, the only way left to reach a curator', async () => {
+          ;(AutoCurationService.prototype
+            .prepareChanges as jest.Mock).mockResolvedValueOnce(null)
+          const created = { id: 'new-request' }
+          const createSpy = jest
+            .spyOn(CollectionCuration, 'create')
+            .mockResolvedValueOnce(created as any)
+
+          await expect(router.insertCollectionCuration(req)).resolves.toBe(
+            created
+          )
+          expect(createSpy).toHaveBeenCalled()
+          expect(
+            AutoCurationService.prototype.onChangesSubmitted
+          ).not.toHaveBeenCalled()
+        })
+      })
+
       describe('and items changed after the validator opened the row', () => {
         it('should open a request and submit the changes for review', async () => {
           const created = { id: 'new-request' }

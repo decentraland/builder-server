@@ -1031,8 +1031,6 @@ paths:
           description: An automated review of the collection is running
         '429':
           description: The collection used today's automated reviews; `retryAt` in the data
-        '503':
-          description: The collection is being updated; try again
     patch:
       operationId: updateCollectionCuration
       tags: [Curations]

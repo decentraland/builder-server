@@ -4,11 +4,7 @@ import { Collection } from '../Collection/Collection.model'
 import { isCommitteeMember } from '../Committee/utils'
 import { CollectionAttributes } from '../Collection/Collection.types'
 import { peerAPI } from '../ethereum/api/peer'
-import {
-  getLegacyItemEditorUrl,
-  getStandardItemEditorUrl,
-  shortenAddress,
-} from '../Forum/utils'
+import { getItemEditorUrl, shortenAddress } from '../Forum/utils'
 import { escapeSlackText, sendSlackMessage, toOneLine } from '../Slack'
 import { isTPCollection } from '../utils/urn'
 import { CurationStatus } from './Curation.types'
@@ -168,9 +164,7 @@ async function notify(
 }
 
 function link(collection: CollectionAttributes): string {
-  const url = isTPCollection(collection)
-    ? getLegacyItemEditorUrl({ collectionId: collection.id })
-    : getStandardItemEditorUrl({ collectionId: collection.id })
+  const url = getItemEditorUrl({ collectionId: collection.id })
   return `<${url}|${escapeSlackText(toOneLine(collection.name))}>`
 }
 

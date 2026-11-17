@@ -48,7 +48,7 @@ export function buildThirdPartyCollectionForumPost(
 ): ForumPost {
   return {
     title: `Third Party collection ${collection.name} with URN: ${collection.third_party_id}`,
-    raw: buildForumPostBody(collection, items, getLegacyItemEditorUrl),
+    raw: buildForumPostBody(collection, items, getItemEditorUrl),
   }
 }
 
@@ -59,7 +59,7 @@ export function buildStandardCollectionForumPost(
 ): Pick<ForumPost, 'title' | 'raw'> {
   return {
     title: `Collection '${collection.name}' created by ${createdBy} is ready for review!`,
-    raw: buildForumPostBody(collection, items, getStandardItemEditorUrl),
+    raw: buildForumPostBody(collection, items, getItemEditorUrl),
   }
 }
 
@@ -80,7 +80,7 @@ export function buildCollectionForumUpdateReply(
     .map((item) =>
       toRawItem(
         item,
-        getLegacyItemEditorUrl({
+        getItemEditorUrl({
           collectionId: item.collection_id ?? undefined,
           itemId: item.id,
         })
@@ -107,7 +107,6 @@ function toRawItem(item: FullItem, editorUrl: string) {
       [Link to editor](${editorUrl})`
 }
 
-// Third-party collections can only be curated in the legacy Builder, which reads `collection` and `item`.
 export function getLegacyItemEditorUrl(params: {
   collectionId?: string
   itemId?: string
@@ -118,15 +117,18 @@ export function getLegacyItemEditorUrl(params: {
   return `${getBaseUrl('BUILDER_URL')}/item-editor?${query.toString()}`
 }
 
-export function getStandardItemEditorUrl(params: {
-  collectionId: string
+// Curators review every collection, standard or third-party, in the creators site; the legacy Builder is
+// only a fallback for deployments that have no creators site configured.
+export function getItemEditorUrl(params: {
+  collectionId?: string
   itemId?: string
 }): string {
   const creatorsUrl = getBaseUrl('CREATORS_URL')
   if (!creatorsUrl) {
     return getLegacyItemEditorUrl(params)
   }
-  const query = new URLSearchParams({ collection: params.collectionId })
+  const query = new URLSearchParams()
+  if (params.collectionId) query.set('collection', params.collectionId)
   if (params.itemId) query.set('item', params.itemId)
   query.set('reviewing', 'true')
   return `${creatorsUrl}/collections/editor?${query.toString()}`

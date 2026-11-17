@@ -771,8 +771,9 @@ export class CurationRouter extends Router {
       : null
 
     // The validator rejected the publication before its own request arrived, opening the row itself: with nothing
-    // changed since, that rejection answers the request instead of reopening the review as an appeal. Without the
-    // automated review (null) the request opens as it always did, the only way left to reach a curator.
+    // changed since, that rejection answers the request instead of reopening the review as an appeal. When nothing
+    // was prepared (null: the review flow is off, or this is not a creator's changes submission) the request opens
+    // as it always did.
     if (
       openedByValidator &&
       submittedChanges !== null &&

@@ -1310,6 +1310,32 @@ describe('AutoCurationService', () => {
       })
     })
 
+    describe('and it is a background review, with only the automated review on', () => {
+      beforeEach(() => {
+        mockIsFeatureFlagEnabled.mockImplementation(
+          async (flag: string) => flag === AUTO_CURATION_FEATURE_FLAG
+        )
+        mockFindLatestEventByType.mockResolvedValue(undefined)
+        result = { ...result, verdict: 'rejected' }
+      })
+
+      it('should log the verdict and change nothing', async () => {
+        await service.handleValidationResult(dbCollectionMock.id, result)
+
+        expect(process.stderr.write).toHaveBeenCalledWith(
+          expect.stringContaining(
+            `collection ${dbCollectionMock.id} ended rejected (rules 0.4.0): ${item.id}=true`
+          )
+        )
+        expect(process.stderr.write).not.toHaveBeenCalledWith(
+          expect.stringContaining('not the latest validation')
+        )
+        expect(mockRecordEventOnce).not.toHaveBeenCalled()
+        expect(mockUpdateCuration).not.toHaveBeenCalled()
+        expect(mockNotifySlack).not.toHaveBeenCalled()
+      })
+    })
+
     describe('and the verdict is a retryable error', () => {
       beforeEach(() => {
         result = { ...result, verdict: 'error', retryable: true }

@@ -1017,10 +1017,10 @@ paths:
                 note:
                   type: string
                   maxLength: 2000
-                  description: Optional message for the curators, kept on the `changes.submitted` event
+                  description: Optional message for the curators
       responses:
         '200':
-          description: Curation created, or the validator's existing rejection when nothing changed since it
+          description: Curation created, or the current automated rejection when nothing changed since it
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
@@ -1028,9 +1028,9 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: An automated review of the collection is running
+          description: An automated review of the collection is running (only with the automated review flow on)
         '429':
-          description: The collection used today's automated reviews; `retryAt` in the data
+          description: The collection used today's automated reviews; `data.retryAt` says when it can try again (only with the automated review flow on)
     patch:
       operationId: updateCollectionCuration
       tags: [Curations]
@@ -1069,7 +1069,7 @@ paths:
                 note:
                   type: string
                   maxLength: 2000
-                  description: Optional message for the creator with an approval, kept on the `review.approved` event
+                  description: Optional message for the creator with an approval
       responses:
         '200':
           description: Curation updated successfully
@@ -1080,7 +1080,7 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '503':
-          description: The collection is being updated; try again
+          description: The collection is busy; retry shortly
 
   /collections/{id}/curation/post:
     post:
@@ -1108,8 +1108,8 @@ paths:
       tags: [Curations]
       summary: Request a human review
       description: |
-        Appeals a rejected curation. Opens a new pending curation, records a `review.appeal_requested` event
-        and notifies the curation Slack channel. Only the collection creator or a manager can call it.
+        Asks a curator to review a collection the automated review rejected. Only the collection creator or a
+        manager can call it. Answers 404 while the automated review flow is off.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1145,7 +1145,7 @@ paths:
         '429':
           description: More than 30 requests per minute from this address
         '503':
-          description: Another server instance is updating the collection; retry shortly
+          description: The collection is busy; retry shortly
           content:
             application/json:
               schema:
@@ -1157,18 +1157,14 @@ paths:
       tags: [Curations]
       summary: Request an automated review
       description: |
-        Sends the collection to the automatic validator again. Only the collection creator or a manager can call it.
-        A collection gets 5 automated reviews per UTC day (publish, retry and submitted changes all count; sweep
-        re-sends do not); a curator decision resets the count. The same content always gets the same verdict, so a
-        retry needs the last run to have ended without one (an automated review error) or an item whose content changed since it
-        started; it then validates the changed items plus the previous run's. Reopens a pending curation when the
-        validator rejected the latest one; a curator's rejection stands until the creator submits changes or
-        appeals. Records a `review.automated_started` event. At most 30 requests per minute per address.
+        Runs the automated review of a published collection again, after it changed or the last run failed. Only the
+        collection creator or a manager can call it, up to 5 automated reviews per collection per UTC day. Answers 404
+        while the automated review flow is off.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       responses:
         '200':
-          description: Validation started. The event's payload omits the `validationId`
+          description: Automated review started, returns its timeline event
           content:
             application/json:
               schema:
@@ -1178,19 +1174,19 @@ paths:
         '404':
           $ref: '#/components/responses/NotFound'
         '409':
-          description: A validation is already in progress, nothing changed since the last verdict, a curator rejected the collection, it was too large for an automated review, or it is not a published standard collection
+          description: The collection can't be reviewed now (a review is running, nothing changed since the last verdict, a curator rejected it, or it isn't eligible)
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '429':
-          description: Daily validation limit reached (`data.retryAt` is the ISO date when validations are allowed again), or more than 30 requests per minute from this address
+          description: Daily limit reached (`data.retryAt` says when it can try again), or more than 30 requests per minute from this address
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
         '503':
-          description: Another server instance is updating the collection; retry shortly
+          description: The collection is busy; retry shortly
           content:
             application/json:
               schema:
@@ -1203,8 +1199,7 @@ paths:
       summary: Get collection events
       description: |
         Returns the review timeline of a collection, newest first. Creators and managers can read their own
-        collections, committee members any collection. For non-committee callers the `validationId` and each item's
-        `error` are omitted from every event payload. At most 120 requests per minute per address.
+        collections, committee members any collection. Answers 404 while the automated review flow is off.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
         - $ref: '#/components/parameters/Page'
@@ -1236,9 +1231,8 @@ paths:
       tags: [Curations]
       summary: Comment on a collection review
       description: |
-        Adds a `review.comment` event to the review timeline of a published collection whose latest review request
-        is pending or rejected. Its creator, its managers and committee members can call it. At most 30 requests
-        per minute per address.
+        Adds a comment to the review timeline of a collection under review, optionally about one of its items. Its
+        creator, its managers and committee members can call it. Answers 404 while the automated review flow is off.
       parameters:
         - $ref: '#/components/parameters/CollectionId'
       requestBody:
@@ -1254,14 +1248,14 @@ paths:
                   type: string
                   minLength: 1
                   maxLength: 2000
-                  description: The comment; trimmed before it is measured and stored
+                  description: The comment
                 itemId:
                   type: string
                   format: uuid
                   description: Item of the collection the comment is about
       responses:
         '200':
-          description: Comment recorded, returns its event as the timeline lists it
+          description: Comment added, returns its timeline event
           content:
             application/json:
               schema:
@@ -1291,12 +1285,9 @@ paths:
       tags: [Curations]
       summary: Receive a validation result
       description: |
-        Callback from the wearable validator job with the verdict of a validation. Authenticated with an HMAC
-        signature instead of signed fetch: `x-wearable-validator-signature` is `sha256=` plus the hex HMAC-SHA256,
-        keyed with `WEARABLE_VALIDATOR_CALLBACK_SECRET`, of `<x-wearable-validator-timestamp>.<raw body>`; timestamps
-        more than 5 minutes off are refused. The signature is checked before the feature flag. A body whose
-        `collectionId` is not the path id is answered with 400. Results whose `validationId` is not the latest
-        `review.automated_started` of the collection are ignored and still answered with 204.
+        Receives the verdict of an automated review from the wearable validator. Only the validator can call it: the
+        request is signed with a secret shared with it (`sha256=<hex HMAC>` of `<timestamp>.<raw body>`), and the
+        timestamp must be within 5 minutes. Results of an outdated review are accepted and ignored.
       security:
         - ValidatorSignature: []
       parameters:
@@ -1321,13 +1312,13 @@ paths:
               $ref: '#/components/schemas/ValidationResult'
       responses:
         '204':
-          description: Result processed or ignored
+          description: Result received
         '400':
           $ref: '#/components/responses/BadRequest'
         '401':
           $ref: '#/components/responses/Unauthorized'
         '503':
-          description: Another server instance is updating the collection; retry shortly
+          description: The collection is busy; retry shortly
           content:
             application/json:
               schema:
@@ -2201,7 +2192,7 @@ components:
       type: apiKey
       in: header
       name: x-wearable-validator-signature
-      description: HMAC-SHA256 of `<timestamp>.<raw body>` with the secret shared with the wearable validator job (`WEARABLE_VALIDATOR_CALLBACK_SECRET`).
+      description: HMAC-SHA256 of `<timestamp>.<raw body>` with the secret shared with the wearable validator.
 
   parameters:
     ProjectId:
@@ -2694,13 +2685,13 @@ components:
         reviewed_by:
           type: string
           nullable: true
-          description: '`validator` or the lowercase address of the curator. Null while pending'
+          description: '`validator` or the address of the curator who decided. Null while pending'
         rejection_reasons:
           type: array
           nullable: true
           items:
             $ref: '#/components/schemas/RejectionReason'
-          description: Set by curators only. Validator rejections keep it null
+          description: Set on a curator's rejection
         rejection_message:
           type: string
           nullable: true
@@ -2845,10 +2836,10 @@ components:
           example: 0.4.0
         reason:
           type: string
-          description: Only with verdict `error`. `unsupported` means every undecided item is one the validator cannot judge, so the unsupported items go to a curator instead of being re-sent
+          description: Only with verdict `error`. `unsupported` means the validator can't judge the undecided items
         retryable:
           type: boolean
-          description: Only with verdict `error`. `true` leaves the validation for the sweep to re-send; otherwise the collection goes to a curator
+          description: Only with verdict `error`. Whether running the review again may succeed
         items:
           type: array
           maxItems: 50

@@ -440,6 +440,22 @@ export class AutoCurationService {
     collectionId: string,
     result: ValidationResult
   ): Promise<void> {
+    const items = result.items
+      .map((item) => `${item.itemId}=${item.passed ?? 'undecided'}`)
+      .join(' ')
+    logger.info(
+      `Validation ${result.validationId} of collection ${collectionId} ended ${result.verdict} (rules ${result.rulesVersion}): ${items}`
+    )
+    // Background reviews record no start, so with the review flow off their verdicts end at the log line.
+    if (!(await this.isReviewFlowEnabled())) {
+      const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+        collectionId,
+        CollectionEventType.REVIEW_AUTOMATED_STARTED
+      )
+      if (latestStart?.payload.validationId !== result.validationId) {
+        return
+      }
+    }
     const notices = await withCollectionLock(collectionId, () =>
       this.doHandleValidationResult(collectionId, result)
     )

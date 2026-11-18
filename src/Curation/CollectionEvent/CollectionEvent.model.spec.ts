@@ -70,3 +70,31 @@ describe('when breaking ties between events written at the same instant', () => 
     }
   })
 })
+
+describe('when finding the hashes the validator judged', () => {
+  let querySpy: jest.SpyInstance
+
+  afterEach(() => {
+    jest.restoreAllMocks()
+  })
+
+  beforeEach(() => {
+    querySpy = jest.spyOn(CollectionEvent, 'query').mockResolvedValue([
+      { item_id: 'itemA', content_hash: 'hashA' },
+      { item_id: 'itemB', content_hash: 'hashB' },
+    ])
+  })
+
+  it('should take each item from the latest judged run that sent it, with no limit on how far back', async () => {
+    await expect(
+      CollectionEvent.findJudgedHashesByCollectionId('collectionId')
+    ).resolves.toEqual({ itemA: 'hashA', itemB: 'hashB' })
+
+    const text = querySpy.mock.calls[0][0].text.replace(/\s+/g, ' ')
+    expect(text).toContain('SELECT DISTINCT ON (hashes.key)')
+    expect(text).toContain(
+      'ORDER BY hashes.key, started.created_at DESC, started.id DESC'
+    )
+    expect(text).not.toContain('LIMIT')
+  })
+})

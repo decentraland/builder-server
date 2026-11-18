@@ -745,13 +745,14 @@ describe('AutoCuration router', () => {
 
     describe('and nothing changed since the latest verdict', () => {
       beforeEach(() => {
-        ;(CollectionEvent.findJudgedStartsByCollectionId as jest.Mock).mockImplementation(
-          async (collectionId: string) => [
-            await mockFindLatestEventByType(
-              collectionId,
-              CollectionEventType.REVIEW_AUTOMATED_STARTED
-            ),
-          ]
+        ;(CollectionEvent.findJudgedHashesByCollectionId as jest.Mock).mockImplementation(
+          async (collectionId: string) =>
+            (
+              await mockFindLatestEventByType(
+                collectionId,
+                CollectionEventType.REVIEW_AUTOMATED_STARTED
+              )
+            ).payload.contentHashes
         )
         const itemId = uuidv4()
         mockFindLatestEventByType.mockImplementation((_, type) =>

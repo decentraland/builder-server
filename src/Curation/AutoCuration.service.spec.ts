@@ -87,14 +87,14 @@ const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndTyp
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
 const mockFindStaleAutomatedStarted = CollectionEvent.findStaleAutomatedStarted as jest.Mock
-const mockFindStarts = CollectionEvent.findJudgedStartsByCollectionId as jest.Mock
+const mockFindJudgedHashes = CollectionEvent.findJudgedHashesByCollectionId as jest.Mock
 const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
 const mockCountSweepStarts = CollectionEvent.countSweepStartsSinceManualStart as jest.Mock
 const mockFindLatestCuration = CollectionCuration.findLatestByCollectionId as jest.Mock
 const mockCreateCuration = CollectionCuration.create as jest.Mock
 const mockUpdateCuration = CollectionCuration.update as jest.Mock
 const mockFindCollection = Collection.findOne as jest.Mock
-const mockFindPendingWithAutomatedReview = Collection.findPendingWithAutomatedReview as jest.Mock
+const mockFindPendingWithAutomatedReview = Collection.findPendingWithEditedItems as jest.Mock
 const mockFindItemsByCollection = Item.findOrderedByCollectionId as jest.Mock
 const mockFindItemsByIds = Item.findByIds as jest.Mock
 const mockFetchRemoteItems = collectionAPI.fetchItemsByContractAddress as jest.Mock
@@ -135,12 +135,12 @@ describe('AutoCurationService', () => {
     item = { ...dbItemMock, local_content_hash: 'localHash' }
     mockIsFeatureFlagEnabled.mockResolvedValue(true)
     mockCalculateHash.mockResolvedValue('computedHash')
-    mockFindStarts.mockImplementation(async (collectionId: string) => {
+    mockFindJudgedHashes.mockImplementation(async (collectionId: string) => {
       const latest = await mockFindLatestEventByType(
         collectionId,
         CollectionEventType.REVIEW_AUTOMATED_STARTED
       )
-      return latest ? [latest] : []
+      return { ...(latest?.payload.contentHashes ?? {}) }
     })
     jest.spyOn(console, 'log').mockImplementation(() => undefined)
     jest.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -1720,19 +1720,10 @@ describe('AutoCurationService', () => {
 
     describe('and each item was judged as it is by a different earlier run', () => {
       beforeEach(() => {
-        mockFindStarts.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            validationId: 'changesRun',
-            contentHashes: { [changedItem.id]: 'newHash' },
-          }),
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            validationId: 'publishRun',
-            contentHashes: {
-              [unchangedItem.id]: 'staleHash',
-              [changedItem.id]: 'olderHash',
-            },
-          }),
-        ])
+        mockFindJudgedHashes.mockResolvedValue({
+          [changedItem.id]: 'newHash',
+          [unchangedItem.id]: 'staleHash',
+        })
         mockFetchRemoteItems.mockResolvedValue([
           { ...itemFragmentMock, blockchainId: '0', contentHash: 'chainHash' },
           { ...itemFragmentMock, blockchainId: '1', contentHash: 'oldHash' },
@@ -2517,6 +2508,28 @@ describe('AutoCurationService', () => {
       })
 
       it('should not validate it again', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and an item with a stored hash was never sent in any run', () => {
+      beforeEach(() => {
+        mockFindItemsByCollection.mockResolvedValue([
+          { ...editedItem, local_content_hash: 'oldHash' },
+          untouchedItem,
+          {
+            ...dbItemMock,
+            id: 'neverJudged',
+            blockchain_item_id: '3',
+            local_content_hash: 'chainHash',
+          },
+        ])
+      })
+
+      it('should leave it as the chain has it, without validating the collection again', async () => {
         await service.revalidateEditedCollections()
 
         expect(mockRecordEvent).not.toHaveBeenCalled()

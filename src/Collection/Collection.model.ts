@@ -6,6 +6,7 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import {
   CollectionEvent,
   PUBLISH_FAILED_REASON,
+  judgedStartCondition,
 } from '../Curation/CollectionEvent/CollectionEvent.model'
 import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
 import { database } from '../database/database'
@@ -633,9 +634,13 @@ export class Collection extends Model<CollectionAttributes> {
         WHERE contract_address = ANY(${contractAddresses})`)
   }
 
-  /** Published standard collections whose latest curation is pending and that the validator already ran on. */
-  static findPendingWithAutomatedReview() {
-    return this.query<CollectionAttributes>(SQL`
+  /**
+   * Published standard collections whose latest curation is pending and with an on-chain item saved since an
+   * automated review judged it: its stored hash differs from the one the latest run that sent it recorded.
+   */
+  static findPendingWithEditedItems() {
+    return this.query<CollectionAttributes>(
+      SQL`
       SELECT collections.*
         FROM ${raw(this.tableName)}
         ${this.getLatestCurationJoinStatement()}
@@ -644,12 +649,24 @@ export class Collection extends Model<CollectionAttributes> {
           AND collections.third_party_id IS NULL
           AND EXISTS (
             SELECT 1
-              FROM ${raw(CollectionEvent.tableName)} started
-              WHERE started.collection_id = collections.id
-                AND started.type = ${
-                  CollectionEventType.REVIEW_AUTOMATED_STARTED
-                }
-          )`)
+              FROM ${raw(Item.tableName)} items
+              WHERE items.collection_id = collections.id
+                AND items.blockchain_item_id IS NOT NULL
+                AND items.local_content_hash <> (
+                  SELECT started.payload->'contentHashes'->>items.id::text
+                    FROM ${raw(CollectionEvent.tableName)} started
+                    WHERE started.collection_id = collections.id
+                      AND started.payload->'contentHashes' ? items.id::text
+                      AND `
+        .append(judgedStartCondition('started'))
+        .append(
+          SQL`
+                    ORDER BY started.created_at DESC, started.id DESC
+                    LIMIT 1
+                )
+          )`
+        )
+    )
   }
 
   static async findByItemId(

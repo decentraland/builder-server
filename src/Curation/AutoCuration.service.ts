@@ -565,7 +565,7 @@ export class AutoCurationService {
       return
     }
 
-    for (const collection of await Collection.findPendingWithAutomatedReview()) {
+    for (const collection of await Collection.findPendingWithEditedItems()) {
       try {
         const started = await withCollectionLock(collection.id, () =>
           this.doRevalidateEdited(collection)
@@ -669,13 +669,17 @@ export class AutoCurationService {
       return undefined
     }
 
-    const judgedHashes = await this.findJudgedHashes(collection.id)
+    const judgedHashes = await CollectionEvent.findJudgedHashesByCollectionId(
+      collection.id
+    )
     const editedItems: ItemAttributes[] = []
     for (const item of await Item.findOrderedByCollectionId(collection.id)) {
-      // The hash is only stored by a save after the publication: an item without one was never edited since.
+      // The hash is only stored by a save after the publication, also one that changed nothing, so only an item a
+      // run judged has a version to compare with; the others are the chain's, which a change request validates.
       if (
         item.blockchain_item_id !== null &&
         item.local_content_hash &&
+        item.id in judgedHashes &&
         judgedHashes[item.id] !== item.local_content_hash
       ) {
         editedItems.push(item)
@@ -1365,7 +1369,9 @@ export class AutoCurationService {
       throw new TooLargeToValidateError(collection.id)
     }
 
-    const previousHashes = await this.findJudgedHashes(collection.id)
+    const previousHashes = await CollectionEvent.findJudgedHashesByCollectionId(
+      collection.id
+    )
     const changedItems: ItemAttributes[] = []
     for (const item of await Item.findOrderedByCollectionId(collection.id)) {
       const hash = await this.getContentHash(item, collection)
@@ -1409,31 +1415,12 @@ export class AutoCurationService {
         }
       }
     }
-    const judgedHashes = await this.findJudgedHashes(collection.id)
+    const judgedHashes = await CollectionEvent.findJudgedHashesByCollectionId(
+      collection.id
+    )
     return changedItems.filter(
       (item) => judgedHashes[item.id] !== item.local_content_hash
     )
-  }
-
-  /** Each item's hash as the most recent run that judged it saw it: a run only carries the items it sent. */
-  private async findJudgedHashes(
-    collectionId: string
-  ): Promise<Record<string, string>> {
-    const judged: Record<string, string> = {}
-    for (const start of await CollectionEvent.findJudgedStartsByCollectionId(
-      collectionId
-    )) {
-      const hashes = (start.payload.contentHashes ?? {}) as Record<
-        string,
-        string
-      >
-      for (const [itemId, hash] of Object.entries(hashes)) {
-        if (!(itemId in judged)) {
-          judged[itemId] = hash
-        }
-      }
-    }
-    return judged
   }
 
   /** The items whose content differs from the chain, with the hash the manifest will carry. */

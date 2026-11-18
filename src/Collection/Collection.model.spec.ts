@@ -423,17 +423,20 @@ describe('Collection model', () => {
   })
 
   describe('when finding the collections whose edits the sweep revalidates', () => {
-    it('should take published standard collections with a pending latest curation and an automated review behind them', async () => {
-      await Collection.findPendingWithAutomatedReview()
+    it('should take published standard collections with a pending latest curation and an on-chain item whose stored hash differs from its latest judged one', async () => {
+      await Collection.findPendingWithEditedItems()
 
       const text = normalize(lastQuery().text)
       expect(text).toContain('WHERE collection_curations.status = $1')
       expect(text).toContain('AND collections.contract_address IS NOT NULL')
       expect(text).toContain('AND collections.third_party_id IS NULL')
       expect(text).toContain(
-        'EXISTS ( SELECT 1 FROM collection_events started WHERE started.collection_id = collections.id AND started.type = $2 )'
+        "AND items.blockchain_item_id IS NOT NULL AND items.local_content_hash <> ( SELECT started.payload->'contentHashes'->>items.id::text FROM collection_events started WHERE started.collection_id = collections.id AND started.payload->'contentHashes' ? items.id::text AND started.type = $2"
       )
-      expect(lastQuery().values).toEqual([
+      expect(text).toContain(
+        'ORDER BY started.created_at DESC, started.id DESC LIMIT 1'
+      )
+      expect(lastQuery().values.slice(0, 2)).toEqual([
         CurationStatusFilter.PENDING,
         CollectionEventType.REVIEW_AUTOMATED_STARTED,
       ])

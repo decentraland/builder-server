@@ -28,11 +28,32 @@ const FINAL_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_HUMAN_REQUIRED,
 ]
 
-// Runs whose items the validator checked: a verdict, or a hand-off of the items it cannot judge (it judged the rest).
 const JUDGED_VERDICT_EVENT_TYPES = [
   CollectionEventType.REVIEW_AUTOMATED_PASSED,
   CollectionEventType.REVIEW_AUTOMATED_REJECTED,
 ]
+
+/** A start whose items the validator checked: a verdict, or a hand-off of the items it cannot judge (it judged the rest). */
+export function judgedStartCondition(alias: string) {
+  return SQL`${raw(alias)}.type = ${
+    CollectionEventType.REVIEW_AUTOMATED_STARTED
+  }
+          AND EXISTS (
+            SELECT 1
+              FROM collection_events verdict
+              WHERE verdict.collection_id = ${raw(alias)}.collection_id
+                AND verdict.payload->>'validationId' = ${raw(
+                  alias
+                )}.payload->>'validationId'
+                AND (
+                  verdict.type = ANY(${JUDGED_VERDICT_EVENT_TYPES})
+                  OR (
+                    verdict.type = ${CollectionEventType.REVIEW_HUMAN_REQUIRED}
+                    AND verdict.payload->>'reason' = ${UNSUPPORTED_ITEMS_REASON}
+                  )
+                )
+          )`
+}
 
 let lastTimestamp = 0
 
@@ -146,31 +167,27 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
         OFFSET ${offset}`)
   }
 
-  /** The latest starts whose items the validator checked: a run too large to send or that failed checked none. */
-  static findJudgedStartsByCollectionId(
-    collectionId: string,
-    limit = 50
-  ): Promise<CollectionEventAttributes[]> {
-    return this.query<CollectionEventAttributes>(SQL`
-      SELECT started.*
+  /**
+   * Each item's hash as the most recent run that judged it saw it: a run only carries the items it sent, and a run
+   * too large to send or that failed judged none.
+   */
+  static async findJudgedHashesByCollectionId(
+    collectionId: string
+  ): Promise<Record<string, string>> {
+    const rows = await this.query<{ item_id: string; content_hash: string }>(
+      SQL`
+      SELECT DISTINCT ON (hashes.key) hashes.key AS item_id, hashes.value AS content_hash
         FROM ${raw(this.tableName)} started
+        CROSS JOIN LATERAL jsonb_each_text(COALESCE(started.payload->'contentHashes', '{}'::jsonb)) hashes
         WHERE started.collection_id = ${collectionId}
-          AND started.type = ${CollectionEventType.REVIEW_AUTOMATED_STARTED}
-          AND EXISTS (
-            SELECT 1
-              FROM ${raw(this.tableName)} verdict
-              WHERE verdict.collection_id = started.collection_id
-                AND verdict.payload->>'validationId' = started.payload->>'validationId'
-                AND (
-                  verdict.type = ANY(${JUDGED_VERDICT_EVENT_TYPES})
-                  OR (
-                    verdict.type = ${CollectionEventType.REVIEW_HUMAN_REQUIRED}
-                    AND verdict.payload->>'reason' = ${UNSUPPORTED_ITEMS_REASON}
-                  )
-                )
-          )
-        ORDER BY started.created_at DESC, started.id DESC
-        LIMIT ${limit}`)
+          AND `.append(judgedStartCondition('started')).append(SQL`
+        ORDER BY hashes.key, started.created_at DESC, started.id DESC`)
+    )
+    const hashes: Record<string, string> = {}
+    for (const row of rows) {
+      hashes[row.item_id] = row.content_hash
+    }
+    return hashes
   }
 
   /** Counts sweep re-sends since the last validation started by a publish, retry or change. */

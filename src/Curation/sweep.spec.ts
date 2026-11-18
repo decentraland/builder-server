@@ -50,6 +50,14 @@ describe('when running the auto curation sweep', () => {
       ])
     })
 
+    it('should still revalidate the edited collections when the stale sweep fails', async () => {
+      service.sweepStaleValidations.mockRejectedValueOnce(new Error('boom'))
+
+      await expect(runAutoCurationSweep(service)).rejects.toThrow('boom')
+
+      expect(service.revalidateEditedCollections).toHaveBeenCalledTimes(1)
+    })
+
     it('should release the lock when the sweep fails', async () => {
       service.sweepStaleValidations.mockRejectedValueOnce(new Error('boom'))
 

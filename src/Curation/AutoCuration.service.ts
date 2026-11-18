@@ -23,6 +23,7 @@ import {
   CollectionEventType,
   HUMAN_DECISION_EVENT_TYPES,
   isSweepResendableError,
+  REVIEW_STAGE_EVENT_TYPES,
   PUBLISH_FAILED_REASON,
   SWEEP_EXHAUSTED_REASON,
   TOO_LARGE_REASON,
@@ -652,20 +653,27 @@ export class AutoCurationService {
     if (latestCuration?.status !== CurationStatus.PENDING) {
       return undefined
     }
-    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+    // Only a pass that is still where the review stands is refreshed: a run in flight already flags what changed under
+    // it, errors and hand-offs belong to the sweep or a curator, and a later decision or appeal to the curators.
+    const latestStage = await CollectionEvent.findLatestByCollectionIdAndTypes(
       collection.id,
-      CollectionEventType.REVIEW_AUTOMATED_STARTED
+      REVIEW_STAGE_EVENT_TYPES
     )
-    if (!latestStart) {
+    if (latestStage?.type !== CollectionEventType.REVIEW_AUTOMATED_PASSED) {
       return undefined
     }
-    // Only a pass is refreshed: a run in flight already flags what changed under it, errors and hand-offs belong to
-    // the sweep or a curator, and re-judging an appealed rejection would close the appeal.
-    const verdict = await CollectionEvent.findVerdictByValidationId(
-      collection.id,
-      latestStart.payload.validationId as string
+    // Edit runs are not held against the creator, but are bounded like their requests.
+    const todaysEditRuns = (
+      await CollectionEvent.findByCollectionIdSince(
+        collection.id,
+        getStartOfTodayUTC()
+      )
+    ).filter(
+      (event) =>
+        event.type === CollectionEventType.REVIEW_AUTOMATED_STARTED &&
+        event.payload.trigger === 'edit'
     )
-    if (verdict?.type !== CollectionEventType.REVIEW_AUTOMATED_PASSED) {
+    if (todaysEditRuns.length >= MAX_VALIDATION_ATTEMPTS_PER_DAY) {
       return undefined
     }
 
@@ -1271,9 +1279,11 @@ export class AutoCurationService {
       collectionId,
       CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
-    // The sweep gives up on older runs, so they block the creator no longer than they hide from curators.
+    // The sweep gives up on older runs, so they block the creator no longer than they hide from curators. An edit
+    // run is the server's own: the creator's request supersedes it.
     if (
       !latestStart ||
+      latestStart.payload.trigger === 'edit' ||
       new Date(latestStart.created_at).getTime() <
         Date.now() - SWEEP_LOOKBACK_MS
     ) {

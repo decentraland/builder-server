@@ -8,7 +8,10 @@ import {
   PUBLISH_FAILED_REASON,
   judgedStartCondition,
 } from '../Curation/CollectionEvent/CollectionEvent.model'
-import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
+import {
+  CollectionEventType,
+  REVIEW_STAGE_EVENT_TYPES,
+} from '../Curation/CollectionEvent/CollectionEvent.types'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
 import {
@@ -635,8 +638,8 @@ export class Collection extends Model<CollectionAttributes> {
   }
 
   /**
-   * Published standard collections whose latest curation is pending and with an on-chain item saved since an
-   * automated review judged it: its stored hash differs from the one the latest run that sent it recorded.
+   * Published standard collections whose latest curation is pending, whose review stands at an automated pass, and
+   * with an on-chain item saved since a run judged it: its stored hash differs from the latest judged one.
    */
   static findPendingWithEditedItems() {
     return this.query<CollectionAttributes>(
@@ -647,6 +650,14 @@ export class Collection extends Model<CollectionAttributes> {
         WHERE collection_curations.status = ${CurationStatusFilter.PENDING}
           AND collections.contract_address IS NOT NULL
           AND collections.third_party_id IS NULL
+          AND (
+            SELECT stage.type
+              FROM ${raw(CollectionEvent.tableName)} stage
+              WHERE stage.collection_id = collections.id
+                AND stage.type = ANY(${REVIEW_STAGE_EVENT_TYPES})
+              ORDER BY stage.created_at DESC, stage.id DESC
+              LIMIT 1
+          ) = ${CollectionEventType.REVIEW_AUTOMATED_PASSED}
           AND EXISTS (
             SELECT 1
               FROM ${raw(Item.tableName)} items

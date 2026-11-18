@@ -2,7 +2,10 @@ import { SQL } from 'decentraland-server'
 import { Collection } from './Collection.model'
 import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
 import { PUBLISH_FAILED_REASON } from '../Curation/CollectionEvent/CollectionEvent.model'
-import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
+import {
+  CollectionEventType,
+  REVIEW_STAGE_EVENT_TYPES,
+} from '../Curation/CollectionEvent/CollectionEvent.types'
 import {
   CollectionSort,
   CollectionStatus,
@@ -423,7 +426,7 @@ describe('Collection model', () => {
   })
 
   describe('when finding the collections whose edits the sweep revalidates', () => {
-    it('should take published standard collections with a pending latest curation and an on-chain item whose stored hash differs from its latest judged one', async () => {
+    it('should take published standard collections with a pending latest curation, an automated pass as the latest review stage and an on-chain item whose stored hash differs from its latest judged one', async () => {
       await Collection.findPendingWithEditedItems()
 
       const text = normalize(lastQuery().text)
@@ -431,13 +434,18 @@ describe('Collection model', () => {
       expect(text).toContain('AND collections.contract_address IS NOT NULL')
       expect(text).toContain('AND collections.third_party_id IS NULL')
       expect(text).toContain(
-        "AND items.blockchain_item_id IS NOT NULL AND items.local_content_hash <> ( SELECT started.payload->'contentHashes'->>items.id::text FROM collection_events started WHERE started.collection_id = collections.id AND started.payload->'contentHashes' ? items.id::text AND started.type = $2"
+        'AND ( SELECT stage.type FROM collection_events stage WHERE stage.collection_id = collections.id AND stage.type = ANY($2) ORDER BY stage.created_at DESC, stage.id DESC LIMIT 1 ) = $3'
+      )
+      expect(text).toContain(
+        "AND items.blockchain_item_id IS NOT NULL AND items.local_content_hash <> ( SELECT started.payload->'contentHashes'->>items.id::text FROM collection_events started WHERE started.collection_id = collections.id AND started.payload->'contentHashes' ? items.id::text AND started.type = $4"
       )
       expect(text).toContain(
         'ORDER BY started.created_at DESC, started.id DESC LIMIT 1'
       )
-      expect(lastQuery().values.slice(0, 2)).toEqual([
+      expect(lastQuery().values.slice(0, 4)).toEqual([
         CurationStatusFilter.PENDING,
+        REVIEW_STAGE_EVENT_TYPES,
+        CollectionEventType.REVIEW_AUTOMATED_PASSED,
         CollectionEventType.REVIEW_AUTOMATED_STARTED,
       ])
     })

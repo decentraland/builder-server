@@ -190,7 +190,7 @@ export class CollectionEvent extends Model<CollectionEventAttributes> {
     return hashes
   }
 
-  /** Counts sweep re-sends since the last validation started by a publish, retry or change. */
+  /** Counts sweep re-sends since the last validation started by a publish, retry, change or edit. */
   static async countSweepStartsSinceManualStart(
     collectionId: string
   ): Promise<number> {

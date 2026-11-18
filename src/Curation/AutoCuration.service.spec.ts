@@ -84,6 +84,7 @@ const mockRecordEvent = CollectionEvent.record as jest.Mock
 const mockRecordEventOnce = CollectionEvent.recordOnce as jest.Mock
 const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Mock
 const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndType as jest.Mock
+const mockFindLatestEventByTypes = CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
 const mockFindStaleAutomatedStarted = CollectionEvent.findStaleAutomatedStarted as jest.Mock
@@ -308,6 +309,18 @@ describe('AutoCurationService', () => {
         })
 
         it('should treat the run as over and start a new validation', async () => {
+          await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+          expect(mockSendValidation).toHaveBeenCalledTimes(1)
+        })
+      })
+
+      describe('and the run in flight is an edit run the server started', () => {
+        beforeEach(() => {
+          previousStart.payload.trigger = 'edit'
+        })
+
+        it("should start the creator's validation, which supersedes it", async () => {
           await service.requestValidation(dbCollectionMock.id, ethAddress)
 
           expect(mockSendValidation).toHaveBeenCalledTimes(1)
@@ -2453,11 +2466,12 @@ describe('AutoCurationService', () => {
         status: CurationStatus.PENDING,
       })
       mockFindLatestEventByType.mockResolvedValue(passedStart)
-      mockFindVerdict.mockResolvedValue(
+      mockFindLatestEventByTypes.mockResolvedValue(
         buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED, {
           validationId: 'passedRun',
         })
       )
+      mockFindEventsSince.mockResolvedValue([])
       mockFindItemsByCollection.mockResolvedValue([editedItem, untouchedItem])
     })
 
@@ -2567,49 +2581,53 @@ describe('AutoCurationService', () => {
       })
     })
 
-    describe('and the latest run has no verdict yet', () => {
+    describe.each([
+      ['a run is in flight', CollectionEventType.REVIEW_AUTOMATED_STARTED],
+      [
+        'the latest run was rejected',
+        CollectionEventType.REVIEW_AUTOMATED_REJECTED,
+      ],
+      [
+        'the latest run ended in an error',
+        CollectionEventType.REVIEW_AUTOMATED_ERROR,
+      ],
+      ['it was handed to a curator', CollectionEventType.REVIEW_HUMAN_REQUIRED],
+      [
+        'a curator rejected it after the pass',
+        CollectionEventType.REVIEW_REJECTED,
+      ],
+      [
+        'the creator appealed a rejection after the pass',
+        CollectionEventType.REVIEW_APPEAL_REQUESTED,
+      ],
+    ])('and %s', (_, latestStage) => {
       beforeEach(() => {
-        mockFindVerdict.mockResolvedValue(undefined)
+        mockFindLatestEventByTypes.mockResolvedValue(buildEvent(latestStage))
       })
 
-      it('should wait for it', async () => {
+      it('should leave the review where it stands', async () => {
         await service.revalidateEditedCollections()
 
+        expect(mockRecordEvent).not.toHaveBeenCalled()
         expect(mockSendValidation).not.toHaveBeenCalled()
       })
     })
 
-    describe('and the latest run was rejected, with an appeal open', () => {
+    describe('and the collection used its edit runs of the day', () => {
       beforeEach(() => {
-        mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_REJECTED, {
-            validationId: 'passedRun',
-          })
+        mockFindEventsSince.mockResolvedValue(
+          Array.from({ length: MAX_VALIDATION_ATTEMPTS_PER_DAY }, () =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'edit',
+            })
+          )
         )
       })
 
-      it('should not judge it again, which would close the appeal', async () => {
+      it('should wait for the next day', async () => {
         await service.revalidateEditedCollections()
 
         expect(mockSendValidation).not.toHaveBeenCalled()
-      })
-    })
-
-    describe('and the latest run ended in an error', () => {
-      beforeEach(() => {
-        mockFindVerdict.mockResolvedValue(
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR, {
-            validationId: 'passedRun',
-            reason: 'too_large',
-          })
-        )
-      })
-
-      it('should leave it to the sweep or a curator', async () => {
-        await service.revalidateEditedCollections()
-
-        expect(mockSendValidation).not.toHaveBeenCalled()
-        expect(mockNotifyNotRequested).not.toHaveBeenCalled()
       })
     })
 

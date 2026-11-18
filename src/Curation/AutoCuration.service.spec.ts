@@ -315,17 +315,20 @@ describe('AutoCurationService', () => {
         })
       })
 
-      describe('and the run in flight is an edit run the server started', () => {
-        beforeEach(() => {
-          previousStart.payload.trigger = 'edit'
-        })
+      describe.each(['edit', 'sweep'])(
+        'and the run in flight is a %s run the server started',
+        (trigger) => {
+          beforeEach(() => {
+            previousStart.payload.trigger = trigger
+          })
 
-        it("should start the creator's validation, which supersedes it", async () => {
-          await service.requestValidation(dbCollectionMock.id, ethAddress)
+          it("should start the creator's validation, which supersedes it", async () => {
+            await service.requestValidation(dbCollectionMock.id, ethAddress)
 
-          expect(mockSendValidation).toHaveBeenCalledTimes(1)
-        })
-      })
+            expect(mockSendValidation).toHaveBeenCalledTimes(1)
+          })
+        }
+      )
 
       describe('and the start is older than the sweep looks back', () => {
         beforeEach(() => {

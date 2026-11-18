@@ -1279,11 +1279,13 @@ export class AutoCurationService {
       collectionId,
       CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
-    // The sweep gives up on older runs, so they block the creator no longer than they hide from curators. An edit
-    // run is the server's own: the creator's request supersedes it.
+    // The sweep gives up on older runs, so they block the creator no longer than they hide from curators. A run the
+    // server started on its own (an edit run or a re-send of one) is superseded by the creator's request.
     if (
       !latestStart ||
-      latestStart.payload.trigger === 'edit' ||
+      UNCOUNTED_TRIGGERS.includes(
+        latestStart.payload.trigger as ValidationTrigger
+      ) ||
       new Date(latestStart.created_at).getTime() <
         Date.now() - SWEEP_LOOKBACK_MS
     ) {

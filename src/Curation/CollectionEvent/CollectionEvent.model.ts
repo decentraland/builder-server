@@ -40,7 +40,7 @@ export function judgedStartCondition(alias: string) {
   }
           AND EXISTS (
             SELECT 1
-              FROM collection_events verdict
+              FROM ${raw(CollectionEvent.tableName)} verdict
               WHERE verdict.collection_id = ${raw(alias)}.collection_id
                 AND verdict.payload->>'validationId' = ${raw(
                   alias

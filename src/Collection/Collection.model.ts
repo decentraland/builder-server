@@ -6,8 +6,12 @@ import { ItemCuration } from '../Curation/ItemCuration'
 import {
   CollectionEvent,
   PUBLISH_FAILED_REASON,
+  judgedStartCondition,
 } from '../Curation/CollectionEvent/CollectionEvent.model'
-import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
+import {
+  CollectionEventType,
+  REVIEW_STAGE_EVENT_TYPES,
+} from '../Curation/CollectionEvent/CollectionEvent.types'
 import { database } from '../database/database'
 import { Item } from '../Item/Item.model'
 import {
@@ -631,6 +635,49 @@ export class Collection extends Model<CollectionAttributes> {
       )} WHERE items.collection_id = collections.id) as item_count
         FROM ${raw(this.tableName)}
         WHERE contract_address = ANY(${contractAddresses})`)
+  }
+
+  /**
+   * Published standard collections whose latest curation is pending, whose review stands at an automated pass, and
+   * with an on-chain item saved since a run judged it: its stored hash differs from the latest judged one.
+   */
+  static findPendingWithEditedItems() {
+    return this.query<CollectionAttributes>(
+      SQL`
+      SELECT collections.*
+        FROM ${raw(this.tableName)}
+        ${this.getLatestCurationJoinStatement()}
+        WHERE collection_curations.status = ${CurationStatusFilter.PENDING}
+          AND collections.contract_address IS NOT NULL
+          AND collections.third_party_id IS NULL
+          AND (
+            SELECT stage.type
+              FROM ${raw(CollectionEvent.tableName)} stage
+              WHERE stage.collection_id = collections.id
+                AND stage.type = ANY(${REVIEW_STAGE_EVENT_TYPES})
+              ORDER BY stage.created_at DESC, stage.id DESC
+              LIMIT 1
+          ) = ${CollectionEventType.REVIEW_AUTOMATED_PASSED}
+          AND EXISTS (
+            SELECT 1
+              FROM ${raw(Item.tableName)} items
+              WHERE items.collection_id = collections.id
+                AND items.blockchain_item_id IS NOT NULL
+                AND items.local_content_hash <> (
+                  SELECT started.payload->'contentHashes'->>items.id::text
+                    FROM ${raw(CollectionEvent.tableName)} started
+                    WHERE started.collection_id = collections.id
+                      AND started.payload->'contentHashes' ? items.id::text
+                      AND `
+        .append(judgedStartCondition('started'))
+        .append(
+          SQL`
+                    ORDER BY started.created_at DESC, started.id DESC
+                    LIMIT 1
+                )
+          )`
+        )
+    )
   }
 
   static async findByItemId(

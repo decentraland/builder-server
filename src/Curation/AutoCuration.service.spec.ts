@@ -84,16 +84,18 @@ const mockRecordEvent = CollectionEvent.record as jest.Mock
 const mockRecordEventOnce = CollectionEvent.recordOnce as jest.Mock
 const mockFindLatestEvent = CollectionEvent.findLatestByCollectionId as jest.Mock
 const mockFindLatestEventByType = CollectionEvent.findLatestByCollectionIdAndType as jest.Mock
+const mockFindLatestEventByTypes = CollectionEvent.findLatestByCollectionIdAndTypes as jest.Mock
 const mockFindEventsSince = CollectionEvent.findByCollectionIdSince as jest.Mock
 const mockFindEventsPage = CollectionEvent.findPageByCollectionId as jest.Mock
 const mockFindStaleAutomatedStarted = CollectionEvent.findStaleAutomatedStarted as jest.Mock
-const mockFindStarts = CollectionEvent.findJudgedStartsByCollectionId as jest.Mock
+const mockFindJudgedHashes = CollectionEvent.findJudgedHashesByCollectionId as jest.Mock
 const mockFindVerdict = CollectionEvent.findVerdictByValidationId as jest.Mock
 const mockCountSweepStarts = CollectionEvent.countSweepStartsSinceManualStart as jest.Mock
 const mockFindLatestCuration = CollectionCuration.findLatestByCollectionId as jest.Mock
 const mockCreateCuration = CollectionCuration.create as jest.Mock
 const mockUpdateCuration = CollectionCuration.update as jest.Mock
 const mockFindCollection = Collection.findOne as jest.Mock
+const mockFindPendingWithAutomatedReview = Collection.findPendingWithEditedItems as jest.Mock
 const mockFindItemsByCollection = Item.findOrderedByCollectionId as jest.Mock
 const mockFindItemsByIds = Item.findByIds as jest.Mock
 const mockFetchRemoteItems = collectionAPI.fetchItemsByContractAddress as jest.Mock
@@ -134,12 +136,12 @@ describe('AutoCurationService', () => {
     item = { ...dbItemMock, local_content_hash: 'localHash' }
     mockIsFeatureFlagEnabled.mockResolvedValue(true)
     mockCalculateHash.mockResolvedValue('computedHash')
-    mockFindStarts.mockImplementation(async (collectionId: string) => {
+    mockFindJudgedHashes.mockImplementation(async (collectionId: string) => {
       const latest = await mockFindLatestEventByType(
         collectionId,
         CollectionEventType.REVIEW_AUTOMATED_STARTED
       )
-      return latest ? [latest] : []
+      return { ...(latest?.payload.contentHashes ?? {}) }
     })
     jest.spyOn(console, 'log').mockImplementation(() => undefined)
     jest.spyOn(console, 'error').mockImplementation(() => undefined)
@@ -159,13 +161,16 @@ describe('AutoCurationService', () => {
   })
 
   describe('when counting the validation attempts of the day', () => {
-    it('should count the starts the creator caused, not the sweep re-sends nor the verdicts', () => {
+    it('should count the starts the creator caused, not the sweep re-sends, the edit runs nor the verdicts', () => {
       expect(
         countValidationAttempts([
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'sweep',
           }),
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_ERROR),
+          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+            trigger: 'edit',
+          }),
           buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
             trigger: 'retry',
           }),
@@ -309,6 +314,21 @@ describe('AutoCurationService', () => {
           expect(mockSendValidation).toHaveBeenCalledTimes(1)
         })
       })
+
+      describe.each(['edit', 'sweep'])(
+        'and the run in flight is a %s run the server started',
+        (trigger) => {
+          beforeEach(() => {
+            previousStart.payload.trigger = trigger
+          })
+
+          it("should start the creator's validation, which supersedes it", async () => {
+            await service.requestValidation(dbCollectionMock.id, ethAddress)
+
+            expect(mockSendValidation).toHaveBeenCalledTimes(1)
+          })
+        }
+      )
 
       describe('and the start is older than the sweep looks back', () => {
         beforeEach(() => {
@@ -1716,19 +1736,10 @@ describe('AutoCurationService', () => {
 
     describe('and each item was judged as it is by a different earlier run', () => {
       beforeEach(() => {
-        mockFindStarts.mockResolvedValue([
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            validationId: 'changesRun',
-            contentHashes: { [changedItem.id]: 'newHash' },
-          }),
-          buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
-            validationId: 'publishRun',
-            contentHashes: {
-              [unchangedItem.id]: 'staleHash',
-              [changedItem.id]: 'olderHash',
-            },
-          }),
-        ])
+        mockFindJudgedHashes.mockResolvedValue({
+          [changedItem.id]: 'newHash',
+          [unchangedItem.id]: 'staleHash',
+        })
         mockFetchRemoteItems.mockResolvedValue([
           { ...itemFragmentMock, blockchainId: '0', contentHash: 'chainHash' },
           { ...itemFragmentMock, blockchainId: '1', contentHash: 'oldHash' },
@@ -2422,6 +2433,242 @@ describe('AutoCurationService', () => {
         })
       )
       expect(mockSendValidation).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('when revalidating the collections edited under review', () => {
+    let passedStart: CollectionEventAttributes
+    let editedItem: ItemAttributes
+    let untouchedItem: ItemAttributes
+
+    beforeEach(() => {
+      editedItem = {
+        ...dbItemMock,
+        id: 'editedItem',
+        blockchain_item_id: '1',
+        local_content_hash: 'newHash',
+      }
+      untouchedItem = {
+        ...dbItemMock,
+        id: 'untouchedItem',
+        blockchain_item_id: '2',
+        local_content_hash: 'judgedHash',
+      }
+      passedStart = buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+        validationId: 'passedRun',
+        trigger: 'publish',
+        itemIds: [editedItem.id, untouchedItem.id],
+        contentHashes: {
+          [editedItem.id]: 'oldHash',
+          [untouchedItem.id]: 'judgedHash',
+        },
+      })
+      mockFindPendingWithAutomatedReview.mockResolvedValue([dbCollectionMock])
+      mockFindLatestCuration.mockResolvedValue({
+        id: 'curationId',
+        status: CurationStatus.PENDING,
+      })
+      mockFindLatestEventByType.mockResolvedValue(passedStart)
+      mockFindLatestEventByTypes.mockResolvedValue(
+        buildEvent(CollectionEventType.REVIEW_AUTOMATED_PASSED, {
+          validationId: 'passedRun',
+        })
+      )
+      mockFindEventsSince.mockResolvedValue([])
+      mockFindItemsByCollection.mockResolvedValue([editedItem, untouchedItem])
+    })
+
+    describe('and the review flow is off', () => {
+      beforeEach(() => {
+        mockIsFeatureFlagEnabled.mockImplementation(
+          async (flag: string) => flag === AUTO_CURATION_FEATURE_FLAG
+        )
+      })
+
+      it('should do nothing', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockFindPendingWithAutomatedReview).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and an item changed since the validator passed the collection', () => {
+      it('should validate only the edited item, as an edit run', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockRecordEvent).toHaveBeenCalledWith(
+          expect.objectContaining({
+            type: CollectionEventType.REVIEW_AUTOMATED_STARTED,
+            actor_address: null,
+            payload: expect.objectContaining({
+              trigger: 'edit',
+              itemIds: [editedItem.id],
+              contentHashes: { [editedItem.id]: 'newHash' },
+            }),
+          })
+        )
+        expect(mockSendValidation).toHaveBeenCalledWith(
+          expect.objectContaining({
+            items: [expect.objectContaining({ itemId: editedItem.id })],
+          })
+        )
+      })
+    })
+
+    describe('and every item is as the validator judged it', () => {
+      beforeEach(() => {
+        mockFindItemsByCollection.mockResolvedValue([
+          { ...editedItem, local_content_hash: 'oldHash' },
+          untouchedItem,
+        ])
+      })
+
+      it('should not validate it again', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and an item with a stored hash was never sent in any run', () => {
+      beforeEach(() => {
+        mockFindItemsByCollection.mockResolvedValue([
+          { ...editedItem, local_content_hash: 'oldHash' },
+          untouchedItem,
+          {
+            ...dbItemMock,
+            id: 'neverJudged',
+            blockchain_item_id: '3',
+            local_content_hash: 'chainHash',
+          },
+        ])
+      })
+
+      it('should leave it as the chain has it, without validating the collection again', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the changed items are not on chain or were never saved since the publication', () => {
+      beforeEach(() => {
+        mockFindItemsByCollection.mockResolvedValue([
+          { ...editedItem, blockchain_item_id: null },
+          { ...untouchedItem, local_content_hash: null },
+        ])
+      })
+
+      it('should not validate it again', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the latest curation is no longer pending', () => {
+      beforeEach(() => {
+        mockFindLatestCuration.mockResolvedValue({
+          id: 'curationId',
+          status: CurationStatus.REJECTED,
+        })
+      })
+
+      it('should leave it to the creator', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe.each([
+      ['a run is in flight', CollectionEventType.REVIEW_AUTOMATED_STARTED],
+      [
+        'the latest run was rejected',
+        CollectionEventType.REVIEW_AUTOMATED_REJECTED,
+      ],
+      [
+        'the latest run ended in an error',
+        CollectionEventType.REVIEW_AUTOMATED_ERROR,
+      ],
+      ['it was handed to a curator', CollectionEventType.REVIEW_HUMAN_REQUIRED],
+      [
+        'a curator rejected it after the pass',
+        CollectionEventType.REVIEW_REJECTED,
+      ],
+      [
+        'the creator appealed a rejection after the pass',
+        CollectionEventType.REVIEW_APPEAL_REQUESTED,
+      ],
+    ])('and %s', (_, latestStage) => {
+      beforeEach(() => {
+        mockFindLatestEventByTypes.mockResolvedValue(buildEvent(latestStage))
+      })
+
+      it('should leave the review where it stands', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockRecordEvent).not.toHaveBeenCalled()
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the collection used its edit runs of the day', () => {
+      beforeEach(() => {
+        mockFindEventsSince.mockResolvedValue(
+          Array.from({ length: MAX_VALIDATION_ATTEMPTS_PER_DAY }, () =>
+            buildEvent(CollectionEventType.REVIEW_AUTOMATED_STARTED, {
+              trigger: 'edit',
+            })
+          )
+        )
+      })
+
+      it('should wait for the next day', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and it is a third party collection', () => {
+      beforeEach(() => {
+        mockFindPendingWithAutomatedReview.mockResolvedValue([
+          dbTPCollectionMock,
+        ])
+      })
+
+      it('should not validate it', async () => {
+        await service.revalidateEditedCollections()
+
+        expect(mockSendValidation).not.toHaveBeenCalled()
+      })
+    })
+
+    describe('and the first collection fails', () => {
+      beforeEach(() => {
+        mockFindPendingWithAutomatedReview.mockResolvedValue([
+          { ...dbCollectionMock, id: 'failing' },
+          dbCollectionMock,
+        ])
+        mockFindLatestCuration.mockImplementation(async (id: string) => {
+          if (id === 'failing') {
+            throw new Error('boom')
+          }
+          return { id: 'curationId', status: CurationStatus.PENDING }
+        })
+      })
+
+      it('should still validate the next one', async () => {
+        await expect(
+          service.revalidateEditedCollections()
+        ).resolves.toBeUndefined()
+
+        expect(mockSendValidation).toHaveBeenCalledTimes(1)
+      })
     })
   })
 

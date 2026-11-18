@@ -18,6 +18,15 @@ export const HUMAN_DECISION_EVENT_TYPES: CollectionEventType[] = [
   CollectionEventType.REVIEW_REJECTED,
 ]
 
+/** The events that move a review: an assignment or a comment doesn't. */
+export const REVIEW_STAGE_EVENT_TYPES: CollectionEventType[] = Object.values(
+  CollectionEventType
+).filter(
+  (type) =>
+    type !== CollectionEventType.REVIEW_ASSIGNED &&
+    type !== CollectionEventType.REVIEW_COMMENT
+)
+
 export enum CollectionEventActor {
   CREATOR = 'creator',
   CURATOR = 'curator',

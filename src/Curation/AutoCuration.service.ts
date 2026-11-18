@@ -23,6 +23,7 @@ import {
   CollectionEventType,
   HUMAN_DECISION_EVENT_TYPES,
   isSweepResendableError,
+  REVIEW_STAGE_EVENT_TYPES,
   PUBLISH_FAILED_REASON,
   SWEEP_EXHAUSTED_REASON,
   TOO_LARGE_REASON,
@@ -73,6 +74,8 @@ export const MAX_SWEEP_RESENDS = 3
 export const VALIDATOR_REVIEWER = 'validator'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+// Runs the server starts on its own: they are not held against the creator's daily limit.
+const UNCOUNTED_TRIGGERS: ValidationTrigger[] = ['sweep', 'edit']
 const MAX_LOGGED_ERROR_LENGTH = 1000
 const VERDICT_EVENT_TYPE_BY_VERDICT: Record<
   ValidationResult['verdict'],
@@ -110,7 +113,7 @@ export function getStartOfTodayUTC(now = new Date()): Date {
 }
 
 /**
- * Counts the automated reviews a creator used: every start that is not a sweep re-send, since the latest human
+ * Counts the automated reviews a creator used: every start that is not a sweep re-send or an edit run, since the latest human
  * decision. Expects the day's events newest first.
  */
 export function countValidationAttempts(
@@ -133,7 +136,9 @@ export function countValidationAttempts(
     }
     if (
       event.type === CollectionEventType.REVIEW_AUTOMATED_STARTED &&
-      event.payload.trigger !== 'sweep' &&
+      !UNCOUNTED_TRIGGERS.includes(
+        event.payload.trigger as ValidationTrigger
+      ) &&
       !unsentValidationIds.has(event.payload.validationId)
     ) {
       attempts++
@@ -552,6 +557,31 @@ export class AutoCurationService {
     }
   }
 
+  /**
+   * Re-runs the automated review of the collections under review whose items changed since the validator judged
+   * them, so curators never decide on a verdict about other files. Runs from the sweep, which spaces the runs out.
+   */
+  async revalidateEditedCollections(): Promise<void> {
+    if (!(await this.isReviewFlowEnabled())) {
+      return
+    }
+
+    for (const collection of await Collection.findPendingWithEditedItems()) {
+      try {
+        const started = await withCollectionLock(collection.id, () =>
+          this.doRevalidateEdited(collection)
+        )
+        await this.sendValidation(started)
+      } catch (error) {
+        logger.error(
+          `Error validating the edited items of collection ${collection.id}: ${
+            (error as Error).message
+          }`
+        )
+      }
+    }
+  }
+
   async buildManifest(
     validationId: string,
     collection: CollectionAttributes,
@@ -608,6 +638,65 @@ export class AutoCurationService {
 
     const items = await Item.findOrderedByCollectionId(collection.id)
     return this.recordStart(collection, items, 'publish')
+  }
+
+  private async doRevalidateEdited(
+    collection: CollectionAttributes
+  ): Promise<StartedValidation | undefined> {
+    if (isTPCollection(collection)) {
+      return undefined
+    }
+    // A rejection, by the validator or a curator, is answered by the creator's retry or appeal, not by a save.
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collection.id
+    )
+    if (latestCuration?.status !== CurationStatus.PENDING) {
+      return undefined
+    }
+    // Only a pass that is still where the review stands is refreshed: a run in flight already flags what changed under
+    // it, errors and hand-offs belong to the sweep or a curator, and a later decision or appeal to the curators.
+    const latestStage = await CollectionEvent.findLatestByCollectionIdAndTypes(
+      collection.id,
+      REVIEW_STAGE_EVENT_TYPES
+    )
+    if (latestStage?.type !== CollectionEventType.REVIEW_AUTOMATED_PASSED) {
+      return undefined
+    }
+    // Edit runs are not held against the creator, but are bounded like their requests.
+    const todaysEditRuns = (
+      await CollectionEvent.findByCollectionIdSince(
+        collection.id,
+        getStartOfTodayUTC()
+      )
+    ).filter(
+      (event) =>
+        event.type === CollectionEventType.REVIEW_AUTOMATED_STARTED &&
+        event.payload.trigger === 'edit'
+    )
+    if (todaysEditRuns.length >= MAX_VALIDATION_ATTEMPTS_PER_DAY) {
+      return undefined
+    }
+
+    const judgedHashes = await CollectionEvent.findJudgedHashesByCollectionId(
+      collection.id
+    )
+    const editedItems: ItemAttributes[] = []
+    for (const item of await Item.findOrderedByCollectionId(collection.id)) {
+      // The hash is only stored by a save after the publication, also one that changed nothing, so only an item a
+      // run judged has a version to compare with; the others are the chain's, which a change request validates.
+      if (
+        item.blockchain_item_id !== null &&
+        item.local_content_hash &&
+        item.id in judgedHashes &&
+        judgedHashes[item.id] !== item.local_content_hash
+      ) {
+        editedItems.push(item)
+      }
+    }
+    if (editedItems.length === 0) {
+      return undefined
+    }
+    return this.recordStart(collection, editedItems, 'edit')
   }
 
   private async doRequestValidation(
@@ -914,7 +1003,7 @@ export class AutoCurationService {
     return notices
   }
 
-  /** A sweep re-send does not count: the changes supersede it, and its verdict is no longer the latest. */
+  /** A sweep re-send or an edit run does not count: the changes supersede it, and its verdict is no longer the latest. */
   private async wasOvertaken(changes: SubmittedChanges): Promise<boolean> {
     const collectionId = changes.collection.id
     const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
@@ -924,7 +1013,9 @@ export class AutoCurationService {
     if (
       latestStart &&
       latestStart.id !== changes.latestStartId &&
-      latestStart.payload.trigger !== 'sweep'
+      !UNCOUNTED_TRIGGERS.includes(
+        latestStart.payload.trigger as ValidationTrigger
+      )
     ) {
       return true
     }
@@ -1188,9 +1279,13 @@ export class AutoCurationService {
       collectionId,
       CollectionEventType.REVIEW_AUTOMATED_STARTED
     )
-    // The sweep gives up on older runs, so they block the creator no longer than they hide from curators.
+    // The sweep gives up on older runs, so they block the creator no longer than they hide from curators. A run the
+    // server started on its own (an edit run or a re-send of one) is superseded by the creator's request.
     if (
       !latestStart ||
+      UNCOUNTED_TRIGGERS.includes(
+        latestStart.payload.trigger as ValidationTrigger
+      ) ||
       new Date(latestStart.created_at).getTime() <
         Date.now() - SWEEP_LOOKBACK_MS
     ) {
@@ -1286,7 +1381,9 @@ export class AutoCurationService {
       throw new TooLargeToValidateError(collection.id)
     }
 
-    const previousHashes = await this.findJudgedHashes(collection.id)
+    const previousHashes = await CollectionEvent.findJudgedHashesByCollectionId(
+      collection.id
+    )
     const changedItems: ItemAttributes[] = []
     for (const item of await Item.findOrderedByCollectionId(collection.id)) {
       const hash = await this.getContentHash(item, collection)
@@ -1330,31 +1427,12 @@ export class AutoCurationService {
         }
       }
     }
-    const judgedHashes = await this.findJudgedHashes(collection.id)
+    const judgedHashes = await CollectionEvent.findJudgedHashesByCollectionId(
+      collection.id
+    )
     return changedItems.filter(
       (item) => judgedHashes[item.id] !== item.local_content_hash
     )
-  }
-
-  /** Each item's hash as the most recent run that judged it saw it: a run only carries the items it sent. */
-  private async findJudgedHashes(
-    collectionId: string
-  ): Promise<Record<string, string>> {
-    const judged: Record<string, string> = {}
-    for (const start of await CollectionEvent.findJudgedStartsByCollectionId(
-      collectionId
-    )) {
-      const hashes = (start.payload.contentHashes ?? {}) as Record<
-        string,
-        string
-      >
-      for (const [itemId, hash] of Object.entries(hashes)) {
-        if (!(itemId in judged)) {
-          judged[itemId] = hash
-        }
-      }
-    }
-    return judged
   }
 
   /** The items whose content differs from the chain, with the hash the manifest will carry. */

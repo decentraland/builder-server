@@ -31,7 +31,21 @@ async function sweepUnderLock(service: AutoCurationService): Promise<boolean> {
   }
 
   try {
-    await service.sweepStaleValidations()
+    // Each step runs whatever the other did; the first failure is reported once both ran.
+    let failure: unknown
+    for (const step of [
+      () => service.sweepStaleValidations(),
+      () => service.revalidateEditedCollections(),
+    ]) {
+      try {
+        await step()
+      } catch (error) {
+        failure = failure ?? error
+      }
+    }
+    if (failure) {
+      throw failure
+    }
   } finally {
     await db.query('SELECT pg_advisory_unlock($1)', [SWEEP_LOCK_KEY])
   }

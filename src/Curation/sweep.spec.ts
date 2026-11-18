@@ -38,15 +38,24 @@ describe('when running the auto curation sweep', () => {
         .mockResolvedValueOnce([{ pg_advisory_unlock: true }])
     })
 
-    it('should sweep and release the lock', async () => {
+    it('should sweep, revalidate the edited collections and release the lock', async () => {
       await expect(runAutoCurationSweep(service)).resolves.toBe(true)
 
       expect(service.sweepStaleValidations).toHaveBeenCalledTimes(1)
+      expect(service.revalidateEditedCollections).toHaveBeenCalledTimes(1)
       expect(
         mockQuery
       ).toHaveBeenLastCalledWith('SELECT pg_advisory_unlock($1)', [
         SWEEP_LOCK_KEY,
       ])
+    })
+
+    it('should still revalidate the edited collections when the stale sweep fails', async () => {
+      service.sweepStaleValidations.mockRejectedValueOnce(new Error('boom'))
+
+      await expect(runAutoCurationSweep(service)).rejects.toThrow('boom')
+
+      expect(service.revalidateEditedCollections).toHaveBeenCalledTimes(1)
     })
 
     it('should release the lock when the sweep fails', async () => {

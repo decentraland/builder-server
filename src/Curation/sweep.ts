@@ -32,6 +32,7 @@ async function sweepUnderLock(service: AutoCurationService): Promise<boolean> {
 
   try {
     await service.sweepStaleValidations()
+    await service.revalidateEditedCollections()
   } finally {
     await db.query('SELECT pg_advisory_unlock($1)', [SWEEP_LOCK_KEY])
   }

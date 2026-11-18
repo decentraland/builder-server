@@ -633,6 +633,25 @@ export class Collection extends Model<CollectionAttributes> {
         WHERE contract_address = ANY(${contractAddresses})`)
   }
 
+  /** Published standard collections whose latest curation is pending and that the validator already ran on. */
+  static findPendingWithAutomatedReview() {
+    return this.query<CollectionAttributes>(SQL`
+      SELECT collections.*
+        FROM ${raw(this.tableName)}
+        ${this.getLatestCurationJoinStatement()}
+        WHERE collection_curations.status = ${CurationStatusFilter.PENDING}
+          AND collections.contract_address IS NOT NULL
+          AND collections.third_party_id IS NULL
+          AND EXISTS (
+            SELECT 1
+              FROM ${raw(CollectionEvent.tableName)} started
+              WHERE started.collection_id = collections.id
+                AND started.type = ${
+                  CollectionEventType.REVIEW_AUTOMATED_STARTED
+                }
+          )`)
+  }
+
   static async findByItemId(
     itemId: string
   ): Promise<CollectionAttributes | undefined> {

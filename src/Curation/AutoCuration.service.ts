@@ -73,6 +73,8 @@ export const MAX_SWEEP_RESENDS = 3
 export const VALIDATOR_REVIEWER = 'validator'
 
 const DAY_MS = 24 * 60 * 60 * 1000
+// Runs the server starts on its own: they are not held against the creator's daily limit.
+const UNCOUNTED_TRIGGERS: ValidationTrigger[] = ['sweep', 'edit']
 const MAX_LOGGED_ERROR_LENGTH = 1000
 const VERDICT_EVENT_TYPE_BY_VERDICT: Record<
   ValidationResult['verdict'],
@@ -110,7 +112,7 @@ export function getStartOfTodayUTC(now = new Date()): Date {
 }
 
 /**
- * Counts the automated reviews a creator used: every start that is not a sweep re-send, since the latest human
+ * Counts the automated reviews a creator used: every start that is not a sweep re-send or an edit run, since the latest human
  * decision. Expects the day's events newest first.
  */
 export function countValidationAttempts(
@@ -133,7 +135,9 @@ export function countValidationAttempts(
     }
     if (
       event.type === CollectionEventType.REVIEW_AUTOMATED_STARTED &&
-      event.payload.trigger !== 'sweep' &&
+      !UNCOUNTED_TRIGGERS.includes(
+        event.payload.trigger as ValidationTrigger
+      ) &&
       !unsentValidationIds.has(event.payload.validationId)
     ) {
       attempts++
@@ -552,6 +556,31 @@ export class AutoCurationService {
     }
   }
 
+  /**
+   * Re-runs the automated review of the collections under review whose items changed since the validator judged
+   * them, so curators never decide on a verdict about other files. Runs from the sweep, which spaces the runs out.
+   */
+  async revalidateEditedCollections(): Promise<void> {
+    if (!(await this.isReviewFlowEnabled())) {
+      return
+    }
+
+    for (const collection of await Collection.findPendingWithAutomatedReview()) {
+      try {
+        const started = await withCollectionLock(collection.id, () =>
+          this.doRevalidateEdited(collection)
+        )
+        await this.sendValidation(started)
+      } catch (error) {
+        logger.error(
+          `Error validating the edited items of collection ${collection.id}: ${
+            (error as Error).message
+          }`
+        )
+      }
+    }
+  }
+
   async buildManifest(
     validationId: string,
     collection: CollectionAttributes,
@@ -608,6 +637,54 @@ export class AutoCurationService {
 
     const items = await Item.findOrderedByCollectionId(collection.id)
     return this.recordStart(collection, items, 'publish')
+  }
+
+  private async doRevalidateEdited(
+    collection: CollectionAttributes
+  ): Promise<StartedValidation | undefined> {
+    if (isTPCollection(collection)) {
+      return undefined
+    }
+    // A rejection, by the validator or a curator, is answered by the creator's retry or appeal, not by a save.
+    const latestCuration = await CollectionCuration.findLatestByCollectionId(
+      collection.id
+    )
+    if (latestCuration?.status !== CurationStatus.PENDING) {
+      return undefined
+    }
+    const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
+      collection.id,
+      CollectionEventType.REVIEW_AUTOMATED_STARTED
+    )
+    if (!latestStart) {
+      return undefined
+    }
+    // Only a pass is refreshed: a run in flight already flags what changed under it, errors and hand-offs belong to
+    // the sweep or a curator, and re-judging an appealed rejection would close the appeal.
+    const verdict = await CollectionEvent.findVerdictByValidationId(
+      collection.id,
+      latestStart.payload.validationId as string
+    )
+    if (verdict?.type !== CollectionEventType.REVIEW_AUTOMATED_PASSED) {
+      return undefined
+    }
+
+    const judgedHashes = await this.findJudgedHashes(collection.id)
+    const editedItems: ItemAttributes[] = []
+    for (const item of await Item.findOrderedByCollectionId(collection.id)) {
+      // The hash is only stored by a save after the publication: an item without one was never edited since.
+      if (
+        item.blockchain_item_id !== null &&
+        item.local_content_hash &&
+        judgedHashes[item.id] !== item.local_content_hash
+      ) {
+        editedItems.push(item)
+      }
+    }
+    if (editedItems.length === 0) {
+      return undefined
+    }
+    return this.recordStart(collection, editedItems, 'edit')
   }
 
   private async doRequestValidation(
@@ -914,7 +991,7 @@ export class AutoCurationService {
     return notices
   }
 
-  /** A sweep re-send does not count: the changes supersede it, and its verdict is no longer the latest. */
+  /** A sweep re-send or an edit run does not count: the changes supersede it, and its verdict is no longer the latest. */
   private async wasOvertaken(changes: SubmittedChanges): Promise<boolean> {
     const collectionId = changes.collection.id
     const latestStart = await CollectionEvent.findLatestByCollectionIdAndType(
@@ -924,7 +1001,9 @@ export class AutoCurationService {
     if (
       latestStart &&
       latestStart.id !== changes.latestStartId &&
-      latestStart.payload.trigger !== 'sweep'
+      !UNCOUNTED_TRIGGERS.includes(
+        latestStart.payload.trigger as ValidationTrigger
+      )
     ) {
       return true
     }

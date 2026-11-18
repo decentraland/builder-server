@@ -294,8 +294,8 @@ export class CollectionService {
       const collectionCuration = await CollectionCuration.findOne(collectionId)
       if (collectionCuration) {
         await CollectionCuration.update(
-          { id: collectionCuration.id },
-          { updated_at: now }
+          { updated_at: now },
+          { id: collectionCuration.id }
         )
       } else {
         await CollectionCuration.create<CollectionCurationAttributes>({
@@ -305,6 +305,9 @@ export class CollectionService {
           created_at: now,
           updated_at: now,
           assignee: null,
+          reviewed_by: null,
+          rejection_reasons: null,
+          rejection_message: null,
         })
       }
     } catch (error) {

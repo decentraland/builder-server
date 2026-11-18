@@ -1,6 +1,8 @@
 import { SQL } from 'decentraland-server'
 import { Collection } from './Collection.model'
 import { CurationStatusFilter, UNASSIGNED_FILTER } from '../Curation'
+import { PUBLISH_FAILED_REASON } from '../Curation/CollectionEvent/CollectionEvent.model'
+import { CollectionEventType } from '../Curation/CollectionEvent/CollectionEvent.types'
 import {
   CollectionSort,
   CollectionStatus,
@@ -85,6 +87,7 @@ describe('Collection model', () => {
       it('should match any of them', async () => {
         await Collection.findAll({
           ...remoteSets,
+          autoReviewingSince: new Date(),
           statuses: [
             CurationStatusFilter.TO_REVIEW,
             CurationStatusFilter.UNDER_REVIEW,
@@ -140,6 +143,73 @@ describe('Collection model', () => {
         expect(normalize(lastQuery().text)).toContain(
           'WHERE (((collection_curations.assignee is NOT NULL AND (collection_curations.status = $1 OR ((collections.third_party_id is NOT NULL AND collections.urn_suffix is NOT NULL) AND EXISTS (SELECT 1 FROM item_curations'
         )
+      })
+    })
+
+    describe('filtered by the auto reviewing status', () => {
+      const since = new Date('2026-11-09T00:00:00.000Z')
+
+      it('should take a standard collection with a pending request whose newest review event is a start or a retryable error of a run started since the cutoff', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          autoReviewingSince: since,
+          statuses: [CurationStatusFilter.AUTO_REVIEWING],
+        })
+
+        const text = normalize(lastQuery().text)
+        expect(text).toContain(
+          "collections.third_party_id is NULL AND collections.urn_suffix is NULL AND (COALESCE(collection_curations.status = $1, false) AND EXISTS (SELECT 1 FROM (SELECT latest_events.type, latest_events.payload, latest_events.created_at FROM collection_events latest_events WHERE latest_events.collection_id = collections.id AND latest_events.type NOT IN ($2, $3, $4) ORDER BY latest_events.created_at DESC, latest_events.id DESC LIMIT 1) latest_stage WHERE EXISTS (SELECT 1 FROM collection_events run_start WHERE run_start.collection_id = collections.id AND run_start.type = $5 AND run_start.payload->>'validationId' = latest_stage.payload->>'validationId' AND run_start.created_at >= $6) AND (latest_stage.type = $7 OR (latest_stage.type = $8 AND COALESCE(latest_stage.payload->>'retryable' = 'true' OR latest_stage.payload->>'reason' = $9, false)))))"
+        )
+        expect(lastQuery().values.slice(0, 9)).toEqual([
+          CurationStatusFilter.PENDING,
+          CollectionEventType.REVIEW_ASSIGNED,
+          CollectionEventType.CHANGES_SUBMITTED,
+          CollectionEventType.REVIEW_COMMENT,
+          CollectionEventType.REVIEW_AUTOMATED_STARTED,
+          since,
+          CollectionEventType.REVIEW_AUTOMATED_STARTED,
+          CollectionEventType.REVIEW_AUTOMATED_ERROR,
+          PUBLISH_FAILED_REASON,
+        ])
+      })
+
+      it('should match nothing while auto-curation is off', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          statuses: [CurationStatusFilter.AUTO_REVIEWING],
+        })
+
+        const text = normalize(lastQuery().text)
+        expect(text).toContain(
+          'collections.third_party_id is NULL AND collections.urn_suffix is NULL AND false'
+        )
+        expect(text).not.toContain('latest_stage')
+      })
+    })
+
+    describe.each([
+      CurationStatusFilter.TO_REVIEW,
+      CurationStatusFilter.UNDER_REVIEW,
+      CurationStatusFilter.PENDING,
+    ])('filtered by the %s status', (status) => {
+      it('should leave out a collection whose automated review is running', async () => {
+        await Collection.findAll({
+          ...remoteSets,
+          autoReviewingSince: new Date(),
+          statuses: [status],
+        })
+
+        expect(normalize(lastQuery().text)).toMatch(
+          /AND NOT \(COALESCE\(collection_curations.status = \$\d+, false\) AND EXISTS \(SELECT 1 FROM \(SELECT latest_events.type/
+        )
+      })
+
+      it('should leave nothing out while auto-curation is off', async () => {
+        await Collection.findAll({ ...remoteSets, statuses: [status] })
+
+        const text = normalize(lastQuery().text)
+        expect(text).toContain('AND NOT false')
+        expect(text).not.toContain('latest_stage')
       })
     })
 

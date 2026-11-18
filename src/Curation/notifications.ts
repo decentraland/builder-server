@@ -4,15 +4,13 @@ import { Collection } from '../Collection/Collection.model'
 import { isCommitteeMember } from '../Committee/utils'
 import { CollectionAttributes } from '../Collection/Collection.types'
 import { peerAPI } from '../ethereum/api/peer'
-import {
-  getItemEditorUrl,
-  shortenAddress,
-} from '../Forum/utils'
-import { escapeSlackText, sendSlackMessage } from '../Slack'
+import { getItemEditorUrl, shortenAddress } from '../Forum/utils'
+import { escapeSlackText, sendSlackMessage, toOneLine } from '../Slack'
 import { isTPCollection } from '../utils/urn'
 import { CurationStatus } from './Curation.types'
 
 const CHANNEL_KEY = 'SLACK_CURATION_CHANNEL'
+const MAX_QUOTED_COMMENT_LENGTH = 300
 const logger = createConsoleLogComponent().getLogger('CurationNotifications')
 
 export type CurationVerdict = CurationStatus.APPROVED | CurationStatus.REJECTED
@@ -101,7 +99,27 @@ export const curationNotifications = {
     })
   },
 
-  /** The automatic review was not requested, so no result will follow in the channel. */
+  /** A creator wrote on the review timeline. The message is quoted on one line so it cannot forge channel lines. */
+  async commentPosted(
+    collectionId: string,
+    authorAddress: string,
+    message: string
+  ): Promise<void> {
+    await notify(collectionId, async (collection) => {
+      const author = await describeAddress(authorAddress, 'creator')
+      const line = toOneLine(message)
+      // Cut before escaping so an entity is never split.
+      const quote =
+        line.length > MAX_QUOTED_COMMENT_LENGTH
+          ? `${line.slice(0, MAX_QUOTED_COMMENT_LENGTH)}…`
+          : line
+      return `💬 New comment on ${link(
+        collection
+      )} by ${author}: ${escapeSlackText(quote)}`
+    })
+  },
+
+  /** The automated review was not requested, so no result will follow in the channel. */
   async validationNotRequested(
     collectionId: string,
     reason: string
@@ -109,7 +127,7 @@ export const curationNotifications = {
     await notify(
       collectionId,
       async (collection) =>
-        `⚠️ No automatic review for ${link(
+        `⚠️ No automated review for ${link(
           collection
         )}: ${reason}. It needs a curator review without it.`
     )
@@ -147,7 +165,7 @@ async function notify(
 
 function link(collection: CollectionAttributes): string {
   const url = getItemEditorUrl({ collectionId: collection.id })
-  return `<${url}|${escapeSlackText(collection.name)}>`
+  return `<${url}|${escapeSlackText(toOneLine(collection.name))}>`
 }
 
 /** The person as a link: creators to their shop page, curators to their profile. */
@@ -156,7 +174,9 @@ async function describeAddress(
   role: 'creator' | 'curator'
 ): Promise<string> {
   const name = await peerAPI.getProfileName(address)
-  const label = name ? escapeSlackText(name) : shortenAddress(address)
+  const label = name
+    ? escapeSlackText(toOneLine(name))
+    : shortenAddress(address)
   const origin = getSiteOrigin()
   if (!origin) {
     return label
